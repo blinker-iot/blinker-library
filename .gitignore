@@ -1,0 +1,7 @@
+__vm/
+Debug/
+*.vcxproj
+*.filters
+.vs/
+*.sln
+.vscode/
