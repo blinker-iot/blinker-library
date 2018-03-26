@@ -1,5 +1,6 @@
 #define BLINKER_PRINT	Serial
 #define BLINKER_WIFI
+#define BLINKER_ESP_SMARTCONFIG
 
 #include <Blinker.h>
 

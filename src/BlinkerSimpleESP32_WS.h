@@ -30,6 +30,7 @@ class BlinkerSimpleESP32_WS
         }
     
     private :
+#if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
             WiFi.mode(WIFI_AP_STA);
             WiFi.beginSmartConfig();
@@ -51,6 +52,7 @@ class BlinkerSimpleESP32_WS
             BLINKER_LOG1("IP Address: ");
             BLINKER_LOG1(WiFi.localIP());
         }
+#endif
 
         void mDNSInit()
         {
