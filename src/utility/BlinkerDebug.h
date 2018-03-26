@@ -22,7 +22,7 @@
 
     #if (defined(__AVR__))
         #include <avr/pgmspace.h>
-    #else if
+    #else
         #include <pgmspace.h>
     #endif
 

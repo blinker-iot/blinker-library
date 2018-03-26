@@ -11,10 +11,46 @@ class BlinkerSimpleESP32_WS
     typedef BlinkerProtocol<BlinkerArduinoWS> Base;
 
     public :
-        
         BlinkerSimpleESP32_WS(BlinkerArduinoWS &transp)
             : Base(transp)
         {}
+
+        void begin() {
+            Base::begin();
+            smartconfig();
+            BLINKER_LOG1("ESP8266_WiFi Initialled...");
+        }
+    
+        void begin(const char* ssid,
+                    const char* pswd)
+        {
+            Base::begin();
+            connectWiFi(ssid, pswd);
+            BLINKER_LOG1("ESP32_WiFi Initialled...");
+        }
+    
+    private :
+        void smartconfig() {
+            WiFi.mode(WIFI_AP_STA);
+            WiFi.beginSmartConfig();
+            
+            BLINKER_LOG1("Waiting for SmartConfig.");
+            while (!WiFi.smartConfigDone()) {
+                delay(500);
+            }
+
+            BLINKER_LOG1("SmartConfig received.");
+            
+            BLINKER_LOG1("Waiting for WiFi");
+            while (WiFi.status() != WL_CONNECTED) {
+                delay(500);
+            }
+
+            BLINKER_LOG1("WiFi Connected.");
+
+            BLINKER_LOG1("IP Address: ");
+            BLINKER_LOG1(WiFi.localIP());
+        }
 
         void mDNSInit()
         {
@@ -59,16 +95,6 @@ class BlinkerSimpleESP32_WS
 
             mDNSInit();
         }
-    
-        void  begin(const char* ssid,
-                    const char* pswd)
-        {
-            Base::begin();
-            connectWiFi(ssid, pswd);
-            BLINKER_LOG1("ESP32_WiFi Initialled...");
-        }
-    
-    // private :
 };
 
 static BlinkerArduinoWS  _blinkerTransport;
