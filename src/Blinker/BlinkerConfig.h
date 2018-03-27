@@ -1,7 +1,7 @@
 #ifndef BlinkerConfig_H
 #define BlinkerConfig_H
 
-#define BLINKER_VERSION                 "0.1.0"
+#define BLINKER_VERSION                 "0.1.1"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
