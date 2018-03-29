@@ -15,11 +15,13 @@ class BlinkerSimpleESP32_WS
             : Base(transp)
         {}
 
+#if defined(BLINKER_ESP_SMARTCONFIG)
         void begin() {
             Base::begin();
             smartconfig();
             BLINKER_LOG1("ESP8266_WiFi Initialled...");
         }
+#endif
     
         void begin(const char* ssid,
                     const char* pswd)

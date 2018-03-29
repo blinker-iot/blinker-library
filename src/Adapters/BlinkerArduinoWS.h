@@ -2,7 +2,8 @@
 #define BlinkerWebSocket_H
 
 #include <Blinker/BlinkerProtocol.h>
-#include <WebSocketsServer.h>
+#include <modules/WebSockets/WebSocketsServer.h>
+// #include <WebSocketsServer.h>
 // #include <Hash.h>
 
 #define WS_SERVERPORT                       81
