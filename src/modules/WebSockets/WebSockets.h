@@ -32,6 +32,8 @@
 #include <Arduino.h>
 #endif
 
+#if defined(ESP8266) || defined(ESP32)
+
 #include <functional>
 
 #ifndef NODEBUG_WEBSOCKETS
@@ -297,5 +299,7 @@ class WebSockets {
 
 
 };
+
+#endif
 
 #endif /* WEBSOCKETS_H_ */

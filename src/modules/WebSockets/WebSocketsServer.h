@@ -27,6 +27,8 @@
 
 #include "WebSockets.h"
 
+#if defined(ESP8266) || defined(ESP32)
+
 #define WEBSOCKETS_SERVER_CLIENT_MAX  (5)
 
 
@@ -200,6 +202,6 @@ private:
 
 };
 
-
+#endif
 
 #endif /* WEBSOCKETSSERVER_H_ */

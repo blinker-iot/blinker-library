@@ -24,6 +24,8 @@
 
 #include "WebSockets.h"
 
+#if defined(ESP8266) || defined(ESP32)
+
 #ifdef ESP8266
 #include <core_esp8266_features.h>
 #endif
@@ -652,3 +654,5 @@ size_t WebSockets::write(WSclient_t * client, const char *out) {
 	if(out == NULL) return 0;
 	return write(client, (uint8_t*)out, strlen(out));
 }
+
+#endif

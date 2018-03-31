@@ -27,6 +27,8 @@
 
 #include "WebSockets.h"
 
+#if defined(ESP8266) || defined(ESP32)
+
 class WebSocketsClient: private WebSockets {
     public:
 #ifdef __AVR__
@@ -131,5 +133,7 @@ class WebSocketsClient: private WebSockets {
         }
 
 };
+
+#endif
 
 #endif /* WEBSOCKETSCLIENT_H_ */

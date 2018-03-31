@@ -25,6 +25,8 @@
 #include "WebSockets.h"
 #include "WebSocketsServer.h"
 
+#if defined(ESP8266) || defined(ESP32)
+
 WebSocketsServer::WebSocketsServer(uint16_t port, String origin, String protocol) {
     _port = port;
     _origin = origin;
@@ -831,5 +833,5 @@ void WebSocketsServer::handleHeader(WSclient_t * client, String * headerLine) {
     }
 }
 
-
+#endif
 
