@@ -13,6 +13,7 @@ void setup()
 	digitalWrite(LED_BUILTIN, LOW);
 	
 	Blinker.begin();
+	Blinker.wInit(SLIDER_1, W_SLIDER);
 }
 
 void loop()

@@ -15,6 +15,8 @@
         #include <BlinkerSimpleESP8266_WS.h>
     #elif defined(ESP32)
         #include <BlinkerSimpleESP32_WS.h>
+    #else
+        #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
 #endif

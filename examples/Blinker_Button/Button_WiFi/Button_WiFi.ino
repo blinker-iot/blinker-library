@@ -16,6 +16,7 @@ void setup()
 	digitalWrite(LED_BUILTIN, LOW);
 
 	Blinker.begin(ssid, pswd);
+	Blinker.wInit(BUTTON_1, W_BUTTON);
 }
 
 void loop()

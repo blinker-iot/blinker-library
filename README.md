@@ -122,6 +122,12 @@ Blinker.print("temp", 30.2, "°C");
 >Json data can display in the Blinker TEXT widget  
 
 ## App Widgets
+### Blinker.wInit()
+Init widget, **Button** and **Slider** widget recommended to initialize before use.
+```
+Blinker.wInit("ButtonName", W_BUTTON);  
+Blinker.wInit("SliderName", W_SLIDER);//keyName, type  
+```
 ### Blinker.button() 
 Device receives an update of **Button** state from app, return true when **Pressed**, return false when **Released**.
 ```
@@ -209,7 +215,7 @@ void setup() {
 >串口蓝牙模块:  
 >**Blinker.begin()** 将使用默认设置配置 SoftWareSerial   
 >  
->Blinker.begin();// 默认设置: 数字IO 2(RX) 3(TX), 波特率 9600 bps
+>Blinker.begin();// 默认设置: 数字IO 2(RX) 3(TX), 波特率 9600 bps  
 >Blinker.begin(4, 5);// 设置数字IO 4(RX) 5(TX), 默认波特率 9600 bps  
 >Blinker.begin(4, 5, 115200);// 设置数字IO 4(RX) 5(TX) 及波特率 115200 bps  
   
@@ -279,6 +285,12 @@ Blinker.print("temp", 30.2, "°C");
 >发送的Json数据可以在 Blinker APP 的 TEXT 组件中显示  
 
 ## App Widgets
+### Blinker.wInit()
+组件初始化, 建议在使用前初始化 **Button** 和 **Slider**
+```
+Blinker.wInit("ButtonName", W_BUTTON);  
+Blinker.wInit("SliderName", W_SLIDER);//键词, 类型  
+```
 ### Blinker.button() 
 读取开关/按键数据, 按下(Pressed)时返回true, 松开(Released)时返回false
 ```

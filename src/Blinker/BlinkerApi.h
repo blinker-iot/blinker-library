@@ -5,12 +5,17 @@
 #include <utility/BlinkerDebug.h>
 #include <utility/BlinkerUtility.h>
 
-enum JoyStickAxis{
+enum b_widgettype_t {
+    W_BUTTON,
+    W_SLIDER
+};
+
+enum b_joystickaxis_t {
     J_Xaxis,
     J_Yaxis
 };
 
-enum AhrsAttitude{
+enum b_ahrsattitude_t {
     Yaw,
     Pitch,
     Roll
@@ -76,6 +81,31 @@ class BlinkerApi
             ahrsValue[Yaw] = 0;
             ahrsValue[Roll] = 0;
             ahrsValue[Pitch] = 0;
+        }
+
+        void wInit(const String & _name, b_widgettype_t _type) {
+            switch (_type) {
+                case W_BUTTON :
+                    if (checkNum(_name, _Button, _bCount) == BLINKER_OBJECT_NOT_AVAIL) {
+                        if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+                            _Button[_bCount] = new BlinkerButton();
+                            _Button[_bCount]->name(_name);
+                            _bCount++;
+                        }
+                    }
+                    break;
+                case W_SLIDER :
+                    if (checkNum(_name, _Slider, _sCount) == BLINKER_OBJECT_NOT_AVAIL) {
+                        if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+                            _Slider[_sCount] = new BlinkerSlider();
+                            _Slider[_sCount]->name(_name);
+                            _sCount++;
+                        }
+                    }
+                    break;
+                default :
+                    break;
+            }
         }
 
         void parse()
@@ -192,7 +222,7 @@ class BlinkerApi
             }
         }
 
-        uint8_t joystick(JoyStickAxis axis)
+        uint8_t joystick(b_joystickaxis_t axis)
         {
             int16_t jAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, axis);
 
@@ -208,7 +238,7 @@ class BlinkerApi
             }
         }
 
-        int16_t ahrs(AhrsAttitude attitude)
+        int16_t ahrs(b_ahrsattitude_t attitude)
         {
             int16_t aAttiValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, attitude);
 
