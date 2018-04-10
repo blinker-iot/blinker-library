@@ -8,7 +8,7 @@
 enum b_widgettype_t {
     W_BUTTON,
     W_SLIDER,
-    W_KEY
+    W_TOGGLE
 };
 
 enum b_joystickaxis_t {
@@ -23,8 +23,8 @@ enum b_ahrsattitude_t {
 };
 
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
-static class BlinkerKey *       _Key[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
+static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 
 class BlinkerButton
 {
@@ -44,24 +44,6 @@ class BlinkerButton
         bool    buttonState;
 };
 
-class BlinkerKey
-{
-    public :
-        BlinkerKey()
-            : keyName(NULL), keyState(false)
-        {}
-        
-        void name(String name) { keyName = name; }
-        String getName() { return keyName; }
-        void freshState(bool state) { keyState = state; }
-        bool getState() { return keyState; }
-        bool checkName(String name) { return ((keyName == name) ? true : false); }
-    
-    private :
-        String  keyName;
-        bool    keyState;
-};
-
 class BlinkerSlider
 {
     public :
@@ -78,6 +60,24 @@ class BlinkerSlider
     private :
         String  sliderName;
         uint8_t sliderValue;
+};
+
+class BlinkerToggle
+{
+    public :
+        BlinkerToggle()
+            : toggleName(NULL), toggleState(false)
+        {}
+        
+        void name(String name) { toggleName = name; }
+        String getName() { return toggleName; }
+        void freshState(bool state) { toggleState = state; }
+        bool getState() { return toggleState; }
+        bool checkName(String name) { return ((toggleName == name) ? true : false); }
+    
+    private :
+        String  toggleName;
+        bool    toggleState;
 };
 
 template <class T>
@@ -123,12 +123,12 @@ class BlinkerApi
                         }
                     }
                     break;
-                case W_KEY :
-                    if (checkNum(_name, _Key, _kCount) == BLINKER_OBJECT_NOT_AVAIL) {
-                        if ( _kCount < BLINKER_MAX_WIDGET_SIZE ) {
-                            _Key[_kCount] = new BlinkerKey();
-                            _Key[_kCount]->name(_name);
-                            _kCount++;
+                case W_TOGGLE :
+                    if (checkNum(_name, _Toggle, _tCount) == BLINKER_OBJECT_NOT_AVAIL) {
+                        if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                            _Toggle[_tCount] = new BlinkerToggle();
+                            _Toggle[_tCount]->name(_name);
+                            _tCount++;
                         }
                     }
                     break;
@@ -145,11 +145,11 @@ class BlinkerApi
                 for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                     buttonParse(_Button[bNum]->getName());
                 }
-                for (uint8_t kNum = 0; kNum < _kCount; kNum++) {
-                    key(_Key[kNum]->getName());
-                }
                 for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
                     slider(_Slider[sNum]->getName());
+                }
+                for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                    toggle(_Toggle[kNum]->getName());
                 }
 
                 joystick(J_Xaxis);
@@ -219,26 +219,26 @@ class BlinkerApi
             }
         }
 
-        bool key(const String & _kName)
+        bool toggle(const String & _tName)
         {
-            int8_t num = checkNum(_kName, _Key, _kCount);
+            int8_t num = checkNum(_tName, _Toggle, _tCount);
             String state;
 
-            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _kName)) {
+            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _tName)) {
                 _fresh = true;
             }
 
             if (state == BLINKER_CMD_ON) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _kCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Key[_kCount] = new BlinkerKey();
-                        _Key[_kCount]->name(_kName);
-                        _Key[_kCount]->freshState(true);
-                        _kCount++;
+                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Toggle[_tCount] = new BlinkerToggle();
+                        _Toggle[_tCount]->name(_tName);
+                        _Toggle[_tCount]->freshState(true);
+                        _tCount++;
                     }
                 }
                 else {
-                    _Key[num]->freshState(true);
+                    _Toggle[num]->freshState(true);
                 }
 
                 _fresh = true;
@@ -246,15 +246,15 @@ class BlinkerApi
             }
             else if (state == BLINKER_CMD_OFF) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _kCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Key[_kCount] = new BlinkerKey();
-                        _Key[_kCount]->name(_kName);
-                        _Key[_kCount]->freshState(false);
-                        _kCount++;
+                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Toggle[_tCount] = new BlinkerToggle();
+                        _Toggle[_tCount]->name(_tName);
+                        _Toggle[_tCount]->freshState(false);
+                        _tCount++;
                     }
                 }
                 else {
-                    _Key[num]->freshState(false);
+                    _Toggle[num]->freshState(false);
                 }
 
                 _fresh = true;
@@ -262,15 +262,15 @@ class BlinkerApi
             }
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _kCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Key[_kCount] = new BlinkerKey();
-                        _Key[_kCount]->name(_kName);
-                        _kCount++;
+                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Toggle[_tCount] = new BlinkerToggle();
+                        _Toggle[_tCount]->name(_tName);
+                        _tCount++;
                     }
                     return false;
                 }
 
-                return _Key[num]->getState();
+                return _Toggle[num]->getState();
             }
         }
 
@@ -279,7 +279,7 @@ class BlinkerApi
             int8_t num = checkNum(_sName, _Slider, _sCount);
             int16_t value = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), _sName);
 
-            if (value != FIND_KEY_VALUE_FAILED) {
+            if (value != FIND_Toggle_VALUE_FAILED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
                         _Slider[_sCount] = new BlinkerSlider();
@@ -313,7 +313,7 @@ class BlinkerApi
         {
             int16_t jAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, axis);
 
-            if (jAxisValue != FIND_KEY_VALUE_FAILED) {
+            if (jAxisValue != FIND_Toggle_VALUE_FAILED) {
                 joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
                 joyValue[J_Yaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
 
@@ -329,7 +329,7 @@ class BlinkerApi
         {
             int16_t aAttiValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, attitude);
 
-            if (aAttiValue != FIND_KEY_VALUE_FAILED) {
+            if (aAttiValue != FIND_Toggle_VALUE_FAILED) {
                 ahrsValue[Yaw] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Yaw);
                 ahrsValue[Roll] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Roll);
                 ahrsValue[Pitch] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Pitch);

@@ -126,17 +126,23 @@ Blinker.print("temp", 30.2, "°C");
 Init widget, **Button** and **Slider** widget recommended to initialize before use.
 ```
 Blinker.wInit("ButtonName", W_BUTTON);  
-Blinker.wInit("SliderName", W_SLIDER);//keyName, type  
+Blinker.wInit("SliderName", W_SLIDER);  
+Blinker.wInit("ToggleName", W_TOGGLE);//keyName, type  
 ```
 ### Blinker.button() 
 Device receives an update of **Button** state from app, return true when **Pressed**, return false when **Released**.
 ```
 bool result = Blinker.button("Button1");
-```
+```  
 ### Blinker.slider()
 Return the latest update of **Slider** value from app
 ```
 uint8_t result = Blinker.slider("Slider1");
+```
+### Blinker.toggle() 
+Device receives an update of **Toggle** state from app, return true when **ON**, return false when **OFF**.
+```
+bool result = Blinker.toggle("ToggleKey1");
 ```
 ### Blinker.joystick()
 Return the latest update of **Joystick** value from app
@@ -300,6 +306,11 @@ bool result = Blinker.button("Button1");
 读取滑动条数据
 ```
 uint8_t result = Blinker.slider("Slider1");
+```
+### Blinker.toggle() 
+读取拨动开关数据, 打开(ON)时返回true, 关闭(OFF)时返回false
+```
+bool result = Blinker.toggle("Toggle1");
 ```
 ### Blinker.joystick()
 读取摇杆数据

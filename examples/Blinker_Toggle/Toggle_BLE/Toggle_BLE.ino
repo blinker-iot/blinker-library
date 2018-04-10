@@ -1,7 +1,7 @@
 #define BLINKER_PRINT	Serial
 #define BLINKER_BLE
 
-#define KEY_1		"Key"
+#define TOGGLE_1		"ToggleKey"
 
 #include <Blinker.h>
 
@@ -13,7 +13,7 @@ void setup()
 	digitalWrite(LED_BUILTIN, LOW);
 	
 	Blinker.begin();
-	Blinker.wInit(KEY_1, W_KEY);
+	Blinker.wInit(TOGGLE_1, W_TOGGLE);
 }
 
 void loop()
@@ -30,7 +30,7 @@ void loop()
 		Blinker.print("millis", BlinkerTime);
 	}
 
-	if (Blinker.key(KEY_1)) {
+	if (Blinker.toggle(TOGGLE_1)) {
 		digitalWrite(LED_BUILTIN, HIGH);
 	}
     else {
