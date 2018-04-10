@@ -7,7 +7,8 @@
 
 enum b_widgettype_t {
     W_BUTTON,
-    W_SLIDER
+    W_SLIDER,
+    W_KEY
 };
 
 enum b_joystickaxis_t {
@@ -22,6 +23,7 @@ enum b_ahrsattitude_t {
 };
 
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
+static class BlinkerKey *       _Key[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 
 class BlinkerButton
@@ -40,6 +42,24 @@ class BlinkerButton
     private :
         String  buttonName;
         bool    buttonState;
+};
+
+class BlinkerKey
+{
+    public :
+        BlinkerKey()
+            : keyName(NULL), keyState(false)
+        {}
+        
+        void name(String name) { keyName = name; }
+        String getName() { return keyName; }
+        void freshState(bool state) { keyState = state; }
+        bool getState() { return keyState; }
+        bool checkName(String name) { return ((keyName == name) ? true : false); }
+    
+    private :
+        String  keyName;
+        bool    keyState;
 };
 
 class BlinkerSlider
@@ -103,6 +123,15 @@ class BlinkerApi
                         }
                     }
                     break;
+                case W_KEY :
+                    if (checkNum(_name, _Key, _kCount) == BLINKER_OBJECT_NOT_AVAIL) {
+                        if ( _kCount < BLINKER_MAX_WIDGET_SIZE ) {
+                            _Key[_kCount] = new BlinkerKey();
+                            _Key[_kCount]->name(_name);
+                            _kCount++;
+                        }
+                    }
+                    break;
                 default :
                     break;
             }
@@ -115,6 +144,9 @@ class BlinkerApi
 
                 for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                     buttonParse(_Button[bNum]->getName());
+                }
+                for (uint8_t kNum = 0; kNum < _kCount; kNum++) {
+                    key(_Key[kNum]->getName());
                 }
                 for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
                     slider(_Slider[sNum]->getName());
@@ -184,6 +216,61 @@ class BlinkerApi
                 _Button[num]->freshState(false);
 
                 return _state;
+            }
+        }
+
+        bool key(const String & _kName)
+        {
+            int8_t num = checkNum(_kName, _Key, _kCount);
+            String state;
+
+            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _kName)) {
+                _fresh = true;
+            }
+
+            if (state == BLINKER_CMD_ON) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _kCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Key[_kCount] = new BlinkerKey();
+                        _Key[_kCount]->name(_kName);
+                        _Key[_kCount]->freshState(true);
+                        _kCount++;
+                    }
+                }
+                else {
+                    _Key[num]->freshState(true);
+                }
+
+                _fresh = true;
+                return true;
+            }
+            else if (state == BLINKER_CMD_OFF) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _kCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Key[_kCount] = new BlinkerKey();
+                        _Key[_kCount]->name(_kName);
+                        _Key[_kCount]->freshState(false);
+                        _kCount++;
+                    }
+                }
+                else {
+                    _Key[num]->freshState(false);
+                }
+
+                _fresh = true;
+                return false;
+            }
+            else {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _kCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Key[_kCount] = new BlinkerKey();
+                        _Key[_kCount]->name(_kName);
+                        _kCount++;
+                    }
+                    return false;
+                }
+
+                return _Key[num]->getState();
             }
         }
 
