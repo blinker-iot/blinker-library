@@ -279,7 +279,7 @@ class BlinkerApi
             int8_t num = checkNum(_sName, _Slider, _sCount);
             int16_t value = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), _sName);
 
-            if (value != FIND_Toggle_VALUE_FAILED) {
+            if (value != FIND_KEY_VALUE_FAILED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
                         _Slider[_sCount] = new BlinkerSlider();
@@ -313,7 +313,7 @@ class BlinkerApi
         {
             int16_t jAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, axis);
 
-            if (jAxisValue != FIND_Toggle_VALUE_FAILED) {
+            if (jAxisValue != FIND_KEY_VALUE_FAILED) {
                 joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
                 joyValue[J_Yaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
 
@@ -329,7 +329,7 @@ class BlinkerApi
         {
             int16_t aAttiValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, attitude);
 
-            if (aAttiValue != FIND_Toggle_VALUE_FAILED) {
+            if (aAttiValue != FIND_KEY_VALUE_FAILED) {
                 ahrsValue[Yaw] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Yaw);
                 ahrsValue[Roll] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Roll);
                 ahrsValue[Pitch] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Pitch);
@@ -416,6 +416,7 @@ class BlinkerApi
     private :
         uint8_t _bCount = 0;
         uint8_t _sCount = 0;
+        uint8_t _tCount = 0;
         uint8_t joyValue[2];
         int16_t ahrsValue[3];
         bool    _fresh = false;
