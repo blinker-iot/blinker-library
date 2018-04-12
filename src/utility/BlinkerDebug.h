@@ -63,13 +63,19 @@
 #endif
 
 #if defined(BLINKER_PRINT)
-    #define BLINKER_LOG_FreeHeap()                  { BLINKER_LOG_TIME(); BLINKER_PRINT.print(BLINKER_F("Freeheap: ")); BLINKER_PRINT.println(BLINKER_FreeHeap());}
+    #define BLINKER_LOG_FreeHeap()                  { BLINKER_LOG_TIME(); BLINKER_PRINT.print(("Freeheap: ")); BLINKER_PRINT.println(BLINKER_FreeHeap());}
     #define BLINKER_LOG1(p1)                        { BLINKER_LOG_TIME(); BLINKER_PRINT.println(p1); }
     #define BLINKER_LOG2(p1, p2)                    { BLINKER_LOG_TIME(); BLINKER_PRINT.print(p1); BLINKER_PRINT.println(p2); }
     #define BLINKER_LOG3(p1, p2, p3)                { BLINKER_LOG_TIME(); BLINKER_PRINT.print(p1); BLINKER_PRINT.print(p2); BLINKER_PRINT.println(p3); }
     #define BLINKER_LOG4(p1, p2, p3, p4)            { BLINKER_LOG_TIME(); BLINKER_PRINT.print(p1); BLINKER_PRINT.print(p2); BLINKER_PRINT.print(p3); BLINKER_PRINT.println(p4); }
     #define BLINKER_LOG5(p1, p2, p3, p4, p5)        { BLINKER_LOG_TIME(); BLINKER_PRINT.print(p1); BLINKER_PRINT.print(p2); BLINKER_PRINT.print(p3); BLINKER_PRINT.print(p4); BLINKER_PRINT.println(p5); }
     #define BLINKER_LOG6(p1, p2, p3, p4, p5, p6)    { BLINKER_LOG_TIME(); BLINKER_PRINT.print(p1); BLINKER_PRINT.print(p2); BLINKER_PRINT.print(p3); BLINKER_PRINT.print(p4); BLINKER_PRINT.print(p5); BLINKER_PRINT.println(p6); }
+    #define BLINKER_ERR_LOG1(p1)                    { BLINKER_LOG_TIME(); BLINKER_PRINT.print(("ERROR: ")); BLINKER_PRINT.println(p1); }
+    #define BLINKER_ERR_LOG2(p1, p2)                { BLINKER_LOG_TIME(); BLINKER_PRINT.print(("ERROR: ")); BLINKER_PRINT.print(p1); BLINKER_PRINT.println(p2); }
+    #define BLINKER_ERR_LOG3(p1, p2, p3)            { BLINKER_LOG_TIME(); BLINKER_PRINT.print(("ERROR: ")); BLINKER_PRINT.print(p1); BLINKER_PRINT.print(p2); BLINKER_PRINT.println(p3); }
+    #define BLINKER_ERR_LOG4(p1, p2, p3, p4)        { BLINKER_LOG_TIME(); BLINKER_PRINT.print(("ERROR: ")); BLINKER_PRINT.print(p1); BLINKER_PRINT.print(p2); BLINKER_PRINT.print(p3); BLINKER_PRINT.println(p4); }
+    #define BLINKER_ERR_LOG5(p1, p2, p3, p4, p5)    { BLINKER_LOG_TIME(); BLINKER_PRINT.print(("ERROR: ")); BLINKER_PRINT.print(p1); BLINKER_PRINT.print(p2); BLINKER_PRINT.print(p3); BLINKER_PRINT.print(p4); BLINKER_PRINT.println(p5); }
+    #define BLINKER_ERR_LOG6(p1, p2, p3, p4, p5, p6){ BLINKER_LOG_TIME(); BLINKER_PRINT.print(("ERROR: ")); BLINKER_PRINT.print(p1); BLINKER_PRINT.print(p2); BLINKER_PRINT.print(p3); BLINKER_PRINT.print(p4); BLINKER_PRINT.print(p5); BLINKER_PRINT.println(p6); }
 
     static void BLINKER_LOG_TIME() {
         BLINKER_PRINT.print("[");

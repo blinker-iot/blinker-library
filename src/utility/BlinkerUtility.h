@@ -75,16 +75,16 @@ const T& BlinkerMax(const T& a, const T& b)
     return (b < a) ? a : b;
 }
 
-// String STRING_find_string(String src, String targetStart, String targetEnd, uint8_t skipNum) {
-//     int addr_start = src.indexOf(targetStart);
-//     int addr_end = src.indexOf(targetEnd, addr_start + targetStart.length() + skipNum);
-//     if (addr_start == -1 || addr_end == -1) {
-//         return "";
-//     }
-//     else {
-//         return src.substring(addr_start + targetStart.length() + skipNum, addr_end);
-//     }
-// }
+String STRING_find_string(String src, String targetStart, String targetEnd, uint8_t skipNum) {
+    int addr_start = src.indexOf(targetStart);
+    int addr_end = src.indexOf(targetEnd, addr_start + targetStart.length() + skipNum);
+    if (addr_start == -1 || addr_end == -1) {
+        return "";
+    }
+    else {
+        return src.substring(addr_start + targetStart.length() + skipNum, addr_end);
+    }
+}
 
 bool STRING_contais_string(const String & src, const String & key)
 {

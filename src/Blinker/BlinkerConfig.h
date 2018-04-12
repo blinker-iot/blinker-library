@@ -7,12 +7,20 @@
 
 #define BLINKER_STREAM_TIMEOUT          100
 
+#define BLINKER_MQTT_MSG_LIMIT          1000UL
+
+#define BLINKER_MQTT_KEEPALIVE          120000UL
+
 #define BLINKER_MAX_WIDGET_SIZE         16
 
 #define BLINKER_OBJECT_NOT_AVAIL        -1
 
-#ifndef BLINKER_BUFFER_SIZE
-#define BLINKER_BUFFER_SIZE             256
+#ifndef BLINKER_MAX_READ_SIZE
+    #define BLINKER_MAX_READ_SIZE       256
+#endif
+
+#ifndef BLINKER_MAX_SEND_SIZE
+    #define BLINKER_MAX_SEND_SIZE       128
 #endif
 
 #define  BLINKER_NO_LOGO
@@ -44,5 +52,37 @@
 #define BLINKER_CMD_INTERSPACE          " "
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
+
+#if defined(BLINKER_MQTT)
+
+    #define BLINKER_MQTT_BORKER_ALIYUN  "aliyun"
+
+    #define BLINKER_MQTT_ALIYUN_HOST    "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
+
+    #define BLINKER_MQTT_ALIYUN_PORT    1883
+
+    #define BLINKER_MQTT_BORKER_QCLOUD  "qcloud"
+
+    #define BLINKER_MQTT_QCLOUD_HOST    "iotcloud-mqtt.gz.tencentdevices.com"
+
+    #define BLINKER_MQTT_QCLOUD_PORT    8883
+
+    #define BLINKER_MQTT_PING_TIMEOUT       30000UL
+
+    #define BLINKER_MQTT_HOST_SIZE          50
+
+    #define BLINKER_MQTT_ID_SIZE            110
+
+    #define BLINKER_MQTT_NAME_SIZE          40
+
+    #define BLINKER_MQTT_KEY_SIZE           50
+
+    #define BLINKER_MQTT_PINFO_SIZE         12
+
+    #define BLINKER_MQTT_UUID_SIZE          40
+
+    #define BLINKER_MQTT_DEVICENAME_SIZE    13
+
+#endif
 
 #endif

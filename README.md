@@ -2,7 +2,9 @@
 Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.  
 
 # What's Blinker
-[Blinker](https://blinker-iot.com/) is a platform with iOS and Android apps to control Arduino. You can easily build graphic interfaces for all your projects by simply dragging and dropping widgets.  
+[Blinker](https://blinker-iot.com/) is a platform with iOS and Android apps to control embedded hardware like Arduino. You can easily build graphic interfaces for all your projects by simply dragging and dropping widgets.  
+  
+[Blinker](https://blinker-iot.com/) 是一个运行在 IOS 和 Android 上用于控制嵌入式硬件的应用程序。你可以通过拖放控制组件，轻松地为你的项目建立图形化控制界面。  
 
 # Reference/参考
 * [EN-英文](https://github.com/i3water/blinker-library#currently-supported-hardware)  
@@ -25,7 +27,7 @@ You should have the following ready before beginning with any board:
 * [Arduino IDE](https://www.arduino.cc/en/Main/Software) 1.6.12 or later
 * Install the [esp8266/arduino](https://github.com/esp8266/arduino) core via the Arduino IDE Boards Manager
 * Install the [espressif/arduino-esp32](https://github.com/espressif/arduino-esp32) cora following [Installation Instructions](https://github.com/espressif/arduino-esp32#installation-instructions) 
-* Install the [WebSockets](https://github.com/Links2004/arduinoWebSockets) library via the Arduino Library Manager  
+<!-- * Install the [WebSockets](https://github.com/Links2004/arduinoWebSockets) library via the Arduino Library Manager   -->
   
 # Blinker Api
 ## Configuration
@@ -61,7 +63,19 @@ WiFi:
 void setup() {  
     Blinker.begin(ssid, pswd);  
 }
+```  
+  
+MQTT:
 ```
+#define BLINKER_MQTT  
+#include <Blinker.h>  
+  
+void setup() {  
+    Blinker.begin(auth, ssid, pswd);  
+}
+```
+> MQTT support hardware: WiFiduino, WiFiduino32, ESP8266, ESP32  
+
 **begin()** is basically doing these steps:  
 1.Configure hardware  
 2.Wait for connection app  
@@ -106,6 +120,7 @@ This function to reads characters from Blinker into a string.
 ```
 String data = Blinker.readString();
 ```
+`*max read data bytes is 256bytes`
 ### Blinker.print()
 Prints data to Blinker app
 ```
@@ -120,6 +135,8 @@ Prints a Json data with unit to Blinkrt app, eg: {"temp":"30.2 °C"}
 Blinker.print("temp", 30.2, "°C");
 ```
 >Json data can display in the Blinker TEXT widget  
+
+`*max send data bytes is 128bytes`
 
 ## App Widgets
 ### Blinker.wInit()
@@ -176,7 +193,11 @@ Blinker.vibrate(255);
 This function can process incoming commands and perform of Blinker connection when delay
 ```
 Blinker.delay(500);
-```
+```  
+  
+# Thanks
+[WebSockets](https://github.com/Links2004/arduinoWebSockets) - for Blinker to build up a websocket server  
+[Adafruit_MQTT_Library](https://github.com/adafruit/Adafruit_MQTT_Library) - for Blinker to build up a mqtt client  
   
 
 ---
@@ -196,7 +217,7 @@ Blinker.delay(500);
 * [Arduino IDE](https://www.arduino.cc/en/Main/Software) 1.6.12及更新版本
 * 使用 Arduino IDE 的开发板管理器安装 [esp8266/arduino](https://github.com/esp8266/arduino)
 * 按照 [安装说明](https://github.com/espressif/arduino-esp32#installation-instructions) 安装 [espressif/arduino-esp32](https://github.com/espressif/arduino-esp32)
-* 使用 Arduino IDE 的库管理器安装 [WebSockets](https://github.com/Links2004/arduinoWebSockets)    
+<!-- * 使用 Arduino IDE 的库管理器安装 [WebSockets](https://github.com/Links2004/arduinoWebSockets)     -->
   
 # Blinker接口函数
 ## 设备配置
@@ -208,7 +229,7 @@ Blinker.begin(...);
 根据你使用的连接方式选择不同的参数用于配置Blinker  
   
 
-蓝牙模块:
+BLE:
 ```
 #define BLINKER_BLE  
 #include <Blinker.h>  
@@ -225,7 +246,7 @@ void setup() {
 >Blinker.begin(4, 5);// 设置数字IO 4(RX) 5(TX), 默认波特率 9600 bps  
 >Blinker.begin(4, 5, 115200);// 设置数字IO 4(RX) 5(TX) 及波特率 115200 bps  
   
-WiFi模块:
+WiFi:
 ```
 #define BLINKER_WIFI  
 #include <Blinker.h>  
@@ -233,7 +254,19 @@ WiFi模块:
 void setup() {  
     Blinker.begin(ssid, pswd);  
 }
+```  
+  
+MQTT:
 ```
+#define BLINKER_MQTT  
+#include <Blinker.h>  
+  
+void setup() {  
+    Blinker.begin(auth, ssid, pswd);  
+}
+```
+> MQTT 支持的硬件: WiFiduino, WiFiduino32, ESP8266, ESP32  
+
 **begin()** 主要完成以下配置:  
 1.初始化硬件设置;  
 2.连接网络并广播设备信息等待app连接;
@@ -275,6 +308,7 @@ bool result = Blinker.available();
 ```
 String data = Blinker.readString();
 ```
+`*读取数据最大为 256 字节`
 ### Blinker.print()
 发送数据
 ```
@@ -289,6 +323,8 @@ Blinker.print(text1, data);
 Blinker.print("temp", 30.2, "°C");
 ```
 >发送的Json数据可以在 Blinker APP 的 TEXT 组件中显示  
+
+`*发送数据最大为 128 字节`
 
 ## App Widgets
 ### Blinker.wInit()
@@ -348,4 +384,7 @@ Blinker.delay(500);
 >*为了连接设备成功, 需要延时时务必使用该函数;  
 >使用此函数可以在延时期间连接设备及接收数据并处理数据, 延时完成后才能执行后面的程序;  
 
-  
+# 感谢
+[WebSockets](https://github.com/Links2004/arduinoWebSockets) - Blinker 用这个库建立了一个 websocket 服务器  
+[Adafruit_MQTT_Library](https://github.com/adafruit/Adafruit_MQTT_Library) - Blinker 用这个库建立了一个 MQTT 客户端
+
