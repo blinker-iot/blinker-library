@@ -70,7 +70,7 @@ class BlinkerTransportStream
 
     protected :
         Stream* stream;
-        char    streamData[BLINKER_BUFFER_SIZE];
+        char    streamData[BLINKER_MAX_READ_SIZE];
         bool    isConnect;
 };
 

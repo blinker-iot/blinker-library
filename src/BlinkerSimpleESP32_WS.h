@@ -19,7 +19,7 @@ class BlinkerSimpleESP32_WS
         void begin() {
             Base::begin();
             smartconfig();
-            BLINKER_LOG1("ESP8266_WiFi Initialled...");
+            BLINKER_LOG1("ESP32_WiFi Initialled...");
         }
 #endif
     

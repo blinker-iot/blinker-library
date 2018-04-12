@@ -1,7 +1,7 @@
 #define BLINKER_PRINT	Serial
 #define BLINKER_WIFI
 
-#define BUTTON_1		"ButtonKey"
+#define TOGGLE_1		"ToggleKey"
 
 #include <Blinker.h>
 
@@ -16,7 +16,7 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
-    Blinker.wInit(BUTTON_1, W_BUTTON);
+    Blinker.wInit(TOGGLE_1, W_TOGGLE);
 }
 
 void loop()
@@ -33,7 +33,10 @@ void loop()
         Blinker.print("millis", BlinkerTime);
     }
 
-    if (Blinker.button(BUTTON_1)) {
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    if (Blinker.toggle(TOGGLE_1)) {
+        digitalWrite(LED_BUILTIN, HIGH);
+    }
+    else {
+        digitalWrite(LED_BUILTIN, LOW);
     }
 }

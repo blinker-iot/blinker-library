@@ -1,11 +1,11 @@
 #define BLINKER_PRINT	Serial
 #define BLINKER_BLE
 
+#define SLIDER_1		"SliderKey"
+#define TOGGLE_1		"ToggleKey"
+#define TEXT_1  		"millis"
+
 #include <Blinker.h>
-
-#include <modules/Ultrasonic.h>
-
-Ultrasonic SR04(9, 8);// Trig, Echo
 
 void setup()
 {
@@ -15,7 +15,12 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
     
     Blinker.begin();
+    Blinker.wInit(SLIDER_1, W_SLIDER);
+    Blinker.wInit(TOGGLE_1, W_TOGGLE);
 }
+
+uint8_t s_value = 0;
+bool    on_off = false;
 
 void loop()
 {
@@ -28,12 +33,17 @@ void loop()
         
         uint32_t BlinkerTime = millis();
         Blinker.print(BlinkerTime);
-        Blinker.print("millis", BlinkerTime);
+        Blinker.print(TEXT_1, BlinkerTime);
     }
 
-    BLINKER_LOG3("SR04: ", SR04.cm(), " cm");
+    Blinker.print(SLIDER_1, s_value);
+    Blinker.print(TOGGLE_1, on_off?"on":"off");
+    Blinker.print(TEXT_1, millis());
 
-    Blinker.print("SR04", SR04.cm());
+    digitalWrite(LED_BUILTIN, on_off);
+
+    s_value++;
+    on_off = !on_off;
 
     Blinker.delay(1000);
 }

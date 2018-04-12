@@ -68,7 +68,15 @@ class BlinkerProtocol
         }
         
         template <typename T>
-        void print(T n)                     { conn.print(STRING_format(n) + BLINKER_CMD_NEWLINE); }
+        void print(T n) {
+            String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
+            if (data.length() <= BLINKER_MAX_SEND_SIZE) {
+                conn.print(data);
+            }
+            else {
+                BLINKER_ERR_LOG1("SEND DATA BYTES MAX THAN LIMIT!");
+            }
+        }
         void print()                        { print(""); }
         
         template <typename T>

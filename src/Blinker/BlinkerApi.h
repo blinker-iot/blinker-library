@@ -7,7 +7,8 @@
 
 enum b_widgettype_t {
     W_BUTTON,
-    W_SLIDER
+    W_SLIDER,
+    W_TOGGLE
 };
 
 enum b_joystickaxis_t {
@@ -23,6 +24,7 @@ enum b_ahrsattitude_t {
 
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
+static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 
 class BlinkerButton
 {
@@ -58,6 +60,24 @@ class BlinkerSlider
     private :
         String  sliderName;
         uint8_t sliderValue;
+};
+
+class BlinkerToggle
+{
+    public :
+        BlinkerToggle()
+            : toggleName(NULL), toggleState(false)
+        {}
+        
+        void name(String name) { toggleName = name; }
+        String getName() { return toggleName; }
+        void freshState(bool state) { toggleState = state; }
+        bool getState() { return toggleState; }
+        bool checkName(String name) { return ((toggleName == name) ? true : false); }
+    
+    private :
+        String  toggleName;
+        bool    toggleState;
 };
 
 template <class T>
@@ -103,6 +123,15 @@ class BlinkerApi
                         }
                     }
                     break;
+                case W_TOGGLE :
+                    if (checkNum(_name, _Toggle, _tCount) == BLINKER_OBJECT_NOT_AVAIL) {
+                        if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                            _Toggle[_tCount] = new BlinkerToggle();
+                            _Toggle[_tCount]->name(_name);
+                            _tCount++;
+                        }
+                    }
+                    break;
                 default :
                     break;
             }
@@ -118,6 +147,9 @@ class BlinkerApi
                 }
                 for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
                     slider(_Slider[sNum]->getName());
+                }
+                for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                    toggle(_Toggle[kNum]->getName());
                 }
 
                 joystick(J_Xaxis);
@@ -184,6 +216,61 @@ class BlinkerApi
                 _Button[num]->freshState(false);
 
                 return _state;
+            }
+        }
+
+        bool toggle(const String & _tName)
+        {
+            int8_t num = checkNum(_tName, _Toggle, _tCount);
+            String state;
+
+            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _tName)) {
+                _fresh = true;
+            }
+
+            if (state == BLINKER_CMD_ON) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Toggle[_tCount] = new BlinkerToggle();
+                        _Toggle[_tCount]->name(_tName);
+                        _Toggle[_tCount]->freshState(true);
+                        _tCount++;
+                    }
+                }
+                else {
+                    _Toggle[num]->freshState(true);
+                }
+
+                _fresh = true;
+                return true;
+            }
+            else if (state == BLINKER_CMD_OFF) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Toggle[_tCount] = new BlinkerToggle();
+                        _Toggle[_tCount]->name(_tName);
+                        _Toggle[_tCount]->freshState(false);
+                        _tCount++;
+                    }
+                }
+                else {
+                    _Toggle[num]->freshState(false);
+                }
+
+                _fresh = true;
+                return false;
+            }
+            else {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Toggle[_tCount] = new BlinkerToggle();
+                        _Toggle[_tCount]->name(_tName);
+                        _tCount++;
+                    }
+                    return false;
+                }
+
+                return _Toggle[num]->getState();
             }
         }
 
@@ -318,10 +405,9 @@ class BlinkerApi
             uint32_t start = micros();
             while (ms > 0) {
                 static_cast<Proto*>(this)->run();
-
-                if ((micros() - start) >= 1000) {
-                    ms--;
-                    start = micros();
+                
+                if ((micros() - start)/1000 >= ms) {
+                    ms = 0;
                 }
             }
         }
@@ -329,6 +415,7 @@ class BlinkerApi
     private :
         uint8_t _bCount = 0;
         uint8_t _sCount = 0;
+        uint8_t _tCount = 0;
         uint8_t joyValue[2];
         int16_t ahrsValue[3];
         bool    _fresh = false;

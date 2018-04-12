@@ -9,7 +9,7 @@
 #define WS_SERVERPORT                       81
 WebSocketsServer webSocket = WebSocketsServer(WS_SERVERPORT);
 
-static char msgBuf[BLINKER_BUFFER_SIZE];
+static char msgBuf[BLINKER_MAX_READ_SIZE];
 static bool isConnect = false;
 static bool isAvail = false;
 
@@ -44,7 +44,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG6("num: ", num, ", get Text: ", (char *)payload, ", length: ", length);
 #endif
-            if (length < BLINKER_BUFFER_SIZE) {
+            if (length < BLINKER_MAX_READ_SIZE) {
                 // msgBuf = (char*)malloc((length+1)*sizeof(char));
                 // memcpy (msgBuf, (char*)payload, length);
                 // buflen = length;

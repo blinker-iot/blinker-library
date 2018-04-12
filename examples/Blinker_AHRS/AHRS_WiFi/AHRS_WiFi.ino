@@ -8,30 +8,30 @@ char pswd[] = "<Your WiFi network WPA password or WEP key>";
 
 void setup()
 {
-	Serial.begin(115200);
+    Serial.begin(115200);
 
-	pinMode(LED_BUILTIN, OUTPUT);
-	digitalWrite(LED_BUILTIN, LOW);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
 
-	Blinker.begin(ssid, pswd);
+    Blinker.begin(ssid, pswd);
     Blinker.attachAhrs();
 }
 
 void loop()
 {
-	Blinker.run();
+    Blinker.run();
 
-	if (Blinker.available()) {
-		BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+    if (Blinker.available()) {
+        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
 
-		Blinker.vibrate();
-		
-		uint32_t BlinkerTime = millis();
-		Blinker.print(BlinkerTime);
-		Blinker.print("millis", BlinkerTime);
-	}
+        Blinker.vibrate();
+        
+        uint32_t BlinkerTime = millis();
+        Blinker.print(BlinkerTime);
+        Blinker.print("millis", BlinkerTime);
+    }
 
-	BLINKER_LOG2("AHRS Yaw: ", Blinker.ahrs(Yaw));
+    BLINKER_LOG2("AHRS Yaw: ", Blinker.ahrs(Yaw));
     BLINKER_LOG2("AHRS Roll: ", Blinker.ahrs(Roll));
     BLINKER_LOG2("AHRS Pitch: ", Blinker.ahrs(Pitch));
 

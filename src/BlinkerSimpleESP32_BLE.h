@@ -107,7 +107,7 @@ class BlinkerTransportESP32_BLE
 
     private :
         bool                    deviceConnected;
-        char                    BLEBuf[BLINKER_BUFFER_SIZE];
+        char                    BLEBuf[BLINKER_MAX_READ_SIZE];
         bool                    isAvail;
         bool                    isFresh;
         uint32_t                _bufLen;
@@ -140,7 +140,7 @@ class BlinkerTransportESP32_BLE
                 freshTime = millis();
 
                 if (_bufLen == 0) {
-                    memset(BLEBuf, '\0', BLINKER_BUFFER_SIZE);
+                    memset(BLEBuf, '\0', BLINKER_MAX_READ_SIZE);
                 }
 
                 for (uint8_t _num = 0; _num < vlen; _num++) {

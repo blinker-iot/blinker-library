@@ -6,12 +6,12 @@
 
 void setup()
 {
-	Serial.begin(115200);
+    Serial.begin(115200);
 
-	Blinker.begin();
+    Blinker.begin();
 }
 
 void loop()
 {
-	Blinker.run();
+    Blinker.run();
 }
