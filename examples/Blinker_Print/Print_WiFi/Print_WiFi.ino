@@ -12,13 +12,13 @@ char pswd[] = "<Your WiFi network WPA password or WEP key>";
 
 void setup()
 {
-	Serial.begin(115200);
+    Serial.begin(115200);
 
-	pinMode(LED_BUILTIN, OUTPUT);
-	digitalWrite(LED_BUILTIN, LOW);
-	
-	Blinker.begin(ssid, pswd);
-	Blinker.wInit(SLIDER_1, W_SLIDER);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
+    
+    Blinker.begin(ssid, pswd);
+    Blinker.wInit(SLIDER_1, W_SLIDER);
     Blinker.wInit(TOGGLE_1, W_TOGGLE);
 }
 
@@ -27,17 +27,17 @@ bool    on_off = false;
 
 void loop()
 {
-	Blinker.run();
+    Blinker.run();
 
-	if (Blinker.available()) {
-		BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+    if (Blinker.available()) {
+        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
 
-		Blinker.vibrate();
-		
-		uint32_t BlinkerTime = millis();
-		Blinker.print(BlinkerTime);
-		Blinker.print(TEXT_1, BlinkerTime);
-	}
+        Blinker.vibrate();
+        
+        uint32_t BlinkerTime = millis();
+        Blinker.print(BlinkerTime);
+        Blinker.print(TEXT_1, BlinkerTime);
+    }
 
     Blinker.print(SLIDER_1, s_value);
     Blinker.print(TOGGLE_1, on_off?"on":"off");
