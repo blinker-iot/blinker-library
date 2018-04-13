@@ -141,12 +141,17 @@ Blinker.print("temp", 30.2, "°C");
 
 ## App Widgets
 ### Blinker.wInit()
-Init widget, **Button** and **Slider** widget recommended to initialize before use.
+Init widget, **Button** **Slider** and **Toggle** widget recommended to initialize before use.
 ```
 Blinker.wInit("ButtonName", W_BUTTON);  
 Blinker.wInit("SliderName", W_SLIDER);  
 Blinker.wInit("ToggleName", W_TOGGLE);//keyName, type  
 ```
+>type:  
+>W_BUTTON Button  
+>W_SLIDER Slider  
+>W_TOGGLE toggle  
+
 ### Blinker.button() 
 Device receives an update of **Button** state from app, return true when **Pressed**, return false when **Released**.
 ```
@@ -195,6 +200,32 @@ This function can process incoming commands and perform of Blinker connection wh
 ```
 Blinker.delay(500);
 ```  
+## Debug
+To enable debug prints on the Serial, add this on the top of your sketch:
+```
+#define BLINKER_PRINTER Serial
+```
+Init & enable Serial in `void setup()` :
+```
+Serial.begin(115200);
+```
+You can also use spare HardWareSerial or SoftWareSerial for debug output (you will need an adapter to connect to it with your PC).  
+  
+If you want debug output all detail :
+```
+#define BLINKER_PRINTER Serial
+#define BLINKER_DEBUG_ALL  //add this behind
+```
+## LOG
+After enabled debug, you can use **BLINKER_LOG()** to debug output:
+```
+BLINKER_LOG1("detail message 1");  
+BLINKER_LOG2("detail message 1", " 2");  
+BLINKER_LOG3("detail message 1", " 2", " 3");  
+BLINKER_LOG4("detail message 1", " 2", " 3", " 4");  
+BLINKER_LOG5("detail message 1", " 2", " 3", " 4", " 5");  
+BLINKER_LOG6("detail message 1", " 2", " 3", " 4", " 5", " 6");  
+```
   
 # Thanks
 [WebSockets](https://github.com/Links2004/arduinoWebSockets) - for Blinker to build up a websocket server  
@@ -330,11 +361,17 @@ Blinker.print("temp", 30.2, "°C");
 
 ## App Widgets
 ### Blinker.wInit()
-组件初始化, 建议在使用前初始化 **Button** 和 **Slider**
+组件初始化, 建议在使用前初始化 **Button** 、**Slider**及 **Toggle**
 ```
 Blinker.wInit("ButtonName", W_BUTTON);  
-Blinker.wInit("SliderName", W_SLIDER);//键词, 类型  
+Blinker.wInit("SliderName", W_SLIDER);  
+Blinker.wInit("ToggleName", W_TOGGLE);//键词, 类型  
 ```
+>类型:  
+>W_BUTTON 按键  
+>W_SLIDER 滑动条  
+>W_TOGGLE 开关  
+
 ### Blinker.button() 
 读取开关/按键数据, 按下(Pressed)时返回true, 松开(Released)时返回false
 ```
@@ -385,6 +422,32 @@ Blinker.delay(500);
 ```
 >*为了连接设备成功, 需要延时时务必使用该函数;  
 >使用此函数可以在延时期间连接设备及接收数据并处理数据, 延时完成后才能执行后面的程序;  
+## Debug
+将这行代码添加到你的工程文件第一行, 以启用串口调试输出功能:
+```
+#define BLINKER_PRINTER Serial
+```
+在 `void setup()` 中初始化串口Serial :
+```
+Serial.begin(115200);
+```
+你可以用额外的硬件串口 (HardWareSerial) 或者软串口 (SoftWareSerial) 来调试输出 (你需要额外的适配器将该串口连接到你的电脑上).  
+  
+如果你想调试输出更多细节信息 :
+```
+#define BLINKER_PRINTER Serial
+#define BLINKER_DEBUG_ALL  //add this behind
+```
+## LOG
+开启调试输出 (Debug) 后可以使用 **BLINKER_LOG()** 打印输出调试信息:
+```
+BLINKER_LOG1("detail message 1");  
+BLINKER_LOG2("detail message 1", " 2");  
+BLINKER_LOG3("detail message 1", " 2", " 3");  
+BLINKER_LOG4("detail message 1", " 2", " 3", " 4");  
+BLINKER_LOG5("detail message 1", " 2", " 3", " 4", " 5");  
+BLINKER_LOG6("detail message 1", " 2", " 3", " 4", " 5", " 6");  
+```
 
 # 感谢
 [WebSockets](https://github.com/Links2004/arduinoWebSockets) - Blinker 用这个库建立了一个 websocket 服务器  
