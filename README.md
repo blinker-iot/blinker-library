@@ -19,8 +19,9 @@ Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.
 * ESP32 based board with [espressif/arduino-esp32](https://github.com/espressif/arduino-esp32)  
   
 # Connection types
-* WiFi
-* Bluetooth Smart (BLE 4.0)
+* Bluetooth Smart (BLE 4.0)  
+* WiFi  
+* MQTT  
   
 # Prerequisites
 You should have the following ready before beginning with any board:
@@ -209,8 +210,9 @@ Blinker.delay(500);
 * 使用 [espressif/arduino-esp32](https://github.com/espressif/arduino-esp32) 的ESP32  
   
 # 连接类型
-* WiFi
-* Bluetooth Smart (BLE 4.0)
+* Bluetooth Smart (BLE 4.0)  
+* WiFi  
+* MQTT  
   
 # 准备工作
 开始使用前你需要做好如下准备:
