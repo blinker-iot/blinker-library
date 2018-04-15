@@ -50,7 +50,7 @@ void setup() {
 ```  
 
 >SerialBLE Modules:  
->**Blinker.begin()** will config SoftWareSerial with default settings.  
+>**Blinker.begin()** will config Serial with default settings.  
 >  
 >Blinker.begin();// default settings digital pins 2(RX) 3(TX) and baudrate 9600 bps  
 >Blinker.begin(4, 5);// config digital pins 4(RX) 5(TX) with default baudrate 9600 bps  
@@ -286,7 +286,7 @@ void setup() {
 ```  
   
 >串口蓝牙模块:  
->**Blinker.begin()** 将使用默认设置配置 SoftWareSerial   
+>**Blinker.begin()** 将使用默认设置配置 Serial   
 >  
 >Blinker.begin();// 默认设置: 数字IO 2(RX) 3(TX), 波特率 9600 bps  
 >Blinker.begin(4, 5);// 设置数字IO 4(RX) 5(TX), 默认波特率 9600 bps  
