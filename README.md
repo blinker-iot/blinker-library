@@ -189,10 +189,10 @@ Send **AHRS** detach commond to Blinker
 Blinker.detachAhrs();
 ```
 ### Blinker.gps()
-Send **GPS** attach commond to Blinker
+<!-- Send **GPS** fresh commond to Blinker
 ```
-Blinker.attachGPS();
-```
+Blinker.freshGPS();
+``` -->
 Return the latest update of **GPS** value from app
 ```
 String result_LONG = Blinker.gps(LONG);  
@@ -201,10 +201,6 @@ String result_LAT = Blinker.gps(LAT);
 > LONG for longitude  
 > LAT for latitude  
 
-Send **GPS** detach commond to Blinker
-```
-Blinker.detachGPS();
-```
 ### Blinker.vibrate()
 Send vibrate commond to Blinker, default vibration time is 500 milliseconds
 ```
@@ -426,10 +422,10 @@ int16_t result_Pitch = Blinker.ahrs(Pitch);
 Blinker.dettachAhrs();
 ```
 ### Blinker.gps()
-开启手机 **GPS** 功能
+<!-- 刷新手机 **GPS** 功能
 ```
-Blinker.attachAhrs();
-```
+Blinker.freshAhrs();
+``` -->
 读取 **GPS** 数据
 ```
 String result_LONG = Blinker.gps(LONG);  
@@ -438,10 +434,6 @@ String result_LAT = Blinker.gps(LAT);
 > LONG 经度  
 > LAT 维度  
 
-关闭手机 **GPS** 功能
-```
-Blinker.detachGPS();
-```
 ### Blinker.vibrate()
 发送手机振动指令, 震动时间, 单位ms 毫秒, 数值范围0-1000, 默认为500
 ```

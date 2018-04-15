@@ -11,7 +11,6 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
     
     Blinker.begin();
-    Blinker.attachGPS();
 }
 
 void loop()
