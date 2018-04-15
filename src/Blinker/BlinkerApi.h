@@ -161,6 +161,7 @@ class BlinkerApi
 
                 joystick(J_Xaxis);
                 ahrs(Yaw);
+                gps(LONG);
 
                 if (_fresh) {
                     static_cast<Proto*>(this)->isParsed();
@@ -409,6 +410,10 @@ class BlinkerApi
                 gpsValue[LAT] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LAT);
 
                 _fresh = true;
+
+                if (_fresh) {
+                    static_cast<Proto*>(this)->isParsed();
+                }
 
                 return gpsValue[axis];
             }
