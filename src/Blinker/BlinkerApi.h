@@ -31,7 +31,7 @@ enum b_rgb_t {
     R,
     G,
     B
-}
+};
 
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
