@@ -201,6 +201,13 @@ String result_LAT = Blinker.gps(LAT);
 > LONG for longitude  
 > LAT for latitude  
 
+### Blinker.rgb()
+Return the latest update of **RGB** value from app
+```
+uint8_t result_R = Blinker.rgb(R);  
+uint8_t result_G = Blinker.rgb(G);  
+uint8_t result_B = Blinker.rgb(B);
+```
 ### Blinker.vibrate()
 Send vibrate commond to Blinker, default vibration time is 500 milliseconds
 ```
@@ -434,6 +441,13 @@ String result_LAT = Blinker.gps(LAT);
 > LONG 经度  
 > LAT 维度  
 
+### Blinker.rgb()
+读取 **RGB** 数据
+```
+uint8_t result_R = Blinker.rgb(R);
+uint8_t result_G = Blinker.rgb(G);
+uint8_t result_B = Blinker.rgb(B);
+```
 ### Blinker.vibrate()
 发送手机振动指令, 震动时间, 单位ms 毫秒, 数值范围0-1000, 默认为500
 ```

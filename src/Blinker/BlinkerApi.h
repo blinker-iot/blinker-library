@@ -27,6 +27,12 @@ enum b_gps_t {
     LAT
 };
 
+enum b_rgb_t {
+    R,
+    G,
+    B
+}
+
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
@@ -108,6 +114,9 @@ class BlinkerApi
             ahrsValue[Pitch] = 0;
             gpsValue[LONG] = "0.000000";
             gpsValue[LAT] = "0.000000";
+            rgbValue[R] = 0;
+            rgbValue[G] = 0;
+            rgbValue[B] = 0;
         }
 
         void wInit(const String & _name, b_widgettype_t _type) {
@@ -162,6 +171,7 @@ class BlinkerApi
                 joystick(J_Xaxis);
                 ahrs(Yaw);
                 gps(LONG, true);
+                rgb(R);
 
                 if (_fresh) {
                     static_cast<Proto*>(this)->isParsed();
@@ -424,6 +434,22 @@ class BlinkerApi
             }
         }
 
+        uint8_t rgb(b_rgb_t color) {
+            int16_t colorValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, color);
+
+            if (colorValue != FIND_KEY_VALUE_FAILED) {
+                rgbValue[R] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, R);
+                rgbValue[G] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, G);
+                rgbValue[B] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, B);
+
+                _fresh = true;
+                return colorValue;
+            }
+            else {
+                return rgbValue[color];
+            }
+        }
+
         // void freshGPS()
         // {
         //     static_cast<Proto*>(this)->print(BLINKER_CMD_GPS, "");
@@ -458,6 +484,7 @@ class BlinkerApi
         uint8_t joyValue[2];
         int16_t ahrsValue[3];
         String  gpsValue[2];
+        uint8_t rgbValue[3];
         bool    _fresh = false;
 
         bool buttonParse(const String & _bName)
