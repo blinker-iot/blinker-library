@@ -39,6 +39,8 @@
 
 #define BLINKER_CMD_AHRS                "ahrs"
 
+#define BLINKER_CMD_GPS                 "gps"
+
 #define BLINKER_CMD_VIBRATE             "vibrate"
 
 #define BLINKER_CMD_BUTTON_TAP          "tap"

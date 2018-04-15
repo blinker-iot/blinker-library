@@ -22,6 +22,11 @@ enum b_ahrsattitude_t {
     Roll
 };
 
+enum b_gps_t {
+    LONG,
+    LAT
+};
+
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
@@ -101,6 +106,8 @@ class BlinkerApi
             ahrsValue[Yaw] = 0;
             ahrsValue[Roll] = 0;
             ahrsValue[Pitch] = 0;
+            gpsValue[LONG] = "0.000000"
+            gpsValue[LAT] = "0.000000"
         }
 
         void wInit(const String & _name, b_widgettype_t _type) {
@@ -391,6 +398,67 @@ class BlinkerApi
             ahrsValue[Pitch] = 0;
         }
 
+        String gps(b_gps_t axis) {
+            String axisValue = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, axis);
+
+            if (axisValue != "") {
+                gpsValue[LONG] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LONG);
+                gpsValue[LAT] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LAT);
+
+                _fresh = true;
+
+                return gpsValue[axis];
+            }
+            else {
+                return gpsValue[axis];
+            }
+        }
+
+        void attachGPS()
+        {
+            bool state = false;
+            uint32_t startTime = millis();
+            static_cast<Proto*>(this)->print(BLINKER_CMD_GPS, BLINKER_CMD_ON);
+            while (!state) {
+                while (!static_cast<Proto*>(this)->connected()) {
+                    static_cast<Proto*>(this)->run();
+                    if (static_cast<Proto*>(this)->connect()) {
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_GPS, BLINKER_CMD_ON);
+                        break;
+                    }
+                }
+                
+                ::delay(100);
+
+                if (static_cast<Proto*>(this)->checkAvail()) {
+                    BLINKER_LOG2("GET: ", static_cast<Proto*>(this)->dataParse());
+                    if (STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS)) {
+                        BLINKER_LOG1("GPS attach sucessed...");
+                        parse();
+                        state = true;
+                        break;
+                    }
+                    else {
+                        BLINKER_LOG1("GPS attach failed...Try again");
+                        startTime = millis();
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_GPS, BLINKER_CMD_ON);
+                    }
+                }
+                else {
+                    if (millis() - startTime > BLINKER_CONNECT_TIMEOUT_MS) {
+                        BLINKER_LOG1("GPS attach failed...Try again");
+                        startTime = millis();
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_GPS, BLINKER_CMD_ON);
+                    }
+                }
+            }
+        }
+
+        void detachGPS()
+        {
+            static_cast<Proto*>(this)->print(BLINKER_CMD_GPS, BLINKER_CMD_OFF);
+        }
+
         void vibrate(uint16_t ms = 500)
         {
             if (ms > 1000) {
@@ -418,6 +486,7 @@ class BlinkerApi
         uint8_t _tCount = 0;
         uint8_t joyValue[2];
         int16_t ahrsValue[3];
+        String  gpsValue[2];
         bool    _fresh = false;
 
         bool buttonParse(const String & _bName)
