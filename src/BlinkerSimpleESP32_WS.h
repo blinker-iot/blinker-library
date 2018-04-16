@@ -91,7 +91,8 @@ class BlinkerSimpleESP32_WS
 
                 if (millis() - connectTime > BLINKER_CONNECT_TIMEOUT_MS && WiFi.status() != WL_CONNECTED) {
                     connectTime = millis();
-                    BLINKER_LOG1(BLINKER_F("Connect timeout"));
+                    BLINKER_LOG1(("WiFi connect timeout, please check ssid and pswd!"));
+                    BLINKER_LOG1(("Retring WiFi connect again!"));
                 }
             }
             BLINKER_LOG1(BLINKER_F("Connected"));

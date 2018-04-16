@@ -22,6 +22,17 @@ enum b_ahrsattitude_t {
     Roll
 };
 
+enum b_gps_t {
+    LONG,
+    LAT
+};
+
+enum b_rgb_t {
+    R,
+    G,
+    B
+};
+
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
@@ -101,6 +112,11 @@ class BlinkerApi
             ahrsValue[Yaw] = 0;
             ahrsValue[Roll] = 0;
             ahrsValue[Pitch] = 0;
+            gpsValue[LONG] = "0.000000";
+            gpsValue[LAT] = "0.000000";
+            rgbValue[R] = 0;
+            rgbValue[G] = 0;
+            rgbValue[B] = 0;
         }
 
         void wInit(const String & _name, b_widgettype_t _type) {
@@ -154,6 +170,8 @@ class BlinkerApi
 
                 joystick(J_Xaxis);
                 ahrs(Yaw);
+                gps(LONG, true);
+                rgb(R);
 
                 if (_fresh) {
                     static_cast<Proto*>(this)->isParsed();
@@ -391,6 +409,53 @@ class BlinkerApi
             ahrsValue[Pitch] = 0;
         }
 
+        String gps(b_gps_t axis, bool newData = false) {
+            if (!newData) {
+                static_cast<Proto*>(this)->print(BLINKER_CMD_GPS, "");
+                delay(100);
+            }
+
+            String axisValue = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, axis);
+
+            if (axisValue != "") {
+                gpsValue[LONG] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LONG);
+                gpsValue[LAT] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LAT);
+
+                _fresh = true;
+
+                if (_fresh) {
+                    static_cast<Proto*>(this)->isParsed();
+                }
+
+                return gpsValue[axis];
+            }
+            else {
+                return gpsValue[axis];
+            }
+        }
+
+        uint8_t rgb(b_rgb_t color) {
+            int16_t colorValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, color);
+
+            if (colorValue != FIND_KEY_VALUE_FAILED) {
+                rgbValue[R] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, R);
+                rgbValue[G] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, G);
+                rgbValue[B] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, B);
+
+                _fresh = true;
+                return colorValue;
+            }
+            else {
+                return rgbValue[color];
+            }
+        }
+
+        // void freshGPS()
+        // {
+        //     static_cast<Proto*>(this)->print(BLINKER_CMD_GPS, "");
+        //     delay(100);
+        // }
+
         void vibrate(uint16_t ms = 500)
         {
             if (ms > 1000) {
@@ -418,6 +483,8 @@ class BlinkerApi
         uint8_t _tCount = 0;
         uint8_t joyValue[2];
         int16_t ahrsValue[3];
+        String  gpsValue[2];
+        uint8_t rgbValue[3];
         bool    _fresh = false;
 
         bool buttonParse(const String & _bName)
