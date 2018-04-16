@@ -25,7 +25,7 @@ class BlinkerTransportStream
             }
             
             if (stream->available()) {
-                strcpy(streamData, (stream->readString()).c_str());
+                strcpy(streamData, (stream->readStringUntil('\n')).c_str());
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("handleSerial: "), streamData);
 #endif
