@@ -1,6 +1,8 @@
 #define BLINKER_PRINT	Serial
 #define BLINKER_WIFI
 
+#define RGB1            "RGBKEY"
+
 #include <Blinker.h>
 
 char ssid[] = "<Your WiFi network SSID or name>";
@@ -14,6 +16,7 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
+    Blinker.wInit(RGB1, W_RGB);
 }
 
 void loop()
@@ -30,9 +33,9 @@ void loop()
         Blinker.print("millis", BlinkerTime);
     }
 
-    BLINKER_LOG2("Red color: ", Blinker.rgb(R));
-    BLINKER_LOG2("Green color: ", Blinker.rgb(G));
-    BLINKER_LOG2("Blue color: ", Blinker.rgb(B));
+    BLINKER_LOG2("Red color: ", Blinker.rgb(RGB1,R));
+    BLINKER_LOG2("Green color: ", Blinker.rgb(RGB1,G));
+    BLINKER_LOG2("Blue color: ", Blinker.rgb(RGB1,B));
 
     Blinker.delay(2000);
 }
