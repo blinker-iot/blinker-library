@@ -258,7 +258,7 @@ void BlinkerMQTT::connectServer() {
     String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
     String _userName = STRING_find_string(payload, "iotId", "\"", 4);
     String _key = STRING_find_string(payload, "iotToken", "\"", 4);
-    String _productInfo = STRING_find_string(payload, "ProductKey", "\"", 4);
+    String _productInfo = STRING_find_string(payload, "productKey", "\"", 4);
     String _broker = STRING_find_string(payload, "broker", "\"", 4);
     String _uuid = STRING_find_string(payload, "uuid", "\"", 4);
 

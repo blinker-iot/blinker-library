@@ -1,6 +1,8 @@
 #define BLINKER_PRINT	Serial
 #define BLINKER_MQTT
 
+#define BUTTON_1        "ButtonKey"
+
 #include <Blinker.h>
 
 char auth[] = "<Your MQTT Secret Key>";
@@ -10,7 +12,11 @@ char pswd[] = "<Your WiFi network WPA password or WEP key>";
 void setup() {
     Serial.begin(115200);
 
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
+
     Blinker.begin(auth, ssid, pswd);
+    Blinker.wInit(BUTTON_1, W_BUTTON);
 }
 
 void loop()
@@ -25,5 +31,9 @@ void loop()
         uint32_t BlinkerTime = millis();
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
+    }
+
+    if (Blinker.button(BUTTON_1)) {
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
 }
