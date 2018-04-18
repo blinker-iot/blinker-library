@@ -1,6 +1,8 @@
 #define BLINKER_PRINT	Serial
 #define BLINKER_BLE
 
+#define RGB1            "RGBKEY"
+
 #include <Blinker.h>
 
 void setup()
@@ -11,6 +13,7 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
     
     Blinker.begin();
+    Blinker.wInit(RGB1, W_RGB);
 }
 
 void loop()
@@ -27,9 +30,9 @@ void loop()
         Blinker.print("millis", BlinkerTime);
     }
 
-    BLINKER_LOG2("Red color: ", Blinker.rgb(R));
-    BLINKER_LOG2("Green color: ", Blinker.rgb(G));
-    BLINKER_LOG2("Blue color: ", Blinker.rgb(B));
+    BLINKER_LOG2("Red color: ", Blinker.rgb(RGB1,R));
+    BLINKER_LOG2("Green color: ", Blinker.rgb(RGB1,G));
+    BLINKER_LOG2("Blue color: ", Blinker.rgb(RGB1,B));
 
     Blinker.delay(2000);
 }

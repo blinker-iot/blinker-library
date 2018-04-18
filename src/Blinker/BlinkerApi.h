@@ -8,7 +8,8 @@
 enum b_widgettype_t {
     W_BUTTON,
     W_SLIDER,
-    W_TOGGLE
+    W_TOGGLE,
+    W_RGB
 };
 
 enum b_joystickaxis_t {
@@ -36,6 +37,7 @@ enum b_rgb_t {
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
+static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 
 class BlinkerButton
 {
@@ -91,6 +93,24 @@ class BlinkerToggle
         bool    toggleState;
 };
 
+class BlinkerRGB
+{
+    public :
+        BlinkerRGB()
+            : rgbName(NULL)
+        {}
+        
+        void name(String name) { rgbName = name; }
+        String getName() { return rgbName; }
+        void freshValue(b_rgb_t color,uint8_t value) { rgbValue[color] = value; }
+        uint8_t getValue(b_rgb_t color) { return rgbValue[color]; }
+        bool checkName(String name) { return ((rgbName == name) ? true : false); }
+    
+    private :
+        String  rgbName;
+        uint8_t rgbValue[3];
+};
+
 template <class T>
 int8_t checkNum(String name, T * c, uint8_t count)
 {
@@ -114,9 +134,9 @@ class BlinkerApi
             ahrsValue[Pitch] = 0;
             gpsValue[LONG] = "0.000000";
             gpsValue[LAT] = "0.000000";
-            rgbValue[R] = 0;
-            rgbValue[G] = 0;
-            rgbValue[B] = 0;
+            // rgbValue[R] = 0;
+            // rgbValue[G] = 0;
+            // rgbValue[B] = 0;
         }
 
         void wInit(const String & _name, b_widgettype_t _type) {
@@ -148,6 +168,15 @@ class BlinkerApi
                         }
                     }
                     break;
+                case W_RGB :
+                    if (checkNum(_name, _RGB, _rgbCount) == BLINKER_OBJECT_NOT_AVAIL) {
+                        if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+                            _RGB[_rgbCount] = new BlinkerRGB();
+                            _RGB[_rgbCount]->name(_name);
+                            _rgbCount++;
+                        }
+                    }
+                    break;
                 default :
                     break;
             }
@@ -167,11 +196,13 @@ class BlinkerApi
                 for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
                     toggle(_Toggle[kNum]->getName());
                 }
+                for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                    rgb(_RGB[rgbNum]->getName(), R);
+                }
 
                 joystick(J_Xaxis);
                 ahrs(Yaw);
                 gps(LONG, true);
-                rgb(R);
 
                 if (_fresh) {
                     static_cast<Proto*>(this)->isParsed();
@@ -434,19 +465,45 @@ class BlinkerApi
             }
         }
 
-        uint8_t rgb(b_rgb_t color) {
-            int16_t colorValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, color);
+        uint8_t rgb(const String & _rgbName, b_rgb_t color) {
+            int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
+            int16_t value = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, color);
 
-            if (colorValue != FIND_KEY_VALUE_FAILED) {
-                rgbValue[R] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, R);
-                rgbValue[G] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, G);
-                rgbValue[B] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RGB, B);
+            if (value != FIND_KEY_VALUE_FAILED) {
+                uint8_t _rValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, R);
+                uint8_t _gValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, G);
+                uint8_t _bValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, B);
+
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount]->name(_rgbName);
+                        _RGB[_rgbCount]->freshValue(R, _rValue);
+                        _RGB[_rgbCount]->freshValue(G, _gValue);
+                        _RGB[_rgbCount]->freshValue(B, _bValue);
+                        _rgbCount++;
+                    }
+                }
+                else {
+                    _RGB[num]->freshValue(R, _rValue);
+                    _RGB[num]->freshValue(G, _gValue);
+                    _RGB[num]->freshValue(B, _bValue);
+                }
 
                 _fresh = true;
-                return colorValue;
+                return value;
             }
             else {
-                return rgbValue[color];
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount]->name(_rgbName);
+                        _rgbCount++;
+                    }
+                    return 0;
+                }
+                
+                return _RGB[num]->getValue(color);
             }
         }
 
@@ -483,10 +540,11 @@ class BlinkerApi
         uint8_t _bCount = 0;
         uint8_t _sCount = 0;
         uint8_t _tCount = 0;
+        uint8_t _rgbCount = 0;
         uint8_t joyValue[2];
         int16_t ahrsValue[3];
         String  gpsValue[2];
-        uint8_t rgbValue[3];
+        // uint8_t rgbValue[3];
         bool    _fresh = false;
 
         bool buttonParse(const String & _bName)
