@@ -138,13 +138,11 @@ class BlinkerSerail
                 BLINKER_LOG1("SerialBLE Initialled...");
             }
 #else
-            else {
-                Base::begin();
-                SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
-                SSerialBLE->begin(ss_baud);
-                this->conn.begin(*SSerialBLE, false);
-                BLINKER_LOG1("SerialBLE Initialled...");
-            }
+            Base::begin();
+            SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
+            SSerialBLE->begin(ss_baud);
+            this->conn.begin(*SSerialBLE, false);
+            BLINKER_LOG1("SerialBLE Initialled...");
 #endif
         }
 };

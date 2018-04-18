@@ -470,6 +470,8 @@ class BlinkerApi
             uint32_t start = micros();
             while (ms > 0) {
                 static_cast<Proto*>(this)->run();
+
+                yield();
                 
                 if ((micros() - start)/1000 >= ms) {
                     ms = 0;

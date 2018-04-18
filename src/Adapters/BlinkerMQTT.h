@@ -204,7 +204,7 @@ void BlinkerMQTT::connectServer() {
     }
 #endif
 
-    String url_iot = "/user/device/auth?yK6RNFrGRJl&authkey=" + String(authkey);
+    String url_iot = "/api/v1/user/device/diy/auth?authkey=" + String(authkey);
 #ifdef BLINKER_DEBUG_ALL    
     BLINKER_LOG2("requesting URL: ", url_iot);
 #endif    
