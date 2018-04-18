@@ -4,9 +4,11 @@
 #if defined(ESP8266)
     #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
+    #include <ESP8266HTTPClient.h>
 #elif defined(ESP32)
     #include <ESPmDNS.h>
     #include <WiFi.h>
+    #include <HTTPClient.h>
 #endif
 #include "Blinker/BlinkerProtocol.h"
 #include "modules/WebSockets/WebSocketsServer.h"
@@ -175,84 +177,90 @@ class BlinkerMQTT {
 
 void BlinkerMQTT::connectServer() {
     const int httpsPort = 443;
-    const char* host = "iotdev.clz.me";
-    const char* fingerprint = "b0 79 d7 e6 b2 be a7 1f 28 65 40 db a7 6a 7d 78 83 19 85 68";
-#ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG2("connecting to ", host);
+    const char* host = "https://iotdev.clz.me";
+#if defined(ESP8266)
+    const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
+#elif defined(ESP32)
+    // const char* ca = \ 
+    //     "-----BEGIN CERTIFICATE-----\n" \
+    //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
+    //     "MQswCQYDVQQGEwJDTjElMCMGA1UEChMcVHJ1c3RBc2lhIFRlY2hub2xvZ2llcywg\n" \
+    //     "SW5jLjEdMBsGA1UECxMURG9tYWluIFZhbGlkYXRlZCBTU0wxHTAbBgNVBAMTFFRy\n" \
+    //     "dXN0QXNpYSBUTFMgUlNBIENBMB4XDTE4MDEwNDAwMDAwMFoXDTE5MDEwNDEyMDAw\n" \
+    //     "MFowGDEWMBQGA1UEAxMNaW90ZGV2LmNsei5tZTCCASIwDQYJKoZIhvcNAQEBBQAD\n" \
+    //     "ggEPADCCAQoCggEBALbOFn7cJ2I/FKMJqIaEr38n4kCuJCCeNf1bWdWvOizmU2A8\n" \
+    //     "QeTAr5e6Q3GKeJRdPnc8xXhqkTm4LOhgdZB8KzuVZARtu23D4vj4sVzxgC/zwJlZ\n" \
+    //     "MRMxN+cqI37kXE8gGKW46l2H9vcukylJX+cx/tjWDfS2YuyXdFuS/RjhCxLgXzbS\n" \
+    //     "cve1W0oBZnBPRSMV0kgxTWj7hEGZNWKIzK95BSCiMN59b+XEu3NWGRb/VzSAiJEy\n" \
+    //     "Hy9DcDPBC9TEg+p5itHtdMhy2gq1OwsPgl9HUT0xmDATSNEV2RB3vwviNfu9/Eif\n" \
+    //     "ObhsV078zf30TqdiESqISEB68gJ0Otru67ePoTkCAwEAAaOCAWowggFmMB8GA1Ud\n" \
+    //     "IwQYMBaAFH/TmfOgRw4xAFZWIo63zJ7dygGKMB0GA1UdDgQWBBR/KLqnke61779P\n" \
+    //     "xc9htonQwLOxPDAYBgNVHREEETAPgg1pb3RkZXYuY2x6Lm1lMA4GA1UdDwEB/wQE\n" \
+    //     "AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwTAYDVR0gBEUwQzA3\n" \
+    //     "BglghkgBhv1sAQIwKjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQu\n" \
+    //     "Y29tL0NQUzAIBgZngQwBAgEwgYEGCCsGAQUFBwEBBHUwczAlBggrBgEFBQcwAYYZ\n" \
+    //     "aHR0cDovL29jc3AyLmRpZ2ljZXJ0LmNvbTBKBggrBgEFBQcwAoY+aHR0cDovL2Nh\n" \
+    //     "Y2VydHMuZGlnaXRhbGNlcnR2YWxpZGF0aW9uLmNvbS9UcnVzdEFzaWFUTFNSU0FD\n" \
+    //     "QS5jcnQwCQYDVR0TBAIwADANBgkqhkiG9w0BAQsFAAOCAQEAhtM4eyrWB14ajJpQ\n" \
+    //     "ibZ5FbzVuvv2Le0FOSoss7UFCDJUYiz2LiV8yOhL4KTY+oVVkqHaYtcFS1CYZNzj\n" \
+    //     "6xWcqYZJ+pgsto3WBEgNEEe0uLSiTW6M10hm0LFW9Det3k8fqwSlljqMha3gkpZ6\n" \
+    //     "8WB0f2clXOuC+f1SxAOymnGUsSqbU0eFSgevcOIBKR7Hr3YXBXH3jjED76Q52OMS\n" \
+    //     "ucfOM9/HB3jN8o/ioQbkI7xyd/DUQtzK6hSArEoYRl3p5H2P4fr9XqmpoZV3i3gQ\n" \
+    //     "oOdVycVtpLunyUoVAB2DcOElfDxxXCvDH3XsgoIU216VY03MCaUZf7kZ2GiNL+UX\n" \
+    //     "9UBd0Q==\n" \
+    //     "-----END CERTIFICATE-----\n";
 #endif
-    while (!client.connect(host, httpsPort)) {
-#ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG1("connection failed");
-#endif
-        // return;
-        ::delay(100);
-    }
-#ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1("connection success");
+
+    HTTPClient http;
+
+    String url_iot = String(host) + "/api/v1/user/device/diy/auth?authKey=" + String(authkey);
+#ifdef BLINKER_DEBUG_ALL 
+    BLINKER_LOG2("HTTPS begin: ", url_iot);
 #endif
 
 #if defined(ESP8266)
-    if (client.verify(fingerprint, host)) {
-#ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG1("certificate matches");
+    http.begin(url_iot, fingerprint); //HTTP
+#elif defined(ESP32)
+    // http.begin(url_iot, ca); TODO
+    http.begin(url_iot);
 #endif
+    int httpCode = http.GET();
+
+    String payload;
+
+    if (httpCode > 0) {
+      // HTTP header has been send and Server response header has been handled
+#ifdef BLINKER_DEBUG_ALL 
+        BLINKER_LOG2("[HTTP] GET... code: ", httpCode);
+#endif
+
+        // file found at server
+        if (httpCode == HTTP_CODE_OK) {
+            payload = http.getString();
+            BLINKER_LOG1(payload);
+        }
     }
     else {
-#ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG1("certificate doesn't match");
+#ifdef BLINKER_DEBUG_ALL 
+        BLINKER_LOG2("[HTTP] GET... failed, error: ", http.errorToString(httpCode).c_str());
 #endif
     }
-#endif
 
-    String url_iot = "/api/v1/user/device/diy/auth?authkey=" + String(authkey);
-#ifdef BLINKER_DEBUG_ALL    
-    BLINKER_LOG2("requesting URL: ", url_iot);
-#endif    
-    client.print(String("GET ") + "/" + " HTTP/1.1\r\n" +
-                    "Host: " + host + "\r\n" +
-                    "User-Agent: Blinker_MQTT_DEVICE\r\n" +
-                    "Connection: close\r\n\r\n");
-#ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1("request sent");
-#endif
-    String dataGet;
-	String lastGet;
-	String lengthOfJson;
-
-    while (client.connected()) {
-        dataGet = client.readStringUntil('\n');
-
-        if (dataGet.startsWith("Content-Length: ")){
-            lengthOfJson = STRING_find_string(dataGet, " ", "\0", 0);
-        }
-
-        if (dataGet == "\r") {
-#ifdef BLINKER_DEBUG_ALL            
-            BLINKER_LOG1("headers received");
-#endif
-            break;
-        }
-    }
-
-    for(int i=0;i<lengthOfJson.toInt();i++){
-        lastGet += (char)client.read();
-    }
-
-    dataGet = lastGet;
+    http.end();
 
 #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1("reply was:");
     BLINKER_LOG1("==============================");
-    BLINKER_LOG1(dataGet);
+    BLINKER_LOG1(payload);
     BLINKER_LOG1("==============================");
 #endif
 
-    String _userID = STRING_find_string(dataGet, "deviceName", "\"", 3);
-    String _userName = STRING_find_string(dataGet, "iotId", "\"", 3);
-    String _key = STRING_find_string(dataGet, "iotToken", "\"", 3);
-    String _productInfo = STRING_find_string(dataGet, "ProductKey", "\"", 3);
-    String _broker = STRING_find_string(dataGet, "broker", "\"", 3);
-    String _uuid = STRING_find_string(dataGet, "uuid", "\"", 3);
+    String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
+    String _userName = STRING_find_string(payload, "iotId", "\"", 4);
+    String _key = STRING_find_string(payload, "iotToken", "\"", 4);
+    String _productInfo = STRING_find_string(payload, "ProductKey", "\"", 4);
+    String _broker = STRING_find_string(payload, "broker", "\"", 4);
+    String _uuid = STRING_find_string(payload, "uuid", "\"", 4);
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         memcpy(DEVICE_NAME, _userID.c_str(), 12);
@@ -280,14 +288,14 @@ void BlinkerMQTT::connectServer() {
     BLINKER_LOG1("====================");
     BLINKER_LOG2("DEVICE_NAME: ", DEVICE_NAME);
     BLINKER_LOG2("MQTT_PRODUCTINFO: ", MQTT_PRODUCTINFO);
-	BLINKER_LOG2("MQTT_ID: ", MQTT_ID);
-	BLINKER_LOG2("MQTT_NAME: ", MQTT_NAME);
-	BLINKER_LOG2("MQTT_KEY: ", MQTT_KEY);
+    BLINKER_LOG2("MQTT_ID: ", MQTT_ID);
+    BLINKER_LOG2("MQTT_NAME: ", MQTT_NAME);
+    BLINKER_LOG2("MQTT_KEY: ", MQTT_KEY);
     BLINKER_LOG2("MQTT_BROKER: ", _broker);
     BLINKER_LOG2("HOST: ", MQTT_HOST);
     BLINKER_LOG2("PORT: ", MQTT_PORT);
     BLINKER_LOG2("UUID: ", UUID);
-	BLINKER_LOG1("====================");
+    BLINKER_LOG1("====================");
 #endif
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
@@ -344,9 +352,14 @@ bool BlinkerMQTT::connect() {
     if (mqtt->connected()) {
         return true;
     }
+    if ((millis() - latestTime) < 5000) {
+        return false;
+    }
+
 #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1("Connecting to MQTT... ");
 #endif
+
     if ((ret = mqtt->connect()) != 0) {
         BLINKER_LOG1(mqtt->connectErrorString(ret));
         BLINKER_LOG1("Retrying MQTT connection in 5 seconds...");
