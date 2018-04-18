@@ -25,7 +25,7 @@ class BlinkerTransportStream
             }
             
             if (stream->available()) {
-                strcpy(streamData, (stream->readString()).c_str());
+                strcpy(streamData, (stream->readStringUntil('\n')).c_str());
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("handleSerial: "), streamData);
 #endif
@@ -138,13 +138,11 @@ class BlinkerSerail
                 BLINKER_LOG1("SerialBLE Initialled...");
             }
 #else
-            else {
-                Base::begin();
-                SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
-                SSerialBLE->begin(ss_baud);
-                this->conn.begin(*SSerialBLE, false);
-                BLINKER_LOG1("SerialBLE Initialled...");
-            }
+            Base::begin();
+            SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
+            SSerialBLE->begin(ss_baud);
+            this->conn.begin(*SSerialBLE, false);
+            BLINKER_LOG1("SerialBLE Initialled...");
 #endif
         }
 };
