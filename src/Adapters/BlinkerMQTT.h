@@ -352,6 +352,9 @@ bool BlinkerMQTT::connect() {
     if (mqtt->connected()) {
         return true;
     }
+
+    disconnect();
+
     if ((millis() - latestTime) < 5000) {
         return false;
     }

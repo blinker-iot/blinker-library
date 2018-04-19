@@ -108,7 +108,7 @@ class BlinkerRGB
     
     private :
         String  rgbName;
-        uint8_t rgbValue[3];
+        uint8_t rgbValue[3] = {0};
 };
 
 template <class T>
