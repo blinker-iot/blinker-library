@@ -188,6 +188,7 @@ class BlinkerApi
                 _fresh = false;
 
                 heartBeat();
+                getVersion();
 
                 for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                     buttonParse(_Button[bNum]->getName());
@@ -614,6 +615,18 @@ class BlinkerApi
                 // _fresh = true;
                 if (state == BLINKER_CMD_STATE) {
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+                    _fresh = true;
+                }
+            }
+        }
+
+        void getVersion() {
+            String state;
+
+            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
+                // _fresh = true;
+                if (state == BLINKER_CMD_VERSION) {
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, BLINKER_VERSION);
                     _fresh = true;
                 }
             }
