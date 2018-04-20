@@ -7,6 +7,8 @@
 
 #define BLINKER_STREAM_TIMEOUT          100
 
+#define BLINKER_GPS_MSG_LIMIT           30000UL
+
 #define BLINKER_MQTT_MSG_LIMIT          1000UL
 
 #define BLINKER_MQTT_KEEPALIVE          120000UL
@@ -54,6 +56,12 @@
 #define BLINKER_CMD_NEWLINE             "\n"
 
 #define BLINKER_CMD_INTERSPACE          " "
+
+#define BLINKER_CMD_GET                 "get"
+
+#define BLINKER_CMD_STATE               "state"
+
+#define BLINKER_CMD_ONLINE              "online"
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
