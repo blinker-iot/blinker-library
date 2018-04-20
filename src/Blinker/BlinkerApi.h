@@ -517,7 +517,7 @@ class BlinkerApi
         //     delay(100);
         // }
 
-        void vibrate(uint16_t ms = 500)
+        void vibrate(uint16_t ms = 200)
         {
             if (ms > 1000) {
                 ms = 1000;
