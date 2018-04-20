@@ -187,6 +187,8 @@ class BlinkerApi
             if (static_cast<Proto*>(this)->parseState() ) {
                 _fresh = false;
 
+                heartBeat();
+
                 for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                     buttonParse(_Button[bNum]->getName());
                 }
@@ -441,9 +443,11 @@ class BlinkerApi
         }
 
         String gps(b_gps_t axis, bool newData = false) {
-            if (!newData) {
-                static_cast<Proto*>(this)->print(BLINKER_CMD_GPS, "");
+            if (!newData && (millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT) {
+                static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
                 delay(100);
+
+                gps_get_time = millis();
             }
 
             String axisValue = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, axis);
@@ -543,6 +547,7 @@ class BlinkerApi
         uint8_t _rgbCount = 0;
         uint8_t joyValue[2];
         int16_t ahrsValue[3];
+        uint32_t gps_get_time;
         String  gpsValue[2];
         // uint8_t rgbValue[3];
         bool    _fresh = false;
@@ -599,6 +604,18 @@ class BlinkerApi
                 }
 
                 return _Button[num]->getState();
+            }
+        }
+
+        void heartBeat() {
+            String state;
+
+            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
+                // _fresh = true;
+                if (state == BLINKER_CMD_STATE) {
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+                    _fresh = true;
+                }
             }
         }
 };

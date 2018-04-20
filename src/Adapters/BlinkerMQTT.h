@@ -170,6 +170,7 @@ class BlinkerMQTT {
     protected :
         const char* authkey;
         bool* isHandle = &isConnect;
+        bool isAlive = false;
         uint32_t latestTime;
         uint32_t printTime;
         uint32_t kaTime;
@@ -426,6 +427,7 @@ void BlinkerMQTT::subscribe() {
             kaTime = millis();
 
             isAvail = true;
+            isAlive = true;
         }
     }
 }
@@ -445,7 +447,7 @@ void BlinkerMQTT::print(String data) {
 #endif
 
         if (mqtt->connected()) {
-            if (millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && millis() - kaTime < BLINKER_MQTT_KEEPALIVE) {
+            if (millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && millis() - kaTime < BLINKER_MQTT_KEEPALIVE && isAlive) {
                 if (! iotPub->publish(payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(payload, ("...Failed"));
@@ -460,12 +462,14 @@ void BlinkerMQTT::print(String data) {
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1("MQTT MSG LIMIT or NOT ALIVE");
+                BLINKER_ERR_LOG1("MQTT NOT ALIVE");
 #endif
+                isAlive = false;
             }
         }
         else {
             BLINKER_ERR_LOG1("MQTT Disconnected");
+            isAlive = false;
         }
     }
 }
