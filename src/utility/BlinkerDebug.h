@@ -90,6 +90,12 @@
     #define BLINKER_LOG4(p1, p2, p3, p4)
     #define BLINKER_LOG5(p1, p2, p3, p4, p5)
     #define BLINKER_LOG6(p1, p2, p3, p4, p5, p6)
+    #define BLINKER_ERR_LOG1(p1)
+    #define BLINKER_ERR_LOG2(p1, p2)
+    #define BLINKER_ERR_LOG3(p1, p2, p3)
+    #define BLINKER_ERR_LOG4(p1, p2, p3, p4)
+    #define BLINKER_ERR_LOG5(p1, p2, p3, p4, p5)
+    #define BLINKER_ERR_LOG6(p1, p2, p3, p4, p5, p6)
 #endif
 
 #endif
