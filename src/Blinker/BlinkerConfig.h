@@ -63,6 +63,8 @@
 
 #define BLINKER_CMD_ONLINE              "online"
 
+#define BLINKER_CMD_VERSION             "version"
+
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
 #if defined(BLINKER_MQTT)
