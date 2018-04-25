@@ -65,6 +65,8 @@
 
 #define BLINKER_CMD_VERSION             "version"
 
+#define BLINKER_CMD_NOTICE              "notice"
+
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
 #if defined(BLINKER_MQTT)

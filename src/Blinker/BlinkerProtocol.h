@@ -113,6 +113,9 @@ class BlinkerProtocol
         void println(const char str[], long n)              { print(str, n); }
         void println(const char str[], unsigned long n)     { print(str, n); }
         void println(const char str[], double n)            { print(str, n); }
+
+        template <typename T>
+        void notice(T n) { print("{\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"}"); }
         
         void flush() {
             isFresh = false;
