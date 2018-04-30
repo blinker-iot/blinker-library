@@ -462,9 +462,10 @@ void BlinkerMQTT::print(String data) {
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1("MQTT NOT ALIVE");
+                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
 #endif
-                isAlive = false;
+                if (millis() - kaTime >= BLINKER_MQTT_KEEPALIVE)
+                    isAlive = false;
             }
         }
         else {

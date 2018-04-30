@@ -89,8 +89,18 @@ class BlinkerTransportESP32_BLE
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("Succese..."));
 #endif
-                pCharacteristic->setValue(s.c_str());
-                pCharacteristic->notify();
+                String s_send;
+                uint8_t parts = s.length()/20 + 1;
+                for (uint8_t num = 0; num < parts; num++) {
+                    if ((num + 1) == parts)
+                        s_send = s.substring(num*(20), s.length()); 
+                    else
+                        s_send = s.substring(num*(20), (num+1)*20);    
+
+                    pCharacteristic->setValue(s_send.c_str());
+                    pCharacteristic->notify();
+                    delay(5);
+                }
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
