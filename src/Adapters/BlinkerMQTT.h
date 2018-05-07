@@ -456,7 +456,7 @@ void BlinkerMQTT::print(String data, bool state) {
             isAlive = true;
         }
 
-        if (mqtt->connected()) {// && millis() - kaTime < BLINKER_MQTT_KEEPALIVE 
+        if (mqtt->connected()) {
             if (millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) {
                 if (! iotPub->publish(payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
@@ -474,8 +474,6 @@ void BlinkerMQTT::print(String data, bool state) {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
 #endif
-                // if (millis() - kaTime >= BLINKER_MQTT_KEEPALIVE)
-                //     isAlive = false;
                 checkKA();
             }
         }
