@@ -614,7 +614,11 @@ class BlinkerApi
             if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
                 // _fresh = true;
                 if (state == BLINKER_CMD_STATE) {
+#if defined(BLINKER_MQTT)
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+#else
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+#endif
                     _fresh = true;
                 }
             }

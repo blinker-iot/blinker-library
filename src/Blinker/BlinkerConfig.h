@@ -63,6 +63,8 @@
 
 #define BLINKER_CMD_ONLINE              "online"
 
+#define BLINKER_CMD_CONNECTED           "connected"
+
 #define BLINKER_CMD_VERSION             "version"
 
 #define BLINKER_CMD_NOTICE              "notice"
