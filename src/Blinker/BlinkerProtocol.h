@@ -68,6 +68,17 @@ class BlinkerProtocol
         }
         
         template <typename T>
+#if defined(BLINKER_MQTT)
+        void print(T n, bool state = false) {
+            String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
+            if (data.length() <= BLINKER_MAX_SEND_SIZE) {
+                conn.print(data, state);
+            }
+            else {
+                BLINKER_ERR_LOG1("SEND DATA BYTES MAX THAN LIMIT!");
+            }
+        }
+#else
         void print(T n) {
             String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
             if (data.length() <= BLINKER_MAX_SEND_SIZE) {
@@ -77,6 +88,7 @@ class BlinkerProtocol
                 BLINKER_ERR_LOG1("SEND DATA BYTES MAX THAN LIMIT!");
             }
         }
+#endif
         void print()                        { print(""); }
         
         template <typename T>
@@ -115,7 +127,13 @@ class BlinkerProtocol
         void println(const char str[], double n)            { print(str, n); }
 
         template <typename T>
-        void notify(T n) { print("{\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"}"); }
+        void notify(T n) {
+#if defined(BLINKER_MQTT)
+            print("{\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"}", true);
+#else
+            print("{\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"}");
+#endif
+        }
         
         void flush() {
             isFresh = false;
