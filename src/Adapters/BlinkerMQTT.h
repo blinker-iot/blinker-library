@@ -111,6 +111,8 @@ class BlinkerMQTT {
         bool available () {
             webSocket.loop();
 
+            checkKA();
+
             if (!mqtt->connected() || (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT) {
                 ping();
             }
@@ -130,7 +132,7 @@ class BlinkerMQTT {
 
         void subscribe();
         String lastRead() { return STRING_format(msgBuf); }
-        void print(String data);
+        void print(String data, bool state = false);
         
         void begin(const char* auth) {
             authkey = auth;
@@ -165,6 +167,11 @@ class BlinkerMQTT {
             webSocket.onEvent(webSocketEvent);
             BLINKER_LOG1(BLINKER_F("webSocket server started"));
             BLINKER_LOG4("ws://", DEVICE_NAME, ".local:", WS_SERVERPORT);
+        }
+
+        void checkKA() {
+            if (millis() - kaTime >= BLINKER_MQTT_KEEPALIVE)
+                isAlive = false;
         }
 
     protected :
@@ -432,7 +439,7 @@ void BlinkerMQTT::subscribe() {
     }
 }
 
-void BlinkerMQTT::print(String data) {
+void BlinkerMQTT::print(String data, bool state) {
     if (*isHandle) {
         webSocket.broadcastTXT(data);
 #ifdef BLINKER_DEBUG_ALL
@@ -445,9 +452,12 @@ void BlinkerMQTT::print(String data) {
 #ifdef BLINKER_DEBUG_ALL
         BLINKER_LOG1("MQTT Publish...");
 #endif
+        if (state) {
+            isAlive = true;
+        }
 
         if (mqtt->connected()) {
-            if (millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && millis() - kaTime < BLINKER_MQTT_KEEPALIVE && isAlive) {
+            if (millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) {
                 if (! iotPub->publish(payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(payload, ("...Failed"));
@@ -464,8 +474,7 @@ void BlinkerMQTT::print(String data) {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
 #endif
-                if (millis() - kaTime >= BLINKER_MQTT_KEEPALIVE)
-                    isAlive = false;
+                checkKA();
             }
         }
         else {
