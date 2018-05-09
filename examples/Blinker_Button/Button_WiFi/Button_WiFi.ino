@@ -2,6 +2,7 @@
 #define BLINKER_WIFI
 
 #define BUTTON_1		"ButtonKey"
+#define TAP_EXAMPLE
 
 #include <Blinker.h>
 
@@ -32,8 +33,17 @@ void loop()
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
     }
-
+    
+#if defined(TAP_EXAMPLE)
     if (Blinker.button(BUTTON_1)) {
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    } // simple tap
+#else
+    if (Blinker.button(BUTTON_1)) {
+        digitalWrite(LED_BUILTIN, LOW);
     }
+    else {
+        digitalWrite(LED_BUILTIN, HIGH);
+    } //long press
+#endif
 }

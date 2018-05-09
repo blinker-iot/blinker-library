@@ -49,9 +49,9 @@
 
 #define BLINKER_CMD_BUTTON_TAP          "tap"
 
-#define BLINKER_CMD_BUTTON_PRESSED      "pressed"
+#define BLINKER_CMD_BUTTON_PRESSED      "press"
 
-#define BLINKER_CMD_BUTTON_RELEASED     "released"
+#define BLINKER_CMD_BUTTON_RELEASED     "pressup"
 
 #define BLINKER_CMD_NEWLINE             "\n"
 
@@ -83,7 +83,7 @@
 
     #define BLINKER_MQTT_QCLOUD_HOST    "iotcloud-mqtt.gz.tencentdevices.com"
 
-    #define BLINKER_MQTT_QCLOUD_PORT    8883
+    #define BLINKER_MQTT_QCLOUD_PORT    1883
 
     #define BLINKER_MQTT_PING_TIMEOUT       30000UL
 
@@ -91,7 +91,7 @@
 
     #define BLINKER_MQTT_ID_SIZE            110
 
-    #define BLINKER_MQTT_NAME_SIZE          40
+    #define BLINKER_MQTT_NAME_SIZE          80
 
     #define BLINKER_MQTT_KEY_SIZE           50
 
