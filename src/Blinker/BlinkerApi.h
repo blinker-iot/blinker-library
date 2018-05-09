@@ -48,13 +48,15 @@ class BlinkerButton
         
         void name(String name) { buttonName = name; }
         String getName() { return buttonName; }
-        void freshState(bool state) { buttonState = state; }
+        void freshState(bool state, bool isLong = false) { buttonState = state; isLPress = isLong; }
         bool getState() { return buttonState; }
+        bool longPress() { return isLPress; }
         bool checkName(String name) { return ((buttonName == name) ? true : false); }
     
     private :
         String  buttonName;
         bool    buttonState;
+        bool    isLPress;
 };
 
 class BlinkerSlider
@@ -222,7 +224,7 @@ class BlinkerApi
                 _fresh = true;
             }
 
-            if (state == BLINKER_CMD_BUTTON_PRESSED || state == BLINKER_CMD_BUTTON_TAP) {
+            if (state == BLINKER_CMD_BUTTON_TAP) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
                         _Button[_bCount] = new BlinkerButton();
@@ -233,6 +235,22 @@ class BlinkerApi
                 }
                 else {
                     _Button[num]->freshState(true);
+                }
+
+                _fresh = true;
+                return true;
+            }
+            else if (state == BLINKER_CMD_BUTTON_PRESSED) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount]->name(_bName);
+                        _Button[_bCount]->freshState(true, true);
+                        _bCount++;
+                    }
+                }
+                else {
+                    _Button[num]->freshState(true, true);
                 }
 
                 _fresh = true;
@@ -265,7 +283,8 @@ class BlinkerApi
                 }
 
                 bool _state = _Button[num]->getState();
-                _Button[num]->freshState(false);
+                if ( !_Button[num]->longPress() )
+                    _Button[num]->freshState(false);
 
                 return _state;
             }
@@ -562,7 +581,7 @@ class BlinkerApi
                 _fresh = true;
             }
 
-            if (state == BLINKER_CMD_BUTTON_PRESSED || state == BLINKER_CMD_BUTTON_TAP) {
+            if (state == BLINKER_CMD_BUTTON_TAP) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
                         _Button[_bCount] = new BlinkerButton();
@@ -573,6 +592,22 @@ class BlinkerApi
                 }
                 else {
                     _Button[num]->freshState(true);
+                }
+
+                _fresh = true;
+                return true;
+            }
+            else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount]->name(_bName);
+                        _Button[_bCount]->freshState(true, true);
+                        _bCount++;
+                    }
+                }
+                else {
+                    _Button[num]->freshState(true, true);
                 }
 
                 _fresh = true;

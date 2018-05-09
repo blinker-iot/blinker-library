@@ -49,9 +49,9 @@
 
 #define BLINKER_CMD_BUTTON_TAP          "tap"
 
-#define BLINKER_CMD_BUTTON_PRESSED      "pressed"
+#define BLINKER_CMD_BUTTON_PRESSED      "press"
 
-#define BLINKER_CMD_BUTTON_RELEASED     "released"
+#define BLINKER_CMD_BUTTON_RELEASED     "pressup"
 
 #define BLINKER_CMD_NEWLINE             "\n"
 

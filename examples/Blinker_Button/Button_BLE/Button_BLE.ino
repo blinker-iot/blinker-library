@@ -32,5 +32,12 @@ void loop()
 
     if (Blinker.button(BUTTON_1)) {
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    }
+    } // simple tap
+
+    // if (Blinker.button(BUTTON_1)) {
+    //     digitalWrite(LED_BUILTIN, LOW);
+    // }
+    // else {
+    //     digitalWrite(LED_BUILTIN, HIGH);
+    // } //long press
 }
