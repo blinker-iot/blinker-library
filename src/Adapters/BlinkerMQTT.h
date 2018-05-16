@@ -421,7 +421,11 @@ void BlinkerMQTT::subscribe() {
 
             dataGet = STRING_find_string(dataGet, "data", ",\"", 2);
 
-            // BLINKER_LOG2("data: ", data);
+            if (dataGet.indexOf("\"") != -1) {
+                dataGet = STRING_find_string(dataGet, "\"", "\"", 0);
+            }
+
+            BLINKER_LOG2("data: ", dataGet);
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("fromDevice: ", _uuid);
 #endif
