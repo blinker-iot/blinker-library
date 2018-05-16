@@ -418,6 +418,10 @@ void BlinkerMQTT::subscribe() {
             String dataGet = String((char *)iotSub->lastread);
 
             String _uuid = STRING_find_string(dataGet, "fromDevice", "\"", 3);
+
+            dataGet = STRING_find_string(dataGet, "data", ",\"", 2);
+
+            // BLINKER_LOG2("data: ", data);
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("fromDevice: ", _uuid);
 #endif
@@ -434,7 +438,7 @@ void BlinkerMQTT::subscribe() {
             }
 
             memset(msgBuf, 0, BLINKER_MAX_READ_SIZE);
-            memcpy(msgBuf, (char *)iotSub->lastread, iotSub->datalen);
+            memcpy(msgBuf, dataGet.c_str(), dataGet.length());
             
             this->latestTime = millis();
             kaTime = millis();
