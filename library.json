@@ -1,7 +1,7 @@
 {
     "name": "Blinker",
     "description": "Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.",
-    "keywords": "wifi, websocket, Bluetooth",
+    "keywords": "wifi, websocket, Bluetooth, mqtt",
     "authors": [
         {
             "name": "i3water",
@@ -11,10 +11,10 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/i3water/blinker-library.git"
+        "url": "https://github.com/blinker-iot/blinker-library.git"
     },
     "version": "0.1.2",
-    "homepage": "https://blinker-iot.com/",
+    "homepage": "https://blinker.app/",
     "export": {
         "exclude": [
             "tests"
