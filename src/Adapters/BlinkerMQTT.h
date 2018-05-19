@@ -133,7 +133,7 @@ class BlinkerMQTT {
 
         void subscribe();
         String lastRead() { return STRING_format(msgBuf); }
-        void print(String data, bool state = false);
+        void print(String data);
         
         void begin(const char* auth) {
             authkey = auth;
@@ -453,7 +453,7 @@ void BlinkerMQTT::subscribe() {
     }
 }
 
-void BlinkerMQTT::print(String data, bool state) {
+void BlinkerMQTT::print(String data) {
     if (*isHandle) {
         webSocket.broadcastTXT(data);
 #ifdef BLINKER_DEBUG_ALL
@@ -467,6 +467,7 @@ void BlinkerMQTT::print(String data, bool state) {
         BLINKER_LOG1("MQTT Publish...");
 #endif
         bool _alive = isAlive;
+        bool state = STRING_contais_string(data, BLINKER_CMD_NOTICE);
 
         if (state) {
             isAlive = true;
