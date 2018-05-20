@@ -69,7 +69,7 @@
 
 #define BLINKER_CMD_NOTICE              "notice"
 
-#define BLINKER_CMD_NOTFUND             "device not found"
+#define BLINKER_CMD_NOTFOUND            "device not found"
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
