@@ -264,6 +264,13 @@ void BlinkerMQTT::connectServer() {
     BLINKER_LOG1("==============================");
 #endif
 
+    if (STRING_contais_string(payload, BLINKER_CMD_NOTFUND)) {
+        while(1) {
+            BLINKER_ERR_LOG1("Please make sure you have put in the right AuthKey!");
+            ::delay(10000);
+        }
+    }
+
     String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
     String _userName = STRING_find_string(payload, "iotId", "\"", 4);
     String _key = STRING_find_string(payload, "iotToken", "\"", 4);
