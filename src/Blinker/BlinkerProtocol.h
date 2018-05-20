@@ -169,8 +169,9 @@ class BlinkerProtocol
         //     }
         // }
         
-        void print(const String &s1, const String &s2) {
-            String _msg = "\"" + s1 + "\":\"" + s2 + "\"";
+        template <typename T1>
+        void print(T1 n1, const String &s2) {
+            String _msg = "\"" + STRING_format(n1) + "\":\"" + s2 + "\"";
 
             if (isFormat) {
                 formatData(_msg);
@@ -180,8 +181,9 @@ class BlinkerProtocol
             }
         }
 
-        void print(const char str1[], const char str2[]) {
-            String _msg = "\"" + STRING_format(str1) + "\":\"" + STRING_format(str2) + "\"";
+        template <typename T1>
+        void print(T1 n1, const char str2[]) {
+            String _msg = "\"" + STRING_format(n1) + "\":\"" + STRING_format(str2) + "\"";
 
             if (isFormat) {
                 formatData(_msg);
@@ -191,8 +193,9 @@ class BlinkerProtocol
             }
         }
 
-        void print(const char str[], char c) {
-            String _msg = "\"" + STRING_format(str) + "\":\"" + STRING_format(c) + "\"";
+        template <typename T1>
+        void print(T1 n1, char c) {
+            String _msg = "\"" + STRING_format(n1) + "\":\"" + STRING_format(c) + "\"";
 
             if (isFormat) {
                 formatData(_msg);
@@ -202,8 +205,9 @@ class BlinkerProtocol
             }
         }
 
-        void print(const char str[], unsigned char b) {
-            String _msg = "\"" + STRING_format(str) + "\":\"" + STRING_format(b) + "\"";
+        template <typename T1>
+        void print(T1 n1, unsigned char b) {
+            String _msg = "\"" + STRING_format(n1) + "\":\"" + STRING_format(b) + "\"";
 
             if (isFormat) {
                 formatData(_msg);
@@ -213,8 +217,9 @@ class BlinkerProtocol
             }
         }
 
-        void print(const char str[], int n) {
-            String _msg = "\"" + STRING_format(str) + "\":" + STRING_format(n);
+        template <typename T1>
+        void print(T1 n1, int n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
             if (isFormat) {
                 formatData(_msg);
@@ -224,8 +229,9 @@ class BlinkerProtocol
             }
         }
 
-        void print(const char str[], unsigned int n) {
-            String _msg = "\"" + STRING_format(str) + "\":" + STRING_format(n);
+        template <typename T1>
+        void print(T1 n1, unsigned int n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
             if (isFormat) {
                 formatData(_msg);
@@ -235,8 +241,9 @@ class BlinkerProtocol
             }
         }
 
-        void print(const char str[], long n) {
-            String _msg = "\"" + STRING_format(str) + "\":" + STRING_format(n);
+        template <typename T1>
+        void print(T1 n1, long n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
             if (isFormat) {
                 formatData(_msg);
@@ -246,8 +253,9 @@ class BlinkerProtocol
             }
         }
 
-        void print(const char str[], unsigned long n) {
-            String _msg = "\"" + STRING_format(str) + "\":" + STRING_format(n);
+        template <typename T1>
+        void print(T1 n1, unsigned long n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
             if (isFormat) {
                 formatData(_msg);
@@ -257,8 +265,9 @@ class BlinkerProtocol
             }
         }
 
-        void print(const char str[], double n) {
-            String _msg = "\"" + STRING_format(str) + "\":" + STRING_format(n);
+        template <typename T1>
+        void print(T1 n1, double n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
             if (isFormat) {
                 formatData(_msg);
@@ -268,15 +277,24 @@ class BlinkerProtocol
             }
         }
 
-        void println(const String &s1, const String &s2)    { print(s1, s2); }
-        void println(const char str1[], const char str2[])  { print(str1, str2); }
-        void println(const char str[], char c)              { print(str, c); }
-        void println(const char str[], unsigned char b)     { print(str, b); }
-        void println(const char str[], int n)               { print(str, n); }
-        void println(const char str[], unsigned int n)      { print(str, n); }        
-        void println(const char str[], long n)              { print(str, n); }        
-        void println(const char str[], unsigned long n)     { print(str, n); }        
-        void println(const char str[], double n)            { print(str, n); }
+        template <typename T1>
+        void println(T1 n1, const String &s2)    { print(n1, s2); }
+        template <typename T1>
+        void println(T1 n1, const char str2[])   { print(n1, str2); }
+        template <typename T1>
+        void println(T1 n1, char c)              { print(n1, c); }
+        template <typename T1>
+        void println(T1 n1, unsigned char b)     { print(n1, b); }
+        template <typename T1>
+        void println(T1 n1, int n)               { print(n1, n); }
+        template <typename T1>
+        void println(T1 n1, unsigned int n)      { print(n1, n); }        
+        template <typename T1>
+        void println(T1 n1, long n)              { print(n1, n); }        
+        template <typename T1>
+        void println(T1 n1, unsigned long n)     { print(n1, n); }        
+        template <typename T1>
+        void println(T1 n1, double n)            { print(n1, n); }
         
         template <typename T>
         void notify(T n) {
