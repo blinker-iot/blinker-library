@@ -300,7 +300,7 @@ class BlinkerProtocol
         void notify(T n) {
             String _msg = "\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"";
             if (isFormat) {
-
+                formatData(_msg);
             }
             else {
                 _print("{" + _msg + "}");
