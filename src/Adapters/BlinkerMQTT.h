@@ -264,7 +264,7 @@ void BlinkerMQTT::connectServer() {
     BLINKER_LOG1("==============================");
 #endif
 
-    if (STRING_contais_string(payload, BLINKER_CMD_NOTFUND)) {
+    if (STRING_contais_string(payload, BLINKER_CMD_NOTFOUND)) {
         while(1) {
             BLINKER_ERR_LOG1("Please make sure you have put in the right AuthKey!");
             ::delay(10000);
