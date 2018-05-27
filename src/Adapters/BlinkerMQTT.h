@@ -163,6 +163,7 @@ class BlinkerMQTT {
             BLINKER_LOG1(("mDNS responder started"));
             
             MDNS.addService("DiyArduinoMQTT", "tcp", WS_SERVERPORT);
+            MDNS.addServiceTxt("DiyArduinoMQTT", "tcp", "deviceName", DEVICE_NAME);
 
             webSocket.begin();
             webSocket.onEvent(webSocketEvent);
