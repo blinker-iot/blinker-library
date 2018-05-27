@@ -69,6 +69,7 @@ class BlinkerSimpleESP8266_WS
             BLINKER_LOG1(BLINKER_F("mDNS responder started"));
             
             MDNS.addService("DiyArduino", "tcp", WS_SERVERPORT);
+            MDNS.addServiceTxt("DiyArduino", "tcp", "deviceName", macDeviceName());
 
             this->conn.begin(macDeviceName());
         }
