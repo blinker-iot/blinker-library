@@ -401,6 +401,10 @@ class BlinkerProtocol
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
+#if defined(ESP8266) || defined(ESP32)
+    BApi::ntpInit();
+#endif
+
     bool conState = conn.connected();
 
     switch (state)
