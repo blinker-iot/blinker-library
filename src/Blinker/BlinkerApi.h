@@ -1,6 +1,7 @@
 #ifndef BlinkerApi_H
 #define BlinkerApi_H
 
+#include <time.h>
 #include <Blinker/BlinkerConfig.h>
 #include <utility/BlinkerDebug.h>
 #include <utility/BlinkerUtility.h>
@@ -559,6 +560,61 @@ class BlinkerApi
                 }
             }
         }
+
+        void setTimezone(float tz) {
+            _timezone = tz;
+        }
+
+#if defined(ESP8266) || defined(ESP32)
+        bool ntpInit() {
+            if (!_isNTPInit) {
+                now_ntp = ::time(nullptr);
+            
+                // BLINKER_LOG2("Setting time using SNTP: ", now_ntp);
+                
+                if (now_ntp < _timezone * 3600 * 2) {
+                    configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
+                    now_ntp = ::time(nullptr);
+
+                    if (now_ntp < _timezone * 3600 * 2) {
+                        ::delay(50);
+
+                        now_ntp = ::time(nullptr);
+
+                        // BLINKER_LOG2("Setting time using SNTP time out: ", now_ntp);
+
+                        return false;
+                    }
+                }
+                // struct tm timeinfo;
+                gmtime_r(&now_ntp, &timeinfo);
+#ifdef BLINKER_DEBUG_ALL                
+                BLINKER_LOG2("Current time: ", asctime(&timeinfo));
+#endif
+                _isNTPInit = true;
+            }
+
+            return true;
+        }
+#endif
+
+        int8_t second()    { freshNTP(); return _isNTPInit ? timeinfo.tm_sec : -1; }
+        /**< seconds after the minute - [ 0 to 59 ] */
+        int8_t minute()    { freshNTP(); return _isNTPInit ? timeinfo.tm_min : -1; }
+        /**< minutes after the hour - [ 0 to 59 ] */
+        int8_t hour()   { freshNTP(); return _isNTPInit ? timeinfo.tm_hour : -1; }
+        /**< hours since midnight - [ 0 to 23 ] */
+        int8_t mday()   { freshNTP(); return _isNTPInit ? timeinfo.tm_mday : -1; }
+        /**< day of the month - [ 1 to 31 ] */
+        int8_t wday()   { freshNTP(); return _isNTPInit ? timeinfo.tm_wday : -1; }
+        /**< days since Sunday - [ 0 to 6 ] */
+        int8_t month()    { freshNTP(); return _isNTPInit ? timeinfo.tm_mon : -1; }
+        /**< months since January - [ 0 to 11 ] */
+        int16_t year()  { freshNTP(); return _isNTPInit ? 1900 + timeinfo.tm_year : -1; }
+        /**< years since 1900 */
+        int16_t yday()  { freshNTP(); return _isNTPInit ? timeinfo.tm_yday : -1; }
+        /**< days since January 1 - [ 0 to 365 ] */
+        time_t  time()  { freshNTP(); return _isNTPInit ? now_ntp : millis(); }
     
     private :
         uint8_t _bCount = 0;
@@ -571,6 +627,17 @@ class BlinkerApi
         String  gpsValue[2];
         // uint8_t rgbValue[3];
         bool    _fresh = false;
+        bool    _isNTPInit = false;
+        float   _timezone = 8.0;
+        time_t  now_ntp;
+        struct tm timeinfo;
+
+        void freshNTP() {
+            if (_isNTPInit) {
+                now_ntp = ::time(nullptr);
+                gmtime_r(&now_ntp, &timeinfo);
+            }
+        }
 
         bool buttonParse(const String & _bName)
         {
