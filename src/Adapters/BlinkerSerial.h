@@ -80,13 +80,13 @@ class BlinkerTransportStream
         bool    isHWS = false;
 };
 
-class BlinkerSerail
+class BlinkerSerial
     : public BlinkerProtocol<BlinkerTransportStream>
 {
     typedef BlinkerProtocol<BlinkerTransportStream> Base;
 
     public :
-        BlinkerSerail(BlinkerTransportStream& transp)
+        BlinkerSerial(BlinkerTransportStream& transp)
             : Base(transp)
         {}
 

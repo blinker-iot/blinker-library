@@ -8,7 +8,7 @@
 char ssid[] = "<Your WiFi network SSID or name>";
 char pswd[] = "<Your WiFi network WPA password or WEP key>";
 
-BlinkerTimer timer1;
+BlinkerTimer BlinkerCountDown;
 
 void blink() {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
@@ -23,7 +23,7 @@ void setup()
 
     Blinker.begin(ssid, pswd);
     Blinker.wInit(BUTTON_1, W_BUTTON);
-    timer1.countdown(1, blink);
+    BlinkerCountDown.countdown(5, blink);
 }
 
 void loop()

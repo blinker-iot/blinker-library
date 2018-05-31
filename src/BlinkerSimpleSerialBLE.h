@@ -4,6 +4,6 @@
 #include <Adapters/BlinkerSerial.h>
 
 static BlinkerTransportStream _blinkerTransport;
-BlinkerSerail Blinker(_blinkerTransport);
+BlinkerSerial Blinker(_blinkerTransport);
 
 #endif

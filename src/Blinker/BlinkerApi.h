@@ -2,7 +2,9 @@
 #define BlinkerApi_H
 
 #include <time.h>
+#if defined(ESP8266) || defined(ESP32)
 #include <Ticker.h>
+#endif
 #include <Blinker/BlinkerConfig.h>
 #include <utility/BlinkerDebug.h>
 #include <utility/BlinkerUtility.h>
@@ -126,19 +128,16 @@ int8_t checkNum(String name, T * c, uint8_t count)
     return BLINKER_OBJECT_NOT_AVAIL;
 }
 
+#if defined(ESP8266) || defined(ESP32)
 class BlinkerTimer
     : public Ticker
 {
-    typedef Ticker CDowner;
-    typedef Ticker Looper;
-    typedef Ticker LCounter;
-
     public :
         typedef void (*callback_t)(void);
 	    typedef void (*callback_with_arg_t)(void*);
 
         void countdown(float seconds, callback_t callback) {
-            CDowner::once(seconds, callback);
+            CDowner.once(seconds, callback);
         }
 
         // template<typename TArg>
@@ -146,13 +145,8 @@ class BlinkerTimer
         //     CDowner::once(seconds, arg);
         // }
 
-        void loop(float seconds, callback_t callback, uint8_t times = 1) {
-            _sec = seconds;
-            _loopCB = callback;
-            _times = times;
-            // Looper::attach(seconds, callback);
-            LCounter::attach(_sec, (callback_t)&BlinkerTimer::_loop);
-            Looper::attach(_sec, _loopCB);
+        void loop(float seconds, callback_t callback) {
+            Looper.attach(seconds, callback);
         }
 
         // template<typename TArg>
@@ -160,34 +154,25 @@ class BlinkerTimer
         //     Timer::attach(seconds, arg);
         // }
 
-        // void timing(float seconds, callback_t callback1, callback_t callback2) {
-        //     _sec = seconds;
-        //     _loopCB = callback;
-        //     _times = times;
-        //     // Looper::attach(seconds, callback);
-        //     LCounter::attach(_sec, (callback_t)&BlinkerTimer::_loop);
-        //     Looper::attach(_sec, _loopCB);
-        // }
+        void timing(float seconds1, callback_t callback1, float seconds2 , callback_t callback2) {
+            Timinger1.once(seconds1, callback1);
+            Timinger2.once(seconds1 + seconds2, callback2);
+        }
+
+        void detach() {
+            CDowner.detach();
+            Looper.detach();
+            Timinger1.detach();
+            Timinger2.detach();
+        }
 
     private :
-        float   _sec = 0;
-        uint8_t _times = 0;
-        uint8_t _loopCount = 0;
-        callback_t _loopCB;
-
-        void _loop() {
-            _loopCount++;
-
-            if (_loopCount < _times) {
-                LCounter::attach(_sec, (callback_t)&BlinkerTimer::_loop);
-                Looper::attach(_sec, _loopCB);
-            }
-            else {
-                LCounter::detach();
-                Looper::detach();
-            }
-        }
+        Ticker CDowner;
+        Ticker Looper;
+        Ticker Timinger1;
+        Ticker Timinger2;
 };
+#endif
 
 template <class Proto>
 class BlinkerApi
