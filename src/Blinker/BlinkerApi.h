@@ -985,12 +985,19 @@ class BlinkerApi
                 // _fresh = true;
                 if (state == BLINKER_CMD_STATE) {
 #if defined(BLINKER_MQTT)
+                    static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+                    stateData();
+                    if (!static_cast<Proto*>(this)->endFormat()) {
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+                    }
 #else
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
                     stateData();
-                    static_cast<Proto*>(this)->endFormat();
+                    if (!static_cast<Proto*>(this)->endFormat()) {
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+                    }
 #endif
                     _fresh = true;
                 }

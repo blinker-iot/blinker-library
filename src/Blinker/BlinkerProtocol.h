@@ -96,9 +96,16 @@ class BlinkerProtocol
             memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
         }
 
-        void endFormat() {
+        bool endFormat() {
             isFormat = false;
             _print("{" + STRING_format(_sendBuf) + "}");
+
+            if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE - 3) {
+                return false;
+            }
+            else {
+                return true;
+            }
         }
 
         template <typename T>
