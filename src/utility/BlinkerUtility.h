@@ -22,7 +22,7 @@
 #define FIND_KEY_VALUE_FAILED               -1000
 
 template<class T>
-String STRING_format(T& p)
+String STRING_format(T p)
 {
     return String(p);
 }
