@@ -782,7 +782,6 @@ class BlinkerApi
 
             if (STRING_find_string_value(data, state, _bName)) {
                 // _fresh = true;
-                BLINKER_LOG2("state: ", state);
             }
 
             if (state == BLINKER_CMD_BUTTON_TAP) {
@@ -988,7 +987,10 @@ class BlinkerApi
 #if defined(BLINKER_MQTT)
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
 #else
+                    static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+                    stateData();
+                    static_cast<Proto*>(this)->endFormat();
 #endif
                     _fresh = true;
                 }
@@ -1004,6 +1006,18 @@ class BlinkerApi
                     static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, BLINKER_VERSION);
                     _fresh = true;
                 }
+            }
+        }
+
+        void stateData() {
+            for (uint8_t _tNum = 0; _tNum < _tCount; _tNum++) {
+                static_cast<Proto*>(this)->print(_Toggle[_tNum]->getName(), _Toggle[_tNum]->getState() ? "on" : "off");
+            }
+            for (uint8_t _sNum = 0; _sNum < _sCount; _sNum++) {
+                static_cast<Proto*>(this)->print(_Slider[_sNum]->getName(), _Slider[_sNum]->getValue());
+            }
+            for (uint8_t _rgbNum = 0; _rgbNum < _rgbCount; _rgbNum++) {
+                static_cast<Proto*>(this)->print(_RGB[_rgbNum]->getName(), "[" + STRING_format(_RGB[_rgbNum]->getValue(R)) + "," + STRING_format(_RGB[_rgbNum]->getValue(G)) + "," + STRING_format(_RGB[_rgbNum]->getValue(B)) + "]");
             }
         }
 };
