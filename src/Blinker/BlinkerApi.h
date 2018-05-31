@@ -265,6 +265,22 @@ class BlinkerApi
             }
         }
 
+        void _parse(String data)
+        {
+            for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                buttonParse(_Button[bNum]->getName(), data);
+            }
+            for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                slider(_Slider[sNum]->getName(), data);
+            }
+            for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                toggle(_Toggle[kNum]->getName(), data);
+            }
+            for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                rgb(_RGB[rgbNum]->getName(), R, data);
+            }
+        }
+
         bool button(const String & _bName)
         {
             int8_t num = checkNum(_bName, _Button, _bCount);
@@ -756,6 +772,210 @@ class BlinkerApi
                 }
 
                 return _Button[num]->getState();
+            }
+        }
+
+        bool buttonParse(const String & _bName, String data)
+        {
+            int8_t num = checkNum(_bName, _Button, _bCount);
+            String state;
+
+            if (STRING_find_string_value(data, state, _bName)) {
+                // _fresh = true;
+                BLINKER_LOG2("state: ", state);
+            }
+
+            if (state == BLINKER_CMD_BUTTON_TAP) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount]->name(_bName);
+                        _Button[_bCount]->freshState(true);
+                        _bCount++;
+                    }
+                }
+                else {
+                    _Button[num]->freshState(true);
+                }
+
+                // _fresh = true;
+                return true;
+            }
+            else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount]->name(_bName);
+                        _Button[_bCount]->freshState(true, true);
+                        _bCount++;
+                    }
+                }
+                else {
+                    _Button[num]->freshState(true, true);
+                }
+
+                // _fresh = true;
+                return true;
+            }
+            else if (state == BLINKER_CMD_BUTTON_RELEASED) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount]->name(_bName);
+                        _Button[_bCount]->freshState(false);
+                        _bCount++;
+                    }
+                }
+                else {
+                    _Button[num]->freshState(false);
+                }
+
+                // _fresh = true;
+                return false;
+            }
+            else {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount]->name(_bName);
+                        _bCount++;
+                    }
+                    return false;
+                }
+
+                return _Button[num]->getState();
+            }
+        }
+
+        bool toggle(const String & _tName, String data)
+        {
+            int8_t num = checkNum(_tName, _Toggle, _tCount);
+            String state;
+
+            if (STRING_find_string_value(data, state, _tName)) {
+                // _fresh = true;
+            }
+
+            if (state == BLINKER_CMD_ON) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Toggle[_tCount] = new BlinkerToggle();
+                        _Toggle[_tCount]->name(_tName);
+                        _Toggle[_tCount]->freshState(true);
+                        _tCount++;
+                    }
+                }
+                else {
+                    _Toggle[num]->freshState(true);
+                }
+
+                // _fresh = true;
+                return true;
+            }
+            else if (state == BLINKER_CMD_OFF) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Toggle[_tCount] = new BlinkerToggle();
+                        _Toggle[_tCount]->name(_tName);
+                        _Toggle[_tCount]->freshState(false);
+                        _tCount++;
+                    }
+                }
+                else {
+                    _Toggle[num]->freshState(false);
+                }
+
+                // _fresh = true;
+                return false;
+            }
+            else {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Toggle[_tCount] = new BlinkerToggle();
+                        _Toggle[_tCount]->name(_tName);
+                        _tCount++;
+                    }
+                    return false;
+                }
+
+                return _Toggle[num]->getState();
+            }
+        }
+
+        uint8_t slider(const String & _sName, String data)
+        {
+            int8_t num = checkNum(_sName, _Slider, _sCount);
+            int16_t value = STRING_find_numberic_value(data, _sName);
+
+            if (value != FIND_KEY_VALUE_FAILED) {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Slider[_sCount] = new BlinkerSlider();
+                        _Slider[_sCount]->name(_sName);
+                        _Slider[_sCount]->freshValue(value);
+                        _sCount++;
+                    }
+                }
+                else {
+                    _Slider[num]->freshValue(value);
+                }
+
+                // _fresh = true;
+                return value;
+            }
+            else {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _Slider[_sCount] = new BlinkerSlider();
+                        _Slider[_sCount]->name(_sName);
+                        _sCount++;
+                    }
+                    return 0;
+                }
+                
+                return _Slider[num]->getValue();
+            }
+        }
+
+        uint8_t rgb(const String & _rgbName, b_rgb_t color, String data) {
+            int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
+            int16_t value = STRING_find_array_numberic_value(data, _rgbName, color);
+
+            if (value != FIND_KEY_VALUE_FAILED) {
+                uint8_t _rValue = STRING_find_array_numberic_value(data, _rgbName, R);
+                uint8_t _gValue = STRING_find_array_numberic_value(data, _rgbName, G);
+                uint8_t _bValue = STRING_find_array_numberic_value(data, _rgbName, B);
+
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount]->name(_rgbName);
+                        _RGB[_rgbCount]->freshValue(R, _rValue);
+                        _RGB[_rgbCount]->freshValue(G, _gValue);
+                        _RGB[_rgbCount]->freshValue(B, _bValue);
+                        _rgbCount++;
+                    }
+                }
+                else {
+                    _RGB[num]->freshValue(R, _rValue);
+                    _RGB[num]->freshValue(G, _gValue);
+                    _RGB[num]->freshValue(B, _bValue);
+                }
+
+                // _fresh = true;
+                return value;
+            }
+            else {
+                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount]->name(_rgbName);
+                        _rgbCount++;
+                    }
+                    return 0;
+                }
+                
+                return _RGB[num]->getValue(color);
             }
         }
 
