@@ -110,7 +110,7 @@ bool STRING_find_string_value(const String & src,String & dst, const String & ke
     }
 }
 
-int16_t STRING_find_numberic_value(const String & src, const String & key)
+int32_t STRING_find_numberic_value(const String & src, const String & key)
 {
     int addr_start = src.indexOf(key);
     uint8_t keyLen = key.length();
@@ -136,7 +136,33 @@ int16_t STRING_find_numberic_value(const String & src, const String & key)
     }
 }
 
-int16_t STRING_find_array_numberic_value(const String & src, const String & key, uint8_t num)
+float STRING_find_float_value(const String & src, const String & key)
+{
+    int addr_start = src.indexOf(key);
+    uint8_t keyLen = key.length();
+
+    if ( key != src.substring(addr_start, addr_start + keyLen)) {
+        return FIND_KEY_VALUE_FAILED;
+    }
+
+    int addr_end1 = src.indexOf(NUMBERIC_VALUE_END_1, addr_start + keyLen + NUMBERIC_VALUE_SKIP);
+    int addr_end2 = src.indexOf(NUMBERIC_VALUE_END_2, addr_start + keyLen + NUMBERIC_VALUE_SKIP);
+    int addr_end = BlinkerMin(addr_end1, addr_end2);
+
+    if (addr_end == -1) {
+        addr_end = BlinkerMax(addr_end1, addr_end2);
+    }
+
+    if (addr_start == -1 || addr_end == -1) {
+        return (float)FIND_KEY_VALUE_FAILED;
+    }
+    else {
+        String value = src.substring(addr_start + keyLen + NUMBERIC_VALUE_SKIP, addr_end);
+        return value.toFloat();
+    }
+}
+
+int32_t STRING_find_array_numberic_value(const String & src, const String & key, uint8_t num)
 {
     int addr_start = src.indexOf(key);
     uint8_t keyLen = key.length();

@@ -59,6 +59,8 @@
 
 #define BLINKER_CMD_GET                 "get"
 
+#define BLINKER_CMD_SET                 "set"
+
 #define BLINKER_CMD_STATE               "state"
 
 #define BLINKER_CMD_ONLINE              "online"
@@ -71,21 +73,47 @@
 
 #define BLINKER_CMD_NOTFOUND            "device not found"
 
+#define BLINKER_CMD_AUTO                "auto"
+
+#define BLINKER_CMD_AUTODATA            "autoData"
+
+#define BLINKER_CMD_LOGICDATA           "logicData"
+
+#define BLINKER_CMD_LOGICTYPE           "logicType"
+
+#define BLINKER_CMD_LESS                "less"
+
+#define BLINKER_CMD_EQUAL               "equal"
+
+#define BLINKER_CMD_GREATER             "greater"
+
+#define BLINKER_CMD_NUMBERIC            "numberic"
+
+#define BLINKER_CMD_COMPARETYPE         "compareType"
+
+#define BLINKER_CMD_TRIGGER             "trigger"
+
+#define BLINKER_CMD_TARGETSTATE         "targetState"
+
+#define BLINKER_CMD_TARGETDATA          "targetData"
+
+#define BLINKER_CMD_TIMESLOT            "timeSlot"
+
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
 #if defined(BLINKER_MQTT)
 
-    #define BLINKER_MQTT_BORKER_ALIYUN  "aliyun"
+    #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
-    #define BLINKER_MQTT_ALIYUN_HOST    "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
+    #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
 
-    #define BLINKER_MQTT_ALIYUN_PORT    1883
+    #define BLINKER_MQTT_ALIYUN_PORT        1883
 
-    #define BLINKER_MQTT_BORKER_QCLOUD  "qcloud"
+    #define BLINKER_MQTT_BORKER_QCLOUD      "qcloud"
 
-    #define BLINKER_MQTT_QCLOUD_HOST    "iotcloud-mqtt.gz.tencentdevices.com"
+    #define BLINKER_MQTT_QCLOUD_HOST        "iotcloud-mqtt.gz.tencentdevices.com"
 
-    #define BLINKER_MQTT_QCLOUD_PORT    1883
+    #define BLINKER_MQTT_QCLOUD_PORT        1883
 
     #define BLINKER_MQTT_PING_TIMEOUT       30000UL
 
@@ -104,5 +132,15 @@
     #define BLINKER_MQTT_DEVICENAME_SIZE    13
 
 #endif
+
+#define BLINKER_AUTO_STATE              0
+
+#define BLINKER_AUTO_NUMERIC            1
+
+#define BLINKER_COMPARE_LESS            0
+
+#define BLINKER_COMPARE_EQUAL           1
+
+#define BLINKER_COMPARE_GREATER         2
 
 #endif
