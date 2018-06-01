@@ -631,38 +631,38 @@ class BlinkerApi
             _timezone = tz;
         }
 
-#if defined(ESP8266) || defined(ESP32)
-        bool ntpInit() {
-            if (!_isNTPInit) {
-                now_ntp = ::time(nullptr);
+// #if defined(ESP8266) || defined(ESP32)
+//         bool ntpInit() {
+//             if (!_isNTPInit) {
+//                 now_ntp = ::time(nullptr);
             
-                // BLINKER_LOG2("Setting time using SNTP: ", now_ntp);
+//                 // BLINKER_LOG2("Setting time using SNTP: ", now_ntp);
                 
-                if (now_ntp < _timezone * 3600 * 2) {
-                    configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
-                    now_ntp = ::time(nullptr);
+//                 if (now_ntp < _timezone * 3600 * 2) {
+//                     configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
+//                     now_ntp = ::time(nullptr);
 
-                    if (now_ntp < _timezone * 3600 * 2) {
-                        ::delay(50);
+//                     if (now_ntp < _timezone * 3600 * 2) {
+//                         ::delay(50);
 
-                        now_ntp = ::time(nullptr);
+//                         now_ntp = ::time(nullptr);
 
-                        // BLINKER_LOG2("Setting time using SNTP time out: ", now_ntp);
+//                         // BLINKER_LOG2("Setting time using SNTP time out: ", now_ntp);
 
-                        return false;
-                    }
-                }
-                // struct tm timeinfo;
-                gmtime_r(&now_ntp, &timeinfo);
-#ifdef BLINKER_DEBUG_ALL                
-                BLINKER_LOG2("Current time: ", asctime(&timeinfo));
-#endif
-                _isNTPInit = true;
-            }
+//                         return false;
+//                     }
+//                 }
+//                 // struct tm timeinfo;
+//                 gmtime_r(&now_ntp, &timeinfo);
+// #ifdef BLINKER_DEBUG_ALL                
+//                 BLINKER_LOG2("Current time: ", asctime(&timeinfo));
+// #endif
+//                 _isNTPInit = true;
+//             }
 
-            return true;
-        }
-#endif
+//             return true;
+//         }
+// #endif
 
         int8_t second()    { freshNTP(); return _isNTPInit ? timeinfo.tm_sec : -1; }
         /**< seconds after the minute - [ 0 to 59 ] */
@@ -690,34 +690,102 @@ class BlinkerApi
         void autoRun(String state) {
             BLINKER_LOG2("autoRun state: ", state);
 
+            if (!_isNTPInit) {
+                return;
+            }
+
+            int32_t nowTime = dtime();
+            if (time1 < time2) {
+                if (!(nowTime >= time1 && nowTime <= time2)) {
+                    BLINKER_LOG2("out of time slot: ", nowTime);
+                    return;
+                }
+            }
+            else if (time1 > time2) {
+                if (nowTime > time1 && nowTime < time2) {
+                    BLINKER_LOG2("out of time slot: ", nowTime);
+                    return;
+                }
+            }
+
             if (state == BLINKER_CMD_ON) {
                 if (targetState) {
-                    BLINKER_LOG1("on trigged");
+                    if (!isTrigged) {
+                        isTrigged = true;
+                        BLINKER_LOG1("on trigged");
+                    }
+                }
+                else {
+                    isTrigged = false;
                 }
             }
             else if (state == BLINKER_CMD_OFF) {
                 if (!targetState) {
-                    BLINKER_LOG1("off trigged");
+                    if (!isTrigged) {
+                        isTrigged = true;
+                        BLINKER_LOG1("off trigged");
+                    }
+                }
+                else {
+                    isTrigged = false;
                 }
             }
         }
 
         void autoRun(float data) {
             BLINKER_LOG2("autoRun data: ", data);
+
+            if (!_isNTPInit) {
+                return;
+            }
+
+            int32_t nowTime = dtime();
+            if (time1 < time2) {
+                if (!(nowTime >= time1 && nowTime <= time2)) {
+                    BLINKER_LOG2("out of time slot: ", nowTime);
+                    return;
+                }
+            }
+            else if (time1 > time2) {
+                if (nowTime > time1 && nowTime < time2) {
+                    BLINKER_LOG2("out of time slot: ", nowTime);
+                    return;
+                }
+            }
+
             switch (compareType) {
                 case BLINKER_COMPARE_LESS:
                     if (data < targetData) {
-                        BLINKER_LOG1("less trigged");
+                        if (!isTrigged) {
+                            isTrigged = true;
+                            BLINKER_LOG1("less trigged");
+                            static_cast<Proto*>(this)->autoTrigged();
+                        }
+                    }
+                    else {
+                        isTrigged = false;
                     }
                     break;
                 case BLINKER_COMPARE_EQUAL:
                     if (data = targetData) {
-                        BLINKER_LOG1("equal trigged");
+                        if (!isTrigged) {
+                            isTrigged = true;
+                            BLINKER_LOG1("equal trigged");
+                        }
+                    }
+                    else {
+                        isTrigged = false;
                     }
                     break;
                 case BLINKER_COMPARE_GREATER:
                     if (data > targetData) {
-                        BLINKER_LOG1("greater trigged");
+                        if (!isTrigged) {
+                            isTrigged = true;
+                            BLINKER_LOG1("greater trigged");
+                        }
+                    }
+                    else {
+                        isTrigged = false;
                     }
                     break;
                 default:
@@ -726,26 +794,27 @@ class BlinkerApi
         }
     
     private :
-        uint8_t _bCount = 0;
-        uint8_t _sCount = 0;
-        uint8_t _tCount = 0;
-        uint8_t _rgbCount = 0;
-        uint8_t joyValue[2];
-        int16_t ahrsValue[3];
-        uint32_t gps_get_time;
-        String  gpsValue[2];
+        uint8_t     _bCount = 0;
+        uint8_t     _sCount = 0;
+        uint8_t     _tCount = 0;
+        uint8_t     _rgbCount = 0;
+        uint8_t     joyValue[2];
+        int16_t     ahrsValue[3];
+        uint32_t    gps_get_time;
+        String      gpsValue[2];
         // uint8_t rgbValue[3];
-        bool    _fresh = false;
-        bool    _isNTPInit = false;
-        float   _timezone = 8.0;
-        time_t  now_ntp;
-        struct tm timeinfo;
+        bool        _fresh = false;
+        bool        _isNTPInit = false;
+        float       _timezone = 8.0;
+        time_t      now_ntp;
+        struct tm   timeinfo;
 
-        float           targetData;
-        uint8_t         compareType = -1;
-        bool            targetState;
-        uint32_t        time1;
-        uint32_t        time2;
+        float       targetData;
+        uint8_t     compareType = -1;
+        bool        targetState;
+        uint32_t    time1;
+        uint32_t    time2;
+        bool        isTrigged = false;
 
         void freshNTP() {
             if (_isNTPInit) {
@@ -1066,6 +1135,8 @@ class BlinkerApi
             }
         }
 
+        
+
         void stateData() {
             for (uint8_t _tNum = 0; _tNum < _tCount; _tNum++) {
                 static_cast<Proto*>(this)->print(_Toggle[_tNum]->getName(), _Toggle[_tNum]->getState() ? "on" : "off");
@@ -1141,11 +1212,46 @@ class BlinkerApi
                         time1 = 0;
                         time2 = 24 * 60 * 60;
                     }
-
+#ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4("time1: ", time1, " time2: ", time2);
+#endif
                 }
             }
         }
+
+    protected :
+#if defined(ESP8266) || defined(ESP32)
+        bool ntpInit() {
+            if (!_isNTPInit) {
+                now_ntp = ::time(nullptr);
+            
+                // BLINKER_LOG2("Setting time using SNTP: ", now_ntp);
+                
+                if (now_ntp < _timezone * 3600 * 2) {
+                    configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
+                    now_ntp = ::time(nullptr);
+
+                    if (now_ntp < _timezone * 3600 * 2) {
+                        ::delay(50);
+
+                        now_ntp = ::time(nullptr);
+
+                        // BLINKER_LOG2("Setting time using SNTP time out: ", now_ntp);
+
+                        return false;
+                    }
+                }
+                // struct tm timeinfo;
+                gmtime_r(&now_ntp, &timeinfo);
+#ifdef BLINKER_DEBUG_ALL                
+                BLINKER_LOG2("Current time: ", asctime(&timeinfo));
+#endif
+                _isNTPInit = true;
+            }
+
+            return true;
+        }
+#endif
 };
 
 #endif
