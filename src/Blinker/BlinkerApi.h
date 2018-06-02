@@ -234,53 +234,6 @@ class BlinkerApi
             }
         }
 
-        void parse()
-        {
-            if (static_cast<Proto*>(this)->parseState() ) {
-                _fresh = false;
-
-                heartBeat();
-                getVersion();
-
-                for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                    buttonParse(_Button[bNum]->getName());
-                }
-                for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                    slider(_Slider[sNum]->getName());
-                }
-                for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                    toggle(_Toggle[kNum]->getName());
-                }
-                for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                    rgb(_RGB[rgbNum]->getName(), R);
-                }
-
-                joystick(J_Xaxis);
-                ahrs(Yaw);
-                gps(LONG, true);
-
-                if (_fresh) {
-                    static_cast<Proto*>(this)->isParsed();
-                }
-            }
-        }
-
-        void _parse(String data)
-        {
-            for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                buttonParse(_Button[bNum]->getName(), data);
-            }
-            for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                slider(_Slider[sNum]->getName(), data);
-            }
-            for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                toggle(_Toggle[kNum]->getName(), data);
-            }
-            for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                rgb(_RGB[rgbNum]->getName(), R, data);
-            }
-        }
-
         bool button(const String & _bName)
         {
             int8_t num = checkNum(_bName, _Button, _bCount);
@@ -630,38 +583,38 @@ class BlinkerApi
             _timezone = tz;
         }
 
-#if defined(ESP8266) || defined(ESP32)
-        bool ntpInit() {
-            if (!_isNTPInit) {
-                now_ntp = ::time(nullptr);
+// #if defined(ESP8266) || defined(ESP32)
+//         bool ntpInit() {
+//             if (!_isNTPInit) {
+//                 now_ntp = ::time(nullptr);
             
-                // BLINKER_LOG2("Setting time using SNTP: ", now_ntp);
+//                 // BLINKER_LOG2("Setting time using SNTP: ", now_ntp);
                 
-                if (now_ntp < _timezone * 3600 * 2) {
-                    configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
-                    now_ntp = ::time(nullptr);
+//                 if (now_ntp < _timezone * 3600 * 2) {
+//                     configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
+//                     now_ntp = ::time(nullptr);
 
-                    if (now_ntp < _timezone * 3600 * 2) {
-                        ::delay(50);
+//                     if (now_ntp < _timezone * 3600 * 2) {
+//                         ::delay(50);
 
-                        now_ntp = ::time(nullptr);
+//                         now_ntp = ::time(nullptr);
 
-                        // BLINKER_LOG2("Setting time using SNTP time out: ", now_ntp);
+//                         // BLINKER_LOG2("Setting time using SNTP time out: ", now_ntp);
 
-                        return false;
-                    }
-                }
-                // struct tm timeinfo;
-                gmtime_r(&now_ntp, &timeinfo);
-#ifdef BLINKER_DEBUG_ALL                
-                BLINKER_LOG2("Current time: ", asctime(&timeinfo));
-#endif
-                _isNTPInit = true;
-            }
+//                         return false;
+//                     }
+//                 }
+//                 // struct tm timeinfo;
+//                 gmtime_r(&now_ntp, &timeinfo);
+// #ifdef BLINKER_DEBUG_ALL                
+//                 BLINKER_LOG2("Current time: ", asctime(&timeinfo));
+// #endif
+//                 _isNTPInit = true;
+//             }
 
-            return true;
-        }
-#endif
+//             return true;
+//         }
+// #endif
 
         int8_t second()    { freshNTP(); return _isNTPInit ? timeinfo.tm_sec : -1; }
         /**< seconds after the minute - [ 0 to 59 ] */
@@ -680,22 +633,174 @@ class BlinkerApi
         int16_t yday()  { freshNTP(); return _isNTPInit ? timeinfo.tm_yday : -1; }
         /**< days since January 1 - [ 0 to 365 ] */
         time_t  time()  { freshNTP(); return _isNTPInit ? now_ntp : millis(); }
+
+        int32_t dtime() {
+            freshNTP();
+            return _isNTPInit ? timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec : -1;
+        }
+
+#if defined(BLINKER_MQTT)
+        void autoRun(String state) {
+            BLINKER_LOG2("autoRun state: ", state);
+
+            if (!_isNTPInit) {
+                return;
+            }
+
+            int32_t nowTime = dtime();
+            if (_time1 < _time2) {
+                if (!(nowTime >= _time1 && nowTime <= _time2)) {
+                    BLINKER_LOG2("out of time slot: ", nowTime);
+                    return;
+                }
+            }
+            else if (_time1 > _time2) {
+                if (nowTime > _time1 && nowTime < _time2) {
+                    BLINKER_LOG2("out of time slot: ", nowTime);
+                    return;
+                }
+            }
+
+            if (state == BLINKER_CMD_ON) {
+                if (_targetState) {
+                    if (!isTrigged) {
+                        isTrigged = true;
+                        BLINKER_LOG1("on trigged");
+                    }
+                }
+                else {
+                    isTrigged = false;
+                }
+            }
+            else if (state == BLINKER_CMD_OFF) {
+                if (!_targetState) {
+                    if (!isTrigged) {
+                        isTrigged = true;
+                        BLINKER_LOG1("off trigged");
+                    }
+                }
+                else {
+                    isTrigged = false;
+                }
+            }
+        }
+
+        void autoRun(float data) {
+            BLINKER_LOG2("autoRun data: ", data);
+
+            if (!_isNTPInit) {
+                return;
+            }
+
+            int32_t nowTime = dtime();
+            if (_time1 < _time2) {
+                if (!(nowTime >= _time1 && nowTime <= _time2)) {
+                    BLINKER_LOG2("out of time slot: ", nowTime);
+                    return;
+                }
+            }
+            else if (_time1 > _time2) {
+                if (nowTime > _time1 && nowTime < _time2) {
+                    BLINKER_LOG2("out of time slot: ", nowTime);
+                    return;
+                }
+            }
+
+            switch (_compareType) {
+                case BLINKER_COMPARE_LESS:
+                    if (data < _targetData) {
+                        if (!isTrigged) {
+                            if (!isRecord) {
+                                isRecord = true;
+                                _treTime = millis();
+                            }
+
+                            if ((millis() - _treTime) / 1000 >= _duration) {
+                                isTrigged = true;
+                                BLINKER_LOG1("less trigged");
+                                static_cast<Proto*>(this)->autoTrigged();
+                            }
+                        }
+                    }
+                    else {
+                        isTrigged = false;
+                        isRecord = false;
+                    }
+                    break;
+                case BLINKER_COMPARE_EQUAL:
+                    if (data = _targetData) {
+                        if (!isTrigged) {
+                            if (!isRecord) {
+                                isRecord = true;
+                                _treTime = millis();
+                            }
+
+                            if ((millis() - _treTime) / 1000 >= _duration) {
+                                isTrigged = true;
+                                BLINKER_LOG1("equal trigged");
+                                static_cast<Proto*>(this)->autoTrigged();
+                            }
+                        }
+                    }
+                    else {
+                        isTrigged = false;
+                        isRecord = false;
+                    }
+                    break;
+                case BLINKER_COMPARE_GREATER:
+                    if (data > _targetData) {
+                        if (!isTrigged) {
+                            if (!isRecord) {
+                                isRecord = true;
+                                _treTime = millis();
+                            }
+
+                            if ((millis() - _treTime) / 1000 >= _duration) {
+                                isTrigged = true;
+                                BLINKER_LOG1("greater trigged");
+                                static_cast<Proto*>(this)->autoTrigged();
+                            }
+                        }
+                    }
+                    else {
+                        isTrigged = false;
+                        isRecord = false;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+#else
+    #error This code is intended to run with BLINKER_WQTT! Please check your connect type.
+#endif
     
     private :
-        uint8_t _bCount = 0;
-        uint8_t _sCount = 0;
-        uint8_t _tCount = 0;
-        uint8_t _rgbCount = 0;
-        uint8_t joyValue[2];
-        int16_t ahrsValue[3];
-        uint32_t gps_get_time;
-        String  gpsValue[2];
+        uint8_t     _bCount = 0;
+        uint8_t     _sCount = 0;
+        uint8_t     _tCount = 0;
+        uint8_t     _rgbCount = 0;
+        uint8_t     joyValue[2];
+        int16_t     ahrsValue[3];
+        uint32_t    gps_get_time;
+        String      gpsValue[2];
         // uint8_t rgbValue[3];
-        bool    _fresh = false;
-        bool    _isNTPInit = false;
-        float   _timezone = 8.0;
-        time_t  now_ntp;
-        struct tm timeinfo;
+        bool        _fresh = false;
+        bool        _isNTPInit = false;
+        float       _timezone = 8.0;
+        uint32_t    _ntpStart;
+        time_t      now_ntp;
+        struct tm   timeinfo;
+
+        float       _targetData;
+        uint8_t     _compareType = -1;
+        bool        _targetState;
+        uint32_t    _time1;
+        uint32_t    _time2;
+        uint32_t    _duration;
+        uint32_t    _treTime;
+        bool        isRecord = false;
+        bool        isTrigged = false;
 
         void freshNTP() {
             if (_isNTPInit) {
@@ -1016,6 +1121,8 @@ class BlinkerApi
             }
         }
 
+        
+
         void stateData() {
             for (uint8_t _tNum = 0; _tNum < _tCount; _tNum++) {
                 static_cast<Proto*>(this)->print(_Toggle[_tNum]->getName(), _Toggle[_tNum]->getState() ? "on" : "off");
@@ -1027,6 +1134,178 @@ class BlinkerApi
                 static_cast<Proto*>(this)->print(_RGB[_rgbNum]->getName(), "[" + STRING_format(_RGB[_rgbNum]->getValue(R)) + "," + STRING_format(_RGB[_rgbNum]->getValue(G)) + "," + STRING_format(_RGB[_rgbNum]->getValue(B)) + "]");
             }
         }
+
+        void autoManager() {
+            // String set;
+            bool isSet = false;
+            bool isAuto = false;
+
+            isSet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
+            isAuto = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTO);
+
+            if (isSet && isAuto) {
+                _fresh = true;
+                BLINKER_LOG1("get auto setting");
+
+                String _logicType;
+                if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _logicType, BLINKER_CMD_LOGICTYPE)) {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_logicType: ", _logicType);
+#endif
+                    if (_logicType == BLINKER_CMD_STATE) {
+                        BLINKER_LOG1("state!");
+                        String _state;
+                        if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _state, BLINKER_CMD_TARGETSTATE)) {
+                            if (_state == BLINKER_CMD_ON) {
+                                _targetState = true;
+                            }
+                            else if (_state == BLINKER_CMD_OFF) {
+                                _targetState = false;
+                            }
+#ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2("targetState: ", _targetState);
+#endif                            
+                        }
+                    }
+                    else if (_logicType == BLINKER_CMD_NUMBERIC) {
+                        BLINKER_LOG1("numberic!");
+                        String _type;
+                        if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _type, BLINKER_CMD_COMPARETYPE)) {
+                            if (_type == BLINKER_CMD_LESS) {
+                                _compareType = BLINKER_COMPARE_LESS;
+                            }
+                            else if (_type == BLINKER_CMD_EQUAL) {
+                                _compareType = BLINKER_COMPARE_EQUAL;
+                            }
+                            else if (_type == BLINKER_CMD_GREATER) {
+                                _compareType = BLINKER_COMPARE_GREATER;
+                            }
+
+                            _targetData = STRING_find_float_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TARGETDATA);
+#ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG6("_type: ", _type, " _compareType: ", _compareType, " _targetData: ", _targetData);
+#endif
+                        }
+                    }
+
+                    int32_t duValue = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DURATION);
+
+                    if (duValue != FIND_KEY_VALUE_FAILED) {
+                        _duration = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DURATION);
+                    }
+                    else {
+                        _duration = 0;
+                    }
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_duration: ", _duration);
+#endif
+                    int32_t timeValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMESLOT, 0);
+
+                    if (timeValue != FIND_KEY_VALUE_FAILED) {
+                        _time1 = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMESLOT, 0);
+                        _time2 = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMESLOT, 1);
+                    }
+                    else {
+                        _time1 = 0;
+                        _time2 = 24 * 60 * 60;
+                    }
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG4("_time1: ", _time1, " _time2: ", _time2);
+#endif
+                }
+            }
+        }
+
+    protected :
+        void parse()
+        {
+            if (static_cast<Proto*>(this)->parseState() ) {
+                _fresh = false;
+
+                autoManager();
+                heartBeat();
+                getVersion();
+
+                for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                    buttonParse(_Button[bNum]->getName());
+                }
+                for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                    slider(_Slider[sNum]->getName());
+                }
+                for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                    toggle(_Toggle[kNum]->getName());
+                }
+                for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                    rgb(_RGB[rgbNum]->getName(), R);
+                }
+
+                joystick(J_Xaxis);
+                ahrs(Yaw);
+                gps(LONG, true);
+
+                if (_fresh) {
+                    static_cast<Proto*>(this)->isParsed();
+                }
+            }
+        }
+
+        void _parse(String data)
+        {
+            for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                buttonParse(_Button[bNum]->getName(), data);
+            }
+            for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                slider(_Slider[sNum]->getName(), data);
+            }
+            for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                toggle(_Toggle[kNum]->getName(), data);
+            }
+            for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                rgb(_RGB[rgbNum]->getName(), R, data);
+            }
+        }
+
+#if defined(ESP8266) || defined(ESP32)
+        bool ntpInit() {
+            freshNTP();
+
+            if (!_isNTPInit) {
+                if ((millis() - _ntpStart) > BLINKER_NTP_TIMEOUT) {
+                    _ntpStart = millis();
+                }
+                else {
+                    return false;
+                }
+
+                now_ntp = ::time(nullptr);
+            
+                // BLINKER_LOG4("Setting time using SNTP: ", now_ntp, " ", _timezone * 3600 * 2);
+                
+                if (now_ntp < _timezone * 3600 * 2) {
+                    configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
+                    now_ntp = ::time(nullptr);
+
+                    if (now_ntp < _timezone * 3600 * 2) {
+                        ::delay(50);
+
+                        now_ntp = ::time(nullptr);
+
+                        // BLINKER_LOG4("Setting time using SNTP2: ", now_ntp, " ", _timezone * 3600 * 2);
+
+                        return false;
+                    }
+                }
+                // struct tm timeinfo;
+                gmtime_r(&now_ntp, &timeinfo);
+#ifdef BLINKER_DEBUG_ALL                
+                BLINKER_LOG2("Current time: ", asctime(&timeinfo));
+#endif
+                _isNTPInit = true;
+            }
+
+            return true;
+        }
+#endif
 };
 
 #endif

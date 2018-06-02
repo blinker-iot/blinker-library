@@ -404,6 +404,10 @@ class BlinkerProtocol
                 "/____/_/_/_//_/_/\\_\\\\__/_/   \n"));
         #endif
         }
+
+        void autoTrigged() {
+            BLINKER_LOG1("autoTrigged");
+        }
 };
 
 template <class Transp>
