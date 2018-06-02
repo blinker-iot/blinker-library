@@ -771,8 +771,8 @@ class BlinkerApi
                     break;
             }
         }
-#else
-    #error This code is intended to run with BLINKER_WQTT! Please check your connect type.
+// #else
+    // #error This code is intended to run with BLINKER_MQTT! Please check your connect type.
 #endif
     
     private :
