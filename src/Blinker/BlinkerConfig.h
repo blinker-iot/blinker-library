@@ -7,6 +7,8 @@
 
 #define BLINKER_STREAM_TIMEOUT          100
 
+#define BLINKER_NTP_TIMEOUT             1000
+
 #define BLINKER_GPS_MSG_LIMIT           30000UL
 
 #define BLINKER_MQTT_MSG_LIMIT          1000UL
@@ -92,6 +94,8 @@
 #define BLINKER_CMD_COMPARETYPE         "compareType"
 
 #define BLINKER_CMD_TRIGGER             "trigger"
+
+#define BLINKER_CMD_DURATION            "duration"
 
 #define BLINKER_CMD_TARGETSTATE         "targetState"
 
