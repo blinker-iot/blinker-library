@@ -639,6 +639,7 @@ class BlinkerApi
             return _isNTPInit ? timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec : -1;
         }
 
+#if defined(BLINKER_MQTT)
         void autoRun(String state) {
             BLINKER_LOG2("autoRun state: ", state);
 
@@ -770,6 +771,9 @@ class BlinkerApi
                     break;
             }
         }
+#else
+    #error This code is intended to run with BLINKER_WQTT! Please check your connect type.
+#endif
     
     private :
         uint8_t     _bCount = 0;
