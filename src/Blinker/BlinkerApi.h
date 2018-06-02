@@ -639,24 +639,29 @@ class BlinkerApi
             return _isNTPInit ? timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec : -1;
         }
 
-#if defined(BLINKER_MQTT)
+// #if defined(BLINKER_MQTT)
         void autoRun(String state) {
+#ifdef BLINKER_DEBUG_ALL            
             BLINKER_LOG2("autoRun state: ", state);
-
-            if (!_isNTPInit) {
+#endif
+            if (!_isNTPInit || !_autoState) {
                 return;
             }
 
             int32_t nowTime = dtime();
             if (_time1 < _time2) {
                 if (!(nowTime >= _time1 && nowTime <= _time2)) {
+#ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("out of time slot: ", nowTime);
+#endif
                     return;
                 }
             }
             else if (_time1 > _time2) {
                 if (nowTime > _time1 && nowTime < _time2) {
+#ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("out of time slot: ", nowTime);
+#endif
                     return;
                 }
             }
@@ -664,44 +669,49 @@ class BlinkerApi
             if (state == BLINKER_CMD_ON) {
                 if (_targetState) {
                     if (!isTrigged) {
-                        isTrigged = true;
-                        BLINKER_LOG1("on trigged");
+                        triggerCheck("on");
                     }
                 }
                 else {
                     isTrigged = false;
+                    isRecord = false;
                 }
             }
             else if (state == BLINKER_CMD_OFF) {
                 if (!_targetState) {
                     if (!isTrigged) {
-                        isTrigged = true;
-                        BLINKER_LOG1("off trigged");
+                        triggerCheck("off");
                     }
                 }
                 else {
                     isTrigged = false;
+                    isRecord = false;
                 }
             }
         }
 
         void autoRun(float data) {
+#ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("autoRun data: ", data);
-
-            if (!_isNTPInit) {
+#endif
+            if (!_isNTPInit || !_autoState) {
                 return;
             }
 
             int32_t nowTime = dtime();
             if (_time1 < _time2) {
                 if (!(nowTime >= _time1 && nowTime <= _time2)) {
+#ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("out of time slot: ", nowTime);
+#endif
                     return;
                 }
             }
             else if (_time1 > _time2) {
                 if (nowTime > _time1 && nowTime < _time2) {
+#ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("out of time slot: ", nowTime);
+#endif
                     return;
                 }
             }
@@ -710,16 +720,7 @@ class BlinkerApi
                 case BLINKER_COMPARE_LESS:
                     if (data < _targetData) {
                         if (!isTrigged) {
-                            if (!isRecord) {
-                                isRecord = true;
-                                _treTime = millis();
-                            }
-
-                            if ((millis() - _treTime) / 1000 >= _duration) {
-                                isTrigged = true;
-                                BLINKER_LOG1("less trigged");
-                                static_cast<Proto*>(this)->autoTrigged();
-                            }
+                            triggerCheck("less");
                         }
                     }
                     else {
@@ -730,16 +731,7 @@ class BlinkerApi
                 case BLINKER_COMPARE_EQUAL:
                     if (data = _targetData) {
                         if (!isTrigged) {
-                            if (!isRecord) {
-                                isRecord = true;
-                                _treTime = millis();
-                            }
-
-                            if ((millis() - _treTime) / 1000 >= _duration) {
-                                isTrigged = true;
-                                BLINKER_LOG1("equal trigged");
-                                static_cast<Proto*>(this)->autoTrigged();
-                            }
+                            triggerCheck("equal");
                         }
                     }
                     else {
@@ -750,16 +742,7 @@ class BlinkerApi
                 case BLINKER_COMPARE_GREATER:
                     if (data > _targetData) {
                         if (!isTrigged) {
-                            if (!isRecord) {
-                                isRecord = true;
-                                _treTime = millis();
-                            }
-
-                            if ((millis() - _treTime) / 1000 >= _duration) {
-                                isTrigged = true;
-                                BLINKER_LOG1("greater trigged");
-                                static_cast<Proto*>(this)->autoTrigged();
-                            }
+                            triggerCheck("greater");
                         }
                     }
                     else {
@@ -772,8 +755,8 @@ class BlinkerApi
             }
         }
 // #else
-    // #error This code is intended to run with BLINKER_MQTT! Please check your connect type.
-#endif
+//     #pragma message("This code is intended to run with BLINKER_MQTT! Please check your connect type.")
+// #endif
     
     private :
         uint8_t     _bCount = 0;
@@ -792,6 +775,7 @@ class BlinkerApi
         time_t      now_ntp;
         struct tm   timeinfo;
 
+        bool        _autoState = false;
         float       _targetData;
         uint8_t     _compareType = -1;
         bool        _targetState;
@@ -801,6 +785,9 @@ class BlinkerApi
         uint32_t    _treTime;
         bool        isRecord = false;
         bool        isTrigged = false;
+        String      _linkDevice;
+        String      _linkType;
+        String      _linkData;
 
         void freshNTP() {
             if (_isNTPInit) {
@@ -1135,7 +1122,7 @@ class BlinkerApi
             }
         }
 
-        void autoManager() {
+        bool autoManager() {
             // String set;
             bool isSet = false;
             bool isAuto = false;
@@ -1145,7 +1132,17 @@ class BlinkerApi
 
             if (isSet && isAuto) {
                 _fresh = true;
+#ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1("get auto setting");
+#endif
+                String auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", ",", 1);
+                if (auto_state == "") {
+                    auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", "}", 1);
+                }
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2("auto state: ", auto_state);
+#endif
+                _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
 
                 String _logicType;
                 if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _logicType, BLINKER_CMD_LOGICTYPE)) {
@@ -1154,12 +1151,12 @@ class BlinkerApi
 #endif
                     if (_logicType == BLINKER_CMD_STATE) {
                         BLINKER_LOG1("state!");
-                        String _state;
-                        if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _state, BLINKER_CMD_TARGETSTATE)) {
-                            if (_state == BLINKER_CMD_ON) {
+                        String target_state;
+                        if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_state, BLINKER_CMD_TARGETSTATE)) {
+                            if (target_state == BLINKER_CMD_ON) {
                                 _targetState = true;
                             }
-                            else if (_state == BLINKER_CMD_OFF) {
+                            else if (target_state == BLINKER_CMD_OFF) {
                                 _targetState = false;
                             }
 #ifdef BLINKER_DEBUG_ALL
@@ -1212,7 +1209,33 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4("_time1: ", _time1, " _time2: ", _time2);
 #endif
+                    _linkDevice = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDEVICE, "\"", 3);
+                    _linkType = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKTYPE, "\"", 3);
+                    _linkData = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDATA, "}", 3);
+
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_linkDevice: ", _linkDevice);
+                    BLINKER_LOG2("_linkType: ", _linkType);
+                    BLINKER_LOG2("_linkData: ", _linkData);
+#endif                    
                 }
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        void triggerCheck(String state) {
+            if (!isRecord) {
+                isRecord = true;
+                _treTime = millis();
+            }
+
+            if ((millis() - _treTime) / 1000 >= _duration) {
+                isTrigged = true;
+                BLINKER_LOG2(state, " trigged");
+                static_cast<Proto*>(this)->autoTrigged(_linkDevice, _linkType, _linkData);
             }
         }
 
@@ -1222,7 +1245,10 @@ class BlinkerApi
             if (static_cast<Proto*>(this)->parseState() ) {
                 _fresh = false;
 
-                autoManager();
+                if (autoManager()) {
+                    static_cast<Proto*>(this)->isParsed();
+                    return;
+                }
                 heartBeat();
                 getVersion();
 

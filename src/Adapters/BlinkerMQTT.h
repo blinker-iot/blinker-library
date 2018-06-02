@@ -144,6 +144,16 @@ class BlinkerMQTT {
             mDNSInit();
         }
 
+        void linkPrint(String name, String type, String data) {
+            String payload = "{\"data\":{" + data + "}," + \ 
+                + "\"fromDevice\":\"" + MQTT_ID + "\"," + \
+                + "\"toDevice\":\"" + name + "\"," + \
+                + "\"deviceType\":\"" + type + "\"}";
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("linkPrint payload: ", payload);
+#endif
+        }
+
     private :    
 
         void connectServer();
@@ -427,7 +437,7 @@ void BlinkerMQTT::subscribe() {
 
             String _uuid = STRING_find_string(dataGet, "fromDevice", "\"", 3);
 
-            dataGet = STRING_find_string(dataGet, "data", ",\"", 2);
+            dataGet = STRING_find_string(dataGet, "data", ",\"fromDevice", 2);
 
             if (dataGet.indexOf("\"") != -1 && dataGet.indexOf("\"") == 0) {
                 dataGet = STRING_find_string(dataGet, "\"", "\"", 0);
@@ -435,6 +445,7 @@ void BlinkerMQTT::subscribe() {
 
             // BLINKER_LOG2("data: ", dataGet);
 #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("data: ", dataGet);
             BLINKER_LOG2("fromDevice: ", _uuid);
 #endif
             if (strcmp(_uuid.c_str(), UUID) == 0) {

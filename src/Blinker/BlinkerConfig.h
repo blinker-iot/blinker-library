@@ -37,6 +37,10 @@
 
 #define BLINKER_CMD_OFF                 "off"
 
+#define BLINKER_CMD_TRUE                "true"
+
+#define BLINKER_CMD_FALSE               "false"
+
 #define BLINKER_CMD_JOYSTICK            "joy"
 
 #define BLINKER_CMD_GYRO                "gyro"
@@ -102,6 +106,12 @@
 #define BLINKER_CMD_TARGETDATA          "targetData"
 
 #define BLINKER_CMD_TIMESLOT            "timeSlot"
+
+#define BLINKER_CMD_LINKDEVICE          "linkDevice"
+
+#define BLINKER_CMD_LINKTYPE            "linkType"
+
+#define BLINKER_CMD_LINKDATA            "linkData"
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
