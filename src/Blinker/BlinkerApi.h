@@ -804,9 +804,9 @@ class BlinkerApi
         uint32_t    _treTime;
         bool        isRecord = false;
         bool        isTrigged = false;
-        String      _linkDevice;
-        String      _linkType;
-        String      _linkData;
+        char        _linkDevice[BLINKER_LINKDEVICE_SIZE];
+        char        _linkType[BLINKER_LINKTYPE_SIZE];
+        char        _linkData[BLINKER_LINKDATA_SIZE];
         uint32_t    _autoData;
 #endif
 
@@ -1235,9 +1235,9 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4("_time1: ", _time1, " _time2: ", _time2);
 #endif
-                    _linkDevice = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDEVICE, "\"", 3);
-                    _linkType = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKTYPE, "\"", 3);
-                    _linkData = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDATA, "}", 3);
+                    strcpy(_linkDevice, STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDEVICE, "\"", 3).c_str());
+                    strcpy(_linkType, STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKTYPE, "\"", 3).c_str());
+                    strcpy(_linkData, STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDATA, "}", 3).c_str());
 
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("_linkDevice: ", _linkDevice);
@@ -1281,7 +1281,6 @@ class BlinkerApi
 
         void deserialization() {
             uint8_t checkData;
-            char linkDatas[128];
             EEPROM.begin(BLINKER_EEP_SIZE);
             EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
 
@@ -1319,13 +1318,16 @@ class BlinkerApi
             _time1 = (_autoData >> 11 & 0x7ff) * 60;
             _time2 = (_autoData & 0x7ff) * 60;
 
-            EEPROM.get(BLINKER_EEP_ADDR_LINKDATA, linkDatas);
-            _linkData = STRING_format(linkDatas);
+            EEPROM.get(BLINKER_EEP_ADDR_LINKDEVICE, _linkDevice);
+            EEPROM.get(BLINKER_EEP_ADDR_LINKTYPE, _linkType);
+            EEPROM.get(BLINKER_EEP_ADDR_LINKDATA, _linkData);
 
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("_duration: ", _duration);
             BLINKER_LOG4("_time1: ", _time1, " _time2: ", _time2);
             BLINKER_LOG2("_duration: ", _duration);
+            BLINKER_LOG2("_linkDevice: ", _linkDevice);
+            BLINKER_LOG2("_linkType: ", _linkType);
             BLINKER_LOG2("_linkData: ", _linkData);
 #endif
             EEPROM.commit();
@@ -1334,7 +1336,6 @@ class BlinkerApi
 
         void serialization() {
             uint8_t checkData;
-            char linkDatas[128];
 
             _autoData = _autoState << 31 | _logicType << 30 ;
             if (_logicType == BLINKER_TYPE_STATE) {
@@ -1359,8 +1360,9 @@ class BlinkerApi
                 EEPROM.put(BLINKER_EEP_ADDR_TARGGETDATA, _targetData);
             }
 
-            strcpy(linkDatas, _linkData.c_str());
-            EEPROM.put(BLINKER_EEP_ADDR_LINKDATA, linkDatas);
+            EEPROM.put(BLINKER_EEP_ADDR_LINKDEVICE, _linkDevice);
+            EEPROM.put(BLINKER_EEP_ADDR_LINKTYPE, _linkType);
+            EEPROM.put(BLINKER_EEP_ADDR_LINKDATA, _linkData);
 
             EEPROM.commit();
             EEPROM.end();

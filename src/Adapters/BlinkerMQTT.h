@@ -144,9 +144,9 @@ class BlinkerMQTT {
             mDNSInit();
         }
 
-        bool autoPrint(String name, String type, String data) {
-            String payload = "{\"data\":{" + data + "}," + \ 
-                + "\"fromDevice\":\"" + MQTT_ID + "\"," + \
+        bool autoPrint(char *name, char *type, char *data) {
+            String payload = "{\"data\":{" + STRING_format(data) + "}," + \ 
+                + "\"fromDevice\":\"" + STRING_format(MQTT_ID) + "\"," + \
                 + "\"toDevice\":\"" + name + "\"," + \
                 + "\"deviceType\":\"" + type + "\"}";
 
