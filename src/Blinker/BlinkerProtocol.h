@@ -404,10 +404,14 @@ class BlinkerProtocol
                 "/____/_/_/_//_/_/\\_\\\\__/_/   \n"));
         #endif
         }
-
-        void autoTrigged() {
+// #if defined(BLINKER_MQTT)
+        bool autoTrigged(String name, String type, String data) {
+#ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("autoTrigged");
+#endif
+            return conn.autoPrint(name, type, data);
         }
+// #endif
 };
 
 template <class Transp>

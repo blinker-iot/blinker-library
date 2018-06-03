@@ -144,6 +144,36 @@ class BlinkerMQTT {
             mDNSInit();
         }
 
+        bool autoPrint(String name, String type, String data) {
+            String payload = "{\"data\":{" + data + "}," + \ 
+                + "\"fromDevice\":\"" + MQTT_ID + "\"," + \
+                + "\"toDevice\":\"" + name + "\"," + \
+                + "\"deviceType\":\"" + type + "\"}";
+
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1("autoPrint...");
+#endif
+            if (mqtt->connected()) {
+                if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || linkTime == 0) {
+                    linkTime = millis();
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2(payload, ("...OK!"));
+#endif
+                    return true;
+                }
+                else {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG2("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
+#endif
+                    return false;
+                }
+            }
+            else {
+                BLINKER_ERR_LOG1("MQTT Disconnected");
+                return false;
+            }
+        }
+
     private :    
 
         void connectServer();
@@ -183,6 +213,7 @@ class BlinkerMQTT {
         uint32_t latestTime;
         uint32_t printTime;
         uint32_t kaTime;
+        uint32_t linkTime;
 };
 
 void BlinkerMQTT::connectServer() {
@@ -427,7 +458,7 @@ void BlinkerMQTT::subscribe() {
 
             String _uuid = STRING_find_string(dataGet, "fromDevice", "\"", 3);
 
-            dataGet = STRING_find_string(dataGet, "data", ",\"", 2);
+            dataGet = STRING_find_string(dataGet, "data", ",\"fromDevice", 2);
 
             if (dataGet.indexOf("\"") != -1 && dataGet.indexOf("\"") == 0) {
                 dataGet = STRING_find_string(dataGet, "\"", "\"", 0);
@@ -435,6 +466,7 @@ void BlinkerMQTT::subscribe() {
 
             // BLINKER_LOG2("data: ", dataGet);
 #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("data: ", dataGet);
             BLINKER_LOG2("fromDevice: ", _uuid);
 #endif
             if (strcmp(_uuid.c_str(), UUID) == 0) {
