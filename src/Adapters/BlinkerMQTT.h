@@ -144,16 +144,34 @@ class BlinkerMQTT {
             mDNSInit();
         }
 
-        bool linkPrint(String name, String type, String data) {
+        bool autoPrint(String name, String type, String data) {
             String payload = "{\"data\":{" + data + "}," + \ 
                 + "\"fromDevice\":\"" + MQTT_ID + "\"," + \
                 + "\"toDevice\":\"" + name + "\"," + \
                 + "\"deviceType\":\"" + type + "\"}";
+
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("linkPrint payload: ", payload);
+            BLINKER_LOG1("autoPrint...");
 #endif
-            return true;
-            // return false;
+            if (mqtt->connected()) {
+                if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || linkTime == 0) {
+                    linkTime = millis();
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2(payload, ("...OK!"));
+#endif
+                    return true;
+                }
+                else {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG2("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
+#endif
+                    return false;
+                }
+            }
+            else {
+                BLINKER_ERR_LOG1("MQTT Disconnected");
+                return false;
+            }
         }
 
     private :    
@@ -195,6 +213,7 @@ class BlinkerMQTT {
         uint32_t latestTime;
         uint32_t printTime;
         uint32_t kaTime;
+        uint32_t linkTime;
 };
 
 void BlinkerMQTT::connectServer() {

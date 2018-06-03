@@ -409,7 +409,7 @@ class BlinkerProtocol
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("autoTrigged");
 #endif
-            return conn.linkPrint(name, type, data);
+            return conn.autoPrint(name, type, data);
         }
 // #endif
 };

@@ -1281,6 +1281,7 @@ class BlinkerApi
 
         void deserialization() {
             uint8_t checkData;
+            char linkDatas[128];
             EEPROM.begin(BLINKER_EEP_SIZE);
             EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
 
@@ -1317,16 +1318,23 @@ class BlinkerApi
             _duration = (_autoData >> 22 & 0x3f) * 60;
             _time1 = (_autoData >> 11 & 0x7ff) * 60;
             _time2 = (_autoData & 0x7ff) * 60;
+
+            EEPROM.get(BLINKER_EEP_ADDR_LINKDATA, linkDatas);
+            _linkData = STRING_format(linkDatas);
+
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("_duration: ", _duration);
             BLINKER_LOG4("_time1: ", _time1, " _time2: ", _time2);
-#endif            
+            BLINKER_LOG2("_duration: ", _duration);
+            BLINKER_LOG2("_linkData: ", _linkData);
+#endif
             EEPROM.commit();
             EEPROM.end();
         }
 
         void serialization() {
             uint8_t checkData;
+            char linkDatas[128];
 
             _autoData = _autoState << 31 | _logicType << 30 ;
             if (_logicType == BLINKER_TYPE_STATE) {
@@ -1350,6 +1358,9 @@ class BlinkerApi
             if (_logicType == BLINKER_TYPE_NUMERIC) {
                 EEPROM.put(BLINKER_EEP_ADDR_TARGGETDATA, _targetData);
             }
+
+            strcpy(linkDatas, _linkData.c_str());
+            EEPROM.put(BLINKER_EEP_ADDR_LINKDATA, linkDatas);
 
             EEPROM.commit();
             EEPROM.end();
