@@ -147,14 +147,30 @@
 
 #endif
 
-#define BLINKER_AUTO_STATE              0
+#define BLINKER_TYPE_STATE              0
 
-#define BLINKER_AUTO_NUMERIC            1
+#define BLINKER_TYPE_NUMERIC            1
 
 #define BLINKER_COMPARE_LESS            0
 
 #define BLINKER_COMPARE_EQUAL           1
 
 #define BLINKER_COMPARE_GREATER         2
+
+#define BLINKER_CHECK_DATA              170
+
+#define BLINKER_EEP_SIZE                4096
+
+#define BLINKER_EEP_ADDR_CHECK          0
+
+#define BLINKER_CHECK_SIZE              1
+
+#define BLINKER_EEP_ADDR_AUTO           (BLINKER_EEP_ADDR_CHECK + BLINKER_CHECK_SIZE)
+
+#define BLINKER_AUTODATA_SIZE           4
+
+#define BLINKER_EEP_ADDR_TARGGETDATA    (BLINKER_EEP_ADDR_AUTO + BLINKER_AUTODATA_SIZE)
+
+#define BLINKER_TARGGETDATA_SIZE        4
 
 #endif

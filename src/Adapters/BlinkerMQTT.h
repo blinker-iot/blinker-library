@@ -144,7 +144,7 @@ class BlinkerMQTT {
             mDNSInit();
         }
 
-        void linkPrint(String name, String type, String data) {
+        bool linkPrint(String name, String type, String data) {
             String payload = "{\"data\":{" + data + "}," + \ 
                 + "\"fromDevice\":\"" + MQTT_ID + "\"," + \
                 + "\"toDevice\":\"" + name + "\"," + \
@@ -152,6 +152,8 @@ class BlinkerMQTT {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("linkPrint payload: ", payload);
 #endif
+            return true;
+            // return false;
         }
 
     private :    
