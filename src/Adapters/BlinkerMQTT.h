@@ -206,6 +206,20 @@ class BlinkerMQTT {
                 isAlive = false;
         }
 
+        bool checkCanPrint() {
+            if (millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) {
+                return true;
+            }
+            else {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
+#endif
+                checkKA();
+
+                return false;
+            }
+        }
+
     protected :
         const char* authkey;
         bool* isHandle = &isConnect;
@@ -509,33 +523,31 @@ void BlinkerMQTT::print(String data) {
         bool _alive = isAlive;
         bool state = STRING_contais_string(data, BLINKER_CMD_NOTICE);
 
-        if (state) {
-            isAlive = true;
+        if (!state) {
+            state = STRING_contais_string(data, BLINKER_CMD_STATE) && STRING_contais_string(data, BLINKER_CMD_ONLINE);
         }
 
         if (mqtt->connected()) {
-            if (millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) {
-                if (! iotPub->publish(payload.c_str())) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(payload, ("...Failed"));
-#endif
+            if (!state) {
+                if (!checkCanPrint()) {
+                    return;
                 }
-                else {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(payload, ("...OK!"));
-#endif
-                    printTime = millis();
-                }
+            }
 
-                if (!_alive) {
-                    isAlive = false;
-                }
+            if (! iotPub->publish(payload.c_str())) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2(payload, ("...Failed"));
+#endif
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
+                BLINKER_LOG2(payload, ("...OK!"));
 #endif
-                checkKA();
+                printTime = millis();
+            }
+
+            if (!_alive) {
+                isAlive = false;
             }
         }
         else {
