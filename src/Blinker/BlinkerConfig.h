@@ -65,6 +65,8 @@
 
 #define BLINKER_CMD_INTERSPACE          " "
 
+#define BLINKER_CMD_DATA                "data"
+
 #define BLINKER_CMD_GET                 "get"
 
 #define BLINKER_CMD_SET                 "set"

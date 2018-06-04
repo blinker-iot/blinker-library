@@ -1235,9 +1235,12 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4("_time1: ", _time1, " _time2: ", _time2);
 #endif
-                    strcpy(_linkDevice, STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDEVICE, "\"", 3).c_str());
-                    strcpy(_linkType, STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKTYPE, "\"", 3).c_str());
-                    strcpy(_linkData, STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDATA, "}", 3).c_str());
+                    String datas;
+                    datas = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDATA, "]", 3);
+
+                    strcpy(_linkDevice, STRING_find_string(datas, BLINKER_CMD_LINKDEVICE, "\"", 3).c_str());
+                    strcpy(_linkType, STRING_find_string(datas, BLINKER_CMD_LINKTYPE, "\"", 3).c_str());
+                    strcpy(_linkData, STRING_find_string(datas, BLINKER_CMD_DATA, "}", 3).c_str());
 
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("_linkDevice: ", _linkDevice);
