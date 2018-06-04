@@ -405,7 +405,7 @@ class BlinkerProtocol
         #endif
         }
 // #if defined(BLINKER_MQTT)
-        bool autoTrigged(String name, String type, String data) {
+        bool autoTrigged(char *name, char *type, char *data) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("autoTrigged");
 #endif
