@@ -419,6 +419,9 @@ void BlinkerProtocol<Transp>::run()
 {
 #if defined(ESP8266) || defined(ESP32)
     BApi::ntpInit();
+// #endif
+// #if defined(BLINKER_MQTT)
+    BApi::checkTimer();
 #endif
 
     bool conState = conn.connected();

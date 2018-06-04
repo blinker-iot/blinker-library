@@ -22,11 +22,19 @@
 #define BLINKER_OBJECT_NOT_AVAIL        -1
 
 #ifndef BLINKER_MAX_READ_SIZE
+#if defined(BLINKER_MQTT)
+    #define BLINKER_MAX_READ_SIZE       512
+#else
     #define BLINKER_MAX_READ_SIZE       256
+#endif
 #endif
 
 #ifndef BLINKER_MAX_SEND_SIZE
+#if defined(BLINKER_MQTT)
+    #define BLINKER_MAX_SEND_SIZE       256
+#else
     #define BLINKER_MAX_SEND_SIZE       128
+#endif
 #endif
 
 #define  BLINKER_NO_LOGO
@@ -64,6 +72,8 @@
 #define BLINKER_CMD_NEWLINE             "\n"
 
 #define BLINKER_CMD_INTERSPACE          " "
+
+#define BLINKER_CMD_DATA                "data"
 
 #define BLINKER_CMD_GET                 "get"
 
@@ -114,6 +124,30 @@
 #define BLINKER_CMD_LINKTYPE            "linkType"
 
 #define BLINKER_CMD_LINKDATA            "linkData"
+
+#define BLINKER_CMD_COUNTDOWN           "countdown"
+
+#define BLINKER_CMD_TOTALTIME           "totalTime"
+
+#define BLINKER_CMD_RUNTIME             "runTime"
+
+#define BLINKER_CMD_ACTION              "action"
+
+#define BLINKER_CMD_ACTION1             "action1"
+
+#define BLINKER_CMD_ACTION2             "action2"
+
+#define BLINKER_CMD_LOOP                "loop"
+
+#define BLINKER_CMD_TIMES               "times"
+
+#define BLINKER_CMD_TIME1               "time1"
+
+#define BLINKER_CMD_TIME2               "time2"
+
+#define BLINKER_CMD_TIMING              "timing"
+
+#define BLINKER_CMD_TASK                "task"
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 

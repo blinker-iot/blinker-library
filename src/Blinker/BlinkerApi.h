@@ -173,7 +173,65 @@ class BlinkerTimer
         Ticker Timinger1;
         Ticker Timinger2;
 };
+
+Ticker cdTicker;
+Ticker lpTicker;
+Ticker tmTicker;
+
+static bool _cdState = false;
+static bool _lpState = false;
+static bool _tmState = false;
+static bool _isTm1 = true;
+static bool _cdTrigged = false;
+static bool _timerTrigged = false;
+
+static uint8_t _lpTimes = 0;
+
+// static String _cbData1;
+// static String _cbData2;
+
+static void disableTimer() {
+    _cdState = false;
+    cdTicker.detach();
+    _lpState = false;
+    lpTicker.detach();
+    _tmState = false;
+    tmTicker.detach();
+}
+
+static void _cd_callback() {
+    _cdState = false;
+    _cdTrigged = true;
+    BLINKER_LOG1("countdown end!");
+}
+
+// static void _countdown(float seconds) {
+//     _cdState = true;
+//     cdTicker.once(seconds, _cd_callback);
+// }
+
+static void _lp_callback() {
+    // _lpState = false;
+    _lpTimes++;
+    _timerTrigged = true;
+}
+
+// static void _loop(float seconds) {
+//     _lpState = false;
+//     lpTicker.attach(seconds, _lp_callback);
+// }
+
+static void _tm_callback() {
+    _isTm1 = !_isTm1;
+    _timerTrigged = true;
+}
+
+// static void _timing(float seconds) {
+//     tmTicker.attach(seconds, _tm_callback);
+// }
 #endif
+
+
 
 template <class Proto>
 class BlinkerApi
@@ -584,39 +642,6 @@ class BlinkerApi
             _timezone = tz;
         }
 
-// #if defined(ESP8266) || defined(ESP32)
-//         bool ntpInit() {
-//             if (!_isNTPInit) {
-//                 now_ntp = ::time(nullptr);
-            
-//                 // BLINKER_LOG2("Setting time using SNTP: ", now_ntp);
-                
-//                 if (now_ntp < _timezone * 3600 * 2) {
-//                     configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
-//                     now_ntp = ::time(nullptr);
-
-//                     if (now_ntp < _timezone * 3600 * 2) {
-//                         ::delay(50);
-
-//                         now_ntp = ::time(nullptr);
-
-//                         // BLINKER_LOG2("Setting time using SNTP time out: ", now_ntp);
-
-//                         return false;
-//                     }
-//                 }
-//                 // struct tm timeinfo;
-//                 gmtime_r(&now_ntp, &timeinfo);
-// #ifdef BLINKER_DEBUG_ALL                
-//                 BLINKER_LOG2("Current time: ", asctime(&timeinfo));
-// #endif
-//                 _isNTPInit = true;
-//             }
-
-//             return true;
-//         }
-// #endif
-
         int8_t second()    { freshNTP(); return _isNTPInit ? timeinfo.tm_sec : -1; }
         /**< seconds after the minute - [ 0 to 59 ] */
         int8_t minute()    { freshNTP(); return _isNTPInit ? timeinfo.tm_min : -1; }
@@ -808,6 +833,14 @@ class BlinkerApi
         char        _linkType[BLINKER_LINKTYPE_SIZE];
         char        _linkData[BLINKER_LINKDATA_SIZE];
         uint32_t    _autoData;
+#endif
+
+#if defined(ESP8266) || defined(ESP32)
+        String      _cdAction;
+        String      _lpAction1;
+        String      _lpAction2;
+        String      _tmAction1;
+        String      _tmAction2;
 #endif
 
         void freshNTP() {
@@ -1235,9 +1268,12 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4("_time1: ", _time1, " _time2: ", _time2);
 #endif
-                    strcpy(_linkDevice, STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDEVICE, "\"", 3).c_str());
-                    strcpy(_linkType, STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKTYPE, "\"", 3).c_str());
-                    strcpy(_linkData, STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDATA, "}", 3).c_str());
+                    String datas;
+                    datas = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDATA, "]", 3);
+
+                    strcpy(_linkDevice, STRING_find_string(datas, BLINKER_CMD_LINKDEVICE, "\"", 3).c_str());
+                    strcpy(_linkType, STRING_find_string(datas, BLINKER_CMD_LINKTYPE, "\"", 3).c_str());
+                    strcpy(_linkData, STRING_find_string(datas, BLINKER_CMD_DATA, "}", 3).c_str());
 
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("_linkDevice: ", _linkDevice);
@@ -1372,6 +1408,118 @@ class BlinkerApi
         }
 #endif
 
+#if defined(ESP8266) || defined(ESP32)
+        bool timerManager() {
+            bool isSet = false;
+            bool isCount = false;
+            bool isLoop = false;
+            bool isTiming = false;
+
+            isSet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
+            isCount = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_COUNTDOWN);
+            isLoop = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LOOP);
+            isTiming = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMING);
+
+            if (isSet && (isCount || isLoop || isTiming)) {
+                _fresh = true;
+                BLINKER_LOG1("get timer setting");
+
+                if (isCount) {
+                    String cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", ",", 1);
+                    if (cd_state == "") {
+                        cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", "}", 1);
+                    }
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("countdown state: ", cd_state);
+#endif
+                    // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
+
+                    String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
+                    int32_t _totalTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TOTALTIME);
+                    int32_t _runTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RUNTIME);
+                    String _action = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION, "]", 3);
+
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_state: ", _state);
+                    BLINKER_LOG2("_totalTime: ", _totalTime);
+                    BLINKER_LOG2("_runTime: ", _runTime);
+                    BLINKER_LOG2("_action: ", _action);
+#endif
+                    _cdAction = _action;
+                    
+                    _cdState = (cd_state == BLINKER_CMD_TRUE) ? true : false;
+                    if (_cdState) {
+                        cdTicker.once(_totalTime - _runTime, _cd_callback);
+                        BLINKER_LOG1("countdown start!");
+                    }
+                    else {
+                        cdTicker.detach();
+                    }
+                }
+                else if (isLoop) {
+                    String lp_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "loop\"", ",", 1);
+                    if (lp_state == "") {
+                        lp_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "loop\"", "}", 1);
+                    }
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("countdown state: ", lp_state);
+#endif
+                    // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
+
+                    int8_t _times = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMES);
+                    String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
+                    int32_t _time1 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME1);
+                    String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
+                    int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
+                    String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
+
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_times: ", _times);
+                    BLINKER_LOG2("_state: ", _state);
+                    BLINKER_LOG2("_time1: ", _time1);
+                    BLINKER_LOG2("_action1: ", _action1);
+                    BLINKER_LOG2("_time2: ", _time2);
+                    BLINKER_LOG2("_action2: ", _action2);
+#endif
+                    _lpAction1 = _action1;
+                    _lpAction2 = _action2;
+                }
+                else if (isTiming) {
+                    String tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", ",", 1);
+                    if (tm_state == "") {
+                        tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", "}", 1);
+                    }
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("countdown state: ", tm_state);
+#endif
+                    // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
+
+                    // int8_t _times = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMES);
+                    String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
+                    int32_t _time1 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME1);
+                    String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
+                    int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
+                    String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
+
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_state: ", _state);
+                    BLINKER_LOG2("_time1: ", _time1);
+                    BLINKER_LOG2("_action1: ", _action1);
+                    BLINKER_LOG2("_time2: ", _time2);
+                    BLINKER_LOG2("_action2: ", _action2);
+#endif
+                    _tmAction1 = _action1;
+                    _tmAction2 = _action2;
+                }
+
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+#endif
+
     protected :
         void parse()
         {
@@ -1379,12 +1527,17 @@ class BlinkerApi
                 _fresh = false;
 
 #if defined(BLINKER_MQTT)
-                if (autoManager()) {
+                if (timerManager()) {
                     static_cast<Proto*>(this)->isParsed();
                     return;
                 }
 #endif
-
+#if defined(ESP8266) || defined(ESP32)
+                if (timerManager()) {
+                    static_cast<Proto*>(this)->isParsed();
+                    return;
+                }
+#endif
                 heartBeat();
                 getVersion();
 
@@ -1466,6 +1619,14 @@ class BlinkerApi
             }
 
             return true;
+        }
+// #endif
+// #if defined(BLINKER_MQTT)
+        bool checkTimer() {
+            if (_cdTrigged) {
+                _cdTrigged = false;
+                BLINKER_LOG2("countdown trigged, action is: ", _cdAction);
+            }
         }
 #endif
 };

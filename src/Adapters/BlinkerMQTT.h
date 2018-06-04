@@ -472,7 +472,7 @@ void BlinkerMQTT::subscribe() {
 
             String _uuid = STRING_find_string(dataGet, "fromDevice", "\"", 3);
 
-            dataGet = STRING_find_string(dataGet, "data", ",\"fromDevice", 2);
+            dataGet = STRING_find_string(dataGet, BLINKER_CMD_DATA, ",\"fromDevice", 2);
 
             if (dataGet.indexOf("\"") != -1 && dataGet.indexOf("\"") == 0) {
                 dataGet = STRING_find_string(dataGet, "\"", "\"", 0);
