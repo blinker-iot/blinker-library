@@ -125,6 +125,12 @@
 
 #define BLINKER_CMD_LINKDATA            "linkData"
 
+#define BLINKER_CMD_COUNTDOWN           "countdown"
+
+#define BLINKER_CMD_LOOP                "loop"
+
+#define BLINKER_CMD_TIMING              "timing"
+
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
 #if defined(BLINKER_MQTT)
