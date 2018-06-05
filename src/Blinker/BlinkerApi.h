@@ -181,11 +181,17 @@ Ticker tmTicker;
 static bool _cdState = false;
 static bool _lpState = false;
 static bool _tmState = false;
-static bool _isTm1 = true;
+static bool _lpRun1 = true;
+static bool _tmRun1 = true;
 static bool _cdTrigged = false;
-static bool _timerTrigged = false;
+static bool _lpTrigged = false;
+static bool _tmTrigged = false;
 
 static uint8_t _lpTimes = 0;
+static uint32_t _lpTime1;
+static uint32_t _lpTime2;
+static uint32_t _tmTime1;
+static uint32_t _tmTime2;
 
 // static String _cbData1;
 // static String _cbData2;
@@ -202,7 +208,7 @@ static void disableTimer() {
 static void _cd_callback() {
     _cdState = false;
     _cdTrigged = true;
-    BLINKER_LOG1("countdown end!");
+    BLINKER_LOG1("countdown trigged!");
 }
 
 // static void _countdown(float seconds) {
@@ -212,8 +218,17 @@ static void _cd_callback() {
 
 static void _lp_callback() {
     // _lpState = false;
-    _lpTimes++;
-    _timerTrigged = true;
+    _lpRun1 = !_lpRun1;
+    if (_lpRun1) {
+        _lpTimes++;
+        lpTicker.attach(_lpTime1, _lp_callback);
+    }
+    else {
+        lpTicker.attach(_lpTime2, _lp_callback);
+    }
+    _lpTrigged = true;
+    
+    BLINKER_LOG1("loop trigged!");
 }
 
 // static void _loop(float seconds) {
@@ -222,8 +237,32 @@ static void _lp_callback() {
 // }
 
 static void _tm_callback() {
-    _isTm1 = !_isTm1;
-    _timerTrigged = true;
+    _tmRun1 = !_tmRun1;
+
+    time_t      now_ntp;
+    struct tm   timeinfo;
+    now_ntp = time(nullptr);
+    gmtime_r(&now_ntp, &timeinfo);
+
+    int32_t nowTime = timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
+
+    BLINKER_LOG6("nowTime: ", nowTime, " _tmTime1: ", _tmTime1, " _tmTime2: ", _tmTime2);
+
+    if (_tmRun1) {
+        if (_tmTime1 >= nowTime) {
+            tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+            BLINKER_LOG2("timing2 trigged! next time: ", _tmTime1 - nowTime);
+        }
+        else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
+            tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime + _tmTime1, _tm_callback);
+            BLINKER_LOG2("timing2 trigged! next time: ", BLINKER_ONE_DAY_TIME - nowTime + _tmTime1);
+        }
+    }
+    else {
+        tmTicker.attach(_tmTime2 - _tmTime1, _tm_callback);
+        BLINKER_LOG2("timing1 trigged! next time: ", _tmTime2 - _tmTime1);
+    }
+    _tmTrigged = true;
 }
 
 // static void _timing(float seconds) {
@@ -1483,6 +1522,19 @@ class BlinkerApi
 #endif
                     _lpAction1 = _action1;
                     _lpAction2 = _action2;
+
+                    _lpTime1 = _time1;
+                    _lpTime2 = _time2;
+
+                    _lpState = (lp_state == BLINKER_CMD_TRUE) ? true : false;
+                    if (_lpState) {
+                        _lpRun1 = true;
+                        lpTicker.attach(_lpTime1, _lp_callback);
+                        BLINKER_LOG1("loop start!");
+                    }
+                    else {
+                        lpTicker.detach();
+                    }
                 }
                 else if (isTiming) {
                     String tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", ",", 1);
@@ -1510,6 +1562,31 @@ class BlinkerApi
 #endif
                     _tmAction1 = _action1;
                     _tmAction2 = _action2;
+
+                    _tmTime1 = _time1;
+                    _tmTime2 = _time2;
+
+                    _tmState = (tm_state == BLINKER_CMD_TRUE) ? true : false;
+                    if (_tmState) {
+                        int32_t nowTime = dtime();
+
+                        if (_tmTime1 >= nowTime) {
+                            _tmRun1 = true;
+                            tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+                        }
+                        else if (_tmTime1 < nowTime && _tmTime2 > nowTime) {
+                            _tmRun1 = false;
+                            tmTicker.attach(_tmTime2 - nowTime, _tm_callback);
+                        }
+                        else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
+                            _tmRun1 = true;
+                            tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime + _tmTime1, _tm_callback);
+                        }
+                        BLINKER_LOG1("timing start!");
+                    }
+                    else {
+                        tmTicker.detach();
+                    }
                 }
 
                 return true;
@@ -1527,7 +1604,7 @@ class BlinkerApi
                 _fresh = false;
 
 #if defined(BLINKER_MQTT)
-                if (timerManager()) {
+                if (autoManager()) {
                     static_cast<Proto*>(this)->isParsed();
                     return;
                 }
@@ -1626,6 +1703,26 @@ class BlinkerApi
             if (_cdTrigged) {
                 _cdTrigged = false;
                 BLINKER_LOG2("countdown trigged, action is: ", _cdAction);
+            }
+            if (_lpTrigged) {
+                _lpTrigged = false;
+
+                if (_lpRun1) {
+                    BLINKER_LOG2("loop trigged, action is: ", _lpAction2);
+                }
+                else {
+                    BLINKER_LOG2("loop trigged, action is: ", _lpAction1);
+                }
+            }
+            if (_tmTrigged) {
+                _tmTrigged = false;
+
+                if (_tmRun1) {
+                    BLINKER_LOG2("timing trigged, action is: ", _tmAction2);
+                }
+                else {
+                    BLINKER_LOG2("timing trigged, action is: ", _tmAction1);
+                }
             }
         }
 #endif

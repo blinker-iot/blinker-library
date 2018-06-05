@@ -151,6 +151,8 @@
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
+#define BLINKER_ONE_DAY_TIME            86400UL
+
 #if defined(BLINKER_MQTT)
 
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
