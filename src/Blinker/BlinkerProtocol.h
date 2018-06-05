@@ -111,7 +111,7 @@ class BlinkerProtocol
         template <typename T>
         void print(T n) {
             if (!isFormat)
-                _print(n);
+                _print("\""  + STRING_format(n)+ "\"");
         }
         void print() {
             if (!isFormat)
@@ -121,7 +121,7 @@ class BlinkerProtocol
         template <typename T>
         void println(T n) {
             if (!isFormat)
-                _print(n);
+                _print("\""  + STRING_format(n)+ "\"");
         }
         void println() {
             if (!isFormat)
