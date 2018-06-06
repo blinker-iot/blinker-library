@@ -345,6 +345,15 @@ void BlinkerMQTT::connectServer() {
         strcpy(MQTT_HOST, BLINKER_MQTT_QCLOUD_HOST);
         MQTT_PORT = BLINKER_MQTT_QCLOUD_PORT;
     }
+    else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
+        memcpy(DEVICE_NAME, _userID.c_str(), 12);
+        strcpy(MQTT_ID, _userName.c_str());
+        strcpy(MQTT_NAME, _productInfo.c_str());
+        strcpy(MQTT_KEY, _key.c_str());
+        strcpy(MQTT_PRODUCTINFO, _productInfo.c_str());
+        strcpy(MQTT_HOST, BLINKER_MQTT_ONENET_HOST);
+        MQTT_PORT = BLINKER_MQTT_ONENET_PORT;
+    }
     strcpy(UUID, _uuid.c_str());
 
 #ifdef BLINKER_DEBUG_ALL
@@ -395,6 +404,23 @@ void BlinkerMQTT::connectServer() {
         BLINKER_LOG2("BLINKER_SUB_TOPIC: ", BLINKER_SUB_TOPIC);
 #endif
     }
+    else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
+        uint8_t str_len;
+        String PUB_TOPIC_STR = String(MQTT_PRODUCTINFO) + "/" + String(_userID) + "/s";
+        str_len = PUB_TOPIC_STR.length() + 1;
+        BLINKER_PUB_TOPIC = (char*)malloc(str_len*sizeof(char));
+        memcpy(BLINKER_PUB_TOPIC, PUB_TOPIC_STR.c_str(), str_len);
+#ifdef BLINKER_DEBUG_ALL
+        BLINKER_LOG2("BLINKER_PUB_TOPIC: ", BLINKER_PUB_TOPIC);
+#endif
+        String SUB_TOPIC_STR = String(MQTT_PRODUCTINFO) + "/" + String(_userID) + "/r";
+        str_len = SUB_TOPIC_STR.length() + 1;
+        BLINKER_SUB_TOPIC = (char*)malloc(str_len*sizeof(char));
+        memcpy(BLINKER_SUB_TOPIC, SUB_TOPIC_STR.c_str(), str_len);
+#ifdef BLINKER_DEBUG_ALL
+        BLINKER_LOG2("BLINKER_SUB_TOPIC: ", BLINKER_SUB_TOPIC);
+#endif
+    }
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         mqtt = new Adafruit_MQTT_Client(&client_s, MQTT_HOST, MQTT_PORT, MQTT_ID, MQTT_NAME, MQTT_KEY);
@@ -402,6 +428,10 @@ void BlinkerMQTT::connectServer() {
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
         mqtt = new Adafruit_MQTT_Client(&client, MQTT_HOST, MQTT_PORT, MQTT_ID, MQTT_NAME, MQTT_KEY);
     }
+    else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
+        mqtt = new Adafruit_MQTT_Client(&client, MQTT_HOST, MQTT_PORT, MQTT_ID, MQTT_NAME, MQTT_KEY);
+    }
+
     iotPub = new Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
     iotSub = new Adafruit_MQTT_Subscribe(mqtt, BLINKER_SUB_TOPIC);
 
