@@ -1703,15 +1703,18 @@ class BlinkerApi
             if (_cdTrigged) {
                 _cdTrigged = false;
                 BLINKER_LOG2("countdown trigged, action is: ", _cdAction);
+                _parse(_cdAction);
             }
             if (_lpTrigged) {
                 _lpTrigged = false;
 
                 if (_lpRun1) {
                     BLINKER_LOG2("loop trigged, action is: ", _lpAction2);
+                    _parse(_lpAction2);
                 }
                 else {
                     BLINKER_LOG2("loop trigged, action is: ", _lpAction1);
+                    _parse(_lpAction1);
                 }
             }
             if (_tmTrigged) {
@@ -1719,9 +1722,11 @@ class BlinkerApi
 
                 if (_tmRun1) {
                     BLINKER_LOG2("timing trigged, action is: ", _tmAction2);
+                    _parse(_tmAction2);
                 }
                 else {
                     BLINKER_LOG2("timing trigged, action is: ", _tmAction1);
+                    _parse(_tmAction1);
                 }
             }
         }
