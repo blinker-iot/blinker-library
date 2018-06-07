@@ -98,7 +98,9 @@ class BlinkerProtocol
 
         bool endFormat() {
             isFormat = false;
-            _print("{" + STRING_format(_sendBuf) + "}");
+            if (strlen(_sendBuf)) {
+                _print("{" + STRING_format(_sendBuf) + "}");
+            }
 
             if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE - 3) {
                 return false;
@@ -325,18 +327,6 @@ class BlinkerProtocol
         }
 
     private :
-        template <typename T>
-        void _print(T n) {
-            String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
-            if (data.length() <= BLINKER_MAX_SEND_SIZE) {
-                conn.print(data);
-                BApi::_parse(data);
-            }
-            else {
-                BLINKER_ERR_LOG1("SEND DATA BYTES MAX THAN LIMIT!");
-            }
-        }
-
         void formatData(String data) {
             if (strlen(_sendBuf) > 0) {
                 data = "," + data;
@@ -404,6 +394,21 @@ class BlinkerProtocol
                 "/____/_/_/_//_/_/\\_\\\\__/_/   \n"));
         #endif
         }
+
+        template <typename T>
+        void _print(T n, bool needParse = true) {
+            String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
+            if (data.length() <= BLINKER_MAX_SEND_SIZE) {
+                conn.print(data);
+                if (needParse) {
+                    BApi::_parse(data);
+                }
+            }
+            else {
+                BLINKER_ERR_LOG1("SEND DATA BYTES MAX THAN LIMIT!");
+            }
+        }
+
 // #if defined(BLINKER_MQTT)
         bool autoTrigged(char *name, char *type, char *data) {
 #ifdef BLINKER_DEBUG_ALL

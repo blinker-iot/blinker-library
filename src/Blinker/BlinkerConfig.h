@@ -165,7 +165,13 @@
 
     #define BLINKER_MQTT_QCLOUD_HOST        "iotcloud-mqtt.gz.tencentdevices.com"
 
+    #define BLINKER_MQTT_BORKER_ONENET      "onenet"
+
     #define BLINKER_MQTT_QCLOUD_PORT        1883
+
+    #define BLINKER_MQTT_ONENET_HOST        "mqtt.heclouds.com"
+
+    #define BLINKER_MQTT_ONENET_PORT        6002
 
     #define BLINKER_MQTT_PING_TIMEOUT       30000UL
 
