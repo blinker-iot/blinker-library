@@ -501,9 +501,11 @@ void BlinkerMQTT::subscribe() {
 #endif
             // String dataGet = String((char *)iotSub->lastread);
 
-            DynamicJsonDocument doc;
-            deserializeJson(doc, String((char *)iotSub->lastread));
-            JsonObject& root = doc.as<JsonObject>();
+            // DynamicJsonDocument doc;
+            // deserializeJson(doc, String((char *)iotSub->lastread));
+            // JsonObject& root = doc.as<JsonObject>();
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub->lastread));
 	        // JsonObject& root = jsonBuffer.parseObject((char *)iotSub->lastread);
 
             // if (!root.success()) {

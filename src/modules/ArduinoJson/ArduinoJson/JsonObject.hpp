@@ -4,13 +4,17 @@
 
 #pragma once
 
+#include "Data/JsonBufferAllocated.hpp"
 #include "Data/List.hpp"
 #include "Data/ReferenceType.hpp"
 #include "Data/ValueSaver.hpp"
 #include "JsonPair.hpp"
-#include "Memory/JsonBufferAllocated.hpp"
-#include "Polyfills/type_traits.hpp"
-#include "Strings/StringTraits.hpp"
+#include "Serialization/JsonPrintable.hpp"
+#include "StringTraits/StringTraits.hpp"
+#include "TypeTraits/EnableIf.hpp"
+#include "TypeTraits/IsArray.hpp"
+#include "TypeTraits/IsFloatingPoint.hpp"
+#include "TypeTraits/IsSame.hpp"
 
 // Returns the size (in bytes) of an object with n elements.
 // Can be very handy to determine the size of a StaticJsonBuffer.
@@ -27,15 +31,23 @@ template <typename>
 class JsonObjectSubscript;
 }
 
-class JsonObject : public Internals::ReferenceType,
+// A dictionary of JsonVariant indexed by string (char*)
+//
+// The constructor is private, instances must be created via
+// JsonBuffer::createObject() or JsonBuffer::parseObject().
+// A JsonObject can be serialized to a JSON string via JsonObject::printTo().
+// It can also be deserialized from a JSON string via JsonBuffer::parseObject().
+class JsonObject : public Internals::JsonPrintable<JsonObject>,
+                   public Internals::ReferenceType,
                    public Internals::NonCopyable,
                    public Internals::List<JsonPair>,
                    public Internals::JsonBufferAllocated {
  public:
   // Create an empty JsonArray attached to the specified JsonBuffer.
   // You should not use this constructor directly.
-  explicit JsonObject(Internals::JsonBuffer* buf) throw()
-      : Internals::List<JsonPair>(buf) {}
+  // Instead, use JsonBuffer::createObject() or JsonBuffer.parseObject().
+  explicit JsonObject(JsonBuffer* buffer) throw()
+      : Internals::List<JsonPair>(buffer) {}
 
   // Gets or sets the value associated with the specified key.
   //
@@ -108,6 +120,29 @@ class JsonObject : public Internals::ReferenceType,
   template <typename TValue, typename TString>
   bool set(TString* key, TValue* value) {
     return set_impl<TString*, TValue*>(key, value);
+  }
+  //
+  // bool set(TKey, TValue, uint8_t decimals);
+  // TKey = const std::string&, const String&
+  // TValue = float, double
+  template <typename TValue, typename TString>
+  DEPRECATED("Second argument is not supported anymore")
+  typename Internals::EnableIf<Internals::IsFloatingPoint<TValue>::value,
+                               bool>::type
+      set(const TString& key, TValue value, uint8_t) {
+    return set_impl<const TString&, const JsonVariant&>(key,
+                                                        JsonVariant(value));
+  }
+  //
+  // bool set(TKey, TValue, uint8_t decimals);
+  // TKey = char*, const char*, const FlashStringHelper*
+  // TValue = float, double
+  template <typename TValue, typename TString>
+  DEPRECATED("Second argument is not supported anymore")
+  typename Internals::EnableIf<Internals::IsFloatingPoint<TValue>::value,
+                               bool>::type
+      set(TString* key, TValue value, uint8_t) {
+    return set_impl<TString*, const JsonVariant&>(key, JsonVariant(value));
   }
 
   // Gets the value associated with the specified key.
@@ -224,11 +259,6 @@ class JsonObject : public Internals::ReferenceType,
   static JsonObject& invalid() {
     static JsonObject instance(NULL);
     return instance;
-  }
-
-  template <typename Visitor>
-  void visit(Visitor& visitor) const {
-    return visitor.acceptObject(*this);
   }
 
  private:

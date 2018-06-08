@@ -7,13 +7,13 @@
 namespace ArduinoJson {
 namespace Internals {
 template <typename T>
-bool isnan(T x) {
+bool isNaN(T x) {
   return x != x;
 }
 
 template <typename T>
-bool isinf(T x) {
+bool isInfinity(T x) {
   return x != 0.0 && x * 2 == x;
 }
-}  // namespace Internals
-}  // namespace ArduinoJson
+}
+}

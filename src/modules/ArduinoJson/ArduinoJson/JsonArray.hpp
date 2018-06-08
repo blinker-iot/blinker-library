@@ -4,13 +4,17 @@
 
 #pragma once
 
+#include "Data/JsonBufferAllocated.hpp"
 #include "Data/List.hpp"
 #include "Data/ReferenceType.hpp"
 #include "Data/ValueSaver.hpp"
 #include "JsonVariant.hpp"
-#include "Memory/JsonBufferAllocated.hpp"
-#include "Polyfills/type_traits.hpp"
-#include "Strings/StringTraits.hpp"
+#include "Serialization/JsonPrintable.hpp"
+#include "StringTraits/StringTraits.hpp"
+#include "TypeTraits/EnableIf.hpp"
+#include "TypeTraits/IsArray.hpp"
+#include "TypeTraits/IsFloatingPoint.hpp"
+#include "TypeTraits/IsSame.hpp"
 
 // Returns the size (in bytes) of an array with n elements.
 // Can be very handy to determine the size of a StaticJsonBuffer.
@@ -26,13 +30,23 @@ namespace Internals {
 class JsonArraySubscript;
 }
 
-class JsonArray : public Internals::ReferenceType,
+// An array of JsonVariant.
+//
+// The constructor is private, instances must be created via
+// JsonBuffer::createArray() or JsonBuffer::parseArray().
+// A JsonArray can be serialized to a JSON string via JsonArray::printTo().
+// It can also be deserialized from a JSON string via JsonBuffer::parseArray().
+class JsonArray : public Internals::JsonPrintable<JsonArray>,
+                  public Internals::ReferenceType,
                   public Internals::NonCopyable,
                   public Internals::List<JsonVariant>,
                   public Internals::JsonBufferAllocated {
  public:
-  explicit JsonArray(Internals::JsonBuffer *buf) throw()
-      : Internals::List<JsonVariant>(buf) {}
+  // Create an empty JsonArray attached to the specified JsonBuffer.
+  // You should not call this constructor directly.
+  // Instead, use JsonBuffer::createArray() or JsonBuffer::parseArray().
+  explicit JsonArray(JsonBuffer *buffer) throw()
+      : Internals::List<JsonVariant>(buffer) {}
 
   // Gets the value at the specified index
   const Internals::JsonArraySubscript operator[](size_t index) const;
@@ -85,8 +99,7 @@ class JsonArray : public Internals::ReferenceType,
   // bool set(size_t index, TValue value, uint8_t decimals);
   // TValue = float, double
   template <typename T>
-  typename Internals::enable_if<Internals::is_floating_point<T>::value,
-                                bool>::type
+  typename Internals::EnableIf<Internals::IsFloatingPoint<T>::value, bool>::type
   set(size_t index, T value, uint8_t decimals) {
     return set_impl<const JsonVariant &>(index, JsonVariant(value, decimals));
   }
@@ -106,9 +119,11 @@ class JsonArray : public Internals::ReferenceType,
   }
 
   // Creates a JsonArray and adds a reference at the end of the array.
+  // It's a shortcut for JsonBuffer::createArray() and JsonArray::add()
   JsonArray &createNestedArray();
 
   // Creates a JsonObject and adds a reference at the end of the array.
+  // It's a shortcut for JsonBuffer::createObject() and JsonArray::add()
   JsonObject &createNestedObject();
 
   // Removes element at specified index.
@@ -178,10 +193,12 @@ class JsonArray : public Internals::ReferenceType,
     }
   }
 
-  template <typename Visitor>
-  void visit(Visitor &visitor) const {
-    return visitor.acceptArray(*this);
+#if ARDUINOJSON_ENABLE_DEPRECATED
+  DEPRECATED("use remove() instead")
+  FORCE_INLINE void removeAt(size_t index) {
+    return remove(index);
   }
+#endif
 
  private:
   template <typename TValueRef>
@@ -206,5 +223,5 @@ struct JsonVariantDefault<JsonArray> {
     return JsonArray::invalid();
   }
 };
-}  // namespace Internals
-}  // namespace ArduinoJson
+}
+}

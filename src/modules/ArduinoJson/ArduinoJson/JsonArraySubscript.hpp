@@ -73,10 +73,13 @@ class JsonArraySubscript : public JsonVariantBase<JsonArraySubscript> {
   FORCE_INLINE bool set(TValue* value) {
     return _array.set(_index, value);
   }
-
-  template <typename Visitor>
-  void visit(Visitor& visitor) const {
-    return _array.get<JsonVariant>(_index).visit(visitor);
+  //
+  // bool set(TValue, uint8_t decimals);
+  // TValue = float, double
+  template <typename TValue>
+  DEPRECATED("Second argument is not supported anymore")
+  FORCE_INLINE bool set(const TValue& value, uint8_t) {
+    return _array.set(_index, value);
   }
 
  private:
@@ -95,7 +98,14 @@ inline const JsonArraySubscript JsonVariantSubscripts<TImpl>::operator[](
     size_t index) const {
   return impl()->template as<JsonArray>()[index];
 }
-}  // namespace Internals
+
+#if ARDUINOJSON_ENABLE_STD_STREAM
+inline std::ostream& operator<<(std::ostream& os,
+                                const JsonArraySubscript& source) {
+  return source.printTo(os);
+}
+#endif
+}
 
 inline Internals::JsonArraySubscript JsonArray::operator[](size_t index) {
   return Internals::JsonArraySubscript(*this, index);
@@ -105,7 +115,7 @@ inline const Internals::JsonArraySubscript JsonArray::operator[](
     size_t index) const {
   return Internals::JsonArraySubscript(*const_cast<JsonArray*>(this), index);
 }
-}  // namespace ArduinoJson
+}
 
 #ifdef _MSC_VER
 #pragma warning(pop)

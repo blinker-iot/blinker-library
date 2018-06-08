@@ -6,14 +6,14 @@
 
 #include "ArduinoJson/version.hpp"
 
-#include "ArduinoJson/DynamicJsonDocument.hpp"
-#include "ArduinoJson/Json/JsonDeserializer.hpp"
-#include "ArduinoJson/Json/JsonSerializer.hpp"
-#include "ArduinoJson/Json/PrettyJsonSerializer.hpp"
-#include "ArduinoJson/MsgPack/MsgPackDeserializer.hpp"
-#include "ArduinoJson/MsgPack/MsgPackSerializer.hpp"
-#include "ArduinoJson/StaticJsonDocument.hpp"
+#include "ArduinoJson/DynamicJsonBuffer.hpp"
+#include "ArduinoJson/JsonArray.hpp"
+#include "ArduinoJson/JsonObject.hpp"
+#include "ArduinoJson/StaticJsonBuffer.hpp"
 
+#include "ArduinoJson/Deserialization/JsonParserImpl.hpp"
 #include "ArduinoJson/JsonArrayImpl.hpp"
+#include "ArduinoJson/JsonBufferImpl.hpp"
 #include "ArduinoJson/JsonObjectImpl.hpp"
 #include "ArduinoJson/JsonVariantImpl.hpp"
+#include "ArduinoJson/Serialization/JsonSerializerImpl.hpp"

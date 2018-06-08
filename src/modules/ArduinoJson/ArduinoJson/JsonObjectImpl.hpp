@@ -12,17 +12,17 @@ namespace ArduinoJson {
 
 template <typename TStringRef>
 inline JsonArray &JsonObject::createNestedArray_impl(TStringRef key) {
-  JsonArray *array = new (_buffer) JsonArray(_buffer);
-  if (!array) return JsonArray::invalid();
+  if (!_buffer) return JsonArray::invalid();
+  JsonArray &array = _buffer->createArray();
   set(key, array);
-  return *array;
+  return array;
 }
 
 template <typename TStringRef>
 inline JsonObject &JsonObject::createNestedObject_impl(TStringRef key) {
-  JsonObject *object = new (_buffer) JsonObject(_buffer);
-  if (!object) return JsonObject::invalid();
+  if (!_buffer) return JsonObject::invalid();
+  JsonObject &object = _buffer->createObject();
   set(key, object);
-  return *object;
+  return object;
 }
-}  // namespace ArduinoJson
+}

@@ -8,10 +8,10 @@
 #include "JsonArray.hpp"
 #include "JsonObject.hpp"
 #include "JsonVariant.hpp"
-#include "Numbers/isFloat.hpp"
-#include "Numbers/isInteger.hpp"
-#include "Numbers/parseFloat.hpp"
-#include "Numbers/parseInteger.hpp"
+#include "Polyfills/isFloat.hpp"
+#include "Polyfills/isInteger.hpp"
+#include "Polyfills/parseFloat.hpp"
+#include "Polyfills/parseInteger.hpp"
 
 #include <string.h>  // for strcmp
 
@@ -116,5 +116,11 @@ inline bool JsonVariant::variantIsFloat() const {
          _type == JSON_NEGATIVE_INTEGER ||
          (_type == JSON_UNPARSED && isFloat(_content.asString));
 }
+
+#if ARDUINOJSON_ENABLE_STD_STREAM
+inline std::ostream &operator<<(std::ostream &os, const JsonVariant &source) {
+  return source.printTo(os);
+}
+#endif
 
 }  // namespace ArduinoJson

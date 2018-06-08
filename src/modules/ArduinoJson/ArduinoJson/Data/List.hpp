@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../Memory/JsonBuffer.hpp"
+#include "../JsonBuffer.hpp"
 #include "ListConstIterator.hpp"
 #include "ListIterator.hpp"
 
@@ -27,7 +27,7 @@ class List {
   // When buffer is NULL, the List is not able to grow and success() returns
   // false. This is used to identify bad memory allocations and parsing
   // failures.
-  explicit List(JsonBuffer *buf) : _buffer(buf), _firstNode(NULL) {}
+  explicit List(JsonBuffer *buffer) : _buffer(buffer), _firstNode(NULL) {}
 
   // Returns true if the object is valid
   // Would return false in the following situation:
@@ -84,19 +84,11 @@ class List {
     }
   }
 
-  JsonBuffer &buffer() const {
-    return *_buffer;
-  }
-
  protected:
-  void clear() {
-    _firstNode = 0;
-  }
-
   JsonBuffer *_buffer;
 
  private:
   node_type *_firstNode;
 };
-}  // namespace Internals
-}  // namespace ArduinoJson
+}
+}

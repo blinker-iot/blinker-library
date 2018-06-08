@@ -128,10 +128,70 @@ class Blinker_AUTO
             : _autoState(false)
         {}
 
+//         void run(String key, float data, int32_t nowTime) {
+//             if (key != STRING_format(_targetKey)) {
+//                 return;
+//             }
+
+//             if (_time1 < _time2) {
+//                 if (!(nowTime >= _time1 && nowTime <= _time2)) {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2("out of time slot: ", nowTime);
+// #endif
+//                     return;
+//                 }
+//             }
+//             else if (_time1 > _time2) {
+//                 if (nowTime > _time1 && nowTime < _time2) {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2("out of time slot: ", nowTime);
+// #endif
+//                     return;
+//                 }
+//             }
+
+//             switch (_compareType) {
+//                 case BLINKER_COMPARE_LESS:
+//                     if (data < _targetData) {
+//                         if (!isTrigged) {
+//                             triggerCheck("less");
+//                         }
+//                     }
+//                     else {
+//                         isTrigged = false;
+//                         isRecord = false;
+//                     }
+//                     break;
+//                 case BLINKER_COMPARE_EQUAL:
+//                     if (data = _targetData) {
+//                         if (!isTrigged) {
+//                             triggerCheck("equal");
+//                         }
+//                     }
+//                     else {
+//                         isTrigged = false;
+//                         isRecord = false;
+//                     }
+//                     break;
+//                 case BLINKER_COMPARE_GREATER:
+//                     if (data > _targetData) {
+//                         if (!isTrigged) {
+//                             triggerCheck("greater");
+//                         }
+//                     }
+//                     else {
+//                         isTrigged = false;
+//                         isRecord = false;
+//                     }
+//                     break;
+//                 default:
+//                     break;
+//             }
+//         }
+
         void manager(String data) {
-            DynamicJsonDocument doc;
-            deserializeJson(doc, data);
-            JsonObject& root = doc.as<JsonObject>();
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& root = jsonBuffer.parseObject(data);
 
             // String auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", ",", 1);
             bool auto_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
@@ -310,7 +370,7 @@ class Blinker_AUTO
             // EEPROM.get(BLINKER_EEP_ADDR_AUTOID, _autoId);
             // EEPROM.get(BLINKER_EEP_ADDR_AUTO, _autoData);
             EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTOID, _autoId);
-            EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO, _autoData);
+            EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO1, _autoData);
 
             _linkNum = _autoId >> 30;
             _autoId = _autoId & 0x3FFFFFFF;
@@ -330,7 +390,7 @@ class Blinker_AUTO
             else {
                 _compareType = _autoData >> 28 & 0x03;
                 // EEPROM.get(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA, _targetData);
+                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA1, _targetData);
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2("_compareType: ", _compareType ? (_compareType == BLINKER_COMPARE_GREATER ? "greater" : "equal") : "less");
                 BLINKER_LOG2("_targetData: ", _targetData);
@@ -386,11 +446,11 @@ class Blinker_AUTO
             // EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE, _autoId);
             // EEPROM.put(BLINKER_EEP_ADDR_AUTO, _autoData);
             EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTOID, _autoId);
-            EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO, _autoData);
+            EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO1, _autoData);
 
             if (_logicType == BLINKER_TYPE_NUMERIC) {
                 // EEPROM.put(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
-                EEPROM.put(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
+                EEPROM.put(BLINKER_EEP_ADDR_TARGETDATA1, _targetData);
             }
 
             // EEPROM.put(BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
@@ -413,6 +473,8 @@ class Blinker_AUTO
 
         uint32_t id() { return _autoId; }
 
+        uint8_t type() { return _logicType; }
+
     private :
         uint8_t     _num;
         // - - - - - - - -  - - - - - - - -  - - - - - - - -  - - - - - - - -
@@ -420,8 +482,8 @@ class Blinker_AUTO
         // | | | | | _duration 0-60min 6
         // | | | | _targetState|_compareType on/off|less/equal/greater 2
         // | | | _targetState|_compareType on/off|less/equal/greater
-        // | | _logicType state/numberic 1
-        // | _autoState true/false 1
+        // | | logic_type state/numberic 1
+        // | _autoState true/false 1 X
         bool        _autoState;
         uint32_t    _autoId = 0;
         uint8_t     _logicType;
@@ -1050,6 +1112,8 @@ class BlinkerApi
             BLINKER_LOG1("Warning! EEPROM address 0-255 is used for Auto Control!");
             BLINKER_LOG1("=======================================================");
 
+            BLINKER_LOG2("Already used: ", BLINKER_ONE_AUTO_DATA_SIZE);
+
             // deserialization();
             autoStart();
         }
@@ -1112,69 +1176,73 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("autoRun data: ", data);
 #endif
-            if (key != STRING_format(_targetKey)) {
-                return;
-            }
-
             if (!_isNTPInit || !_autoState) {
                 return;
             }
 
             int32_t nowTime = dtime();
-            if (_time1 < _time2) {
-                if (!(nowTime >= _time1 && nowTime <= _time2)) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("out of time slot: ", nowTime);
-#endif
-                    return;
-                }
-            }
-            else if (_time1 > _time2) {
-                if (nowTime > _time1 && nowTime < _time2) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("out of time slot: ", nowTime);
-#endif
-                    return;
-                }
-            }
 
-            switch (_compareType) {
-                case BLINKER_COMPARE_LESS:
-                    if (data < _targetData) {
-                        if (!isTrigged) {
-                            triggerCheck("less");
-                        }
-                    }
-                    else {
-                        isTrigged = false;
-                        isRecord = false;
-                    }
-                    break;
-                case BLINKER_COMPARE_EQUAL:
-                    if (data = _targetData) {
-                        if (!isTrigged) {
-                            triggerCheck("equal");
-                        }
-                    }
-                    else {
-                        isTrigged = false;
-                        isRecord = false;
-                    }
-                    break;
-                case BLINKER_COMPARE_GREATER:
-                    if (data > _targetData) {
-                        if (!isTrigged) {
-                            triggerCheck("greater");
-                        }
-                    }
-                    else {
-                        isTrigged = false;
-                        isRecord = false;
-                    }
-                    break;
-                default:
-                    break;
-            }
+            // for (uint8_t _num = 0; _num < _aCount; _num++) {
+
+            // }
+//             if (key != STRING_format(_targetKey)) {
+//                 return;
+//             }
+
+//             if (_time1 < _time2) {
+//                 if (!(nowTime >= _time1 && nowTime <= _time2)) {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2("out of time slot: ", nowTime);
+// #endif
+//                     return;
+//                 }
+//             }
+//             else if (_time1 > _time2) {
+//                 if (nowTime > _time1 && nowTime < _time2) {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2("out of time slot: ", nowTime);
+// #endif
+//                     return;
+//                 }
+//             }
+
+//             switch (_compareType) {
+//                 case BLINKER_COMPARE_LESS:
+//                     if (data < _targetData) {
+//                         if (!isTrigged) {
+//                             triggerCheck("less");
+//                         }
+//                     }
+//                     else {
+//                         isTrigged = false;
+//                         isRecord = false;
+//                     }
+//                     break;
+//                 case BLINKER_COMPARE_EQUAL:
+//                     if (data = _targetData) {
+//                         if (!isTrigged) {
+//                             triggerCheck("equal");
+//                         }
+//                     }
+//                     else {
+//                         isTrigged = false;
+//                         isRecord = false;
+//                     }
+//                     break;
+//                 case BLINKER_COMPARE_GREATER:
+//                     if (data > _targetData) {
+//                         if (!isTrigged) {
+//                             triggerCheck("greater");
+//                         }
+//                     }
+//                     else {
+//                         isTrigged = false;
+//                         isRecord = false;
+//                     }
+//                     break;
+//                 default:
+//                     break;
+//             }
         }
 // #else
 //     #pragma message("This code is intended to run with BLINKER_MQTT! Please check your connect type.")

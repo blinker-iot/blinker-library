@@ -130,6 +130,11 @@
 #endif
 #endif
 
+// Enable deprecated functions by default
+#ifndef ARDUINOJSON_ENABLE_DEPRECATED
+#define ARDUINOJSON_ENABLE_DEPRECATED 1
+#endif
+
 // Control the exponentiation threshold for big numbers
 // CAUTION: cannot be more that 1e9 !!!!
 #ifndef ARDUINOJSON_POSITIVE_EXPONENTIATION_THRESHOLD
@@ -143,14 +148,4 @@
 
 #if ARDUINOJSON_USE_LONG_LONG && ARDUINOJSON_USE_INT64
 #error ARDUINOJSON_USE_LONG_LONG and ARDUINOJSON_USE_INT64 cannot be set together
-#endif
-
-#ifndef ARDUINOJSON_LITTLE_ENDIAN
-#if defined(_MSC_VER) ||                                                      \
-    (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) || \
-    (defined(__LITTLE_ENDIAN__))
-#define ARDUINOJSON_LITTLE_ENDIAN 1
-#else
-#define ARDUINOJSON_LITTLE_ENDIAN 0
-#endif
 #endif

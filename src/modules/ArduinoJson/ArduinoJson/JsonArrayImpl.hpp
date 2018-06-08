@@ -11,18 +11,16 @@
 namespace ArduinoJson {
 
 inline JsonArray &JsonArray::createNestedArray() {
-  JsonArray *array = new (_buffer) JsonArray(_buffer);
-  if (!array) return JsonArray::invalid();
-
+  if (!_buffer) return JsonArray::invalid();
+  JsonArray &array = _buffer->createArray();
   add(array);
-  return *array;
+  return array;
 }
 
 inline JsonObject &JsonArray::createNestedObject() {
-  JsonObject *object = new (_buffer) JsonObject(_buffer);
-  if (!object) return JsonObject::invalid();
-
+  if (!_buffer) return JsonObject::invalid();
+  JsonObject &object = _buffer->createObject();
   add(object);
-  return *object;
+  return object;
 }
-}  // namespace ArduinoJson
+}
