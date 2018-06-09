@@ -175,6 +175,46 @@ class BlinkerMQTT {
             }
         }
 
+        bool autoPrint(char *name1, char *type1, char *data1
+            , char *name2, char *type2, char *data2)
+        {
+            String payload = "{\"data\":{" + STRING_format(data1) + "}," + \ 
+                + "\"fromDevice\":\"" + STRING_format(MQTT_ID) + "\"," + \
+                + "\"toDevice\":\"" + name1 + "\"," + \
+                + "\"deviceType\":\"" + type1 + "\"}";
+
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1("autoPrint...");
+#endif
+            if (mqtt->connected()) {
+                if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || linkTime == 0) {
+                    linkTime = millis();
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2(payload, ("...OK!"));
+#endif
+                    payload = "{\"data\":{" + STRING_format(data2) + "}," + \ 
+                        + "\"fromDevice\":\"" + STRING_format(MQTT_ID) + "\"," + \
+                        + "\"toDevice\":\"" + name2 + "\"," + \
+                        + "\"deviceType\":\"" + type2 + "\"}";
+
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2(payload, ("...OK!"));
+#endif                    
+                    return true;
+                }
+                else {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG2("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
+#endif
+                    return false;
+                }
+            }
+            else {
+                BLINKER_ERR_LOG1("MQTT Disconnected");
+                return false;
+            }
+        }
+
     private :    
 
         void connectServer();
