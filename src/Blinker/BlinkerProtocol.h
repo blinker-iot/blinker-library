@@ -416,6 +416,14 @@ class BlinkerProtocol
 #endif
             return conn.autoPrint(name, type, data);
         }
+
+        bool autoTrigged(char *name1, char *type1, char *data1
+            , char *name2, char *type2, char *data2) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1("autoTrigged");
+#endif
+            return conn.autoPrint(name1, type1, data1, name2, type2, data2);
+        }
 // #endif
 };
 
