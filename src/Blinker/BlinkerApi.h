@@ -173,6 +173,7 @@ class BlinkerAUTO
                             else {
                                 _isTrigged[_num] = false;
                                 isRecord[_num] = false;
+                                _trigged = false;
                             }
                             break;
                         case BLINKER_COMPARE_EQUAL:
@@ -184,6 +185,7 @@ class BlinkerAUTO
                             else {
                                 _isTrigged[_num] = false;
                                 isRecord[_num] = false;
+                                _trigged = false;
                             }
                             break;
                         case BLINKER_COMPARE_GREATER:
@@ -195,6 +197,7 @@ class BlinkerAUTO
                             else {
                                 _isTrigged[_num] = false;
                                 isRecord[_num] = false;
+                                _trigged = false;
                             }
                             break;
                         default:
@@ -566,6 +569,7 @@ class BlinkerAUTO
                     _isTrigged[_num] = true;
                 }
             }
+            _trigged = false;
         }
 
         uint32_t id() { return _autoId; }
