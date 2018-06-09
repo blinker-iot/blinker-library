@@ -14,6 +14,7 @@
 #include "modules/WebSockets/WebSocketsServer.h"
 #include "modules/mqtt/Adafruit_MQTT.h"
 #include "modules/mqtt/Adafruit_MQTT_Client.h"
+#include "modules/ArduinoJson/ArduinoJson.h"
 
 static char MQTT_HOST[BLINKER_MQTT_HOST_SIZE];
 static uint16_t MQTT_PORT;
@@ -498,15 +499,30 @@ void BlinkerMQTT::subscribe() {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(("Got: "), (char *)iotSub->lastread);
 #endif
-            String dataGet = String((char *)iotSub->lastread);
+            // String dataGet = String((char *)iotSub->lastread);
 
-            String _uuid = STRING_find_string(dataGet, "fromDevice", "\"", 3);
+            // DynamicJsonDocument doc;
+            // deserializeJson(doc, String((char *)iotSub->lastread));
+            // JsonObject& root = doc.as<JsonObject>();
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub->lastread));
+	        // JsonObject& root = jsonBuffer.parseObject((char *)iotSub->lastread);
 
-            dataGet = STRING_find_string(dataGet, BLINKER_CMD_DATA, ",\"fromDevice", 2);
+            // if (!root.success()) {
+            //     BLINKER_LOG1("json test error");
+            //     return;
+            // }
 
-            if (dataGet.indexOf("\"") != -1 && dataGet.indexOf("\"") == 0) {
-                dataGet = STRING_find_string(dataGet, "\"", "\"", 0);
-            }
+            String _uuid = root["fromDevice"];
+            String dataGet = root["data"];
+
+            // String _uuid = STRING_find_string(dataGet, "fromDevice", "\"", 3);
+
+            // dataGet = STRING_find_string(dataGet, BLINKER_CMD_DATA, ",\"fromDevice", 2);
+
+            // if (dataGet.indexOf("\"") != -1 && dataGet.indexOf("\"") == 0) {
+            //     dataGet = STRING_find_string(dataGet, "\"", "\"", 0);
+            // }
 
             // BLINKER_LOG2("data: ", dataGet);
 #ifdef BLINKER_DEBUG_ALL
