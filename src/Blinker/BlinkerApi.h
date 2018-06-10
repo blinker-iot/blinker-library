@@ -209,94 +209,6 @@ class BlinkerAUTO
                             break;
                     }
                 }
-                // else if (_logicType == BLINKER_TYPE_OR 
-                //     && logic_type[_num] == BLINKER_TYPE_NUMERIC)
-                // {
-                //     switch (_compareType[_num]) {
-                //         case BLINKER_COMPARE_LESS:
-                //             if (data < _targetData[_num]) {
-                //                 if (!_isTrigged[_num]) {
-                //                     triggerCheck("or less", _num);
-                //                 }
-                //             }
-                //             else {
-                //                 _isTrigged[_num] = false;
-                //                 isRecord[_num] = false;
-                //                 _trigged = false;
-                //             }
-                //             break;
-                //         case BLINKER_COMPARE_EQUAL:
-                //             if (data = _targetData[_num]) {
-                //                 if (!_isTrigged[_num]) {
-                //                     triggerCheck("or equal", _num);
-                //                 }
-                //             }
-                //             else {
-                //                 _isTrigged[_num] = false;
-                //                 isRecord[_num] = false;
-                //                 _trigged = false;
-                //             }
-                //             break;
-                //         case BLINKER_COMPARE_GREATER:
-                //             if (data > _targetData[_num]) {
-                //                 if (!_isTrigged[_num]) {
-                //                     triggerCheck("or greater", _num);
-                //                 }
-                //             }
-                //             else {
-                //                 _isTrigged[_num] = false;
-                //                 isRecord[_num] = false;
-                //                 _trigged = false;
-                //             }
-                //             break;
-                //         default:
-                //             break;
-                //     }
-                // }
-                // else if (_logicType == BLINKER_TYPE_AND 
-                //     && logic_type[_num] == BLINKER_TYPE_NUMERIC)
-                // {
-                //     switch (_compareType[_num]) {
-                //         case BLINKER_COMPARE_LESS:
-                //             if (data < _targetData[_num]) {
-                //                 if (!_isTrigged[_num]) {
-                //                     triggerCheck("and less", _num);
-                //                 }
-                //             }
-                //             else {
-                //                 _isTrigged[_num] = false;
-                //                 isRecord[_num] = false;
-                //                 _trigged = false;
-                //             }
-                //             break;
-                //         case BLINKER_COMPARE_EQUAL:
-                //             if (data = _targetData[_num]) {
-                //                 if (!_isTrigged[_num]) {
-                //                     triggerCheck("and equal", _num);
-                //                 }
-                //             }
-                //             else {
-                //                 _isTrigged[_num] = false;
-                //                 isRecord[_num] = false;
-                //                 _trigged = false;
-                //             }
-                //             break;
-                //         case BLINKER_COMPARE_GREATER:
-                //             if (data > _targetData[_num]) {
-                //                 if (!_isTrigged[_num]) {
-                //                     triggerCheck("and greater", _num);
-                //                 }
-                //             }
-                //             else {
-                //                 _isTrigged[_num] = false;
-                //                 isRecord[_num] = false;
-                //                 _trigged = false;
-                //             }
-                //             break;
-                //         default:
-                //             break;
-                //     }
-                // }
             }
         }
 
@@ -1659,7 +1571,7 @@ class BlinkerApi
         void beginAuto() {
             BLINKER_LOG1("=======================================================");
             BLINKER_LOG1("=========== Blinker Auto Control mode init! ===========");
-            BLINKER_LOG1("Warning! EEPROM address 0-255 is used for Auto Control!");
+            BLINKER_LOG1("Warning!EEPROM address 0-1255 is used for Auto Control!");
             BLINKER_LOG1("=======================================================");
 
             BLINKER_LOG2("Already used: ", BLINKER_ONE_AUTO_DATA_SIZE);
@@ -1670,14 +1582,6 @@ class BlinkerApi
 
         // void autoRun(String key, String state) {
         void autoInput(String key, String state) {
-// #ifdef BLINKER_DEBUG_ALL            
-//             BLINKER_LOG2("autoRun state: ", state);
-// #endif
-//             if (key != STRING_format(_targetKey)) {
-//                 return;
-//             }
-            
-            // if (!_isNTPInit || !_autoState) {
             if (!_isNTPInit) {
                 return;
             }
@@ -1732,10 +1636,6 @@ class BlinkerApi
 
         // void autoRun(String key, float data) {
         void autoInput(String key, float data) {
-// #ifdef BLINKER_DEBUG_ALL
-//             BLINKER_LOG2("autoRun data: ", data);
-// #endif
-            // if (!_isNTPInit || !_autoState) {
             if (!_isNTPInit) {
                 return;
             }
