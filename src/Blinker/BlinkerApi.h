@@ -1590,47 +1590,6 @@ class BlinkerApi
 
             for (uint8_t _num = 0; _num < _aCount; _num++) {
                 _AUTO[_num]->run(key, state, nowTime);
-//                 if (_AUTO[_num]->isTrigged()) {
-//                     uint8_t link_num = _AUTO[_num]->linkNum();
-                    
-//                     if (link_num == 1) {
-//                         if (static_cast<Proto*>(this)->autoTrigged(
-//                             _AUTO[_num]->name(0)
-//                             , _AUTO[_num]->type(0)
-//                             , _AUTO[_num]->data(0)))
-//                         {
-// #ifdef BLINKER_DEBUG_ALL
-//                             BLINKER_LOG1("trigged sucessed");
-// #endif
-//                             _AUTO[_num]->fresh();
-//                         }
-//                         else {
-// #ifdef BLINKER_DEBUG_ALL
-//                             BLINKER_LOG1("trigged failed");
-// #endif                            
-//                         }
-//                     }
-//                     else if (link_num == 2) {
-//                         if (static_cast<Proto*>(this)->autoTrigged(
-//                             _AUTO[_num]->name(0)
-//                             , _AUTO[_num]->type(0)
-//                             , _AUTO[_num]->data(0)
-//                             , _AUTO[_num]->name(1)
-//                             , _AUTO[_num]->type(1)
-//                             , _AUTO[_num]->data(1)))
-//                         {
-// #ifdef BLINKER_DEBUG_ALL
-//                             BLINKER_LOG1("trigged sucessed");
-// #endif
-//                             _AUTO[_num]->fresh();
-//                         }
-//                         else {
-// #ifdef BLINKER_DEBUG_ALL
-//                             BLINKER_LOG1("trigged failed");
-// #endif                            
-//                         }
-//                     }
-//                 }
             }
         }
 
@@ -1644,47 +1603,6 @@ class BlinkerApi
 
             for (uint8_t _num = 0; _num < _aCount; _num++) {
                 _AUTO[_num]->run(key, data, nowTime);
-//                 if (_AUTO[_num]->isTrigged()) {
-//                     uint8_t link_num = _AUTO[_num]->linkNum();
-                    
-//                     if (link_num == 1) {
-//                         if (static_cast<Proto*>(this)->autoTrigged(
-//                             _AUTO[_num]->name(0)
-//                             , _AUTO[_num]->type(0)
-//                             , _AUTO[_num]->data(0)))
-//                         {
-// #ifdef BLINKER_DEBUG_ALL
-//                             BLINKER_LOG1("trigged sucessed");
-// #endif
-//                             _AUTO[_num]->fresh();
-//                         }
-//                         else {
-// #ifdef BLINKER_DEBUG_ALL
-//                             BLINKER_LOG1("trigged failed");
-// #endif                            
-//                         }
-//                     }
-//                     else if (link_num == 2) {
-//                         if (static_cast<Proto*>(this)->autoTrigged(
-//                             _AUTO[_num]->name(0)
-//                             , _AUTO[_num]->type(0)
-//                             , _AUTO[_num]->data(0)
-//                             , _AUTO[_num]->name(1)
-//                             , _AUTO[_num]->type(1)
-//                             , _AUTO[_num]->data(1)))
-//                         {
-// #ifdef BLINKER_DEBUG_ALL
-//                             BLINKER_LOG1("trigged sucessed");
-// #endif
-//                             _AUTO[_num]->fresh();
-//                         }
-//                         else {
-// #ifdef BLINKER_DEBUG_ALL
-//                             BLINKER_LOG1("trigged failed");
-// #endif                            
-//                         }
-//                     }
-//                 }
             }
         }
 
@@ -1755,32 +1673,6 @@ class BlinkerApi
         struct tm   timeinfo;
 
 #if defined(BLINKER_MQTT)
-        // - - - - - - - -  - - - - - - - -  - - - - - - - -  - - - - - - - -
-        // | | | | |            | _time1 0-1440min 11  | _time2 0-1440min 11                   
-        // | | | | | _duration 0-60min 6
-        // | | | | _targetState|_compareType on/off|less/equal/greater 2
-        // | | | _targetState|_compareType on/off|less/equal/greater
-        // | | _logicType state/numberic 1
-        // | _autoState true/false 1
-        // bool        _autoState = false;
-        // uint32_t    _autoId;
-        // uint8_t     _logicType;
-        // char        _targetKey[12];
-        // float       _targetData;
-        // uint8_t     _compareType = -1;
-        // bool        _targetState;
-        // uint32_t    _time1;
-        // uint32_t    _time2;
-        // uint32_t    _duration;
-        // uint32_t    _treTime;
-        // bool        isRecord = false;
-        // bool        isTrigged = false;
-        // uint8_t     _linkNum = 0;
-        // char        _linkDevice[2][BLINKER_LINKDEVICE_SIZE];
-        // char        _linkType[2][BLINKER_LINKTYPE_SIZE];
-        // char        _linkData[2][BLINKER_LINKDATA_SIZE];
-        // uint32_t    _autoData;
-
         uint8_t     _aCount = 0;
 #endif
 
@@ -2230,32 +2122,6 @@ class BlinkerApi
             }
         }
 
-//         void triggerCheck(String state) {
-//             if (!isRecord) {
-//                 isRecord = true;
-//                 _treTime = millis();
-//             }
-
-//             if ((millis() - _treTime) / 1000 >= _duration) {
-// #ifdef BLINKER_DEBUG_ALL
-//                 BLINKER_LOG2(state, " trigged");
-// #endif
-//                 if (static_cast<Proto*>(this)->autoTrigged(_linkDevice[0], _linkType[0], _linkData[0]))
-//                 {
-//                     isTrigged = true;
-// // #ifdef BLINKER_DEBUG_ALL
-//                     BLINKER_LOG1("trigged sucessed");
-// // #endif
-//                 }
-//                 else
-//                 {
-// // #ifdef BLINKER_DEBUG_ALL
-//                     BLINKER_LOG1("trigged failed");
-// // #endif
-//                 }
-//             }
-//         }
-
         void autoStart() {
             EEPROM.begin(BLINKER_EEP_SIZE);
             EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
@@ -2278,39 +2144,6 @@ class BlinkerApi
                 }
             }
         }
-
-        // String logicData() {
-        //     String _logicData;
-
-        //     if (_logicType == BLINKER_TYPE_STATE) {
-        //         _logicData = "{\"targetState\":\"" + STRING_format(_targetState ? BLINKER_CMD_ON : BLINKER_CMD_OFF) + "\"" + \
-        //             ",\"targetKey\":\"" + STRING_format(_targetKey) + "\"" + \
-        //             ",\"duration\":" + STRING_format(_duration) + "}";
-        //     }
-        //     else if (_logicType == BLINKER_TYPE_NUMERIC) {
-        //         _logicData = "{\"copmpareType\":\"" + STRING_format(_compareType ? ((_compareType == BLINKER_COMPARE_GREATER) ? BLINKER_CMD_GREATER : BLINKER_CMD_EQUAL) : BLINKER_CMD_LESS) + "\"" + \
-        //             ",\"targetKey\":\"" + STRING_format(_targetKey) + "\"" + \
-        //             ",\"targetData\":" + STRING_format(_targetData) + \
-        //             ",\"duration\":" + STRING_format(_duration) + "}";
-        //     }
-
-        //     return _logicData;
-        // }
-
-        // String autoData() {
-        //     String _auto_data;
-        //     _auto_data = "{\"auto\":" + STRING_format(_autoState ? "true" : "false") + \
-        //         ",\"autoData\":{\"autoId\":\"123\"" + \
-        //         ",\"logicType\":\"" + STRING_format(_logicType ? BLINKER_CMD_NUMBERIC : BLINKER_CMD_STATE) + "\"" + \
-        //         ",\"logicData\":[" + logicData() + "]" + \
-        //         ",\"timeSlot\":[" + STRING_format(_time1/60) + "," + STRING_format(_time2/60) + "]" + \
-        //         ",\"linkData\":[{\"linkDevice\":\"" + STRING_format(_linkDevice[0]) + "\"" + \
-        //         ",\"linkType\":\"" + STRING_format(_linkType[0]) + "\"" + \
-        //         ",\"data\":{" + STRING_format(_linkData[0]) + "}" + \
-        //         "}]}}";
-
-        //     return _auto_data;
-        // }
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
