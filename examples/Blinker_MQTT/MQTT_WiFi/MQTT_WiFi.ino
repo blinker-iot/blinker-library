@@ -5,9 +5,9 @@
 
 #include <Blinker.h>
 
-char auth[] = "<Your MQTT Secret Key>";
-char ssid[] = "<Your WiFi network SSID or name>";
-char pswd[] = "<Your WiFi network WPA password or WEP key>";
+char auth[] = "Your MQTT Secret Key";
+char ssid[] = "Your WiFi network SSID or name";
+char pswd[] = "Your WiFi network WPA password or WEP key";
 
 void setup() {
     Serial.begin(115200);

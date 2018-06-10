@@ -177,6 +177,17 @@ class BlinkerProtocol
         //         _print("{" + _msg + "}");
         //     }
         // }
+        template <typename T1>
+        void printArray(T1 n1, const String &s2) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + s2;
+
+            if (isFormat) {
+                formatData(_msg);
+            }
+            else {
+                _print("{" + _msg + "}");
+            }
+        }
         
         template <typename T1>
         void print(T1 n1, const String &s2) {
@@ -204,7 +215,7 @@ class BlinkerProtocol
 
         template <typename T1>
         void print(T1 n1, char c) {
-            String _msg = "\"" + STRING_format(n1) + "\":\"" + STRING_format(c) + "\"";
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(c);
 
             if (isFormat) {
                 formatData(_msg);
@@ -216,7 +227,7 @@ class BlinkerProtocol
 
         template <typename T1>
         void print(T1 n1, unsigned char b) {
-            String _msg = "\"" + STRING_format(n1) + "\":\"" + STRING_format(b) + "\"";
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(b);
 
             if (isFormat) {
                 formatData(_msg);

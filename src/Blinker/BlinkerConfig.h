@@ -97,6 +97,8 @@
 
 #define BLINKER_CMD_AUTODATA            "autoData"
 
+#define BLINKER_CMD_DELETID             "deletId"
+
 #define BLINKER_CMD_LOGICDATA           "logicData"
 
 #define BLINKER_CMD_LOGICTYPE           "logicType"
