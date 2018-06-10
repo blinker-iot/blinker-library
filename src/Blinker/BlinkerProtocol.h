@@ -177,6 +177,17 @@ class BlinkerProtocol
         //         _print("{" + _msg + "}");
         //     }
         // }
+        template <typename T1>
+        void printArray(T1 n1, const String &s2) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + s2;
+
+            if (isFormat) {
+                formatData(_msg);
+            }
+            else {
+                _print("{" + _msg + "}");
+            }
+        }
         
         template <typename T1>
         void print(T1 n1, const String &s2) {
