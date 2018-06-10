@@ -109,6 +109,10 @@
 
 #define BLINKER_CMD_NUMBERIC            "numberic"
 
+#define BLINKER_CMD_OR                  "or"
+
+#define BLINKER_CMD_AND                 "and"
+
 #define BLINKER_CMD_COMPARETYPE         "compareType"
 
 #define BLINKER_CMD_TRIGGER             "trigger"
@@ -198,6 +202,10 @@
 #define BLINKER_TYPE_STATE              0
 
 #define BLINKER_TYPE_NUMERIC            1
+
+#define BLINKER_TYPE_OR                 2
+
+#define BLINKER_TYPE_AND                3
 
 #define BLINKER_COMPARE_LESS            0
 
