@@ -1326,111 +1326,12 @@ class BlinkerApi
             }
         }
 
-        bool toggle(const String & _tName, const JsonObject& data)
-        {
-            int8_t num = checkNum(_tName, _Toggle, _tCount);
-            String state = data[_tName];
-
-            // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _tName)) {
-            if (data.containsKey(_tName)) {
-                _fresh = true;
-            }
-            else {
-                state = "";
-            }
-
-            if (state == BLINKER_CMD_ON) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _Toggle[_tCount]->freshState(true);
-                        _tCount++;
-                    }
-                }
-                else {
-                    _Toggle[num]->freshState(true);
-                }
-
-                _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_OFF) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _Toggle[_tCount]->freshState(false);
-                        _tCount++;
-                    }
-                }
-                else {
-                    _Toggle[num]->freshState(false);
-                }
-
-                _fresh = true;
-                return false;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _tCount++;
-                    }
-                    return false;
-                }
-
-                return _Toggle[num]->getState();
-            }
-        }
-
         uint8_t slider(const String & _sName)
         {
             int8_t num = checkNum(_sName, _Slider, _sCount);
             int16_t value = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), _sName);
 
             if (value != FIND_KEY_VALUE_FAILED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new BlinkerSlider();
-                        _Slider[_sCount]->name(_sName);
-                        _Slider[_sCount]->freshValue(value);
-                        _sCount++;
-                    }
-                }
-                else {
-                    _Slider[num]->freshValue(value);
-                }
-
-                _fresh = true;
-                return value;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new BlinkerSlider();
-                        _Slider[_sCount]->name(_sName);
-                        _sCount++;
-                    }
-                    return 0;
-                }
-                
-                return _Slider[num]->getValue();
-            }
-        }
-
-        uint8_t slider(const String & _sName, const JsonObject& data)
-        {
-            int8_t num = checkNum(_sName, _Slider, _sCount);
-            // int16_t value = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), _sName);
-            // if (data.containsKey(_sName)) {
-            //     int16_t value = data[_sName];
-            // }
-
-            // if (value != FIND_KEY_VALUE_FAILED) {
-            if (data.containsKey(_sName)) {
-                int16_t value = data[_sName];
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
                         _Slider[_sCount] = new BlinkerSlider();
@@ -1476,26 +1377,6 @@ class BlinkerApi
             }
         }
 
-        uint8_t joystick(b_joystickaxis_t axis, const JsonObject& data)
-        {
-            // int16_t jAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, axis);
-
-            // if (jAxisValue != FIND_KEY_VALUE_FAILED) {
-            if (data.containsKey(BLINKER_CMD_JOYSTICK)) {
-                int16_t jAxisValue = data[BLINKER_CMD_JOYSTICK][axis];
-                // joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
-                // joyValue[J_Yaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
-                joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
-                joyValue[J_Yaxis] = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
-
-                _fresh = true;
-                return jAxisValue;
-            }
-            else {
-                return joyValue[axis];
-            }
-        }
-
         int16_t ahrs(b_ahrsattitude_t attitude)
         {
             int16_t aAttiValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, attitude);
@@ -1504,29 +1385,6 @@ class BlinkerApi
                 ahrsValue[Yaw] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Yaw);
                 ahrsValue[Roll] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Roll);
                 ahrsValue[Pitch] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Pitch);
-
-                _fresh = true;
-
-                return aAttiValue;
-            }
-            else {
-                return ahrsValue[attitude];
-            }
-        }
-
-        int16_t ahrs(b_ahrsattitude_t attitude, const JsonObject& data)
-        {
-            // int16_t aAttiValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, attitude);
-
-            // if (aAttiValue != FIND_KEY_VALUE_FAILED) {
-            if (data.containsKey(BLINKER_CMD_AHRS)) {
-                int16_t aAttiValue = data[BLINKER_CMD_AHRS][attitude];
-                // ahrsValue[Yaw] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Yaw);
-                // ahrsValue[Roll] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Roll);
-                // ahrsValue[Pitch] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS, Pitch);
-                ahrsValue[Yaw] = data[BLINKER_CMD_AHRS][Yaw];
-                ahrsValue[Roll] = data[BLINKER_CMD_AHRS][Roll];
-                ahrsValue[Pitch] = data[BLINKER_CMD_AHRS][Pitch];
 
                 _fresh = true;
 
@@ -1612,37 +1470,6 @@ class BlinkerApi
             }
         }
 
-        String gps(b_gps_t axis, bool newData, const JsonObject& data) {
-            if (!newData && (millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT) {
-                static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
-                delay(100);
-
-                gps_get_time = millis();
-            }
-
-            // String axisValue = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, axis);
-
-            if (data.containsKey(BLINKER_CMD_GPS)) {
-                // gpsValue[LONG] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LONG);
-                // gpsValue[LAT] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LAT);
-                String gpsValue_LONG = data[BLINKER_CMD_GPS][LONG];
-                String gpsValue_LAT = data[BLINKER_CMD_GPS][LAT];
-                gpsValue[LONG] = gpsValue_LONG;
-                gpsValue[LAT] = gpsValue_LAT;
-
-                _fresh = true;
-
-                if (_fresh) {
-                    static_cast<Proto*>(this)->isParsed();
-                }
-
-                return gpsValue[axis];
-            }
-            else {
-                return gpsValue[axis];
-            }
-        }
-
         uint8_t rgb(const String & _rgbName, b_rgb_t color) {
             int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
             int16_t value = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, color);
@@ -1651,53 +1478,6 @@ class BlinkerApi
                 uint8_t _rValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, R);
                 uint8_t _gValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, G);
                 uint8_t _bValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, B);
-
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new BlinkerRGB();
-                        _RGB[_rgbCount]->name(_rgbName);
-                        _RGB[_rgbCount]->freshValue(R, _rValue);
-                        _RGB[_rgbCount]->freshValue(G, _gValue);
-                        _RGB[_rgbCount]->freshValue(B, _bValue);
-                        _rgbCount++;
-                    }
-                }
-                else {
-                    _RGB[num]->freshValue(R, _rValue);
-                    _RGB[num]->freshValue(G, _gValue);
-                    _RGB[num]->freshValue(B, _bValue);
-                }
-
-                _fresh = true;
-                return value;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new BlinkerRGB();
-                        _RGB[_rgbCount]->name(_rgbName);
-                        _rgbCount++;
-                    }
-                    return 0;
-                }
-                
-                return _RGB[num]->getValue(color);
-            }
-        }
-
-        uint8_t rgb(const String & _rgbName, b_rgb_t color, const JsonObject& data) {
-            int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
-            // int16_t value = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, color);
-
-            // if (value != FIND_KEY_VALUE_FAILED) {
-            if (data.containsKey(_rgbName)) {
-                int16_t value = data[_rgbName][color];
-                // uint8_t _rValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, R);
-                // uint8_t _gValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, G);
-                // uint8_t _bValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, B);
-                uint8_t _rValue = data[_rgbName][R];
-                uint8_t _gValue = data[_rgbName][G];
-                uint8_t _bValue = data[_rgbName][B];
 
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
@@ -1793,6 +1573,7 @@ class BlinkerApi
             BLINKER_LOG1("=======================================================");
             BLINKER_LOG1("=========== Blinker Auto Control mode init! ===========");
             BLINKER_LOG1("Warning!EEPROM address 0-1279 is used for Auto Control!");
+            BLINKER_LOG1("=========== DON'T USE THESE EEPROM ADDRESS! ===========");
             BLINKER_LOG1("=======================================================");
 
             BLINKER_LOG2("Already used: ", BLINKER_ONE_AUTO_DATA_SIZE);
@@ -1988,7 +1769,6 @@ class BlinkerApi
             int8_t num = checkNum(_bName, _Button, _bCount);
             String state = data[_bName];
 
-            // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _bName)) {
             if (data.containsKey(_bName)) {
                 _fresh = true;
             }
@@ -2058,84 +1838,16 @@ class BlinkerApi
             }
         }
 
-        bool buttonParse(const String & _bName, String data)
-        {
-            int8_t num = checkNum(_bName, _Button, _bCount);
-            String state;
-
-            if (STRING_find_string_value(data, state, _bName)) {
-                // _fresh = true;
-            }
-
-            if (state == BLINKER_CMD_BUTTON_TAP) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true);
-                }
-
-                // _fresh = true;
-                return true;
-            }
-            else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true, true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true, true);
-                }
-
-                // _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_BUTTON_RELEASED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(false);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(false);
-                }
-
-                // _fresh = true;
-                return false;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _bCount++;
-                    }
-                    return false;
-                }
-
-                return _Button[num]->getState();
-            }
-        }
-
-        bool toggle(const String & _tName, String data)
+        bool toggle(const String & _tName, const JsonObject& data)
         {
             int8_t num = checkNum(_tName, _Toggle, _tCount);
-            String state;
+            String state = data[_tName];
 
-            if (STRING_find_string_value(data, state, _tName)) {
-                // _fresh = true;
+            if (data.containsKey(_tName)) {
+                _fresh = true;
+            }
+            else {
+                state = "";
             }
 
             if (state == BLINKER_CMD_ON) {
@@ -2151,7 +1863,7 @@ class BlinkerApi
                     _Toggle[num]->freshState(true);
                 }
 
-                // _fresh = true;
+                _fresh = true;
                 return true;
             }
             else if (state == BLINKER_CMD_OFF) {
@@ -2167,7 +1879,7 @@ class BlinkerApi
                     _Toggle[num]->freshState(false);
                 }
 
-                // _fresh = true;
+                _fresh = true;
                 return false;
             }
             else {
@@ -2184,12 +1896,12 @@ class BlinkerApi
             }
         }
 
-        uint8_t slider(const String & _sName, String data)
+        uint8_t slider(const String & _sName, const JsonObject& data)
         {
             int8_t num = checkNum(_sName, _Slider, _sCount);
-            int16_t value = STRING_find_numberic_value(data, _sName);
-
-            if (value != FIND_KEY_VALUE_FAILED) {
+            
+            if (data.containsKey(_sName)) {
+                int16_t value = data[_sName];
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
                         _Slider[_sCount] = new BlinkerSlider();
@@ -2202,7 +1914,7 @@ class BlinkerApi
                     _Slider[num]->freshValue(value);
                 }
 
-                // _fresh = true;
+                _fresh = true;
                 return value;
             }
             else {
@@ -2219,14 +1931,73 @@ class BlinkerApi
             }
         }
 
-        uint8_t rgb(const String & _rgbName, b_rgb_t color, String data) {
-            int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
-            int16_t value = STRING_find_array_numberic_value(data, _rgbName, color);
+        uint8_t joystick(b_joystickaxis_t axis, const JsonObject& data)
+        {
+            if (data.containsKey(BLINKER_CMD_JOYSTICK)) {
+                int16_t jAxisValue = data[BLINKER_CMD_JOYSTICK][axis];
+                joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
+                joyValue[J_Yaxis] = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
 
-            if (value != FIND_KEY_VALUE_FAILED) {
-                uint8_t _rValue = STRING_find_array_numberic_value(data, _rgbName, R);
-                uint8_t _gValue = STRING_find_array_numberic_value(data, _rgbName, G);
-                uint8_t _bValue = STRING_find_array_numberic_value(data, _rgbName, B);
+                _fresh = true;
+                return jAxisValue;
+            }
+            else {
+                return joyValue[axis];
+            }
+        }
+
+        int16_t ahrs(b_ahrsattitude_t attitude, const JsonObject& data)
+        {
+            if (data.containsKey(BLINKER_CMD_AHRS)) {
+                int16_t aAttiValue = data[BLINKER_CMD_AHRS][attitude];
+                ahrsValue[Yaw] = data[BLINKER_CMD_AHRS][Yaw];
+                ahrsValue[Roll] = data[BLINKER_CMD_AHRS][Roll];
+                ahrsValue[Pitch] = data[BLINKER_CMD_AHRS][Pitch];
+
+                _fresh = true;
+
+                return aAttiValue;
+            }
+            else {
+                return ahrsValue[attitude];
+            }
+        }
+
+        String gps(b_gps_t axis, bool newData, const JsonObject& data) {
+            if (!newData && (millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT) {
+                static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
+                delay(100);
+
+                gps_get_time = millis();
+            }
+
+            if (data.containsKey(BLINKER_CMD_GPS)) {
+                String gpsValue_LONG = data[BLINKER_CMD_GPS][LONG];
+                String gpsValue_LAT = data[BLINKER_CMD_GPS][LAT];
+                gpsValue[LONG] = gpsValue_LONG;
+                gpsValue[LAT] = gpsValue_LAT;
+
+                _fresh = true;
+
+                if (_fresh) {
+                    static_cast<Proto*>(this)->isParsed();
+                }
+
+                return gpsValue[axis];
+            }
+            else {
+                return gpsValue[axis];
+            }
+        }
+
+        uint8_t rgb(const String & _rgbName, b_rgb_t color, const JsonObject& data) {
+            int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
+            
+            if (data.containsKey(_rgbName)) {
+                int16_t value = data[_rgbName][color];
+                uint8_t _rValue = data[_rgbName][R];
+                uint8_t _gValue = data[_rgbName][G];
+                uint8_t _bValue = data[_rgbName][B];
 
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
@@ -2244,7 +2015,7 @@ class BlinkerApi
                     _RGB[num]->freshValue(B, _bValue);
                 }
 
-                // _fresh = true;
+                _fresh = true;
                 return value;
             }
             else {
@@ -2452,7 +2223,8 @@ class BlinkerApi
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
-        bool timerManager() {
+        bool timerManager(const JsonObject& data) {
+        // bool timerManager() {
             bool isSet = false;
             bool isCount = false;
             bool isLoop = false;
@@ -2468,19 +2240,26 @@ class BlinkerApi
                 BLINKER_LOG1("get timer setting");
 
                 if (isCount) {
-                    String cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", ",", 1);
-                    if (cd_state == "") {
-                        cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", "}", 1);
-                    }
+                    // String cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", ",", 1);
+                    // if (cd_state == "") {
+                    //     cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", "}", 1);
+                    // }
+                    _cdState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN];
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("countdown state: ", cd_state);
+                    BLINKER_LOG2("countdown state: ", _cdState ? "true" : "false");
 #endif
                     // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
 
-                    String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
-                    int32_t _totalTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TOTALTIME);
-                    int32_t _runTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RUNTIME);
-                    String _action = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION, "]", 3);
+                    // String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
+                    // int32_t _totalTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TOTALTIME);
+                    // int32_t _runTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RUNTIME);
+                    // String _action = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION, "]", 3);
+                    String _state = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
+                    int32_t _totalTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_TOTALTIME];
+                    _totalTime = 60 * _totalTime;
+                    int32_t _runTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
+                    _runTime = 60 * _runTime;
+                    String _action = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_ACTION];
 
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("_state: ", _state);
@@ -2493,7 +2272,7 @@ class BlinkerApi
                     _cdTime1 = _totalTime;
                     _cdTime2 = _runTime;
                     
-                    _cdState = (cd_state == BLINKER_CMD_TRUE) ? true : false;
+                    // _cdState = (cd_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_cdState) {
                         cdTicker.once(_totalTime - _runTime, _cd_callback);
                         BLINKER_LOG1("countdown start!");
@@ -2505,21 +2284,30 @@ class BlinkerApi
                     static_cast<Proto*>(this)->_print(countdownData(), false);
                 }
                 else if (isLoop) {
-                    String lp_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "loop\"", ",", 1);
-                    if (lp_state == "") {
-                        lp_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "loop\"", "}", 1);
-                    }
+                    // String lp_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "loop\"", ",", 1);
+                    // if (lp_state == "") {
+                    //     lp_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "loop\"", "}", 1);
+                    // }
+                    _lpState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP];
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("countdown state: ", lp_state);
+                    BLINKER_LOG2("countdown state: ", _lpState ? "true" : "false");
 #endif
                     // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
 
-                    int8_t _times = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMES);
-                    String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
-                    int32_t _time1 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME1);
-                    String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
-                    int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
-                    String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
+                    // int8_t _times = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMES);
+                    // String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
+                    // int32_t _time1 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME1);
+                    // String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
+                    // int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
+                    // String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
+                    int8_t _times = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIMES];
+                    String _state = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
+                    int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME1];
+                    _time1 = 60 * _time1;
+                    String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION1];
+                    int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME1];
+                    _time2 = 60 * _time2;
+                    String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION1];
 
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("_times: ", _times);
@@ -2536,7 +2324,7 @@ class BlinkerApi
                     _lpTime1 = _time1;
                     _lpTime2 = _time2;
 
-                    _lpState = (lp_state == BLINKER_CMD_TRUE) ? true : false;
+                    // _lpState = (lp_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_lpState) {
                         _lpRun1 = true;
                         _lpTrigged_times = 0;
@@ -2550,21 +2338,29 @@ class BlinkerApi
                     static_cast<Proto*>(this)->_print(loopData(), false);
                 }
                 else if (isTiming) {
-                    String tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", ",", 1);
-                    if (tm_state == "") {
-                        tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", "}", 1);
-                    }
+                    // String tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", ",", 1);
+                    // if (tm_state == "") {
+                    //     tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", "}", 1);
+                    // }
+                    _tmState = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING];
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("countdown state: ", tm_state);
+                    BLINKER_LOG2("countdown state: ", _tmState ? "true" : "false");
 #endif
                     // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
 
                     // int8_t _times = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMES);
-                    String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
-                    int32_t _time1 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME1);
-                    String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
-                    int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
-                    String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
+                    // String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
+                    // int32_t _time1 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME1);
+                    // String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
+                    // int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
+                    // String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
+                    String _state = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][BLINKER_CMD_STATE];
+                    int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][BLINKER_CMD_TIME1];
+                    _time1 = 60 * _time1;
+                    String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][BLINKER_CMD_ACTION1];
+                    int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][BLINKER_CMD_TIME1];
+                    _time2 = 60 * _time2;
+                    String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][BLINKER_CMD_ACTION1];
 
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("_state: ", _state);
@@ -2579,7 +2375,7 @@ class BlinkerApi
                     _tmTime1 = _time1;
                     _tmTime2 = _time2;
 
-                    _tmState = (tm_state == BLINKER_CMD_TRUE) ? true : false;
+                    // _tmState = (tm_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_tmState) {
                         int32_t nowTime = dtime();
 
@@ -2666,16 +2462,18 @@ class BlinkerApi
                 }
 // (const JsonObject& data)
 #if defined(BLINKER_MQTT)
-                if (autoManager(root)) {
-                    // static_cast<Proto*>(this)->isParsed();
-                    // return;
-                }
+                // if (autoManager(root)) {
+                //     static_cast<Proto*>(this)->isParsed();
+                //     return;
+                // }
+                autoManager(root);
 #endif
 #if defined(ESP8266) || defined(ESP32)
-                if (timerManager()) {
-                    // static_cast<Proto*>(this)->isParsed();
-                    // return;
-                }
+                // if (timerManager(root)) {
+                //     static_cast<Proto*>(this)->isParsed();
+                //     return;
+                // }
+                timerManager(root);
 #endif
                 heartBeat(root);
                 getVersion(root);
@@ -2705,25 +2503,59 @@ class BlinkerApi
 
         void _parse(String data)
         {
+            String data1 = "{\"data\":" + data + "}";
             DynamicJsonBuffer jsonBuffer;
-            JsonObject& root = jsonBuffer.parseObject(static_cast<Proto*>(this)->dataParse());
+            JsonObject& root = jsonBuffer.parseObject(data1);
 
             if (!root.success()) {
                 return;
             }
 
-            // for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-            //     buttonParse(_Button[bNum]->getName(), root);
-            // }
+            String arrayData = root["data"][0];
+
+            BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
+            
+            if (arrayData.length()) {
+                for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
+                    String array_data = root["data"][a_num];
+
+                    BLINKER_LOG2("array_data: ", array_data);
+
+                    if(array_data.length()) {
+                        DynamicJsonBuffer _jsonBuffer;
+                        JsonObject& _array = _jsonBuffer.parseObject(array_data);
+                        
+                        json_parse(_array);
+                    }
+                    else {
+                        return;
+                    }
+                }
+            }
+            else {
+                JsonObject& root = jsonBuffer.parseObject(data);
+
+                if (!root.success()) {
+                    return;
+                }
+
+                json_parse(root);
+            }
+        }
+
+        void json_parse(const JsonObject& data) {
+            for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                buttonParse(_Button[bNum]->getName(), data);
+            }
             for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                slider(_Slider[sNum]->getName(), root);
+                slider(_Slider[sNum]->getName(), data);
             }
             for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                toggle(_Toggle[kNum]->getName(), root);
+                toggle(_Toggle[kNum]->getName(), data);
             }
-            // for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-            //     rgb(_RGB[rgbNum]->getName(), R, root);
-            // }
+            for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                rgb(_RGB[rgbNum]->getName(), R, data);
+            }
         }
 
 #if defined(ESP8266) || defined(ESP32)

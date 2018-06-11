@@ -137,6 +137,8 @@
 
 #define BLINKER_CMD_COUNTDOWN           "countdown"
 
+#define BLINKER_CMD_COUNTDOWNDATA       "countdownData"
+
 #define BLINKER_CMD_TOTALTIME           "totalTime"
 
 #define BLINKER_CMD_RUNTIME             "runTime"
@@ -149,6 +151,8 @@
 
 #define BLINKER_CMD_LOOP                "loop"
 
+#define BLINKER_CMD_LOOPDATA            "loopData"
+
 #define BLINKER_CMD_TIMES               "times"
 
 #define BLINKER_CMD_TIME1               "time1"
@@ -156,6 +160,8 @@
 #define BLINKER_CMD_TIME2               "time2"
 
 #define BLINKER_CMD_TIMING              "timing"
+
+#define BLINKER_CMD_TIMINGDATA          "timingData"
 
 #define BLINKER_CMD_TASK                "task"
 
