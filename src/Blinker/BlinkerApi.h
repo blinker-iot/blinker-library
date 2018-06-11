@@ -1612,7 +1612,7 @@ class BlinkerApi
             }
         }
 
-        String gps(b_gps_t axis, bool newData = false, const JsonObject& data) {
+        String gps(b_gps_t axis, bool newData, const JsonObject& data) {
             if (!newData && (millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT) {
                 static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
                 delay(100);
@@ -1625,8 +1625,10 @@ class BlinkerApi
             if (data.containsKey(BLINKER_CMD_GPS)) {
                 // gpsValue[LONG] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LONG);
                 // gpsValue[LAT] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LAT);
-                gpsValue[LONG] = data[BLINKER_CMD_GPS][LONG];
-                gpsValue[LAT] = data[BLINKER_CMD_GPS][LAT];
+                String gpsValue_LONG = data[BLINKER_CMD_GPS][LONG];
+                String gpsValue_LAT = data[BLINKER_CMD_GPS][LAT];
+                gpsValue[LONG] = gpsValue_LONG;
+                gpsValue[LAT] = gpsValue_LAT;
 
                 _fresh = true;
 
@@ -2265,9 +2267,7 @@ class BlinkerApi
             // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
             if (state.length()) {
                 // _fresh = true;
-                BLINKER_LOG2("heartBeat: ", state);
                 if (state == BLINKER_CMD_STATE) {
-                    BLINKER_LOG2("heartBeat2: ", state);
 #if defined(BLINKER_MQTT)
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
@@ -2695,7 +2695,7 @@ class BlinkerApi
 
                 joystick(J_Xaxis, root);
                 ahrs(Yaw, root);
-                gps(LONG, true);
+                gps(LONG, true, root);
 
                 if (_fresh) {
                     static_cast<Proto*>(this)->isParsed();
@@ -2705,18 +2705,25 @@ class BlinkerApi
 
         void _parse(String data)
         {
-            for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                buttonParse(_Button[bNum]->getName(), data);
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& root = jsonBuffer.parseObject(static_cast<Proto*>(this)->dataParse());
+
+            if (!root.success()) {
+                return;
             }
+
+            // for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+            //     buttonParse(_Button[bNum]->getName(), root);
+            // }
             for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                slider(_Slider[sNum]->getName(), data);
+                slider(_Slider[sNum]->getName(), root);
             }
             for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                toggle(_Toggle[kNum]->getName(), data);
+                toggle(_Toggle[kNum]->getName(), root);
             }
-            for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                rgb(_RGB[rgbNum]->getName(), R, data);
-            }
+            // for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+            //     rgb(_RGB[rgbNum]->getName(), R, root);
+            // }
         }
 
 #if defined(ESP8266) || defined(ESP32)
