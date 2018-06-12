@@ -351,19 +351,28 @@ void BlinkerMQTT::connectServer() {
     BLINKER_LOG1("==============================");
 #endif
 
-    if (STRING_contais_string(payload, BLINKER_CMD_NOTFOUND)) {
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(payload);
+
+    if (STRING_contais_string(payload, BLINKER_CMD_NOTFOUND) || !root.success()) {
         while(1) {
             BLINKER_ERR_LOG1("Please make sure you have put in the right AuthKey!");
             ::delay(10000);
         }
     }
 
-    String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
-    String _userName = STRING_find_string(payload, "iotId", "\"", 4);
-    String _key = STRING_find_string(payload, "iotToken", "\"", 4);
-    String _productInfo = STRING_find_string(payload, "productKey", "\"", 4);
-    String _broker = STRING_find_string(payload, "broker", "\"", 4);
-    String _uuid = STRING_find_string(payload, "uuid", "\"", 4);
+    // String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
+    // String _userName = STRING_find_string(payload, "iotId", "\"", 4);
+    // String _key = STRING_find_string(payload, "iotToken", "\"", 4);
+    // String _productInfo = STRING_find_string(payload, "productKey", "\"", 4);
+    // String _broker = STRING_find_string(payload, "broker", "\"", 4);
+    // String _uuid = STRING_find_string(payload, "uuid", "\"", 4);
+    String _userID = root[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
+    String _userName = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTID];
+    String _key = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTTOKEN];
+    String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
+    String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
+    String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         memcpy(DEVICE_NAME, _userID.c_str(), 12);

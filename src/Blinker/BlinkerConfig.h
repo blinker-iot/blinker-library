@@ -165,6 +165,20 @@
 
 #define BLINKER_CMD_TASK                "task"
 
+#define BLINKER_CMD_DETAIL              "detail"
+
+#define BLINKER_CMD_DEVICENAME          "deviceName"
+
+#define BLINKER_CMD_IOTID               "iotId"
+
+#define BLINKER_CMD_IOTTOKEN            "iotToken"
+
+#define BLINKER_CMD_PRODUCTKEY          "productKey"
+
+#define BLINKER_CMD_BROKER              "broker"
+
+#define BLINKER_CMD_UUID                "uuid"
+
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
 #define BLINKER_ONE_DAY_TIME            86400UL
