@@ -311,16 +311,16 @@ class BlinkerAUTO
             JsonObject& root = jsonBuffer.parseObject(data);
 
             // String auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", ",", 1);
-            bool auto_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
+            _autoState = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
             // if (auto_state == "") {
             //     auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", "}", 1);
             // }
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("===============================================");
-            BLINKER_LOG2("auto state: ", auto_state);
+            BLINKER_LOG2("auto state: ", _autoState);
 #endif
             // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
-            _autoState = auto_state;
+            // _autoState = auto_state;
 
             // _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
             _autoId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_AUTOID];
@@ -428,9 +428,9 @@ class BlinkerAUTO
                 for (uint8_t t_num = 0; t_num < _targetNum; t_num++) {
                     String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_TARGETKEY];
 
-                    const char* compare_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_COMPARETYPE];
+                    String compare_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_COMPARETYPE];
 
-                    if (compare_type) {
+                    if (compare_type.length()) {
 #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG1("or/and numberic!");
 #endif
@@ -2102,8 +2102,8 @@ class BlinkerApi
             // isSet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
             // isAuto = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTODATA);
             isSet = data.containsKey(BLINKER_CMD_SET);
-            const char* aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA];
-            if (aData) {
+            String aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA];
+            if (aData.length()) {
                 isAuto = true;
             }
 
@@ -2208,16 +2208,28 @@ class BlinkerApi
         }
 
         void autoStart() {
+            uint8_t checkData;
+
             EEPROM.begin(BLINKER_EEP_SIZE);
-            EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+            EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
+            if (checkData != BLINKER_CHECK_DATA) {
+                EEPROM.put(BLINKER_EEP_ADDR_CHECK, BLINKER_CHECK_DATA);
+                EEPROM.commit();
+                EEPROM.end();
+                return;
+            }
+            EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);         
+            if (_aCount > 2) {
+                _aCount = 0;
+                EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+            }
             EEPROM.commit();
             EEPROM.end();
+
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("_aCount: ", _aCount);
 #endif
-            if (_aCount > 2) {
-                _aCount = 2;
-            }
+
             if (_aCount) {
                 for (uint8_t _num = 0; _num < _aCount; _num++) {
 #ifdef BLINKER_DEBUG_ALL
@@ -2527,9 +2539,10 @@ class BlinkerApi
             }
 
             String arrayData = root["data"][0];
-
+#ifdef BLINKER_DEBUG_ALL
             // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
-            
+            BLINKER_LOG2("_parse data: ", data);
+#endif            
             if (arrayData.length()) {
                 for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
                     String array_data = root["data"][a_num];

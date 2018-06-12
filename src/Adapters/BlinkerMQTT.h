@@ -215,6 +215,8 @@ class BlinkerMQTT {
             }
         }
 
+        String deviceName() { return MQTT_ID; }
+
     private :    
 
         void connectServer();
