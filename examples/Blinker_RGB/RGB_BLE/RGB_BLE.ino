@@ -1,9 +1,9 @@
-#define BLINKER_PRINT	Serial
+#define BLINKER_PRINT Serial
 #define BLINKER_BLE
 
 #include <Blinker.h>
 
-#define RGB1            "RGBKEY"
+#define RGB1 "RGBKEY"
 
 void setup()
 {

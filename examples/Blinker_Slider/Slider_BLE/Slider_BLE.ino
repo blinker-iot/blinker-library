@@ -1,9 +1,9 @@
-#define BLINKER_PRINT	Serial
+#define BLINKER_PRINT Serial
 #define BLINKER_BLE
 
 #include <Blinker.h>
 
-#define SLIDER_1		"SliderKey"
+#define SLIDER_1 "SliderKey"
 
 void setup()
 {

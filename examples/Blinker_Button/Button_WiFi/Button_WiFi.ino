@@ -1,4 +1,4 @@
-#define BLINKER_PRINT	Serial
+#define BLINKER_PRINT Serial
 #define BLINKER_WIFI
 
 #include <Blinker.h>
@@ -6,7 +6,7 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#define BUTTON_1		"ButtonKey"
+#define BUTTON_1 "ButtonKey"
 #define TAP_EXAMPLE
 
 void setup()
