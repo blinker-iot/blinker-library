@@ -22,7 +22,7 @@
 #define BLINKER_OBJECT_NOT_AVAIL        -1
 
 #ifndef BLINKER_MAX_READ_SIZE
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     #define BLINKER_MAX_READ_SIZE       512
 #else
     #define BLINKER_MAX_READ_SIZE       256
@@ -30,10 +30,10 @@
 #endif
 
 #ifndef BLINKER_MAX_SEND_SIZE
-#if defined(BLINKER_MQTT)
-    #define BLINKER_MAX_SEND_SIZE       256
+#if defined(BLINKER_WIFI) ||defined(BLINKER_MQTT)
+    #define BLINKER_MAX_SEND_SIZE       512
 #else
-    #define BLINKER_MAX_SEND_SIZE       128
+    #define BLINKER_MAX_SEND_SIZE       256
 #endif
 #endif
 
@@ -164,6 +164,20 @@
 #define BLINKER_CMD_TIMINGDATA          "timingData"
 
 #define BLINKER_CMD_TASK                "task"
+
+#define BLINKER_CMD_DETAIL              "detail"
+
+#define BLINKER_CMD_DEVICENAME          "deviceName"
+
+#define BLINKER_CMD_IOTID               "iotId"
+
+#define BLINKER_CMD_IOTTOKEN            "iotToken"
+
+#define BLINKER_CMD_PRODUCTKEY          "productKey"
+
+#define BLINKER_CMD_BROKER              "broker"
+
+#define BLINKER_CMD_UUID                "uuid"
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
