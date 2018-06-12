@@ -23,11 +23,11 @@ class BlinkerSimpleESP8266_WS
         }
 #endif
     
-        void begin(const char* ssid,
-                    const char* pswd)
+        void begin(const char* _ssid,
+                    const char* _pswd)
         {
             Base::begin();
-            connectWiFi(ssid, pswd);
+            connectWiFi(_ssid, _pswd);
             BLINKER_LOG1("ESP8266_WiFi Initialled...");
         }
     
@@ -39,14 +39,14 @@ class BlinkerSimpleESP8266_WS
             
             BLINKER_LOG1("Waiting for SmartConfig.");
             while (!WiFi.smartConfigDone()) {
-                delay(500);
+                ::delay(500);
             }
 
             BLINKER_LOG1("SmartConfig received.");
             
             BLINKER_LOG1("Waiting for WiFi");
             while (WiFi.status() != WL_CONNECTED) {
-                delay(500);
+                ::delay(500);
             }
 
             BLINKER_LOG1("WiFi Connected.");
@@ -74,17 +74,17 @@ class BlinkerSimpleESP8266_WS
             this->conn.begin(macDeviceName());
         }
 
-        void connectWiFi(const char* ssid, const char* pswd)
+        void connectWiFi(const char* _ssid, const char* _pswd)
         {
             uint32_t connectTime = millis();
 
-            BLINKER_LOG2(BLINKER_F("Connecting to "), ssid);
+            BLINKER_LOG2(BLINKER_F("Connecting to "), _ssid);
             WiFi.mode(WIFI_STA);
-            if (pswd && strlen(pswd)) {
-                WiFi.begin(ssid, pswd);
+            if (_pswd && strlen(_pswd)) {
+                WiFi.begin(_ssid, _pswd);
             }
             else {
-                WiFi.begin(ssid);
+                WiFi.begin(_ssid);
             }
 
             while (WiFi.status() != WL_CONNECTED) {

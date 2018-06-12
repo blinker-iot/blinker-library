@@ -14,21 +14,21 @@ class BlinkerSimpleESP32_MQTT
         {}
 
 #if defined(BLINKER_ESP_SMARTCONFIG)
-        void begin(const char* auth) {
+        void begin(const char* _auth) {
             Base::begin();
             smartconfig();
-            this->conn.begin(auth);
+            this->conn.begin(_auth);
             BLINKER_LOG1("ESP32_MQTT Initialled...");
         }
 #endif
 
-        void begin( const char* auth,
-                    const char* ssid,
-                    const char* pswd)
+        void begin( const char* _auth,
+                    const char* _ssid,
+                    const char* _pswd)
         {
             Base::begin();
-            connectWiFi(ssid, pswd);
-            this->conn.begin(auth);
+            connectWiFi(_ssid, _pswd);
+            this->conn.begin(_auth);
             BLINKER_LOG1("ESP32_MQTT Initialled...");
         }
 
@@ -40,14 +40,14 @@ class BlinkerSimpleESP32_MQTT
             
             BLINKER_LOG1("Waiting for SmartConfig.");
             while (!WiFi.smartConfigDone()) {
-                delay(500);
+                ::delay(500);
             }
 
             BLINKER_LOG1("SmartConfig received.");
             
             BLINKER_LOG1("Waiting for WiFi");
             while (WiFi.status() != WL_CONNECTED) {
-                delay(500);
+                ::delay(500);
             }
 
             BLINKER_LOG1("WiFi Connected.");
@@ -59,17 +59,17 @@ class BlinkerSimpleESP32_MQTT
         }
 #endif
 
-        void connectWiFi(const char* ssid, const char* pswd)
+        void connectWiFi(const char* _ssid, const char* _pswd)
         {
             uint32_t connectTime = millis();
 
-            BLINKER_LOG2(("Connecting to "), ssid);
+            BLINKER_LOG2(("Connecting to "), _ssid);
             WiFi.mode(WIFI_STA);
-            if (pswd && strlen(pswd)) {
-                WiFi.begin(ssid, pswd);
+            if (_pswd && strlen(_pswd)) {
+                WiFi.begin(_ssid, _pswd);
             }
             else {
-                WiFi.begin(ssid);
+                WiFi.begin(_ssid);
             }
 
             while (WiFi.status() != WL_CONNECTED) {
