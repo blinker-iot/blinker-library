@@ -2244,28 +2244,45 @@ class BlinkerApi
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
-        bool timerManager(const JsonObject& data) {
+        bool timerManager(const JsonObject& data, bool _noSet = false) {
         // bool timerManager() {
             bool isSet = false;
             bool isCount = false;
             bool isLoop = false;
             bool isTiming = false;
 
-            isSet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
-            isCount = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_COUNTDOWN);
-            isLoop = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LOOP);
-            isTiming = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMING);
+            if (!_noSet) {
+                isSet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
+                isCount = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_COUNTDOWN);
+                isLoop = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LOOP);
+                isTiming = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMING);
+            }
+            else {
+                isCount = data.containsKey(BLINKER_CMD_COUNTDOWN);
+                isLoop = data.containsKey(BLINKER_CMD_LOOP);
+                isTiming = data.containsKey(BLINKER_CMD_TIMING);
+            }
 
-            if (isSet && (isCount || isLoop || isTiming)) {
+            // if (isSet && (isCount || isLoop || isTiming)) {
+            if (isCount || isLoop || isTiming) {
                 _fresh = true;
                 BLINKER_LOG1("get timer setting");
+
+                if(!isSet && !_noSet) {
+                    return false;
+                }
 
                 if (isCount) {
                     // String cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", ",", 1);
                     // if (cd_state == "") {
                     //     cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", "}", 1);
                     // }
-                    _cdState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN];
+                    if (isSet) {
+                        _cdState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN];
+                    }
+                    else if(_noSet) {
+                        _cdState = data[BLINKER_CMD_COUNTDOWN];
+                    }
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("countdown state: ", _cdState ? "true" : "false");
 #endif
@@ -2275,27 +2292,49 @@ class BlinkerApi
                     // int32_t _totalTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TOTALTIME);
                     // int32_t _runTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RUNTIME);
                     // String _action = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION, "]", 3);
-                    String _state = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
-                    int32_t _totalTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_TOTALTIME];
-                    _totalTime = 60 * _totalTime;
-                    int32_t _runTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
-                    _runTime = 60 * _runTime;
-                    String _action = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_ACTION];
+                    if (isSet) {
+                        String _state = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
+                        int32_t _totalTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_TOTALTIME];
+                        _totalTime = 60 * _totalTime;
+                        int32_t _runTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
+                        _runTime = 60 * _runTime;
+                        String _action = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_ACTION];
+                    
+                        _cdAction = _action;
+                        _cdTime1 = _totalTime;
+                        _cdTime2 = _runTime;
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("_state: ", _state);
+#endif
+                    }
+                    else if (_noSet) {
+                        String _state = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
+                        int32_t _totalTime = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_TOTALTIME];
+                        _totalTime = 60 * _totalTime;
+                        int32_t _runTime = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
+                        _runTime = 60 * _runTime;
+                        String _action = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_ACTION];
+                    
+                        _cdAction = _action;
+                        _cdTime1 = _totalTime;
+                        _cdTime2 = _runTime;
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("_state: ", _state);
+#endif
+                    }
 
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_state: ", _state);
-                    BLINKER_LOG2("_totalTime: ", _totalTime);
-                    BLINKER_LOG2("_runTime: ", _runTime);
-                    BLINKER_LOG2("_action: ", _action);
+                    BLINKER_LOG2("_totalTime: ", _cdTime1);
+                    BLINKER_LOG2("_runTime: ", _cdTime2);
+                    BLINKER_LOG2("_action: ", _cdAction);
 #endif
-                    _cdAction = _action;
-
-                    _cdTime1 = _totalTime;
-                    _cdTime2 = _runTime;
+                    // _cdAction = _action;
+                    // _cdTime1 = _totalTime;
+                    // _cdTime2 = _runTime;
                     
                     // _cdState = (cd_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_cdState) {
-                        cdTicker.once(_totalTime - _runTime, _cd_callback);
+                        cdTicker.once(_cdTime1 - _cdTime2, _cd_callback);
 #ifdef BLINKER_DEBUG_ALL 
                         BLINKER_LOG1("countdown start!");
 #endif
@@ -2311,7 +2350,12 @@ class BlinkerApi
                     // if (lp_state == "") {
                     //     lp_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "loop\"", "}", 1);
                     // }
-                    _lpState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP];
+                    if (isSet) {
+                        _lpState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP];
+                    }
+                    else if (_noSet) {
+                        _lpState = data[BLINKER_CMD_LOOP];
+                    }
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("loop state: ", _lpState ? "true" : "false");
 #endif
@@ -2323,29 +2367,60 @@ class BlinkerApi
                     // String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
                     // int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
                     // String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
-                    int8_t _times = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIMES];
-                    String _state = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
-                    int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME1];
-                    _time1 = 60 * _time1;
-                    String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION1];
-                    int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME2];
-                    _time2 = 60 * _time2;
-                    String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION2];
+                    if (isSet) {
+                        int8_t _times = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIMES];
+                        String _state = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
+                        int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME1];
+                        _time1 = 60 * _time1;
+                        String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION1];
+                        int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME2];
+                        _time2 = 60 * _time2;
+                        String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION2];
+                        
+                        _lpAction1 = _action1;
+                        _lpAction2 = _action2;
+
+                        _lpTimes = _times;
+                        _lpTime1 = _time1;
+                        _lpTime2 = _time2;
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("_state: ", _state);
+#endif
+                    }
+                    else if (_noSet) {
+                        int8_t _times = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIMES];
+                        String _state = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
+                        int32_t _time1 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME1];
+                        _time1 = 60 * _time1;
+                        String _action1 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION1];
+                        int32_t _time2 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME2];
+                        _time2 = 60 * _time2;
+                        String _action2 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION2];
+                        
+                        _lpAction1 = _action1;
+                        _lpAction2 = _action2;
+
+                        _lpTimes = _times;
+                        _lpTime1 = _time1;
+                        _lpTime2 = _time2;
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("_state: ", _state);
+#endif
+                    }
 
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_times: ", _times);
-                    BLINKER_LOG2("_state: ", _state);
-                    BLINKER_LOG2("_time1: ", _time1);
-                    BLINKER_LOG2("_action1: ", _action1);
-                    BLINKER_LOG2("_time2: ", _time2);
-                    BLINKER_LOG2("_action2: ", _action2);
+                    BLINKER_LOG2("_times: ", _lpTimes);
+                    BLINKER_LOG2("_time1: ", _lpTime1);
+                    BLINKER_LOG2("_action1: ", _lpAction1);
+                    BLINKER_LOG2("_time2: ", _lpTime2);
+                    BLINKER_LOG2("_action2: ", _lpAction2);
 #endif
-                    _lpAction1 = _action1;
-                    _lpAction2 = _action2;
+                    // _lpAction1 = _action1;
+                    // _lpAction2 = _action2;
 
-                    _lpTimes = _times;
-                    _lpTime1 = _time1;
-                    _lpTime2 = _time2;
+                    // _lpTimes = _times;
+                    // _lpTime1 = _time1;
+                    // _lpTime2 = _time2;
 
                     // _lpState = (lp_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_lpState) {
@@ -2367,7 +2442,12 @@ class BlinkerApi
                     // if (tm_state == "") {
                     //     tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", "}", 1);
                     // }
-                    _tmState = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING];
+                    if (isSet) {
+                        _tmState = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING];
+                    }
+                    else if (_noSet) {
+                        _tmState = data[BLINKER_CMD_TIMING];
+                    }
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("timing state: ", _tmState ? "true" : "false");
 #endif
@@ -2379,26 +2459,54 @@ class BlinkerApi
                     // String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
                     // int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
                     // String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
-                    String _state = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
-                    int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME1];
-                    _time1 = 60 * _time1;
-                    String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION1];
-                    int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME2];
-                    _time2 = 60 * _time2;
-                    String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION2];
+                    if (isSet) {
+                        String _state = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
+                        int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME1];
+                        _time1 = 60 * _time1;
+                        String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION1];
+                        int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME2];
+                        _time2 = 60 * _time2;
+                        String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION2];
+                    
+                        _tmAction1 = _action1;
+                        _tmAction2 = _action2;
+
+                        _tmTime1 = _time1;
+                        _tmTime2 = _time2;
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("_state: ", _state);
+#endif
+                    }
+                    else if (_noSet) {
+                        String _state = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
+                        int32_t _time1 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME1];
+                        _time1 = 60 * _time1;
+                        String _action1 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION1];
+                        int32_t _time2 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME2];
+                        _time2 = 60 * _time2;
+                        String _action2 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION2];
+                    
+                        _tmAction1 = _action1;
+                        _tmAction2 = _action2;
+
+                        _tmTime1 = _time1;
+                        _tmTime2 = _time2;
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("_state: ", _state);
+#endif
+                    }
 
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_state: ", _state);
-                    BLINKER_LOG2("_time1: ", _time1);
-                    BLINKER_LOG2("_action1: ", _action1);
-                    BLINKER_LOG2("_time2: ", _time2);
-                    BLINKER_LOG2("_action2: ", _action2);
+                    BLINKER_LOG2("_time1: ", _tmTime1);
+                    BLINKER_LOG2("_action1: ", _tmAction1);
+                    BLINKER_LOG2("_time2: ", _tmTime2);
+                    BLINKER_LOG2("_action2: ", _tmAction2);
 #endif
-                    _tmAction1 = _action1;
-                    _tmAction2 = _action2;
+                    // _tmAction1 = _action1;
+                    // _tmAction2 = _action2;
 
-                    _tmTime1 = _time1;
-                    _tmTime2 = _time2;
+                    // _tmTime1 = _time1;
+                    // _tmTime2 = _time2;
 
                     // _tmState = (tm_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_tmState) {
@@ -2554,6 +2662,7 @@ class BlinkerApi
                         JsonObject& _array = _jsonBuffer.parseObject(array_data);
                         
                         json_parse(_array);
+                        timerManager(_array, true);
                     }
                     else {
                         return;
