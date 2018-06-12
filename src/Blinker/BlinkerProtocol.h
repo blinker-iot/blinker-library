@@ -420,11 +420,15 @@ class BlinkerProtocol
             }
         }
 
-// #if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT)
         bool autoTrigged(char *name, char *type, char *data) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("autoTrigged");
 #endif
+            if (conn.deviceName() == name) {
+                BApi::_parse(data);
+                return true;
+            }
             return conn.autoPrint(name, type, data);
         }
 
@@ -433,9 +437,28 @@ class BlinkerProtocol
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("autoTrigged");
 #endif
-            return conn.autoPrint(name1, type1, data1, name2, type2, data2);
+            bool _link1 = false;
+            bool _link2 = false;
+
+            if (conn.deviceName() == name1) {
+                BApi::_parse(data1);
+                _link1 = true;
+            }
+            if (conn.deviceName() == name2) {
+                BApi::_parse(data2); 
+                _link2 = true;
+            }
+            if (_link1 && _link2) {
+                return conn.autoPrint(name1, type1, data1, name2, type2, data2);
+            }
+            else if (_link1) {
+                return conn.autoPrint(name2, type2, data2);
+            }
+            else if (_link2) {
+                return conn.autoPrint(name1, type1, data1);
+            }
         }
-// #endif
+#endif
 };
 
 template <class Transp>

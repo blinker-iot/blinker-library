@@ -311,16 +311,16 @@ class BlinkerAUTO
             JsonObject& root = jsonBuffer.parseObject(data);
 
             // String auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", ",", 1);
-            bool auto_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
+            _autoState = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
             // if (auto_state == "") {
             //     auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", "}", 1);
             // }
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("===============================================");
-            BLINKER_LOG2("auto state: ", auto_state);
+            BLINKER_LOG2("auto state: ", _autoState);
 #endif
             // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
-            _autoState = auto_state;
+            // _autoState = auto_state;
 
             // _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
             _autoId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_AUTOID];

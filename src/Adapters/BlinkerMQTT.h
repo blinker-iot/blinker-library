@@ -269,6 +269,8 @@ class BlinkerMQTT {
         uint32_t printTime;
         uint32_t kaTime;
         uint32_t linkTime;
+
+        String deviceName() { return MQTT_ID; }
 };
 
 void BlinkerMQTT::connectServer() {
