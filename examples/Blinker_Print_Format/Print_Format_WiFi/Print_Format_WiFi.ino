@@ -1,4 +1,4 @@
-#define BLINKER_PRINT	Serial
+#define BLINKER_PRINT Serial
 #define BLINKER_WIFI
 
 #define SLIDER_1		"SliderKey"

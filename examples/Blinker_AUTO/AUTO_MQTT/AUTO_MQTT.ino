@@ -4,7 +4,7 @@
  * 
  * /
 
-// #define BLINKER_PRINT	Serial
+// #define BLINKER_PRINT Serial
 // #define BLINKER_MQTT
 
 // #define BUTTON_1        "ButtonKey"

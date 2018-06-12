@@ -1,4 +1,4 @@
-#define BLINKER_PRINT	Serial
+#define BLINKER_PRINT Serial
 #define BLINKER_BLE
 
 #define BUTTON_1		"ButtonKey"
