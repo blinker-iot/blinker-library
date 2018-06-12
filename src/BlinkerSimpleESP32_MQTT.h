@@ -23,11 +23,11 @@ class BlinkerSimpleESP32_MQTT
 #endif
 
         void begin( const char* _auth,
-                    const char* ssid,
-                    const char* pswd)
+                    const char* _ssid,
+                    const char* _pswd)
         {
             Base::begin();
-            connectWiFi(ssid, pswd);
+            connectWiFi(_ssid, _pswd);
             this->conn.begin(_auth);
             BLINKER_LOG1("ESP32_MQTT Initialled...");
         }
@@ -59,17 +59,17 @@ class BlinkerSimpleESP32_MQTT
         }
 #endif
 
-        void connectWiFi(const char* ssid, const char* pswd)
+        void connectWiFi(const char* _ssid, const char* _pswd)
         {
             uint32_t connectTime = millis();
 
-            BLINKER_LOG2(("Connecting to "), ssid);
+            BLINKER_LOG2(("Connecting to "), _ssid);
             WiFi.mode(WIFI_STA);
-            if (pswd && strlen(pswd)) {
-                WiFi.begin(ssid, pswd);
+            if (_pswd && strlen(_pswd)) {
+                WiFi.begin(_ssid, _pswd);
             }
             else {
-                WiFi.begin(ssid);
+                WiFi.begin(_ssid);
             }
 
             while (WiFi.status() != WL_CONNECTED) {

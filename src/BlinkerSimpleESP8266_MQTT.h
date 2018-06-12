@@ -93,7 +93,7 @@ class BlinkerSimpleESP8266_MQTT
 
                 if (millis() - connectTime > BLINKER_CONNECT_TIMEOUT_MS && WiFi.status() != WL_CONNECTED) {
                     connectTime = millis();
-                    BLINKER_LOG1(("WiFi connect timeout, please check _ssid and _pswd!"));
+                    BLINKER_LOG1(("WiFi connect timeout, please check ssid and pswd!"));
                     BLINKER_LOG1(("Retring WiFi connect again!"));
                 }
             }
