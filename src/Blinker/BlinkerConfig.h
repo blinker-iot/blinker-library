@@ -22,7 +22,7 @@
 #define BLINKER_OBJECT_NOT_AVAIL        -1
 
 #ifndef BLINKER_MAX_READ_SIZE
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     #define BLINKER_MAX_READ_SIZE       512
 #else
     #define BLINKER_MAX_READ_SIZE       256
@@ -30,10 +30,10 @@
 #endif
 
 #ifndef BLINKER_MAX_SEND_SIZE
-#if defined(BLINKER_MQTT)
-    #define BLINKER_MAX_SEND_SIZE       256
+#if defined(BLINKER_WIFI) ||defined(BLINKER_MQTT)
+    #define BLINKER_MAX_SEND_SIZE       512
 #else
-    #define BLINKER_MAX_SEND_SIZE       128
+    #define BLINKER_MAX_SEND_SIZE       256
 #endif
 #endif
 
