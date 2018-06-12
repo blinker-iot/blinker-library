@@ -1,10 +1,12 @@
 #define BLINKER_PRINT Serial
 #define BLINKER_WIFI
+#define BLINKER_ESP_SMARTCONFIG
 
 #include <Blinker.h>
 
-char ssid[] = "Your WiFi network SSID or name";
-char pswd[] = "Your WiFi network WPA password or WEP key";
+char auth[] = "Your MQTT Secret Key";
+
+#define BUTTON_1 "ButtonKey"
 
 void setup()
 {
@@ -12,8 +14,9 @@ void setup()
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
-
-    Blinker.begin(ssid, pswd);
+    
+    Blinker.begin(auth);
+    Blinker.wInit(BUTTON_1, W_BUTTON);
 }
 
 void loop()
@@ -23,15 +26,15 @@ void loop()
     if (Blinker.available()) {
         BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
 
-        Blinker.vibrate();
-        
         uint32_t BlinkerTime = millis();
-        Blinker.print(BlinkerTime);
+
+        Blinker.beginFormat();
+        Blinker.vibrate();        
         Blinker.print("millis", BlinkerTime);
+        Blinker.endFormat();
     }
 
-    BLINKER_LOG2("GPS LONG.: ", Blinker.gps(LONG));
-    BLINKER_LOG2("GPS LAT.: ", Blinker.gps(LAT));
-
-    Blinker.delay(2000);
+    if (Blinker.button(BUTTON_1)) {
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
 }
