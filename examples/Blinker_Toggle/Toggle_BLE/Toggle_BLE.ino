@@ -1,9 +1,9 @@
-#define BLINKER_PRINT	Serial
+#define BLINKER_PRINT Serial
 #define BLINKER_BLE
 
-#define TOGGLE_1		"ToggleKey"
-
 #include <Blinker.h>
+
+#define TOGGLE_1 "ToggleKey"
 
 void setup()
 {
