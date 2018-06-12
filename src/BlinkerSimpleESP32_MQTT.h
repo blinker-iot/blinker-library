@@ -14,21 +14,21 @@ class BlinkerSimpleESP32_MQTT
         {}
 
 #if defined(BLINKER_ESP_SMARTCONFIG)
-        void begin(const char* auth) {
+        void begin(const char* _auth) {
             Base::begin();
             smartconfig();
-            this->conn.begin(auth);
+            this->conn.begin(_auth);
             BLINKER_LOG1("ESP32_MQTT Initialled...");
         }
 #endif
 
-        void begin( const char* auth,
+        void begin( const char* _auth,
                     const char* ssid,
                     const char* pswd)
         {
             Base::begin();
             connectWiFi(ssid, pswd);
-            this->conn.begin(auth);
+            this->conn.begin(_auth);
             BLINKER_LOG1("ESP32_MQTT Initialled...");
         }
 
@@ -40,14 +40,14 @@ class BlinkerSimpleESP32_MQTT
             
             BLINKER_LOG1("Waiting for SmartConfig.");
             while (!WiFi.smartConfigDone()) {
-                delay(500);
+                ::delay(500);
             }
 
             BLINKER_LOG1("SmartConfig received.");
             
             BLINKER_LOG1("Waiting for WiFi");
             while (WiFi.status() != WL_CONNECTED) {
-                delay(500);
+                ::delay(500);
             }
 
             BLINKER_LOG1("WiFi Connected.");
