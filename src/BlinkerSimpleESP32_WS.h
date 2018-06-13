@@ -39,14 +39,14 @@ class BlinkerSimpleESP32_WS
             
             BLINKER_LOG1("Waiting for SmartConfig.");
             while (!WiFi.smartConfigDone()) {
-                delay(500);
+                ::delay(500);
             }
 
             BLINKER_LOG1("SmartConfig received.");
             
             BLINKER_LOG1("Waiting for WiFi");
             while (WiFi.status() != WL_CONNECTED) {
-                delay(500);
+                ::delay(500);
             }
 
             BLINKER_LOG1("WiFi Connected.");
