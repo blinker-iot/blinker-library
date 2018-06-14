@@ -15,7 +15,7 @@ class BlinkerSimpleESP32_MQTT
 
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void begin(const char* _auth) {
-            Base::begin();
+            Base::begin(_auth);
             smartconfig();
             this->conn.begin(_auth);
             BLINKER_LOG1("ESP32_MQTT Initialled...");
@@ -26,7 +26,7 @@ class BlinkerSimpleESP32_MQTT
                     const char* _ssid,
                     const char* _pswd)
         {
-            Base::begin();
+            Base::begin(_auth);
             connectWiFi(_ssid, _pswd);
             this->conn.begin(_auth);
             BLINKER_LOG1("ESP32_MQTT Initialled...");

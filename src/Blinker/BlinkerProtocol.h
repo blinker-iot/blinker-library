@@ -382,7 +382,9 @@ class BlinkerProtocol
         bool            canParse;
         bool            isFormat;
         char            _sendBuf[BLINKER_MAX_SEND_SIZE];
-        
+#if defined(BLINKER_MQTT)
+        char            _authKey[BLINKER_AUTHKEY_SIZE];
+#endif        
         void begin()
         {
             BLINKER_LOG1(BLINKER_F(""));
@@ -405,6 +407,14 @@ class BlinkerProtocol
                 "/____/_/_/_//_/_/\\_\\\\__/_/   \n"));
         #endif
         }
+
+#if defined(BLINKER_MQTT)
+        void begin(const char* _auth)
+        {
+            begin();
+            strcpy(_authKey, _auth);
+        }
+#endif
 
         template <typename T>
         void _print(T n, bool needParse = true) {
