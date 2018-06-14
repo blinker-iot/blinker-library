@@ -17,7 +17,13 @@
 
 #define BLINKER_MQTT_KEEPALIVE          120000UL
 
-#define BLINKER_MAX_WIDGET_SIZE         16
+#define BLINKER_SMS_MSG_LIMIT           60000UL
+
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+    #define BLINKER_MAX_WIDGET_SIZE         16
+#else
+    #define BLINKER_MAX_WIDGET_SIZE         4
+#endif
 
 #define BLINKER_OBJECT_NOT_AVAIL        -1
 

@@ -1672,84 +1672,22 @@ class BlinkerApi
 // #endif
 
 // #if defined(BLINKER_MQTT)
-    template<typename T>
-    bool sms(const T& msg) {
-        HTTPClient http;
-
-        BLINKER_LOG2("authKey: ", static_cast<Proto*>(this)->_authKey);
-        String url_iot = "http://192.168.1.116:8080/sms";
-#ifdef BLINKER_DEBUG_ALL 
-        BLINKER_LOG2("HTTPS begin: ", url_iot);
-#endif
-        http.begin(url_iot);
-
-        // BLINKER_LOG1("[HTTP] POST...\n");
-        
-        http.addHeader("Content-Type", "application/json");
-
-        String data = "{\"auth\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
-                        "\",\"msg\":\"" + msg + "\"}";
-        int httpCode = http.POST(data);
-
-        if (httpCode > 0) {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("[HTTP] POST... code: %d\n", httpCode);
-#endif
-            if (httpCode == HTTP_CODE_OK) {
-                String payload = http.getString();
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(payload);
-#endif
-            }
-            return true;
+        template<typename T>
+        bool sms(const T& msg) {
+            String data = "{\"auth\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                            "\",\"msg\":\"" + msg + "\"}";
+            
+            return _smsSend(data);
         }
-        else {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
-#endif
-            return false;
+
+        template<typename T>
+        bool sms(const char* cel, const T& msg) {
+            String data = "{\"auth\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                            "\",\"cel\":\"" + cel + \
+                            "\",\"msg\":\"" + msg + "\"}";
+            
+            return _smsSend(data);
         }
-    }
-
-    template<typename T>
-    bool sms(const char* cel, const T& msg) {
-        HTTPClient http;
-
-        BLINKER_LOGD("phone number: ", cel, " authKey: ", static_cast<Proto*>(this)->_authKey);
-        String url_iot = "http://192.168.1.116:8080/sms";
-#ifdef BLINKER_DEBUG_ALL 
-        BLINKER_LOG2("HTTPS begin: ", url_iot);
-#endif
-        http.begin(url_iot);
-
-        // BLINKER_LOG1("[HTTP] POST...\n");
-        
-        http.addHeader("Content-Type", "application/json");
-
-        String data = "{\"auth\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
-                        "\",\"cel\":\"" + cel + \
-                        "\",\"msg\":\"" + msg + "\"}";
-        int httpCode = http.POST(data);
-
-        if (httpCode > 0) {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("[HTTP] POST... code: %d\n", httpCode);
-#endif
-            if (httpCode == HTTP_CODE_OK) {
-                String payload = http.getString();
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(payload);
-#endif
-            }
-            return true;
-        }
-        else {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
-#endif
-            return false;
-        }
-    }
 #endif
     
     private :
@@ -1771,6 +1709,8 @@ class BlinkerApi
 
 #if defined(BLINKER_MQTT)
         uint8_t     _aCount = 0;
+
+        uint32_t    _smsTime = 0;
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
@@ -2669,6 +2609,62 @@ class BlinkerApi
         }
 #endif
 
+#if defined(BLINKER_MQTT)
+        bool _smsSend(String msg) {
+            if (!checkSMS()) {
+                return false;
+            }
+
+            _smsTime = millis();
+
+            HTTPClient http;
+
+            String url_iot = "http://192.168.1.116:8080/sms";
+#ifdef BLINKER_DEBUG_ALL 
+            BLINKER_LOG2("HTTPS begin: ", url_iot);
+#endif
+            http.begin(url_iot);
+
+            // BLINKER_LOG1("[HTTP] POST...\n");
+            
+            http.addHeader("Content-Type", "application/json");
+
+            int httpCode = http.POST(msg);
+
+#ifdef BLINKER_DEBUG_ALL 
+            BLINKER_LOG2("HTTPS POST: ", msg);
+#endif
+
+            if (httpCode > 0) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2("[HTTP] POST... code: %d\n", httpCode);
+#endif
+                if (httpCode == HTTP_CODE_OK) {
+                    String payload = http.getString();
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG1(payload);
+#endif
+                }
+                return true;
+            }
+            else {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+#endif
+                return false;
+            }
+        }
+
+        bool checkSMS() {
+            if ((millis() - _smsTime) > BLINKER_SMS_MSG_LIMIT || _smsTime == 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+#endif
+
     protected :
         void parse()
         {
@@ -2748,7 +2744,9 @@ class BlinkerApi
                         JsonObject& _array = _jsonBuffer.parseObject(array_data);
                         
                         json_parse(_array);
+#if defined(ESP8266) || defined(ESP32)
                         timerManager(_array, true);
+#endif
                     }
                     else {
                         return;
