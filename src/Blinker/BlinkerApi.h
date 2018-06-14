@@ -7,6 +7,11 @@
     #include <EEPROM.h>
     // #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
+#if defined(ESP8266)
+    #include <ESP8266HTTPClient.h>
+#elif defined(ESP32)
+    #include <HTTPClient.h>
+#endif
 #include "modules/ArduinoJson/ArduinoJson.h"
 #include <Blinker/BlinkerConfig.h>
 #include <utility/BlinkerDebug.h>
@@ -1664,6 +1669,87 @@ class BlinkerApi
         }
 // #else
 //     #pragma message("This code is intended to run with BLINKER_MQTT! Please check your connect type.")
+// #endif
+
+// #if defined(BLINKER_MQTT)
+    template<typename T>
+    bool sms(const T& msg) {
+        HTTPClient http;
+
+        BLINKER_LOG2("authKey: ", static_cast<Proto*>(this)->_authKey);
+        String url_iot = "http://192.168.1.116:8080/sms";
+#ifdef BLINKER_DEBUG_ALL 
+        BLINKER_LOG2("HTTPS begin: ", url_iot);
+#endif
+        http.begin(url_iot);
+
+        // BLINKER_LOG1("[HTTP] POST...\n");
+        
+        http.addHeader("Content-Type", "application/json");
+
+        String data = "{\"auth\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                        "\",\"msg\":\"" + msg + "\"}";
+        int httpCode = http.POST(data);
+
+        if (httpCode > 0) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("[HTTP] POST... code: %d\n", httpCode);
+#endif
+            if (httpCode == HTTP_CODE_OK) {
+                String payload = http.getString();
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(payload);
+#endif
+            }
+            return true;
+        }
+        else {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+#endif
+            return false;
+        }
+    }
+
+    template<typename T>
+    bool sms(const char* cel, const T& msg) {
+        HTTPClient http;
+
+        BLINKER_LOGD("phone number: ", cel, " authKey: ", static_cast<Proto*>(this)->_authKey);
+        String url_iot = "http://192.168.1.116:8080/sms";
+#ifdef BLINKER_DEBUG_ALL 
+        BLINKER_LOG2("HTTPS begin: ", url_iot);
+#endif
+        http.begin(url_iot);
+
+        // BLINKER_LOG1("[HTTP] POST...\n");
+        
+        http.addHeader("Content-Type", "application/json");
+
+        String data = "{\"auth\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                        "\",\"cel\":\"" + cel + \
+                        "\",\"msg\":\"" + msg + "\"}";
+        int httpCode = http.POST(data);
+
+        if (httpCode > 0) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("[HTTP] POST... code: %d\n", httpCode);
+#endif
+            if (httpCode == HTTP_CODE_OK) {
+                String payload = http.getString();
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(payload);
+#endif
+            }
+            return true;
+        }
+        else {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+#endif
+            return false;
+        }
+    }
 #endif
     
     private :

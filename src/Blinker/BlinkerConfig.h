@@ -37,7 +37,9 @@
 #endif
 #endif
 
-#define  BLINKER_NO_LOGO
+#define BLINKER_AUTHKEY_SIZE            14
+
+#define BLINKER_NO_LOGO
 
 //#define BLINKER_LOGO_3D
 

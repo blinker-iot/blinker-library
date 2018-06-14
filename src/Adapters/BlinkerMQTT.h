@@ -341,6 +341,8 @@ void BlinkerMQTT::connectServer() {
     else {
 #ifdef BLINKER_DEBUG_ALL 
         BLINKER_LOG2("[HTTP] GET... failed, error: ", http.errorToString(httpCode).c_str());
+        payload = http.getString();
+        BLINKER_LOG1(payload);
 #endif
     }
 
