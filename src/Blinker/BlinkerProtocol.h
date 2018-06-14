@@ -408,7 +408,7 @@ class BlinkerProtocol
         #endif
         }
 
-
+#if defined(BLINKER_MQTT)
         void begin(const char* _auth)
         {
             begin();
