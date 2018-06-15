@@ -2904,135 +2904,194 @@ class BlinkerApi
 #endif
 
     protected :
-        void parse()
+        void parse(String _data, bool ex_data = false)
         {
-            if (static_cast<Proto*>(this)->parseState() ) {
-                _fresh = false;
+            if (!ex_data) {
+                if (static_cast<Proto*>(this)->parseState() ) {
+                    _fresh = false;
 
 #if defined(ESP8266) || defined(ESP32)
-                DynamicJsonBuffer jsonBuffer;
-                JsonObject& root = jsonBuffer.parseObject(static_cast<Proto*>(this)->dataParse());
+                    DynamicJsonBuffer jsonBuffer;
+                    JsonObject& root = jsonBuffer.parseObject(_data);
 
-                if (!root.success()) {
-                    return;
-                }
-// (const JsonObject& data)
-#if defined(BLINKER_MQTT)
-                // if (autoManager(root)) {
-                //     static_cast<Proto*>(this)->isParsed();
-                //     return;
-                // }
-                autoManager(root);
-#endif
-                // if (timerManager(root)) {
-                //     static_cast<Proto*>(this)->isParsed();
-                //     return;
-                // }
-                timerManager(root);
-                heartBeat(root);
-                getVersion(root);
-
-                for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                    buttonParse(_Button[bNum]->getName(), root);
-                }
-                for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                    slider(_Slider[sNum]->getName(), root);
-                }
-                for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                    toggle(_Toggle[kNum]->getName(), root);
-                }
-                for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                    rgb(_RGB[rgbNum]->getName(), R, root);
-                }
-
-                joystick(J_Xaxis, root);
-                ahrs(Yaw, root);
-                gps(LONG, true, root);
-#else
-                heartBeat();
-                getVersion();
-
-                for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                    buttonParse(_Button[bNum]->getName());
-                }
-                for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                    slider(_Slider[sNum]->getName());
-                }
-                for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                    toggle(_Toggle[kNum]->getName());
-                }
-                for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                    rgb(_RGB[rgbNum]->getName(), R);
-                }
-
-                joystick(J_Xaxis);
-                ahrs(Yaw);
-                gps(LONG, true);
-#endif
-                if (_fresh) {
-                    static_cast<Proto*>(this)->isParsed();
-                }
-            }
-        }
-
-        void _parse(String data)
-        {
-#if defined(ESP8266) || defined(ESP32)
-            String data1 = "{\"data\":" + data + "}";
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& root = jsonBuffer.parseObject(data1);
-
-            if (!root.success()) {
-                return;
-            }
-
-            String arrayData = root["data"][0];
-#ifdef BLINKER_DEBUG_ALL
-            // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
-            BLINKER_LOG2("_parse data: ", data);
-#endif            
-            if (arrayData.length()) {
-                for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
-                    String array_data = root["data"][a_num];
-
-                    // BLINKER_LOG2("array_data: ", array_data);
-
-                    if(array_data.length()) {
-                        DynamicJsonBuffer _jsonBuffer;
-                        JsonObject& _array = _jsonBuffer.parseObject(array_data);
-                        
-                        json_parse(_array);
-                        timerManager(_array, true);
-                    }
-                    else {
+                    if (!root.success()) {
                         return;
                     }
-                }
-            }
-            else {
-                JsonObject& root = jsonBuffer.parseObject(data);
-
-                if (!root.success()) {
-                    return;
-                }
-
-                json_parse(root);
-            }
-#else
-            for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                buttonParse(_Button[bNum]->getName(), data);
-            }
-            for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                slider(_Slider[sNum]->getName(), data);
-            }
-            for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                toggle(_Toggle[kNum]->getName(), data);
-            }
-            for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                rgb(_RGB[rgbNum]->getName(), R, data);
-            }
+// (const JsonObject& data)
+#if defined(BLINKER_MQTT)
+                    // if (autoManager(root)) {
+                    //     static_cast<Proto*>(this)->isParsed();
+                    //     return;
+                    // }
+                    autoManager(root);
 #endif
+                    // if (timerManager(root)) {
+                    //     static_cast<Proto*>(this)->isParsed();
+                    //     return;
+                    // }
+                    timerManager(root);
+                    heartBeat(root);
+                    getVersion(root);
+
+                    for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                        buttonParse(_Button[bNum]->getName(), root);
+                    }
+                    for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                        slider(_Slider[sNum]->getName(), root);
+                    }
+                    for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                        toggle(_Toggle[kNum]->getName(), root);
+                    }
+                    for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                        rgb(_RGB[rgbNum]->getName(), R, root);
+                    }
+
+                    joystick(J_Xaxis, root);
+                    ahrs(Yaw, root);
+                    gps(LONG, true, root);
+#else
+                    heartBeat();
+                    getVersion();
+
+                    for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                        buttonParse(_Button[bNum]->getName(), _data);
+                    }
+                    for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                        slider(_Slider[sNum]->getName(), _data);
+                    }
+                    for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                        toggle(_Toggle[kNum]->getName(), _data);
+                    }
+                    for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                        rgb(_RGB[rgbNum]->getName(), R, _data);
+                    }
+
+                    joystick(J_Xaxis);
+                    ahrs(Yaw);
+                    gps(LONG, true);
+#endif
+                    if (_fresh) {
+                        static_cast<Proto*>(this)->isParsed();
+                    }
+                }
+                else {
+#if defined(ESP8266) || defined(ESP32)
+                    String data1 = "{\"data\":" + _data + "}";
+                    DynamicJsonBuffer jsonBuffer;
+                    JsonObject& root = jsonBuffer.parseObject(data1);
+
+                    if (!root.success()) {
+                        return;
+                    }
+
+                    String arrayData = root["data"][0];
+#ifdef BLINKER_DEBUG_ALL
+                    // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
+                    BLINKER_LOG2("_parse data: ", _data);
+#endif            
+                    if (arrayData.length()) {
+                        for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
+                            String array_data = root["data"][a_num];
+
+                            // BLINKER_LOG2("array_data: ", array_data);
+
+                            if(array_data.length()) {
+                                DynamicJsonBuffer _jsonBuffer;
+                                JsonObject& _array = _jsonBuffer.parseObject(array_data);
+                                
+                                json_parse(_array);
+                                timerManager(_array, true);
+                            }
+                            else {
+                                return;
+                            }
+                        }
+                    }
+                    else {
+                        JsonObject& root = jsonBuffer.parseObject(data);
+
+                        if (!root.success()) {
+                            return;
+                        }
+
+                        json_parse(root);
+                    }
+#else
+                    for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                        buttonParse(_Button[bNum]->getName(), _data);
+                    }
+                    for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                        slider(_Slider[sNum]->getName(), _data);
+                    }
+                    for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                        toggle(_Toggle[kNum]->getName(), _data);
+                    }
+                    for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                        rgb(_RGB[rgbNum]->getName(), R, _data);
+                    }
+#endif
+                }
+            }
         }
+
+//         void _parse(String data)
+//         {
+// #if defined(ESP8266) || defined(ESP32)
+//             String data1 = "{\"data\":" + data + "}";
+//             DynamicJsonBuffer jsonBuffer;
+//             JsonObject& root = jsonBuffer.parseObject(data1);
+
+//             if (!root.success()) {
+//                 return;
+//             }
+
+//             String arrayData = root["data"][0];
+// #ifdef BLINKER_DEBUG_ALL
+//             // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
+//             BLINKER_LOG2("_parse data: ", data);
+// #endif            
+//             if (arrayData.length()) {
+//                 for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
+//                     String array_data = root["data"][a_num];
+
+//                     // BLINKER_LOG2("array_data: ", array_data);
+
+//                     if(array_data.length()) {
+//                         DynamicJsonBuffer _jsonBuffer;
+//                         JsonObject& _array = _jsonBuffer.parseObject(array_data);
+                        
+//                         json_parse(_array);
+//                         timerManager(_array, true);
+//                     }
+//                     else {
+//                         return;
+//                     }
+//                 }
+//             }
+//             else {
+//                 JsonObject& root = jsonBuffer.parseObject(data);
+
+//                 if (!root.success()) {
+//                     return;
+//                 }
+
+//                 json_parse(root);
+//             }
+// #else
+//             for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+//                 buttonParse(_Button[bNum]->getName(), data);
+//             }
+//             for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+//                 slider(_Slider[sNum]->getName(), data);
+//             }
+//             for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+//                 toggle(_Toggle[kNum]->getName(), data);
+//             }
+//             for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+//                 rgb(_RGB[rgbNum]->getName(), R, data);
+//             }
+// #endif
+//         }
 
 #if defined(ESP8266) || defined(ESP32)
         void json_parse(const JsonObject& data) {
@@ -3097,7 +3156,8 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL 
                 BLINKER_LOG2("countdown trigged, action is: ", _cdAction);
 #endif
-                _parse(_cdAction);
+                // _parse(_cdAction);
+                parse(_cdAction, true);
             }
             if (_lpTrigged) {
                 _lpTrigged = false;
@@ -3106,13 +3166,15 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2("loop trigged, action is: ", _lpAction2);
 #endif
-                    _parse(_lpAction2);
+                    // _parse(_lpAction2);
+                    parse(_lpAction2, true);
                 }
                 else {
 #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2("loop trigged, action is: ", _lpAction1);
 #endif
-                    _parse(_lpAction1);
+                    // _parse(_lpAction1);
+                    parse(_lpAction1, true);
                 }
             }
             if (_tmTrigged) {
@@ -3122,13 +3184,15 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2("timing trigged, action is: ", _tmAction2);
 #endif
-                    _parse(_tmAction2);
+                    // _parse(_tmAction2);
+                    parse(_tmAction2, true);
                 }
                 else {
 #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2("timing trigged, action is: ", _tmAction1);
 #endif
-                    _parse(_tmAction1);
+                    // _parse(_tmAction1);
+                    parse(_tmAction1, true);
                 }
             }
         }

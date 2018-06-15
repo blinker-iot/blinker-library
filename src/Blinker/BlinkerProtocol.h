@@ -422,7 +422,7 @@ class BlinkerProtocol
             if (data.length() <= BLINKER_MAX_SEND_SIZE) {
                 conn.print(data);
                 if (needParse) {
-                    BApi::_parse(data);
+                    BApi::parse(data, true);
                 }
             }
             else {
@@ -436,7 +436,7 @@ class BlinkerProtocol
             BLINKER_LOG1("autoTrigged");
 #endif
             if (conn.deviceName() == name) {
-                BApi::_parse(data);
+                BApi::parse(data, true);
                 return true;
             }
             return conn.autoPrint(name, type, data);
@@ -451,11 +451,11 @@ class BlinkerProtocol
             bool _link2 = false;
 
             if (conn.deviceName() == name1) {
-                BApi::_parse(data1);
+                BApi::parse(data1, true);
                 _link1 = true;
             }
             if (conn.deviceName() == name2) {
-                BApi::_parse(data2); 
+                BApi::parse(data2, true);
                 _link2 = true;
             }
             if (_link1 && _link2) {
@@ -494,7 +494,7 @@ void BlinkerProtocol<Transp>::run()
             if (conState) {
                 checkAvail();
                 if (isAvail) {
-                    BApi::parse();
+                    BApi::parse(dataParse());
                 }
             }
             else {
