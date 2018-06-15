@@ -19,6 +19,8 @@
 
 #define BLINKER_SMS_MSG_LIMIT           60000UL
 
+#define BLINKER_SMS_MAX_SEND_SIZE       128
+
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else
@@ -174,6 +176,8 @@
 #define BLINKER_CMD_TASK                "task"
 
 #define BLINKER_CMD_DETAIL              "detail"
+
+#define BLINKER_CMD_MESSAGE             "message"
 
 #define BLINKER_CMD_DEVICENAME          "deviceName"
 
