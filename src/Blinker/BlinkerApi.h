@@ -2903,10 +2903,11 @@ class BlinkerApi
             HTTPClient http;
 
             String url_iot = String(host) + "/api/v1/user/device/sms";
+            BLINKER_LOG_FreeHeap();
 #ifdef BLINKER_DEBUG_ALL 
             BLINKER_LOG2("HTTPS begin: ", url_iot);
 #endif
-
+            BLINKER_LOG_FreeHeap();
 #if defined(ESP8266)
             http.begin(url_iot, fingerprint); //HTTP
             // http.begin(url_iot);
@@ -2915,7 +2916,7 @@ class BlinkerApi
             http.begin(url_iot);
 #endif
 
-            // BLINKER_LOG1("[HTTP] POST...\n");
+            BLINKER_LOG_FreeHeap();
             
             http.addHeader("Content-Type", "application/json");
 
@@ -2934,17 +2935,17 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(payload);
 #endif
-                    DynamicJsonBuffer jsonBuffer;
-                    JsonObject& root = jsonBuffer.parseObject(payload);
+                    // DynamicJsonBuffer jsonBuffer;
+                    // JsonObject& root = jsonBuffer.parseObject(payload);
 
-                    uint16_t msg_code = root[BLINKER_CMD_MESSAGE];
-                    if (msg_code != 1000) {
-                        String _detail = root[BLINKER_CMD_DETAIL];
-                        BLINKER_ERR_LOG1(_detail);
-                    }
+                    // uint16_t msg_code = root[BLINKER_CMD_MESSAGE];
+                    // if (msg_code != 1000) {
+                    //     String _detail = root[BLINKER_CMD_DETAIL];
+                    //     BLINKER_ERR_LOG1(_detail);
+                    // }
                 }
                 _smsTime = millis();
-            
+                http.end();
                 return true;
             }
             else {
@@ -2953,6 +2954,7 @@ class BlinkerApi
                 String payload = http.getString();
                 BLINKER_LOG1(payload);
 #endif
+                http.end();
                 return false;
             }
         }
