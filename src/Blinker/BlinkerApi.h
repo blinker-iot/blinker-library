@@ -2908,8 +2908,8 @@ class BlinkerApi
 #endif
 
 #if defined(ESP8266)
-            // http.begin(url_iot, fingerprint); //HTTP
-            http.begin(url_iot);
+            http.begin(url_iot, fingerprint); //HTTP
+            // http.begin(url_iot);
 #elif defined(ESP32)
             // http.begin(url_iot, ca); TODO
             http.begin(url_iot);
