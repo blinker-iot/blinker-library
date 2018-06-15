@@ -1429,7 +1429,7 @@ class BlinkerApi
                     BLINKER_LOG2("GET: ", static_cast<Proto*>(this)->dataParse());
                     if (STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS)) {
                         BLINKER_LOG1("AHRS attach sucessed...");
-                        parse();
+                        parse(static_cast<Proto*>(this)->dataParse());
                         state = true;
                         break;
                     }
