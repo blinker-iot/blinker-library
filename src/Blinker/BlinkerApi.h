@@ -2867,10 +2867,99 @@ class BlinkerApi
             }
 
             const int httpsPort = 443;
-            const char* host = "https://iotdev.clz.me";
 #if defined(ESP8266)
+            const char* host = "iotdev.clz.me";
             const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
+
+            extern WiFiClientSecure client_s;
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("connecting to ", host);
+#endif
+            if (!client_s.connect(host, httpsPort)) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1("connection failed");
+#endif
+                return false;
+            }
+            else {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1("connection succeed");
+#endif
+                // return true;
+            }
+
+            if (client_s.verify(fingerprint, host)) {
+#ifdef BLINKER_DEBUG_ALL
+                // _status = DH_VERIFIED;
+                BLINKER_LOG1("Fingerprint verified");
+                // return true;
+#endif
+            }
+            else {
+#ifdef BLINKER_DEBUG_ALL
+                // _status = DH_VERIFY_FAILED;
+                // _status = DH_VERIFIED;
+                BLINKER_LOG1("Fingerprint verification failed!");
+                // return false;
+#endif
+            }
+
+            String url = "/api/v1/user/device/sms";
+
+            client_s.print(String("POST ") + url + " HTTP/1.1\r\n" +
+               "Host: " + host + ":" + httpsPort + "\r\n" +
+               "Content-Type: application/json;charset=utf-8\r\n" +
+               "Content-Length: " + msg.length() + "\r\n" +  
+                "Connection: Keep Alive\r\n\r\n" +  
+                msg + "\r\n");
+
+            unsigned long timeout = millis();
+            while (client_s.available() == 0) {
+                if (millis() - timeout > 5000) {
+                    BLINKER_LOG1(">>> Client Timeout !");
+                    client_s.stop();
+                    return false;
+                }
+            }
+
+            // Read all the lines of the reply from server and print them to Serial
+            String dataGet;
+            String lastGet;
+            String lengthOfJson;
+            while (client_s.available()) {
+                // String line = client_s.readStringUntil('\r');
+                dataGet = client_s.readStringUntil('\n');
+
+                if (dataGet.startsWith("Content-Length: ")){
+                    int addr_start = dataGet.indexOf(' ');
+                    int addr_end = dataGet.indexOf('\0', addr_start + 1);
+                    lengthOfJson = dataGet.substring(addr_start + 1, addr_end);
+                }
+
+                if (dataGet == "\r") {
+#ifdef BLINKER_DEBUG_ALL                    
+                    BLINKER_LOG1("headers received");
+#endif
+                    break;
+                }
+            }
+
+            for(int i=0;i<lengthOfJson.toInt();i++){
+                lastGet += (char)client_s.read();
+            }
+            
+            dataGet = lastGet;
+
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("dataGet: ", dataGet);
+#endif
+
+            client_s.stop();
+
+            return true;
 #elif defined(ESP32)
+            const char* host = "https://iotdev.clz.me";
+
             // const char* ca = \ 
             //     "-----BEGIN CERTIFICATE-----\n" \
             //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
@@ -2899,7 +2988,7 @@ class BlinkerApi
             //     "oOdVycVtpLunyUoVAB2DcOElfDxxXCvDH3XsgoIU216VY03MCaUZf7kZ2GiNL+UX\n" \
             //     "9UBd0Q==\n" \
             //     "-----END CERTIFICATE-----\n";
-#endif
+// #endif
             HTTPClient http;
 
             String url_iot = String(host) + "/api/v1/user/device/sms";
@@ -2957,6 +3046,7 @@ class BlinkerApi
                 http.end();
                 return false;
             }
+#endif
         }
 
         bool checkSMS() {
