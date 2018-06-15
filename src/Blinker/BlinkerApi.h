@@ -1674,19 +1674,27 @@ class BlinkerApi
 // #if defined(BLINKER_MQTT)
         template<typename T>
         bool sms(const T& msg) {
-            String data = "{\"auth\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
-                            "\",\"msg\":\"" + msg + "\"}";
+            String _msg = STRING_format(msg);
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                            "\",\"msg\":\"" + _msg + "\"}";
             
+            if (_msg.length() > 20) {
+                return false;
+            }
             return _smsSend(data);
         }
 
         template<typename T>
         bool sms(const char* cel, const T& msg) {
-            String data = "{\"auth\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+            String _msg = STRING_format(msg);
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"cel\":\"" + cel + \
-                            "\",\"msg\":\"" + msg + "\"}";
-            
-            return _smsSend(data);
+                            "\",\"msg\":\"" + _msg + "\"}";
+
+            if (_msg.length() > 20) {
+                return false;
+            }
+            return _smsSend(data, true);
         }
 #endif
     
@@ -2848,20 +2856,64 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_MQTT)
-        bool _smsSend(String msg) {
+        bool _smsSend(String msg, bool state = false) {
             if (!checkSMS()) {
                 return false;
             }
 
-            _smsTime = millis();
+            if ((!state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE) ||
+                (state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE + 15)) {
+                return false;
+            }
 
+            const int httpsPort = 443;
+            const char* host = "https://iotdev.clz.me";
+#if defined(ESP8266)
+            const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
+#elif defined(ESP32)
+            // const char* ca = \ 
+            //     "-----BEGIN CERTIFICATE-----\n" \
+            //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
+            //     "MQswCQYDVQQGEwJDTjElMCMGA1UEChMcVHJ1c3RBc2lhIFRlY2hub2xvZ2llcywg\n" \
+            //     "SW5jLjEdMBsGA1UECxMURG9tYWluIFZhbGlkYXRlZCBTU0wxHTAbBgNVBAMTFFRy\n" \
+            //     "dXN0QXNpYSBUTFMgUlNBIENBMB4XDTE4MDEwNDAwMDAwMFoXDTE5MDEwNDEyMDAw\n" \
+            //     "MFowGDEWMBQGA1UEAxMNaW90ZGV2LmNsei5tZTCCASIwDQYJKoZIhvcNAQEBBQAD\n" \
+            //     "ggEPADCCAQoCggEBALbOFn7cJ2I/FKMJqIaEr38n4kCuJCCeNf1bWdWvOizmU2A8\n" \
+            //     "QeTAr5e6Q3GKeJRdPnc8xXhqkTm4LOhgdZB8KzuVZARtu23D4vj4sVzxgC/zwJlZ\n" \
+            //     "MRMxN+cqI37kXE8gGKW46l2H9vcukylJX+cx/tjWDfS2YuyXdFuS/RjhCxLgXzbS\n" \
+            //     "cve1W0oBZnBPRSMV0kgxTWj7hEGZNWKIzK95BSCiMN59b+XEu3NWGRb/VzSAiJEy\n" \
+            //     "Hy9DcDPBC9TEg+p5itHtdMhy2gq1OwsPgl9HUT0xmDATSNEV2RB3vwviNfu9/Eif\n" \
+            //     "ObhsV078zf30TqdiESqISEB68gJ0Otru67ePoTkCAwEAAaOCAWowggFmMB8GA1Ud\n" \
+            //     "IwQYMBaAFH/TmfOgRw4xAFZWIo63zJ7dygGKMB0GA1UdDgQWBBR/KLqnke61779P\n" \
+            //     "xc9htonQwLOxPDAYBgNVHREEETAPgg1pb3RkZXYuY2x6Lm1lMA4GA1UdDwEB/wQE\n" \
+            //     "AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwTAYDVR0gBEUwQzA3\n" \
+            //     "BglghkgBhv1sAQIwKjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQu\n" \
+            //     "Y29tL0NQUzAIBgZngQwBAgEwgYEGCCsGAQUFBwEBBHUwczAlBggrBgEFBQcwAYYZ\n" \
+            //     "aHR0cDovL29jc3AyLmRpZ2ljZXJ0LmNvbTBKBggrBgEFBQcwAoY+aHR0cDovL2Nh\n" \
+            //     "Y2VydHMuZGlnaXRhbGNlcnR2YWxpZGF0aW9uLmNvbS9UcnVzdEFzaWFUTFNSU0FD\n" \
+            //     "QS5jcnQwCQYDVR0TBAIwADANBgkqhkiG9w0BAQsFAAOCAQEAhtM4eyrWB14ajJpQ\n" \
+            //     "ibZ5FbzVuvv2Le0FOSoss7UFCDJUYiz2LiV8yOhL4KTY+oVVkqHaYtcFS1CYZNzj\n" \
+            //     "6xWcqYZJ+pgsto3WBEgNEEe0uLSiTW6M10hm0LFW9Det3k8fqwSlljqMha3gkpZ6\n" \
+            //     "8WB0f2clXOuC+f1SxAOymnGUsSqbU0eFSgevcOIBKR7Hr3YXBXH3jjED76Q52OMS\n" \
+            //     "ucfOM9/HB3jN8o/ioQbkI7xyd/DUQtzK6hSArEoYRl3p5H2P4fr9XqmpoZV3i3gQ\n" \
+            //     "oOdVycVtpLunyUoVAB2DcOElfDxxXCvDH3XsgoIU216VY03MCaUZf7kZ2GiNL+UX\n" \
+            //     "9UBd0Q==\n" \
+            //     "-----END CERTIFICATE-----\n";
+#endif
             HTTPClient http;
 
-            String url_iot = "http://192.168.1.116:8080/sms";
+            String url_iot = String(host) + "/api/v1/user/device/sms";
 #ifdef BLINKER_DEBUG_ALL 
             BLINKER_LOG2("HTTPS begin: ", url_iot);
 #endif
+
+#if defined(ESP8266)
+            // http.begin(url_iot, fingerprint); //HTTP
             http.begin(url_iot);
+#elif defined(ESP32)
+            // http.begin(url_iot, ca); TODO
+            http.begin(url_iot);
+#endif
 
             // BLINKER_LOG1("[HTTP] POST...\n");
             
@@ -2875,19 +2927,31 @@ class BlinkerApi
 
             if (httpCode > 0) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2("[HTTP] POST... code: %d\n", httpCode);
+                BLINKER_LOG2("[HTTP] POST... code: %d", httpCode);
 #endif
                 if (httpCode == HTTP_CODE_OK) {
                     String payload = http.getString();
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(payload);
 #endif
+                    DynamicJsonBuffer jsonBuffer;
+                    JsonObject& root = jsonBuffer.parseObject(payload);
+
+                    uint16_t msg_code = root[BLINKER_CMD_MESSAGE];
+                    if (msg_code != 1000) {
+                        String _detail = root[BLINKER_CMD_DETAIL];
+                        BLINKER_ERR_LOG1(_detail);
+                    }
                 }
+                _smsTime = millis();
+            
                 return true;
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+                BLINKER_LOG2("[HTTP] POST... failed, error: %s", http.errorToString(httpCode).c_str());
+                String payload = http.getString();
+                BLINKER_LOG1(payload);
 #endif
                 return false;
             }
@@ -3008,7 +3072,7 @@ class BlinkerApi
                         }
                     }
                     else {
-                        JsonObject& root = jsonBuffer.parseObject(data);
+                        JsonObject& root = jsonBuffer.parseObject(_data);
 
                         if (!root.success()) {
                             return;

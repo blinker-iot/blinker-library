@@ -9,8 +9,6 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 #define BUTTON_1 "ButtonKey"
 
-// #define PHONE_NUMBER "18xxxxxxxxx"
-
 void setup() {
     Serial.begin(115200);
 
@@ -39,8 +37,6 @@ void loop()
     if (Blinker.button(BUTTON_1)) {
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
         Blinker.sms("Hello blinker! Button pressed!");
-        
-        // Blinker.sms(PHONE_NUMBER, "Hello blinker! Button pressed!");
 
         Blinker.delay(6000);
     }
