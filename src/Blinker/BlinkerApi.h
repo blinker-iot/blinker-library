@@ -2992,20 +2992,13 @@ class BlinkerApi
             HTTPClient http;
 
             String url_iot = String(host) + "/api/v1/user/device/sms";
-            BLINKER_LOG_FreeHeap();
+            
 #ifdef BLINKER_DEBUG_ALL 
             BLINKER_LOG2("HTTPS begin: ", url_iot);
 #endif
-            BLINKER_LOG_FreeHeap();
-#if defined(ESP8266)
-            http.begin(url_iot, fingerprint); //HTTP
-            // http.begin(url_iot);
-#elif defined(ESP32)
+            
             // http.begin(url_iot, ca); TODO
             http.begin(url_iot);
-#endif
-
-            BLINKER_LOG_FreeHeap();
             
             http.addHeader("Content-Type", "application/json");
 
@@ -3017,7 +3010,7 @@ class BlinkerApi
 
             if (httpCode > 0) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2("[HTTP] POST... code: %d", httpCode);
+                BLINKER_LOG2("[HTTP] POST... code: ", httpCode);
 #endif
                 if (httpCode == HTTP_CODE_OK) {
                     String payload = http.getString();
@@ -3039,7 +3032,7 @@ class BlinkerApi
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2("[HTTP] POST... failed, error: %s", http.errorToString(httpCode).c_str());
+                BLINKER_LOG2("[HTTP] POST... failed, error: ", http.errorToString(httpCode).c_str());
                 String payload = http.getString();
                 BLINKER_LOG1(payload);
 #endif
