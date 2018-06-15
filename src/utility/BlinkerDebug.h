@@ -83,7 +83,7 @@
         BLINKER_PRINT.print("] ");
     }
 #else
-    #define BLINKER_FreeHeap()
+    #define BLINKER_LOG_FreeHeap()
     #define BLINKER_LOG1(p1)
     #define BLINKER_LOG2(p1, p2)
     #define BLINKER_LOG3(p1, p2, p3)

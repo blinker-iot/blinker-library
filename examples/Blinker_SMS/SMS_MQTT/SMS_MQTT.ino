@@ -36,7 +36,7 @@ void loop()
 
     if (Blinker.button(BUTTON_1)) {
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-        Blinker.sms("Hello blinker! Button pressed!");
+        Blinker.sms("Hello blinker!");
 
         Blinker.delay(6000);
     }
