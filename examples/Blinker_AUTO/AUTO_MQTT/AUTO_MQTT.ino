@@ -7,13 +7,13 @@
 // #define BLINKER_PRINT Serial
 // #define BLINKER_MQTT
 
-// #define BUTTON_1        "ButtonKey"
-
 // #include <Blinker.h>
 
 // char auth[] = "Your MQTT Secret Key";
 // char ssid[] = "Your WiFi network SSID or name";
 // char pswd[] = "Your WiFi network WPA password or WEP key";
+
+// #define BUTTON_1 "ButtonKey"
 
 // void setup() {
 //     Serial.begin(115200);

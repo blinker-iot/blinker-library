@@ -1,9 +1,9 @@
 #define BLINKER_PRINT Serial
 #define BLINKER_BLE
 
-#define BUTTON_1		"ButtonKey"
-
 #include <Blinker.h>
+
+#define BUTTON_1 "ButtonKey"
 
 void setup()
 {

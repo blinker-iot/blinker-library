@@ -1,11 +1,11 @@
 #define BLINKER_PRINT Serial
 #define BLINKER_BLE
 
-#define SLIDER_1		"SliderKey"
-#define TOGGLE_1		"ToggleKey"
-#define TEXT_1  		"millis"
-
 #include <Blinker.h>
+
+#define SLIDER_1 "SliderKey"
+#define TOGGLE_1 "ToggleKey"
+#define TEXT_1   "millis"
 
 void setup()
 {
