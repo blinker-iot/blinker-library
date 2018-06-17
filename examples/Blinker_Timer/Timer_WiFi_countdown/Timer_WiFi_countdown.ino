@@ -1,12 +1,12 @@
 #define BLINKER_PRINT Serial
 #define BLINKER_WIFI
 
-#define BUTTON_1		"ButtonKey"
-
 #include <Blinker.h>
 
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
+
+#define BUTTON_1 "ButtonKey"
 
 BlinkerTimer BlinkerCountDown;
 

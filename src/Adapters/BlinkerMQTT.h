@@ -145,6 +145,48 @@ class BlinkerMQTT {
             mDNSInit();
         }
 
+        bool autoPrint(uint32_t id) {
+            String payload = "{\"data\":{\"set\":{" + \
+                STRING_format("\"trigged\":true,\"autoData\":{") + \
+                "\"autoId\":" + STRING_format(id)  + "}}}" + \
+                ",\"fromDevice\":\"" + STRING_format(MQTT_ID) + "\"" + \
+                ",\"toDevice\":\"" + "autoManager" + "\"}";
+                // "\",\"deviceType\":\"" + "type" + "\"}";
+
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1("autoPrint...");
+#endif
+            if (mqtt->connected()) {
+                if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || linkTime == 0) {
+                    // linkTime = millis();
+
+                    if (! iotPub->publish(payload.c_str())) {
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(payload, ("...Failed"));
+#endif
+                        return false;
+                    }
+                    else {
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(payload, ("...OK!"));
+#endif
+                        linkTime = millis();
+                        return true;
+                    }
+                }
+                else {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG2("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
+#endif
+                    return false;
+                }
+            }
+            else {
+                BLINKER_ERR_LOG1("MQTT Disconnected");
+                return false;
+            }
+        }
+
         bool autoPrint(char *name, char *type, char *data) {
             String payload = "{\"data\":{" + STRING_format(data) + "}," + \ 
                 + "\"fromDevice\":\"" + STRING_format(MQTT_ID) + "\"," + \

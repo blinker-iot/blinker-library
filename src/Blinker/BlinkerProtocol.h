@@ -431,6 +431,13 @@ class BlinkerProtocol
         }
 
 #if defined(BLINKER_MQTT)
+        bool autoTrigged(uint32_t _id) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1("autoTrigged");
+#endif
+            return conn.autoPrint(_id);
+        }
+
         bool autoTrigged(char *name, char *type, char *data) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("autoTrigged");
