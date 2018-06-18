@@ -96,16 +96,32 @@ class BlinkerArduinoWS
 
         String lastRead() { return STRING_format(msgBuf); }
 
-        void print(String s)
+        void print(String s_data)
         {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("Response: "), s);
+            BLINKER_LOG2(BLINKER_F("Response: "), s_data);
 #endif
             if(connected()) {
+                bool state = STRING_contais_string(s_data, BLINKER_CMD_NOTICE);
+
+                if (!state) {
+                    state = (STRING_contais_string(s_data, BLINKER_CMD_STATE) 
+                        && STRING_contais_string(s_data, BLINKER_CMD_CONNECTED));
+                }
+
+                respTime = millis();
+
+                if (!state) {
+                    if (!checkPrintSpan()) {
+                        return;
+                    }
+                }
+
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("Succese..."));
 #endif
-                webSocket.broadcastTXT(s);
+
+                webSocket.broadcastTXT(s_data);
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
@@ -127,8 +143,42 @@ class BlinkerArduinoWS
 
         void disconnect() { webSocket.disconnect(); }
 
+    private :
+        bool checkPrintSpan() {
+            if (millis() - respTime < BLINKER_WS_MSG_LIMIT) {
+                if (respTimes > BLINKER_WS_MSG_LIMIT) {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
+#endif
+                    return false;
+                }
+                else {
+                    respTimes++;
+                    return true;
+                }
+            }
+            else {
+                respTimes = 0;
+                return true;
+            }
+        }
+
+//         bool checkWSCanPrint() {
+//             if (millis() - respTime >= BLINKER_WS_MSG_LIMIT || respTime == 0) {
+//                 return true;
+//             }
+//             else {
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
+// #endif
+//                 return false;
+//             }
+//         }
+
     protected :
         bool*       isHandle = &isConnect;
+        uint8_t     respTimes = 0;
+        uint32_t    respTime = 0;
 };
 
 #endif

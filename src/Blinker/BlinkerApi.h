@@ -1709,7 +1709,7 @@ class BlinkerApi
         }
 
         template<typename T>
-        bool sms(const char* cel, const T& msg) {
+        bool sms(const T& msg, const char* cel) {
             String _msg = STRING_format(msg);
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"cel\":\"" + cel + \
