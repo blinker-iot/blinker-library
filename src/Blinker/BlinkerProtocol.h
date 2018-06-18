@@ -481,10 +481,10 @@ class BlinkerProtocol
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
-#if defined(ESP8266) || defined(ESP32)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     BApi::ntpInit();
-// #endif
-// #if defined(BLINKER_MQTT)
+#endif
+#if defined(ESP8266) || defined(ESP32)
     BApi::checkTimer();
 #endif
 
