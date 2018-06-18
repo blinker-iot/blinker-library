@@ -109,13 +109,14 @@ class BlinkerArduinoWS
                         && STRING_contais_string(s_data, BLINKER_CMD_CONNECTED));
                 }
 
-                respTime = millis();
-
                 if (!state) {
                     if (!checkPrintSpan()) {
+                        respTime = millis();
                         return;
                     }
                 }
+
+                respTime = millis();
 
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("Succese..."));
