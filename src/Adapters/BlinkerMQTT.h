@@ -292,7 +292,7 @@ class BlinkerMQTT {
         }
 
         bool checkCanPrint() {
-            if (millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) {
+            if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
                 return true;
             }
             else {
@@ -305,14 +305,35 @@ class BlinkerMQTT {
             }
         }
 
+        bool checkPrintSpan() {
+            if (millis() - respTime < BLINKER_WS_MSG_LIMIT) {
+                if (respTimes > BLINKER_WS_MSG_LIMIT) {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
+#endif
+                    return false;
+                }
+                else {
+                    respTimes++;
+                    return true;
+                }
+            }
+            else {
+                respTimes = 0;
+                return true;
+            }
+        }
+
     protected :
         const char* authkey;
-        bool* isHandle = &isConnect;
-        bool isAlive = false;
-        uint32_t latestTime;
-        uint32_t printTime;
-        uint32_t kaTime;
-        uint32_t linkTime;
+        bool*       isHandle = &isConnect;
+        bool        isAlive = false;
+        uint32_t    latestTime;
+        uint32_t    printTime = 0;
+        uint32_t    kaTime = 0;
+        uint32_t    linkTime = 0;
+        uint8_t     respTimes = 0;
+        uint32_t    respTime = 0;
 };
 
 void BlinkerMQTT::connectServer() {
@@ -650,10 +671,28 @@ void BlinkerMQTT::subscribe() {
 
 void BlinkerMQTT::print(String data) {
     if (*isHandle) {
-        webSocket.broadcastTXT(data);
+        bool state = STRING_contais_string(s_data, BLINKER_CMD_NOTICE);
+
+        if (!state) {
+            state = (STRING_contais_string(s_data, BLINKER_CMD_STATE) 
+                && STRING_contais_string(s_data, BLINKER_CMD_CONNECTED));
+        }
+
+        respTime = millis();
+
+        if (!state) {
+            if (!checkPrintSpan()) {
+                return;
+            }
+        }
+
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG3("WS response: ", data, "Succese...");
+        BLINKER_LOG1(BLINKER_F("Succese..."));
 #endif
+        webSocket.broadcastTXT(data);
+// #ifdef BLINKER_DEBUG_ALL
+//         BLINKER_LOG3("WS response: ", data, "Succese...");
+// #endif
     }
     else {
         String payload = "{\"data\":" + data.substring(0, data.length() - 1) + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + UUID + "\"}";
@@ -665,7 +704,8 @@ void BlinkerMQTT::print(String data) {
         bool state = STRING_contais_string(data, BLINKER_CMD_NOTICE);
 
         if (!state) {
-            state = STRING_contais_string(data, BLINKER_CMD_STATE) && STRING_contais_string(data, BLINKER_CMD_ONLINE);
+            state = (STRING_contais_string(data, BLINKER_CMD_STATE) 
+                && STRING_contais_string(data, BLINKER_CMD_ONLINE));
         }
 
         if (mqtt->connected()) {
