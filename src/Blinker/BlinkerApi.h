@@ -1579,12 +1579,12 @@ class BlinkerApi
         /**< day of the month - [ 1 to 31 ] */
         int8_t wday()   { freshNTP(); return _isNTPInit ? timeinfo.tm_wday : -1; }
         /**< days since Sunday - [ 0 to 6 ] */
-        int8_t month()  { freshNTP(); return _isNTPInit ? timeinfo.tm_mon : -1; }
-        /**< months since January - [ 0 to 11 ] */
-        int16_t year()  { freshNTP(); return _isNTPInit ? 1900 + timeinfo.tm_year : -1; }
+        int8_t month()  { freshNTP(); return _isNTPInit ? timeinfo.tm_mon + 1 : -1; }
+        /**< months since January - [ 1 to 12 ] */
+        int16_t year()  { freshNTP(); return _isNTPInit ? timeinfo.tm_year + 1900 : -1; }
         /**< years since 1900 */
-        int16_t yday()  { freshNTP(); return _isNTPInit ? timeinfo.tm_yday : -1; }
-        /**< days since January 1 - [ 0 to 365 ] */
+        int16_t yday()  { freshNTP(); return _isNTPInit ? timeinfo.tm_yday + 1 : -1; }
+        /**< days since January 1 - [ 1 to 366 ] */
         time_t  time()  { freshNTP(); return _isNTPInit ? now_ntp : millis(); }
 
         int32_t dtime() {
