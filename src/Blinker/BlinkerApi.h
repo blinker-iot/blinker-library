@@ -3158,63 +3158,63 @@ class BlinkerApi
                         static_cast<Proto*>(this)->isParsed();
                     }
                 }
-                else {
+            }
+            else {
 #if defined(ESP8266) || defined(ESP32)
-                    String data1 = "{\"data\":" + _data + "}";
-                    DynamicJsonBuffer jsonBuffer;
-                    JsonObject& root = jsonBuffer.parseObject(data1);
+                String data1 = "{\"data\":" + _data + "}";
+                DynamicJsonBuffer jsonBuffer;
+                JsonObject& root = jsonBuffer.parseObject(data1);
+
+                if (!root.success()) {
+                    return;
+                }
+
+                String arrayData = root["data"][0];
+#ifdef BLINKER_DEBUG_ALL
+                // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
+                BLINKER_LOG2("_parse data: ", _data);
+#endif            
+                if (arrayData.length()) {
+                    for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
+                        String array_data = root["data"][a_num];
+
+                        // BLINKER_LOG2("array_data: ", array_data);
+
+                        if(array_data.length()) {
+                            DynamicJsonBuffer _jsonBuffer;
+                            JsonObject& _array = _jsonBuffer.parseObject(array_data);
+                            
+                            json_parse(_array);
+                            timerManager(_array, true);
+                        }
+                        else {
+                            return;
+                        }
+                    }
+                }
+                else {
+                    JsonObject& root = jsonBuffer.parseObject(_data);
 
                     if (!root.success()) {
                         return;
                     }
 
-                    String arrayData = root["data"][0];
-#ifdef BLINKER_DEBUG_ALL
-                    // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
-                    BLINKER_LOG2("_parse data: ", _data);
-#endif            
-                    if (arrayData.length()) {
-                        for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
-                            String array_data = root["data"][a_num];
-
-                            // BLINKER_LOG2("array_data: ", array_data);
-
-                            if(array_data.length()) {
-                                DynamicJsonBuffer _jsonBuffer;
-                                JsonObject& _array = _jsonBuffer.parseObject(array_data);
-                                
-                                json_parse(_array);
-                                timerManager(_array, true);
-                            }
-                            else {
-                                return;
-                            }
-                        }
-                    }
-                    else {
-                        JsonObject& root = jsonBuffer.parseObject(_data);
-
-                        if (!root.success()) {
-                            return;
-                        }
-
-                        json_parse(root);
-                    }
-#else
-                    for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                        buttonParse(_Button[bNum]->getName(), _data);
-                    }
-                    for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                        slider(_Slider[sNum]->getName(), _data);
-                    }
-                    for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                        toggle(_Toggle[kNum]->getName(), _data);
-                    }
-                    for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                        rgb(_RGB[rgbNum]->getName(), R, _data);
-                    }
-#endif
+                    json_parse(root);
                 }
+#else
+                for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                    buttonParse(_Button[bNum]->getName(), _data);
+                }
+                for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                    slider(_Slider[sNum]->getName(), _data);
+                }
+                for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                    toggle(_Toggle[kNum]->getName(), _data);
+                }
+                for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                    rgb(_RGB[rgbNum]->getName(), R, _data);
+                }
+#endif
             }
         }
 
