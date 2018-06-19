@@ -1298,7 +1298,7 @@ class BlinkerApi
         bool toggle(const String & _tName)
         {
             int8_t num = checkNum(_tName, _Toggle, _tCount);
-            String state;
+            String state = "";
 
             if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _tName)) {
                 _fresh = true;
@@ -1914,11 +1914,12 @@ class BlinkerApi
             String state = data[_tName];
 
             if (data.containsKey(_tName)) {
+                BLINKER_LOG2("STATE: ", state);
                 _fresh = true;
             }
-            else {
-                state = "";
-            }
+            // else {
+            //     state = "";
+            // }
 
             if (state == BLINKER_CMD_ON) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
