@@ -384,7 +384,19 @@ class BlinkerProtocol
         char            _sendBuf[BLINKER_MAX_SEND_SIZE];
 #if defined(BLINKER_MQTT)
         char            _authKey[BLINKER_AUTHKEY_SIZE];
-#endif        
+#endif
+
+#if defined(BLINKER_PRO)
+        // BlinkerWlan Bwlan;
+
+        // bool wlanRun() { return Bwlan.run(); }
+
+        bool beginPro() {
+            return BApi::wlanRun();
+            // return Bwlan.run();
+        }
+#endif
+
         void begin()
         {
             BLINKER_LOG1(BLINKER_F(""));
@@ -430,7 +442,7 @@ class BlinkerProtocol
             }
         }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool autoTrigged(uint32_t _id) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("autoTrigged");
@@ -481,7 +493,12 @@ class BlinkerProtocol
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+// #if defined(BLINKER_PRO)
+//     if (Bwlan.run()) {
+//         return;
+//     }
+// #endif
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     BApi::ntpInit();
 #endif
 #if defined(ESP8266) || defined(ESP32)

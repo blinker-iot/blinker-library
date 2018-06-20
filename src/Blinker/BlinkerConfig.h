@@ -1,6 +1,8 @@
 #ifndef BlinkerConfig_H
 #define BlinkerConfig_H
 
+#include <utility/BlinkerDebug.h>
+
 #define BLINKER_VERSION                 "0.1.4"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
@@ -197,7 +199,7 @@
 
 #define BLINKER_ONE_DAY_TIME            86400UL
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
@@ -231,7 +233,9 @@
 
     #define BLINKER_MQTT_UUID_SIZE          40
 
-    #define BLINKER_MQTT_DEVICENAME_SIZE    13
+    #define BLINKER_MQTT_DEVICEID_SIZE      26
+
+    #define BLINKER_MQTT_DEVICENAME_SIZE    14
 
 #endif
 
@@ -328,5 +332,23 @@
     #define BLINKER_ONE_AUTO_DATA_SIZE      (BLINKER_AUTOID_SIZE + BLINKER_TYPESTATE_SIZE + (BLINKER_AUTODATA_SIZE + BLINKER_TARGETKEY_SIZE + BLINKER_TARGETDATA_SIZE + BLINKER_LINKDEVICE_SIZE + BLINKER_LINKTYPE_SIZE + BLINKER_LINKDATA_SIZE) * 2)
 
 #endif
+
+// #if defined(BLINKER_PRO)
+
+#define BLINKER_AIR_DETECTOR            "OwnAirdetector"
+
+#define BLINKER_EEP_ADDR_SSID           1280
+
+#define BLINKER_SSID_SIZE               32
+
+#define BLINKER_EEP_ADDR_PSWD           (BLINKER_EEP_ADDR_SSID + BLINKER_SSID_SIZE)
+
+#define BLINKER_PSWD_SIZE               32
+
+#define BLINKER_EEP_ADDR_WLAN_CHECK     (BLINKER_EEP_ADDR_PSWD + BLINKER_PSWD_SIZE)
+
+#define BLINKER_WLAN_CHECK_SIZE         3
+
+// #endif
 
 #endif

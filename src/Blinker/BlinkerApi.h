@@ -12,9 +12,14 @@
 #elif defined(ESP32)
     #include <HTTPClient.h>
 #endif
+#if defined(BLINKER_PRO)
+    #include "utility/BlinkerWlan.h"
+#else
+    #include <Blinker/BlinkerConfig.h>
+#endif
 // #include "modules/ArduinoJson/ArduinoJson.h"
-#include <Blinker/BlinkerConfig.h>
-#include <utility/BlinkerDebug.h>
+// #include <Blinker/BlinkerConfig.h>
+// #include <utility/BlinkerDebug.h>
 #include <utility/BlinkerUtility.h>
 
 enum b_widgettype_t {
@@ -3088,6 +3093,11 @@ class BlinkerApi
 #endif
 
     protected :
+#if defined(BLINKER_PRO)
+        BlinkerWlan Bwlan;
+
+        bool wlanRun() { return Bwlan.run(); }
+#endif
         void parse(String _data, bool ex_data = false)
         {
             if (!ex_data) {
