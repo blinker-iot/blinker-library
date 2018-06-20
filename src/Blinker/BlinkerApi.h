@@ -13,7 +13,12 @@
     #include <HTTPClient.h>
 #endif
 #if defined(BLINKER_PRO)
-    #include "utility/BlinkerWlan.h"
+    #include <utility/BlinkerWlan.h>
+    #include "modules/OneButton/OneButton.h"
+
+    extern "C" {
+        typedef void (*callbackFunction)(void);
+    }
 #else
     #include <Blinker/BlinkerConfig.h>
 #endif
@@ -58,6 +63,11 @@ static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT)
 static class BlinkerAUTO * _AUTO[2];
 #endif
+
+// #if defined(BLINKER_PRO)
+// static OneButton button1(BLINKER_RESET_PIN, true);
+
+// #endif
 
 class BlinkerButton
 {
@@ -1726,6 +1736,28 @@ class BlinkerApi
             return _smsSend(data, true);
         }
 #endif
+
+#if defined(BLINKER_PRO)
+        void click(callbackFunction newFunction) {
+            _clickFunc = newFunction;
+        }
+
+        void doubleClick(callbackFunction newFunction) {
+            _clickFunc = newFunction;
+        }
+
+        void longPressStart(callbackFunction newFunction) {
+            _clickFunc = newFunction;
+        }
+
+        void longPressStop(callbackFunction newFunction) {
+            _clickFunc = newFunction;
+        }
+
+        void duringLongPress(callbackFunction newFunction) {
+            _clickFunc = newFunction;
+        }
+#endif
     
     private :
         uint8_t     _bCount = 0;
@@ -3095,8 +3127,72 @@ class BlinkerApi
     protected :
 #if defined(BLINKER_PRO)
         BlinkerWlan Bwlan;
+        OneButton   button1;
+        callbackFunction _clickFunc;
+        callbackFunction _doubleClickFunc;
+        callbackFunction _longPressStartFunc;
+        callbackFunction _longPressStopFunc;
+        callbackFunction _duringLongPressFunc;
 
-        bool wlanRun() { return Bwlan.run(); }
+        bool wlanRun() {
+            checkButton();
+            return Bwlan.run();
+        }
+
+        bool isPressed = false;
+
+        void checkButton()
+        {
+            button1.tick();
+        }
+
+        void click()
+        {
+            BLINKER_LOG1("Button click.");
+            _clickFunc();
+        } // click
+
+        void doubleclick() {
+        	BLINKER_LOG1("Button doubleclick.");
+            _doubleClickFunc();
+        } // doubleclick1
+
+        void longPressStart()
+        {
+            BLINKER_LOG1("Button longPress start");
+            _longPressStartFunc();
+            isPressed = true;
+        } // longPressStart
+
+        void longPress()
+        {
+            if (isPressed)
+            {
+                BLINKER_LOG1("Button longPress...");
+                isPressed = false;
+            }
+            _duringLongPressFunc();
+        } // longPress
+
+        void longPressStop()
+        {
+            BLINKER_LOG1("Button longPress stop");
+            _longPressStopFunc();
+            Bwlan.deleteConfig();
+	        Bwlan.reset();
+            ESP.restart();
+        } // longPressStop
+
+        void buttonInit()
+        {
+            button1.attachClick(click);
+            button1.attachDoubleClick(doubleclick);
+            button1.attachLongPressStart(longPressStart);
+            button1.attachLongPressStop(longPressStop);
+            button1.attachDuringLongPress(longPress);
+
+            attachInterrupt(BLINKER_RESET_PIN, checkButton, CHANGE);
+        }
 #endif
         void parse(String _data, bool ex_data = false)
         {

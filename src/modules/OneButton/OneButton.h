@@ -30,7 +30,12 @@ class OneButton
 public:
   // ----- Constructor -----
   OneButton(int pin, int active);
+
+  OneButton()
+    : _pin(0)
+  {}
   
+  void setButton(int pin, int active);
   // ----- Set runtime parameters -----
 
   // set # millisec after safe click is assumed.

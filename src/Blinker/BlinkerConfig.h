@@ -333,7 +333,11 @@
 
 #endif
 
-// #if defined(BLINKER_PRO)
+#if defined(BLINKER_PRO)
+
+#ifndef BLINKER_RESET_PIN
+    #define BLINKER_RESET_PIN               2
+#endif
 
 #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
 
@@ -349,6 +353,6 @@
 
 #define BLINKER_WLAN_CHECK_SIZE         3
 
-// #endif
+#endif
 
 #endif

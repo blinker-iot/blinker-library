@@ -49,6 +49,42 @@ OneButton::OneButton(int pin, int activeLow)
   _duringLongPressFunc = NULL;
 } // OneButton
 
+void OneButton::setButton(int pin, int activeLow)
+{
+  _pin = pin;
+
+  _debounceTicks = 50;      // number of millisec that have to pass by before a click is assumed as safe.
+  _clickTicks = 600;        // number of millisec that have to pass by before a click is detected.
+  _pressTicks = 1000;       // number of millisec that have to pass by before a long button press is detected.
+ 
+  _state = 0; // starting with state 0: waiting for button to be pressed
+  _isLongPressed = false;  // Keep track of long press state
+
+  if (activeLow) {
+    // the button connects the input pin to GND when pressed.
+    _buttonReleased = HIGH; // notPressed
+    _buttonPressed = LOW;
+
+    // use the given pin as input and activate internal PULLUP resistor.
+    pinMode( pin, INPUT_PULLUP );
+
+  } else {
+    // the button connects the input pin to VCC when pressed.
+    _buttonReleased = LOW;
+    _buttonPressed = HIGH;
+
+    // use the given pin as input
+    pinMode(pin, INPUT);
+  } // if
+
+  // no functions attached yet: clear all function pointers.
+  _clickFunc = NULL;
+  _doubleClickFunc = NULL;
+  _pressFunc = NULL;
+  _longPressStartFunc = NULL;
+  _longPressStopFunc = NULL;
+  _duringLongPressFunc = NULL;
+}
 
 // explicitly set the number of millisec that have to pass by before a click is assumed as safe.
 void OneButton::setDebounceTicks(int ticks) { 

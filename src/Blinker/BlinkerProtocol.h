@@ -387,13 +387,8 @@ class BlinkerProtocol
 #endif
 
 #if defined(BLINKER_PRO)
-        // BlinkerWlan Bwlan;
-
-        // bool wlanRun() { return Bwlan.run(); }
-
         bool beginPro() {
             return BApi::wlanRun();
-            // return Bwlan.run();
         }
 #endif
 
@@ -493,11 +488,11 @@ class BlinkerProtocol
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
-// #if defined(BLINKER_PRO)
-//     if (Bwlan.run()) {
-//         return;
-//     }
-// #endif
+#if defined(BLINKER_PRO)
+    if (!BApi::wlanRun()) {
+        return;
+    }
+#endif
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     BApi::ntpInit();
 #endif

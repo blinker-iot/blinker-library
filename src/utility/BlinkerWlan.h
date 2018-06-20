@@ -1,6 +1,8 @@
 #ifndef BLINKER_WLAN_H
 #define BLINKER_WLAN_H
 
+#if defined(BLINKER_PRO)
+
 #include <Blinker/BlinkerConfig.h>
 #include <ESP8266WiFi.h>
 #include <EEPROM.h>
@@ -288,5 +290,7 @@ bool BlinkerWlan::run() {
     }
     return false;
 }
+
+#endif
 
 #endif
