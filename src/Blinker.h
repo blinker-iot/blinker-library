@@ -29,6 +29,16 @@
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
+#elif defined(BLINKER_PRO)
+
+    #if defined(ESP8266)
+        #include <BlinkerSimpleESP8266_PRO.h>
+    #elif defined(ESP32)
+        #include <BlinkerSimpleESP32_PRO.h>
+    #else
+        #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
+    #endif
+
 #endif
 
 #endif
