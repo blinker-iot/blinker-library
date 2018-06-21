@@ -60,7 +60,7 @@ static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
 #endif
 
@@ -143,7 +143,7 @@ class BlinkerRGB
         uint8_t rgbValue[3] = {0};
 };
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 // template <class API>
 class BlinkerAUTO
 {
@@ -1607,7 +1607,7 @@ class BlinkerApi
             return _isNTPInit ? timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec : -1;
         }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         void beginAuto() {
             BLINKER_LOG1("=======================================================");
             BLINKER_LOG1("=========== Blinker Auto Control mode init! ===========");
@@ -1726,9 +1726,15 @@ class BlinkerApi
         template<typename T>
         bool sms(const T& msg, const char* cel) {
             String _msg = STRING_format(msg);
+#if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"cel\":\"" + cel + \
                             "\",\"msg\":\"" + _msg + "\"}";
+#elif defined(BLINKER_PRO)
+            String data = "{\"deviceName\":\"" + macDeviceName() + \
+                            "\",\"cel\":\"" + cel + \
+                            "\",\"msg\":\"" + _msg + "\"}";
+#endif
 
             if (_msg.length() > 20) {
                 return false;
@@ -1757,6 +1763,30 @@ class BlinkerApi
         void duringLongPress(callbackFunction newFunction) {
             _clickFunc = newFunction;
         }
+
+        void setType(const char* _type) {
+            _deviceType = _type;
+
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("API deviceType: ", _type);
+#endif
+        }
+
+        const char* type() {
+            return _deviceType;
+        }
+
+        void reset() {
+            BLINKER_LOG1("Blinker reset...");
+            char _authCheck = 0x00;
+            EEPROM.begin(BLINKER_EEP_SIZE);
+            EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+            EEPROM.commit();
+            EEPROM.end();
+            Bwlan.deleteConfig();
+	        Bwlan.reset();
+            ESP.restart();
+        }
 #endif
     
     private :
@@ -1776,7 +1806,7 @@ class BlinkerApi
         time_t      now_ntp;
         struct tm   timeinfo;
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         uint8_t     _aCount = 0;
 
         uint32_t    _smsTime = 0;
@@ -2147,7 +2177,7 @@ class BlinkerApi
             if (state.length()) {
                 // _fresh = true;
                 if (state == BLINKER_CMD_STATE) {
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
                     stateData();
@@ -2427,7 +2457,7 @@ class BlinkerApi
             // }
         }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool autoManager(const JsonObject& data) {
             // String set;
             bool isSet = false;
@@ -2917,7 +2947,7 @@ class BlinkerApi
         }
 #endif
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool _smsSend(String msg, bool state = false) {
             if (!checkSMS()) {
                 return false;
@@ -3124,8 +3154,31 @@ class BlinkerApi
         }
 #endif
 
+#if defined(BLINKER_PRO)
+        void checkRegister(const JsonObject& data) {
+            String _type = data[BLINKER_CMD_REGISTER];
+
+            if (_type.length() > 0) {
+                if (_type == STRING_format(_deviceType)) {
+                    static_cast<Proto*>(this)->_getRegister = true;
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG1("getRegister!");
+#endif
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "success");
+                }
+                else {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG1("not getRegister!");
+#endif
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "deviceType check fail");                    
+                }
+            }
+        }
+#endif
+
     protected :
 #if defined(BLINKER_PRO)
+        const char* _deviceType;
         BlinkerWlan Bwlan;
         OneButton   button1;
         callbackFunction _clickFunc;
@@ -3178,9 +3231,10 @@ class BlinkerApi
         {
             BLINKER_LOG1("Button longPress stop");
             _longPressStopFunc();
-            Bwlan.deleteConfig();
-	        Bwlan.reset();
-            ESP.restart();
+            // Bwlan.deleteConfig();
+	        // Bwlan.reset();
+            // ESP.restart();
+            reset();
         } // longPressStop
 
         void buttonInit()
@@ -3208,7 +3262,11 @@ class BlinkerApi
                         return;
                     }
 // (const JsonObject& data)
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_PRO)
+                    checkRegister(root);
+#endif
+
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     // if (autoManager(root)) {
                     //     static_cast<Proto*>(this)->isParsed();
                     //     return;

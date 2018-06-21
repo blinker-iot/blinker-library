@@ -339,7 +339,13 @@
         #define BLINKER_RESET_PIN               2
     #endif
 
+    #define BLINKER_CMD_REGISTER            "register"
+
     #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
+
+    #define BLINKER_CHECK_AUTH_TIME         120000UL
+
+    #define BLINKER_AUTH_CHECK_DATA         0x55
 
     #define BLINKER_EEP_ADDR_SSID           1280
 
@@ -356,6 +362,10 @@
     #define BLINKER_EEP_ADDR_AUUID          (BLINKER_EEP_ADDR_WLAN_CHECK + BLINKER_WLAN_CHECK_SIZE)
 
     #define BLINKER_AUUID_SIZE              34
+
+    #define BLINKER_EEP_ADDR_AUTH_CHECK     (BLINKER_EEP_ADDR_AUUID + BLINKER_AUUID_SIZE)
+
+    #define BLINKER_AUTH_CHECK_SIZE         1
 
 #endif
 

@@ -387,6 +387,13 @@ class BlinkerProtocol
 #endif
 
 #if defined(BLINKER_PRO)
+        bool            _isConnBegin = false;
+        bool            _getRegister = false;
+
+        uint32_t        _initTime;
+#endif
+
+#if defined(BLINKER_PRO)
         bool beginPro() {
             return BApi::wlanRun();
         }
@@ -420,6 +427,14 @@ class BlinkerProtocol
         {
             begin();
             strcpy(_authKey, _auth);
+        }
+#endif
+
+#if defined(BLINKER_PRO)
+        void begin(const char* _type)
+        {
+            begin();
+            BApi::setType(_type);
         }
 #endif
 
@@ -489,8 +504,39 @@ template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
 #if defined(BLINKER_PRO)
+
     if (!BApi::wlanRun()) {
         return;
+    }
+    else {
+        if (!_isConnBegin) {
+            conn.begin(BApi::type());
+            _isConnBegin = true;
+            _initTime = millis();
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("conn begin, fresh _initTime: ", _initTime);
+#endif
+            if (conn.authCheck()) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1("is auth, conn deviceRegister");
+#endif
+                conn.deviceRegister();
+            }
+        }
+    }
+
+    if (_getRegister) {
+#ifdef BLINKER_DEBUG_ALL
+        BLINKER_LOG1("conn deviceRegister");
+#endif
+        conn.deviceRegister();
+        _getRegister = false;
+    }
+
+    if (!conn.init()) {
+        if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME) {
+            BApi::reset();
+        }
     }
 #endif
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)

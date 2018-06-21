@@ -111,9 +111,11 @@ void BlinkerWlan::saveConfig(char *_ssid, char *_pswd) {
 }
 
 void BlinkerWlan::deleteConfig() {
+    char ok[3] = {0};
     EEPROM.begin(BLINKER_EEP_SIZE);
-    for (int i = BLINKER_EEP_ADDR_WLAN_CHECK; i < BLINKER_WLAN_CHECK_SIZE; i++)
-        EEPROM.write(i, 0);
+    // for (int i = BLINKER_EEP_ADDR_WLAN_CHECK; i < BLINKER_WLAN_CHECK_SIZE; i++)
+    //     EEPROM.write(i, 0);
+    EEPROM.put(BLINKER_EEP_ADDR_WLAN_CHECK, ok);
     EEPROM.commit();
     EEPROM.end();
 

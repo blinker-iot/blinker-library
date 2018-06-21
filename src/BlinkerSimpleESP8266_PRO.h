@@ -14,11 +14,11 @@ class BlinkerSimpleESP8266_PRO
         {}
 
         void begin(const char* _type = BLINKER_AIR_DETECTOR) {
-            Base::begin();
-            while(!Base::beginPro()) {
-                ::delay(1);
-            }
-            this->conn.begin(_type);
+            Base::begin(_type);
+            // while(!Base::beginPro()) {
+            //     ::delay(1);
+            // }
+            // this->conn.begin(_type);
             BLINKER_LOG1("ESP8266_PRO Initialled...");
         }
 

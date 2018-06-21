@@ -24,7 +24,7 @@ static char MQTT_NAME[BLINKER_MQTT_NAME_SIZE];
 static char MQTT_KEY[BLINKER_MQTT_KEY_SIZE];
 static char MQTT_PRODUCTINFO[BLINKER_MQTT_PINFO_SIZE];
 static char UUID[BLINKER_MQTT_UUID_SIZE];
-static char DEVICE_NAME[BLINKER_MQTT_DEVICENAME_SIZE];
+// static char DEVICE_NAME[BLINKER_MQTT_DEVICENAME_SIZE];
 static char *BLINKER_PUB_TOPIC;
 static char *BLINKER_SUB_TOPIC;
 
@@ -102,25 +102,38 @@ class BlinkerPRO {
             _deviceType(NULL) {}
         
         bool connect();
-        bool connected() { return mqtt->connected()||*isHandle; }
-        void disconnect() {
-            mqtt->disconnect();
+        bool connected() {
+            if (!isMQTTinit) {
+                return *isHandle;
+            }
 
-            if (*isHandle)
-                webSocket.disconnect();
+            return mqtt->connected()||*isHandle;
         }
+
+        void disconnect() {
+            if (isMQTTinit) {
+                mqtt->disconnect();
+            }
+
+            if (*isHandle) {
+                webSocket.disconnect();
+            }
+        }
+
         void ping();
         
         bool available () {
             webSocket.loop();
 
-            checkKA();
-
-            if (!mqtt->connected() || (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT) {
-                ping();
-            }
-            else {
-                subscribe();
+            if (isMQTTinit) {
+                checkKA();
+            
+                if (!mqtt->connected() || (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT) {
+                    ping();
+                }
+                else {
+                    subscribe();
+                }
             }
 
             if (isAvail) {
@@ -140,13 +153,20 @@ class BlinkerPRO {
         void begin(const char* _type) {
             _deviceType = _type;
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("deviceType: ", _type);
+            BLINKER_LOG2("PRO deviceType: ", _type);
 #endif
-            connectServer();
             mDNSInit();
         }
 
+        void deviceRegister() {
+            connectServer();
+        }
+
         bool autoPrint(uint32_t id) {
+            if (!isMQTTinit) {
+                return false;
+            }
+
             String payload = "{\"data\":{\"set\":{" + \
                 STRING_format("\"trigged\":true,\"autoData\":{") + \
                 "\"autoId\":" + STRING_format(id)  + "}}}" + \
@@ -189,6 +209,10 @@ class BlinkerPRO {
         }
 
         bool autoPrint(char *name, char *type, char *data) {
+            if (!isMQTTinit) {
+                return false;
+            }
+
             String payload = "{\"data\":{" + STRING_format(data) + "}," + \ 
                 + "\"fromDevice\":\"" + STRING_format(MQTT_DEVICEID) + "\"," + \
                 + "\"toDevice\":\"" + name + "\"," + \
@@ -221,6 +245,10 @@ class BlinkerPRO {
         bool autoPrint(char *name1, char *type1, char *data1
             , char *name2, char *type2, char *data2)
         {
+            if (!isMQTTinit) {
+                return false;
+            }
+
             String payload = "{\"data\":{" + STRING_format(data1) + "}," + \ 
                 + "\"fromDevice\":\"" + STRING_format(MQTT_DEVICEID) + "\"," + \
                 + "\"toDevice\":\"" + name1 + "\"," + \
@@ -260,16 +288,30 @@ class BlinkerPRO {
 
         String deviceName() { return MQTT_DEVICEID; }
 
-    private :    
+        bool init() { return isMQTTinit; }
+
+        bool authCheck() {
+            char _authCheck;
+            EEPROM.begin(BLINKER_EEP_SIZE);
+            EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+            if (_authCheck == BLINKER_AUTH_CHECK_DATA) {
+                isAuth = true;
+            }
+            EEPROM.commit();
+            EEPROM.end();
+        }
+
+    private :
+        bool isMQTTinit = false;
 
         void connectServer();
 
         void mDNSInit()
         {
 #if defined(ESP8266)
-            if (!MDNS.begin(DEVICE_NAME, WiFi.localIP())) {
+            if (!MDNS.begin(macDeviceName().c_str(), WiFi.localIP())) {
 #elif defined(ESP32)
-            if (!MDNS.begin(DEVICE_NAME)) {
+            if (!MDNS.begin(macDeviceName().c_str())) {
 #endif
                 while(1) {
                     ::delay(100);
@@ -279,12 +321,12 @@ class BlinkerPRO {
             BLINKER_LOG1(("mDNS responder started"));
             
             MDNS.addService(_deviceType, "tcp", WS_SERVERPORT);
-            MDNS.addServiceTxt(_deviceType, "tcp", "deviceName", String(DEVICE_NAME));
+            MDNS.addServiceTxt(_deviceType, "tcp", "deviceName", String(macDeviceName()));
 
             webSocket.begin();
             webSocket.onEvent(webSocketEvent);
             BLINKER_LOG1(("webSocket server started"));
-            BLINKER_LOG4("ws://", DEVICE_NAME, ".local:", WS_SERVERPORT);
+            BLINKER_LOG4("ws://", macDeviceName(), ".local:", WS_SERVERPORT);
         }
 
         void checkKA() {
@@ -344,6 +386,7 @@ class BlinkerPRO {
         uint8_t     respTimes = 0;
         uint32_t    respTime = 0;
         bool        isNew = false;
+        bool        isAuth = false;
 };
 
 void BlinkerPRO::connectServer() {
@@ -436,18 +479,7 @@ void BlinkerPRO::connectServer() {
         !STRING_contais_string(payload, BLINKER_CMD_IOTID)) {
         BLINKER_ERR_LOG1("Please make sure you have register this device!");
 
-        char ok[3] = {0};
-        EEPROM.begin(BLINKER_EEP_SIZE);
-        // for (int i = BLINKER_EEP_ADDR_WLAN_CHECK; i < BLINKER_WLAN_CHECK_SIZE; i++)
-        //     EEPROM.write(i, 0);
-        EEPROM.put(BLINKER_EEP_ADDR_WLAN_CHECK, ok);
-        EEPROM.get(BLINKER_EEP_ADDR_WLAN_CHECK, ok);
-        EEPROM.commit();
-        EEPROM.end();
-
-        BLINKER_LOG2("Erase wlan config ", ok);
-
-        ESP.restart();
+        return;
     }
 
     // String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
@@ -465,7 +497,7 @@ void BlinkerPRO::connectServer() {
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         String _deviceName = _userID.substring(12, 36);
-        memcpy(DEVICE_NAME, _deviceName.c_str(), 12);
+        // memcpy(DEVICE_NAME, _deviceName.c_str(), 12);
         strcpy(MQTT_DEVICEID, _deviceName.c_str());
         strcpy(MQTT_ID, _userID.c_str());
         strcpy(MQTT_NAME, _userName.c_str());
@@ -497,6 +529,7 @@ void BlinkerPRO::connectServer() {
     // }
     
     // char AUUID[BLINKER_AUUID_SIZE];
+    char _authCheck;
     EEPROM.begin(BLINKER_EEP_SIZE);
     EEPROM.get(BLINKER_EEP_ADDR_AUUID, UUID);
     if (STRING_format(UUID) != _uuid) {
@@ -504,12 +537,17 @@ void BlinkerPRO::connectServer() {
         EEPROM.put(BLINKER_EEP_ADDR_AUUID, UUID);
         isNew = true;
     }
+    EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+    if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
+        EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
+        isAuth = true;
+    }
     EEPROM.commit();
     EEPROM.end();
 
 #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1("====================");
-    BLINKER_LOG2("DEVICE_NAME: ", DEVICE_NAME);
+    BLINKER_LOG2("DEVICE_NAME: ", macDeviceName());
     BLINKER_LOG2("MQTT_PRODUCTINFO: ", MQTT_PRODUCTINFO);
     BLINKER_LOG2("MQTT_DEVICEID: ", MQTT_DEVICEID);
     BLINKER_LOG2("MQTT_ID: ", MQTT_ID);
@@ -590,6 +628,7 @@ void BlinkerPRO::connectServer() {
     // mDNSInit(MQTT_ID);
     this->latestTime = millis();
     mqtt->subscribe(iotSub);
+    isMQTTinit = true;
     connect();
 }
 
@@ -597,6 +636,10 @@ bool BlinkerPRO::connect() {
     int8_t ret;
 
     webSocket.loop();
+
+    if (!isMQTTinit) {
+        return *isHandle;
+    }
 
     if (mqtt->connected()) {
         return true;
@@ -638,6 +681,10 @@ void BlinkerPRO::ping() {
 #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1("MQTT Ping!");
 #endif
+    if (!isMQTTinit) {
+        return;
+    }
+
     if (!mqtt->ping()) {
         disconnect();
         delay(100);
@@ -650,6 +697,10 @@ void BlinkerPRO::ping() {
 }
 
 void BlinkerPRO::subscribe() {
+    if (!isMQTTinit) {
+        return;
+    }
+
     Adafruit_MQTT_Subscribe *subscription;
     while ((subscription = mqtt->readSubscription(10))) {
         if (subscription == iotSub) {
@@ -739,6 +790,10 @@ bool BlinkerPRO::print(String data) {
 // #endif
     }
     else {
+        if (!isMQTTinit) {
+            return false;
+        }
+
         String payload;
         if (STRING_contais_string(data, BLINKER_CMD_NEWLINE)) {
             payload = "{\"data\":" + data.substring(0, data.length() - 1) + ",\"fromDevice\":\"" + MQTT_DEVICEID + "\",\"toDevice\":\"" + UUID + "\"}";
