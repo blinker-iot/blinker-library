@@ -335,23 +335,27 @@
 
 #if defined(BLINKER_PRO)
 
-#ifndef BLINKER_RESET_PIN
-    #define BLINKER_RESET_PIN               2
-#endif
+    #ifndef BLINKER_RESET_PIN
+        #define BLINKER_RESET_PIN               2
+    #endif
 
-#define BLINKER_AIR_DETECTOR            "OwnAirdetector"
+    #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
 
-#define BLINKER_EEP_ADDR_SSID           1280
+    #define BLINKER_EEP_ADDR_SSID           1280
 
-#define BLINKER_SSID_SIZE               32
+    #define BLINKER_SSID_SIZE               32
 
-#define BLINKER_EEP_ADDR_PSWD           (BLINKER_EEP_ADDR_SSID + BLINKER_SSID_SIZE)
+    #define BLINKER_EEP_ADDR_PSWD           (BLINKER_EEP_ADDR_SSID + BLINKER_SSID_SIZE)
 
-#define BLINKER_PSWD_SIZE               32
+    #define BLINKER_PSWD_SIZE               32
 
-#define BLINKER_EEP_ADDR_WLAN_CHECK     (BLINKER_EEP_ADDR_PSWD + BLINKER_PSWD_SIZE)
+    #define BLINKER_EEP_ADDR_WLAN_CHECK     (BLINKER_EEP_ADDR_PSWD + BLINKER_PSWD_SIZE)
 
-#define BLINKER_WLAN_CHECK_SIZE         3
+    #define BLINKER_WLAN_CHECK_SIZE         3
+
+    #define BLINKER_EEP_ADDR_AUUID          (BLINKER_EEP_ADDR_WLAN_CHECK + BLINKER_WLAN_CHECK_SIZE)
+
+    #define BLINKER_AUUID_SIZE              34
 
 #endif
 
