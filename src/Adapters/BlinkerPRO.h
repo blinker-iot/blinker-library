@@ -432,11 +432,22 @@ void BlinkerPRO::connectServer() {
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(payload);
 
-    if (STRING_contais_string(payload, BLINKER_CMD_NOTFOUND) || !root.success()) {
-        while(1) {
-            BLINKER_ERR_LOG1("Please make sure you have put in the right AuthKey!");
-            ::delay(10000);
-        }
+    if (STRING_contais_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() || 
+        !STRING_contais_string(payload, BLINKER_CMD_IOTID)) {
+        BLINKER_ERR_LOG1("Please make sure you have register this device!");
+
+        char ok[3] = {0};
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        // for (int i = BLINKER_EEP_ADDR_WLAN_CHECK; i < BLINKER_WLAN_CHECK_SIZE; i++)
+        //     EEPROM.write(i, 0);
+        EEPROM.put(BLINKER_EEP_ADDR_WLAN_CHECK, ok);
+        EEPROM.get(BLINKER_EEP_ADDR_WLAN_CHECK, ok);
+        EEPROM.commit();
+        EEPROM.end();
+
+        BLINKER_LOG2("Erase wlan config ", ok);
+
+        ESP.restart();
     }
 
     // String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
