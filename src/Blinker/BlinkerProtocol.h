@@ -434,6 +434,7 @@ class BlinkerProtocol
         void begin(const char* _type)
         {
             begin();
+            BApi::buttonInit();
             BApi::setType(_type);
         }
 #endif

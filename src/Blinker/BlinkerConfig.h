@@ -335,8 +335,8 @@
 
 #if defined(BLINKER_PRO)
 
-    #ifndef BLINKER_RESET_PIN
-        #define BLINKER_RESET_PIN               2
+    #ifndef BLINKER_BUTTON_PIN
+        #define BLINKER_BUTTON_PIN              2
     #endif
 
     #define BLINKER_CMD_REGISTER            "register"
