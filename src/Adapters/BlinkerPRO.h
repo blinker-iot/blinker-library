@@ -295,10 +295,14 @@ class BlinkerPRO {
             EEPROM.begin(BLINKER_EEP_SIZE);
             EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
             if (_authCheck == BLINKER_AUTH_CHECK_DATA) {
+                EEPROM.commit();
+                EEPROM.end();
                 isAuth = true;
+                return true;
             }
             EEPROM.commit();
             EEPROM.end();
+            return false;
         }
 
     private :

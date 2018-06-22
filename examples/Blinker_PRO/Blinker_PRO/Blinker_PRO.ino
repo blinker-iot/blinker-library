@@ -1,5 +1,7 @@
 #define BLINKER_PRINT Serial
 #define BLINKER_PRO
+#define BLINKER_BUTTON
+#define BLINKER_BUTTON_PIN D7
 
 #include <Blinker.h>
 

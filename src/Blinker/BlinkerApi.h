@@ -1744,25 +1744,25 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_PRO)
-        // void click(callbackFunction newFunction) {
-        //     _clickFunc = newFunction;
-        // }
+        void attachClick(callbackFunction newFunction) {
+            _clickFunc = newFunction;
+        }
 
-        // void doubleClick(callbackFunction newFunction) {
-        //     _clickFunc = newFunction;
-        // }
+        void attachDoubleClick(callbackFunction newFunction) {
+            _doubleClickFunc = newFunction;
+        }
 
-        // void longPressStart(callbackFunction newFunction) {
-        //     _clickFunc = newFunction;
-        // }
+        void attachLongPressStart(callbackFunction newFunction) {
+            _longPressStartFunc = newFunction;
+        }
 
-        // void longPressStop(callbackFunction newFunction) {
-        //     _clickFunc = newFunction;
-        // }
+        void attachLongPressStop(callbackFunction newFunction) {
+            _longPressStopFunc = newFunction;
+        }
 
-        // void duringLongPress(callbackFunction newFunction) {
-        //     _clickFunc = newFunction;
-        // }
+        void attachDuringLongPress(callbackFunction newFunction) {
+            _duringLongPressFunc = newFunction;
+        }
 
         void setType(const char* _type) {
             _deviceType = _type;
@@ -1779,8 +1779,10 @@ class BlinkerApi
         void reset() {
             BLINKER_LOG1("Blinker reset...");
             char _authCheck = 0x00;
+            char _uuid[BLINKER_AUUID_SIZE] = {0};
             EEPROM.begin(BLINKER_EEP_SIZE);
             EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+            EEPROM.put(BLINKER_EEP_ADDR_AUUID, _uuid);
             EEPROM.commit();
             EEPROM.end();
             Bwlan.deleteConfig();
@@ -1826,7 +1828,8 @@ class BlinkerApi
                 } // if
 
             } else if (_state == 2) { // waiting for menu pin being pressed the second time or timeout.
-                if (_doubleClickFunc == NULL || (unsigned long)(now - _startTime) > _clickTicks) {
+                // if (_doubleClickFunc == NULL || (unsigned long)(now - _startTime) > _clickTicks) {
+                if ((unsigned long)(now - _startTime) > _clickTicks) {
                     // this was only a single short click
                     _click();
                     if (_clickFunc) _clickFunc();
@@ -3283,15 +3286,10 @@ class BlinkerApi
         unsigned long _startTime; // will be set in state 1
         unsigned long _stopTime; // will be set in state 2
 
-        // callbackFunction _clickFunc;
-        // callbackFunction _doubleClickFunc;
-        // callbackFunction _longPressStartFunc;
-        // callbackFunction _longPressStopFunc;
-        // callbackFunction _duringLongPressFunc;
-
         bool wlanRun() {
-            // checkButton();
+#if defined(BLINKER_BUTTON)
             tick();
+#endif
             return Bwlan.run();
         }
 
@@ -3304,19 +3302,25 @@ class BlinkerApi
 
         void _click()
         {
+#ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("Button click.");
             // _clickFunc();
+#endif
         } // click
 
         void _doubleClick() {
+#ifdef BLINKER_DEBUG_ALL
         	BLINKER_LOG1("Button doubleclick.");
             // _doubleClickFunc();
+#endif
         } // doubleclick1
 
         void _longPressStart()
         {
+#ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("Button longPress start");
             // _longPressStartFunc();
+#endif
             isPressed = true;
         } // longPressStart
 
@@ -3324,7 +3328,9 @@ class BlinkerApi
         {
             if (isPressed)
             {
+#ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1("Button longPress...");
+#endif
                 isPressed = false;
             }
             // _duringLongPressFunc();
@@ -3332,7 +3338,9 @@ class BlinkerApi
 
         void _longPressStop()
         {
+#ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("Button longPress stop");
+#endif
             // _longPressStopFunc();
             // Bwlan.deleteConfig();
 	        // Bwlan.reset();
@@ -3374,16 +3382,11 @@ class BlinkerApi
             _longPressStartFunc = NULL;
             _longPressStopFunc = NULL;
             _duringLongPressFunc = NULL;
-            // button1.setButton(BLINKER_BUTTON_PIN, true);
-            // button1.attachClick(click);
-            // button1.attachDoubleClick(doubleclick);
-            // button1.attachLongPressStart(longPressStart);
-            // button1.attachLongPressStop(longPressStop);
-            // button1.attachDuringLongPress(longPress);
 
             // attachInterrupt(BLINKER_BUTTON_PIN, checkButton, CHANGE);
-
+#ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("Button initialled");
+#endif
         }
 #endif
         void parse(String _data, bool ex_data = false)
