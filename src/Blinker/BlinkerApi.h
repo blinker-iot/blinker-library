@@ -12,9 +12,19 @@
 #elif defined(ESP32)
     #include <HTTPClient.h>
 #endif
+#if defined(BLINKER_PRO)
+    #include <utility/BlinkerWlan.h>
+    #include "modules/OneButton/OneButton.h"
+
+    extern "C" {
+        typedef void (*callbackFunction)(void);
+    }
+#else
+    #include <Blinker/BlinkerConfig.h>
+#endif
 // #include "modules/ArduinoJson/ArduinoJson.h"
-#include <Blinker/BlinkerConfig.h>
-#include <utility/BlinkerDebug.h>
+// #include <Blinker/BlinkerConfig.h>
+// #include <utility/BlinkerDebug.h>
 #include <utility/BlinkerUtility.h>
 
 enum b_widgettype_t {
@@ -50,9 +60,14 @@ static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
 #endif
+
+// #if defined(BLINKER_PRO)
+// static OneButton button1(BLINKER_BUTTON_PIN, true);
+
+// #endif
 
 class BlinkerButton
 {
@@ -128,7 +143,7 @@ class BlinkerRGB
         uint8_t rgbValue[3] = {0};
 };
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 // template <class API>
 class BlinkerAUTO
 {
@@ -1048,18 +1063,21 @@ static bool _lpState = false;
 static bool _tmState = false;
 static bool _lpRun1 = true;
 static bool _tmRun1 = true;
+static bool _tmDay = false;
 static bool _cdTrigged = false;
 static bool _lpTrigged = false;
 static bool _tmTrigged = false;
+static bool _isTimingLoop = false;
 
-static uint8_t _lpTimes;
-static uint8_t _lpTrigged_times;
+static uint8_t  _lpTimes;
+static uint8_t  _lpTrigged_times;
 static uint32_t _cdTime1;
 static uint32_t _cdTime2;
 static uint32_t _lpTime1;
 static uint32_t _lpTime2;
 static uint32_t _tmTime1;
 static uint32_t _tmTime2;
+static uint8_t  _timingDay = 0;
 
 // static String _cbData1;
 // static String _cbData2;
@@ -1097,15 +1115,15 @@ static void _lp_callback() {
                 lpTicker.detach();
             }
             else {
-                lpTicker.attach(_lpTime1, _lp_callback);
+                lpTicker.once(_lpTime1, _lp_callback);
             }
         }
         else {
-            lpTicker.attach(_lpTime1, _lp_callback);
+            lpTicker.once(_lpTime1, _lp_callback);
         }
     }
     else {
-        lpTicker.attach(_lpTime2, _lp_callback);
+        lpTicker.once(_lpTime2, _lp_callback);
     }
     _lpTrigged = true;
 #ifdef BLINKER_DEBUG_ALL     
@@ -1118,39 +1136,72 @@ static void _lp_callback() {
 //     lpTicker.attach(seconds, _lp_callback);
 // }
 
+static bool isTimingDay(uint8_t _day) {
+ #ifdef BLINKER_DEBUG_ALL     
+    BLINKER_LOG2("isTimingDay: ", _day);
+#endif   
+    if (_timingDay & (0x01 << _day))
+        return true;
+    else
+        return false;
+}
+
 static void _tm_callback() {
     _tmRun1 = !_tmRun1;
 
     time_t      now_ntp;
     struct tm   timeinfo;
     now_ntp = time(nullptr);
+    // gmtime_r(&now_ntp, &timeinfo);
+#if defined(ESP8266)
     gmtime_r(&now_ntp, &timeinfo);
+#elif defined(ESP32)
+    localtime_r(&now_ntp, &timeinfo);
+#endif
 
     int32_t nowTime = timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
 #ifdef BLINKER_DEBUG_ALL 
     BLINKER_LOG6("nowTime: ", nowTime, " _tmTime1: ", _tmTime1, " _tmTime2: ", _tmTime2);
 #endif
-    if (_tmRun1) {
-        if (_tmTime1 >= nowTime) {
-            tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+
+    if (isTimingDay(timeinfo.tm_wday)) {
+        if (_tmRun1) {
+            if (!_isTimingLoop) {
+                tmTicker.detach();
 #ifdef BLINKER_DEBUG_ALL 
-            BLINKER_LOG2("timing2 trigged! next time: ", _tmTime1 - nowTime);
+                BLINKER_LOG1("timing2 trigged! now need stop!");
+#endif
+                _tmState = false;
+            }
+            else {
+                if (_tmTime1 >= nowTime) {
+                    tmTicker.once(_tmTime1 - nowTime, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+                    BLINKER_LOG2("timing2 trigged! next time: ", _tmTime1 - nowTime);
+#endif
+                }
+                else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
+                    tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+                    BLINKER_LOG2("timing2 trigged! next time: ", BLINKER_ONE_DAY_TIME - nowTime);
+#endif
+                }
+            }
+        }
+        else {
+            tmTicker.once(_tmTime2 - _tmTime1, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+            BLINKER_LOG2("timing1 trigged! next time: ", _tmTime2 - _tmTime1);
 #endif
         }
-        else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
-            tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime + _tmTime1, _tm_callback);
-#ifdef BLINKER_DEBUG_ALL 
-            BLINKER_LOG2("timing2 trigged! next time: ", BLINKER_ONE_DAY_TIME - nowTime + _tmTime1);
-#endif
-        }
+        _tmTrigged = true;
     }
     else {
-        tmTicker.attach(_tmTime2 - _tmTime1, _tm_callback);
+        tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
-        BLINKER_LOG2("timing1 trigged! next time: ", _tmTime2 - _tmTime1);
+        BLINKER_LOG2("timing trigged! next time: ", BLINKER_ONE_DAY_TIME - nowTime);
 #endif
     }
-    _tmTrigged = true;
 }
 
 // static void _timing(float seconds) {
@@ -1592,7 +1643,7 @@ class BlinkerApi
             return _isNTPInit ? timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec : -1;
         }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         void beginAuto() {
             BLINKER_LOG1("=======================================================");
             BLINKER_LOG1("=========== Blinker Auto Control mode init! ===========");
@@ -1711,14 +1762,146 @@ class BlinkerApi
         template<typename T>
         bool sms(const T& msg, const char* cel) {
             String _msg = STRING_format(msg);
+#if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"cel\":\"" + cel + \
                             "\",\"msg\":\"" + _msg + "\"}";
+#elif defined(BLINKER_PRO)
+            String data = "{\"deviceName\":\"" + macDeviceName() + \
+                            "\",\"cel\":\"" + cel + \
+                            "\",\"msg\":\"" + _msg + "\"}";
+#endif
 
             if (_msg.length() > 20) {
                 return false;
             }
             return _smsSend(data, true);
+        }
+#endif
+
+#if defined(BLINKER_PRO)
+        void attachClick(callbackFunction newFunction) {
+            _clickFunc = newFunction;
+        }
+
+        void attachDoubleClick(callbackFunction newFunction) {
+            _doubleClickFunc = newFunction;
+        }
+
+        void attachLongPressStart(callbackFunction newFunction) {
+            _longPressStartFunc = newFunction;
+        }
+
+        void attachLongPressStop(callbackFunction newFunction) {
+            _longPressStopFunc = newFunction;
+        }
+
+        void attachDuringLongPress(callbackFunction newFunction) {
+            _duringLongPressFunc = newFunction;
+        }
+
+        void setType(const char* _type) {
+            _deviceType = _type;
+
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("API deviceType: ", _type);
+#endif
+        }
+
+        const char* type() {
+            return _deviceType;
+        }
+
+        void reset() {
+            BLINKER_LOG1("Blinker reset...");
+            char _authCheck = 0x00;
+            char _uuid[BLINKER_AUUID_SIZE] = {0};
+            EEPROM.begin(BLINKER_EEP_SIZE);
+            EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+            EEPROM.put(BLINKER_EEP_ADDR_AUUID, _uuid);
+            EEPROM.commit();
+            EEPROM.end();
+            Bwlan.deleteConfig();
+	        Bwlan.reset();
+            ESP.restart();
+        }
+
+        void tick()
+        {
+            // Detect the input information 
+            int buttonLevel = digitalRead(_pin); // current button signal.
+            unsigned long now = millis(); // current (relative) time in msecs.
+
+            // Implementation of the state machine
+            if (_state == 0) { // waiting for menu pin being pressed.
+                if (buttonLevel == _buttonPressed) {
+                    _state = 1; // step to state 1
+                    _startTime = now; // remember starting time
+                } // if
+
+            } else if (_state == 1) { // waiting for menu pin being released.
+
+                if ((buttonLevel == _buttonReleased) && ((unsigned long)(now - _startTime) < _debounceTicks)) {
+                    // button was released to quickly so I assume some debouncing.
+                    // go back to state 0 without calling a function.
+                    _state = 0;
+
+                } else if (buttonLevel == _buttonReleased) {
+                    _state = 2; // step to state 2
+                    _stopTime = now; // remember stopping time
+
+                } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _startTime) > _pressTicks)) {
+                    _isLongPressed = true;  // Keep track of long press state
+                    if (_pressFunc) _pressFunc();
+                    _longPressStart();
+                    if (_longPressStartFunc) _longPressStartFunc();
+                    _longPress();
+                    if (_duringLongPressFunc) _duringLongPressFunc();
+                    _state = 6; // step to state 6
+                
+                } else {
+                // wait. Stay in this state.
+                } // if
+
+            } else if (_state == 2) { // waiting for menu pin being pressed the second time or timeout.
+                // if (_doubleClickFunc == NULL || (unsigned long)(now - _startTime) > _clickTicks) {
+                if ((unsigned long)(now - _startTime) > _clickTicks) {
+                    // this was only a single short click
+                    _click();
+                    if (_clickFunc) _clickFunc();
+                    _state = 0; // restart.
+
+                } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _stopTime) > _debounceTicks)) {
+                    _state = 3; // step to state 3
+                    _startTime = now; // remember starting time
+                } // if
+
+            } else if (_state == 3) { // waiting for menu pin being released finally.
+                // Stay here for at least _debounceTicks because else we might end up in state 1 if the
+                // button bounces for too long.
+                if (buttonLevel == _buttonReleased && ((unsigned long)(now - _startTime) > _debounceTicks)) {
+                    // this was a 2 click sequence.
+                    _doubleClick();
+                    if (_doubleClickFunc) _doubleClickFunc();
+                    _state = 0; // restart.
+                } // if
+
+            } else if (_state == 6) { // waiting for menu pin being release after long press.
+                if (buttonLevel == _buttonReleased) {
+                    _isLongPressed = false;  // Keep track of long press state
+                    _longPressStop();
+                    if(_longPressStopFunc) _longPressStopFunc();
+                    _state = 0; // restart.
+                } else {
+                    // button is being long pressed
+                    _isLongPressed = true; // Keep track of long press state
+                    _longPress();
+                    if (_duringLongPressFunc) _duringLongPressFunc();
+                } // if  
+
+            } // if  
+
+            // BLINKER_LOG2("_state: ", _state);
         }
 #endif
     
@@ -1739,7 +1922,7 @@ class BlinkerApi
         time_t      now_ntp;
         struct tm   timeinfo;
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         uint8_t     _aCount = 0;
 
         uint32_t    _smsTime = 0;
@@ -1755,7 +1938,12 @@ class BlinkerApi
         void freshNTP() {
             if (_isNTPInit) {
                 now_ntp = ::time(nullptr);
+                // gmtime_r(&now_ntp, &timeinfo);
+#if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
+#elif defined(ESP32)
+                localtime_r(&now_ntp, &timeinfo);
+#endif
             }
         }
 #else
@@ -2110,7 +2298,7 @@ class BlinkerApi
             if (state.length()) {
                 // _fresh = true;
                 if (state == BLINKER_CMD_STATE) {
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
                     stateData();
@@ -2390,7 +2578,7 @@ class BlinkerApi
             // }
         }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool autoManager(const JsonObject& data) {
             // String set;
             bool isSet = false;
@@ -2563,8 +2751,9 @@ class BlinkerApi
             // if (isSet && (isCount || isLoop || isTiming)) {
             if (isCount || isLoop || isTiming) {
                 _fresh = true;
+#ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1("get timer setting");
-
+#endif
                 if(!isSet && !_noSet) {
                     return false;
                 }
@@ -2723,7 +2912,7 @@ class BlinkerApi
                     if (_lpState) {
                         _lpRun1 = true;
                         _lpTrigged_times = 0;
-                        lpTicker.attach(_lpTime1, _lp_callback);
+                        lpTicker.once(_lpTime1, _lp_callback);
 #ifdef BLINKER_DEBUG_ALL 
                         BLINKER_LOG1("loop start!");
 #endif
@@ -2770,7 +2959,46 @@ class BlinkerApi
 
                         _tmTime1 = _time1;
                         _tmTime2 = _time2;
+
+                        if (data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0] == 7) {
+                            // now_ntp = time(nullptr);
+                            // gmtime_r(&now_ntp, &timeinfo);
+
+                            if (_tmTime2 > dtime()) {
+                                _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
+                            }
+                            else {
+                                _timingDay |= (0x01 << ((wday() + 1) % 7));//timeinfo.tm_wday(uint8_t)pow(2,(timeinfo.tm_wday + 1) % 7);
+                            }
+
+                            _isTimingLoop = false;
+#ifdef BLINKER_DEBUG_ALL                            
+                            BLINKER_LOG2("timingDay: ", _timingDay);
+#endif
+                        }
+                        else {
+                            uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
+                            // timingDay = 0x80;
+                            _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
+#ifdef BLINKER_DEBUG_ALL                            
+                            BLINKER_LOG4("day: ", taskDay, " timingDay: ", _timingDay);
+#endif                            
+
+                            for (uint8_t day = 1;day < 7;day++) {
+                                taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
+                                if (taskDay > 0) {
+                                    _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
+#ifdef BLINKER_DEBUG_ALL                                    
+                                    BLINKER_LOG4("day: ", taskDay, " timingDay: ", _timingDay);
+#endif
+                                }
+                            }
+
+                            _isTimingLoop = true;
+                        }
+                        
 #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("timingDay: ", _timingDay);
                         BLINKER_LOG2("_state: ", _state);
 #endif
                     }
@@ -2788,12 +3016,52 @@ class BlinkerApi
 
                         _tmTime1 = _time1;
                         _tmTime2 = _time2;
+
+                        if (data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0] == 7) {
+                            // now_ntp = time(nullptr);
+                            // gmtime_r(&now_ntp, &timeinfo);
+
+                            if (_tmTime2 > dtime()) {
+                                _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
+                            }
+                            else {
+                                _timingDay |= (0x01 << ((wday() + 1) % 7));//timeinfo.tm_wday(uint8_t)pow(2,(timeinfo.tm_wday + 1) % 7);
+                            }
+
+                            _isTimingLoop = false;
+#ifdef BLINKER_DEBUG_ALL                            
+                            BLINKER_LOG2("timingDay: ", _timingDay);
+#endif
+                        }
+                        else {
+                            uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
+                            // timingDay = 0x80;
+                            _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
+#ifdef BLINKER_DEBUG_ALL                            
+                            BLINKER_LOG4("day: ", taskDay, " timingDay: ", _timingDay);
+#endif                            
+
+                            for (uint8_t day = 1;day < 7;day++) {
+                                taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
+                                if (taskDay > 0) {
+                                    _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
+#ifdef BLINKER_DEBUG_ALL                                    
+                                    BLINKER_LOG4("day: ", taskDay, " timingDay: ", _timingDay);
+#endif
+                                }
+                            }
+
+                            _isTimingLoop = true;
+                        }
+                        
 #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("timingDay: ", _timingDay);
                         BLINKER_LOG2("_state: ", _state);
 #endif
                     }
 
 #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_isTimingLoop: ", _isTimingLoop ? "true":"false");
                     BLINKER_LOG2("_time1: ", _tmTime1);
                     BLINKER_LOG2("_action1: ", _tmAction1);
                     BLINKER_LOG2("_time2: ", _tmTime2);
@@ -2807,19 +3075,39 @@ class BlinkerApi
 
                     // _tmState = (tm_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_tmState) {
-                        int32_t nowTime = dtime();
+                        if (isTimingDay(wday())) {
+                            int32_t nowTime = dtime();
+#ifdef BLINKER_DEBUG_ALL 
+                                BLINKER_LOG2("nowTime: ", nowTime);
+#endif
 
-                        if (_tmTime1 >= nowTime) {
-                            _tmRun1 = true;
-                            tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+                            if (_tmTime1 >= nowTime) {
+                                _tmRun1 = true;
+                                tmTicker.once(_tmTime1 - nowTime, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+                                BLINKER_LOG2("timing1 start! next time: ", _tmTime1 - nowTime);
+#endif
+                            }
+                            else if (_tmTime1 < nowTime && _tmTime2 > nowTime) {
+                                _tmRun1 = false;
+                                tmTicker.once(_tmTime2 - nowTime, _tm_callback);
+ #ifdef BLINKER_DEBUG_ALL 
+                                BLINKER_LOG2("timing2 start! next time: ", _tmTime2 - nowTime);
+#endif                               
+                            }
+                            else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
+                                _tmRun1 = false;
+                                tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+                                BLINKER_LOG2("next day start! next time: ", BLINKER_ONE_DAY_TIME - nowTime);
+#endif
+                            }
                         }
-                        else if (_tmTime1 < nowTime && _tmTime2 > nowTime) {
+                        else {
+                            int32_t nowTime = dtime();
+
                             _tmRun1 = false;
-                            tmTicker.attach(_tmTime2 - nowTime, _tm_callback);
-                        }
-                        else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
-                            _tmRun1 = true;
-                            tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime + _tmTime1, _tm_callback);
+                            tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
                         }
 #ifdef BLINKER_DEBUG_ALL 
                         BLINKER_LOG1("timing start!");
@@ -2864,12 +3152,39 @@ class BlinkerApi
             return lpData;
         }
 
+        String timingDay() {    
+            String timingDayStr = "";
+            // uint8_t _timingDay;// = timingTask[task]->getTimingday();
+            if (_isTimingLoop) {
+                for (uint8_t day = 0; day < 7; day++) {
+                    // timingDayStr += (timingDay & (uint8_t)pow(2,day)) ? String(day):String("");
+                    if ((_timingDay >> day) & 0x01) {
+                        timingDayStr += STRING_format(day);
+                        if (day < 6 && (_timingDay >> (day + 1)))
+                            timingDayStr += STRING_format(",");
+                    }
+                    // timingDayStr += String((day < 6) ? ((timingDay >> (day + 1)) ? ",":""):"");
+                }
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG4("timingDayStr: ", timingDayStr, " timingDay: ", _timingDay);
+#endif
+            }
+            else {
+                timingDayStr = STRING_format("7");
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2("timingDayStr: ", timingDayStr);
+#endif
+            }
+
+            return timingDayStr;
+        }
+
         String timingData() {
             String tmData;
             tmData = "{\"timing\":" + STRING_format(_tmState ? "true" : "false") + \
                 ",\"timingData\":{\"task\":0" + \
                 ",\"state\":" + STRING_format(_tmState ? "\"run\"" : "\"parse\"") + \
-                ",\"day\":[0,1,2,3,4,5,6]" + \
+                ",\"day\":[" + timingDay() + "]" + \
                 ",\"time1\":" + STRING_format(_tmTime1/60) + \
                 ",\"action1\":" + _tmAction1 + \
                 ",\"time2\":" + STRING_format(_tmTime2/60) + \
@@ -2880,7 +3195,7 @@ class BlinkerApi
         }
 #endif
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool _smsSend(String msg, bool state = false) {
             if (!checkSMS()) {
                 return false;
@@ -3087,7 +3402,161 @@ class BlinkerApi
         }
 #endif
 
+#if defined(BLINKER_PRO)
+        void checkRegister(const JsonObject& data) {
+            String _type = data[BLINKER_CMD_REGISTER];
+
+            if (_type.length() > 0) {
+                if (_type == STRING_format(_deviceType)) {
+                    static_cast<Proto*>(this)->_getRegister = true;
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG1("getRegister!");
+#endif
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "success");
+                }
+                else {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG1("not getRegister!");
+#endif
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "deviceType check fail");                    
+                }
+            }
+        }
+#endif
+
     protected :
+#if defined(BLINKER_PRO)
+        const char* _deviceType;
+        BlinkerWlan Bwlan;
+        // OneButton   button1;
+
+        int _pin;        // hardware pin number. 
+        int _debounceTicks; // number of ticks for debounce times.
+        int _clickTicks; // number of ticks that have to pass by before a click is detected
+        int _pressTicks; // number of ticks that have to pass by before a long button press is detected
+        
+        int _buttonReleased;
+        int _buttonPressed;
+
+        bool _isLongPressed;
+
+        // These variables will hold functions acting as event source.
+        callbackFunction _clickFunc;
+        callbackFunction _doubleClickFunc;
+        callbackFunction _pressFunc;
+        callbackFunction _longPressStartFunc;
+        callbackFunction _longPressStopFunc;
+        callbackFunction _duringLongPressFunc;
+
+        // These variables that hold information across the upcoming tick calls.
+        // They are initialized once on program start and are updated every time the tick function is called.
+        int _state;
+        unsigned long _startTime; // will be set in state 1
+        unsigned long _stopTime; // will be set in state 2
+
+        bool wlanRun() {
+#if defined(BLINKER_BUTTON)
+            tick();
+#endif
+            return Bwlan.run();
+        }
+
+        bool isPressed = false;
+
+        // void checkButton()
+        // {
+        //     button1.tick();
+        // }
+
+        void _click()
+        {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1("Button click.");
+            // _clickFunc();
+#endif
+        } // click
+
+        void _doubleClick() {
+#ifdef BLINKER_DEBUG_ALL
+        	BLINKER_LOG1("Button doubleclick.");
+            // _doubleClickFunc();
+#endif
+        } // doubleclick1
+
+        void _longPressStart()
+        {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1("Button longPress start");
+            // _longPressStartFunc();
+#endif
+            isPressed = true;
+        } // longPressStart
+
+        void _longPress()
+        {
+            if (isPressed)
+            {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1("Button longPress...");
+#endif
+                isPressed = false;
+            }
+            // _duringLongPressFunc();
+        } // longPress
+
+        void _longPressStop()
+        {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1("Button longPress stop");
+#endif
+            // _longPressStopFunc();
+            // Bwlan.deleteConfig();
+	        // Bwlan.reset();
+            // ESP.restart();
+            reset();
+        } // longPressStop
+
+        void buttonInit(int activeLow = true)
+        {
+            _pin = BLINKER_BUTTON_PIN;
+
+            _debounceTicks = 50;      // number of millisec that have to pass by before a click is assumed as safe.
+            _clickTicks = 600;        // number of millisec that have to pass by before a click is detected.
+            _pressTicks = 1000;       // number of millisec that have to pass by before a long button press is detected.
+            
+            _state = 0; // starting with state 0: waiting for button to be pressed
+            _isLongPressed = false;  // Keep track of long press state
+
+            if (activeLow) {
+                // the button connects the input pin to GND when pressed.
+                _buttonReleased = HIGH; // notPressed
+                _buttonPressed = LOW;
+
+                // use the given pin as input and activate internal PULLUP resistor.
+                pinMode( _pin, INPUT_PULLUP );
+
+            } else {
+                // the button connects the input pin to VCC when pressed.
+                _buttonReleased = LOW;
+                _buttonPressed = HIGH;
+
+                // use the given pin as input
+                pinMode(_pin, INPUT);
+            } // if
+
+            _clickFunc = NULL;
+            _doubleClickFunc = NULL;
+            _pressFunc = NULL;
+            _longPressStartFunc = NULL;
+            _longPressStopFunc = NULL;
+            _duringLongPressFunc = NULL;
+
+            // attachInterrupt(BLINKER_BUTTON_PIN, checkButton, CHANGE);
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1("Button initialled");
+#endif
+        }
+#endif
         void parse(String _data, bool ex_data = false)
         {
             if (!ex_data) {
@@ -3102,7 +3571,11 @@ class BlinkerApi
                         return;
                     }
 // (const JsonObject& data)
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_PRO)
+                    checkRegister(root);
+#endif
+
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     // if (autoManager(root)) {
                     //     static_cast<Proto*>(this)->isParsed();
                     //     return;
@@ -3304,12 +3777,12 @@ class BlinkerApi
                     return false;
                 }
 
-                now_ntp = ::time(nullptr);
+                now_ntp = ::time(nullptr);//getLocalTime(&timeinfo)
             
                 // BLINKER_LOG4("Setting time using SNTP: ", now_ntp, " ", _timezone * 3600 * 2);
                 
                 if (now_ntp < _timezone * 3600 * 2) {
-                    configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
+                    configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
                     now_ntp = ::time(nullptr);
 
                     if (now_ntp < _timezone * 3600 * 2) {
@@ -3323,7 +3796,11 @@ class BlinkerApi
                     }
                 }
                 // struct tm timeinfo;
+#if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
+#elif defined(ESP32)
+                localtime_r(&now_ntp, &timeinfo);
+#endif
 #ifdef BLINKER_DEBUG_ALL                
                 BLINKER_LOG2("Current time: ", asctime(&timeinfo));
 #endif

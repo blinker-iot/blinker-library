@@ -39,6 +39,8 @@
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
+#else
+    #error Please setting connect mode ahead! Here provided BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT mode!
 #endif
 
 #endif

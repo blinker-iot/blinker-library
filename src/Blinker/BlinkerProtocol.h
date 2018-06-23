@@ -384,7 +384,21 @@ class BlinkerProtocol
         char            _sendBuf[BLINKER_MAX_SEND_SIZE];
 #if defined(BLINKER_MQTT)
         char            _authKey[BLINKER_AUTHKEY_SIZE];
-#endif        
+#endif
+
+#if defined(BLINKER_PRO)
+        bool            _isConnBegin = false;
+        bool            _getRegister = false;
+
+        uint32_t        _initTime;
+#endif
+
+#if defined(BLINKER_PRO)
+        bool beginPro() {
+            return BApi::wlanRun();
+        }
+#endif
+
         void begin()
         {
             BLINKER_LOG1(BLINKER_F(""));
@@ -416,6 +430,17 @@ class BlinkerProtocol
         }
 #endif
 
+#if defined(BLINKER_PRO)
+        void begin(const char* _type)
+        {
+            begin();
+#if defined(BLINKER_BUTTON)
+            BApi::buttonInit();
+#endif
+            BApi::setType(_type);
+        }
+#endif
+
         template <typename T>
         void _print(T n, bool needParse = true) {
             String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
@@ -430,7 +455,7 @@ class BlinkerProtocol
             }
         }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool autoTrigged(uint32_t _id) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1("autoTrigged");
@@ -481,7 +506,43 @@ class BlinkerProtocol
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+#if defined(BLINKER_PRO)
+
+    if (!BApi::wlanRun()) {
+        return;
+    }
+    else {
+        if (!_isConnBegin) {
+            conn.begin(BApi::type());
+            _isConnBegin = true;
+            _initTime = millis();
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("conn begin, fresh _initTime: ", _initTime);
+#endif
+            if (conn.authCheck()) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1("is auth, conn deviceRegister");
+#endif
+                conn.deviceRegister();
+            }
+        }
+    }
+
+    if (_getRegister) {
+#ifdef BLINKER_DEBUG_ALL
+        BLINKER_LOG1("conn deviceRegister");
+#endif
+        conn.deviceRegister();
+        _getRegister = false;
+    }
+
+    if (!conn.init()) {
+        if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME) {
+            BApi::reset();
+        }
+    }
+#endif
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     BApi::ntpInit();
 #endif
 #if defined(ESP8266) || defined(ESP32)
