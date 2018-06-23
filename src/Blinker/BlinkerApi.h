@@ -1063,18 +1063,21 @@ static bool _lpState = false;
 static bool _tmState = false;
 static bool _lpRun1 = true;
 static bool _tmRun1 = true;
+static bool _tmDay = false;
 static bool _cdTrigged = false;
 static bool _lpTrigged = false;
 static bool _tmTrigged = false;
+static bool _isTimingLoop = false;
 
-static uint8_t _lpTimes;
-static uint8_t _lpTrigged_times;
+static uint8_t  _lpTimes;
+static uint8_t  _lpTrigged_times;
 static uint32_t _cdTime1;
 static uint32_t _cdTime2;
 static uint32_t _lpTime1;
 static uint32_t _lpTime2;
 static uint32_t _tmTime1;
 static uint32_t _tmTime2;
+static uint8_t  _timingDay = 0;
 
 // static String _cbData1;
 // static String _cbData2;
@@ -1133,39 +1136,72 @@ static void _lp_callback() {
 //     lpTicker.attach(seconds, _lp_callback);
 // }
 
+static bool isTimingDay(uint8_t _day) {
+ #ifdef BLINKER_DEBUG_ALL     
+    BLINKER_LOG2("isTimingDay: ", _day);
+#endif   
+    if (_timingDay & (0x01 << _day))
+        return true;
+    else
+        return false;
+}
+
 static void _tm_callback() {
     _tmRun1 = !_tmRun1;
 
     time_t      now_ntp;
     struct tm   timeinfo;
     now_ntp = time(nullptr);
+    // gmtime_r(&now_ntp, &timeinfo);
+#if defined(ESP8266)
     gmtime_r(&now_ntp, &timeinfo);
+#elif defined(ESP32)
+    localtime_r(&now_ntp, &timeinfo);
+#endif
 
     int32_t nowTime = timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
 #ifdef BLINKER_DEBUG_ALL 
     BLINKER_LOG6("nowTime: ", nowTime, " _tmTime1: ", _tmTime1, " _tmTime2: ", _tmTime2);
 #endif
-    if (_tmRun1) {
-        if (_tmTime1 >= nowTime) {
-            tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+
+    if (isTimingDay(timeinfo.tm_wday)) {
+        if (_tmRun1) {
+            if (!_isTimingLoop) {
+                tmTicker.detach();
 #ifdef BLINKER_DEBUG_ALL 
-            BLINKER_LOG2("timing2 trigged! next time: ", _tmTime1 - nowTime);
+                BLINKER_LOG1("timing2 trigged! now need stop!");
+#endif
+                _tmState = false;
+            }
+            else {
+                if (_tmTime1 >= nowTime) {
+                    tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+                    BLINKER_LOG2("timing2 trigged! next time: ", _tmTime1 - nowTime);
+#endif
+                }
+                else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
+                    tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+                    BLINKER_LOG2("timing2 trigged! next time: ", BLINKER_ONE_DAY_TIME - nowTime);
+#endif
+                }
+            }
+        }
+        else {
+            tmTicker.attach(_tmTime2 - _tmTime1, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+            BLINKER_LOG2("timing1 trigged! next time: ", _tmTime2 - _tmTime1);
 #endif
         }
-        else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
-            tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime + _tmTime1, _tm_callback);
-#ifdef BLINKER_DEBUG_ALL 
-            BLINKER_LOG2("timing2 trigged! next time: ", BLINKER_ONE_DAY_TIME - nowTime + _tmTime1);
-#endif
-        }
+        _tmTrigged = true;
     }
     else {
-        tmTicker.attach(_tmTime2 - _tmTime1, _tm_callback);
+        tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
-        BLINKER_LOG2("timing1 trigged! next time: ", _tmTime2 - _tmTime1);
+        BLINKER_LOG2("timing trigged! next time: ", BLINKER_ONE_DAY_TIME - nowTime);
 #endif
     }
-    _tmTrigged = true;
 }
 
 // static void _timing(float seconds) {
@@ -1902,7 +1938,12 @@ class BlinkerApi
         void freshNTP() {
             if (_isNTPInit) {
                 now_ntp = ::time(nullptr);
+                // gmtime_r(&now_ntp, &timeinfo);
+#if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
+#elif defined(ESP32)
+                localtime_r(&now_ntp, &timeinfo);
+#endif
             }
         }
 #else
@@ -2710,8 +2751,9 @@ class BlinkerApi
             // if (isSet && (isCount || isLoop || isTiming)) {
             if (isCount || isLoop || isTiming) {
                 _fresh = true;
+#ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1("get timer setting");
-
+#endif
                 if(!isSet && !_noSet) {
                     return false;
                 }
@@ -2917,7 +2959,46 @@ class BlinkerApi
 
                         _tmTime1 = _time1;
                         _tmTime2 = _time2;
+
+                        if (data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0] == 7) {
+                            // now_ntp = time(nullptr);
+                            // gmtime_r(&now_ntp, &timeinfo);
+
+                            if (_tmTime2 > dtime()) {
+                                _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
+                            }
+                            else {
+                                _timingDay |= (0x01 << ((wday() + 1) % 7));//timeinfo.tm_wday(uint8_t)pow(2,(timeinfo.tm_wday + 1) % 7);
+                            }
+
+                            _isTimingLoop = false;
+#ifdef BLINKER_DEBUG_ALL                            
+                            BLINKER_LOG2("timingDay: ", _timingDay);
+#endif
+                        }
+                        else {
+                            uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
+                            // timingDay = 0x80;
+                            _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
+#ifdef BLINKER_DEBUG_ALL                            
+                            BLINKER_LOG4("day: ", taskDay, " timingDay: ", _timingDay);
+#endif                            
+
+                            for (uint8_t day = 1;day < 7;day++) {
+                                taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
+                                if (taskDay > 0) {
+                                    _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
+#ifdef BLINKER_DEBUG_ALL                                    
+                                    BLINKER_LOG4("day: ", taskDay, " timingDay: ", _timingDay);
+#endif
+                                }
+                            }
+
+                            _isTimingLoop = true;
+                        }
+                        
 #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("timingDay: ", _timingDay);
                         BLINKER_LOG2("_state: ", _state);
 #endif
                     }
@@ -2935,12 +3016,52 @@ class BlinkerApi
 
                         _tmTime1 = _time1;
                         _tmTime2 = _time2;
+
+                        if (data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0] == 7) {
+                            // now_ntp = time(nullptr);
+                            // gmtime_r(&now_ntp, &timeinfo);
+
+                            if (_tmTime2 > dtime()) {
+                                _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
+                            }
+                            else {
+                                _timingDay |= (0x01 << ((wday() + 1) % 7));//timeinfo.tm_wday(uint8_t)pow(2,(timeinfo.tm_wday + 1) % 7);
+                            }
+
+                            _isTimingLoop = false;
+#ifdef BLINKER_DEBUG_ALL                            
+                            BLINKER_LOG2("timingDay: ", _timingDay);
+#endif
+                        }
+                        else {
+                            uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
+                            // timingDay = 0x80;
+                            _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
+#ifdef BLINKER_DEBUG_ALL                            
+                            BLINKER_LOG4("day: ", taskDay, " timingDay: ", _timingDay);
+#endif                            
+
+                            for (uint8_t day = 1;day < 7;day++) {
+                                taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
+                                if (taskDay > 0) {
+                                    _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
+#ifdef BLINKER_DEBUG_ALL                                    
+                                    BLINKER_LOG4("day: ", taskDay, " timingDay: ", _timingDay);
+#endif
+                                }
+                            }
+
+                            _isTimingLoop = true;
+                        }
+                        
 #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("timingDay: ", _timingDay);
                         BLINKER_LOG2("_state: ", _state);
 #endif
                     }
 
 #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_isTimingLoop: ", _isTimingLoop ? "true":"false");
                     BLINKER_LOG2("_time1: ", _tmTime1);
                     BLINKER_LOG2("_action1: ", _tmAction1);
                     BLINKER_LOG2("_time2: ", _tmTime2);
@@ -2954,19 +3075,39 @@ class BlinkerApi
 
                     // _tmState = (tm_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_tmState) {
-                        int32_t nowTime = dtime();
+                        if (isTimingDay(wday())) {
+                            int32_t nowTime = dtime();
+#ifdef BLINKER_DEBUG_ALL 
+                                BLINKER_LOG2("nowTime: ", nowTime);
+#endif
 
-                        if (_tmTime1 >= nowTime) {
-                            _tmRun1 = true;
-                            tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+                            if (_tmTime1 >= nowTime) {
+                                _tmRun1 = true;
+                                tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+                                BLINKER_LOG2("timing1 start! next time: ", _tmTime1 - nowTime);
+#endif
+                            }
+                            else if (_tmTime1 < nowTime && _tmTime2 > nowTime) {
+                                _tmRun1 = false;
+                                tmTicker.attach(_tmTime2 - nowTime, _tm_callback);
+ #ifdef BLINKER_DEBUG_ALL 
+                                BLINKER_LOG2("timing2 start! next time: ", _tmTime2 - nowTime);
+#endif                               
+                            }
+                            else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
+                                _tmRun1 = false;
+                                tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
+#ifdef BLINKER_DEBUG_ALL 
+                                BLINKER_LOG2("next day start! next time: ", BLINKER_ONE_DAY_TIME - nowTime);
+#endif
+                            }
                         }
-                        else if (_tmTime1 < nowTime && _tmTime2 > nowTime) {
+                        else {
+                            int32_t nowTime = dtime();
+
                             _tmRun1 = false;
-                            tmTicker.attach(_tmTime2 - nowTime, _tm_callback);
-                        }
-                        else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
-                            _tmRun1 = true;
-                            tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime + _tmTime1, _tm_callback);
+                            tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
                         }
 #ifdef BLINKER_DEBUG_ALL 
                         BLINKER_LOG1("timing start!");
@@ -3011,12 +3152,39 @@ class BlinkerApi
             return lpData;
         }
 
+        String timingDay() {    
+            String timingDayStr = "";
+            // uint8_t _timingDay;// = timingTask[task]->getTimingday();
+            if (_isTimingLoop) {
+                for (uint8_t day = 0; day < 7; day++) {
+                    // timingDayStr += (timingDay & (uint8_t)pow(2,day)) ? String(day):String("");
+                    if ((_timingDay >> day) & 0x01) {
+                        timingDayStr += STRING_format(day);
+                        if (day < 6 && (_timingDay >> (day + 1)))
+                            timingDayStr += STRING_format(",");
+                    }
+                    // timingDayStr += String((day < 6) ? ((timingDay >> (day + 1)) ? ",":""):"");
+                }
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG4("timingDayStr: ", timingDayStr, " timingDay: ", _timingDay);
+#endif
+            }
+            else {
+                timingDayStr = STRING_format("7");
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2("timingDayStr: ", timingDayStr);
+#endif
+            }
+
+            return timingDayStr;
+        }
+
         String timingData() {
             String tmData;
             tmData = "{\"timing\":" + STRING_format(_tmState ? "true" : "false") + \
                 ",\"timingData\":{\"task\":0" + \
                 ",\"state\":" + STRING_format(_tmState ? "\"run\"" : "\"parse\"") + \
-                ",\"day\":[0,1,2,3,4,5,6]" + \
+                ",\"day\":[" + timingDay() + "]" + \
                 ",\"time1\":" + STRING_format(_tmTime1/60) + \
                 ",\"action1\":" + _tmAction1 + \
                 ",\"time2\":" + STRING_format(_tmTime2/60) + \
@@ -3609,12 +3777,12 @@ class BlinkerApi
                     return false;
                 }
 
-                now_ntp = ::time(nullptr);
+                now_ntp = ::time(nullptr);//getLocalTime(&timeinfo)
             
                 // BLINKER_LOG4("Setting time using SNTP: ", now_ntp, " ", _timezone * 3600 * 2);
                 
                 if (now_ntp < _timezone * 3600 * 2) {
-                    configTime(_timezone * 3600, 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
+                    configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
                     now_ntp = ::time(nullptr);
 
                     if (now_ntp < _timezone * 3600 * 2) {
@@ -3628,7 +3796,11 @@ class BlinkerApi
                     }
                 }
                 // struct tm timeinfo;
+#if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
+#elif defined(ESP32)
+                localtime_r(&now_ntp, &timeinfo);
+#endif
 #ifdef BLINKER_DEBUG_ALL                
                 BLINKER_LOG2("Current time: ", asctime(&timeinfo));
 #endif

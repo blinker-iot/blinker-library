@@ -177,6 +177,8 @@
 
 #define BLINKER_CMD_TIMINGDATA          "timingData"
 
+#define BLINKER_CMD_DAY                 "day"
+
 #define BLINKER_CMD_TASK                "task"
 
 #define BLINKER_CMD_DETAIL              "detail"
