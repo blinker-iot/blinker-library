@@ -1115,15 +1115,15 @@ static void _lp_callback() {
                 lpTicker.detach();
             }
             else {
-                lpTicker.attach(_lpTime1, _lp_callback);
+                lpTicker.once(_lpTime1, _lp_callback);
             }
         }
         else {
-            lpTicker.attach(_lpTime1, _lp_callback);
+            lpTicker.once(_lpTime1, _lp_callback);
         }
     }
     else {
-        lpTicker.attach(_lpTime2, _lp_callback);
+        lpTicker.once(_lpTime2, _lp_callback);
     }
     _lpTrigged = true;
 #ifdef BLINKER_DEBUG_ALL     
@@ -1175,13 +1175,13 @@ static void _tm_callback() {
             }
             else {
                 if (_tmTime1 >= nowTime) {
-                    tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+                    tmTicker.once(_tmTime1 - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2("timing2 trigged! next time: ", _tmTime1 - nowTime);
 #endif
                 }
                 else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
-                    tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
+                    tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2("timing2 trigged! next time: ", BLINKER_ONE_DAY_TIME - nowTime);
 #endif
@@ -1189,7 +1189,7 @@ static void _tm_callback() {
             }
         }
         else {
-            tmTicker.attach(_tmTime2 - _tmTime1, _tm_callback);
+            tmTicker.once(_tmTime2 - _tmTime1, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
             BLINKER_LOG2("timing1 trigged! next time: ", _tmTime2 - _tmTime1);
 #endif
@@ -1197,7 +1197,7 @@ static void _tm_callback() {
         _tmTrigged = true;
     }
     else {
-        tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
+        tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
         BLINKER_LOG2("timing trigged! next time: ", BLINKER_ONE_DAY_TIME - nowTime);
 #endif
@@ -2912,7 +2912,7 @@ class BlinkerApi
                     if (_lpState) {
                         _lpRun1 = true;
                         _lpTrigged_times = 0;
-                        lpTicker.attach(_lpTime1, _lp_callback);
+                        lpTicker.once(_lpTime1, _lp_callback);
 #ifdef BLINKER_DEBUG_ALL 
                         BLINKER_LOG1("loop start!");
 #endif
@@ -3083,21 +3083,21 @@ class BlinkerApi
 
                             if (_tmTime1 >= nowTime) {
                                 _tmRun1 = true;
-                                tmTicker.attach(_tmTime1 - nowTime, _tm_callback);
+                                tmTicker.once(_tmTime1 - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
                                 BLINKER_LOG2("timing1 start! next time: ", _tmTime1 - nowTime);
 #endif
                             }
                             else if (_tmTime1 < nowTime && _tmTime2 > nowTime) {
                                 _tmRun1 = false;
-                                tmTicker.attach(_tmTime2 - nowTime, _tm_callback);
+                                tmTicker.once(_tmTime2 - nowTime, _tm_callback);
  #ifdef BLINKER_DEBUG_ALL 
                                 BLINKER_LOG2("timing2 start! next time: ", _tmTime2 - nowTime);
 #endif                               
                             }
                             else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
                                 _tmRun1 = false;
-                                tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
+                                tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
                                 BLINKER_LOG2("next day start! next time: ", BLINKER_ONE_DAY_TIME - nowTime);
 #endif
@@ -3107,7 +3107,7 @@ class BlinkerApi
                             int32_t nowTime = dtime();
 
                             _tmRun1 = false;
-                            tmTicker.attach(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
+                            tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
                         }
 #ifdef BLINKER_DEBUG_ALL 
                         BLINKER_LOG1("timing start!");
