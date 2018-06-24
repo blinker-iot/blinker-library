@@ -2102,7 +2102,7 @@ class BlinkerApi
             String state = data[_tName];
 
             if (data.containsKey(_tName)) {
-                BLINKER_LOG2("STATE: ", state);
+                // BLINKER_LOG2("STATE: ", state);
                 _fresh = true;
             }
             // else {

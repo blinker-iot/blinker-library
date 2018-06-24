@@ -306,8 +306,8 @@ class BlinkerMQTT {
         }
 
         bool checkPrintSpan() {
-            if (millis() - respTime < BLINKER_WS_MSG_LIMIT) {
-                if (respTimes > BLINKER_WS_MSG_LIMIT) {
+            if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
+                if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
 #endif

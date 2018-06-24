@@ -434,6 +434,15 @@ class BlinkerProtocol
         void begin(const char* _type)
         {
             begin();
+
+            BLINKER_LOG1("===========================================================");
+            BLINKER_LOG1("================= Blinker PRO mode init ! =================");
+            BLINKER_LOG1("Warning! EEPROM address 1280-1535 is used for Auto Control!");
+            BLINKER_LOG1("============= DON'T USE THESE EEPROM ADDRESS! =============");
+            BLINKER_LOG1("===========================================================");
+
+            BLINKER_LOG2("Already used: ", BLINKER_ONE_AUTO_DATA_SIZE);
+
 #if defined(BLINKER_BUTTON)
             BApi::buttonInit();
 #endif
