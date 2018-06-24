@@ -198,7 +198,7 @@ class BlinkerTransportESP32_BLE
             if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
                 if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
+                    BLINKER_ERR_LOG1("DEVICE NOT CONNECT OR MSG LIMIT");
 #endif
                     return false;
                 }

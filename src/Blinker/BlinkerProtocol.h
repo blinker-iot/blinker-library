@@ -435,13 +435,13 @@ class BlinkerProtocol
         {
             begin();
 
-            BLINKER_LOG1("===========================================================");
-            BLINKER_LOG1("================= Blinker PRO mode init ! =================");
-            BLINKER_LOG1("Warning! EEPROM address 1280-1535 is used for Auto Control!");
-            BLINKER_LOG1("============= DON'T USE THESE EEPROM ADDRESS! =============");
-            BLINKER_LOG1("===========================================================");
+            BLINKER_LOG1(BLINKER_F("==========================================================="));
+            BLINKER_LOG1(BLINKER_F("================= Blinker PRO mode init ! ================="));
+            BLINKER_LOG1(BLINKER_F("Warning! EEPROM address 1280-1535 is used for Auto Control!"));
+            BLINKER_LOG1(BLINKER_F("============= DON'T USE THESE EEPROM ADDRESS! ============="));
+            BLINKER_LOG1(BLINKER_F("==========================================================="));
 
-            BLINKER_LOG2("Already used: ", BLINKER_ONE_AUTO_DATA_SIZE);
+            BLINKER_LOG2(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
 #if defined(BLINKER_BUTTON)
             BApi::buttonInit();
@@ -460,21 +460,21 @@ class BlinkerProtocol
                 }
             }
             else {
-                BLINKER_ERR_LOG1("SEND DATA BYTES MAX THAN LIMIT!");
+                BLINKER_ERR_LOG1(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
             }
         }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool autoTrigged(uint32_t _id) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1("autoTrigged");
+            BLINKER_LOG1(BLINKER_F("autoTrigged"));
 #endif
             return conn.autoPrint(_id);
         }
 
         bool autoTrigged(char *name, char *type, char *data) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1("autoTrigged");
+            BLINKER_LOG1(BLINKER_F("autoTrigged"));
 #endif
             if (conn.deviceName() == name) {
                 BApi::parse(data, true);
@@ -486,7 +486,7 @@ class BlinkerProtocol
         bool autoTrigged(char *name1, char *type1, char *data1
             , char *name2, char *type2, char *data2) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1("autoTrigged");
+            BLINKER_LOG1(BLINKER_F("autoTrigged"));
 #endif
             bool _link1 = false;
             bool _link2 = false;
@@ -526,11 +526,11 @@ void BlinkerProtocol<Transp>::run()
             _isConnBegin = true;
             _initTime = millis();
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("conn begin, fresh _initTime: ", _initTime);
+            BLINKER_LOG2(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
 #endif
             if (conn.authCheck()) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1("is auth, conn deviceRegister");
+                BLINKER_LOG1(BLINKER_F("is auth, conn deviceRegister"));
 #endif
                 conn.deviceRegister();
             }
@@ -539,7 +539,7 @@ void BlinkerProtocol<Transp>::run()
 
     if (_getRegister) {
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG1("conn deviceRegister");
+        BLINKER_LOG1(BLINKER_F("conn deviceRegister"));
 #endif
         conn.deviceRegister();
         _getRegister = false;

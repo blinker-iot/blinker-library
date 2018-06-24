@@ -669,7 +669,7 @@ void BlinkerMQTT::subscribe() {
     }
 }
 
-bool BlinkerPRO::print(String data) {
+bool BlinkerMQTT::print(String data) {
     if (*isHandle) {
         bool state = STRING_contais_string(data, BLINKER_CMD_NOTICE);
 
@@ -700,10 +700,10 @@ bool BlinkerPRO::print(String data) {
     else {
         String payload;
         if (STRING_contais_string(data, BLINKER_CMD_NEWLINE)) {
-            payload = "{\"data\":" + data.substring(0, data.length() - 1) + ",\"fromDevice\":\"" + MQTT_DEVICEID + "\",\"toDevice\":\"" + UUID + "\"}";
+            payload = "{\"data\":" + data.substring(0, data.length() - 1) + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + UUID + "\"}";
         }
         else {
-            payload = "{\"data\":" + data + ",\"fromDevice\":\"" + MQTT_DEVICEID + "\",\"toDevice\":\"" + UUID + "\"}";
+            payload = "{\"data\":" + data + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + UUID + "\"}";
         }
     
 #ifdef BLINKER_DEBUG_ALL
