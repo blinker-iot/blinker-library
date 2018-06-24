@@ -13,7 +13,7 @@
 
 #define BLINKER_GPS_MSG_LIMIT           30000UL
 
-#define BLINKER_WS_MSG_LIMIT            20
+#define BLINKER_PRINT_MSG_LIMIT         20
 
 #define BLINKER_MQTT_MSG_LIMIT          1000UL
 

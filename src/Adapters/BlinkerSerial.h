@@ -45,8 +45,24 @@ class BlinkerTransportStream
 
         String lastRead() { return STRING_format(streamData); }
 
-        void print(String s)
+        bool print(String s)
         {
+            bool state = STRING_contais_string(s, BLINKER_CMD_NOTICE);
+
+            if (!state) {
+                state = (STRING_contais_string(s, BLINKER_CMD_STATE) 
+                    && STRING_contais_string(s, BLINKER_CMD_CONNECTED));
+            }
+
+            if (!state) {
+                if (!checkPrintSpan()) {
+                    respTime = millis();
+                    return false;
+                }
+            }
+
+            respTime = millis();
+
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("Response: "), s);
 #endif
@@ -55,11 +71,13 @@ class BlinkerTransportStream
                 BLINKER_LOG1(BLINKER_F("Succese..."));
 #endif
                 stream->print(s);
+                return true;
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("Faile... Disconnected"));
 #endif
+                return false;
             }
         }
 
@@ -78,6 +96,27 @@ class BlinkerTransportStream
         char    streamData[BLINKER_MAX_READ_SIZE];
         bool    isConnect;
         bool    isHWS = false;
+        uint8_t respTimes = 0;
+        uint32_t    respTime = 0;
+
+        bool checkPrintSpan() {
+            if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
+                if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
+#endif
+                    return false;
+                }
+                else {
+                    respTimes++;
+                    return true;
+                }
+            }
+            else {
+                respTimes = 0;
+                return true;
+            }
+        }
 };
 
 class BlinkerSerial

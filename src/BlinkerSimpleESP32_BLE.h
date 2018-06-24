@@ -81,7 +81,23 @@ class BlinkerTransportESP32_BLE
 
         String lastRead() { return STRING_format(BLEBuf); }//
 
-        void print(String s) {
+        bool print(String s) {
+            bool state = STRING_contais_string(s, BLINKER_CMD_NOTICE);
+
+            if (!state) {
+                state = (STRING_contais_string(s, BLINKER_CMD_STATE) 
+                    && STRING_contais_string(s, BLINKER_CMD_CONNECTED));
+            }
+
+            if (!state) {
+                if (!checkPrintSpan()) {
+                    respTime = millis();
+                    return false;
+                }
+            }
+
+            respTime = millis();
+
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("Response: "), s);
 #endif
@@ -101,11 +117,13 @@ class BlinkerTransportESP32_BLE
                     pCharacteristic->notify();
                     delay(5);
                 }
+                return true;
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("Faile... Disconnected"));
 #endif                
+                return false;
             }
         }
 
@@ -127,6 +145,8 @@ class BlinkerTransportESP32_BLE
         BLECharacteristic       *pCharacteristic;
         BLEAdvertising          *pAdvertising;
         BLEAdvertisementData    pAdvertisementData;
+        uint8_t                 respTimes = 0;
+        uint32_t                respTime = 0;
 
         void onConnect(BLEServer* pServer) {
             deviceConnected = true;
@@ -171,6 +191,25 @@ class BlinkerTransportESP32_BLE
             if (isFresh && !isAvail && (millis() - freshTime) > BLINKER_STREAM_TIMEOUT) {
                 isAvail = true;
                 _bufLen = 0;
+            }
+        }
+
+        bool checkPrintSpan() {
+            if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
+                if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
+#endif
+                    return false;
+                }
+                else {
+                    respTimes++;
+                    return true;
+                }
+            }
+            else {
+                respTimes = 0;
+                return true;
             }
         }
 };
