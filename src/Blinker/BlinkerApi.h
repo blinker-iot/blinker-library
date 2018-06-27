@@ -1095,7 +1095,7 @@ static void _cd_callback() {
     _cdState = false;
     _cdTrigged = true;
 #ifdef BLINKER_DEBUG_ALL 
-    BLINKER_LOG1(BLINKER_F("countdown trigged!"));
+    BLINKER_LOG1(("countdown trigged!"));
 #endif
 }
 
@@ -1127,7 +1127,7 @@ static void _lp_callback() {
     }
     _lpTrigged = true;
 #ifdef BLINKER_DEBUG_ALL     
-    BLINKER_LOG1(BLINKER_F("loop trigged!"));
+    BLINKER_LOG1(("loop trigged!"));
 #endif
 }
 
@@ -1138,7 +1138,7 @@ static void _lp_callback() {
 
 static bool isTimingDay(uint8_t _day) {
  #ifdef BLINKER_DEBUG_ALL     
-    BLINKER_LOG2(BLINKER_F("isTimingDay: "), _day);
+    BLINKER_LOG2(("isTimingDay: "), _day);
 #endif   
     if (_timingDay & (0x01 << _day))
         return true;
@@ -1161,7 +1161,7 @@ static void _tm_callback() {
 
     int32_t nowTime = timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
 #ifdef BLINKER_DEBUG_ALL 
-    BLINKER_LOG6(BLINKER_F("nowTime: "), nowTime, BLINKER_F(" _tmTime1: "), _tmTime1, BLINKER_F(" _tmTime2: "), _tmTime2);
+    BLINKER_LOG6(("nowTime: "), nowTime, (" _tmTime1: "), _tmTime1, (" _tmTime2: "), _tmTime2);
 #endif
 
     if (isTimingDay(timeinfo.tm_wday)) {
@@ -1169,7 +1169,7 @@ static void _tm_callback() {
             if (!_isTimingLoop) {
                 tmTicker.detach();
 #ifdef BLINKER_DEBUG_ALL 
-                BLINKER_LOG1(BLINKER_F("timing2 trigged! now need stop!"));
+                BLINKER_LOG1(("timing2 trigged! now need stop!"));
 #endif
                 _tmState = false;
             }
@@ -1177,13 +1177,13 @@ static void _tm_callback() {
                 if (_tmTime1 >= nowTime) {
                     tmTicker.once(_tmTime1 - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
-                    BLINKER_LOG2(BLINKER_F("timing2 trigged! next time: "), _tmTime1 - nowTime);
+                    BLINKER_LOG2(("timing2 trigged! next time: "), _tmTime1 - nowTime);
 #endif
                 }
                 else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
                     tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
-                    BLINKER_LOG2(BLINKER_F("timing2 trigged! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
+                    BLINKER_LOG2(("timing2 trigged! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
 #endif
                 }
             }
@@ -1191,7 +1191,7 @@ static void _tm_callback() {
         else {
             tmTicker.once(_tmTime2 - _tmTime1, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
-            BLINKER_LOG2(BLINKER_F("timing1 trigged! next time: "), _tmTime2 - _tmTime1);
+            BLINKER_LOG2(("timing1 trigged! next time: "), _tmTime2 - _tmTime1);
 #endif
         }
         _tmTrigged = true;
@@ -1199,7 +1199,7 @@ static void _tm_callback() {
     else {
         tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
 #ifdef BLINKER_DEBUG_ALL 
-        BLINKER_LOG2(BLINKER_F("timing trigged! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
+        BLINKER_LOG2(("timing trigged! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
 #endif
     }
 }
@@ -3166,13 +3166,13 @@ class BlinkerApi
                     // timingDayStr += String((day < 6) ? ((timingDay >> (day + 1)) ? ",":""):"");
                 }
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG4(BLINKER_F("timingDayStr: "), timingDayStr, BLINKER_F(" timingDay: "), _timingDay);
+                BLINKER_LOG4(("timingDayStr: "), timingDayStr, (" timingDay: "), _timingDay);
 #endif
             }
             else {
                 timingDayStr = STRING_format("7");
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("timingDayStr: "), timingDayStr);
+                BLINKER_LOG2(("timingDayStr: "), timingDayStr);
 #endif
             }
 
