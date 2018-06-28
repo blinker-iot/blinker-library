@@ -1487,7 +1487,7 @@ class BlinkerApi
                 ::delay(100);
 
                 if (static_cast<Proto*>(this)->checkAvail()) {
-                    BLINKER_LOG2(BLINKER_F("GET: "), static_cast<Proto*>(this)->dataParse());
+                    // BLINKER_LOG2(BLINKER_F("GET: "), static_cast<Proto*>(this)->dataParse());
                     if (STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS)) {
                         BLINKER_LOG1(BLINKER_F("AHRS attach sucessed..."));
                         parse(static_cast<Proto*>(this)->dataParse());
