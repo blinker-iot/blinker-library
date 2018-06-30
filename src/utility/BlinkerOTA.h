@@ -23,7 +23,17 @@ enum bota_status_t{
     BLINKER_UPGRADE_VERI_FAIL,
     BLINKER_UPGRADE_SUCCESS
 };
-#define	VERSIONPARAM					"1.0.1"
+// #define	VERSIONPARAM					"1.0.1"
+
+// if (loadOTACheck()) {
+// 	if (!loadVersion()) {
+// 		saveVersion();
+// 		UPGRADE_STATUS = UPGRADE_SUCCESS;
+// 	}
+// 	else {
+// 		UPGRADE_STATUS = UPGRADE_FAIL;
+// 	}
+// }
 
 class BlinkerOTA {
     public :
@@ -62,7 +72,7 @@ void BlinkerOTA::setURL(String url) {
 
     BLINKER_LOG2(F("ota url: "), otaUrl);
         
-    _status = UPGRADE_START;
+    _status = BLINKER_UPGRADE_START;
 
     update();
 }
@@ -86,7 +96,7 @@ void BlinkerOTA::update() {
             // pubOTAtest();
             // break;
             // return UPGRADE_FAIL;
-            _status = UPGRADE_FAIL;
+            _status = BLINKER_UPGRADE_FAIL;
             return;
 
         case HTTP_UPDATE_NO_UPDATES:
@@ -96,18 +106,18 @@ void BlinkerOTA::update() {
             // pubOTAtest();
             // break;
             // return UPGRADE_LOAD_FAIL;
-            _status = UPGRADE_LOAD_FAIL;
+            _status = BLINKER_UPGRADE_LOAD_FAIL;
             return;
 
         case HTTP_UPDATE_OK:
             //Serial.println(F("HTTP_UPDATE_OK"));
             // break;
             // return UPGRADE_SUCCESS;
-            _status = UPGRADE_SUCCESS;
+            _status = BLINKER_UPGRADE_SUCCESS;
             return;
 
         default :
-            _status = UPGRADE_FAIL;
+            _status = BLINKER_UPGRADE_FAIL;
             return;
             // return UPGRADE_FAIL;
             // break;
@@ -131,6 +141,8 @@ void BlinkerOTA::update() {
             if (millis() - timeout > 5000) {
                 BLINKER_LOG1("Client Timeout !");
                 client.stop();
+
+                _status = BLINKER_UPGRADE_LOAD_FAIL;
                 return;
             }
         }
@@ -209,13 +221,16 @@ void BlinkerOTA::update() {
                 BLINKER_LOG1("OTA done!");
                 if (Update.isFinished()) {
                     BLINKER_LOG1("Update successfully completed. Rebooting.");
+                    _status = BLINKER_UPGRADE_SUCCESS;
                     ESP.restart();
                 } else {
                     BLINKER_LOG1("Update not finished? Something went wrong!");
+                    _status = BLINKER_UPGRADE_FAIL;
                 }
             }
             else {
                 BLINKER_LOG1("Error Occurred. Error #: " + String(Update.getError()));
+                _status = BLINKER_UPGRADE_FAIL;
             }
         }
         else {
@@ -224,11 +239,13 @@ void BlinkerOTA::update() {
             // space availability
             BLINKER_LOG1("Not enough space to begin OTA");
             client.flush();
+            _status = BLINKER_UPGRADE_FAIL;
         }
     }
     else {
         BLINKER_LOG1("There was no content in the response");
         client.flush();
+        _status = BLINKER_UPGRADE_FAIL;
     }
 #endif
 }
@@ -266,6 +283,7 @@ void BlinkerOTA::clearOTACheck() {
     EEPROM.end();
 
     BLINKER_LOG1(F("OTACLEAR()"));
+    _status = BLINKER_UPGRADE_DISABLE;
 }
 
 bool BlinkerOTA::loadVersion() {
@@ -277,10 +295,12 @@ bool BlinkerOTA::loadVersion() {
 
     if (versionCheck != BLINKER_PRO_VERSION_CODE) {
         BLINKER_LOG1(F("OTA SUCCESS BLINKER_PRO_VERSION_CODE NOT UPGRADE"));
+        _status = BLINKER_UPGRADE_SUCCESS;
         return false;
     }
     else {
         BLINKER_LOG1(F("OTA FAIL"));
+        _status = BLINKER_UPGRADE_FAIL;
         return true;
     }
 }

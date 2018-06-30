@@ -345,6 +345,10 @@
 
     #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
 
+    #ifndef BLINKER_PRO_VERSION
+        #define BLINKER_PRO_VERSION             "1.0.0"
+    #endif
+
     #define BLINKER_PRO_VERSION_CODE        B00000001
 
     #define BLINKER_PRO_OTA_START           B01010011
