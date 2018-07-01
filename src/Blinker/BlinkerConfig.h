@@ -23,6 +23,10 @@
 
 #define BLINKER_SMS_MSG_LIMIT           60000UL
 
+#define BLINKER_PUSH_MSG_LIMIT          60000UL
+
+#define BLINKER_WECHAT_MSG_LIMIT        60000UL
+
 #define BLINKER_SMS_MAX_SEND_SIZE       128
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
@@ -198,6 +202,12 @@
 #define BLINKER_CMD_BROKER              "broker"
 
 #define BLINKER_CMD_UUID                "uuid"
+
+#define BLINKER_CMD_SMS                 "sms"
+
+#define BLINKER_CMD_PUSH                "push"
+
+#define BLINKER_CMD_WECHAT              "wechat"
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
