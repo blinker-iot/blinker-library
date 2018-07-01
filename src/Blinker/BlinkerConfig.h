@@ -149,6 +149,8 @@
 
 #define BLINKER_CMD_LINKDATA            "linkData"
 
+#define BLINKER_CMD_TRIGGEDDATA         "triggedData"
+
 #define BLINKER_CMD_COUNTDOWN           "countdown"
 
 #define BLINKER_CMD_COUNTDOWNDATA       "countdownData"
