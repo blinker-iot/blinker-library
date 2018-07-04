@@ -27,6 +27,10 @@
 
 #define BLINKER_WECHAT_MSG_LIMIT        60000UL
 
+#define BLINKER_WEATHER_MSG_LIMIT       60000UL
+
+#define BLINKER_AQI_MSG_LIMIT           60000UL
+
 #define BLINKER_SMS_MAX_SEND_SIZE       128
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
@@ -209,11 +213,28 @@
 
 #define BLINKER_CMD_WECHAT              "wechat"
 
+#define BLINKER_CMD_WEATHER             "weather"
+
+#define BLINKER_CMD_AQI                 "aqi"
+
+#define BLINKER_CMD_DEFAULT             "default"
+
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
 #define BLINKER_ONE_DAY_TIME            86400UL
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #define BLINKER_CMD_SMS_NUMBER          1
+
+    #define BLINKER_CMD_PUSH_NUMBER         2
+
+    #define BLINKER_CMD_WECHAT_NUMBER       3
+
+    #define BLINKER_CMD_WEATHER_NUMBER      4
+
+    #define BLINKER_CMD_AQI_NUMBER          5
+
+    #define BLINKER_CMD_DEFAULT_NUMBER      0
 
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
