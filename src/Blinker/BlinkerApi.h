@@ -1765,7 +1765,7 @@ class BlinkerApi
             if (_msg.length() > 20) {
                 return false;
             }
-            return (blinkServer(BLINKER_CMD_SMS, data) == BLINKER_CMD_TRUE) ? true:false;
+            return (blinkServer(BLINKER_CMD_SMS_NUMBER, data) == BLINKER_CMD_TRUE) ? true:false;
         }
 
         template<typename T>
@@ -1784,7 +1784,7 @@ class BlinkerApi
             if (_msg.length() > 20) {
                 return false;
             }
-            return (blinkServer(BLINKER_CMD_SMS, data, true) == BLINKER_CMD_TRUE) ? true:false;
+            return (blinkServer(BLINKER_CMD_SMS_NUMBER, data, true) == BLINKER_CMD_TRUE) ? true:false;
         }
 
         template<typename T>
@@ -1801,7 +1801,7 @@ class BlinkerApi
             // if (_msg.length() > 20) {
             //     return false;
             // }
-            return (blinkServer(BLINKER_CMD_PUSH, data) == BLINKER_CMD_TRUE) ? true:false;
+            return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_TRUE) ? true:false;
         }
 
         template<typename T>
@@ -1818,7 +1818,7 @@ class BlinkerApi
             // if (_msg.length() > 20) {
             //     return false;
             // }
-            return (blinkServer(BLINKER_CMD_WECHAT, data) == BLINKER_CMD_TRUE) ? true:false;
+            return (blinkServer(BLINKER_CMD_WECHAT_NUMBER, data) == BLINKER_CMD_TRUE) ? true:false;
         }
 
         String weather(String _city = BLINKER_CMD_DEFAULT) {
@@ -1834,7 +1834,7 @@ class BlinkerApi
             // if (_msg.length() > 20) {
             //     return false;
             // }
-            return blinkServer(BLINKER_CMD_WEATHER, data);
+            return blinkServer(BLINKER_CMD_WEATHER_NUMBER, data);
         }
 
         String aqi(String _city = BLINKER_CMD_DEFAULT) {
@@ -1850,7 +1850,7 @@ class BlinkerApi
             // if (_msg.length() > 20) {
             //     return false;
             // }
-            return blinkServer(BLINKER_CMD_WEATHER, data);
+            return blinkServer(BLINKER_CMD_WEATHER_NUMBER, data);
         }
 #endif
 
