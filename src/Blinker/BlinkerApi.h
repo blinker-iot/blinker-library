@@ -12,7 +12,10 @@
 #elif defined(ESP32)
     #include <HTTPClient.h>
 #endif
-#if defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT)
+    #include <utility/BlinkerAuto.h>
+#elif defined(BLINKER_PRO)
+    #include <utility/BlinkerAuto.h>
     #include <utility/BlinkerWlan.h>
     #include "modules/OneButton/OneButton.h"
 
@@ -21,11 +24,12 @@
     }
 #else
     #include <Blinker/BlinkerConfig.h>
+    #include <utility/BlinkerUtility.h>
 #endif
 // #include "modules/ArduinoJson/ArduinoJson.h"
 // #include <Blinker/BlinkerConfig.h>
 // #include <utility/BlinkerDebug.h>
-#include <utility/BlinkerUtility.h>
+// #include <utility/BlinkerUtility.h>
 
 enum b_widgettype_t {
     W_BUTTON,
@@ -143,860 +147,860 @@ class BlinkerRGB
         uint8_t rgbValue[3] = {0};
 };
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-// template <class API>
-class BlinkerAUTO
-{
-    public :
-        BlinkerAUTO()
-            : _autoState(false)
-            , _trigged(false)
-        {}
+// #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+// // template <class API>
+// class BlinkerAUTO
+// {
+//     public :
+//         BlinkerAUTO()
+//             : _autoState(false)
+//             , _trigged(false)
+//         {}
 
-        void run(String key, float data, int32_t nowTime) {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG6(BLINKER_F("BlinkerAUTO run key: "), key, BLINKER_F(" data: "), data, BLINKER_F(" nowTime: "), nowTime);
-#endif
-            for (uint8_t _num = 0; _num < _targetNum; _num++) {
-                if (!_autoState) {
-                    return;
-                }
+//         void run(String key, float data, int32_t nowTime) {
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG6(BLINKER_F("BlinkerAUTO run key: "), key, BLINKER_F(" data: "), data, BLINKER_F(" nowTime: "), nowTime);
+// #endif
+//             for (uint8_t _num = 0; _num < _targetNum; _num++) {
+//                 if (!_autoState) {
+//                     return;
+//                 }
 
-                if (key != STRING_format(_targetKey[_num])) {
-                    return;
-                }
+//                 if (key != STRING_format(_targetKey[_num])) {
+//                     return;
+//                 }
 
-                if (_time1[_num] < _time2[_num]) {
-                    if (!(nowTime >= _time1[_num] && nowTime <= _time2[_num])) {
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("out of time slot: "), nowTime);
-#endif
-                        return;
-                    }
-                }
-                else if (_time1[_num] > _time2[_num]) {
-                    if (nowTime > _time1[_num] && nowTime < _time2[_num]) {
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("out of time slot: "), nowTime);
-#endif
-                        return;
-                    }
-                }
+//                 if (_time1[_num] < _time2[_num]) {
+//                     if (!(nowTime >= _time1[_num] && nowTime <= _time2[_num])) {
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("out of time slot: "), nowTime);
+// #endif
+//                         return;
+//                     }
+//                 }
+//                 else if (_time1[_num] > _time2[_num]) {
+//                     if (nowTime > _time1[_num] && nowTime < _time2[_num]) {
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("out of time slot: "), nowTime);
+// #endif
+//                         return;
+//                     }
+//                 }
 
-                if ((_logicType == BLINKER_TYPE_NUMERIC)
-                    || (_logicType == BLINKER_TYPE_OR 
-                    && logic_type[_num] == BLINKER_TYPE_NUMERIC)
-                    || (_logicType == BLINKER_TYPE_AND 
-                    && logic_type[_num] == BLINKER_TYPE_NUMERIC))
-                {
-                    switch (_compareType[_num]) {
-                        case BLINKER_COMPARE_LESS:
-                            if (data < _targetData[_num]) {
-                                if (!_isTrigged[_num]) {
-                                    triggerCheck("less", _num);
-                                }
-                            }
-                            else {
-                                _isTrigged[_num] = false;
-                                isRecord[_num] = false;
-                                _trigged = false;
-                            }
-                            break;
-                        case BLINKER_COMPARE_EQUAL:
-                            if (data = _targetData[_num]) {
-                                if (!_isTrigged[_num]) {
-                                    triggerCheck("equal", _num);
-                                }
-                            }
-                            else {
-                                _isTrigged[_num] = false;
-                                isRecord[_num] = false;
-                                _trigged = false;
-                            }
-                            break;
-                        case BLINKER_COMPARE_GREATER:
-                            if (data > _targetData[_num]) {
-                                if (!_isTrigged[_num]) {
-                                    triggerCheck("greater", _num);
-                                }
-                            }
-                            else {
-                                _isTrigged[_num] = false;
-                                isRecord[_num] = false;
-                                _trigged = false;
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-        }
+//                 if ((_logicType == BLINKER_TYPE_NUMERIC)
+//                     || (_logicType == BLINKER_TYPE_OR 
+//                     && logic_type[_num] == BLINKER_TYPE_NUMERIC)
+//                     || (_logicType == BLINKER_TYPE_AND 
+//                     && logic_type[_num] == BLINKER_TYPE_NUMERIC))
+//                 {
+//                     switch (_compareType[_num]) {
+//                         case BLINKER_COMPARE_LESS:
+//                             if (data < _targetData[_num]) {
+//                                 if (!_isTrigged[_num]) {
+//                                     triggerCheck("less", _num);
+//                                 }
+//                             }
+//                             else {
+//                                 _isTrigged[_num] = false;
+//                                 isRecord[_num] = false;
+//                                 _trigged = false;
+//                             }
+//                             break;
+//                         case BLINKER_COMPARE_EQUAL:
+//                             if (data = _targetData[_num]) {
+//                                 if (!_isTrigged[_num]) {
+//                                     triggerCheck("equal", _num);
+//                                 }
+//                             }
+//                             else {
+//                                 _isTrigged[_num] = false;
+//                                 isRecord[_num] = false;
+//                                 _trigged = false;
+//                             }
+//                             break;
+//                         case BLINKER_COMPARE_GREATER:
+//                             if (data > _targetData[_num]) {
+//                                 if (!_isTrigged[_num]) {
+//                                     triggerCheck("greater", _num);
+//                                 }
+//                             }
+//                             else {
+//                                 _isTrigged[_num] = false;
+//                                 isRecord[_num] = false;
+//                                 _trigged = false;
+//                             }
+//                             break;
+//                         default:
+//                             break;
+//                     }
+//                 }
+//             }
+//         }
 
-        void run(String key, String state, int32_t nowTime) {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG6(BLINKER_F("BlinkerAUTO run key: "), key, BLINKER_F(" state: "), state, BLINKER_F(" nowTime: "), nowTime);
-#endif
-            for (uint8_t _num = 0; _num < _targetNum; _num++) {
-                if (!_autoState) {
-                    return;
-                }
+//         void run(String key, String state, int32_t nowTime) {
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG6(BLINKER_F("BlinkerAUTO run key: "), key, BLINKER_F(" state: "), state, BLINKER_F(" nowTime: "), nowTime);
+// #endif
+//             for (uint8_t _num = 0; _num < _targetNum; _num++) {
+//                 if (!_autoState) {
+//                     return;
+//                 }
 
-                if (key != STRING_format(_targetKey[_num])) {
-                    return;
-                }
+//                 if (key != STRING_format(_targetKey[_num])) {
+//                     return;
+//                 }
 
-                if (_time1[_num] < _time2[_num]) {
-                    if (!(nowTime >= _time1[_num] && nowTime <= _time2[_num])) {
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("out of time slot: "), nowTime);
-#endif
-                        return;
-                    }
-                }
-                else if (_time1[_num] > _time2[_num]) {
-                    if (nowTime > _time1[_num] && nowTime < _time2[_num]) {
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("out of time slot: "), nowTime);
-#endif
-                        return;
-                    }
-                }
+//                 if (_time1[_num] < _time2[_num]) {
+//                     if (!(nowTime >= _time1[_num] && nowTime <= _time2[_num])) {
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("out of time slot: "), nowTime);
+// #endif
+//                         return;
+//                     }
+//                 }
+//                 else if (_time1[_num] > _time2[_num]) {
+//                     if (nowTime > _time1[_num] && nowTime < _time2[_num]) {
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("out of time slot: "), nowTime);
+// #endif
+//                         return;
+//                     }
+//                 }
 
-                // if (_logicType == BLINKER_TYPE_STATE) {
-                if ((_logicType == BLINKER_TYPE_STATE)
-                    || (_logicType == BLINKER_TYPE_OR 
-                    && logic_type[_num] == BLINKER_TYPE_STATE)
-                    || (_logicType == BLINKER_TYPE_AND 
-                    && logic_type[_num] == BLINKER_TYPE_STATE))
-                {
-                    if (state == BLINKER_CMD_ON) {
-                        if (_targetState[_num]) {
-                            if (!_isTrigged[_num]) {
-                                triggerCheck("on", _num);
-                            }
-                        }
-                        else {
-                            _isTrigged[_num] = false;
-                            isRecord[_num] = false;
-                            _trigged = false;
-                        }
-                    }
-                    else if (state == BLINKER_CMD_OFF) {
-                        if (!_targetState[_num]) {
-                            if (!_isTrigged[_num]) {
-                                triggerCheck("off", _num);
-                            }
-                        }
-                        else {
-                            _isTrigged[_num] = false;
-                            isRecord[_num] = false;
-                            _trigged = false;
-                        }
-                    }
-                }
-                else if (_logicType == BLINKER_TYPE_OR 
-                    && logic_type[_num] == BLINKER_TYPE_STATE)
-                {
-                    if (state == BLINKER_CMD_ON) {
-                        if (_targetState[_num]) {
-                            if (!_isTrigged[_num]) {
-                                triggerCheck("on", _num);
-                            }
-                        }
-                        else {
-                            _isTrigged[_num] = false;
-                            isRecord[_num] = false;
-                            _trigged = false;
-                        }
-                    }
-                    else if (state == BLINKER_CMD_OFF) {
-                        if (!_targetState[_num]) {
-                            if (!_isTrigged[_num]) {
-                                triggerCheck("off", _num);
-                            }
-                        }
-                        else {
-                            _isTrigged[_num] = false;
-                            isRecord[_num] = false;
-                            _trigged = false;
-                        }
-                    }
-                }
-            }
-        }
+//                 // if (_logicType == BLINKER_TYPE_STATE) {
+//                 if ((_logicType == BLINKER_TYPE_STATE)
+//                     || (_logicType == BLINKER_TYPE_OR 
+//                     && logic_type[_num] == BLINKER_TYPE_STATE)
+//                     || (_logicType == BLINKER_TYPE_AND 
+//                     && logic_type[_num] == BLINKER_TYPE_STATE))
+//                 {
+//                     if (state == BLINKER_CMD_ON) {
+//                         if (_targetState[_num]) {
+//                             if (!_isTrigged[_num]) {
+//                                 triggerCheck("on", _num);
+//                             }
+//                         }
+//                         else {
+//                             _isTrigged[_num] = false;
+//                             isRecord[_num] = false;
+//                             _trigged = false;
+//                         }
+//                     }
+//                     else if (state == BLINKER_CMD_OFF) {
+//                         if (!_targetState[_num]) {
+//                             if (!_isTrigged[_num]) {
+//                                 triggerCheck("off", _num);
+//                             }
+//                         }
+//                         else {
+//                             _isTrigged[_num] = false;
+//                             isRecord[_num] = false;
+//                             _trigged = false;
+//                         }
+//                     }
+//                 }
+//                 else if (_logicType == BLINKER_TYPE_OR 
+//                     && logic_type[_num] == BLINKER_TYPE_STATE)
+//                 {
+//                     if (state == BLINKER_CMD_ON) {
+//                         if (_targetState[_num]) {
+//                             if (!_isTrigged[_num]) {
+//                                 triggerCheck("on", _num);
+//                             }
+//                         }
+//                         else {
+//                             _isTrigged[_num] = false;
+//                             isRecord[_num] = false;
+//                             _trigged = false;
+//                         }
+//                     }
+//                     else if (state == BLINKER_CMD_OFF) {
+//                         if (!_targetState[_num]) {
+//                             if (!_isTrigged[_num]) {
+//                                 triggerCheck("off", _num);
+//                             }
+//                         }
+//                         else {
+//                             _isTrigged[_num] = false;
+//                             isRecord[_num] = false;
+//                             _trigged = false;
+//                         }
+//                     }
+//                 }
+//             }
+//         }
 
-        void manager(String data) {
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& root = jsonBuffer.parseObject(data);
+//         void manager(String data) {
+//             DynamicJsonBuffer jsonBuffer;
+//             JsonObject& root = jsonBuffer.parseObject(data);
 
-            // String auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", ",", 1);
-            _autoState = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
-            // if (auto_state == "") {
-            //     auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", "}", 1);
-            // }
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("==============================================="));
-            BLINKER_LOG2(BLINKER_F("auto state: "), _autoState);
-#endif
-            // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
-            // _autoState = auto_state;
+//             // String auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", ",", 1);
+//             _autoState = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
+//             // if (auto_state == "") {
+//             //     auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", "}", 1);
+//             // }
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(BLINKER_F("==============================================="));
+//             BLINKER_LOG2(BLINKER_F("auto state: "), _autoState);
+// #endif
+//             // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
+//             // _autoState = auto_state;
 
-            // _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
-            _autoId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_AUTOID];
+//             // _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
+//             _autoId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_AUTOID];
 
-            // String logicType;
-            String logicType = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICTYPE];
-            // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), logicType, BLINKER_CMD_LOGICTYPE)) {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("_autoId: "), _autoId);
-            BLINKER_LOG2(BLINKER_F("logicType: "), logicType);
-#endif
-            // String target_key;
-            // String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETKEY];
-            // // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_TARGETKEY);
-            // strcpy(_targetKey[0], target_key.c_str());
+//             // String logicType;
+//             String logicType = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICTYPE];
+//             // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), logicType, BLINKER_CMD_LOGICTYPE)) {
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG2(BLINKER_F("_autoId: "), _autoId);
+//             BLINKER_LOG2(BLINKER_F("logicType: "), logicType);
+// #endif
+//             // String target_key;
+//             // String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETKEY];
+//             // // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_TARGETKEY);
+//             // strcpy(_targetKey[0], target_key.c_str());
             
-            if (logicType == BLINKER_CMD_STATE) {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("state!"));
-#endif
-                String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETKEY];
-                // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_TARGETKEY);
-                strcpy(_targetKey[0], target_key.c_str());
-                
-                _targetNum = 1;
-
-                _logicType = BLINKER_TYPE_STATE;
-
-                logic_type[0] = BLINKER_TYPE_STATE;
-                // String target_state;
-                String target_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETSTATE];
-                // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_state, BLINKER_CMD_TARGETSTATE)) {
-                if (target_state == BLINKER_CMD_ON) {
-                    _targetState[0] = true;
-                }
-                else if (target_state == BLINKER_CMD_OFF) {
-                    _targetState[0] = false;
-                }
-
-                _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_DURATION];
-                _duration[0] = 60 * _duration[0];
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
-                    BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[0]);
-                    BLINKER_LOG2(BLINKER_F("_targetState: "), _targetState[0]);
-                    BLINKER_LOG2(BLINKER_F("_duration: "), _duration[0]);
-#endif
-                // }
-            }
-            else if (logicType == BLINKER_CMD_NUMBERIC) {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("numberic!"));
-#endif
-                String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETKEY];
-                // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_TARGETKEY);
-                strcpy(_targetKey[0], target_key.c_str());
-                
-                _targetNum = 1;
-                
-                _logicType = BLINKER_TYPE_NUMERIC;
-
-                logic_type[0] = BLINKER_TYPE_NUMERIC;
-                // String _type;
-                String _type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_COMPARETYPE];
-                // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _type, BLINKER_CMD_COMPARETYPE)) {
-                    if (_type == BLINKER_CMD_LESS) {
-                        _compareType[0] = BLINKER_COMPARE_LESS;
-                    }
-                    else if (_type == BLINKER_CMD_EQUAL) {
-                        _compareType[0] = BLINKER_COMPARE_EQUAL;
-                    }
-                    else if (_type == BLINKER_CMD_GREATER) {
-                        _compareType[0] = BLINKER_COMPARE_GREATER;
-                    }
-
-                    // _targetData = STRING_find_float_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TARGETDATA);
-                    _targetData[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETDATA];
-                    _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_DURATION];
-                    _duration[0] = 60 * _duration[0];
-
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
-                    BLINKER_LOG4(BLINKER_F("_type: "), _type, BLINKER_F(" _compareType: "), _compareType[0]);
-                    BLINKER_LOG4(BLINKER_F("_targetKey: "), _targetKey[0], BLINKER_F(" _targetData: "), _targetData[0]);
-                    BLINKER_LOG2(BLINKER_F("_duration: "), _duration[0]);
-#endif
-                // }
-            }
-            else if (logicType == BLINKER_CMD_OR || logicType == BLINKER_CMD_AND) {
-                if (logicType == BLINKER_CMD_OR) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG1(BLINKER_F("or!"));
-#endif
-                    _logicType = BLINKER_TYPE_OR;
-                }
-                else if (logicType == BLINKER_CMD_AND) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG1(BLINKER_F("and!"));
-#endif
-                    _logicType = BLINKER_TYPE_AND;
-                }
-
-                _targetNum = 2;
-
-                for (uint8_t t_num = 0; t_num < _targetNum; t_num++) {
-                    String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_TARGETKEY];
-
-                    String compare_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_COMPARETYPE];
-
-                    if (compare_type.length()) {
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG1(BLINKER_F("or/and numberic!"));
-#endif
-                        logic_type[t_num] = BLINKER_TYPE_NUMERIC;
-
-                        strcpy(_targetKey[t_num], target_key.c_str());
-
-                        // String _type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_COMPARETYPE];
-                    // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _type, BLINKER_CMD_COMPARETYPE)) {
-                        if (compare_type == BLINKER_CMD_LESS) {
-                            _compareType[t_num] = BLINKER_COMPARE_LESS;
-                        }
-                        else if (compare_type == BLINKER_CMD_EQUAL) {
-                            _compareType[t_num] = BLINKER_COMPARE_EQUAL;
-                        }
-                        else if (compare_type == BLINKER_CMD_GREATER) {
-                            _compareType[t_num] = BLINKER_COMPARE_GREATER;
-                        }
-
-                        // _targetData = STRING_find_float_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TARGETDATA);
-                        _targetData[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_TARGETDATA];
-                        _duration[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_DURATION];
-                        _duration[t_num] = 60 * _duration[t_num];
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
-                        BLINKER_LOG2(BLINKER_F("_compareType: "), _compareType[t_num]);
-                        BLINKER_LOG4(BLINKER_F("_targetKey: "), _targetKey[t_num], BLINKER_F(" _targetData: "), _targetData[t_num]);
-                        BLINKER_LOG2(BLINKER_F("_duration: "), _duration[t_num]);
-#endif
-                    }
-                    else {
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG1(BLINKER_F("or/and state!"));
-#endif
-                        logic_type[t_num] = BLINKER_TYPE_STATE;
-
-                        strcpy(_targetKey[t_num], target_key.c_str());
-                
-                        // String target_state;
-                        String target_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_TARGETSTATE];
-                        // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_state, BLINKER_CMD_TARGETSTATE)) {
-                        if (target_state == BLINKER_CMD_ON) {
-                            _targetState[t_num] = true;
-                        }
-                        else if (target_state == BLINKER_CMD_OFF) {
-                            _targetState[t_num] = false;
-                        }
-
-                        _duration[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_DURATION];
-                        _duration[t_num] = 60 * _duration[t_num];
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
-                        BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[t_num]);
-                        BLINKER_LOG2(BLINKER_F("_targetState: "), _targetState[t_num]);
-                        BLINKER_LOG2(BLINKER_F("_duration: "), _duration[t_num]);
-#endif
-                    }
-                }
-            }
-
-            // int32_t duValue = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DURATION);
-            // _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_DURATION];
-            // _duration[0] = 60 * _duration[0];
-
-            // if (duValue != FIND_KEY_VALUE_FAILED) {
-            //     _duration = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DURATION);
-            // }
-            // else {
-            //     _duration = 0;
-            // }
+//             if (logicType == BLINKER_CMD_STATE) {
 // #ifdef BLINKER_DEBUG_ALL
-//             BLINKER_LOG2("_duration: ", _duration[0]);
+//                 BLINKER_LOG1(BLINKER_F("state!"));
 // #endif
-            // int32_t timeValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMESLOT, 0);
-            int32_t timeValue = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_TIMESLOT][0];
-
-            if (timeValue) {
-                // _time1 = 60 * STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMESLOT, 0);
-                _time1[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_TIMESLOT][0];
-                _time1[0] = 60 * _time1[0];
-                // _time2 = 60 * STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMESLOT, 1);
-                _time2[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_TIMESLOT][1];
-                _time2[0] = 60 * _time2[0];
-            }
-            else {
-                _time1[0] = 0;
-                _time2[0] = 24 * 60 * 60;
-            }
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG4(BLINKER_F("_time1: "), _time1[0], BLINKER_F(" _time2: "), _time2[0]);
-#endif
-            // String datas;
-            // datas = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDATA, "]", 3);
-
-            // strcpy(_linkDevice[0], STRING_find_string(datas, BLINKER_CMD_LINKDEVICE, "\"", 3).c_str());
-            // strcpy(_linkType[0], STRING_find_string(datas, BLINKER_CMD_LINKTYPE, "\"", 3).c_str());
-            // strcpy(_linkData[0], STRING_find_string(datas, BLINKER_CMD_DATA, "}", 3).c_str());
-            // _aCount++;
-            String linkData = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA];
-
-            if (linkData.length() > 0) {
-                String link_device = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKDEVICE];
-                String link_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKTYPE];
-                String link_data = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][0][BLINKER_CMD_DATA];
+//                 String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETKEY];
+//                 // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_TARGETKEY);
+//                 strcpy(_targetKey[0], target_key.c_str());
                 
-                strcpy(_linkDevice[0], link_device.c_str());
-                strcpy(_linkType[0], link_type.c_str());
-                strcpy(_linkData[0], link_data.c_str());
+//                 _targetNum = 1;
 
-                const char* link_device2 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKDEVICE];
+//                 _logicType = BLINKER_TYPE_STATE;
 
-                if (link_device2) {
-                    _linkNum = 2;
+//                 logic_type[0] = BLINKER_TYPE_STATE;
+//                 // String target_state;
+//                 String target_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETSTATE];
+//                 // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_state, BLINKER_CMD_TARGETSTATE)) {
+//                 if (target_state == BLINKER_CMD_ON) {
+//                     _targetState[0] = true;
+//                 }
+//                 else if (target_state == BLINKER_CMD_OFF) {
+//                     _targetState[0] = false;
+//                 }
 
-                    String link_device1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKDEVICE];
-                    String link_type1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKTYPE];
-                    String link_data1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_DATA];
+//                 _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_DURATION];
+//                 _duration[0] = 60 * _duration[0];
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
+//                     BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[0]);
+//                     BLINKER_LOG2(BLINKER_F("_targetState: "), _targetState[0]);
+//                     BLINKER_LOG2(BLINKER_F("_duration: "), _duration[0]);
+// #endif
+//                 // }
+//             }
+//             else if (logicType == BLINKER_CMD_NUMBERIC) {
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG1(BLINKER_F("numberic!"));
+// #endif
+//                 String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETKEY];
+//                 // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_TARGETKEY);
+//                 strcpy(_targetKey[0], target_key.c_str());
+                
+//                 _targetNum = 1;
+                
+//                 _logicType = BLINKER_TYPE_NUMERIC;
+
+//                 logic_type[0] = BLINKER_TYPE_NUMERIC;
+//                 // String _type;
+//                 String _type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_COMPARETYPE];
+//                 // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _type, BLINKER_CMD_COMPARETYPE)) {
+//                     if (_type == BLINKER_CMD_LESS) {
+//                         _compareType[0] = BLINKER_COMPARE_LESS;
+//                     }
+//                     else if (_type == BLINKER_CMD_EQUAL) {
+//                         _compareType[0] = BLINKER_COMPARE_EQUAL;
+//                     }
+//                     else if (_type == BLINKER_CMD_GREATER) {
+//                         _compareType[0] = BLINKER_COMPARE_GREATER;
+//                     }
+
+//                     // _targetData = STRING_find_float_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TARGETDATA);
+//                     _targetData[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETDATA];
+//                     _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_DURATION];
+//                     _duration[0] = 60 * _duration[0];
+
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
+//                     BLINKER_LOG4(BLINKER_F("_type: "), _type, BLINKER_F(" _compareType: "), _compareType[0]);
+//                     BLINKER_LOG4(BLINKER_F("_targetKey: "), _targetKey[0], BLINKER_F(" _targetData: "), _targetData[0]);
+//                     BLINKER_LOG2(BLINKER_F("_duration: "), _duration[0]);
+// #endif
+//                 // }
+//             }
+//             else if (logicType == BLINKER_CMD_OR || logicType == BLINKER_CMD_AND) {
+//                 if (logicType == BLINKER_CMD_OR) {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG1(BLINKER_F("or!"));
+// #endif
+//                     _logicType = BLINKER_TYPE_OR;
+//                 }
+//                 else if (logicType == BLINKER_CMD_AND) {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG1(BLINKER_F("and!"));
+// #endif
+//                     _logicType = BLINKER_TYPE_AND;
+//                 }
+
+//                 _targetNum = 2;
+
+//                 for (uint8_t t_num = 0; t_num < _targetNum; t_num++) {
+//                     String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_TARGETKEY];
+
+//                     String compare_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_COMPARETYPE];
+
+//                     if (compare_type.length()) {
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG1(BLINKER_F("or/and numberic!"));
+// #endif
+//                         logic_type[t_num] = BLINKER_TYPE_NUMERIC;
+
+//                         strcpy(_targetKey[t_num], target_key.c_str());
+
+//                         // String _type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_COMPARETYPE];
+//                     // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _type, BLINKER_CMD_COMPARETYPE)) {
+//                         if (compare_type == BLINKER_CMD_LESS) {
+//                             _compareType[t_num] = BLINKER_COMPARE_LESS;
+//                         }
+//                         else if (compare_type == BLINKER_CMD_EQUAL) {
+//                             _compareType[t_num] = BLINKER_COMPARE_EQUAL;
+//                         }
+//                         else if (compare_type == BLINKER_CMD_GREATER) {
+//                             _compareType[t_num] = BLINKER_COMPARE_GREATER;
+//                         }
+
+//                         // _targetData = STRING_find_float_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TARGETDATA);
+//                         _targetData[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_TARGETDATA];
+//                         _duration[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_DURATION];
+//                         _duration[t_num] = 60 * _duration[t_num];
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
+//                         BLINKER_LOG2(BLINKER_F("_compareType: "), _compareType[t_num]);
+//                         BLINKER_LOG4(BLINKER_F("_targetKey: "), _targetKey[t_num], BLINKER_F(" _targetData: "), _targetData[t_num]);
+//                         BLINKER_LOG2(BLINKER_F("_duration: "), _duration[t_num]);
+// #endif
+//                     }
+//                     else {
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG1(BLINKER_F("or/and state!"));
+// #endif
+//                         logic_type[t_num] = BLINKER_TYPE_STATE;
+
+//                         strcpy(_targetKey[t_num], target_key.c_str());
+                
+//                         // String target_state;
+//                         String target_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_TARGETSTATE];
+//                         // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_state, BLINKER_CMD_TARGETSTATE)) {
+//                         if (target_state == BLINKER_CMD_ON) {
+//                             _targetState[t_num] = true;
+//                         }
+//                         else if (target_state == BLINKER_CMD_OFF) {
+//                             _targetState[t_num] = false;
+//                         }
+
+//                         _duration[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_DURATION];
+//                         _duration[t_num] = 60 * _duration[t_num];
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
+//                         BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[t_num]);
+//                         BLINKER_LOG2(BLINKER_F("_targetState: "), _targetState[t_num]);
+//                         BLINKER_LOG2(BLINKER_F("_duration: "), _duration[t_num]);
+// #endif
+//                     }
+//                 }
+//             }
+
+//             // int32_t duValue = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DURATION);
+//             // _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_DURATION];
+//             // _duration[0] = 60 * _duration[0];
+
+//             // if (duValue != FIND_KEY_VALUE_FAILED) {
+//             //     _duration = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DURATION);
+//             // }
+//             // else {
+//             //     _duration = 0;
+//             // }
+// // #ifdef BLINKER_DEBUG_ALL
+// //             BLINKER_LOG2("_duration: ", _duration[0]);
+// // #endif
+//             // int32_t timeValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMESLOT, 0);
+//             int32_t timeValue = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_TIMESLOT][0];
+
+//             if (timeValue) {
+//                 // _time1 = 60 * STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMESLOT, 0);
+//                 _time1[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_TIMESLOT][0];
+//                 _time1[0] = 60 * _time1[0];
+//                 // _time2 = 60 * STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMESLOT, 1);
+//                 _time2[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_TIMESLOT][1];
+//                 _time2[0] = 60 * _time2[0];
+//             }
+//             else {
+//                 _time1[0] = 0;
+//                 _time2[0] = 24 * 60 * 60;
+//             }
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG4(BLINKER_F("_time1: "), _time1[0], BLINKER_F(" _time2: "), _time2[0]);
+// #endif
+//             // String datas;
+//             // datas = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LINKDATA, "]", 3);
+
+//             // strcpy(_linkDevice[0], STRING_find_string(datas, BLINKER_CMD_LINKDEVICE, "\"", 3).c_str());
+//             // strcpy(_linkType[0], STRING_find_string(datas, BLINKER_CMD_LINKTYPE, "\"", 3).c_str());
+//             // strcpy(_linkData[0], STRING_find_string(datas, BLINKER_CMD_DATA, "}", 3).c_str());
+//             // _aCount++;
+//             String linkData = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA];
+
+//             if (linkData.length() > 0) {
+//                 String link_device = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKDEVICE];
+//                 String link_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKTYPE];
+//                 String link_data = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][0][BLINKER_CMD_DATA];
+                
+//                 strcpy(_linkDevice[0], link_device.c_str());
+//                 strcpy(_linkType[0], link_type.c_str());
+//                 strcpy(_linkData[0], link_data.c_str());
+
+//                 const char* link_device2 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKDEVICE];
+
+//                 if (link_device2) {
+//                     _linkNum = 2;
+
+//                     String link_device1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKDEVICE];
+//                     String link_type1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKTYPE];
+//                     String link_data1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_DATA];
                     
-                    strcpy(_linkDevice[1], link_device1.c_str());
-                    strcpy(_linkType[1], link_type1.c_str());
-                    strcpy(_linkData[1], link_data1.c_str());
+//                     strcpy(_linkDevice[1], link_device1.c_str());
+//                     strcpy(_linkType[1], link_type1.c_str());
+//                     strcpy(_linkData[1], link_data1.c_str());
 
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
-                    BLINKER_LOG2(BLINKER_F("_linkDevice1: "), _linkDevice[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkType1: "), _linkType[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkData1: "), _linkData[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkDevice2: "), _linkDevice[1]);
-                    BLINKER_LOG2(BLINKER_F("_linkType2: "), _linkType[1]);
-                    BLINKER_LOG2(BLINKER_F("_linkData2: "), _linkData[1]);
-                    BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
-                    // BLINKER_LOG2("_aCount: ", _aCount);
-                    BLINKER_LOG1(BLINKER_F("==============================================="));
-#endif
-                }
-                else {
-                    _linkNum = 1;
-
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
-                    BLINKER_LOG2(BLINKER_F("_linkDevice1: "), _linkDevice[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkType1: "), _linkType[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkData1: "), _linkData[0]);
-                    BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
-                    // BLINKER_LOG2("_aCount: ", _aCount);
-                    BLINKER_LOG1(BLINKER_F("==============================================="));
-#endif
-                }
-            }
-            else {
-                _linkNum = 0;
-            }
-
-            serialization();
-        }
-
-        void deserialization() {
-            uint8_t checkData;
-            EEPROM.begin(BLINKER_EEP_SIZE);
-            EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
-
-            if (checkData != BLINKER_CHECK_DATA) {
-                _autoState = false;
-                EEPROM.commit();
-                EEPROM.end();
-                return;
-            }
-
-//             EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
 // #ifdef BLINKER_DEBUG_ALL
-//             BLINKER_LOG2("_aCount: ", _aCount);
+//                     BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
+//                     BLINKER_LOG2(BLINKER_F("_linkDevice1: "), _linkDevice[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkType1: "), _linkType[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkData1: "), _linkData[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkDevice2: "), _linkDevice[1]);
+//                     BLINKER_LOG2(BLINKER_F("_linkType2: "), _linkType[1]);
+//                     BLINKER_LOG2(BLINKER_F("_linkData2: "), _linkData[1]);
+//                     BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
+//                     // BLINKER_LOG2("_aCount: ", _aCount);
+//                     BLINKER_LOG1(BLINKER_F("==============================================="));
 // #endif
-            // EEPROM.get(BLINKER_EEP_ADDR_AUTOID, _autoId);
-            // EEPROM.get(BLINKER_EEP_ADDR_AUTO, _autoData);
-            EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTOID, _autoId);
-            EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TYPESTATE, _typeState);
+//                 }
+//                 else {
+//                     _linkNum = 1;
 
-            _logicType = _typeState >> 6;// | _autoState << 4 | _linkNum;
-            _autoState = _typeState >> 4 & 0x03;
-            _linkNum = _typeState & 0x0F;
-
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
-#endif
-
-            if (_logicType == BLINKER_TYPE_STATE || _logicType == BLINKER_TYPE_NUMERIC) {
-                _targetNum = 1;
-            }
-            else {
-                _targetNum = 2;
-            }
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
-#endif
-            // if (_targetNum == 1) {
-            // for (uint8_t t_num = 0; t_num < _targetNum; t_num++) {
-            EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO1, _autoData[0]);
-
-            // _linkNum = _autoId >> 30;
-            // _autoId = _autoId;// & 0xFFFFFFFF;
-            // _autoState = _autoData >> 31;
-            logic_type[0] = _autoData[0] >> 30 & 0x03;
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("==============================================="));
-            BLINKER_LOG2(BLINKER_F("_autoId: "), _autoId);
-            // BLINKER_LOG2("_autoState: ", _autoState ? "true" : "false");
-            // BLINKER_LOG2("_logicType: ", _logicType ? "numberic" : "state");
-            switch (_logicType) {
-                case BLINKER_TYPE_STATE :
-                    BLINKER_LOG1(BLINKER_F("_logicType: state"));
-                    break;
-                case BLINKER_TYPE_NUMERIC :
-                    BLINKER_LOG1(BLINKER_F("_logicType: numberic"));
-                    break;
-                case BLINKER_TYPE_OR :
-                    BLINKER_LOG1(BLINKER_F("_logicType: or"));
-                    break;
-                case BLINKER_TYPE_AND :
-                    BLINKER_LOG1(BLINKER_F("_logicType: and"));
-                    break;
-                default :
-                    break;
-            }
-#endif
-
-            EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY1, _targetKey[0]);
-                
-            if (logic_type[0] == BLINKER_TYPE_STATE) {
-                _targetState[0] = _autoData[0] >> 28 & 0x03;
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[0]);
-                BLINKER_LOG2(BLINKER_F("_targetState: "), _targetState[0] ? "on" : "off");
-#endif
-            }
-            else {
-                _compareType[0] = _autoData[0] >> 28 & 0x03;
-                // EEPROM.get(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA1, _targetData[0]);
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("_compareType: "), _compareType[0] ? (_compareType[0] == BLINKER_COMPARE_GREATER ? "greater" : "equal") : "less");
-                BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[0]);
-                BLINKER_LOG2(BLINKER_F("_targetData: "), _targetData[0]);
-#endif
-            }
-
-            _duration[0] = (_autoData[0] >> 22 & 0x3f) * 60;
-            _time1[0] = (_autoData[0] >> 11 & 0x7ff) * 60;
-            _time2[0] = (_autoData[0] & 0x7ff) * 60;
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("_duration: "), _duration[0]);
-            BLINKER_LOG4(BLINKER_F("_time1: "), _time1[0], BLINKER_F(" _time2: "), _time2[0]);
-#endif
-
-            if (_targetNum == 2) {
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO2, _autoData[1]);
-
-                // _linkNum = _autoId >> 30;
-                // _autoId = _autoId;// & 0xFFFFFFFF;
-                // _autoState = _autoData >> 31;
-                logic_type[1] = _autoData[1] >> 30 & 0x03;
 // #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
+//                     BLINKER_LOG2(BLINKER_F("_linkDevice1: "), _linkDevice[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkType1: "), _linkType[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkData1: "), _linkData[0]);
+//                     BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
+//                     // BLINKER_LOG2("_aCount: ", _aCount);
+//                     BLINKER_LOG1(BLINKER_F("==============================================="));
+// #endif
+//                 }
+//             }
+//             else {
+//                 _linkNum = 0;
+//             }
+
+//             serialization();
+//         }
+
+//         void deserialization() {
+//             uint8_t checkData;
+//             EEPROM.begin(BLINKER_EEP_SIZE);
+//             EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
+
+//             if (checkData != BLINKER_CHECK_DATA) {
+//                 _autoState = false;
+//                 EEPROM.commit();
+//                 EEPROM.end();
+//                 return;
+//             }
+
+// //             EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+// // #ifdef BLINKER_DEBUG_ALL
+// //             BLINKER_LOG2("_aCount: ", _aCount);
+// // #endif
+//             // EEPROM.get(BLINKER_EEP_ADDR_AUTOID, _autoId);
+//             // EEPROM.get(BLINKER_EEP_ADDR_AUTO, _autoData);
+//             EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTOID, _autoId);
+//             EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TYPESTATE, _typeState);
+
+//             _logicType = _typeState >> 6;// | _autoState << 4 | _linkNum;
+//             _autoState = _typeState >> 4 & 0x03;
+//             _linkNum = _typeState & 0x0F;
+
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
+// #endif
+
+//             if (_logicType == BLINKER_TYPE_STATE || _logicType == BLINKER_TYPE_NUMERIC) {
+//                 _targetNum = 1;
+//             }
+//             else {
+//                 _targetNum = 2;
+//             }
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
+// #endif
+//             // if (_targetNum == 1) {
+//             // for (uint8_t t_num = 0; t_num < _targetNum; t_num++) {
+//             EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO1, _autoData[0]);
+
+//             // _linkNum = _autoId >> 30;
+//             // _autoId = _autoId;// & 0xFFFFFFFF;
+//             // _autoState = _autoData >> 31;
+//             logic_type[0] = _autoData[0] >> 30 & 0x03;
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(BLINKER_F("==============================================="));
+//             BLINKER_LOG2(BLINKER_F("_autoId: "), _autoId);
+//             // BLINKER_LOG2("_autoState: ", _autoState ? "true" : "false");
+//             // BLINKER_LOG2("_logicType: ", _logicType ? "numberic" : "state");
+//             switch (_logicType) {
+//                 case BLINKER_TYPE_STATE :
+//                     BLINKER_LOG1(BLINKER_F("_logicType: state"));
+//                     break;
+//                 case BLINKER_TYPE_NUMERIC :
+//                     BLINKER_LOG1(BLINKER_F("_logicType: numberic"));
+//                     break;
+//                 case BLINKER_TYPE_OR :
+//                     BLINKER_LOG1(BLINKER_F("_logicType: or"));
+//                     break;
+//                 case BLINKER_TYPE_AND :
+//                     BLINKER_LOG1(BLINKER_F("_logicType: and"));
+//                     break;
+//                 default :
+//                     break;
+//             }
+// #endif
+
+//             EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY1, _targetKey[0]);
+                
+//             if (logic_type[0] == BLINKER_TYPE_STATE) {
+//                 _targetState[0] = _autoData[0] >> 28 & 0x03;
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[0]);
+//                 BLINKER_LOG2(BLINKER_F("_targetState: "), _targetState[0] ? "on" : "off");
+// #endif
+//             }
+//             else {
+//                 _compareType[0] = _autoData[0] >> 28 & 0x03;
+//                 // EEPROM.get(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
+//                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA1, _targetData[0]);
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("_compareType: "), _compareType[0] ? (_compareType[0] == BLINKER_COMPARE_GREATER ? "greater" : "equal") : "less");
+//                 BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[0]);
+//                 BLINKER_LOG2(BLINKER_F("_targetData: "), _targetData[0]);
+// #endif
+//             }
+
+//             _duration[0] = (_autoData[0] >> 22 & 0x3f) * 60;
+//             _time1[0] = (_autoData[0] >> 11 & 0x7ff) * 60;
+//             _time2[0] = (_autoData[0] & 0x7ff) * 60;
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG2(BLINKER_F("_duration: "), _duration[0]);
+//             BLINKER_LOG4(BLINKER_F("_time1: "), _time1[0], BLINKER_F(" _time2: "), _time2[0]);
+// #endif
+
+//             if (_targetNum == 2) {
+//                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO2, _autoData[1]);
+
+//                 // _linkNum = _autoId >> 30;
+//                 // _autoId = _autoId;// & 0xFFFFFFFF;
+//                 // _autoState = _autoData >> 31;
+//                 logic_type[1] = _autoData[1] >> 30 & 0x03;
+// // #ifdef BLINKER_DEBUG_ALL
+// //                     // BLINKER_LOG1("===============================================");
+// //                     BLINKER_LOG2("_autoId: ", _autoId);
+// //                     // BLINKER_LOG2("_autoState: ", _autoState ? "true" : "false");
+// //                     BLINKER_LOG2("_logicType: ", _logicType ? "numberic" : "state");
+// // #endif
+
+//                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY2, _targetKey[1]);
+                    
+//                 if (logic_type[1] == BLINKER_TYPE_STATE) {
+//                     _targetState[1] = _autoData[1] >> 28 & 0x03;
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[1]);
+//                     BLINKER_LOG2(BLINKER_F("_targetState: "), _targetState[1] ? "on" : "off");
+// #endif
+//                 }
+//                 else {
+//                     _compareType[1] = _autoData[1] >> 28 & 0x03;
+//                     // EEPROM.get(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
+//                     EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA2, _targetData[1]);
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("_compareType: "), _compareType[1] ? (_compareType[1] == BLINKER_COMPARE_GREATER ? "greater" : "equal") : "less");
+//                     BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[1]);
+//                     BLINKER_LOG2(BLINKER_F("_targetData: "), _targetData[1]);
+// #endif
+//                 }
+
+//                 _duration[1] = (_autoData[1] >> 22 & 0x3f) * 60;
+//                 _time1[1] = (_autoData[1] >> 11 & 0x7ff) * 60;
+//                 _time2[1] = (_autoData[1] & 0x7ff) * 60;
+
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("_duration: "), _duration[1]);
+//                 BLINKER_LOG4(BLINKER_F("_time1: "), _time1[1], BLINKER_F(" _time2: "), _time2[1]);
+// #endif
+//             }
+
+//             // EEPROM.get(BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
+//             // EEPROM.get(BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
+//             // EEPROM.get(BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
+//             if (_linkNum > 0) {
+//                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
+//                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
+//                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
+
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
+//                 BLINKER_LOG2(BLINKER_F("_linkDevice: "), _linkDevice[0]);
+//                 BLINKER_LOG2(BLINKER_F("_linkType: "), _linkType[0]);
+//                 BLINKER_LOG2(BLINKER_F("_linkData: "), _linkData[0]);
+//                 BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
+
+//                 // BLINKER_LOG1("===============================================");
+// #endif          
+
+//                 if (_linkNum == 2) {
+//                     EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
+//                     EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE2, _linkType[1]);
+//                     EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA2, _linkData[1]);
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
+//                     BLINKER_LOG2(BLINKER_F("_linkDevice: "), _linkDevice[1]);
+//                     BLINKER_LOG2(BLINKER_F("_linkType: "), _linkType[1]);
+//                     BLINKER_LOG2(BLINKER_F("_linkData: "), _linkData[1]);
+//                     BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
+
 //                     // BLINKER_LOG1("===============================================");
-//                     BLINKER_LOG2("_autoId: ", _autoId);
-//                     // BLINKER_LOG2("_autoState: ", _autoState ? "true" : "false");
-//                     BLINKER_LOG2("_logicType: ", _logicType ? "numberic" : "state");
+// #endif              
+//                 }
+//             }
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(BLINKER_F("==============================================="));
+// #endif
+//             EEPROM.commit();
+//             EEPROM.end();
+//             // }
+//         }
+
+//         void serialization() {
+//             uint8_t checkData;
+
+//             // _autoData = _autoState << 31 | _logicType << 30 ;
+//             _typeState = _logicType << 6 | _autoState << 4 | _linkNum;
+
+//             EEPROM.begin(BLINKER_EEP_SIZE);
+
+//             EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
+
+//             if (checkData != BLINKER_CHECK_DATA) {
+//                 EEPROM.put(BLINKER_EEP_ADDR_CHECK, BLINKER_CHECK_DATA);
+//             }
+
+//             EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTOID, _autoId);
+//             EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TYPESTATE, _typeState);
+
+//             // if (_targetNum == 1) {
+//             // for (uint8_t t_num = 0; t_num < _targetNum; t_num++) {
+//             _autoData[0] = logic_type[0] << 30 ;
+//             if (logic_type[0] == BLINKER_TYPE_STATE) {
+//                 _autoData[0] |= _targetState[0] << 28;
+//             }
+//             else {
+//                 _autoData[0] |= _compareType[0] << 28;
+//             }
+//             _autoData[0] |= _duration[0] / 60 << 22 | _time1[0] / 60 << 11 | _time2[0] / 60;
+        
+//             // EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+
+//             // _autoId = _linkNum << 30 | _autoId;
+//             // EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE, _autoId);
+//             // EEPROM.put(BLINKER_EEP_ADDR_AUTO, _autoData);
+//             EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO1, _autoData[0]);
+//             EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY1, _targetKey[0]);
+                
+//             if (logic_type[0] == BLINKER_TYPE_NUMERIC) {
+//                 // EEPROM.put(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
+//                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA1, _targetData[0]);
+//             }
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG2(BLINKER_F("serialization _typeState: "), _typeState);
+//             BLINKER_LOG2(BLINKER_F("serialization _autoData: "), _autoData[0]);
+// #endif                 
+//             if (_targetNum == 2) {
+//                 _autoData[1] = logic_type[1] << 30 ;
+//                 if (logic_type[1] == BLINKER_TYPE_STATE) {
+//                     _autoData[1] |= _targetState[1] << 28;
+//                 }
+//                 else {
+//                     _autoData[1] |= _compareType[1] << 28;
+//                 }
+//                 _autoData[1] |= _duration[1] / 60 << 22 | _time1[1] / 60 << 11 | _time2[1] / 60;
+            
+//                 // EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+
+//                 // _autoId = _linkNum << 30 | _autoId;
+//                 // EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE, _autoId);
+//                 // EEPROM.put(BLINKER_EEP_ADDR_AUTO, _autoData);
+//                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO2, _autoData[1]);
+//                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY2, _targetKey[1]);
+                    
+//                 if (logic_type[1] == BLINKER_TYPE_NUMERIC) {
+//                     // EEPROM.put(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
+//                     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA2, _targetData[1]);
+//                 }
+// #ifdef BLINKER_DEBUG_ALL
+//             // BLINKER_LOG2("serialization _typeState: ", _typeState);
+//                 BLINKER_LOG2(BLINKER_F("serialization _autoData: "), _autoData[1]);
+// #endif  
+//             }
+
+//             // EEPROM.put(BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
+//             // EEPROM.put(BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
+//             // EEPROM.put(BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
+//             if (_linkNum > 0) {
+//                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
+//                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
+//                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
+            
+//                 if (_linkNum == 2) {
+//                     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
+//                     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE2, _linkType[1]);
+//                     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA2, _linkData[1]);
+//                 }
+//             }
+            
+//             EEPROM.commit();
+//             EEPROM.end();
+//         }
+
+//         void setNum(uint8_t num) {
+//             a_num = num;
+//         }
+
+//         bool isTrigged() { return _trigged; }
+
+//         void fresh() {
+//             for (uint8_t _num = 0; _num < _targetNum; _num++) {
+//                 if (isRecord[_num]) {
+//                     _isTrigged[_num] = true;
+//                 }
+//             }
+//             _trigged = false;
+//         }
+
+//         uint32_t id() { return _autoId; }
+
+//         // uint8_t type() { return _logicType; }
+
+//         uint8_t linkNum() { return _linkNum; }
+
+//         char * name(uint8_t num) { return _linkDevice[num]; }
+
+//         char * type(uint8_t num) { return _linkType[num]; }
+
+//         char * data(uint8_t num) { return _linkData[num]; }
+
+//     private :
+//         uint8_t     a_num;
+//         // - - - - - - - -  - - - - - - - -  - - - - - - - -  - - - - - - - -
+//         // | | | | |            | _time1 0-1440min 11  | _time2 0-1440min 11                   
+//         // | | | | | _duration 0-60min 6
+//         // | | | | _targetState|_compareType on/off|less/equal/greater 2
+//         // | | | _targetState|_compareType on/off|less/equal/greater
+//         // |  
+//         // | logic_type state/numberic 2
+//         // autoData
+
+//         // - - - - - - - -
+//         // |   |   |
+//         // |   |   | _linkNum
+//         // |   | _autoState true/false 1  
+//         // | _logicType state/numberic/and/or 2
+//         // typestate
+//         bool        _autoState;
+//         uint32_t    _autoId = 0;
+//         uint8_t     _logicType;
+//         uint8_t     _typeState;
+//         uint32_t    _autoData[2];
+
+//         uint8_t     _targetNum = 0;
+
+//         uint8_t     logic_type[2];
+//         char        _targetKey[2][12];
+//         float       _targetData[2];
+//         uint8_t     _compareType[2];
+//         bool        _targetState[2];
+//         uint32_t    _time1[2];
+//         uint32_t    _time2[2];
+//         uint32_t    _duration[2];
+//         uint32_t    _treTime[2];
+//         bool        isRecord[2];
+//         bool        _isTrigged[2];
+//         bool        _trigged;
+//         uint8_t     _linkNum;
+//         char        _linkDevice[2][BLINKER_LINKDEVICE_SIZE];
+//         char        _linkType[2][BLINKER_LINKTYPE_SIZE];
+//         char        _linkData[2][BLINKER_LINKDATA_SIZE];
+
+//         void triggerCheck(String state, uint8_t num) {
+//             if (!isRecord[num]) {
+//                 isRecord[num] = true;
+//                 _treTime[num] = millis();
+//             }
+// #ifdef BLINKER_DEBUG_ALL
+//             switch (_logicType) {
+//                 case BLINKER_TYPE_STATE :
+//                     // BLINKER_LOG1("_logicType: state");
+//                     state = "state " + state;
+//                     break;
+//                 case BLINKER_TYPE_NUMERIC :
+//                     // BLINKER_LOG1("_logicType: numberic");
+//                     state = "numberic " + state;
+//                     break;
+//                 case BLINKER_TYPE_OR :
+//                     // BLINKER_LOG1("_logicType: or");
+//                     state = "or " + state;
+//                     break;
+//                 case BLINKER_TYPE_AND :
+//                     // BLINKER_LOG1("_logicType: and");
+//                     state = "and " + state;
+//                     break;
+//                 default :
+//                     break;
+//             }
 // #endif
 
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY2, _targetKey[1]);
-                    
-                if (logic_type[1] == BLINKER_TYPE_STATE) {
-                    _targetState[1] = _autoData[1] >> 28 & 0x03;
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[1]);
-                    BLINKER_LOG2(BLINKER_F("_targetState: "), _targetState[1] ? "on" : "off");
-#endif
-                }
-                else {
-                    _compareType[1] = _autoData[1] >> 28 & 0x03;
-                    // EEPROM.get(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
-                    EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA2, _targetData[1]);
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_compareType: "), _compareType[1] ? (_compareType[1] == BLINKER_COMPARE_GREATER ? "greater" : "equal") : "less");
-                    BLINKER_LOG2(BLINKER_F("_targetKey: "), _targetKey[1]);
-                    BLINKER_LOG2(BLINKER_F("_targetData: "), _targetData[1]);
-#endif
-                }
-
-                _duration[1] = (_autoData[1] >> 22 & 0x3f) * 60;
-                _time1[1] = (_autoData[1] >> 11 & 0x7ff) * 60;
-                _time2[1] = (_autoData[1] & 0x7ff) * 60;
-
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("_duration: "), _duration[1]);
-                BLINKER_LOG4(BLINKER_F("_time1: "), _time1[1], BLINKER_F(" _time2: "), _time2[1]);
-#endif
-            }
-
-            // EEPROM.get(BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
-            // EEPROM.get(BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
-            // EEPROM.get(BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
-            if (_linkNum > 0) {
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
-
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
-                BLINKER_LOG2(BLINKER_F("_linkDevice: "), _linkDevice[0]);
-                BLINKER_LOG2(BLINKER_F("_linkType: "), _linkType[0]);
-                BLINKER_LOG2(BLINKER_F("_linkData: "), _linkData[0]);
-                BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
-
-                // BLINKER_LOG1("===============================================");
-#endif          
-
-                if (_linkNum == 2) {
-                    EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
-                    EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE2, _linkType[1]);
-                    EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA2, _linkData[1]);
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
-                    BLINKER_LOG2(BLINKER_F("_linkDevice: "), _linkDevice[1]);
-                    BLINKER_LOG2(BLINKER_F("_linkType: "), _linkType[1]);
-                    BLINKER_LOG2(BLINKER_F("_linkData: "), _linkData[1]);
-                    BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
-
-                    // BLINKER_LOG1("===============================================");
-#endif              
-                }
-            }
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("==============================================="));
-#endif
-            EEPROM.commit();
-            EEPROM.end();
-            // }
-        }
-
-        void serialization() {
-            uint8_t checkData;
-
-            // _autoData = _autoState << 31 | _logicType << 30 ;
-            _typeState = _logicType << 6 | _autoState << 4 | _linkNum;
-
-            EEPROM.begin(BLINKER_EEP_SIZE);
-
-            EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
-
-            if (checkData != BLINKER_CHECK_DATA) {
-                EEPROM.put(BLINKER_EEP_ADDR_CHECK, BLINKER_CHECK_DATA);
-            }
-
-            EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTOID, _autoId);
-            EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TYPESTATE, _typeState);
-
-            // if (_targetNum == 1) {
-            // for (uint8_t t_num = 0; t_num < _targetNum; t_num++) {
-            _autoData[0] = logic_type[0] << 30 ;
-            if (logic_type[0] == BLINKER_TYPE_STATE) {
-                _autoData[0] |= _targetState[0] << 28;
-            }
-            else {
-                _autoData[0] |= _compareType[0] << 28;
-            }
-            _autoData[0] |= _duration[0] / 60 << 22 | _time1[0] / 60 << 11 | _time2[0] / 60;
-        
-            // EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-
-            // _autoId = _linkNum << 30 | _autoId;
-            // EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE, _autoId);
-            // EEPROM.put(BLINKER_EEP_ADDR_AUTO, _autoData);
-            EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO1, _autoData[0]);
-            EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY1, _targetKey[0]);
-                
-            if (logic_type[0] == BLINKER_TYPE_NUMERIC) {
-                // EEPROM.put(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
-                EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA1, _targetData[0]);
-            }
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("serialization _typeState: "), _typeState);
-            BLINKER_LOG2(BLINKER_F("serialization _autoData: "), _autoData[0]);
-#endif                 
-            if (_targetNum == 2) {
-                _autoData[1] = logic_type[1] << 30 ;
-                if (logic_type[1] == BLINKER_TYPE_STATE) {
-                    _autoData[1] |= _targetState[1] << 28;
-                }
-                else {
-                    _autoData[1] |= _compareType[1] << 28;
-                }
-                _autoData[1] |= _duration[1] / 60 << 22 | _time1[1] / 60 << 11 | _time2[1] / 60;
-            
-                // EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-
-                // _autoId = _linkNum << 30 | _autoId;
-                // EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + _num * BLINKER_ONE_AUTO_DATA_SIZE, _autoId);
-                // EEPROM.put(BLINKER_EEP_ADDR_AUTO, _autoData);
-                EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO2, _autoData[1]);
-                EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY2, _targetKey[1]);
-                    
-                if (logic_type[1] == BLINKER_TYPE_NUMERIC) {
-                    // EEPROM.put(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
-                    EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA2, _targetData[1]);
-                }
-#ifdef BLINKER_DEBUG_ALL
-            // BLINKER_LOG2("serialization _typeState: ", _typeState);
-                BLINKER_LOG2(BLINKER_F("serialization _autoData: "), _autoData[1]);
-#endif  
-            }
-
-            // EEPROM.put(BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
-            // EEPROM.put(BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
-            // EEPROM.put(BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
-            if (_linkNum > 0) {
-                EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
-                EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
-                EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
-            
-                if (_linkNum == 2) {
-                    EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
-                    EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE2, _linkType[1]);
-                    EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA2, _linkData[1]);
-                }
-            }
-            
-            EEPROM.commit();
-            EEPROM.end();
-        }
-
-        void setNum(uint8_t num) {
-            a_num = num;
-        }
-
-        bool isTrigged() { return _trigged; }
-
-        void fresh() {
-            for (uint8_t _num = 0; _num < _targetNum; _num++) {
-                if (isRecord[_num]) {
-                    _isTrigged[_num] = true;
-                }
-            }
-            _trigged = false;
-        }
-
-        uint32_t id() { return _autoId; }
-
-        // uint8_t type() { return _logicType; }
-
-        uint8_t linkNum() { return _linkNum; }
-
-        char * name(uint8_t num) { return _linkDevice[num]; }
-
-        char * type(uint8_t num) { return _linkType[num]; }
-
-        char * data(uint8_t num) { return _linkData[num]; }
-
-    private :
-        uint8_t     a_num;
-        // - - - - - - - -  - - - - - - - -  - - - - - - - -  - - - - - - - -
-        // | | | | |            | _time1 0-1440min 11  | _time2 0-1440min 11                   
-        // | | | | | _duration 0-60min 6
-        // | | | | _targetState|_compareType on/off|less/equal/greater 2
-        // | | | _targetState|_compareType on/off|less/equal/greater
-        // |  
-        // | logic_type state/numberic 2
-        // autoData
-
-        // - - - - - - - -
-        // |   |   |
-        // |   |   | _linkNum
-        // |   | _autoState true/false 1  
-        // | _logicType state/numberic/and/or 2
-        // typestate
-        bool        _autoState;
-        uint32_t    _autoId = 0;
-        uint8_t     _logicType;
-        uint8_t     _typeState;
-        uint32_t    _autoData[2];
-
-        uint8_t     _targetNum = 0;
-
-        uint8_t     logic_type[2];
-        char        _targetKey[2][12];
-        float       _targetData[2];
-        uint8_t     _compareType[2];
-        bool        _targetState[2];
-        uint32_t    _time1[2];
-        uint32_t    _time2[2];
-        uint32_t    _duration[2];
-        uint32_t    _treTime[2];
-        bool        isRecord[2];
-        bool        _isTrigged[2];
-        bool        _trigged;
-        uint8_t     _linkNum;
-        char        _linkDevice[2][BLINKER_LINKDEVICE_SIZE];
-        char        _linkType[2][BLINKER_LINKTYPE_SIZE];
-        char        _linkData[2][BLINKER_LINKDATA_SIZE];
-
-        void triggerCheck(String state, uint8_t num) {
-            if (!isRecord[num]) {
-                isRecord[num] = true;
-                _treTime[num] = millis();
-            }
-#ifdef BLINKER_DEBUG_ALL
-            switch (_logicType) {
-                case BLINKER_TYPE_STATE :
-                    // BLINKER_LOG1("_logicType: state");
-                    state = "state " + state;
-                    break;
-                case BLINKER_TYPE_NUMERIC :
-                    // BLINKER_LOG1("_logicType: numberic");
-                    state = "numberic " + state;
-                    break;
-                case BLINKER_TYPE_OR :
-                    // BLINKER_LOG1("_logicType: or");
-                    state = "or " + state;
-                    break;
-                case BLINKER_TYPE_AND :
-                    // BLINKER_LOG1("_logicType: and");
-                    state = "and " + state;
-                    break;
-                default :
-                    break;
-            }
-#endif
-
-            if ((millis() - _treTime[num]) / 1000 >= _duration[num]) {
-                if (_logicType != BLINKER_TYPE_AND) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(state, BLINKER_F(" trigged"));
-#endif
-                    _trigged = true;
-                }
-                else {
-                    _isTrigged[num] = true;
-                    if (_isTrigged[0] && _isTrigged[1]) {
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(state, BLINKER_F(" trigged"));
-#endif
-                        _trigged = true;
-                    }
-                }
-            }
-        }
-};
-#endif
+//             if ((millis() - _treTime[num]) / 1000 >= _duration[num]) {
+//                 if (_logicType != BLINKER_TYPE_AND) {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(state, BLINKER_F(" trigged"));
+// #endif
+//                     _trigged = true;
+//                 }
+//                 else {
+//                     _isTrigged[num] = true;
+//                     if (_isTrigged[0] && _isTrigged[1]) {
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(state, BLINKER_F(" trigged"));
+// #endif
+//                         _trigged = true;
+//                     }
+//                 }
+//             }
+//         }
+// };
+// #endif
 
 template <class T>
 int8_t checkNum(String name, T * c, uint8_t count)
@@ -1750,13 +1754,18 @@ class BlinkerApi
         template<typename T>
         bool sms(const T& msg) {
             String _msg = STRING_format(msg);
+#if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"msg\":\"" + _msg + "\"}";
-            
+#elif defined(BLINKER_PRO)
+            String data = "{\"deviceName\":\"" + macDeviceName() + \
+                            "\",\"msg\":\"" + _msg + "\"}";
+#endif
+
             if (_msg.length() > 20) {
                 return false;
             }
-            return _smsSend(data);
+            return (blinkServer(BLINKER_CMD_SMS_NUMBER, data) == BLINKER_CMD_TRUE) ? true:false;
         }
 
         template<typename T>
@@ -1775,7 +1784,73 @@ class BlinkerApi
             if (_msg.length() > 20) {
                 return false;
             }
-            return _smsSend(data, true);
+            return (blinkServer(BLINKER_CMD_SMS_NUMBER, data, true) == BLINKER_CMD_TRUE) ? true:false;
+        }
+
+        template<typename T>
+        bool push(const T& msg) {
+            String _msg = STRING_format(msg);
+#if defined(BLINKER_MQTT)
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                            "\",\"msg\":\"" + _msg + "\"}";
+#elif defined(BLINKER_PRO)
+            String data = "{\"deviceName\":\"" + macDeviceName() + \
+                            "\",\"msg\":\"" + _msg + "\"}";
+#endif
+
+            // if (_msg.length() > 20) {
+            //     return false;
+            // }
+            return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_TRUE) ? true:false;
+        }
+
+        template<typename T>
+        bool wechat(const T& msg) {
+            String _msg = STRING_format(msg);
+#if defined(BLINKER_MQTT)
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                            "\",\"msg\":\"" + _msg + "\"}";
+#elif defined(BLINKER_PRO)
+            String data = "{\"deviceName\":\"" + macDeviceName() + \
+                            "\",\"msg\":\"" + _msg + "\"}";
+#endif
+
+            // if (_msg.length() > 20) {
+            //     return false;
+            // }
+            return (blinkServer(BLINKER_CMD_WECHAT_NUMBER, data) == BLINKER_CMD_TRUE) ? true:false;
+        }
+
+        String weather(String _city = BLINKER_CMD_DEFAULT) {
+            // String _msg = STRING_format(msg);
+#if defined(BLINKER_MQTT)
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                            "\",\"city\":\"" + _city + "\"}";
+#elif defined(BLINKER_PRO)
+            String data = "{\"deviceName\":\"" + macDeviceName() + \
+                            "\",\"city\":\"" + _city + "\"}";
+#endif
+
+            // if (_msg.length() > 20) {
+            //     return false;
+            // }
+            return blinkServer(BLINKER_CMD_WEATHER_NUMBER, data);
+        }
+
+        String aqi(String _city = BLINKER_CMD_DEFAULT) {
+            // String _msg = STRING_format(msg);
+#if defined(BLINKER_MQTT)
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                            "\",\"city\":\"" + _city + "\"}";
+#elif defined(BLINKER_PRO)
+            String data = "{\"deviceName\":\"" + macDeviceName() + \
+                            "\",\"city\":\"" + _city + "\"}";
+#endif
+
+            // if (_msg.length() > 20) {
+            //     return false;
+            // }
+            return blinkServer(BLINKER_CMD_WEATHER_NUMBER, data);
         }
 #endif
 
@@ -1926,6 +2001,11 @@ class BlinkerApi
         uint8_t     _aCount = 0;
 
         uint32_t    _smsTime = 0;
+
+        uint32_t    _pushTime = 0;
+        uint32_t    _wechatTime = 0;
+        uint32_t    _weatherTime = 0;
+        uint32_t    _aqiTime = 0;
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
@@ -2598,6 +2678,7 @@ class BlinkerApi
                 BLINKER_LOG1(BLINKER_F("get auto setting"));
 #endif
                 bool isDelet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
+                String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][0];
 
                 if (isDelet) {
                     // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
@@ -2627,6 +2708,23 @@ class BlinkerApi
 #endif
                                 return true;
                             }
+                        }
+                    }
+                }
+                else if(isTriggedArray.length()) {
+                    for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
+                        String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][a_num];
+
+                        if(_autoData_array.length()) {
+                            DynamicJsonBuffer _jsonBuffer;
+                            JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
+                            
+                            json_parse(_array);
+                            timerManager(_array, true);
+                        }
+                        else {
+                            // a_num = BLINKER_MAX_WIDGET_SIZE;
+                            return true;
                         }
                     }
                 }
@@ -3196,14 +3294,41 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-        bool _smsSend(String msg, bool state = false) {
-            if (!checkSMS()) {
-                return false;
-            }
+        // bool _smsSend(String msg, bool state = false) {
+        String blinkServer(uint8_t _type, String msg, bool state = false) {
+            switch (_type) {
+                case BLINKER_CMD_SMS_NUMBER :
+                    if (!checkSMS()) {
+                        return BLINKER_CMD_FALSE;
+                    }
 
-            if ((!state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE) ||
-                (state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE + 15)) {
-                return false;
+                    if ((!state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE) ||
+                        (state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE + 15)) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_PUSH_NUMBER :
+                    if (!checkPUSH()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_WECHAT_NUMBER :
+                    if (!checkWECHAT()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_WEATHER_NUMBER :
+                    if (!checkWEATHER()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_AQI_NUMBER :
+                    if (!checkAQI()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                default :
+                    return BLINKER_CMD_FALSE;
             }
 
             const int httpsPort = 443;
@@ -3219,7 +3344,7 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("connection failed"));
 #endif
-                return false;
+                return BLINKER_CMD_FALSE;
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
@@ -3244,7 +3369,10 @@ class BlinkerApi
 #endif
             }
 
-            String url = "/api/v1/user/device/sms";
+            String url;
+            if (_type == BLINKER_CMD_SMS_NUMBER) {
+                url = "/api/v1/user/device/sms";
+            }
 
             client_s.print(String("POST ") + url + " HTTP/1.1\r\n" +
                "Host: " + host + ":" + httpsPort + "\r\n" +
@@ -3258,7 +3386,7 @@ class BlinkerApi
                 if (millis() - timeout > 5000) {
                     BLINKER_LOG1(BLINKER_F(">>> Client Timeout !"));
                     client_s.stop();
-                    return false;
+                    return BLINKER_CMD_FALSE;
                 }
             }
 
@@ -3293,20 +3421,23 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("dataGet: "), dataGet);
 #endif
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& sms_rp = jsonBuffer.parseObject(dataGet);
+            if (_type == BLINKER_CMD_SMS_NUMBER) {
+                DynamicJsonBuffer jsonBuffer;
+                JsonObject& sms_rp = jsonBuffer.parseObject(dataGet);
 
-            if (sms_rp.success()) {
-                uint16_t msg_code = sms_rp[BLINKER_CMD_MESSAGE];
-                if (msg_code != 1000) {
-                    String _detail = sms_rp[BLINKER_CMD_DETAIL];
-                    BLINKER_ERR_LOG1(_detail);
+                if (sms_rp.success()) {
+                    uint16_t msg_code = sms_rp[BLINKER_CMD_MESSAGE];
+                    if (msg_code != 1000) {
+                        String _detail = sms_rp[BLINKER_CMD_DETAIL];
+                        BLINKER_ERR_LOG1(_detail);
+                    }
                 }
+                _smsTime = millis();
             }
 
             client_s.stop();
 
-            return true;
+            return BLINKER_CMD_TRUE;
 #elif defined(ESP32)
             const char* host = "https://iotdev.clz.me";
 
@@ -3341,7 +3472,11 @@ class BlinkerApi
 // #endif
             HTTPClient http;
 
-            String url_iot = String(host) + "/api/v1/user/device/sms";
+            String url_iot;
+            
+            if (_type == BLINKER_CMD_SMS_NUMBER) {
+                url_iot = String(host) + "/api/v1/user/device/sms";
+            }
             
 #ifdef BLINKER_DEBUG_ALL 
             BLINKER_LOG2(BLINKER_F("HTTPS begin: "), url_iot);
@@ -3367,18 +3502,23 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(payload);
 #endif
-                    DynamicJsonBuffer jsonBuffer;
-                    JsonObject& sms_rp = jsonBuffer.parseObject(payload);
 
-                    uint16_t msg_code = sms_rp[BLINKER_CMD_MESSAGE];
-                    if (msg_code != 1000) {
-                        String _detail = sms_rp[BLINKER_CMD_DETAIL];
-                        BLINKER_ERR_LOG1(_detail);
+                    if (_type == BLINKER_CMD_SMS_NUMBER) {
+                        DynamicJsonBuffer jsonBuffer;
+                        JsonObject& sms_rp = jsonBuffer.parseObject(payload);
+
+                        uint16_t msg_code = sms_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000) {
+                            String _detail = sms_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG1(_detail);
+                        }
                     }
                 }
-                _smsTime = millis();
+                if (_type == BLINKER_CMD_SMS_NUMBER) {
+                    _smsTime = millis();
+                }
                 http.end();
-                return true;
+                return BLINKER_CMD_TRUE;
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
@@ -3386,14 +3526,53 @@ class BlinkerApi
                 String payload = http.getString();
                 BLINKER_LOG1(payload);
 #endif
+                if (_type == BLINKER_CMD_SMS_NUMBER) {
+                    _smsTime = millis();
+                }
                 http.end();
-                return false;
+                return BLINKER_CMD_FALSE;
             }
 #endif
         }
 
         bool checkSMS() {
             if ((millis() - _smsTime) > BLINKER_SMS_MSG_LIMIT || _smsTime == 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool checkPUSH() {
+            if ((millis() - _pushTime) > BLINKER_PUSH_MSG_LIMIT || _pushTime == 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool checkWECHAT() {
+            if ((millis() - _wechatTime) > BLINKER_WECHAT_MSG_LIMIT || _wechatTime == 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool checkWEATHER() {
+            if ((millis() - _weatherTime) > BLINKER_WEATHER_MSG_LIMIT || _weatherTime == 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool checkAQI() {
+            if ((millis() - _aqiTime) > BLINKER_AQI_MSG_LIMIT || _aqiTime == 0) {
                 return true;
             }
             else {
@@ -3751,6 +3930,40 @@ class BlinkerApi
 //         }
 
 #if defined(ESP8266) || defined(ESP32)
+        void json_parse_all(const JsonObject& data) {
+#if defined(BLINKER_PRO)
+            checkRegister(data);
+#endif
+
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+            // if (autoManager(root)) {
+            //     static_cast<Proto*>(this)->isParsed();
+            //     return;
+            // }
+            autoManager(data);
+#endif
+            timerManager(data);
+            heartBeat(data);
+            getVersion(data);
+
+            for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                buttonParse(_Button[bNum]->getName(), data);
+            }
+            for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                slider(_Slider[sNum]->getName(), data);
+            }
+            for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                toggle(_Toggle[kNum]->getName(), data);
+            }
+            for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                rgb(_RGB[rgbNum]->getName(), R, data);
+            }
+
+            joystick(J_Xaxis, data);
+            ahrs(Yaw, data);
+            gps(LONG, true, data);
+        }
+
         void json_parse(const JsonObject& data) {
             for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                 buttonParse(_Button[bNum]->getName(), data);

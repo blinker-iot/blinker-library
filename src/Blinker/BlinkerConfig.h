@@ -23,6 +23,14 @@
 
 #define BLINKER_SMS_MSG_LIMIT           60000UL
 
+#define BLINKER_PUSH_MSG_LIMIT          60000UL
+
+#define BLINKER_WECHAT_MSG_LIMIT        60000UL
+
+#define BLINKER_WEATHER_MSG_LIMIT       60000UL
+
+#define BLINKER_AQI_MSG_LIMIT           60000UL
+
 #define BLINKER_SMS_MAX_SEND_SIZE       128
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
@@ -149,6 +157,8 @@
 
 #define BLINKER_CMD_LINKDATA            "linkData"
 
+#define BLINKER_CMD_TRIGGEDDATA         "triggedData"
+
 #define BLINKER_CMD_COUNTDOWN           "countdown"
 
 #define BLINKER_CMD_COUNTDOWNDATA       "countdownData"
@@ -197,11 +207,34 @@
 
 #define BLINKER_CMD_UUID                "uuid"
 
+#define BLINKER_CMD_SMS                 "sms"
+
+#define BLINKER_CMD_PUSH                "push"
+
+#define BLINKER_CMD_WECHAT              "wechat"
+
+#define BLINKER_CMD_WEATHER             "weather"
+
+#define BLINKER_CMD_AQI                 "aqi"
+
+#define BLINKER_CMD_DEFAULT             "default"
+
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
 #define BLINKER_ONE_DAY_TIME            86400UL
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #define BLINKER_CMD_SMS_NUMBER          1
+
+    #define BLINKER_CMD_PUSH_NUMBER         2
+
+    #define BLINKER_CMD_WECHAT_NUMBER       3
+
+    #define BLINKER_CMD_WEATHER_NUMBER      4
+
+    #define BLINKER_CMD_AQI_NUMBER          5
+
+    #define BLINKER_CMD_DEFAULT_NUMBER      0
 
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
@@ -345,6 +378,16 @@
 
     #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
 
+    #ifndef BLINKER_PRO_VERSION
+        #define BLINKER_PRO_VERSION             "1.0.0"
+    #endif
+
+    #define BLINKER_PRO_VERSION_CODE        B00000001
+
+    #define BLINKER_PRO_OTA_START           B01010011
+
+    #define BLINKER_PRO_OTA_CLEAR           B00000001
+
     #define BLINKER_CHECK_AUTH_TIME         120000UL
 
     #define BLINKER_AUTH_CHECK_DATA         0x55
@@ -370,6 +413,14 @@
     #define BLINKER_AUTH_CHECK_SIZE         1
 
     #define BLINKER_PRO_DATA_SIZE           (BLINKER_SSID_SIZE + BLINKER_PSWD_SIZE + BLINKER_WLAN_CHECK_SIZE + BLINKER_AUUID_SIZE + BLINKER_AUTH_CHECK_SIZE)
+
+    #define BLINKER_EEP_ADDR_OTA_INFO       (BLINKER_EEP_ADDR_AUTH_CHECK + BLINKER_AUTH_CHECK_SIZE)
+
+    #define BLINKER_OTA_INFO_SIZE           4
+
+    #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
+
+    #define BLINKER_OTA_CHECK_SIZE          1
 
 #endif
 
