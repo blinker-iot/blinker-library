@@ -1098,9 +1098,9 @@ static void disableTimer() {
 static void _cd_callback() {
     _cdState = false;
     _cdTrigged = true;
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
     BLINKER_LOG1(("countdown trigged!"));
-#endif
+    #endif
 }
 
 // static void _countdown(float seconds) {
@@ -1130,9 +1130,9 @@ static void _lp_callback() {
         lpTicker.once(_lpTime2, _lp_callback);
     }
     _lpTrigged = true;
-#ifdef BLINKER_DEBUG_ALL     
+    #ifdef BLINKER_DEBUG_ALL     
     BLINKER_LOG1(("loop trigged!"));
-#endif
+    #endif
 }
 
 // static void _loop(float seconds) {
@@ -1141,9 +1141,9 @@ static void _lp_callback() {
 // }
 
 static bool isTimingDay(uint8_t _day) {
- #ifdef BLINKER_DEBUG_ALL     
+    #ifdef BLINKER_DEBUG_ALL     
     BLINKER_LOG2(("isTimingDay: "), _day);
-#endif   
+    #endif   
     if (_timingDay & (0x01 << _day))
         return true;
     else
@@ -1157,54 +1157,54 @@ static void _tm_callback() {
     struct tm   timeinfo;
     now_ntp = time(nullptr);
     // gmtime_r(&now_ntp, &timeinfo);
-#if defined(ESP8266)
+    #if defined(ESP8266)
     gmtime_r(&now_ntp, &timeinfo);
-#elif defined(ESP32)
+    #elif defined(ESP32)
     localtime_r(&now_ntp, &timeinfo);
-#endif
+    #endif
 
     int32_t nowTime = timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
     BLINKER_LOG6(("nowTime: "), nowTime, (" _tmTime1: "), _tmTime1, (" _tmTime2: "), _tmTime2);
-#endif
+    #endif
 
     if (isTimingDay(timeinfo.tm_wday)) {
         if (_tmRun1) {
             if (!_isTimingLoop) {
                 tmTicker.detach();
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                 BLINKER_LOG1(("timing2 trigged! now need stop!"));
-#endif
+    #endif
                 _tmState = false;
             }
             else {
                 if (_tmTime1 >= nowTime) {
                     tmTicker.once(_tmTime1 - nowTime, _tm_callback);
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2(("timing2 trigged! next time: "), _tmTime1 - nowTime);
-#endif
+    #endif
                 }
                 else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
                     tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2(("timing2 trigged! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
-#endif
+    #endif
                 }
             }
         }
         else {
             tmTicker.once(_tmTime2 - _tmTime1, _tm_callback);
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
             BLINKER_LOG2(("timing1 trigged! next time: "), _tmTime2 - _tmTime1);
-#endif
+    #endif
         }
         _tmTrigged = true;
     }
     else {
         tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
         BLINKER_LOG2(("timing trigged! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
-#endif
+    #endif
     }
 }
 
@@ -1695,15 +1695,15 @@ class BlinkerApi
                     if (link_num == 0) {
                         if (static_cast<Proto*>(this)->autoTrigged(_AUTO[_num]->id()))
                         {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("trigged sucessed"));
-#endif
+    #endif
                             _AUTO[_num]->fresh();
                         }
                         else {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("trigged failed"));
-#endif                            
+    #endif                            
                         }
                     }
                     else if (link_num == 1) {
@@ -1712,15 +1712,15 @@ class BlinkerApi
                             _AUTO[_num]->type(0) , 
                             _AUTO[_num]->data(0)))
                         {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("trigged sucessed"));
-#endif
+    #endif
                             _AUTO[_num]->fresh();
                         }
                         else {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("trigged failed"));
-#endif                            
+    #endif                            
                         }
                     }
                     else if (link_num == 2) {
@@ -1732,15 +1732,15 @@ class BlinkerApi
                             _AUTO[_num]->type(1) , 
                             _AUTO[_num]->data(1)))
                         {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("trigged sucessed"));
-#endif
+    #endif
                             _AUTO[_num]->fresh();
                         }
                         else {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("trigged failed"));
-#endif                            
+    #endif                            
                         }
                     }
                 }
@@ -1754,13 +1754,13 @@ class BlinkerApi
         template<typename T>
         bool sms(const T& msg) {
             String _msg = STRING_format(msg);
-#if defined(BLINKER_MQTT)
+    #if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"msg\":\"" + _msg + "\"}";
-#elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"msg\":\"" + _msg + "\"}";
-#endif
+    #endif
 
             if (_msg.length() > 20) {
                 return false;
@@ -1771,15 +1771,15 @@ class BlinkerApi
         template<typename T>
         bool sms(const T& msg, const char* cel) {
             String _msg = STRING_format(msg);
-#if defined(BLINKER_MQTT)
+    #if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"cel\":\"" + cel + \
                             "\",\"msg\":\"" + _msg + "\"}";
-#elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"cel\":\"" + cel + \
                             "\",\"msg\":\"" + _msg + "\"}";
-#endif
+    #endif
 
             if (_msg.length() > 20) {
                 return false;
@@ -1790,13 +1790,13 @@ class BlinkerApi
         template<typename T>
         bool push(const T& msg) {
             String _msg = STRING_format(msg);
-#if defined(BLINKER_MQTT)
+    #if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"msg\":\"" + _msg + "\"}";
-#elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"msg\":\"" + _msg + "\"}";
-#endif
+    #endif
 
             // if (_msg.length() > 20) {
             //     return false;
@@ -1807,13 +1807,13 @@ class BlinkerApi
         template<typename T>
         bool wechat(const T& msg) {
             String _msg = STRING_format(msg);
-#if defined(BLINKER_MQTT)
+    #if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"msg\":\"" + _msg + "\"}";
-#elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"msg\":\"" + _msg + "\"}";
-#endif
+    #endif
 
             // if (_msg.length() > 20) {
             //     return false;
@@ -1823,13 +1823,13 @@ class BlinkerApi
 
         String weather(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
-#if defined(BLINKER_MQTT)
+    #if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"city\":\"" + _city + "\"}";
-#elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"city\":\"" + _city + "\"}";
-#endif
+    #endif
 
             // if (_msg.length() > 20) {
             //     return false;
@@ -1839,13 +1839,13 @@ class BlinkerApi
 
         String aqi(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
-#if defined(BLINKER_MQTT)
+    #if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"city\":\"" + _city + "\"}";
-#elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"city\":\"" + _city + "\"}";
-#endif
+    #endif
 
             // if (_msg.length() > 20) {
             //     return false;
@@ -1878,9 +1878,9 @@ class BlinkerApi
         void setType(const char* _type) {
             _deviceType = _type;
 
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("API deviceType: "), _type);
-#endif
+    #endif
         }
 
         const char* type() {
@@ -1897,7 +1897,7 @@ class BlinkerApi
             EEPROM.commit();
             EEPROM.end();
             Bwlan.deleteConfig();
-	        Bwlan.reset();
+            Bwlan.reset();
             ESP.restart();
         }
 
@@ -2019,11 +2019,11 @@ class BlinkerApi
             if (_isNTPInit) {
                 now_ntp = ::time(nullptr);
                 // gmtime_r(&now_ntp, &timeinfo);
-#if defined(ESP8266)
+    #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
-#elif defined(ESP32)
+    #elif defined(ESP32)
                 localtime_r(&now_ntp, &timeinfo);
-#endif
+    #endif
             }
         }
 #else
@@ -2378,21 +2378,21 @@ class BlinkerApi
             if (state.length()) {
                 // _fresh = true;
                 if (state == BLINKER_CMD_STATE) {
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
                     stateData();
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
                     }
-#else
+    #else
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
                     stateData();
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
                     }
-#endif
+    #endif
                     _fresh = true;
                 }
             }
@@ -2674,9 +2674,9 @@ class BlinkerApi
 
             if (isSet && isAuto) {
                 _fresh = true;
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("get auto setting"));
-#endif
+    #endif
                 bool isDelet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
                 String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][0];
 
@@ -2703,9 +2703,9 @@ class BlinkerApi
                                 EEPROM.commit();
                                 EEPROM.end();
 
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                                 BLINKER_LOG2(BLINKER_F("_aCount: "), _aCount);
-#endif
+    #endif
                                 return true;
                             }
                         }
@@ -2753,9 +2753,9 @@ class BlinkerApi
                             EEPROM.commit();
                             EEPROM.end();
 
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2(BLINKER_F("_aCount: "), _aCount);
-#endif
+    #endif
                             // static_cast<Proto*>(this)->_print(autoData(), false);
                             // return true;
                         }
@@ -2776,9 +2776,9 @@ class BlinkerApi
                         EEPROM.commit();
                         EEPROM.end();
 
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_aCount: "), _aCount);
-#endif
+    #endif
                         // static_cast<Proto*>(this)->_print(autoData(), false);
                         // return true;
                     }
@@ -2809,15 +2809,15 @@ class BlinkerApi
             EEPROM.commit();
             EEPROM.end();
 
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("_aCount: "), _aCount);
-#endif
+    #endif
 
             if (_aCount) {
                 for (uint8_t _num = 0; _num < _aCount; _num++) {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("new BlinkerAUTO() _num: "), _num);
-#endif
+    #endif
                     _AUTO[_num] = new BlinkerAUTO();
                     _AUTO[_num]->setNum(_num);
                     _AUTO[_num]->deserialization();
@@ -2849,9 +2849,9 @@ class BlinkerApi
             // if (isSet && (isCount || isLoop || isTiming)) {
             if (isCount || isLoop || isTiming) {
                 _fresh = true;
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("get timer setting"));
-#endif
+    #endif
                 if(!isSet && !_noSet) {
                     return false;
                 }
@@ -2867,9 +2867,9 @@ class BlinkerApi
                     else if(_noSet) {
                         _cdState = data[BLINKER_CMD_COUNTDOWN];
                     }
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("countdown state: "), _cdState ? "true" : "false");
-#endif
+    #endif
                     // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
 
                     // String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
@@ -2887,9 +2887,9 @@ class BlinkerApi
                         _cdAction = _action;
                         _cdTime1 = _totalTime;
                         _cdTime2 = _runTime;
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_state: "), _state);
-#endif
+    #endif
                     }
                     else if (_noSet) {
                         String _state = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
@@ -2902,16 +2902,16 @@ class BlinkerApi
                         _cdAction = _action;
                         _cdTime1 = _totalTime;
                         _cdTime2 = _runTime;
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_state: "), _state);
-#endif
+    #endif
                     }
 
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("_totalTime: "), _cdTime1);
                     BLINKER_LOG2(BLINKER_F("_runTime: "), _cdTime2);
                     BLINKER_LOG2(BLINKER_F("_action: "), _cdAction);
-#endif
+    #endif
                     // _cdAction = _action;
                     // _cdTime1 = _totalTime;
                     // _cdTime2 = _runTime;
@@ -2919,9 +2919,9 @@ class BlinkerApi
                     // _cdState = (cd_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_cdState) {
                         cdTicker.once(_cdTime1 - _cdTime2, _cd_callback);
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                         BLINKER_LOG1(BLINKER_F("countdown start!"));
-#endif
+    #endif
                     }
                     else {
                         cdTicker.detach();
@@ -2940,9 +2940,9 @@ class BlinkerApi
                     else if (_noSet) {
                         _lpState = data[BLINKER_CMD_LOOP];
                     }
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("loop state: "), _lpState ? "true" : "false");
-#endif
+    #endif
                     // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
 
                     // int8_t _times = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMES);
@@ -2967,9 +2967,9 @@ class BlinkerApi
                         _lpTimes = _times;
                         _lpTime1 = _time1;
                         _lpTime2 = _time2;
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_state: "), _state);
-#endif
+    #endif
                     }
                     else if (_noSet) {
                         int8_t _times = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIMES];
@@ -2987,18 +2987,18 @@ class BlinkerApi
                         _lpTimes = _times;
                         _lpTime1 = _time1;
                         _lpTime2 = _time2;
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_state: "), _state);
-#endif
+    #endif
                     }
 
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("_times: "), _lpTimes);
                     BLINKER_LOG2(BLINKER_F("_time1: "), _lpTime1);
                     BLINKER_LOG2(BLINKER_F("_action1: "), _lpAction1);
                     BLINKER_LOG2(BLINKER_F("_time2: "), _lpTime2);
                     BLINKER_LOG2(BLINKER_F("_action2: "), _lpAction2);
-#endif
+    #endif
                     // _lpAction1 = _action1;
                     // _lpAction2 = _action2;
 
@@ -3011,9 +3011,9 @@ class BlinkerApi
                         _lpRun1 = true;
                         _lpTrigged_times = 0;
                         lpTicker.once(_lpTime1, _lp_callback);
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                         BLINKER_LOG1(BLINKER_F("loop start!"));
-#endif
+    #endif
                     }
                     else {
                         lpTicker.detach();
@@ -3032,9 +3032,9 @@ class BlinkerApi
                     else if (_noSet) {
                         _tmState = data[BLINKER_CMD_TIMING];
                     }
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("timing state: "), _tmState ? "true" : "false");
-#endif
+    #endif
                     // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
 
                     // int8_t _times = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMES);
@@ -3070,35 +3070,35 @@ class BlinkerApi
                             }
 
                             _isTimingLoop = false;
-#ifdef BLINKER_DEBUG_ALL                            
+    #ifdef BLINKER_DEBUG_ALL                            
                             BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
-#endif
+    #endif
                         }
                         else {
                             uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
                             // timingDay = 0x80;
                             _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-#ifdef BLINKER_DEBUG_ALL                            
+    #ifdef BLINKER_DEBUG_ALL                            
                             BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-#endif                            
+    #endif                            
 
                             for (uint8_t day = 1;day < 7;day++) {
                                 taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
                                 if (taskDay > 0) {
                                     _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-#ifdef BLINKER_DEBUG_ALL                                    
+    #ifdef BLINKER_DEBUG_ALL                                    
                                     BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-#endif
+    #endif
                                 }
                             }
 
                             _isTimingLoop = true;
                         }
                         
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
                         BLINKER_LOG2(BLINKER_F("_state: "), _state);
-#endif
+    #endif
                     }
                     else if (_noSet) {
                         String _state = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
@@ -3127,44 +3127,44 @@ class BlinkerApi
                             }
 
                             _isTimingLoop = false;
-#ifdef BLINKER_DEBUG_ALL                            
+    #ifdef BLINKER_DEBUG_ALL                            
                             BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
-#endif
+    #endif
                         }
                         else {
                             uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
                             // timingDay = 0x80;
                             _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-#ifdef BLINKER_DEBUG_ALL                            
+    #ifdef BLINKER_DEBUG_ALL                            
                             BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-#endif                            
+    #endif                            
 
                             for (uint8_t day = 1;day < 7;day++) {
                                 taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
                                 if (taskDay > 0) {
                                     _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-#ifdef BLINKER_DEBUG_ALL                                    
+    #ifdef BLINKER_DEBUG_ALL                                    
                                     BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-#endif
+    #endif
                                 }
                             }
 
                             _isTimingLoop = true;
                         }
                         
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
                         BLINKER_LOG2(BLINKER_F("_state: "), _state);
-#endif
+    #endif
                     }
 
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("_isTimingLoop: "), _isTimingLoop ? "true":"false");
                     BLINKER_LOG2(BLINKER_F("_time1: "), _tmTime1);
                     BLINKER_LOG2(BLINKER_F("_action1: "), _tmAction1);
                     BLINKER_LOG2(BLINKER_F("_time2: "), _tmTime2);
                     BLINKER_LOG2(BLINKER_F("_action2: "), _tmAction2);
-#endif
+    #endif
                     // _tmAction1 = _action1;
                     // _tmAction2 = _action2;
 
@@ -3175,30 +3175,30 @@ class BlinkerApi
                     if (_tmState) {
                         if (isTimingDay(wday())) {
                             int32_t nowTime = dtime();
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                                 BLINKER_LOG2(BLINKER_F("nowTime: "), nowTime);
-#endif
+    #endif
 
                             if (_tmTime1 >= nowTime) {
                                 _tmRun1 = true;
                                 tmTicker.once(_tmTime1 - nowTime, _tm_callback);
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                                 BLINKER_LOG2(BLINKER_F("timing1 start! next time: "), _tmTime1 - nowTime);
-#endif
+    #endif
                             }
                             else if (_tmTime1 < nowTime && _tmTime2 > nowTime) {
                                 _tmRun1 = false;
                                 tmTicker.once(_tmTime2 - nowTime, _tm_callback);
- #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                                 BLINKER_LOG2(BLINKER_F("timing2 start! next time: "), _tmTime2 - nowTime);
-#endif                               
+    #endif                               
                             }
                             else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
                                 _tmRun1 = false;
                                 tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                                 BLINKER_LOG2(F("next day start! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
-#endif
+    #endif
                             }
                         }
                         else {
@@ -3207,9 +3207,9 @@ class BlinkerApi
                             _tmRun1 = false;
                             tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
                         }
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                         BLINKER_LOG1(BLINKER_F("timing start!"));
-#endif
+    #endif
                     }
                     else {
                         tmTicker.detach();
@@ -3263,15 +3263,15 @@ class BlinkerApi
                     }
                     // timingDayStr += String((day < 6) ? ((timingDay >> (day + 1)) ? ",":""):"");
                 }
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG4(("timingDayStr: "), timingDayStr, (" timingDay: "), _timingDay);
-#endif
+    #endif
             }
             else {
                 timingDayStr = STRING_format("7");
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(("timingDayStr: "), timingDayStr);
-#endif
+    #endif
             }
 
             return timingDayStr;
@@ -3332,41 +3332,41 @@ class BlinkerApi
             }
 
             const int httpsPort = 443;
-#if defined(ESP8266)
+    #if defined(ESP8266)
             const char* host = "iotdev.clz.me";
             const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
 
             extern WiFiClientSecure client_s;
-#ifdef BLINKER_DEBUG_ALL
+        #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("connecting to "), host);
-#endif
+        #endif
             if (!client_s.connect(host, httpsPort)) {
-#ifdef BLINKER_DEBUG_ALL
+        #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("connection failed"));
-#endif
+        #endif
                 return BLINKER_CMD_FALSE;
             }
             else {
-#ifdef BLINKER_DEBUG_ALL
+        #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("connection succeed"));
-#endif
+        #endif
                 // return true;
             }
 
             if (client_s.verify(fingerprint, host)) {
-#ifdef BLINKER_DEBUG_ALL
+        #ifdef BLINKER_DEBUG_ALL
                 // _status = DH_VERIFIED;
                 BLINKER_LOG1(BLINKER_F("Fingerprint verified"));
                 // return true;
-#endif
+        #endif
             }
             else {
-#ifdef BLINKER_DEBUG_ALL
+        #ifdef BLINKER_DEBUG_ALL
                 // _status = DH_VERIFY_FAILED;
                 // _status = DH_VERIFIED;
                 BLINKER_LOG1(BLINKER_F("Fingerprint verification failed!"));
                 // return false;
-#endif
+        #endif
             }
 
             String url;
@@ -3405,9 +3405,9 @@ class BlinkerApi
                 }
 
                 if (dataGet == "\r") {
-#ifdef BLINKER_DEBUG_ALL                    
+        #ifdef BLINKER_DEBUG_ALL                    
                     BLINKER_LOG1(BLINKER_F("headers received"));
-#endif
+        #endif
                     break;
                 }
             }
@@ -3418,9 +3418,9 @@ class BlinkerApi
             
             dataGet = lastGet;
 
-#ifdef BLINKER_DEBUG_ALL
+        #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("dataGet: "), dataGet);
-#endif
+        #endif
             if (_type == BLINKER_CMD_SMS_NUMBER) {
                 DynamicJsonBuffer jsonBuffer;
                 JsonObject& sms_rp = jsonBuffer.parseObject(dataGet);
@@ -3438,7 +3438,7 @@ class BlinkerApi
             client_s.stop();
 
             return BLINKER_CMD_TRUE;
-#elif defined(ESP32)
+    #elif defined(ESP32)
             const char* host = "https://iotdev.clz.me";
 
             // const char* ca = \ 
@@ -3478,9 +3478,9 @@ class BlinkerApi
                 url_iot = String(host) + "/api/v1/user/device/sms";
             }
             
-#ifdef BLINKER_DEBUG_ALL 
+        #ifdef BLINKER_DEBUG_ALL 
             BLINKER_LOG2(BLINKER_F("HTTPS begin: "), url_iot);
-#endif
+        #endif
             
             // http.begin(url_iot, ca); TODO
             http.begin(url_iot);
@@ -3489,19 +3489,19 @@ class BlinkerApi
 
             int httpCode = http.POST(msg);
 
-#ifdef BLINKER_DEBUG_ALL 
+        #ifdef BLINKER_DEBUG_ALL 
             BLINKER_LOG2(BLINKER_F("HTTPS POST: "), msg);
-#endif
+        #endif
 
             if (httpCode > 0) {
-#ifdef BLINKER_DEBUG_ALL
+        #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("[HTTP] POST... code: "), httpCode);
-#endif
+        #endif
                 if (httpCode == HTTP_CODE_OK) {
                     String payload = http.getString();
-#ifdef BLINKER_DEBUG_ALL
+        #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(payload);
-#endif
+        #endif
 
                     if (_type == BLINKER_CMD_SMS_NUMBER) {
                         DynamicJsonBuffer jsonBuffer;
@@ -3521,18 +3521,18 @@ class BlinkerApi
                 return BLINKER_CMD_TRUE;
             }
             else {
-#ifdef BLINKER_DEBUG_ALL
+        #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("[HTTP] POST... failed, error: "), http.errorToString(httpCode).c_str());
                 String payload = http.getString();
                 BLINKER_LOG1(payload);
-#endif
+        #endif
                 if (_type == BLINKER_CMD_SMS_NUMBER) {
                     _smsTime = millis();
                 }
                 http.end();
                 return BLINKER_CMD_FALSE;
             }
-#endif
+    #endif
         }
 
         bool checkSMS() {
@@ -3588,15 +3588,15 @@ class BlinkerApi
             if (_type.length() > 0) {
                 if (_type == STRING_format(_deviceType)) {
                     static_cast<Proto*>(this)->_getRegister = true;
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(BLINKER_F("getRegister!"));
-#endif
+    #endif
                     static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "success");
                 }
                 else {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(BLINKER_F("not getRegister!"));
-#endif
+    #endif
                     static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "deviceType check fail");                    
                 }
             }
@@ -3634,9 +3634,9 @@ class BlinkerApi
         unsigned long _stopTime; // will be set in state 2
 
         bool wlanRun() {
-#if defined(BLINKER_BUTTON)
+    #if defined(BLINKER_BUTTON)
             tick();
-#endif
+    #endif
             return Bwlan.run();
         }
 
@@ -3649,25 +3649,25 @@ class BlinkerApi
 
         void _click()
         {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("Button click."));
             // _clickFunc();
-#endif
+    #endif
         } // click
 
         void _doubleClick() {
-#ifdef BLINKER_DEBUG_ALL
-        	BLINKER_LOG1(BLINKER_F("Button doubleclick."));
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(BLINKER_F("Button doubleclick."));
             // _doubleClickFunc();
-#endif
+    #endif
         } // doubleclick1
 
         void _longPressStart()
         {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("Button longPress start"));
             // _longPressStartFunc();
-#endif
+    #endif
             isPressed = true;
         } // longPressStart
 
@@ -3675,9 +3675,9 @@ class BlinkerApi
         {
             if (isPressed)
             {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("Button longPress..."));
-#endif
+    #endif
                 isPressed = false;
             }
             // _duringLongPressFunc();
@@ -3685,12 +3685,12 @@ class BlinkerApi
 
         void _longPressStop()
         {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("Button longPress stop"));
-#endif
+    #endif
             // _longPressStopFunc();
             // Bwlan.deleteConfig();
-	        // Bwlan.reset();
+            // Bwlan.reset();
             // ESP.restart();
             reset();
         } // longPressStop
@@ -3731,9 +3731,9 @@ class BlinkerApi
             _duringLongPressFunc = NULL;
 
             // attachInterrupt(BLINKER_BUTTON_PIN, checkButton, CHANGE);
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("Button initialled"));
-#endif
+    #endif
         }
 #endif
         void parse(String _data, bool ex_data = false)
@@ -3750,17 +3750,17 @@ class BlinkerApi
                         return;
                     }
 // (const JsonObject& data)
-#if defined(BLINKER_PRO)
+    #if defined(BLINKER_PRO)
                     checkRegister(root);
-#endif
+    #endif
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     // if (autoManager(root)) {
                     //     static_cast<Proto*>(this)->isParsed();
                     //     return;
                     // }
                     autoManager(root);
-#endif
+    #endif
                     // if (timerManager(root)) {
                     //     static_cast<Proto*>(this)->isParsed();
                     //     return;
@@ -3822,10 +3822,10 @@ class BlinkerApi
                 }
 
                 String arrayData = root["data"][0];
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                 // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
                 BLINKER_LOG2(BLINKER_F("_parse data: "), _data);
-#endif            
+    #endif            
                 if (arrayData.length()) {
                     for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
                         String array_data = root["data"][a_num];
@@ -3931,17 +3931,17 @@ class BlinkerApi
 
 #if defined(ESP8266) || defined(ESP32)
         void json_parse_all(const JsonObject& data) {
-#if defined(BLINKER_PRO)
+    #if defined(BLINKER_PRO)
             checkRegister(data);
-#endif
+    #endif
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             // if (autoManager(root)) {
             //     static_cast<Proto*>(this)->isParsed();
             //     return;
             // }
             autoManager(data);
-#endif
+    #endif
             timerManager(data);
             heartBeat(data);
             getVersion(data);
@@ -4009,14 +4009,14 @@ class BlinkerApi
                     }
                 }
                 // struct tm timeinfo;
-#if defined(ESP8266)
+    #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
-#elif defined(ESP32)
+    #elif defined(ESP32)
                 localtime_r(&now_ntp, &timeinfo);
-#endif
-#ifdef BLINKER_DEBUG_ALL                
+    #endif
+    #ifdef BLINKER_DEBUG_ALL                
                 BLINKER_LOG2(BLINKER_F("Current time: "), asctime(&timeinfo));
-#endif
+    #endif
                 _isNTPInit = true;
             }
 
@@ -4027,9 +4027,9 @@ class BlinkerApi
         bool checkTimer() {
             if (_cdTrigged) {
                 _cdTrigged = false;
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                 BLINKER_LOG2(BLINKER_F("countdown trigged, action is: "), _cdAction);
-#endif
+    #endif
                 // _parse(_cdAction);
                 parse(_cdAction, true);
             }
@@ -4037,16 +4037,16 @@ class BlinkerApi
                 _lpTrigged = false;
 
                 if (_lpRun1) {
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2(BLINKER_F("loop trigged, action is: "), _lpAction2);
-#endif
+    #endif
                     // _parse(_lpAction2);
                     parse(_lpAction2, true);
                 }
                 else {
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2(BLINKER_F("loop trigged, action is: "), _lpAction1);
-#endif
+    #endif
                     // _parse(_lpAction1);
                     parse(_lpAction1, true);
                 }
@@ -4055,16 +4055,16 @@ class BlinkerApi
                 _tmTrigged = false;
 
                 if (_tmRun1) {
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2(BLINKER_F("timing trigged, action is: "), _tmAction2);
-#endif
+    #endif
                     // _parse(_tmAction2);
                     parse(_tmAction2, true);
                 }
                 else {
-#ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL 
                     BLINKER_LOG2(BLINKER_F("timing trigged, action is: "), _tmAction1);
-#endif
+    #endif
                     // _parse(_tmAction1);
                     parse(_tmAction1, true);
                 }
