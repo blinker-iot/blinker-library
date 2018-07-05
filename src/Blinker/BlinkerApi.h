@@ -21,6 +21,10 @@
 
     extern "C" {
         typedef void (*callbackFunction)(void);
+
+        typedef void (*callback_t)(void);
+        typedef void (*callback_with_arg_t)(void*);
+        typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
     }
 #else
     #include <Blinker/BlinkerConfig.h>
@@ -1855,6 +1859,10 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_PRO)
+        void attachParse(callback_with_json_arg_t newFunction) {
+            _parseFunc = newFunction;
+        }
+
         void attachClick(callbackFunction newFunction) {
             _clickFunc = newFunction;
         }
@@ -3607,6 +3615,8 @@ class BlinkerApi
 #if defined(BLINKER_PRO)
         const char* _deviceType;
         BlinkerWlan Bwlan;
+
+        callback_with_json_arg_t _parseFunc = NULL;
         // OneButton   button1;
 
         int _pin;        // hardware pin number. 
@@ -3760,6 +3770,15 @@ class BlinkerApi
                     //     return;
                     // }
                     autoManager(root);
+
+                    if (_parseFunc) {
+                        if(_parseFunc(root)) {
+                            _fresh = true;
+                        }
+        #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG1(BLINKER_F("run parse callback function"));
+        #endif
+                    }
     #endif
                     // if (timerManager(root)) {
                     //     static_cast<Proto*>(this)->isParsed();

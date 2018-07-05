@@ -481,7 +481,7 @@ void BlinkerPRO::connectServer() {
 
     if (STRING_contais_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() || 
         !STRING_contais_string(payload, BLINKER_CMD_IOTID)) {
-        BLINKER_ERR_LOG1(BLINKER_F("Please make sure you have register this device!"));
+        BLINKER_ERR_LOG1(("Please make sure you have register this device!"));
 
         return;
     }
@@ -656,18 +656,18 @@ bool BlinkerPRO::connect() {
     }
 
 // #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1(BLINKER_F("Connecting to MQTT... "));
+    BLINKER_LOG1(("Connecting to MQTT... "));
 // #endif
 
     if ((ret = mqtt->connect()) != 0) {
         BLINKER_LOG1(mqtt->connectErrorString(ret));
-        BLINKER_LOG1(BLINKER_F("Retrying MQTT connection in 5 seconds..."));
+        BLINKER_LOG1(("Retrying MQTT connection in 5 seconds..."));
 
         this->latestTime = millis();
         return false;
     }
 // #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1(BLINKER_F("MQTT Connected!"));
+    BLINKER_LOG1(("MQTT Connected!"));
 // #endif
 
     if (isNew) {
@@ -849,7 +849,7 @@ bool BlinkerPRO::print(String data) {
             }            
         }
         else {
-            BLINKER_ERR_LOG1(BLINKER_F("MQTT Disconnected"));
+            BLINKER_ERR_LOG1(("MQTT Disconnected"));
             isAlive = false;
             return false;
         }
