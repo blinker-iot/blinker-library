@@ -1759,7 +1759,7 @@ class BlinkerApi
         bool sms(const T& msg) {
             String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -1776,7 +1776,7 @@ class BlinkerApi
         bool sms(const T& msg, const char* cel) {
             String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"cel\":\"" + cel + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #elif defined(BLINKER_PRO)
@@ -1795,7 +1795,7 @@ class BlinkerApi
         bool push(const T& msg) {
             String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -1812,7 +1812,7 @@ class BlinkerApi
         bool wechat(const T& msg) {
             String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -1828,7 +1828,7 @@ class BlinkerApi
         String weather(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"city\":\"" + _city + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -1844,7 +1844,7 @@ class BlinkerApi
         String aqi(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"city\":\"" + _city + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -3393,17 +3393,14 @@ class BlinkerApi
             String url;
             if (_type == BLINKER_CMD_SMS_NUMBER) {
                 url = "/api/v1/user/device/sms";
-                client_s.print(String("POST ") + url + " HTTP/1.1\r\n" +
-                    "Host: " + host + ":" + httpsPort + "\r\n" +
-                    "Content-Type: application/json;charset=utf-8\r\n" +
-                    "Content-Length: " + msg.length() + "\r\n" +  
-                    "Connection: Keep Alive\r\n\r\n" +  
-                    msg + "\r\n");
-            else {
-                client_s.print(String("GET ") + url + " HTTP/1.1\r\n" +
-                    "Host: " + host + ":" + httpsPort + "\r\n" +
-                    "Connection: close\r\n\r\n");
             }
+
+            client_s.print(String("POST ") + url + " HTTP/1.1\r\n" +
+               "Host: " + host + ":" + httpsPort + "\r\n" +
+               "Content-Type: application/json;charset=utf-8\r\n" +
+               "Content-Length: " + msg.length() + "\r\n" +  
+                "Connection: Keep Alive\r\n\r\n" +  
+                msg + "\r\n");
 
             unsigned long timeout = millis();
             while (client_s.available() == 0) {
@@ -3836,18 +3833,18 @@ class BlinkerApi
                     if (_fresh) {
                         static_cast<Proto*>(this)->isParsed();
                     }
-                    else {
-    #if defined(BLINKER_PRO)                    
+                    else {     
+        #if defined(BLINKER_PRO)
                         if (_parseFunc) {
                             if(_parseFunc(root)) {
                                 _fresh = true;
                                 static_cast<Proto*>(this)->isParsed();
-                    }
-        #ifdef BLINKER_DEBUG_ALL
+                            }
+            #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("run parse callback function"));
-        #endif
+            #endif
                         }
-    #endif
+        #endif
                     }
                 }
             }
