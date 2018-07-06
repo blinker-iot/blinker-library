@@ -36,7 +36,7 @@
 // Uncomment/comment to turn on/off debug output messages.
 // #define MQTT_DEBUG
 // Uncomment/comment to turn on/off error output messages.
-#define MQTT_ERROR
+// #define MQTT_ERROR
 
 // Set where debug messages will be printed.
 #define DEBUG_PRINTER Serial

@@ -18,12 +18,14 @@
 
 static char MQTT_HOST[BLINKER_MQTT_HOST_SIZE];
 static uint16_t MQTT_PORT;
+// static char MQTT_DEVICEID[BLINKER_MQTT_DEVICEID_SIZE];
 static char MQTT_ID[BLINKER_MQTT_ID_SIZE];
 static char MQTT_NAME[BLINKER_MQTT_NAME_SIZE];
 static char MQTT_KEY[BLINKER_MQTT_KEY_SIZE];
 static char MQTT_PRODUCTINFO[BLINKER_MQTT_PINFO_SIZE];
 static char UUID[BLINKER_MQTT_UUID_SIZE];
-static char DEVICE_NAME[BLINKER_MQTT_DEVICENAME_SIZE];
+// static char DEVICE_NAME[BLINKER_MQTT_DEVICENAME_SIZE];
+static char DEVICE_NAME[BLINKER_MQTT_DEVICEID_SIZE];
 static char *BLINKER_PUB_TOPIC;
 static char *BLINKER_SUB_TOPIC;
 
@@ -442,7 +444,8 @@ void BlinkerMQTT::connectServer() {
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
-        memcpy(DEVICE_NAME, _userID.c_str(), 12);
+        // memcpy(DEVICE_NAME, _userID.c_str(), 12);
+        strcpy(DEVICE_NAME, _userID.c_str());
         strcpy(MQTT_ID, _userID.c_str());
         strcpy(MQTT_NAME, _userName.c_str());
         strcpy(MQTT_KEY, _key.c_str());
@@ -452,7 +455,8 @@ void BlinkerMQTT::connectServer() {
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
         // String id2name = _userID.subString(10, _userID.length());
-        memcpy(DEVICE_NAME, _userID.c_str(), 12);
+        // memcpy(DEVICE_NAME, _userID.c_str(), 12);
+        strcpy(DEVICE_NAME, _userID.c_str());
         String IDtest = _productInfo + _userID;
         strcpy(MQTT_ID, IDtest.c_str());
         String NAMEtest = IDtest + ";" + _userName;
@@ -463,7 +467,8 @@ void BlinkerMQTT::connectServer() {
         MQTT_PORT = BLINKER_MQTT_QCLOUD_PORT;
     }
     else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
-        memcpy(DEVICE_NAME, _userID.c_str(), 12);
+        // memcpy(DEVICE_NAME, _userID.c_str(), 12);
+        strcpy(DEVICE_NAME, _userID.c_str());
         strcpy(MQTT_ID, _userName.c_str());
         strcpy(MQTT_NAME, _productInfo.c_str());
         strcpy(MQTT_KEY, _key.c_str());

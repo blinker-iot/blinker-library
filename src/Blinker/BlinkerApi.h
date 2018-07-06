@@ -1759,7 +1759,7 @@ class BlinkerApi
         bool sms(const T& msg) {
             String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -1776,7 +1776,7 @@ class BlinkerApi
         bool sms(const T& msg, const char* cel) {
             String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"cel\":\"" + cel + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #elif defined(BLINKER_PRO)
@@ -1795,7 +1795,7 @@ class BlinkerApi
         bool push(const T& msg) {
             String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -1812,7 +1812,7 @@ class BlinkerApi
         bool wechat(const T& msg) {
             String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -1828,7 +1828,7 @@ class BlinkerApi
         String weather(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"city\":\"" + _city + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -1844,7 +1844,7 @@ class BlinkerApi
         String aqi(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"city\":\"" + _city + "\"}";
     #elif defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -1861,6 +1861,10 @@ class BlinkerApi
 #if defined(BLINKER_PRO)
         void attachParse(callback_with_json_arg_t newFunction) {
             _parseFunc = newFunction;
+        }
+
+        void attachHeartbeat(callbackFunction newFunction) {
+            _heartbeatFunc = newFunction;
         }
 
         void attachClick(callbackFunction newFunction) {
@@ -2390,6 +2394,11 @@ class BlinkerApi
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
                     stateData();
+        #if defined(BLINKER_PRO)
+                    if (_heartbeatFunc) {
+                        _heartbeatFunc();
+                    }
+        #endif
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
                     }
@@ -3339,6 +3348,10 @@ class BlinkerApi
                     return BLINKER_CMD_FALSE;
             }
 
+        #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("POST message: "), msg);
+        #endif
+
             const int httpsPort = 443;
     #if defined(ESP8266)
             const char* host = "iotdev.clz.me";
@@ -3380,14 +3393,17 @@ class BlinkerApi
             String url;
             if (_type == BLINKER_CMD_SMS_NUMBER) {
                 url = "/api/v1/user/device/sms";
+                client_s.print(String("POST ") + url + " HTTP/1.1\r\n" +
+                    "Host: " + host + ":" + httpsPort + "\r\n" +
+                    "Content-Type: application/json;charset=utf-8\r\n" +
+                    "Content-Length: " + msg.length() + "\r\n" +  
+                    "Connection: Keep Alive\r\n\r\n" +  
+                    msg + "\r\n");
+            else {
+                client_s.print(String("GET ") + url + " HTTP/1.1\r\n" +
+                    "Host: " + host + ":" + httpsPort + "\r\n" +
+                    "Connection: close\r\n\r\n");
             }
-
-            client_s.print(String("POST ") + url + " HTTP/1.1\r\n" +
-               "Host: " + host + ":" + httpsPort + "\r\n" +
-               "Content-Type: application/json;charset=utf-8\r\n" +
-               "Content-Length: " + msg.length() + "\r\n" +  
-                "Connection: Keep Alive\r\n\r\n" +  
-                msg + "\r\n");
 
             unsigned long timeout = millis();
             while (client_s.available() == 0) {
@@ -3616,7 +3632,8 @@ class BlinkerApi
         const char* _deviceType;
         BlinkerWlan Bwlan;
 
-        callback_with_json_arg_t _parseFunc = NULL;
+        callback_with_json_arg_t    _parseFunc = NULL;
+        callbackFunction            _heartbeatFunc = NULL;
         // OneButton   button1;
 
         int _pin;        // hardware pin number. 
@@ -3770,15 +3787,6 @@ class BlinkerApi
                     //     return;
                     // }
                     autoManager(root);
-
-                    if (_parseFunc) {
-                        if(_parseFunc(root)) {
-                            _fresh = true;
-                        }
-        #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG1(BLINKER_F("run parse callback function"));
-        #endif
-                    }
     #endif
                     // if (timerManager(root)) {
                     //     static_cast<Proto*>(this)->isParsed();
@@ -3827,6 +3835,19 @@ class BlinkerApi
 #endif
                     if (_fresh) {
                         static_cast<Proto*>(this)->isParsed();
+                    }
+                    else {
+    #if defined(BLINKER_PRO)                    
+                        if (_parseFunc) {
+                            if(_parseFunc(root)) {
+                                _fresh = true;
+                                static_cast<Proto*>(this)->isParsed();
+                    }
+        #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG1(BLINKER_F("run parse callback function"));
+        #endif
+                        }
+    #endif
                     }
                 }
             }
