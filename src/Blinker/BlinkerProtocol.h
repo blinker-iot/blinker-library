@@ -383,7 +383,8 @@ class BlinkerProtocol
         bool            isFormat;
         char            _sendBuf[BLINKER_MAX_SEND_SIZE];
 #if defined(BLINKER_MQTT)
-        char            _authKey[BLINKER_AUTHKEY_SIZE];
+        // char            _authKey[BLINKER_AUTHKEY_SIZE];
+        char            _deviceName[BLINKER_MQTT_DEVICEID_SIZE];
 #endif
 
 #if defined(BLINKER_PRO)
@@ -426,7 +427,7 @@ class BlinkerProtocol
         void begin(const char* _auth)
         {
             begin();
-            strcpy(_authKey, _auth);
+            // strcpy(_authKey, _auth);
         }
 #endif
 
@@ -443,9 +444,9 @@ class BlinkerProtocol
 
             BLINKER_LOG2(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
-#if defined(BLINKER_BUTTON)
+    #if defined(BLINKER_BUTTON)
             BApi::buttonInit();
-#endif
+    #endif
             BApi::setType(_type);
         }
 #endif
@@ -466,16 +467,16 @@ class BlinkerProtocol
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool autoTrigged(uint32_t _id) {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("autoTrigged"));
-#endif
+    #endif
             return conn.autoPrint(_id);
         }
 
         bool autoTrigged(char *name, char *type, char *data) {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("autoTrigged"));
-#endif
+    #endif
             if (conn.deviceName() == name) {
                 BApi::parse(data, true);
                 return true;
@@ -485,9 +486,9 @@ class BlinkerProtocol
 
         bool autoTrigged(char *name1, char *type1, char *data1
             , char *name2, char *type2, char *data2) {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("autoTrigged"));
-#endif
+    #endif
             bool _link1 = false;
             bool _link2 = false;
 
@@ -525,22 +526,22 @@ void BlinkerProtocol<Transp>::run()
             conn.begin(BApi::type());
             _isConnBegin = true;
             _initTime = millis();
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
-#endif
+    #endif
             if (conn.authCheck()) {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("is auth, conn deviceRegister"));
-#endif
+    #endif
                 conn.deviceRegister();
             }
         }
     }
 
     if (_getRegister) {
-#ifdef BLINKER_DEBUG_ALL
+    #ifdef BLINKER_DEBUG_ALL
         BLINKER_LOG1(BLINKER_F("conn deviceRegister"));
-#endif
+    #endif
         conn.deviceRegister();
         _getRegister = false;
     }
@@ -551,10 +552,11 @@ void BlinkerProtocol<Transp>::run()
         }
     }
 #endif
+
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     BApi::ntpInit();
-#endif
-#if defined(ESP8266) || defined(ESP32)
+// #endif
+// #if defined(ESP8266) || defined(ESP32)
     BApi::checkTimer();
 #endif
 

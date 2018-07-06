@@ -20,6 +20,7 @@ class BlinkerSimpleESP8266_MQTT
             Base::begin(_auth);
             smartconfig();
             this->conn.begin(_auth);
+            //strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             BLINKER_LOG1("ESP8266_MQTT Initialled...");
         }
 #endif
@@ -31,6 +32,7 @@ class BlinkerSimpleESP8266_MQTT
             Base::begin(_auth);
             connectWiFi(_ssid, _pswd);
             this->conn.begin(_auth);
+            //strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             BLINKER_LOG1("ESP8266_MQTT Initialled...");
         }
     
