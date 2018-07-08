@@ -284,7 +284,7 @@ class BlinkerMQTT {
 
             webSocket.begin();
             webSocket.onEvent(webSocketEvent);
-            BLINKER_LOG1(BLINKER_F("webSocket server started"));
+            BLINKER_LOG1(("webSocket server started"));
             BLINKER_LOG4("ws://", DEVICE_NAME, ".local:", WS_SERVERPORT);
         }
 
