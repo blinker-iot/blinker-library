@@ -383,7 +383,7 @@ class BlinkerProtocol
         bool            isFormat;
         char            _sendBuf[BLINKER_MAX_SEND_SIZE];
 #if defined(BLINKER_MQTT)
-        // char            _authKey[BLINKER_AUTHKEY_SIZE];
+        char            _authKey[BLINKER_AUTHKEY_SIZE];
         char            _deviceName[BLINKER_MQTT_DEVICEID_SIZE];
 #endif
 
@@ -427,7 +427,7 @@ class BlinkerProtocol
         void begin(const char* _auth)
         {
             begin();
-            // strcpy(_authKey, _auth);
+            strcpy(_authKey, _auth);
         }
 #endif
 
