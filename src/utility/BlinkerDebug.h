@@ -22,7 +22,7 @@
 
     #if (defined(__AVR__))
         #include <avr/pgmspace.h>
-    #else
+    #elif defined(ESP8266) || defined(ESP32)
         #include <pgmspace.h>
     #endif
 

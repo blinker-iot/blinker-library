@@ -402,11 +402,11 @@ class BlinkerProtocol
 
         void begin()
         {
-            BLINKER_LOG1(BLINKER_F(""));
+            BLINKER_LOG1((""));
         #if defined(BLINKER_NO_LOGO)
-            BLINKER_LOG2(BLINKER_F("Blinker v"), BLINKER_VERSION);
+            BLINKER_LOG2(("Blinker v"), BLINKER_VERSION);
         #elif defined(BLINKER_LOGO_3D)
-            BLINKER_LOG1(BLINKER_F("\n"
+            BLINKER_LOG1(("\n"
                 " ____    ___                __                       \n"
                 "/\\  _`\\ /\\_ \\    __        /\\ \\               v"BLINKER_VERSION"\n"
                 "\\ \\ \\L\\ \\//\\ \\  /\\_\\    ___\\ \\ \\/'\\      __   _ __   \n"
@@ -415,7 +415,7 @@ class BlinkerProtocol
                 "   \\ \\____//\\____\\\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\____\\\\ \\_\\  \n"
                 "    \\/___/ \\/____/ \\/_/\\/_/\\/_/\\/_/\\/_/\\/____/ \\/_/  \n"));
         #else
-            BLINKER_LOG1(BLINKER_F("\n"
+            BLINKER_LOG1(("\n"
                 "   ___  ___      __    v"BLINKER_VERSION"\n"
                 "  / _ )/ (_)__  / /_____ ____\n"
                 " / _  / / / _ \\/  '_/ -_) __/\n"
@@ -461,7 +461,7 @@ class BlinkerProtocol
                 }
             }
             else {
-                BLINKER_ERR_LOG1(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+                BLINKER_ERR_LOG1(("SEND DATA BYTES MAX THAN LIMIT!"));
             }
         }
 
