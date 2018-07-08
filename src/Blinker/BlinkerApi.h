@@ -1827,13 +1827,22 @@ class BlinkerApi
 
         String weather(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
+            String data = "/weather/now?";
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
-                            "\",\"city\":\"" + _city + "\"}";
+            // String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            //                 "\",\"city\":\"" + _city + "\"}";
+            
+            data += "deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName);
     #elif defined(BLINKER_PRO)
-            String data = "{\"deviceName\":\"" + macDeviceName() + \
-                            "\",\"city\":\"" + _city + "\"}";
+            // String data = "{\"deviceName\":\"" + macDeviceName() + \
+            //                 "\",\"city\":\"" + _city + "\"}";
+
+            data += "deviceName=" + macDeviceName();
     #endif
+
+            if (_city != BLINKER_CMD_DEFAULT) {
+                data += "&location=" + STRING_format(_city);
+            }
 
             // if (_msg.length() > 20) {
             //     return false;
@@ -1843,13 +1852,22 @@ class BlinkerApi
 
         String aqi(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
+            String data = "/weather/aqi?";
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
-                            "\",\"city\":\"" + _city + "\"}";
+            // String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            //                 "\",\"city\":\"" + _city + "\"}";
+
+            data += "deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName);
     #elif defined(BLINKER_PRO)
-            String data = "{\"deviceName\":\"" + macDeviceName() + \
-                            "\",\"city\":\"" + _city + "\"}";
+            // String data = "{\"deviceName\":\"" + macDeviceName() + \
+            //                 "\",\"city\":\"" + _city + "\"}";
+
+            data += "deviceName=" + macDeviceName();
     #endif
+
+            if (_city != BLINKER_CMD_DEFAULT) {
+                data += "&location=" + STRING_format(_city);
+            }
 
             // if (_msg.length() > 20) {
             //     return false;
