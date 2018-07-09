@@ -61,6 +61,11 @@ class BlinkerSimpleESP32_MQTT
         }
 #endif
 
+        void connectWiFi(String _ssid, String _pswd)
+        {
+            connectWiFi(_ssid.c_str(), _pswd.c_str());
+        }
+
         void connectWiFi(const char* _ssid, const char* _pswd)
         {
             uint32_t connectTime = millis();

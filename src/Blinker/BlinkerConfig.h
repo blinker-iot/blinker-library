@@ -223,7 +223,7 @@
 
 #define BLINKER_ONE_DAY_TIME            86400UL
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     #define BLINKER_CMD_SMS_NUMBER          1
 
     #define BLINKER_CMD_PUSH_NUMBER         2
@@ -236,6 +236,9 @@
 
     #define BLINKER_CMD_DEFAULT_NUMBER      0
 
+#endif
+
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
     #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
