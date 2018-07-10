@@ -57,11 +57,12 @@ class BlinkerSimpleESP8266_WS
         {
             _server = new WiFiServer(80);
 
+            String softAP_ssid = "DiyArduino_" + macDeviceName();
+            WiFi.hostname(softAP_ssid);
+
             WiFi.mode(WIFI_AP);
             WiFi.softAPConfig(apIP, apIP, netMsk);
-            String softAP_ssid = "DiyArduino_" + macDeviceName();
             WiFi.softAP(softAP_ssid.c_str(), "12345678");
-            WiFi.hostname(softAP_ssid);
             delay(100);
 
             _server->begin();
@@ -89,23 +90,26 @@ class BlinkerSimpleESP8266_WS
                     {
                         String data = _client.readStringUntil('\r');
 
-                        data = data.substring(4, data.length() - 9);
+                        // data = data.substring(4, data.length() - 9);
                         _client.flush();
 
-                        BLINKER_LOG2("clientData: ", data);
+                        // BLINKER_LOG2("clientData: ", data);
 
-                        String msg = "{\"hello\":\"world\"}";
-                        
-                        String s= "HTTP/1.1 200 OK\r\nContent-Type: application/json;charset=utf-8\r\n";
-                        s += String("Content-Length: " + String(msg.length()) + "\r\n" +  
-                            "Connection: Keep Alive\r\n\r\n" +  
-                            msg + "\r\n");
+                        if (STRING_contais_string(data, "ssid")) {
 
-                        _client.print(s);
-                        
-                        _client.stop();
+                            String msg = "{\"hello\":\"world\"}";
+                            
+                            String s= "HTTP/1.1 200 OK\r\nContent-Type: application/json;charset=utf-8\r\n";
+                            s += String("Content-Length: " + String(msg.length()) + "\r\n" +  
+                                "Connection: Keep Alive\r\n\r\n" +  
+                                msg + "\r\n");
 
-                        parseUrl(data);
+                            _client.print(s);
+                            
+                            _client.stop();
+
+                            parseUrl(data);
+                        }
                     }
                 }
             }
@@ -113,8 +117,12 @@ class BlinkerSimpleESP8266_WS
 
         bool parseUrl(String data)
         {
-            String _ssid = STRING_find_string(data, "ssid", "&", 1);
-            String _pswd = STRING_find_string(data, "pswd", "", 1);
+            BLINKER_LOG2("APCONFIG data: ", data);
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& wifi_data = jsonBuffer.parseObject(data);
+                            
+            String _ssid = wifi_data["ssid"];
+            String _pswd = wifi_data["pswd"];
 
             BLINKER_LOG2("ssid: ", _ssid);
             BLINKER_LOG2("pswd: ", _pswd);
@@ -126,6 +134,9 @@ class BlinkerSimpleESP8266_WS
 
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
+            String _hostname = "DiyArduino_" + macDeviceName();
+            WiFi.hostname(_hostname);
+
             WiFi.mode(WIFI_STA);
             WiFi.beginSmartConfig();
             
@@ -176,7 +187,11 @@ class BlinkerSimpleESP8266_WS
             uint32_t connectTime = millis();
 
             BLINKER_LOG2(BLINKER_F("Connecting to "), _ssid);
+
+            String _hostname = "DiyArduino_" + macDeviceName();
+            WiFi.hostname(_hostname);
             WiFi.mode(WIFI_STA);
+            
             if (_pswd && strlen(_pswd)) {
                 WiFi.begin(_ssid, _pswd);
             }

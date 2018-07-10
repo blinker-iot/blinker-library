@@ -3688,8 +3688,9 @@ class BlinkerApi
         #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("[HTTP] POST... code: "), httpCode);
         #endif
+                String payload;
                 if (httpCode == HTTP_CODE_OK) {
-                    String payload = http.getString();
+                    payload = http.getString();
         #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(payload);
         #endif
