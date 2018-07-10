@@ -72,6 +72,10 @@ static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerAUTO * _AUTO[2];
 #endif
 
+#if defined(BLINKER_WIFI)
+#include <WiFiClientSecure.h>
+static WiFiClientSecure client_s;
+#endif
 // #if defined(BLINKER_PRO)
 // static OneButton button1(BLINKER_BUTTON_PIN, true);
 
@@ -1752,16 +1756,16 @@ class BlinkerApi
         }
 // #else
 //     #pragma message("This code is intended to run with BLINKER_MQTT! Please check your connect type.")
-// #endif
+#endif
 
-// #if defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         template<typename T>
         bool sms(const T& msg) {
             String _msg = STRING_format(msg);
     #if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"msg\":\"" + _msg + "\"}";
-    #elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_WIFI) || defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #endif
@@ -1769,7 +1773,7 @@ class BlinkerApi
             if (_msg.length() > 20) {
                 return false;
             }
-            return (blinkServer(BLINKER_CMD_SMS_NUMBER, data) == BLINKER_CMD_TRUE) ? true:false;
+            return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
         }
 
         template<typename T>
@@ -1779,7 +1783,7 @@ class BlinkerApi
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
                             "\",\"cel\":\"" + cel + \
                             "\",\"msg\":\"" + _msg + "\"}";
-    #elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_WIFI) ||  defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"cel\":\"" + cel + \
                             "\",\"msg\":\"" + _msg + "\"}";
@@ -1788,7 +1792,7 @@ class BlinkerApi
             if (_msg.length() > 20) {
                 return false;
             }
-            return (blinkServer(BLINKER_CMD_SMS_NUMBER, data, true) == BLINKER_CMD_TRUE) ? true:false;
+            return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
         }
 
         template<typename T>
@@ -1797,7 +1801,7 @@ class BlinkerApi
     #if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"msg\":\"" + _msg + "\"}";
-    #elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_WIFI) ||  defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #endif
@@ -1805,7 +1809,7 @@ class BlinkerApi
             // if (_msg.length() > 20) {
             //     return false;
             // }
-            return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_TRUE) ? true:false;
+            return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
         }
 
         template<typename T>
@@ -1814,7 +1818,7 @@ class BlinkerApi
     #if defined(BLINKER_MQTT)
             String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "\",\"msg\":\"" + _msg + "\"}";
-    #elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_WIFI) ||  defined(BLINKER_PRO)
             String data = "{\"deviceName\":\"" + macDeviceName() + \
                             "\",\"msg\":\"" + _msg + "\"}";
     #endif
@@ -1822,18 +1826,27 @@ class BlinkerApi
             // if (_msg.length() > 20) {
             //     return false;
             // }
-            return (blinkServer(BLINKER_CMD_WECHAT_NUMBER, data) == BLINKER_CMD_TRUE) ? true:false;
+            return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
         }
 
         String weather(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
+            String data = "/weather/now?";
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
-                            "\",\"city\":\"" + _city + "\"}";
-    #elif defined(BLINKER_PRO)
-            String data = "{\"deviceName\":\"" + macDeviceName() + \
-                            "\",\"city\":\"" + _city + "\"}";
+            // String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            //                 "\",\"city\":\"" + _city + "\"}";
+            
+            data += "deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName);
+    #elif defined(BLINKER_WIFI) ||  defined(BLINKER_PRO)
+            // String data = "{\"deviceName\":\"" + macDeviceName() + \
+            //                 "\",\"city\":\"" + _city + "\"}";
+
+            data += "deviceName=" + macDeviceName();
     #endif
+
+            if (_city != BLINKER_CMD_DEFAULT) {
+                data += "&location=" + STRING_format(_city);
+            }
 
             // if (_msg.length() > 20) {
             //     return false;
@@ -1843,13 +1856,22 @@ class BlinkerApi
 
         String aqi(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
+            String data = "/weather/aqi?";
     #if defined(BLINKER_MQTT)
-            String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
-                            "\",\"city\":\"" + _city + "\"}";
-    #elif defined(BLINKER_PRO)
-            String data = "{\"deviceName\":\"" + macDeviceName() + \
-                            "\",\"city\":\"" + _city + "\"}";
+            // String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+            //                 "\",\"city\":\"" + _city + "\"}";
+
+            data += "deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName);
+    #elif defined(BLINKER_WIFI) ||  defined(BLINKER_PRO)
+            // String data = "{\"deviceName\":\"" + macDeviceName() + \
+            //                 "\",\"city\":\"" + _city + "\"}";
+
+            data += "deviceName=" + macDeviceName();
     #endif
+
+            if (_city != BLINKER_CMD_DEFAULT) {
+                data += "&location=" + STRING_format(_city);
+            }
 
             // if (_msg.length() > 20) {
             //     return false;
@@ -2011,7 +2033,9 @@ class BlinkerApi
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         uint8_t     _aCount = 0;
+#endif
 
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         uint32_t    _smsTime = 0;
 
         uint32_t    _pushTime = 0;
@@ -3310,7 +3334,7 @@ class BlinkerApi
         }
 #endif
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         // bool _smsSend(String msg, bool state = false) {
         String blinkServer(uint8_t _type, String msg, bool state = false) {
             switch (_type) {
@@ -3349,18 +3373,21 @@ class BlinkerApi
             }
 
         #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("POST message: "), msg);
+            BLINKER_LOG2(BLINKER_F("message: "), msg);
         #endif
 
             const int httpsPort = 443;
     #if defined(ESP8266)
             const char* host = "iotdev.clz.me";
             const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
-
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             extern WiFiClientSecure client_s;
+        #endif
+
         #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("connecting to "), host);
         #endif
+
             if (!client_s.connect(host, httpsPort)) {
         #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("connection failed"));
@@ -3391,16 +3418,65 @@ class BlinkerApi
             }
 
             String url;
-            if (_type == BLINKER_CMD_SMS_NUMBER) {
-                url = "/api/v1/user/device/sms";
-            }
+            // if (_type == BLINKER_CMD_SMS_NUMBER) {
+            //     url = "/api/v1/user/device/sms";
+            // }
 
-            client_s.print(String("POST ") + url + " HTTP/1.1\r\n" +
-               "Host: " + host + ":" + httpsPort + "\r\n" +
-               "Content-Type: application/json;charset=utf-8\r\n" +
-               "Content-Length: " + msg.length() + "\r\n" +  
-                "Connection: Keep Alive\r\n\r\n" +  
-                msg + "\r\n");
+            // client_s.print(String("POST ") + url + " HTTP/1.1\r\n" +
+            //     "Host: " + host + ":" + httpsPort + "\r\n" +
+            //     "Content-Type: application/json;charset=utf-8\r\n" +
+            //     "Content-Length: " + msg.length() + "\r\n" +  
+            //     "Connection: Keep Alive\r\n\r\n" +  
+            //     msg + "\r\n");
+            String client_msg;
+
+            switch (_type) {
+                case BLINKER_CMD_SMS_NUMBER :
+                    url = "/api/v1/user/device/sms";
+
+                    client_msg = STRING_format("POST " + url + " HTTP/1.1\r\n" +
+                        "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
+                        "Content-Type: application/json;charset=utf-8\r\n" +
+                        "Content-Length: " + STRING_format(msg.length()) + "\r\n" +  
+                        "Connection: Keep Alive\r\n\r\n" +  
+                        msg + "\r\n");
+
+                    client_s.print(client_msg);
+        #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
+                    break;
+                case BLINKER_CMD_PUSH_NUMBER :
+                    return BLINKER_CMD_FALSE;
+                case BLINKER_CMD_WECHAT_NUMBER :
+                    return BLINKER_CMD_FALSE;
+                case BLINKER_CMD_WEATHER_NUMBER :
+                    url = "/api/v1" + msg;
+
+                    client_msg = STRING_format("GET " + url + " HTTP/1.1\r\n" +
+                        "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
+                        "Connection: close\r\n\r\n");
+
+                    client_s.print(client_msg);
+        #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
+                    break;
+                case BLINKER_CMD_AQI_NUMBER :
+                    url = "/api/v1" + msg;
+
+                    client_msg = STRING_format("GET " + url + " HTTP/1.1\r\n" +
+                        "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
+                        "Connection: close\r\n\r\n");
+
+                    client_s.print(client_msg);
+        #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
+                    break;
+                default :
+                    return BLINKER_CMD_FALSE;
+            }
 
             unsigned long timeout = millis();
             while (client_s.available() == 0) {
@@ -3442,23 +3518,94 @@ class BlinkerApi
         #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("dataGet: "), dataGet);
         #endif
-            if (_type == BLINKER_CMD_SMS_NUMBER) {
-                DynamicJsonBuffer jsonBuffer;
-                JsonObject& sms_rp = jsonBuffer.parseObject(dataGet);
+            // if (_type == BLINKER_CMD_SMS_NUMBER) {
+            //     DynamicJsonBuffer jsonBuffer;
+            //     JsonObject& sms_rp = jsonBuffer.parseObject(dataGet);
 
-                if (sms_rp.success()) {
-                    uint16_t msg_code = sms_rp[BLINKER_CMD_MESSAGE];
-                    if (msg_code != 1000) {
-                        String _detail = sms_rp[BLINKER_CMD_DETAIL];
-                        BLINKER_ERR_LOG1(_detail);
+            //     if (sms_rp.success()) {
+            //         uint16_t msg_code = sms_rp[BLINKER_CMD_MESSAGE];
+            //         if (msg_code != 1000) {
+            //             String _detail = sms_rp[BLINKER_CMD_DETAIL];
+            //             BLINKER_ERR_LOG1(_detail);
+            //         }
+            //     }
+            //     _smsTime = millis();
+            // }
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& data_rp = jsonBuffer.parseObject(dataGet);
+
+            switch (_type) {
+                case BLINKER_CMD_SMS_NUMBER :
+                    // DynamicJsonBuffer jsonBuffer;
+                    // JsonObject& sms_rp = jsonBuffer.parseObject(dataGet);
+
+                    if (data_rp.success()) {
+                        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000) {
+                            String _detail = data_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG1(_detail);
+                        }
+                        else {
+                            String _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                            dataGet = _dataGet;
+                        }
                     }
-                }
-                _smsTime = millis();
+                    _smsTime = millis();
+        #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("dataGet: ", dataGet);
+        #endif
+                    break;
+                case BLINKER_CMD_PUSH_NUMBER :
+                    return BLINKER_CMD_FALSE;
+                case BLINKER_CMD_WECHAT_NUMBER :
+                    return BLINKER_CMD_FALSE;
+                case BLINKER_CMD_WEATHER_NUMBER :
+                    // DynamicJsonBuffer jsonBuffer;
+                    // JsonObject& wth_rp = jsonBuffer.parseObject(dataGet);
+
+                    if (data_rp.success()) {
+                        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000) {
+                            String _detail = data_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG1(_detail);
+                        }
+                        else {
+                            String _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                            dataGet = _dataGet;
+                        }
+                    }
+                    _weatherTime = millis();
+            #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("dataGet: ", dataGet);
+            #endif
+                    break;
+                case BLINKER_CMD_AQI_NUMBER :
+                    // DynamicJsonBuffer jsonBuffer;
+                    // JsonObject& wth_rp = jsonBuffer.parseObject(dataGet);
+
+                    if (data_rp.success()) {
+                        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000) {
+                            String _detail = data_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG1(_detail);
+                        }
+                        else {
+                            String _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                            dataGet = _dataGet;
+                        }
+                    }
+                    _aqiTime = millis();
+            #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("dataGet: ", dataGet);
+            #endif
+                    break;
+                default :
+                    return BLINKER_CMD_FALSE;
             }
 
             client_s.stop();
 
-            return BLINKER_CMD_TRUE;
+            return dataGet;
     #elif defined(ESP32)
             const char* host = "https://iotdev.clz.me";
 
@@ -3494,9 +3641,38 @@ class BlinkerApi
             HTTPClient http;
 
             String url_iot;
+
+            int httpCode;
             
-            if (_type == BLINKER_CMD_SMS_NUMBER) {
-                url_iot = String(host) + "/api/v1/user/device/sms";
+            // if (_type == BLINKER_CMD_SMS_NUMBER) {
+            //     url_iot = String(host) + "/api/v1/user/device/sms";
+            // }
+            switch (_type) {
+                case BLINKER_CMD_SMS_NUMBER :
+                    url_iot = String(host) + "/api/v1/user/device/sms";
+
+                    http.begin(url_iot);
+                    http.addHeader("Content-Type", "application/json");
+                    httpCode = http.POST(msg);
+                    break;
+                case BLINKER_CMD_PUSH_NUMBER :
+                    return BLINKER_CMD_FALSE;
+                case BLINKER_CMD_WECHAT_NUMBER :
+                    return BLINKER_CMD_FALSE;
+                case BLINKER_CMD_WEATHER_NUMBER :
+                    url_iot = String(host) + "/api/v1" + msg;
+
+                    http.begin(url_iot);
+                    httpCode = http.GET();
+                    break;
+                case BLINKER_CMD_AQI_NUMBER :
+                    url_iot = String(host) + "/api/v1" + msg;
+
+                    http.begin(url_iot);
+                    httpCode = http.GET();
+                    break;
+                default :
+                    return BLINKER_CMD_FALSE;
             }
             
         #ifdef BLINKER_DEBUG_ALL 
@@ -3504,11 +3680,11 @@ class BlinkerApi
         #endif
             
             // http.begin(url_iot, ca); TODO
-            http.begin(url_iot);
+            // http.begin(url_iot);
             
-            http.addHeader("Content-Type", "application/json");
+            // http.addHeader("Content-Type", "application/json");
 
-            int httpCode = http.POST(msg);
+            // httpCode = http.POST(msg);
 
         #ifdef BLINKER_DEBUG_ALL 
             BLINKER_LOG2(BLINKER_F("HTTPS POST: "), msg);
@@ -3518,28 +3694,97 @@ class BlinkerApi
         #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("[HTTP] POST... code: "), httpCode);
         #endif
+                String payload;
                 if (httpCode == HTTP_CODE_OK) {
-                    String payload = http.getString();
+                    payload = http.getString();
         #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(payload);
         #endif
 
-                    if (_type == BLINKER_CMD_SMS_NUMBER) {
-                        DynamicJsonBuffer jsonBuffer;
-                        JsonObject& sms_rp = jsonBuffer.parseObject(payload);
+                    // if (_type == BLINKER_CMD_SMS_NUMBER) {
+                    //     DynamicJsonBuffer jsonBuffer;
+                    //     JsonObject& sms_rp = jsonBuffer.parseObject(payload);
 
-                        uint16_t msg_code = sms_rp[BLINKER_CMD_MESSAGE];
-                        if (msg_code != 1000) {
-                            String _detail = sms_rp[BLINKER_CMD_DETAIL];
-                            BLINKER_ERR_LOG1(_detail);
-                        }
+                    //     uint16_t msg_code = sms_rp[BLINKER_CMD_MESSAGE];
+                    //     if (msg_code != 1000) {
+                    //         String _detail = sms_rp[BLINKER_CMD_DETAIL];
+                    //         BLINKER_ERR_LOG1(_detail);
+                    //     }
+                    // }
+                    DynamicJsonBuffer jsonBuffer;
+                    JsonObject& data_rp = jsonBuffer.parseObject(payload);
+
+                    switch (_type) {
+                        case BLINKER_CMD_SMS_NUMBER :
+                            // DynamicJsonBuffer jsonBuffer;
+                            // JsonObject& sms_rp = jsonBuffer.parseObject(payload);
+
+                            if (data_rp.success()) {
+                                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                                if (msg_code != 1000) {
+                                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                                    BLINKER_ERR_LOG1(_detail);
+                                }
+                                else {
+                                    String _payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                                    payload = _payload;
+                                }
+                            }
+                            _smsTime = millis();
+
+                            BLINKER_LOG2("payload: ", payload);
+                            break;
+                        case BLINKER_CMD_PUSH_NUMBER :
+                            return BLINKER_CMD_FALSE;
+                        case BLINKER_CMD_WECHAT_NUMBER :
+                            return BLINKER_CMD_FALSE;
+                        case BLINKER_CMD_WEATHER_NUMBER :
+                            // DynamicJsonBuffer jsonBuffer;
+                            // JsonObject& wth_rp = jsonBuffer.parseObject(payload);
+
+                            if (data_rp.success()) {
+                                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                                if (msg_code != 1000) {
+                                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                                    BLINKER_ERR_LOG1(_detail);
+                                }
+                                else {
+                                    String _payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                                    payload = _payload;
+                                }
+                            }
+                            _weatherTime = millis();
+
+                            BLINKER_LOG2("payload: ", payload);
+                            break;
+                        case BLINKER_CMD_AQI_NUMBER :
+                            // DynamicJsonBuffer jsonBuffer;
+                            // JsonObject& wth_rp = jsonBuffer.parseObject(payload);
+
+                            if (data_rp.success()) {
+                                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                                if (msg_code != 1000) {
+                                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                                    BLINKER_ERR_LOG1(_detail);
+                                }
+                                else {
+                                    String _payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                                    payload = _payload;
+                                }
+                            }
+                            _aqiTime = millis();
+
+                            BLINKER_LOG2("payload: ", payload);
+                            break;
+                        default :
+                            return BLINKER_CMD_FALSE;
                     }
                 }
                 if (_type == BLINKER_CMD_SMS_NUMBER) {
                     _smsTime = millis();
                 }
                 http.end();
-                return BLINKER_CMD_TRUE;
+                return payload;
             }
             else {
         #ifdef BLINKER_DEBUG_ALL

@@ -77,7 +77,14 @@ const T& BlinkerMax(const T& a, const T& b)
 
 String STRING_find_string(String src, String targetStart, String targetEnd, uint8_t skipNum) {
     int addr_start = src.indexOf(targetStart);
-    int addr_end = src.indexOf(targetEnd, addr_start + targetStart.length() + skipNum);
+    int addr_end;
+    if (targetEnd.length()) {
+        addr_end = src.indexOf(targetEnd, addr_start + targetStart.length() + skipNum);
+    }
+    else {
+        addr_end = src.length();
+    }
+
     if (addr_start == -1 || addr_end == -1) {
         return "";
     }
