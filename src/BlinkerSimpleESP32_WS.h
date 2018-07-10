@@ -77,7 +77,7 @@ class BlinkerSimpleESP32_WS
             }
             else
             {
-                if (_client.status() == CLOSED)
+                if (!_client.connected())
                 {
                     _client.stop();
                     BLINKER_LOG1(F("Connection closed on _client"));

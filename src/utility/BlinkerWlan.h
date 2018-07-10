@@ -258,6 +258,7 @@ void BlinkerWlan::reset() {
 }
 
 bool BlinkerWlan::run() {
+#if defined(BLINKER_ESP_SMARTCONFIG)
     switch (_status) {
         case BWL_CONFIG_CKECK :
             checkConfig();
@@ -295,6 +296,13 @@ bool BlinkerWlan::run() {
             break;
     }
     return false;
+#elif defined(BLINKER_APCONFIG)
+    switch (_status) {
+        case BWL_CONFIG_CKECK :
+            
+    }
+    return false;
+#endif
 }
 
 #endif
