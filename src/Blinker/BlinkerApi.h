@@ -3442,8 +3442,9 @@ class BlinkerApi
                         msg + "\r\n");
 
                     client_s.print(client_msg);
-
+        #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
                     break;
                 case BLINKER_CMD_PUSH_NUMBER :
                     return BLINKER_CMD_FALSE;
@@ -3457,8 +3458,9 @@ class BlinkerApi
                         "Connection: close\r\n\r\n");
 
                     client_s.print(client_msg);
-
+        #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
                     break;
                 case BLINKER_CMD_AQI_NUMBER :
                     url = "/api/v1" + msg;
@@ -3468,8 +3470,9 @@ class BlinkerApi
                         "Connection: close\r\n\r\n");
 
                     client_s.print(client_msg);
-
+        #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
                     break;
                 default :
                     return BLINKER_CMD_FALSE;
@@ -3548,8 +3551,9 @@ class BlinkerApi
                         }
                     }
                     _smsTime = millis();
-
+        #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("dataGet: ", dataGet);
+        #endif
                     break;
                 case BLINKER_CMD_PUSH_NUMBER :
                     return BLINKER_CMD_FALSE;
@@ -3571,8 +3575,9 @@ class BlinkerApi
                         }
                     }
                     _weatherTime = millis();
-
+            #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("dataGet: ", dataGet);
+            #endif
                     break;
                 case BLINKER_CMD_AQI_NUMBER :
                     // DynamicJsonBuffer jsonBuffer;
@@ -3590,8 +3595,9 @@ class BlinkerApi
                         }
                     }
                     _aqiTime = millis();
-
+            #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("dataGet: ", dataGet);
+            #endif
                     break;
                 default :
                     return BLINKER_CMD_FALSE;
