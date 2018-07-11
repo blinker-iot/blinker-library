@@ -1912,6 +1912,8 @@ class BlinkerApi
         void setType(const char* _type) {
             _deviceType = _type;
 
+            Bwlan.setType(_type);
+
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("API deviceType: "), _type);
     #endif

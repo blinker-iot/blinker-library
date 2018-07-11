@@ -95,7 +95,7 @@ class BlinkerSimpleESP8266_WS
 
                         // BLINKER_LOG2("clientData: ", data);
 
-                        if (STRING_contais_string(data, "ssid")) {
+                        if (STRING_contais_string(data, "ssid") && STRING_contais_string(data, "pswd")) {
 
                             String msg = "{\"hello\":\"world\"}";
                             

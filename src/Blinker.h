@@ -31,8 +31,8 @@
 
 #elif defined(BLINKER_PRO)
 
-    #ifndef(BLINKER_ESP_SMARTCONFIG)
-        #ifndef(BLINKER_APCONFIG)
+    #ifndef BLINKER_ESP_SMARTCONFIG
+        #ifndef BLINKER_APCONFIG
             #define BLINKER_ESP_SMARTCONFIG
         #endif
     #endif
