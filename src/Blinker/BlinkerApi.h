@@ -70,6 +70,7 @@ static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
+static class BlinkerBridge * _Bridge[BLINKER_MAX_BRIDGE_SIZE];
 #endif
 
 #if defined(BLINKER_WIFI)
@@ -155,6 +156,25 @@ class BlinkerRGB
         uint8_t rgbValue[3] = {0};
 };
 
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+class BlinkerBridge
+{
+    public :
+        BlinkerBridge()
+            : _name(NULL)
+        {}
+    
+        void name(String name) { _name = name; }
+        String getName() { return _name; }
+        void freshBridge(String name) { bridgeName = name; }
+        String getBridge() { return bridgeName; }
+        bool checkName(String name) { return ((_name == name) ? true : false); }
+
+    private :
+        String _name;
+        String bridgeName;
+};
+#endif
 // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 // // template <class API>
 // class BlinkerAUTO
@@ -1240,6 +1260,22 @@ class BlinkerApi
             // rgbValue[B] = 0;
         }
 
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        void bridge(const String & _name) {
+            if (checkNum(_name, _Bridge, _bridgeCount) == BLINKER_OBJECT_NOT_AVAIL) {
+                if ( _bridgeCount < BLINKER_MAX_BRIDGE_SIZE ) {
+                    String register_r = bridgeQuery(_name);
+                    if (register_r != BLINKER_CMD_FALSE) {
+                        _Bridge[_bridgeCount] = new BlinkerBridge();
+                        _Bridge[_bridgeCount]->name(_name);
+                        _Bridge[_bridgeCount]->freshBridge(register_r);
+                        _bridgeCount++;
+                    }
+                }
+            }
+        }
+#endif
+
         void wInit(const String & _name, b_widgettype_t _type) {
             switch (_type) {
                 case W_BUTTON :
@@ -2034,6 +2070,7 @@ class BlinkerApi
         struct tm   timeinfo;
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        uint8_t     _bridgeCount = 0;
         uint8_t     _aCount = 0;
 #endif
 
@@ -3476,6 +3513,18 @@ class BlinkerApi
                     BLINKER_LOG2("client_msg: ", client_msg);
         #endif
                     break;
+                case BLINKER_CMD_BRIDGE_NUMBER :
+                    url = "/api/v1" + msg;
+
+                    client_msg = STRING_format("GET " + url + " HTTP/1.1\r\n" +
+                        "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
+                        "Connection: close\r\n\r\n");
+
+                    client_s.print(client_msg);
+        #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
+                    break;
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -3601,6 +3650,22 @@ class BlinkerApi
                     BLINKER_LOG2("dataGet: ", dataGet);
             #endif
                     break;
+                case BLINKER_CMD_BRIDGE_NUMBER :
+                    if (data_rp.success()) {
+                        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000) {
+                            String _detail = data_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG1(_detail);
+                        }
+                        else {
+                            String _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
+                            dataGet = _dataGet;
+                        }
+                    }
+            #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("dataGet: ", dataGet);
+            #endif
+                    break;
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -3668,6 +3733,12 @@ class BlinkerApi
                     httpCode = http.GET();
                     break;
                 case BLINKER_CMD_AQI_NUMBER :
+                    url_iot = String(host) + "/api/v1" + msg;
+
+                    http.begin(url_iot);
+                    httpCode = http.GET();
+                    break;
+                case BLINKER_CMD_BRIDGE_NUMBER :
                     url_iot = String(host) + "/api/v1" + msg;
 
                     http.begin(url_iot);
@@ -3778,6 +3849,20 @@ class BlinkerApi
 
                             BLINKER_LOG2("payload: ", payload);
                             break;
+                        case BLINKER_CMD_BRIDGE_NUMBER :
+                            if (data_rp.success()) {
+                                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                                if (msg_code != 1000) {
+                                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                                    BLINKER_ERR_LOG1(_detail);
+                                }
+                                else {
+                                    String _payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
+                                    payload = _payload;
+                                }
+                            }
+
+                            BLINKER_LOG2("payload: ", payload);
                         default :
                             return BLINKER_CMD_FALSE;
                     }
@@ -4353,6 +4438,32 @@ class BlinkerApi
                     parse(_tmAction1, true);
                 }
             }
+        }
+#endif
+
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        String bridgeFind(const String & _Name)
+        {
+            int8_t num = checkNum(_Name, _Bridge, _bridgeCount);
+
+            if( num != BLINKER_OBJECT_NOT_AVAIL ) {
+                return _Bridge[num]->getBridge();
+            }
+            else {
+                return "";
+            }
+        }
+
+        String bridgeQuery(const String & key) {
+            String data = "/bridge/query?";
+    #if defined(BLINKER_MQTT)
+            data += "deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName);
+    #elif defined(BLINKER_PRO)
+            data += "deviceName=" + macDeviceName();
+    #endif
+            data += "&bridgeKey=" + key;
+
+            return blinkServer(BLINKER_CMD_BRIDGE_NUMBER, data);
         }
 #endif
 };

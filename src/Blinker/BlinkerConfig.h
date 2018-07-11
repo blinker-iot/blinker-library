@@ -17,6 +17,8 @@
 
 #define BLINKER_MQTT_MSG_LIMIT          1000UL
 
+#define BLINKER_BRIDGE_MSG_LIMIT        60000UL
+
 #define BLINKER_LINK_MSG_LIMIT          60000UL
 
 #define BLINKER_MQTT_KEEPALIVE          120000UL
@@ -223,6 +225,14 @@
 
 #define BLINKER_ONE_DAY_TIME            86400UL
 
+#ifndef BLINKER_MAX_BRIDGE_SIZE
+    #if defined(BLINKER_MQTT)
+        #define BLINKER_MAX_BRIDGE_SIZE             4
+    #elif defined(BLINKER_PRO)
+        #define BLINKER_MAX_BRIDGE_SIZE             16
+    #endif
+#endif
+
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     #define BLINKER_CMD_SMS_NUMBER          1
 
@@ -233,6 +243,8 @@
     #define BLINKER_CMD_WEATHER_NUMBER      4
 
     #define BLINKER_CMD_AQI_NUMBER          5
+
+    #define BLINKER_CMD_BRIDGE_NUMBER       6
 
     #define BLINKER_CMD_DEFAULT_NUMBER      0
 
