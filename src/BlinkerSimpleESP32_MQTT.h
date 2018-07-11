@@ -80,7 +80,7 @@ class BlinkerSimpleESP32_MQTT
             }
             else
             {
-                if (_client.status() == CLOSED)
+                if (!_client.connected())
                 {
                     _client.stop();
                     BLINKER_LOG1(F("Connection closed on _client"));
@@ -96,7 +96,7 @@ class BlinkerSimpleESP32_MQTT
 
                         // BLINKER_LOG2("clientData: ", data);
 
-                        if (STRING_contais_string(data, "ssid")) {
+                        if (STRING_contais_string(data, "ssid") && STRING_contais_string(data, "pswd")) {
 
                             String msg = "{\"hello\":\"world\"}";
                             

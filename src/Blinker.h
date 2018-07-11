@@ -31,6 +31,12 @@
 
 #elif defined(BLINKER_PRO)
 
+    #ifndef BLINKER_ESP_SMARTCONFIG
+        #ifndef BLINKER_APCONFIG
+            #define BLINKER_ESP_SMARTCONFIG
+        #endif
+    #endif
+
     #if defined(ESP8266)
         #include <BlinkerSimpleESP8266_PRO.h>
     #elif defined(ESP32)
