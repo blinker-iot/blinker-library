@@ -63,13 +63,28 @@ class BlinkerProtocol
                 String b_name = BApi::bridgeFind(bKey);
 
                 if (b_name.length() > 0) {
-                    _bKey_forwhile = b_name;
-                    return true;
+                    // _bKey_forwhile = b_name;
+                    String b_data = conn.lastRead();
+
+                    DynamicJsonBuffer jsonBuffer;
+                    JsonObject& extra_data = jsonBuffer.parseObject(b_data);
+
+                    String _from = extra_data["fromDevice"];
+                    if (b_name == _bKey_forwhile) {
+                        _bKey_forwhile = b_name;
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
                 }
                 else{
                     _bKey_forwhile = "";
                     return false;
                 }
+            }
+            else {
+                return false;
             }
         }
 
@@ -185,13 +200,13 @@ class BlinkerProtocol
         }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-        void beginBridgeFormat() {
+        void bridgeBeginFormat() {
             isBformat = true;
             _bridgeKey = "";
             memset(_bSendBuf, '\0', BLINKER_MAX_SEND_SIZE);
         }
 
-        bool endBridgeFormat() {
+        bool bridgeEndFormat() {
             isBformat = false;
             if (strlen(_bSendBuf)) {
                 _bPrint(_bridgeKey, "{" + STRING_format(_bSendBuf) + "}");
@@ -413,15 +428,15 @@ class BlinkerProtocol
         void println(T1 n1, double n)            { print(n1, n); }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-        template <typename T>
-        void bridgePrint(const String & bKey, T n) {
-            if (!isBformat) {
-                _bPrint(bKey, "\""  + STRING_format(n)+ "\"");
-            }
-            else {
-                _bridgeKey = bKey;
-            }
-        }
+        // template <typename T>
+        // void bridgePrint(const String & bKey, T n) {
+        //     if (!isBformat) {
+        //         _bPrint(bKey, "\""  + STRING_format(n)+ "\"");
+        //     }
+        //     else {
+        //         _bridgeKey = bKey;
+        //     }
+        // }
         // void bridgePrint(const String & bKey) {
         //     if (!isBformat)
         //         _bPrint("\"\"");
@@ -640,10 +655,14 @@ class BlinkerProtocol
         {
             isExtraAvail = conn.extraAvailable();
             // if (isExtraAvail) {
-
+            //     BLINKER_LOG1("isExtraAvail true");
             // }
             return isExtraAvail;
         }
+#endif
+
+#if defined(BLINKER_PRO)
+        bool inited() { return _isInit;}
 #endif
 
         bool checkAvail()
@@ -697,6 +716,7 @@ class BlinkerProtocol
 #if defined(BLINKER_PRO)
         bool            _isConnBegin = false;
         bool            _getRegister = false;
+        bool            _isInit = false;
 
         uint32_t        _initTime;
 #endif
@@ -876,6 +896,12 @@ void BlinkerProtocol<Transp>::run()
     if (!conn.init()) {
         if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME) {
             BApi::reset();
+        }
+    }
+    else {
+        if (!_isInit) {
+            _isInit = true;
+            strcpy(_deviceName, conn.deviceName().c_str());
         }
     }
 #endif

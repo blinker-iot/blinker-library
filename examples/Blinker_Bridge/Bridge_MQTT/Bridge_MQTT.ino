@@ -20,6 +20,10 @@ void setup() {
     Blinker.begin(auth, ssid, pswd);
     Blinker.bridge(bridgeKey);
     Blinker.wInit(BUTTON_1, W_BUTTON);
+
+    while (!Blinker.connected()) {
+        Blinker.delay(10);
+    }
 }
 
 void loop()
@@ -42,10 +46,10 @@ void loop()
 
         uint32_t BlinkerTime = millis();
 
-        Blinker.beginBridgeFormat();
+        Blinker.bridgeBeginFormat();
         Blinker.bridgePrint(bridgeKey, "Hello", "Blinker");
         Blinker.bridgePrint(bridgeKey, "millis", BlinkerTime);
-        Blinker.endBridgeFormat();
+        Blinker.bridgeEndFormat();
     }
 
     if (Blinker.button(BUTTON_1)) {
