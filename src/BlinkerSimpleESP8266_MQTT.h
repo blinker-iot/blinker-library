@@ -127,6 +127,10 @@ class BlinkerSimpleESP8266_MQTT
             BLINKER_LOG2("APCONFIG data: ", data);
             DynamicJsonBuffer jsonBuffer;
             JsonObject& wifi_data = jsonBuffer.parseObject(data);
+
+            if (!wifi_data.success()) {
+                return false;
+            }
                             
             String _ssid = wifi_data["ssid"];
             String _pswd = wifi_data["pswd"];
@@ -136,6 +140,7 @@ class BlinkerSimpleESP8266_MQTT
 
             free(_server);
             connectWiFi(_ssid, _pswd);
+            return true;
         }
 #endif
 

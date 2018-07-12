@@ -146,9 +146,21 @@ class BlinkerPRO {
             }
         }
 
+        bool extraAvailable() {
+            if (isBavail) {
+                isBavail = false;
+                
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
         void subscribe();
         String lastRead() { return STRING_format(msgBuf); }
         bool print(String data);
+        bool bPrint(String name, String data);
         
         void begin(const char* _type) {
             _deviceType = _type;
@@ -352,6 +364,18 @@ class BlinkerPRO {
             }
         }
 
+        bool checkCanBprint() {
+            if ((millis() - bPrintTime >= BLINKER_BRIDGE_MSG_LIMIT) || bPrintTime == 0) {
+                return true;
+            }
+            else {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
+#endif
+                return false;
+            }
+        }
+
         bool checkPrintSpan() {
             if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
                 if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
@@ -383,8 +407,10 @@ class BlinkerPRO {
         const char* _deviceType;
         bool*       isHandle = &isConnect;
         bool        isAlive = false;
+        bool        isBavail = false;
         uint32_t    latestTime;
         uint32_t    printTime = 0;
+        uint32_t    bPrintTime = 0;
         uint32_t    kaTime = 0;
         uint32_t    linkTime = 0;
         uint8_t     respTimes = 0;
@@ -745,22 +771,24 @@ void BlinkerPRO::subscribe() {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(("Authority uuid"));
 #endif
+                kaTime = millis();
+                isAvail = true;
+                isAlive = true;
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_ERR_LOG1(("No authority uuid"));
 #endif
                 // return;
+                dataGet = String((char *)iotSub->lastread);
+
+                isBavail = true;
             }
 
             memset(msgBuf, 0, BLINKER_MAX_READ_SIZE);
             memcpy(msgBuf, dataGet.c_str(), dataGet.length());
             
             this->latestTime = millis();
-            kaTime = millis();
-
-            isAvail = true;
-            isAlive = true;
         }
     }
 }
@@ -854,6 +882,65 @@ bool BlinkerPRO::print(String data) {
             return false;
         }
     }
+}
+
+bool BlinkerPRO::bPrint(String name, String data) {
+    String payload;
+    if (STRING_contais_string(data, BLINKER_CMD_NEWLINE)) {
+        payload = "{\"data\":" + data.substring(0, data.length() - 1) + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + name + "\"}";
+    }
+    else {
+        payload = "{\"data\":" + data + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + name + "\"}";
+    }
+
+#ifdef BLINKER_DEBUG_ALL
+    BLINKER_LOG1("MQTT Publish...");
+#endif
+    // bool _alive = isAlive;
+    // bool state = STRING_contais_string(data, BLINKER_CMD_NOTICE);
+
+    // if (!state) {
+    //     state = (STRING_contais_string(data, BLINKER_CMD_STATE) 
+    //         && STRING_contais_string(data, BLINKER_CMD_ONLINE));
+    // }
+
+    if (mqtt->connected()) {
+        // if (!state) {
+        if (!checkCanBprint()) {
+            // if (!_alive) {
+            //     isAlive = false;
+            // }
+            return false;
+        }
+        // }
+
+        if (! iotPub->publish(payload.c_str())) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(payload, ("...Failed"));
+#endif
+            // if (!_alive) {
+            //     isAlive = false;
+            // }
+            return false;
+        }
+        else {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(payload, ("...OK!"));
+#endif
+            bPrintTime = millis();
+
+            // if (!_alive) {
+            //     isAlive = false;
+            // }
+            return true;
+        }            
+    }
+    else {
+        BLINKER_ERR_LOG1("MQTT Disconnected");
+        // isAlive = false;
+        return false;
+    }
+    // }
 }
 
 #endif
