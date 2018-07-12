@@ -685,11 +685,12 @@ void BlinkerMQTT::subscribe() {
                 isAlive = true;
             }
             else {
+                dataGet = String((char *)iotSub->lastread);
+
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1("No authority uuid");
+                BLINKER_ERR_LOG2("No authority uuid, data: ", dataGet);
 #endif
                 // return;
-                dataGet = String((char *)iotSub->lastread);
 
                 isBavail = true;
             }

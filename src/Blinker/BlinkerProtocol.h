@@ -62,15 +62,22 @@ class BlinkerProtocol
             if (checkExtraAvail()) {
                 String b_name = BApi::bridgeFind(bKey);
 
+                // BLINKER_LOG2("bridgeAvailable b_name: ", b_name);
+
                 if (b_name.length() > 0) {
                     // _bKey_forwhile = b_name;
                     String b_data = conn.lastRead();
+
+                    // BLINKER_LOG2("bridgeAvailable b_data: ", b_data);
 
                     DynamicJsonBuffer jsonBuffer;
                     JsonObject& extra_data = jsonBuffer.parseObject(b_data);
 
                     String _from = extra_data["fromDevice"];
-                    if (b_name == _bKey_forwhile) {
+
+                    // BLINKER_LOG2("bridgeAvailable _from: ", _from);
+
+                    if (b_name == _from) {
                         _bKey_forwhile = b_name;
                         return true;
                     }
@@ -121,7 +128,7 @@ class BlinkerProtocol
             String b_name = BApi::bridgeFind(bKey);
             String b_data = conn.lastRead();
 
-            if (b_name.length() > 0) {
+            if (b_name.length() > 0 && isBridgeFresh) {
                 DynamicJsonBuffer jsonBuffer;
                 JsonObject& extra_data = jsonBuffer.parseObject(b_data);
 
@@ -132,6 +139,7 @@ class BlinkerProtocol
                     String _from = extra_data["fromDevice"];
                     if (_from == b_name) {
                         String _data = extra_data["data"];
+                        isBridgeFresh = false;
                         return _data;
                     }
                     else {
@@ -629,6 +637,10 @@ class BlinkerProtocol
             availState = false;
         }
 
+#if defined(BLINKER_PRO)
+        bool inited() { return _isInit;}
+#endif
+
     private :
         void formatData(String data) {
             if (strlen(_sendBuf) > 0) {
@@ -654,15 +666,12 @@ class BlinkerProtocol
         bool checkExtraAvail()
         {
             isExtraAvail = conn.extraAvailable();
-            // if (isExtraAvail) {
-            //     BLINKER_LOG1("isExtraAvail true");
-            // }
+            if (isExtraAvail) {
+                isBridgeFresh = true;
+                // BLINKER_LOG1("isExtraAvail true");
+            }
             return isExtraAvail;
         }
-#endif
-
-#if defined(BLINKER_PRO)
-        bool inited() { return _isInit;}
 #endif
 
         bool checkAvail()
@@ -700,6 +709,7 @@ class BlinkerProtocol
         bool            isFormat;
         char            _sendBuf[BLINKER_MAX_SEND_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        bool            isBridgeFresh = false;
         bool            isExtraAvail = false;
         bool            isBridgeAvail = false;
         bool            isBformat = false;

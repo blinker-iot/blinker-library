@@ -43,6 +43,10 @@ void loop()
 
     if (Blinker.bridgeAvailable(bridgeKey)) {
         BLINKER_LOG2("Blinker.bridgeRead(): ", Blinker.bridgeRead(bridgeKey));
+    }
+
+    if (Blinker.button(BUTTON_1)) {
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 
         uint32_t BlinkerTime = millis();
 
@@ -50,9 +54,7 @@ void loop()
         Blinker.bridgePrint(bridgeKey, "Hello", "Blinker");
         Blinker.bridgePrint(bridgeKey, "millis", BlinkerTime);
         Blinker.bridgeEndFormat();
-    }
 
-    if (Blinker.button(BUTTON_1)) {
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        Blinker.delay(60000);
     }
 }
