@@ -2542,6 +2542,8 @@ class BlinkerApi
                     _BUILTIN_SWITCH->freshState(false);
                 }
                 _fresh = true;
+
+                static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
             }
         }
 
@@ -2796,6 +2798,8 @@ class BlinkerApi
                         _BUILTIN_SWITCH->freshState(false);
                     }
                     _fresh = true;
+
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                 }
             }
             // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
