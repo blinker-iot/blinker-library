@@ -1265,8 +1265,38 @@ class BlinkerApi
             // rgbValue[B] = 0;
         }
 
+        bool switchAvailable() {
+            if ((builtInSwitch() && !_switchFresh)
+                || (!builtInSwitch() && _switchFresh)) {
+                _switchFresh = !_switchFresh;
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool switchGet() {
+            // if (builtInSwitch() && !_switchFresh) {
+            //     _switchFresh = true;
+            //     return true;
+            // }
+            // else if (!builtInSwitch() && _switchFresh) {
+            //     _switchFresh = false;
+            //     return false;
+            // }
+            // else {
+            //     return false;
+            // }
+            return _BUILTIN_SWITCH->getState();
+        }
+
         bool builtInSwitch() {
             return _BUILTIN_SWITCH->getState();
+        }
+
+        void switchUpdate() {
+            static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
         }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -2097,6 +2127,7 @@ class BlinkerApi
 #endif
     
     private :
+        bool        _switchFresh = false;
         uint8_t     _bCount = 0;
         uint8_t     _sCount = 0;
         uint8_t     _tCount = 0;
@@ -2543,7 +2574,7 @@ class BlinkerApi
                 }
                 _fresh = true;
 
-                static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
             }
         }
 
@@ -2799,7 +2830,7 @@ class BlinkerApi
                     }
                     _fresh = true;
 
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                    // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                 }
             }
             // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
