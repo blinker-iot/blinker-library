@@ -82,11 +82,11 @@ class BlinkerTransportESP32_BLE
         String lastRead() { return STRING_format(BLEBuf); }//
 
         bool print(String s) {
-            bool state = STRING_contais_string(s, BLINKER_CMD_NOTICE);
+            bool state = STRING_contains_string(s, BLINKER_CMD_NOTICE);
 
             if (!state) {
-                state = (STRING_contais_string(s, BLINKER_CMD_STATE) 
-                    && STRING_contais_string(s, BLINKER_CMD_CONNECTED));
+                state = (STRING_contains_string(s, BLINKER_CMD_STATE) 
+                    && STRING_contains_string(s, BLINKER_CMD_CONNECTED));
             }
 
             if (!state) {

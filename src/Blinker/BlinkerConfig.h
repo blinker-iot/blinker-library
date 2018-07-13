@@ -117,6 +117,8 @@
 
 #define BLINKER_CMD_NOTICE              "notice"
 
+#define BLINKER_CMD_SWITCH              "switch"
+
 #define BLINKER_CMD_NOTFOUND            "device not found"
 
 #define BLINKER_CMD_AUTO                "auto"

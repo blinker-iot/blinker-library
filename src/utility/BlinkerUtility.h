@@ -93,7 +93,7 @@ String STRING_find_string(String src, String targetStart, String targetEnd, uint
     }
 }
 
-bool STRING_contais_string(const String & src, const String & key)
+bool STRING_contains_string(const String & src, const String & key)
 {
     int addr_start = src.indexOf(key);
     uint8_t keyLen = key.length();

@@ -383,7 +383,7 @@ void BlinkerWlan::serverClient()
 
                 // BLINKER_LOG2("clientData: ", data);
 
-                if (STRING_contais_string(data, "ssid") && STRING_contais_string(data, "pswd")) {
+                if (STRING_contains_string(data, "ssid") && STRING_contains_string(data, "pswd")) {
 
                     String msg = "{\"hello\":\"world\"}";
                     
