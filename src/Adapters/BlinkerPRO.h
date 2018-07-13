@@ -800,7 +800,13 @@ bool BlinkerPRO::print(String data) {
         if (!state) {
             state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
                 && STRING_contains_string(data, BLINKER_CMD_ONLINE))
-                || ((STRING_contains_string(data, BLINKER_CMD_SWITCH)));
+                || (STRING_contains_string(data, BLINKER_CMD_SWITCH)));
+
+            if (!checkPrintSpan()) {
+                respTime = millis();
+                return false;
+            }
+            respTime = millis();
         }
 
         if (!state) {
@@ -844,7 +850,13 @@ bool BlinkerPRO::print(String data) {
         if (!state) {
             state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
                 && STRING_contains_string(data, BLINKER_CMD_ONLINE))
-                || ((STRING_contains_string(data, BLINKER_CMD_SWITCH)));
+                || (STRING_contains_string(data, BLINKER_CMD_SWITCH)));
+
+            if (!checkPrintSpan()) {
+                respTime = millis();
+                return false;
+            }
+            respTime = millis();
         }
 
         if (mqtt->connected()) {

@@ -3,8 +3,6 @@
 
 #include <Blinker.h>
 
-bool freshed = false;
-
 void setup() {
     Serial.begin(115200);
 
@@ -29,20 +27,20 @@ void loop()
         Blinker.endFormat();
     }
 
-    if (Blinker.builtInSwitch()) {
-        digitalWrite(LED_BUILTIN, HIGH);
+    if (Blinker.switchAvailable()) {
+        if (Blinker.switchGet()) {
+            digitalWrite(LED_BUILTIN, HIGH);
 
-        if (!freshed) {
             BLINKER_LOG1("builtInSwitch on");
-            freshed = true;
-        }
-    }
-    else {
-        digitalWrite(LED_BUILTIN, LOW);
 
-        if (freshed) {
+            Blinker.switchUpdate();
+        }
+        else {
+            digitalWrite(LED_BUILTIN, LOW);
+
             BLINKER_LOG1("builtInSwitch off");
-            freshed = false;
+
+            Blinker.switchUpdate();
         }
     }
 }
