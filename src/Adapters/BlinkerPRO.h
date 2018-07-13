@@ -505,8 +505,8 @@ void BlinkerPRO::connectServer() {
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(payload);
 
-    if (STRING_contais_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() || 
-        !STRING_contais_string(payload, BLINKER_CMD_IOTID)) {
+    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() || 
+        !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
         BLINKER_ERR_LOG1(("Please make sure you have register this device!"));
 
         return;
@@ -795,11 +795,11 @@ void BlinkerPRO::subscribe() {
 
 bool BlinkerPRO::print(String data) {
     if (*isHandle) {
-        bool state = STRING_contais_string(data, BLINKER_CMD_NOTICE);
+        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
 
         if (!state) {
-            state = (STRING_contais_string(data, BLINKER_CMD_STATE) 
-                && STRING_contais_string(data, BLINKER_CMD_CONNECTED));
+            state = (STRING_contains_string(data, BLINKER_CMD_STATE) 
+                && STRING_contains_string(data, BLINKER_CMD_CONNECTED));
         }
 
         if (!state) {
@@ -827,7 +827,7 @@ bool BlinkerPRO::print(String data) {
         }
 
         String payload;
-        if (STRING_contais_string(data, BLINKER_CMD_NEWLINE)) {
+        if (STRING_contains_string(data, BLINKER_CMD_NEWLINE)) {
             payload = "{\"data\":" + data.substring(0, data.length() - 1) + ",\"fromDevice\":\"" + MQTT_DEVICEID + "\",\"toDevice\":\"" + UUID + "\"}";
         }
         else {
@@ -838,11 +838,11 @@ bool BlinkerPRO::print(String data) {
         BLINKER_LOG1(("MQTT Publish..."));
 #endif
         bool _alive = isAlive;
-        bool state = STRING_contais_string(data, BLINKER_CMD_NOTICE);
+        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
 
         if (!state) {
-            state = (STRING_contais_string(data, BLINKER_CMD_STATE) 
-                && STRING_contais_string(data, BLINKER_CMD_ONLINE));
+            state = (STRING_contains_string(data, BLINKER_CMD_STATE) 
+                && STRING_contains_string(data, BLINKER_CMD_ONLINE));
         }
 
         if (mqtt->connected()) {
@@ -886,7 +886,7 @@ bool BlinkerPRO::print(String data) {
 
 bool BlinkerPRO::bPrint(String name, String data) {
     String payload;
-    if (STRING_contais_string(data, BLINKER_CMD_NEWLINE)) {
+    if (STRING_contains_string(data, BLINKER_CMD_NEWLINE)) {
         payload = "{\"data\":" + data.substring(0, data.length() - 1) + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + name + "\"}";
     }
     else {
@@ -897,11 +897,11 @@ bool BlinkerPRO::bPrint(String name, String data) {
     BLINKER_LOG1("MQTT Publish...");
 #endif
     // bool _alive = isAlive;
-    // bool state = STRING_contais_string(data, BLINKER_CMD_NOTICE);
+    // bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
 
     // if (!state) {
-    //     state = (STRING_contais_string(data, BLINKER_CMD_STATE) 
-    //         && STRING_contais_string(data, BLINKER_CMD_ONLINE));
+    //     state = (STRING_contains_string(data, BLINKER_CMD_STATE) 
+    //         && STRING_contains_string(data, BLINKER_CMD_ONLINE));
     // }
 
     if (mqtt->connected()) {

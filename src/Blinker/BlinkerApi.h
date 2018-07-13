@@ -67,6 +67,7 @@ enum b_rgb_t {
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
+static class BlinkerToggle _BUILTIN_SWITCH;
 static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
@@ -1255,9 +1256,16 @@ class BlinkerApi
             ahrsValue[Pitch] = 0;
             gpsValue[LONG] = "0.000000";
             gpsValue[LAT] = "0.000000";
+
+            _BUILTIN_SWITCH.name(BLINKER_CMD_SWITCH);
+            _BUILTIN_SWITCH.freshState(true);
             // rgbValue[R] = 0;
             // rgbValue[G] = 0;
             // rgbValue[B] = 0;
+        }
+
+        bool builtInSwith() {
+            return _BUILTIN_SWITCH.getState();
         }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -1550,7 +1558,7 @@ class BlinkerApi
 
                 if (static_cast<Proto*>(this)->checkAvail()) {
                     // BLINKER_LOG2(BLINKER_F("GET: "), static_cast<Proto*>(this)->dataParse());
-                    if (STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS)) {
+                    if (STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AHRS)) {
                         BLINKER_LOG1(BLINKER_F("AHRS attach sucessed..."));
                         parse(static_cast<Proto*>(this)->dataParse());
                         state = true;
@@ -2494,6 +2502,7 @@ class BlinkerApi
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
                     stateData();
         #if defined(BLINKER_PRO)
                     if (_heartbeatFunc) {
@@ -2502,17 +2511,36 @@ class BlinkerApi
         #endif
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
+                        static_cast<Proto*>(this)->endFormat();
                     }
     #else
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
                     stateData();
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
+                        static_cast<Proto*>(this)->endFormat();
                     }
     #endif
                     _fresh = true;
                 }
+            }
+        }
+
+        void setSwitch(const JsonObject& data) {
+            String state = data[BLINKER_CMD_SET][BLINKER_CMD_SWITCH];
+
+            if (state.length()) {
+                if (state == BLINKER_CMD_ON) {
+                    _BUILTIN_SWITCH.freshState(true);
+                }
+                else {
+                    _BUILTIN_SWITCH.freshState(false);
+                }
+                _fresh = true;
             }
         }
 
@@ -2742,13 +2770,41 @@ class BlinkerApi
                 if (state == BLINKER_CMD_STATE) {
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
                     stateData();
                     if (!static_cast<Proto*>(this)->endFormat()) {
+                        static_cast<Proto*>(this)->beginFormat();
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
+                        static_cast<Proto*>(this)->endFormat();
                     }
                     _fresh = true;
                 }
             }
+        }
+
+        void setSwitch() {
+            String state;
+
+            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
+                if (STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET)) {
+                    if (state == BLINKER_CMD_ON) {
+                        _BUILTIN_SWITCH.freshState(true);
+                    }
+                    else {
+                        _BUILTIN_SWITCH.freshState(false);
+                    }
+                    _fresh = true;
+                }
+            }
+            // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
+            // // if (state.length()) {
+            //     _fresh = true;
+            //     if (state == BLINKER_CMD_VERSION) {
+            //         static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, BLINKER_VERSION);
+            //         _fresh = true;
+            //     }
+            // }
         }
 
         void getVersion() {
@@ -2782,8 +2838,8 @@ class BlinkerApi
             bool isSet = false;
             bool isAuto = false;
 
-            // isSet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
-            // isAuto = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTODATA);
+            // isSet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
+            // isAuto = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTODATA);
             isSet = data.containsKey(BLINKER_CMD_SET);
             String aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA];
             if (aData.length()) {
@@ -2795,7 +2851,7 @@ class BlinkerApi
     #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("get auto setting"));
     #endif
-                bool isDelet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
+                bool isDelet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
                 String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][0];
 
                 if (isDelet) {
@@ -2953,10 +3009,10 @@ class BlinkerApi
             bool isTiming = false;
 
             if (!_noSet) {
-                isSet = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
-                isCount = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_COUNTDOWN);
-                isLoop = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LOOP);
-                isTiming = STRING_contais_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMING);
+                isSet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
+                isCount = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_COUNTDOWN);
+                isLoop = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LOOP);
+                isTiming = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMING);
             }
             else {
                 isCount = data.containsKey(BLINKER_CMD_COUNTDOWN);
@@ -4312,6 +4368,7 @@ class BlinkerApi
                     // }
                     timerManager(root);
                     heartBeat(root);
+                    setSwitch(root);
                     getVersion(root);
 
                     for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
@@ -4332,6 +4389,7 @@ class BlinkerApi
                     gps(LONG, true, root);
 #else
                     heartBeat();
+                    setSwitch();
                     getVersion();
 
                     for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
@@ -4502,6 +4560,7 @@ class BlinkerApi
     #endif
             timerManager(data);
             heartBeat(data);
+            setSwitch(data);
             getVersion(data);
 
             for (uint8_t bNum = 0; bNum < _bCount; bNum++) {

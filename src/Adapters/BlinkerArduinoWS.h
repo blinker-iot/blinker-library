@@ -102,11 +102,11 @@ class BlinkerArduinoWS
             BLINKER_LOG2(BLINKER_F("Response: "), s_data);
 #endif
             if(connected()) {
-                bool state = STRING_contais_string(s_data, BLINKER_CMD_NOTICE);
+                bool state = STRING_contains_string(s_data, BLINKER_CMD_NOTICE);
 
                 if (!state) {
-                    state = (STRING_contais_string(s_data, BLINKER_CMD_STATE) 
-                        && STRING_contais_string(s_data, BLINKER_CMD_CONNECTED));
+                    state = (STRING_contains_string(s_data, BLINKER_CMD_STATE) 
+                        && STRING_contains_string(s_data, BLINKER_CMD_CONNECTED));
                 }
 
                 if (!state) {
