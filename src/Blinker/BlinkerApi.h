@@ -67,7 +67,7 @@ enum b_rgb_t {
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
-static class BlinkerToggle _BUILTIN_SWITCH;
+static class BlinkerToggle *_BUILTIN_SWITCH;
 static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
@@ -1257,15 +1257,16 @@ class BlinkerApi
             gpsValue[LONG] = "0.000000";
             gpsValue[LAT] = "0.000000";
 
-            _BUILTIN_SWITCH.name(BLINKER_CMD_SWITCH);
-            _BUILTIN_SWITCH.freshState(true);
+            _BUILTIN_SWITCH = new BlinkerToggle();
+            _BUILTIN_SWITCH->name(BLINKER_CMD_SWITCH);
+            _BUILTIN_SWITCH->freshState(true);
             // rgbValue[R] = 0;
             // rgbValue[G] = 0;
             // rgbValue[B] = 0;
         }
 
         bool builtInSwith() {
-            return _BUILTIN_SWITCH.getState();
+            return _BUILTIN_SWITCH->getState();
         }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -2535,10 +2536,10 @@ class BlinkerApi
 
             if (state.length()) {
                 if (state == BLINKER_CMD_ON) {
-                    _BUILTIN_SWITCH.freshState(true);
+                    _BUILTIN_SWITCH->freshState(true);
                 }
                 else {
-                    _BUILTIN_SWITCH.freshState(false);
+                    _BUILTIN_SWITCH->freshState(false);
                 }
                 _fresh = true;
             }
@@ -2789,10 +2790,10 @@ class BlinkerApi
             if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
                 if (STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET)) {
                     if (state == BLINKER_CMD_ON) {
-                        _BUILTIN_SWITCH.freshState(true);
+                        _BUILTIN_SWITCH->freshState(true);
                     }
                     else {
-                        _BUILTIN_SWITCH.freshState(false);
+                        _BUILTIN_SWITCH->freshState(false);
                     }
                     _fresh = true;
                 }
