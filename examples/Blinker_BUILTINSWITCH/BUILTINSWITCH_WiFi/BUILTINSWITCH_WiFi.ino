@@ -35,15 +35,15 @@ void loop()
         Blinker.endFormat();
     }
 
-    if (Blinker.builtInSwith()) {
+    if (Blinker.builtInSwitch()) {
         if (!freshed) {
-            BLINKER_LOG1("builtInSwith on");
+            BLINKER_LOG1("builtInSwitch on");
             freshed = true;
         }
     }
     else {
         if (freshed) {
-            BLINKER_LOG1("builtInSwith off");
+            BLINKER_LOG1("builtInSwitch off");
             freshed = false;
         }
     }
