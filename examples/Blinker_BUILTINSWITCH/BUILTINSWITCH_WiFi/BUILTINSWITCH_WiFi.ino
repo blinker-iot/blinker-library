@@ -6,8 +6,6 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#define BUTTON_1 "ButtonKey"
-
 bool freshed = false;
 
 void setup() {
@@ -17,7 +15,6 @@ void setup() {
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
-    Blinker.wInit(BUTTON_1, W_BUTTON);
 }
 
 void loop()
@@ -36,19 +33,19 @@ void loop()
     }
 
     if (Blinker.builtInSwitch()) {
+        digitalWrite(LED_BUILTIN, HIGH);
+
         if (!freshed) {
             BLINKER_LOG1("builtInSwitch on");
             freshed = true;
         }
     }
     else {
+        digitalWrite(LED_BUILTIN, LOW);
+
         if (freshed) {
             BLINKER_LOG1("builtInSwitch off");
             freshed = false;
         }
-    }
-
-    if (Blinker.button(BUTTON_1)) {
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
 }
