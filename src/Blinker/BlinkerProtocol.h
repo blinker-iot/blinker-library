@@ -79,6 +79,7 @@ class BlinkerProtocol
 
                     if (b_name == _from) {
                         _bKey_forwhile = b_name;
+                        isExtraAvail = false;
                         return true;
                     }
                     else {
@@ -665,7 +666,10 @@ class BlinkerProtocol
 
         bool checkExtraAvail()
         {
-            isExtraAvail = conn.extraAvailable();
+            if (conn.extraAvailable()) {
+                isExtraAvail = true;
+            }
+
             if (isExtraAvail) {
                 isBridgeFresh = true;
                 // BLINKER_LOG1("isExtraAvail true");
