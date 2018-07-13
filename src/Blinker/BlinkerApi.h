@@ -1265,10 +1265,25 @@ class BlinkerApi
             // rgbValue[B] = 0;
         }
 
+        void switchOn() {
+            _BUILTIN_SWITCH->freshState(true);
+            String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
+                            BLINKER_CMD_SWITCH + "\":\"on\"}}";
+            parse(data, true);
+        }
+
+        void switchOff() {
+            _BUILTIN_SWITCH->freshState(false);
+            String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
+                            BLINKER_CMD_SWITCH + "\":\"off\"}}";
+            parse(data, true);
+        }
+
         bool switchAvailable() {
-            if ((builtInSwitch() && !_switchFresh)
-                || (!builtInSwitch() && _switchFresh)) {
-                _switchFresh = !_switchFresh;
+            // if ((builtInSwitch() && !_switchFresh)
+            //     || (!builtInSwitch() && _switchFresh)) {
+            if (_switchFresh) {
+                _switchFresh = false;
                 return true;
             }
             else {
@@ -2573,7 +2588,7 @@ class BlinkerApi
                     _BUILTIN_SWITCH->freshState(false);
                 }
                 _fresh = true;
-
+                _switchFresh = true;
                 // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
             }
         }
@@ -2829,7 +2844,7 @@ class BlinkerApi
                         _BUILTIN_SWITCH->freshState(false);
                     }
                     _fresh = true;
-
+                    _switchFresh = true;
                     // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                 }
             }
@@ -2841,6 +2856,24 @@ class BlinkerApi
             //         _fresh = true;
             //     }
             // }
+        }
+
+        void setSwitch(const String & data) {
+            String state;
+
+            if (STRING_find_string_value(data, state, BLINKER_CMD_GET)) {
+                if (STRING_contains_string(data, BLINKER_CMD_SET)) {
+                    if (state == BLINKER_CMD_ON) {
+                        _BUILTIN_SWITCH->freshState(true);
+                    }
+                    else {
+                        _BUILTIN_SWITCH->freshState(false);
+                    }
+                    _fresh = true;
+                    _switchFresh = true;
+                    // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                }
+            }
         }
 
         void getVersion() {
@@ -4473,6 +4506,8 @@ class BlinkerApi
                     return;
                 }
 
+                setSwitch(root);
+
                 String arrayData = root["data"][0];
     #ifdef BLINKER_DEBUG_ALL
                 // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
@@ -4506,6 +4541,8 @@ class BlinkerApi
                     json_parse(root);
                 }
 #else
+                setSwitch(_data);
+
                 for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                     buttonParse(_Button[bNum]->getName(), _data);
                 }
