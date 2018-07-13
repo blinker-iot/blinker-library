@@ -1265,7 +1265,7 @@ class BlinkerApi
             // rgbValue[B] = 0;
         }
 
-        bool builtInSwith() {
+        bool builtInSwitch() {
             return _BUILTIN_SWITCH->getState();
         }
 
@@ -2503,7 +2503,7 @@ class BlinkerApi
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                     stateData();
         #if defined(BLINKER_PRO)
                     if (_heartbeatFunc) {
@@ -2512,17 +2512,17 @@ class BlinkerApi
         #endif
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                         static_cast<Proto*>(this)->endFormat();
                     }
     #else
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                     stateData();
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                         static_cast<Proto*>(this)->endFormat();
                     }
     #endif
@@ -2771,12 +2771,12 @@ class BlinkerApi
                 if (state == BLINKER_CMD_STATE) {
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                     stateData();
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->beginFormat();
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwith()?"on":"off");
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                         static_cast<Proto*>(this)->endFormat();
                     }
                     _fresh = true;
