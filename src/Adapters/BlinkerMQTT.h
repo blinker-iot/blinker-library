@@ -708,8 +708,9 @@ bool BlinkerMQTT::print(String data) {
         bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
 
         if (!state) {
-            state = (STRING_contains_string(data, BLINKER_CMD_STATE) 
-                && STRING_contains_string(data, BLINKER_CMD_CONNECTED));
+            state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
+                && STRING_contains_string(data, BLINKER_CMD_ONLINE))
+                || ((STRING_contains_string(data, BLINKER_CMD_SWITCH)));
         }
 
         if (!state) {
@@ -747,8 +748,9 @@ bool BlinkerMQTT::print(String data) {
         bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
 
         if (!state) {
-            state = (STRING_contains_string(data, BLINKER_CMD_STATE) 
-                && STRING_contains_string(data, BLINKER_CMD_ONLINE));
+            state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
+                && STRING_contains_string(data, BLINKER_CMD_ONLINE))
+                || ((STRING_contains_string(data, BLINKER_CMD_SWITCH)));
         }
 
         if (mqtt->connected()) {
