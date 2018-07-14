@@ -728,6 +728,8 @@ class BlinkerProtocol
 #endif
 
 #if defined(BLINKER_PRO)
+        char            _deviceName[BLINKER_MQTT_DEVICEID_SIZE];
+        
         bool            _isConnBegin = false;
         bool            _getRegister = false;
         bool            _isInit = false;
@@ -777,13 +779,13 @@ class BlinkerProtocol
         {
             begin();
 
-            BLINKER_LOG1(BLINKER_F("==========================================================="));
-            BLINKER_LOG1(BLINKER_F("================= Blinker PRO mode init ! ================="));
-            BLINKER_LOG1(BLINKER_F("Warning! EEPROM address 1280-1535 is used for Auto Control!"));
-            BLINKER_LOG1(BLINKER_F("============= DON'T USE THESE EEPROM ADDRESS! ============="));
-            BLINKER_LOG1(BLINKER_F("==========================================================="));
+            BLINKER_LOG1(("==========================================================="));
+            BLINKER_LOG1(("================= Blinker PRO mode init ! ================="));
+            BLINKER_LOG1(("Warning! EEPROM address 1280-1535 is used for Auto Control!"));
+            BLINKER_LOG1(("============= DON'T USE THESE EEPROM ADDRESS! ============="));
+            BLINKER_LOG1(("==========================================================="));
 
-            BLINKER_LOG2(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+            BLINKER_LOG2(("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
     #if defined(BLINKER_BUTTON)
             BApi::buttonInit();

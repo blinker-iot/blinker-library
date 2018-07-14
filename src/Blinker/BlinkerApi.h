@@ -3440,7 +3440,7 @@ class BlinkerApi
                                 _tmRun1 = false;
                                 tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
     #ifdef BLINKER_DEBUG_ALL 
-                                BLINKER_LOG2(F("next day start! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
+                                BLINKER_LOG2(BLINKER_F("next day start! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
     #endif
                             }
                         }
