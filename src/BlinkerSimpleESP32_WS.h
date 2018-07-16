@@ -137,9 +137,11 @@ class BlinkerSimpleESP32_WS
 
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
+            WiFi.mode(WIFI_AP_STA);
+
             String _hostname = "DiyArduino_" + macDeviceName();
             WiFi.setHostname(_hostname.c_str());
-            WiFi.mode(WIFI_AP_STA);
+
             WiFi.beginSmartConfig();
             
             BLINKER_LOG1("Waiting for SmartConfig.");
@@ -189,9 +191,11 @@ class BlinkerSimpleESP32_WS
             uint32_t connectTime = millis();
 
             BLINKER_LOG2(BLINKER_F("Connecting to "), _ssid);
+            
+            WiFi.mode(WIFI_STA);
+
             String _hostname = "DiyArduinoMQTT_" + macDeviceName();
             WiFi.setHostname(_hostname.c_str());
-            WiFi.mode(WIFI_STA);
 
             if (_pswd && strlen(_pswd)) {
                 WiFi.begin(_ssid, _pswd);
