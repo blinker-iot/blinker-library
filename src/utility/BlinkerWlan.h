@@ -155,8 +155,8 @@ void BlinkerWlan::deleteConfig() {
 void BlinkerWlan::smartconfigBegin(uint16_t _time) {
     WiFi.mode(WIFI_STA);
     delay(100);
-
     String softAP_ssid = STRING_format(_deviceType) + "_" + macDeviceName();
+
 #if defined(ESP8266)
     WiFi.hostname(softAP_ssid);
 #elif defined(ESP32)
@@ -329,8 +329,8 @@ void BlinkerWlan::softAPinit() {
     _server = new WiFiServer(80);
 
     WiFi.mode(WIFI_AP);
-
     String softAP_ssid = STRING_format(_deviceType) + "_" + macDeviceName();
+    
 #if defined(ESP8266)
     WiFi.hostname(softAP_ssid);
 #elif defined(ESP32)
@@ -447,8 +447,8 @@ void BlinkerWlan::connectWiFi(const char* _ssid, const char* _pswd)
     BLINKER_LOG2(("Connecting to "), _ssid);
 
     WiFi.mode(WIFI_STA);
-
     String _hostname = STRING_format(_deviceType) + "_" + macDeviceName();
+
 #if defined(ESP8266)
     WiFi.hostname(_hostname);
 #elif defined(ESP32)

@@ -65,10 +65,8 @@ class BlinkerSimpleESP8266_MQTT
             _server = new WiFiServer(80);
 
             WiFi.mode(WIFI_AP);
-
             String softAP_ssid = "DiyArduino_" + macDeviceName();
             WiFi.hostname(softAP_ssid);
-
             WiFi.softAPConfig(apIP, apIP, netMsk);
             WiFi.softAP(softAP_ssid.c_str(), "12345678");
             delay(100);
@@ -148,10 +146,8 @@ class BlinkerSimpleESP8266_MQTT
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
             WiFi.mode(WIFI_STA);
-
             String _hostname = "DiyArduinoMQTT_" + macDeviceName();
             WiFi.hostname(_hostname);
-
             WiFi.beginSmartConfig();
             
             BLINKER_LOG1("Waiting for SmartConfig.");
@@ -201,7 +197,6 @@ class BlinkerSimpleESP8266_MQTT
             BLINKER_LOG2(("Connecting to "), _ssid);
 
             WiFi.mode(WIFI_STA);
-
             String _hostname = "DiyArduinoMQTT_" + macDeviceName();
             WiFi.hostname(_hostname);
 
