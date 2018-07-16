@@ -1734,6 +1734,11 @@ class BlinkerApi
 
         void setTimezone(float tz) {
             _timezone = tz;
+            _isNTPInit = false;
+        }
+
+        float getTimezone() {
+            return _timezone;
         }
 
         int8_t second() { freshNTP(); return _isNTPInit ? timeinfo.tm_sec : -1; }
@@ -4679,6 +4684,8 @@ class BlinkerApi
                 else {
                     return false;
                 }
+
+                configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
 
                 now_ntp = ::time(nullptr);//getLocalTime(&timeinfo)
             
