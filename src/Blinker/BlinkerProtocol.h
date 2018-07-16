@@ -308,6 +308,37 @@ class BlinkerProtocol
                 _print("{" + _msg + "}");
             }
         }
+
+        template <typename T1>
+        void printObject(T1 n1, const String &s2) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + s2;
+
+            if (isFormat) {
+                formatData(_msg);
+            }
+            else {
+                _print("{" + _msg + "}");
+            }
+        }
+
+#if defined(ESP8266) || defined(ESP32)
+        void printJson(const String &s) {
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& json_data = jsonBuffer.parseObject(s);
+
+            if (!json_data.success()) {
+                BLINKER_ERR_LOG1("data is not a JSON!");
+                return;
+            }
+            
+            if (isFormat) {
+                formatData(s);
+            }
+            else {
+                _print(s);
+            }
+        }
+#endif
         
         template <typename T1>
         void print(T1 n1, const String &s2) {
