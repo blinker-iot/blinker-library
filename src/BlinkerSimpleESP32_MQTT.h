@@ -57,11 +57,12 @@ class BlinkerSimpleESP32_MQTT
         void softAPinit()
         {
             _server = new WiFiServer(80);
+            
+            WiFi.mode(WIFI_AP);
 
             String softAP_ssid = "DiyArduino_" + macDeviceName();
             WiFi.setHostname(softAP_ssid.c_str());
-            
-            WiFi.mode(WIFI_AP);
+
             WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
             WiFi.softAP(softAP_ssid.c_str(), "12345678");
             delay(100);
@@ -140,9 +141,11 @@ class BlinkerSimpleESP32_MQTT
 
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
+            WiFi.mode(WIFI_AP_STA);
+
             String _hostname = "DiyArduinoMQTT_" + macDeviceName();
             WiFi.setHostname(_hostname.c_str());
-            WiFi.mode(WIFI_AP_STA);
+
             WiFi.beginSmartConfig();
             
             BLINKER_LOG1("Waiting for SmartConfig.");
@@ -176,9 +179,11 @@ class BlinkerSimpleESP32_MQTT
             uint32_t connectTime = millis();
 
             BLINKER_LOG2(("Connecting to "), _ssid);
+            
+            WiFi.mode(WIFI_STA);
+
             String _hostname = "DiyArduinoMQTT_" + macDeviceName();
             WiFi.setHostname(_hostname.c_str());
-            WiFi.mode(WIFI_STA);
 
             if (_pswd && strlen(_pswd)) {
                 WiFi.begin(_ssid, _pswd);
