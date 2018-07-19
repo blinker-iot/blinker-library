@@ -2263,6 +2263,7 @@ class BlinkerApi
         uint32_t    _aqiTime = 0;
 
         uint32_t    _cUpdateTime = 0;
+        uint32_t    _dUpdateTime = 0;
         uint32_t    _cGetTime = 0;
 #endif
 
@@ -3673,6 +3674,9 @@ class BlinkerApi
                     }
                     break;
                 case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                    if (!checkDataUpdata()) {
+                        return BLINKER_CMD_FALSE;
+                    }
                     break;
                 default :
                     return BLINKER_CMD_FALSE;
@@ -4035,7 +4039,7 @@ class BlinkerApi
                             dataGet = _dataGet;
                         }
                     }
-                    _cUpdateTime = millis();
+                    _dUpdateTime = millis();
             #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2("dataGet: ", dataGet);
             #endif
@@ -4308,7 +4312,7 @@ class BlinkerApi
                                     payload = _payload;
                                 }
                             }
-                            _cUpdateTime = millis();
+                            _dUpdateTime = millis();
             #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2("payload: ", payload);
             #endif
@@ -4340,7 +4344,7 @@ class BlinkerApi
         }
 
         bool checkSMS() {
-            if ((millis() - _smsTime) > BLINKER_SMS_MSG_LIMIT || _smsTime == 0) {
+            if ((millis() - _smsTime) >= BLINKER_SMS_MSG_LIMIT || _smsTime == 0) {
                 return true;
             }
             else {
@@ -4349,7 +4353,7 @@ class BlinkerApi
         }
 
         bool checkPUSH() {
-            if ((millis() - _pushTime) > BLINKER_PUSH_MSG_LIMIT || _pushTime == 0) {
+            if ((millis() - _pushTime) >= BLINKER_PUSH_MSG_LIMIT || _pushTime == 0) {
                 return true;
             }
             else {
@@ -4358,7 +4362,7 @@ class BlinkerApi
         }
 
         bool checkWECHAT() {
-            if ((millis() - _wechatTime) > BLINKER_WECHAT_MSG_LIMIT || _wechatTime == 0) {
+            if ((millis() - _wechatTime) >= BLINKER_WECHAT_MSG_LIMIT || _wechatTime == 0) {
                 return true;
             }
             else {
@@ -4367,7 +4371,7 @@ class BlinkerApi
         }
 
         bool checkWEATHER() {
-            if ((millis() - _weatherTime) > BLINKER_WEATHER_MSG_LIMIT || _weatherTime == 0) {
+            if ((millis() - _weatherTime) >= BLINKER_WEATHER_MSG_LIMIT || _weatherTime == 0) {
                 return true;
             }
             else {
@@ -4376,7 +4380,7 @@ class BlinkerApi
         }
 
         bool checkAQI() {
-            if ((millis() - _aqiTime) > BLINKER_AQI_MSG_LIMIT || _aqiTime == 0) {
+            if ((millis() - _aqiTime) >= BLINKER_AQI_MSG_LIMIT || _aqiTime == 0) {
                 return true;
             }
             else {
@@ -4385,7 +4389,7 @@ class BlinkerApi
         }
 
         bool checkCUPDATE() {
-            if ((millis() - _cUpdateTime) > BLINKER_CONFIG_UPDATE_LIMIT || _cUpdateTime == 0) {
+            if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || _cUpdateTime == 0) {
                 return true;
             }
             else {
@@ -4394,7 +4398,16 @@ class BlinkerApi
         }
 
         bool checkCGET() {
-            if ((millis() - _cGetTime) > BLINKER_CONFIG_GET_LIMIT || _cGetTime == 0) {
+            if ((millis() - _cGetTime) >= BLINKER_CONFIG_GET_LIMIT || _cGetTime == 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool checkDataUpdata() {
+            if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT * 60 || _cUpdateTime == 0) {
                 return true;
             }
             else {
