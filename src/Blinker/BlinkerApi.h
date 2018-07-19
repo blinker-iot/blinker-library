@@ -4072,8 +4072,9 @@ class BlinkerApi
                                 }
                             }
                             _smsTime = millis();
-
+            #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2("payload: ", payload);
+            #endif
                             break;
                         case BLINKER_CMD_PUSH_NUMBER :
                             return BLINKER_CMD_FALSE;
@@ -4095,8 +4096,9 @@ class BlinkerApi
                                 }
                             }
                             _weatherTime = millis();
-
+            #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2("payload: ", payload);
+            #endif
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             // DynamicJsonBuffer jsonBuffer;
@@ -4114,8 +4116,9 @@ class BlinkerApi
                                 }
                             }
                             _aqiTime = millis();
-
+            #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2("payload: ", payload);
+            #endif
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             if (data_rp.success()) {
@@ -4129,8 +4132,9 @@ class BlinkerApi
                                     payload = _payload;
                                 }
                             }
-
+            #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2("payload: ", payload);
+            #endif
                             break;
                         case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                             if (data_rp.success()) {
@@ -4145,8 +4149,9 @@ class BlinkerApi
                                 }
                             }
                             _cUpdateTime = millis();
-
+            #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2("payload: ", payload);
+            #endif
                             break;
                         case BLINKER_CMD_CONFIG_GET_NUMBER :
                             if (data_rp.success()) {
@@ -4161,17 +4166,19 @@ class BlinkerApi
                                 }
                             }
                             _cGetTime = millis();
-
+            #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2("payload: ", payload);
+            #endif
                             break;
                         default :
                             return BLINKER_CMD_FALSE;
                     }
                 }
-                if (_type == BLINKER_CMD_SMS_NUMBER) {
-                    _smsTime = millis();
-                }
+                // if (_type == BLINKER_CMD_SMS_NUMBER) {
+                //     _smsTime = millis();
+                // }
                 http.end();
+                
                 return payload;
             }
             else {
