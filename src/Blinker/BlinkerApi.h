@@ -3543,8 +3543,7 @@ class BlinkerApi
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         // bool _smsSend(String msg, bool state = false) {
-        // String blinkServer(uint8_t _type, String msg, bool state = false) {
-        const char * blinkServer(uint8_t _type, String msg, bool state = false) {
+        String blinkServer(uint8_t _type, String msg, bool state = false) {
             switch (_type) {
                 case BLINKER_CMD_SMS_NUMBER :
                     if (!checkSMS()) {
@@ -3928,7 +3927,7 @@ class BlinkerApi
 
             client_s.stop();
 
-            return dataGet.c_str();
+            return dataGet;
     #elif defined(ESP32)
             const char* host = "https://iotdev.clz.me";
 
@@ -4180,7 +4179,7 @@ class BlinkerApi
                 // }
                 http.end();
                 
-                return payload.c_str();
+                return payload;
             }
             else {
         #ifdef BLINKER_DEBUG_ALL
