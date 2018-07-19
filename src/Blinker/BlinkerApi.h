@@ -72,6 +72,9 @@ static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
 static class BlinkerBridge * _Bridge[BLINKER_MAX_BRIDGE_SIZE];
+// #endif
+// #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+static class BlinkerStorage * _Storage[6];
 #endif
 
 #if defined(BLINKER_WIFI)
@@ -174,6 +177,32 @@ class BlinkerBridge
     private :
         String _name;
         String bridgeName;
+};
+// #endif
+
+// #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+class BlinkerStorage
+{
+    public :
+        BlinkerStorage()
+            : _name(""), data("")
+        {}
+
+        void name(String name) { _name = name; }
+        String getName() { return _name; }
+        void saveData(time_t _time, String _data) {
+            if (data.length() > 0) {
+                data += ",";
+            }
+
+            data += "[" + STRING_format(_time) + "," + _data + "]";
+        }
+        String getData() { return data; }
+        bool checkName(String name) { return ((_name == name) ? true : false); }
+
+    private :
+        String _name;
+        String data;
 };
 #endif
 // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -1886,6 +1915,52 @@ class BlinkerApi
 
             return blinkServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
         }
+
+        template<typename T>
+        void dataStorage(const String & _name, const T& msg) {
+            String _msg = STRING_format(msg);
+
+            int8_t num = checkNum(_name, _Storage, _storageCount);
+
+            if( num != BLINKER_OBJECT_NOT_AVAIL ) {
+                _Storage[_storageCount] = new BlinkerStorage();
+                _Storage[_storageCount]->name(_name);
+                _Storage[_storageCount]->saveData(time(), _msg);
+                _storageCount++;
+            }
+            else {
+                _Storage[num]->saveData(time(), _msg);
+            }
+
+            BLINKER_LOG3(_name, " save: ", _msg);
+        }
+
+        bool dataUpdate() {
+            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+                            "\",\"data\":\"{";
+            // String _sdata;
+
+            if (!_storageCount) {
+                BLINKER_ERR_LOG1("none data storaged!");
+                return false;
+            }
+
+            for (uint8_t _num; _num < _storageCount; _num++) {
+                data += "\"" + _Storage[_num]->getName() + "\":[" + _Storage[_num]->getData() + "]";
+                if (_num <= _storageCount - 1) {
+                    data += ",";
+                }
+            }
+
+            data += "}}";
+
+            BLINKER_LOG2("dataUpdate: ", data);
+
+            return true;
+                            //  + \ _msg + \
+                            // "\"}}";
+        //     return (blinkServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        }
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -2166,6 +2241,7 @@ class BlinkerApi
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         uint8_t     _bridgeCount = 0;
+        uint8_t     _storageCount = 0;
         uint8_t     _aCount = 0;
 #endif
 
