@@ -9,7 +9,8 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 #define BUTTON_1 "ButtonKey"
 
-void setup() {
+void setup()
+{
     Serial.begin(115200);
 
     pinMode(LED_BUILTIN, OUTPUT);
@@ -40,6 +41,6 @@ void loop()
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
         
         Blinker.dataStorage("data1", random(0,120));
-        Blinker.dataStorage("data2", )
+        Blinker.dataStorage("data2", random(0,120)/2.0);
     }
 }

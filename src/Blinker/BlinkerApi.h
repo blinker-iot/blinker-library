@@ -1965,7 +1965,7 @@ class BlinkerApi
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("dataUpdate: ", data);
     #endif
-            return true;
+            // return true;
                             //  + \ _msg + \
                             // "\"}}";
             return (blinkServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;

@@ -23,7 +23,8 @@
  * 
  * When get a command and device not parsed this command, device will call this function
  */
-bool dataParse(const JsonObject & data) {
+bool dataParse(const JsonObject & data)
+{
     String getData;
 
     data.printTo(getData);
@@ -40,7 +41,8 @@ bool dataParse(const JsonObject & data) {
  * 
  * Every 30s will get a heartbeat command from app 
  */
-void heartbeat() {
+void heartbeat()
+{
     Blinker.print("hello", "blinker");
 
     BLINKER_LOG1("heartbeat!");
@@ -54,7 +56,8 @@ void heartbeat() {
  * 
  * Blinker.tick() will run by default, use interrupt will be better
  */
-void buttonTick() {
+void buttonTick()
+{
     Blinker.tick();
 }
 
@@ -63,7 +66,8 @@ void buttonTick() {
  * 
  * When button clicked, device will call this function
  */
-void singalClick() {
+void singalClick()
+{
     BLINKER_LOG1("Button clicked!");
 }
 
@@ -72,12 +76,14 @@ void singalClick() {
  * 
  * When button double clicked, device will call this function
  */
-void doubleClick() {
+void doubleClick()
+{
     BLINKER_LOG1("Button double clicked!");
 }
 #endif
 
-void setup() {
+void setup()
+{
     Serial.begin(115200);
 
     pinMode(LED_BUILTIN, OUTPUT);
