@@ -258,6 +258,8 @@
 
     #define BLINKER_CMD_CONFIG_GET_NUMBER       8
 
+    #define BLINKER_CMD_DATA_STORAGE_NUMBER     9
+
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 
 #endif

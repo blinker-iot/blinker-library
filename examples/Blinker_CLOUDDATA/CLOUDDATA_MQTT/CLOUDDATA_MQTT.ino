@@ -33,14 +33,14 @@ void loop()
         Blinker.vibrate();        
         Blinker.print("millis", BlinkerTime);
         Blinker.endFormat();
+
+        Blinker.dataUpdate();
     }
 
     if (Blinker.button(BUTTON_1)) {
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-        String get_weather = Blinker.weather();
-
-        BLINKER_LOG2("weather: ", get_weather);
-
-        Blinker.delay(6000);
+        
+        Blinker.dataStorage("data1", random(0,120));
+        Blinker.dataStorage("data2", random(0,120)/2.0);
     }
 }

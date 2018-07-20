@@ -68,10 +68,13 @@ static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle *_BUILTIN_SWITCH;
-static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
+static class BlinkerRGB *_RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-static class BlinkerAUTO * _AUTO[2];
-static class BlinkerBridge * _Bridge[BLINKER_MAX_BRIDGE_SIZE];
+static class BlinkerAUTO *_AUTO[2];
+static class BlinkerBridge *_Bridge[BLINKER_MAX_BRIDGE_SIZE];
+// #endif
+// #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+static class BlinkerData *_Data[6];
 #endif
 
 #if defined(BLINKER_WIFI)
@@ -174,6 +177,31 @@ class BlinkerBridge
     private :
         String _name;
         String bridgeName;
+};
+// #endif
+
+// #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+class BlinkerData
+{
+    public :
+        BlinkerData()
+            : _dname(NULL)
+        {}
+
+        void name(String name) { _dname = name; }
+        String getName() { return _dname; }
+        void saveData(time_t _time, String _data) {
+            if (data != "") {
+                data += ",";
+            }
+            data += "[" + STRING_format(_time) + "," + _data + "]";
+        }
+        String getData() { return data; }
+        bool checkName(String name) { return ((_dname == name) ? true : false); }
+
+    private :
+        String _dname;
+        String data = "";
 };
 #endif
 // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -1886,6 +1914,62 @@ class BlinkerApi
 
             return blinkServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
         }
+
+        template<typename T>
+        void dataStorage(const String & _name, const T& msg) {
+            String _msg = STRING_format(msg);
+
+            int8_t num = checkNum(_name, _Data, _dataCount);
+
+            // BLINKER_LOG2("num: ", num);
+
+            if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+                if (_dataCount == 5) {
+                    return;
+                }
+                _Data[_dataCount] = new BlinkerData();
+                _Data[_dataCount]->name(_name);
+                _Data[_dataCount]->saveData(time(), _msg);
+                _dataCount++;
+            }
+            else {
+                _Data[num]->saveData(time(), _msg);
+            }
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG3(_name, " save: ", _msg);
+            BLINKER_LOG2("_dataCount: ", _dataCount);
+    #endif
+        }
+
+        bool dataUpdate() {
+            String data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+                            "\",\"data\":{";
+            // String _sdata;
+
+            if (!_dataCount) {
+                BLINKER_ERR_LOG1("none data storaged!");
+                return false;
+            }
+
+            for (uint8_t _num = 0; _num < _dataCount; _num++) {
+                data += "\"" + _Data[_num]->getName() + "\":[" + _Data[_num]->getData() + "]";
+                if (_num < _dataCount - 1) {
+                    data += ",";
+                }
+    #ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG4("num: ", _num, " name: ", _Data[_num]->getName());
+    #endif
+            }
+
+            data += "}}";
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("dataUpdate: ", data);
+    #endif
+            // return true;
+                            //  + \ _msg + \
+                            // "\"}}";
+            return (blinkServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        }
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -2166,6 +2250,7 @@ class BlinkerApi
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         uint8_t     _bridgeCount = 0;
+        uint8_t     _dataCount = 0;
         uint8_t     _aCount = 0;
 #endif
 
@@ -2178,6 +2263,7 @@ class BlinkerApi
         uint32_t    _aqiTime = 0;
 
         uint32_t    _cUpdateTime = 0;
+        uint32_t    _dUpdateTime = 0;
         uint32_t    _cGetTime = 0;
 #endif
 
@@ -3587,6 +3673,11 @@ class BlinkerApi
                         return BLINKER_CMD_FALSE;
                     }
                     break;
+                case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                    if (!checkDataUpdata()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -3740,6 +3831,21 @@ class BlinkerApi
                     client_msg = STRING_format("GET " + url + " HTTP/1.1\r\n" +
                         "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
                         "Connection: close\r\n\r\n");
+
+                    client_s.print(client_msg);
+        #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
+                    break;
+                case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                    url = "/api/v1/user/device/cloudStorage";
+
+                    client_msg = STRING_format("POST " + url + " HTTP/1.1\r\n" +
+                        "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
+                        "Content-Type: application/json;charset=utf-8\r\n" +
+                        "Content-Length: " + STRING_format(msg.length()) + "\r\n" +  
+                        "Connection: Keep Alive\r\n\r\n" +  
+                        msg + "\r\n");
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
@@ -3921,6 +4027,23 @@ class BlinkerApi
                     BLINKER_LOG2("dataGet: ", dataGet);
             #endif
                     break;
+                case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                    if (data_rp.success()) {
+                        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000) {
+                            String _detail = data_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG1(_detail);
+                        }
+                        else {
+                            String _dataGet = data_rp[BLINKER_CMD_DETAIL];
+                            dataGet = _dataGet;
+                        }
+                    }
+                    _dUpdateTime = millis();
+            #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("dataGet: ", dataGet);
+            #endif
+                    break;
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -4011,6 +4134,13 @@ class BlinkerApi
 
                     http.begin(url_iot);
                     httpCode = http.GET();
+                    break;
+                case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                    url_iot = String(host) + "/api/v1/user/device/cloudStorage";
+
+                    http.begin(url_iot);
+                    http.addHeader("Content-Type", "application/json");
+                    httpCode = http.POST(msg);
                     break;
                 default :
                     return BLINKER_CMD_FALSE;
@@ -4170,6 +4300,23 @@ class BlinkerApi
                             BLINKER_LOG2("payload: ", payload);
             #endif
                             break;
+                        case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                            if (data_rp.success()) {
+                                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                                if (msg_code != 1000) {
+                                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                                    BLINKER_ERR_LOG1(_detail);
+                                }
+                                else {
+                                    String _payload = data_rp[BLINKER_CMD_DETAIL];
+                                    payload = _payload;
+                                }
+                            }
+                            _dUpdateTime = millis();
+            #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2("payload: ", payload);
+            #endif
+                            break;
                         default :
                             return BLINKER_CMD_FALSE;
                     }
@@ -4197,7 +4344,7 @@ class BlinkerApi
         }
 
         bool checkSMS() {
-            if ((millis() - _smsTime) > BLINKER_SMS_MSG_LIMIT || _smsTime == 0) {
+            if ((millis() - _smsTime) >= BLINKER_SMS_MSG_LIMIT || _smsTime == 0) {
                 return true;
             }
             else {
@@ -4206,7 +4353,7 @@ class BlinkerApi
         }
 
         bool checkPUSH() {
-            if ((millis() - _pushTime) > BLINKER_PUSH_MSG_LIMIT || _pushTime == 0) {
+            if ((millis() - _pushTime) >= BLINKER_PUSH_MSG_LIMIT || _pushTime == 0) {
                 return true;
             }
             else {
@@ -4215,7 +4362,7 @@ class BlinkerApi
         }
 
         bool checkWECHAT() {
-            if ((millis() - _wechatTime) > BLINKER_WECHAT_MSG_LIMIT || _wechatTime == 0) {
+            if ((millis() - _wechatTime) >= BLINKER_WECHAT_MSG_LIMIT || _wechatTime == 0) {
                 return true;
             }
             else {
@@ -4224,7 +4371,7 @@ class BlinkerApi
         }
 
         bool checkWEATHER() {
-            if ((millis() - _weatherTime) > BLINKER_WEATHER_MSG_LIMIT || _weatherTime == 0) {
+            if ((millis() - _weatherTime) >= BLINKER_WEATHER_MSG_LIMIT || _weatherTime == 0) {
                 return true;
             }
             else {
@@ -4233,7 +4380,7 @@ class BlinkerApi
         }
 
         bool checkAQI() {
-            if ((millis() - _aqiTime) > BLINKER_AQI_MSG_LIMIT || _aqiTime == 0) {
+            if ((millis() - _aqiTime) >= BLINKER_AQI_MSG_LIMIT || _aqiTime == 0) {
                 return true;
             }
             else {
@@ -4242,7 +4389,7 @@ class BlinkerApi
         }
 
         bool checkCUPDATE() {
-            if ((millis() - _cUpdateTime) > BLINKER_CONFIG_UPDATE_LIMIT || _cUpdateTime == 0) {
+            if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || _cUpdateTime == 0) {
                 return true;
             }
             else {
@@ -4251,7 +4398,16 @@ class BlinkerApi
         }
 
         bool checkCGET() {
-            if ((millis() - _cGetTime) > BLINKER_CONFIG_GET_LIMIT || _cGetTime == 0) {
+            if ((millis() - _cGetTime) >= BLINKER_CONFIG_GET_LIMIT || _cGetTime == 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool checkDataUpdata() {
+            if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT * 60 || _cUpdateTime == 0) {
                 return true;
             }
             else {
