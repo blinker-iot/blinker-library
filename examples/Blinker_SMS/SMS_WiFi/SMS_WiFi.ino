@@ -36,6 +36,6 @@ void loop()
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
         Blinker.sms("Hello blinker!");
 
-        Blinker.delay(6000);
+        Blinker.delay(60000);
     }
 }
