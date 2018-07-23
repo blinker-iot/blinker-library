@@ -2032,7 +2032,7 @@ class BlinkerApi
             if (_msg.length() > 20) {
                 return false;
             }
-            return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+            return (blinkServer(BLINKER_CMD_SMS_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
         }
 
         template<typename T>
@@ -2051,7 +2051,7 @@ class BlinkerApi
             if (_msg.length() > 20) {
                 return false;
             }
-            return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+            return (blinkServer(BLINKER_CMD_SMS_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
         }
 
         template<typename T>
