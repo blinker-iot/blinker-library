@@ -41,6 +41,6 @@ void loop()
 
         BLINKER_LOG2("weather: ", get_weather);
 
-        Blinker.delay(6000);
+        Blinker.delay(60000);
     }
 }

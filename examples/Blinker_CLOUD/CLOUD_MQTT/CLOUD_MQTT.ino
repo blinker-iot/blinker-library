@@ -43,6 +43,6 @@ void loop()
             BLINKER_LOG2("Blinker.cloudGet(): ", cloud_data);
         }
 
-        Blinker.delay(6000);
+        Blinker.delay(60000);
     }
 }

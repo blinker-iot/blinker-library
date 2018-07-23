@@ -40,6 +40,6 @@ void loop()
 
         BLINKER_LOG2("AQI: ", get_aqi);
 
-        Blinker.delay(6000);
+        Blinker.delay(60000);
     }
 }
