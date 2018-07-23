@@ -119,11 +119,17 @@ class BlinkerNewButton
         String getName() { return buttonName; }
         void setFunc(callback_with_string_arg_t newFunc) { _bfunc = newFunc; }
         callback_with_string_arg_t getFunc() { return _bfunc; }
+        void setIcon(String icon) { _icon = icon; }
+        String getIcon() { return _icon; }
+        void setText(String text) { _text = text; }
+        String getText() { return _text; }
         bool checkName(String name) { return ((buttonName == name) ? true : false); }
     
     private :
         String buttonName;
         callback_with_string_arg_t _bfunc = NULL;
+        String _icon = "";
+        String _text = "";
 };
 
 class BlinkerSlider
@@ -1400,8 +1406,9 @@ class BlinkerApi
                     _NewButton[_nbCount]->name(_name);
                     _NewButton[_nbCount]->setFunc(_func);
                     _nbCount++;
-
+#ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4("new button: ", _name, " _nbCount: ", _nbCount);
+#endif
                     return true;
                 }
                 else {
@@ -1415,6 +1422,44 @@ class BlinkerApi
             else {
                 return false;
             }
+        }
+
+        bool buttonIcon(const String & _name, const String & _icon) {
+            int8_t num = checkNum(_name, _NewButton, _nbCount);
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
+                return false;
+            }
+
+            _NewButton[num]->setIcon(_icon);
+            return true;
+        }
+
+        bool buttonText(const String & _name, const String & _text) {
+            int8_t num = checkNum(_name, _NewButton, _nbCount);
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
+                return false;
+            }
+
+            _NewButton[num]->setText(_text);
+            return true;
+        }
+
+        bool buttonPrint(const String & _name, const String & _state) {
+            int8_t num = checkNum(_name, _NewButton, _nbCount);
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
+                return false;
+            }
+
+            // bool _format_need = static_cast<Proto*>(this)->formatState();
+
+            // if (!_format_need) static_cast<Proto*>(this)->beginFormat();
+            String buttonData = "[\"" + _state + "\",\"" + _NewButton[num]->getIcon() + \
+                                "\",\"" + _NewButton[num]->getText() + "\"]";
+
+            static_cast<Proto*>(this)->printArray(_name, buttonData);
         }
 
         void wInit(const String & _name, b_widgettype_t _type) {
@@ -2013,7 +2058,16 @@ class BlinkerApi
             // return true;
                             //  + \ _msg + \
                             // "\"}}";
-            return (blinkServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+            if (blinkServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE) {
+                return false;
+            }
+            else {
+                for (uint8_t _num = 0; _num < _dataCount; _num++) {
+                    delete _Data[_num];
+                }
+                _dataCount = 0;
+                return true;
+            }
         }
 #endif
 
@@ -3797,13 +3851,13 @@ class BlinkerApi
         #ifndef BLINKER_LAN_DEBUG
             const int httpsPort = 443;
         #elif defined(BLINKER_LAN_DEBUG)
-            const int httpsPort = 9090;
+            const int httpsPort = 5000;
         #endif
     #if defined(ESP8266)
         #ifndef BLINKER_LAN_DEBUG
             const char* host = "iotdev.clz.me";
         #elif defined(BLINKER_LAN_DEBUG)
-            const char* host = "192.168.1.152";
+            const char* host = "192.168.0.104";
         #endif
             const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -4160,7 +4214,11 @@ class BlinkerApi
 
             return dataGet;
     #elif defined(ESP32)
+        #ifndef BLINKER_LAN_DEBUG
             const char* host = "https://iotdev.clz.me";
+        #elif defined(BLINKER_LAN_DEBUG)
+            const char* host = "http://192.168.0.104:5000";
+        #endif
 
             // const char* ca = \ 
             //     "-----BEGIN CERTIFICATE-----\n" \
@@ -4205,7 +4263,7 @@ class BlinkerApi
                     url_iot = String(host) + "/api/v1/user/device/sms";
 
                     http.begin(url_iot);
-                    http.addHeader("Content-Type", "application/json");
+                    http.addHeader("Content-Type", "application/json;charset=utf-8");
                     httpCode = http.POST(msg);
                     break;
                 case BLINKER_CMD_PUSH_NUMBER :
@@ -4234,11 +4292,11 @@ class BlinkerApi
                     url_iot = String(host) + "/api/v1/user/device/userconfig";
 
                     http.begin(url_iot);
-                    http.addHeader("Content-Type", "application/json");
+                    http.addHeader("Content-Type", "application/json;charset=utf-8");
                     httpCode = http.POST(msg);
                     break;
                 case BLINKER_CMD_CONFIG_GET_NUMBER :
-                    url_iot = String(host) + "/api/v1" + msg;
+                    url_iot = String(host) + "/api/v1/user/device" + msg;
 
                     http.begin(url_iot);
                     httpCode = http.GET();
@@ -4247,7 +4305,7 @@ class BlinkerApi
                     url_iot = String(host) + "/api/v1/user/device/cloudStorage";
 
                     http.begin(url_iot);
-                    http.addHeader("Content-Type", "application/json");
+                    http.addHeader("Content-Type", "application/json;charset=utf-8");
                     httpCode = http.POST(msg);
                     break;
                 default :
@@ -4949,9 +5007,9 @@ class BlinkerApi
             for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                 buttonParse(_Button[bNum]->getName(), data);
             }
-            for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
-                newButtonParse(_NewButton[nbNum]->getName(), data);
-            }
+            // for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
+            //     newButtonParse(_NewButton[nbNum]->getName(), data);
+            // }
             for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
                 slider(_Slider[sNum]->getName(), data);
             }

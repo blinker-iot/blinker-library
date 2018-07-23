@@ -12,6 +12,10 @@ void button1(const String & state)
 {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     BLINKER_LOG2("get button state: ", state);
+
+    Blinker.buttonIcon(BUTTON_1, "icon_1");
+    Blinker.buttonText(BUTTON_1, "this is bedroom button");
+    Blinker.buttonPrint(BUTTON_1, "on");
 }
 
 void setup()
