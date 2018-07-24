@@ -221,4 +221,6 @@ class BlinkerSimpleESP32_WS
 static BlinkerArduinoWS  _blinkerTransport;
 BlinkerSimpleESP32_WS Blinker(_blinkerTransport);
 
+#include <Blinker/BlinkerWidget.h>
+
 #endif

@@ -186,6 +186,24 @@ class BlinkerRGB
         uint8_t rgbValue[3] = {0};
 };
 
+class BlinkerNewRGB
+{
+    public :
+        BlinkerNewRGB()
+            : rgbName(NULL)
+        {}
+        
+        void name(String name) { rgbName = name; }
+        String getName() { return rgbName; }
+        void freshValue(b_rgb_t color,uint8_t value) { rgbValue[color] = value; }
+        uint8_t getValue(b_rgb_t color) { return rgbValue[color]; }
+        bool checkName(String name) { return ((rgbName == name) ? true : false); }
+    
+    private :
+        String  rgbName;
+        uint8_t rgbValue[3] = {0};
+};
+
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 class BlinkerBridge
 {
@@ -1435,14 +1453,15 @@ class BlinkerApi
             return true;
         }
 
-        bool buttonText(const String & _name, const String & _text) {
+        template <typename T1>
+        bool buttonText(const String & _name, T1 _text) {
             int8_t num = checkNum(_name, _NewButton, _nbCount);
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
                 return false;
             }
 
-            _NewButton[num]->setText(_text);
+            _NewButton[num]->setText(STRING_format(_text));
             return true;
         }
 
@@ -2333,6 +2352,7 @@ class BlinkerApi
         bool        _switchFresh = false;
         uint8_t     _bCount = 0;
         uint8_t     _nbCount = 0;
+        uint8_t     _nbCount_test = 0;
         uint8_t     _sCount = 0;
         uint8_t     _tCount = 0;
         uint8_t     _rgbCount = 0;
@@ -2567,9 +2587,9 @@ class BlinkerApi
 
             if (data.containsKey(_bName)) {
                 _fresh = true;
-
+    #if defined(BLINKER_DEBUG_ALL)
                 BLINKER_LOG2("newButtonParse: ", _bName);
-
+    #endif
                 callback_with_string_arg_t nbFunc = _NewButton[num]->getFunc();
                 if (nbFunc) {
                     nbFunc(state);

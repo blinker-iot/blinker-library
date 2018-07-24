@@ -651,6 +651,7 @@ class BlinkerProtocol
         template <typename T>
         void notify(T n) {
             String _msg = "\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"";
+            
             if (isFormat) {
                 formatData(_msg);
             }
@@ -662,6 +663,17 @@ class BlinkerProtocol
 // #else
 //             _print("{\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"}");
 // #endif
+        }
+
+        void textPrint(const String & tName, const String & title, const String & payload) {
+            String _msg = "\"" + tName + "\":[\"" + title + "\",\"" + payload + "\"]";
+
+            if (isFormat) {
+                formatData(_msg);
+            }
+            else {
+                _print("{" + _msg + "}");
+            }
         }
         
         void flush() {
