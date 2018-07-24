@@ -18,6 +18,10 @@
     #include <utility/BlinkerAuto.h>
     #include <utility/BlinkerWlan.h>
     #include "modules/OneButton/OneButton.h"
+#else
+    #include <Blinker/BlinkerConfig.h>
+    #include <utility/BlinkerUtility.h>
+#endif
 
     extern "C" {
         typedef void (*callbackFunction)(void);
@@ -25,11 +29,8 @@
         typedef void (*callback_t)(void);
         typedef void (*callback_with_arg_t)(void*);
         typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
+        typedef void (*callback_with_string_arg_t)(const String & data);
     }
-#else
-    #include <Blinker/BlinkerConfig.h>
-    #include <utility/BlinkerUtility.h>
-#endif
 // #include "modules/ArduinoJson/ArduinoJson.h"
 // #include <Blinker/BlinkerConfig.h>
 // #include <utility/BlinkerDebug.h>
@@ -67,11 +68,11 @@ enum b_rgb_t {
 static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
-static class BlinkerToggle *_BUILTIN_SWITCH;
-static class BlinkerRGB *_RGB[BLINKER_MAX_WIDGET_SIZE];
+static class BlinkerToggle * _BUILTIN_SWITCH;
+static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-static class BlinkerAUTO *_AUTO[2];
-static class BlinkerBridge *_Bridge[BLINKER_MAX_BRIDGE_SIZE];
+static class BlinkerAUTO * _AUTO[2];
+static class BlinkerBridge * _Bridge[BLINKER_MAX_BRIDGE_SIZE];
 // #endif
 // #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerData *_Data[6];
@@ -1968,7 +1969,16 @@ class BlinkerApi
             // return true;
                             //  + \ _msg + \
                             // "\"}}";
-            return (blinkServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+            if (blinkServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE) {
+                return false;
+        }
+            else {
+                for (uint8_t _num = 0; _num < _dataCount; _num++) {
+                    delete _Data[_num];
+                }
+                _dataCount = 0;
+                return true;
+            }
         }
 #endif
 
@@ -3689,13 +3699,13 @@ class BlinkerApi
         #ifndef BLINKER_LAN_DEBUG
             const int httpsPort = 443;
         #elif defined(BLINKER_LAN_DEBUG)
-            const int httpsPort = 9090;
+            const int httpsPort = 5000;
         #endif
     #if defined(ESP8266)
         #ifndef BLINKER_LAN_DEBUG
             const char* host = "iotdev.clz.me";
         #elif defined(BLINKER_LAN_DEBUG)
-            const char* host = "192.168.1.152";
+            const char* host = "192.168.0.104";
         #endif
             const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -4052,7 +4062,11 @@ class BlinkerApi
 
             return dataGet;
     #elif defined(ESP32)
+        #ifndef BLINKER_LAN_DEBUG
             const char* host = "https://iotdev.clz.me";
+        #elif defined(BLINKER_LAN_DEBUG)
+            const char* host = "http://192.168.0.104:5000";
+        #endif
 
             // const char* ca = \ 
             //     "-----BEGIN CERTIFICATE-----\n" \
@@ -4097,7 +4111,7 @@ class BlinkerApi
                     url_iot = String(host) + "/api/v1/user/device/sms";
 
                     http.begin(url_iot);
-                    http.addHeader("Content-Type", "application/json");
+                    http.addHeader("Content-Type", "application/json;charset=utf-8");
                     httpCode = http.POST(msg);
                     break;
                 case BLINKER_CMD_PUSH_NUMBER :
@@ -4126,11 +4140,11 @@ class BlinkerApi
                     url_iot = String(host) + "/api/v1/user/device/userconfig";
 
                     http.begin(url_iot);
-                    http.addHeader("Content-Type", "application/json");
+                    http.addHeader("Content-Type", "application/json;charset=utf-8");
                     httpCode = http.POST(msg);
                     break;
                 case BLINKER_CMD_CONFIG_GET_NUMBER :
-                    url_iot = String(host) + "/api/v1" + msg;
+                    url_iot = String(host) + "/api/v1/user/device" + msg;
 
                     http.begin(url_iot);
                     httpCode = http.GET();
@@ -4139,7 +4153,7 @@ class BlinkerApi
                     url_iot = String(host) + "/api/v1/user/device/cloudStorage";
 
                     http.begin(url_iot);
-                    http.addHeader("Content-Type", "application/json");
+                    http.addHeader("Content-Type", "application/json;charset=utf-8");
                     httpCode = http.POST(msg);
                     break;
                 default :
@@ -4576,6 +4590,9 @@ class BlinkerApi
 #endif
         void parse(String _data, bool ex_data = false)
         {
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("parse data: "), _data);
+    #endif
             if (!ex_data) {
                 if (static_cast<Proto*>(this)->parseState() ) {
                     _fresh = false;
