@@ -6,22 +6,9 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#define BUTTON_1 "ButtonKey"
+#define NUM_1 "NUMKey"
 
-void button1_callback(const String & state);
-
-BlinkerButton Button1(BUTTON_1, button1_callback);
-
-void button1_callback(const String & state)
-{
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    BLINKER_LOG2("get button state: ", state);
-
-    Button1.icon("icon_1");
-    Button1.iconColor("#FFFFFF");
-    Button1.text("Your button name or describe");
-    Button1.print("on");
-}
+BlinkerNUM NUM1(NUM_1);
 
 void setup()
 {
@@ -45,5 +32,10 @@ void loop()
         uint32_t BlinkerTime = millis();
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
+
+        NUM1.icon("icon_1");
+        NUM1.color("#FFFFFF");
+        NUM1.unit("ms");
+        NUM1.print(BlinkerTime);
     }
 }

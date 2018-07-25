@@ -791,6 +791,9 @@ class BlinkerProtocol
             BLINKER_LOG1((""));
         #if defined(BLINKER_NO_LOGO)
             BLINKER_LOG2(("Blinker v"), BLINKER_VERSION);
+
+            BLINKER_LOG1(("Give Blinker a github star, thanks!"));
+            BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
         #elif defined(BLINKER_LOGO_3D)
             BLINKER_LOG1(("\n"
                 " ____    ___                __                       \n"
@@ -800,12 +803,18 @@ class BlinkerProtocol
                 "  \\ \\ \\L\\ \\\\_\\ \\_\\ \\ \\/\\ \\/\\ \\ \\ \\\\`\\ /\\  __/\\ \\ \\/  \n"
                 "   \\ \\____//\\____\\\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\____\\\\ \\_\\  \n"
                 "    \\/___/ \\/____/ \\/_/\\/_/\\/_/\\/_/\\/_/\\/____/ \\/_/  \n"));
+
+            BLINKER_LOG1(("Give Blinker a github star, thanks!"));
+            BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
         #else
             BLINKER_LOG1(("\n"
                 "   ___  ___      __    v"BLINKER_VERSION"\n"
                 "  / _ )/ (_)__  / /_____ ____\n"
                 " / _  / / / _ \\/  '_/ -_) __/\n"
                 "/____/_/_/_//_/_/\\_\\\\__/_/   \n"));
+
+            BLINKER_LOG1(("Give Blinker a github star, thanks!"));
+            BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
         #endif
         }
 

@@ -13,25 +13,41 @@ class BlinkerButton
             registered = Blinker.attachWidget(_name, _func);
         }
         
-        // void name(const String & name) { buttonName = name; }
-        // String getName() { return buttonName; }
-        // void setFunc(callback_with_string_arg_t newFunc) { _bfunc = newFunc; }
-        // callback_with_string_arg_t getFunc() { return _bfunc; }
         void icon(const String & _icon) { bicon = _icon; }
         void iconColor(const String & _clr) { iconClr = _clr; }
-        // String getIcon() { return _icon; }
+        template <typename T>
+        void content(T _con) { bcon = STRING_format(_con); }
         template <typename T>
         void text(T _text) { btext = STRING_format(_text); }
         void textColor(const String & _clr) { textClr = _clr; }
-        // String getText() { return _text; }
         void print(const String & _state) {
             if (!registered) {
                 return;
             }
 
-            String buttonData = "[\"" + _state + "\",\"" + bicon + \
-                                "\",\"" + iconClr + "\",\"" + btext + \
-                                "\",\"" + textClr + "\"]";
+            // String buttonData = "{\"" + _state + "\",\"" + bicon + \
+            //                     "\",\"" + iconClr + "\",\"" + btext + \
+            //                     "\",\"" + textClr + "\"}";
+
+            String buttonData = "{\"swi\":\"" + _state + "\"";
+
+            if (bicon.length()) {
+                buttonData += ",\"ico\":\"" + bicon + "\"";
+            }
+            if (iconClr.length()) {
+                buttonData += ",\"col\":\"" + iconClr + "\"";
+            }
+            if (bcon.length()) {
+                buttonData += ",\"con\":\"" + bcon + "\"";
+            }
+            if (btext.length()) {
+                buttonData += ",\"tex\":\"" + btext + "\"";
+            }
+            if (textClr.length()) {
+                buttonData += ",\"tco\":\"" + textClr + "\"";
+            }
+
+            buttonData += "}";
 
             Blinker.printArray(buttonName, buttonData);
         }
@@ -43,6 +59,7 @@ class BlinkerButton
         bool registered = false;
         String bicon = "";
         String iconClr = "";
+        String bcon = "";
         String btext = "";
         String textClr = "";
 };

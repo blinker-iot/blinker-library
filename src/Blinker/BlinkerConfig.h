@@ -3,7 +3,7 @@
 
 #include <utility/BlinkerDebug.h>
 
-#define BLINKER_VERSION                 "0.1.5"
+#define BLINKER_VERSION                 "0.2.0"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
@@ -65,9 +65,9 @@
 
 #define BLINKER_AUTHKEY_SIZE            14
 
-#define BLINKER_NO_LOGO
+// #define BLINKER_NO_LOGO
 
-//#define BLINKER_LOGO_3D
+#define BLINKER_LOGO_3D
 
 // #define	BLINKER_DEBUG
 

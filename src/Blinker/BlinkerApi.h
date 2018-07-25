@@ -65,10 +65,11 @@ enum b_rgb_t {
     B
 };
 
-static class BlinkerWidgets * _Widgets[BLINKER_MAX_WIDGET_SIZE*4];
+static class BlinkerWidgets_string * _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
+static class BlinkerWidgets_int32 * _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
 static class _BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class _BlinkerNewButton * _NewButton[BLINKER_MAX_WIDGET_SIZE];
-static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
+static class _BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _BUILTIN_SWITCH;
 static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
@@ -89,28 +90,36 @@ static WiFiClientSecure client_s;
 
 // #endif
 
-class BlinkerWidgets
+class BlinkerWidgets_string
 {
     public :
-        BlinkerWidgets(const String & _name, callback_with_string_arg_t _func = NULL)
+        BlinkerWidgets_string(const String & _name, callback_with_string_arg_t _func = NULL)
             : wName(_name), wfunc(_func)
         {}
         
-        // void name(String name) { wName = name; }
         String getName() { return wName; }
-        // void setFunc(callback_with_string_arg_t newFunc) { _wfunc = newFunc; }
         callback_with_string_arg_t getFunc() { return wfunc; }
-        // void setIcon(String icon) { _icon = icon; }
-        // String getIcon() { return _icon; }
-        // void setText(String text) { _text = text; }
-        // String getText() { return _text; }
         bool checkName(String name) { return ((wName == name) ? true : false); }
     
     private :
         String wName;
         callback_with_string_arg_t wfunc;
-        // String _icon = "";
-        // String _text = "";
+};
+
+class BlinkerWidgets_int32
+{
+    public :
+        BlinkerWidgets_int32(const String & _name, callback_with_int32_arg_t _func = NULL)
+            : wName(_name), wfunc(_func)
+        {}
+        
+        String getName() { return wName; }
+        callback_with_int32_arg_t getFunc() { return wfunc; }
+        bool checkName(String name) { return ((wName == name) ? true : false); }
+    
+    private :
+        String wName;
+        callback_with_int32_arg_t wfunc;
 };
 
 class _BlinkerButton
@@ -157,10 +166,10 @@ class _BlinkerNewButton
         String _text = "";
 };
 
-class BlinkerSlider
+class _BlinkerSlider
 {
     public :
-        BlinkerSlider()
+        _BlinkerSlider()
             : sliderName(NULL), sliderValue(0)
         {}
         
@@ -1441,16 +1450,42 @@ class BlinkerApi
         }
 #endif
 
-        bool attachWidget(const String & _name, callback_with_string_arg_t _func) {
-            int8_t num = checkNum(_name, _Widgets, _wCount);
+        bool attachWidget(const String & _name, callback_with_int32_arg_t _func) {
+            int8_t num = checkNum(_name, _Widgets_int, _wCount_int);
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
-                if (_wCount < BLINKER_MAX_WIDGET_SIZE) {
-                    _Widgets[_wCount] = new BlinkerWidgets(_name, _func);
-                    // _Widgets[_wCount]->name(_name);
-                    // _Widgets[_wCount]->setFunc(_func);
-                    _wCount++;
+                if (_wCount_int < BLINKER_MAX_WIDGET_SIZE) {
+                    _Widgets_int[_wCount_int] = new BlinkerWidgets_int32(_name, _func);
+                    // _Widgets_int[_wCount_int]->name(_name);
+                    // _Widgets_int[_wCount_int]->setFunc(_func);
+                    _wCount_int++;
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG4("new widgets: ", _name, " _wCount: ", _wCount);
+                    BLINKER_LOG4("new widgets: ", _name, " _wCount_int: ", _wCount_int);
+#endif
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            else if(num >= 0 ) {
+                BLINKER_ERR_LOG3("widgets name > ", _name, " < has been registered, please register another name!");
+                return false;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool attachWidget(const String & _name, callback_with_string_arg_t _func) {
+            int8_t num = checkNum(_name, _Widgets_str, _wCount_str);
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                if (_wCount_str < BLINKER_MAX_WIDGET_SIZE) {
+                    _Widgets_str[_wCount_str] = new BlinkerWidgets_string(_name, _func);
+                    // _Widgets_str[_wCount_str]->name(_name);
+                    // _Widgets_str[_wCount_str]->setFunc(_func);
+                    _wCount_str++;
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG4("new widgets: ", _name, " _wCount_str: ", _wCount_str);
 #endif
                     return true;
                 }
@@ -1546,7 +1581,7 @@ class BlinkerApi
                 case W_SLIDER :
                     if (checkNum(_name, _Slider, _sCount) == BLINKER_OBJECT_NOT_AVAIL) {
                         if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                            _Slider[_sCount] = new BlinkerSlider();
+                            _Slider[_sCount] = new _BlinkerSlider();
                             _Slider[_sCount]->name(_name);
                             _sCount++;
                         }
@@ -1713,7 +1748,7 @@ class BlinkerApi
             if (value != FIND_KEY_VALUE_FAILED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new BlinkerSlider();
+                        _Slider[_sCount] = new _BlinkerSlider();
                         _Slider[_sCount]->name(_sName);
                         _Slider[_sCount]->freshValue(value);
                         _sCount++;
@@ -1729,7 +1764,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new BlinkerSlider();
+                        _Slider[_sCount] = new _BlinkerSlider();
                         _Slider[_sCount]->name(_sName);
                         _sCount++;
                     }
@@ -2401,7 +2436,8 @@ class BlinkerApi
     
     private :
         bool        _switchFresh = false;
-        uint8_t     _wCount = 0;
+        uint8_t     _wCount_str = 0;
+        uint8_t     _wCount_int = 0;
         uint8_t     _bCount = 0;
         uint8_t     _nbCount = 0;
         uint8_t     _nbCount_test = 0;
@@ -2532,9 +2568,9 @@ class BlinkerApi
             }
         }
 
-        void widgetsParse(const String & _wName)
+        void strWidgetsParse(const String & _wName)
         {
-            int8_t num = checkNum(_wName, _Widgets, _wCount);
+            int8_t num = checkNum(_wName, _Widgets_str, _wCount_str);
 
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 return;
@@ -2545,9 +2581,29 @@ class BlinkerApi
             if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _wName)) {
                 _fresh = true;
 
-                callback_with_string_arg_t nbFunc = _Widgets[num]->getFunc();
-                if (nbFunc) {
-                    nbFunc(state);
+                callback_with_string_arg_t wFunc = _Widgets_str[num]->getFunc();
+                if (wFunc) {
+                    wFunc(state);
+                }
+            }
+        }
+
+        void intWidgetsParse(const String & _wName)
+        {
+            int8_t num = checkNum(_wName, _Widgets_int, _wCount_int);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            int _number = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName);
+
+            if (_number != FIND_KEY_VALUE_FAILED) {
+                _fresh = true;
+
+                callback_with_int32_arg_t wFunc = _Widgets_int[num]->getFunc();
+                if (wFunc) {
+                    wFunc(_number);
                 }
             }
         }
@@ -2647,24 +2703,44 @@ class BlinkerApi
             }
         }
 
-        void widgetsParse(const String & _wName, const JsonObject& data)
+        void strWidgetsParse(const String & _wName, const JsonObject& data)
         {
-            int8_t num = checkNum(_wName, _Widgets, _wCount);
+            int8_t num = checkNum(_wName, _Widgets_str, _wCount_str);
 
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 return;
             }
 
-            String state = data[_wName];
-
             if (data.containsKey(_wName)) {
+                String state = data[_wName];
+
                 _fresh = true;
     #if defined(BLINKER_DEBUG_ALL)
-                BLINKER_LOG2("widgetsParse: ", _wName);
+                BLINKER_LOG2("strWidgetsParse: ", _wName);
     #endif
-                callback_with_string_arg_t nbFunc = _Widgets[num]->getFunc();
+                callback_with_string_arg_t nbFunc = _Widgets_str[num]->getFunc();
                 if (nbFunc) {
                     nbFunc(state);
+                }
+            }
+        }
+
+        void intWidgetsParse(const String & _wName, const JsonObject& data)
+        {
+            int8_t num = checkNum(_wName, _Widgets_int, _wCount_int);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            if (data.containsKey(_wName)) {
+                int _number = data[_wName];
+
+                _fresh = true;
+
+                callback_with_int32_arg_t wFunc = _Widgets_int[num]->getFunc();
+                if (wFunc) {
+                    wFunc(_number);
                 }
             }
         }
@@ -2758,7 +2834,7 @@ class BlinkerApi
                 int16_t value = data[_sName];
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new BlinkerSlider();
+                        _Slider[_sCount] = new _BlinkerSlider();
                         _Slider[_sCount]->name(_sName);
                         _Slider[_sCount]->freshValue(value);
                         _sCount++;
@@ -2774,7 +2850,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new BlinkerSlider();
+                        _Slider[_sCount] = new _BlinkerSlider();
                         _Slider[_sCount]->name(_sName);
                         _sCount++;
                     }
@@ -3024,9 +3100,9 @@ class BlinkerApi
             }
         }
 
-        void widgetsParse(const String & _wName, String _data)
+        void strWidgetsParse(const String & _wName, String _data)
         {
-            int8_t num = checkNum(_wName, _Widgets, _nbCount);
+            int8_t num = checkNum(_wName, _Widgets_str, _nbCount);
 
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 return;
@@ -3037,9 +3113,29 @@ class BlinkerApi
             if (STRING_find_string_value(_data, state, _wName)) {
                 _fresh = true;
             
-                callback_with_string_arg_t nbFunc = _Widgets[num]->getFunc();
+                callback_with_string_arg_t nbFunc = _Widgets_str[num]->getFunc();
                 if (nbFunc) {
                     nbFunc(state);
+                }
+            }
+        }
+
+        void intWidgetsParse(const String & _wName, String _data)
+        {
+            int8_t num = checkNum(_wName, _Widgets_int, _wCount_int);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            int _number = STRING_find_numberic_value(_data, _wName);
+
+            if (_number != FIND_KEY_VALUE_FAILED) {
+                _fresh = true;
+
+                callback_with_int32_arg_t wFunc = _Widgets_int[num]->getFunc();
+                if (wFunc) {
+                    wFunc(_number);
                 }
             }
         }
@@ -3072,7 +3168,7 @@ class BlinkerApi
             if (value != FIND_KEY_VALUE_FAILED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new BlinkerSlider();
+                        _Slider[_sCount] = new _BlinkerSlider();
                         _Slider[_sCount]->name(_sName);
                         _Slider[_sCount]->freshValue(value);
                         _sCount++;
@@ -3088,7 +3184,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new BlinkerSlider();
+                        _Slider[_sCount] = new _BlinkerSlider();
                         _Slider[_sCount]->name(_sName);
                         _sCount++;
                     }
@@ -4911,8 +5007,11 @@ class BlinkerApi
                     setSwitch(root);
                     getVersion(root);
 
-                    for (uint8_t wNum = 0; wNum < _wCount; wNum++) {
-                        widgetsParse(_Widgets[wNum]->getName(), root);
+                    for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
+                        strWidgetsParse(_Widgets_str[wNum]->getName(), root);
+                    }
+                    for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
+                        intWidgetsParse(_Widgets_int[wNum_int]->getName(), root);
                     }
                     for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                         buttonParse(_Button[bNum]->getName(), root);
@@ -4938,8 +5037,11 @@ class BlinkerApi
                     setSwitch();
                     getVersion();
 
-                    for (uint8_t wNum = 0; wNum < _wCount; wNum++) {
-                        widgetsParse(_Widgets[wNum]->getName(), _data);
+                    for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
+                        strWidgetsParse(_Widgets_str[wNum]->getName(), _data);
+                    }
+                    for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
+                        intWidgetsParse(_Widgets_int[wNum_int]->getName(), _data);
                     }
                     for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                         buttonParse(_Button[bNum]->getName(), _data);
@@ -5026,8 +5128,11 @@ class BlinkerApi
 #else
                 setSwitch(_data);
 
-                for (uint8_t wNum = 0; wNum < _wCount; wNum++) {
-                    widgetsParse(_Widgets[wNum]->getName(), _data);
+                for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
+                    strWidgetsParse(_Widgets_str[wNum]->getName(), _data);
+                }
+                for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
+                    intWidgetsParse(_Widgets_int[wNum_int]->getName(), _data);
                 }
                 for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                     buttonParse(_Button[bNum]->getName(), _data);
@@ -5125,8 +5230,11 @@ class BlinkerApi
             setSwitch(data);
             getVersion(data);
 
-            for (uint8_t wNum = 0; wNum < _wCount; wNum++) {
-                widgetsParse(_Widgets[wNum]->getName(), data);
+            for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
+                strWidgetsParse(_Widgets_str[wNum]->getName(), data);
+            }
+            for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
+                intWidgetsParse(_Widgets_int[wNum_int]->getName(), data);
             }
             for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                 buttonParse(_Button[bNum]->getName(), data);

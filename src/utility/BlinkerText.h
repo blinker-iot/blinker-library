@@ -15,7 +15,15 @@ class BlinkerText
         void title(T _title) { tTitle = STRING_format(_title); }
         template <typename T>
         void print(T _content) {
-            String textData = "[\"" + tTitle + "\",\"" + STRING_format(_content) + "\"]";
+            // String textData = "[\"" + tTitle + "\",\"" + STRING_format(_content) + "\"]";
+
+            String textData = "{\"con\":\"" + STRING_format(_content) + "\"";
+
+            if (tTitle.length()) {
+                textData += ",\"tit\":\"" + tTitle + "\"";
+            }
+
+            textData += "}";
 
             Blinker.printArray(textName, textData);
         }

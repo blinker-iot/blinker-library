@@ -28,6 +28,7 @@ extern "C" {
     typedef void (*callback_with_arg_t)(void*);
     typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
     typedef void (*callback_with_string_arg_t)(const String & data);
+    typedef void (*callback_with_int32_arg_t)(int32_t data);
 }
 
 template<class T>
