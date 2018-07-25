@@ -235,4 +235,6 @@ class BlinkerESP32_BLE
 static BlinkerTransportESP32_BLE _blinkerTransportBLE;
 BlinkerESP32_BLE Blinker(_blinkerTransportBLE);
 
+#include <BlinkerWidgets.h>
+
 #endif

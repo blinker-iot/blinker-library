@@ -23,14 +23,14 @@
     #include <utility/BlinkerUtility.h>
 #endif
 
-extern "C" {
-    typedef void (*callbackFunction)(void);
+// extern "C" {
+//     typedef void (*callbackFunction)(void);
 
-    typedef void (*callback_t)(void);
-    typedef void (*callback_with_arg_t)(void*);
-    typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
-    typedef void (*callback_with_string_arg_t)(const String & data);
-}
+//     typedef void (*callback_t)(void);
+//     typedef void (*callback_with_arg_t)(void*);
+//     typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
+//     typedef void (*callback_with_string_arg_t)(const String & data);
+// }
 // #include "modules/ArduinoJson/ArduinoJson.h"
 // #include <Blinker/BlinkerConfig.h>
 // #include <utility/BlinkerDebug.h>
@@ -65,8 +65,9 @@ enum b_rgb_t {
     B
 };
 
-static class BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
-static class BlinkerNewButton * _NewButton[BLINKER_MAX_WIDGET_SIZE];
+static class BlinkerWidgets * _Widgets[BLINKER_MAX_WIDGET_SIZE*4];
+static class _BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
+static class _BlinkerNewButton * _NewButton[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _BUILTIN_SWITCH;
@@ -88,10 +89,34 @@ static WiFiClientSecure client_s;
 
 // #endif
 
-class BlinkerButton
+class BlinkerWidgets
 {
     public :
-        BlinkerButton()
+        BlinkerWidgets(const String & _name, callback_with_string_arg_t _func = NULL)
+            : wName(_name), wfunc(_func)
+        {}
+        
+        // void name(String name) { wName = name; }
+        String getName() { return wName; }
+        // void setFunc(callback_with_string_arg_t newFunc) { _wfunc = newFunc; }
+        callback_with_string_arg_t getFunc() { return wfunc; }
+        // void setIcon(String icon) { _icon = icon; }
+        // String getIcon() { return _icon; }
+        // void setText(String text) { _text = text; }
+        // String getText() { return _text; }
+        bool checkName(String name) { return ((wName == name) ? true : false); }
+    
+    private :
+        String wName;
+        callback_with_string_arg_t wfunc;
+        // String _icon = "";
+        // String _text = "";
+};
+
+class _BlinkerButton
+{
+    public :
+        _BlinkerButton()
             : buttonName(NULL), buttonState(false)
         {}
         
@@ -108,10 +133,10 @@ class BlinkerButton
         bool    isLPress;
 };
 
-class BlinkerNewButton
+class _BlinkerNewButton
 {
     public :
-        BlinkerNewButton()
+        _BlinkerNewButton()
             : buttonName(NULL)
         {}
         
@@ -1416,11 +1441,37 @@ class BlinkerApi
         }
 #endif
 
+        bool attachWidget(const String & _name, callback_with_string_arg_t _func) {
+            int8_t num = checkNum(_name, _Widgets, _wCount);
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                if (_wCount < BLINKER_MAX_WIDGET_SIZE) {
+                    _Widgets[_wCount] = new BlinkerWidgets(_name, _func);
+                    // _Widgets[_wCount]->name(_name);
+                    // _Widgets[_wCount]->setFunc(_func);
+                    _wCount++;
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG4("new widgets: ", _name, " _wCount: ", _wCount);
+#endif
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            else if(num >= 0 ) {
+                BLINKER_ERR_LOG3("widgets name > ", _name, " < has been registered, please register another name!");
+                return false;
+            }
+            else {
+                return false;
+            }
+        }
+
         bool attachButton(const String & _name, callback_with_string_arg_t _func) {
             int8_t num = checkNum(_name, _NewButton, _nbCount);
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 if (_nbCount < BLINKER_MAX_WIDGET_SIZE) {
-                    _NewButton[_nbCount] = new BlinkerNewButton();
+                    _NewButton[_nbCount] = new _BlinkerNewButton();
                     _NewButton[_nbCount]->name(_name);
                     _NewButton[_nbCount]->setFunc(_func);
                     _nbCount++;
@@ -1486,7 +1537,7 @@ class BlinkerApi
                 case W_BUTTON :
                     if (checkNum(_name, _Button, _bCount) == BLINKER_OBJECT_NOT_AVAIL) {
                         if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                            _Button[_bCount] = new BlinkerButton();
+                            _Button[_bCount] = new _BlinkerButton();
                             _Button[_bCount]->name(_name);
                             _bCount++;
                         }
@@ -1536,7 +1587,7 @@ class BlinkerApi
             if (state == BLINKER_CMD_BUTTON_TAP) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(true);
                         _bCount++;
@@ -1552,7 +1603,7 @@ class BlinkerApi
             else if (state == BLINKER_CMD_BUTTON_PRESSED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(true, true);
                         _bCount++;
@@ -1568,7 +1619,7 @@ class BlinkerApi
             else if (state == BLINKER_CMD_BUTTON_RELEASED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(false);
                         _bCount++;
@@ -1584,7 +1635,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _bCount++;
                     }
@@ -2350,6 +2401,7 @@ class BlinkerApi
     
     private :
         bool        _switchFresh = false;
+        uint8_t     _wCount = 0;
         uint8_t     _bCount = 0;
         uint8_t     _nbCount = 0;
         uint8_t     _nbCount_test = 0;
@@ -2421,7 +2473,7 @@ class BlinkerApi
             if (state == BLINKER_CMD_BUTTON_TAP) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(true);
                         _bCount++;
@@ -2437,7 +2489,7 @@ class BlinkerApi
             else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(true, true);
                         _bCount++;
@@ -2453,7 +2505,7 @@ class BlinkerApi
             else if (state == BLINKER_CMD_BUTTON_RELEASED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(false);
                         _bCount++;
@@ -2469,7 +2521,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _bCount++;
                     }
@@ -2477,6 +2529,26 @@ class BlinkerApi
                 }
 
                 return _Button[num]->getState();
+            }
+        }
+
+        void widgetsParse(const String & _wName)
+        {
+            int8_t num = checkNum(_wName, _Widgets, _wCount);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            String state;
+
+            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _wName)) {
+                _fresh = true;
+
+                callback_with_string_arg_t nbFunc = _Widgets[num]->getFunc();
+                if (nbFunc) {
+                    nbFunc(state);
+                }
             }
         }
 
@@ -2516,7 +2588,7 @@ class BlinkerApi
             if (state == BLINKER_CMD_BUTTON_TAP) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(true);
                         _bCount++;
@@ -2532,7 +2604,7 @@ class BlinkerApi
             else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(true, true);
                         _bCount++;
@@ -2548,7 +2620,7 @@ class BlinkerApi
             else if (state == BLINKER_CMD_BUTTON_RELEASED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(false);
                         _bCount++;
@@ -2564,7 +2636,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _bCount++;
                     }
@@ -2572,6 +2644,28 @@ class BlinkerApi
                 }
 
                 return _Button[num]->getState();
+            }
+        }
+
+        void widgetsParse(const String & _wName, const JsonObject& data)
+        {
+            int8_t num = checkNum(_wName, _Widgets, _wCount);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            String state = data[_wName];
+
+            if (data.containsKey(_wName)) {
+                _fresh = true;
+    #if defined(BLINKER_DEBUG_ALL)
+                BLINKER_LOG2("widgetsParse: ", _wName);
+    #endif
+                callback_with_string_arg_t nbFunc = _Widgets[num]->getFunc();
+                if (nbFunc) {
+                    nbFunc(state);
+                }
             }
         }
 
@@ -2871,7 +2965,7 @@ class BlinkerApi
             if (state == BLINKER_CMD_BUTTON_TAP) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(true);
                         _bCount++;
@@ -2887,7 +2981,7 @@ class BlinkerApi
             else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(true, true);
                         _bCount++;
@@ -2903,7 +2997,7 @@ class BlinkerApi
             else if (state == BLINKER_CMD_BUTTON_RELEASED) {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _Button[_bCount]->freshState(false);
                         _bCount++;
@@ -2919,7 +3013,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new BlinkerButton();
+                        _Button[_bCount] = new _BlinkerButton();
                         _Button[_bCount]->name(_bName);
                         _bCount++;
                     }
@@ -2927,6 +3021,26 @@ class BlinkerApi
                 }
 
                 return _Button[num]->getState();
+            }
+        }
+
+        void widgetsParse(const String & _wName, String _data)
+        {
+            int8_t num = checkNum(_wName, _Widgets, _nbCount);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            String state;
+
+            if (STRING_find_string_value(_data, state, _wName)) {
+                _fresh = true;
+            
+                callback_with_string_arg_t nbFunc = _Widgets[num]->getFunc();
+                if (nbFunc) {
+                    nbFunc(state);
+                }
             }
         }
 
@@ -4797,6 +4911,9 @@ class BlinkerApi
                     setSwitch(root);
                     getVersion(root);
 
+                    for (uint8_t wNum = 0; wNum < _wCount; wNum++) {
+                        widgetsParse(_Widgets[wNum]->getName(), root);
+                    }
                     for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                         buttonParse(_Button[bNum]->getName(), root);
                     }
@@ -4821,6 +4938,9 @@ class BlinkerApi
                     setSwitch();
                     getVersion();
 
+                    for (uint8_t wNum = 0; wNum < _wCount; wNum++) {
+                        widgetsParse(_Widgets[wNum]->getName(), _data);
+                    }
                     for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                         buttonParse(_Button[bNum]->getName(), _data);
                     }
@@ -4906,6 +5026,9 @@ class BlinkerApi
 #else
                 setSwitch(_data);
 
+                for (uint8_t wNum = 0; wNum < _wCount; wNum++) {
+                    widgetsParse(_Widgets[wNum]->getName(), _data);
+                }
                 for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                     buttonParse(_Button[bNum]->getName(), _data);
                 }
@@ -5002,6 +5125,9 @@ class BlinkerApi
             setSwitch(data);
             getVersion(data);
 
+            for (uint8_t wNum = 0; wNum < _wCount; wNum++) {
+                widgetsParse(_Widgets[wNum]->getName(), data);
+            }
             for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                 buttonParse(_Button[bNum]->getName(), data);
             }

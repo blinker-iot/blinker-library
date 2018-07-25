@@ -8,14 +8,18 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 #define BUTTON_1 "ButtonKey"
 
-void button1(const String & state)
+void button1_callback(const String & state);
+
+BlinkerButton Button1(BUTTON_1, button1_callback);
+
+void button1_callback(const String & state)
 {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     BLINKER_LOG2("get button state: ", state);
 
-    Blinker.buttonIcon(BUTTON_1, "icon_1");
-    Blinker.buttonText(BUTTON_1, "this is bedroom button");
-    Blinker.buttonPrint(BUTTON_1, "on");
+    Button1.icon("icon_1");
+    Button1.text("this is bedroom button");
+    Button1.print("on");
 }
 
 void setup()
@@ -26,7 +30,6 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
-    Blinker.attachButton(BUTTON_1, button1);
 }
 
 void loop()

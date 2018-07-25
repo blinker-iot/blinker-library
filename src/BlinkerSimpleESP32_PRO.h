@@ -102,4 +102,6 @@ class BlinkerSimpleESP32_PRO
 static BlinkerPRO  _blinkerTransport;
 BlinkerSimpleESP32_PRO Blinker(_blinkerTransport);
 
+#include <BlinkerWidgets.h>
+
 #endif

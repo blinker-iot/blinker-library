@@ -21,6 +21,15 @@
 
 #define FIND_KEY_VALUE_FAILED               -1000
 
+extern "C" {
+    typedef void (*callbackFunction)(void);
+
+    typedef void (*callback_t)(void);
+    typedef void (*callback_with_arg_t)(void*);
+    typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
+    typedef void (*callback_with_string_arg_t)(const String & data);
+}
+
 template<class T>
 String STRING_format(T p)
 {
