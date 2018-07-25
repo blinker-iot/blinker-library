@@ -13,19 +13,20 @@ class BlinkerButton
             registered = Blinker.attachWidget(_name, _func);
         }
         
-        void name(const String & name) { buttonName = name; }
-        String getName() { return buttonName; }
+        // void name(const String & name) { buttonName = name; }
+        // String getName() { return buttonName; }
         // void setFunc(callback_with_string_arg_t newFunc) { _bfunc = newFunc; }
         // callback_with_string_arg_t getFunc() { return _bfunc; }
         void icon(const String & _icon) { bicon = _icon; }
         void iconColor(const String & _clr) { iconClr = _clr; }
         // String getIcon() { return _icon; }
-        void text(const String & _text) { btext = _text; }
+        template <typename T>
+        void text(T _text) { btext = STRING_format(_text); }
         void textColor(const String & _clr) { textClr = _clr; }
         // String getText() { return _text; }
-        bool print(const String & _state) {
+        void print(const String & _state) {
             if (!registered) {
-                return false;
+                return;
             }
 
             String buttonData = "[\"" + _state + "\",\"" + bicon + \
