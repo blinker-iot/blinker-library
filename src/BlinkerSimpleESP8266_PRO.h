@@ -116,4 +116,6 @@ class BlinkerSimpleESP8266_PRO
 static BlinkerPRO  _blinkerTransport;
 BlinkerSimpleESP8266_PRO Blinker(_blinkerTransport);
 
+#include <BlinkerWidgets.h>
+
 #endif

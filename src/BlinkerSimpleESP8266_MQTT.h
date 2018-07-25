@@ -228,4 +228,6 @@ class BlinkerSimpleESP8266_MQTT
 static BlinkerMQTT  _blinkerTransport;
 BlinkerSimpleESP8266_MQTT Blinker(_blinkerTransport);
 
+#include <BlinkerWidgets.h>
+
 #endif
