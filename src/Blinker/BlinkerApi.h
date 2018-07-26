@@ -23,19 +23,6 @@
     #include <utility/BlinkerUtility.h>
 #endif
 
-// extern "C" {
-//     typedef void (*callbackFunction)(void);
-
-//     typedef void (*callback_t)(void);
-//     typedef void (*callback_with_arg_t)(void*);
-//     typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
-//     typedef void (*callback_with_string_arg_t)(const String & data);
-// }
-// #include "modules/ArduinoJson/ArduinoJson.h"
-// #include <Blinker/BlinkerConfig.h>
-// #include <utility/BlinkerDebug.h>
-// #include <utility/BlinkerUtility.h>
-
 enum b_widgettype_t {
     W_BUTTON,
     W_SLIDER,
@@ -67,13 +54,15 @@ enum b_rgb_t {
 };
 
 static class BlinkerWidgets_string * _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
+static class BlinkerWidgets_string * _BUILTIN_SWITCH;
 static class BlinkerWidgets_int32 * _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
 static class BlinkerWidgets_rgb * _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE];
+// BlinkerSwitch BUILTIN_SWITCH;
 static class _BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class _BlinkerNewButton * _NewButton[BLINKER_MAX_WIDGET_SIZE];
 static class _BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
-static class BlinkerToggle * _BUILTIN_SWITCH;
+// static class BlinkerToggle * _BUILTIN_SWITCH;
 static class _BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
@@ -139,6 +128,24 @@ class BlinkerWidgets_rgb
         String wName;
         callback_with_rgb_arg_t wfunc;
 };
+
+// class BlinkerSwitch
+// {
+//     public :
+//         BlinkerSwitch()
+//             : sName(BLINKER_CMD_SWITCH)
+//         {}
+        
+//         String getName() { return sName; }
+//         void attach(callback_with_string_arg_t _func) { sfunc = _func; }
+//         callback_with_string_arg_t getFunc() { return sfunc; }
+//         bool checkName(String name) { return ((sName == name) ? true : false); }
+//         void print(const String & state) {  }
+    
+//     private :
+//         String sName;
+//         callback_with_string_arg_t sfunc;
+// };
 
 class _BlinkerButton
 {
@@ -1381,62 +1388,62 @@ class BlinkerApi
             gpsValue[LONG] = "0.000000";
             gpsValue[LAT] = "0.000000";
 
-            _BUILTIN_SWITCH = new BlinkerToggle();
-            _BUILTIN_SWITCH->name(BLINKER_CMD_SWITCH);
-            _BUILTIN_SWITCH->freshState(true);
+            // _BUILTIN_SWITCH = new BlinkerToggle();
+            // _BUILTIN_SWITCH->name(BLINKER_CMD_SWITCH);
+            // _BUILTIN_SWITCH->freshState(true);
             // rgbValue[R] = 0;
             // rgbValue[G] = 0;
             // rgbValue[B] = 0;
         }
 
-        void switchOn() {
-            _BUILTIN_SWITCH->freshState(true);
-            String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
-                            BLINKER_CMD_SWITCH + "\":\"on\"}}";
-            parse(data, true);
-        }
+        // void switchOn() {
+        //     _BUILTIN_SWITCH->freshState(true);
+        //     String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
+        //                     BLINKER_CMD_SWITCH + "\":\"on\"}}";
+        //     parse(data, true);
+        // }
 
-        void switchOff() {
-            _BUILTIN_SWITCH->freshState(false);
-            String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
-                            BLINKER_CMD_SWITCH + "\":\"off\"}}";
-            parse(data, true);
-        }
+        // void switchOff() {
+        //     _BUILTIN_SWITCH->freshState(false);
+        //     String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
+        //                     BLINKER_CMD_SWITCH + "\":\"off\"}}";
+        //     parse(data, true);
+        // }
 
-        bool switchAvailable() {
-            // if ((builtInSwitch() && !_switchFresh)
-            //     || (!builtInSwitch() && _switchFresh)) {
-            if (_switchFresh) {
-                _switchFresh = false;
-                return true;
-            }
-            else {
-                return false;
-            }
-        }
+        // bool switchAvailable() {
+        //     // if ((builtInSwitch() && !_switchFresh)
+        //     //     || (!builtInSwitch() && _switchFresh)) {
+        //     if (_switchFresh) {
+        //         _switchFresh = false;
+        //         return true;
+        //     }
+        //     else {
+        //         return false;
+        //     }
+        // }
 
-        bool switchGet() {
-            // if (builtInSwitch() && !_switchFresh) {
-            //     _switchFresh = true;
-            //     return true;
-            // }
-            // else if (!builtInSwitch() && _switchFresh) {
-            //     _switchFresh = false;
-            //     return false;
-            // }
-            // else {
-            //     return false;
-            // }
-            return _BUILTIN_SWITCH->getState();
-        }
+        // bool switchGet() {
+        //     // if (builtInSwitch() && !_switchFresh) {
+        //     //     _switchFresh = true;
+        //     //     return true;
+        //     // }
+        //     // else if (!builtInSwitch() && _switchFresh) {
+        //     //     _switchFresh = false;
+        //     //     return false;
+        //     // }
+        //     // else {
+        //     //     return false;
+        //     // }
+        //     return _BUILTIN_SWITCH->getState();
+        // }
 
-        bool builtInSwitch() {
-            return _BUILTIN_SWITCH->getState();
-        }
+        // bool builtInSwitch() {
+        //     return _BUILTIN_SWITCH->getState();
+        // }
 
-        void switchUpdate() {
-            static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
-        }
+        // void switchUpdate() {
+        //     static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+        // }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool bridge(const String & _name) {
@@ -1467,6 +1474,13 @@ class BlinkerApi
             }
         }
 #endif
+
+        void attachSwitch(callback_with_string_arg_t _func) {
+            if (!_BUILTIN_SWITCH) {
+                _BUILTIN_SWITCH = new BlinkerWidgets_string(BLINKER_CMD_SWITCH, _func);
+            }
+            // _BUILTIN_SWITCH->setFunc(_func);
+        }
 
         bool attachWidget(const String & _name, callback_with_rgb_arg_t _func) {
             int8_t num = checkNum(_name, _Widgets_rgb, _wCount_rgb);
@@ -2336,13 +2350,13 @@ class BlinkerApi
         }
 #endif
 
+        void attachHeartbeat(callbackFunction newFunction) {
+            _heartbeatFunc = newFunction;
+        }
+
 #if defined(BLINKER_PRO)
         void attachParse(callback_with_json_arg_t newFunction) {
             _parseFunc = newFunction;
-        }
-
-        void attachHeartbeat(callbackFunction newFunction) {
-            _heartbeatFunc = newFunction;
         }
 
         void attachClick(callbackFunction newFunction) {
@@ -2473,7 +2487,7 @@ class BlinkerApi
 #endif
     
     private :
-        bool        _switchFresh = false;
+        // bool        _switchFresh = false;
         uint8_t     _wCount_str = 0;
         uint8_t     _wCount_int = 0;
         uint8_t     _wCount_rgb = 0;
@@ -3057,26 +3071,31 @@ class BlinkerApi
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                    // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                     stateData();
-        #if defined(BLINKER_PRO)
+        // #if defined(BLINKER_PRO)
                     if (_heartbeatFunc) {
                         _heartbeatFunc();
                     }
-        #endif
+        // #endif
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                        // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                         static_cast<Proto*>(this)->endFormat();
                     }
     #else
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                    // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                     stateData();
+
+                    if (_heartbeatFunc) {
+                        _heartbeatFunc();
+                    }
+
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                        // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                         static_cast<Proto*>(this)->endFormat();
                     }
     #endif
@@ -3089,14 +3108,19 @@ class BlinkerApi
             String state = data[BLINKER_CMD_SET][BLINKER_CMD_SWITCH];
 
             if (state.length()) {
-                if (state == BLINKER_CMD_ON) {
-                    _BUILTIN_SWITCH->freshState(true);
-                }
-                else {
-                    _BUILTIN_SWITCH->freshState(false);
+                // if (state == BLINKER_CMD_ON) {
+                //     _BUILTIN_SWITCH->freshState(true);
+                // }
+                // else {
+                //     _BUILTIN_SWITCH->freshState(false);
+                // }
+                callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
+
+                if (sFunc) {
+                    sFunc(state);
                 }
                 _fresh = true;
-                _switchFresh = true;
+                // _switchFresh = true;
                 // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
             }
         }
@@ -3410,12 +3434,12 @@ class BlinkerApi
                 if (state == BLINKER_CMD_STATE) {
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                    // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                     stateData();
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->beginFormat();
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                        // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                         static_cast<Proto*>(this)->endFormat();
                     }
                     _fresh = true;
@@ -3426,16 +3450,21 @@ class BlinkerApi
         void setSwitch() {
             String state;
 
-            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
+            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_SWITCH)) {
                 if (STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET)) {
-                    if (state == BLINKER_CMD_ON) {
-                        _BUILTIN_SWITCH->freshState(true);
-                    }
-                    else {
-                        _BUILTIN_SWITCH->freshState(false);
+                    // if (state == BLINKER_CMD_ON) {
+                    //     _BUILTIN_SWITCH->freshState(true);
+                    // }
+                    // else {
+                    //     _BUILTIN_SWITCH->freshState(false);
+                    // }
+                    callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
+
+                    if (sFunc) {
+                        sFunc(state);
                     }
                     _fresh = true;
-                    _switchFresh = true;
+                    // _switchFresh = true;
                     // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                 }
             }
@@ -3452,16 +3481,21 @@ class BlinkerApi
         void setSwitch(const String & data) {
             String state;
 
-            if (STRING_find_string_value(data, state, BLINKER_CMD_GET)) {
+            if (STRING_find_string_value(data, state, BLINKER_CMD_SWITCH)) {
                 if (STRING_contains_string(data, BLINKER_CMD_SET)) {
-                    if (state == BLINKER_CMD_ON) {
-                        _BUILTIN_SWITCH->freshState(true);
-                    }
-                    else {
-                        _BUILTIN_SWITCH->freshState(false);
+                    // if (state == BLINKER_CMD_ON) {
+                    //     _BUILTIN_SWITCH->freshState(true);
+                    // }
+                    // else {
+                    //     _BUILTIN_SWITCH->freshState(false);
+                    // }
+                    callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
+
+                    if (sFunc) {
+                        sFunc(state);
                     }
                     _fresh = true;
-                    _switchFresh = true;
+                    // _switchFresh = true;
                     // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                 }
             }
@@ -4943,12 +4977,13 @@ class BlinkerApi
 #endif
 
     protected :
+        callbackFunction            _heartbeatFunc = NULL;
+
 #if defined(BLINKER_PRO)
         const char* _deviceType;
         BlinkerWlan Bwlan;
 
         callback_with_json_arg_t    _parseFunc = NULL;
-        callbackFunction            _heartbeatFunc = NULL;
         // OneButton   button1;
 
         int _pin;        // hardware pin number. 
@@ -5205,7 +5240,7 @@ class BlinkerApi
                     return;
                 }
 
-                setSwitch(root);
+                // setSwitch(root);
 
                 String arrayData = root["data"][0];
     #ifdef BLINKER_DEBUG_ALL
@@ -5240,23 +5275,23 @@ class BlinkerApi
                     json_parse(root);
                 }
 #else
-                setSwitch(_data);
+                // setSwitch(_data);
 
-                for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
-                    strWidgetsParse(_Widgets_str[wNum]->getName(), _data);
-                }
-                for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
-                    intWidgetsParse(_Widgets_int[wNum_int]->getName(), _data);
-                }
-                for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
-                    rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
-                }
-                for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                    buttonParse(_Button[bNum]->getName(), _data);
-                }
-                for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
-                    newButtonParse(_NewButton[nbNum]->getName(), _data);
-                }
+                // for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
+                //     strWidgetsParse(_Widgets_str[wNum]->getName(), _data);
+                // }
+                // for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
+                //     intWidgetsParse(_Widgets_int[wNum_int]->getName(), _data);
+                // }
+                // for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
+                //     rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
+                // }
+                // for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                //     buttonParse(_Button[bNum]->getName(), _data);
+                // }
+                // for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
+                //     newButtonParse(_NewButton[nbNum]->getName(), _data);
+                // }
                 for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
                     slider(_Slider[sNum]->getName(), _data);
                 }
