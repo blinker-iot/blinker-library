@@ -62,17 +62,19 @@ enum b_gps_t {
 enum b_rgb_t {
     R,
     G,
-    B
+    B,
+    BRGB
 };
 
 static class BlinkerWidgets_string * _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
 static class BlinkerWidgets_int32 * _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
+static class BlinkerWidgets_rgb * _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE];
 static class _BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
 static class _BlinkerNewButton * _NewButton[BLINKER_MAX_WIDGET_SIZE];
 static class _BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 static class BlinkerToggle * _BUILTIN_SWITCH;
-static class BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
+static class _BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
 static class BlinkerBridge * _Bridge[BLINKER_MAX_BRIDGE_SIZE];
@@ -120,6 +122,22 @@ class BlinkerWidgets_int32
     private :
         String wName;
         callback_with_int32_arg_t wfunc;
+};
+
+class BlinkerWidgets_rgb
+{
+    public :
+        BlinkerWidgets_rgb(const String & _name, callback_with_rgb_arg_t _func = NULL)
+            : wName(_name), wfunc(_func)
+        {}
+        
+        String getName() { return wName; }
+        callback_with_rgb_arg_t getFunc() { return wfunc; }
+        bool checkName(String name) { return ((wName == name) ? true : false); }
+    
+    private :
+        String wName;
+        callback_with_rgb_arg_t wfunc;
 };
 
 class _BlinkerButton
@@ -202,10 +220,10 @@ class BlinkerToggle
         bool    toggleState;
 };
 
-class BlinkerRGB
+class _BlinkerRGB
 {
     public :
-        BlinkerRGB()
+        _BlinkerRGB()
             : rgbName(NULL)
         {}
         
@@ -1450,13 +1468,35 @@ class BlinkerApi
         }
 #endif
 
+        bool attachWidget(const String & _name, callback_with_rgb_arg_t _func) {
+            int8_t num = checkNum(_name, _Widgets_rgb, _wCount_rgb);
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                if (_wCount_rgb < BLINKER_MAX_WIDGET_SIZE) {
+                    _Widgets_rgb[_wCount_rgb] = new BlinkerWidgets_rgb(_name, _func);
+                    _wCount_rgb++;
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG4("new widgets: ", _name, " _wCount_rgb: ", _wCount_rgb);
+#endif
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            else if(num >= 0 ) {
+                BLINKER_ERR_LOG3("widgets name > ", _name, " < has been registered, please register another name!");
+                return false;
+            }
+            else {
+                return false;
+            }
+        }
+
         bool attachWidget(const String & _name, callback_with_int32_arg_t _func) {
             int8_t num = checkNum(_name, _Widgets_int, _wCount_int);
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 if (_wCount_int < BLINKER_MAX_WIDGET_SIZE) {
                     _Widgets_int[_wCount_int] = new BlinkerWidgets_int32(_name, _func);
-                    // _Widgets_int[_wCount_int]->name(_name);
-                    // _Widgets_int[_wCount_int]->setFunc(_func);
                     _wCount_int++;
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4("new widgets: ", _name, " _wCount_int: ", _wCount_int);
@@ -1481,8 +1521,6 @@ class BlinkerApi
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 if (_wCount_str < BLINKER_MAX_WIDGET_SIZE) {
                     _Widgets_str[_wCount_str] = new BlinkerWidgets_string(_name, _func);
-                    // _Widgets_str[_wCount_str]->name(_name);
-                    // _Widgets_str[_wCount_str]->setFunc(_func);
                     _wCount_str++;
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4("new widgets: ", _name, " _wCount_str: ", _wCount_str);
@@ -1599,7 +1637,7 @@ class BlinkerApi
                 case W_RGB :
                     if (checkNum(_name, _RGB, _rgbCount) == BLINKER_OBJECT_NOT_AVAIL) {
                         if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                            _RGB[_rgbCount] = new BlinkerRGB();
+                            _RGB[_rgbCount] = new _BlinkerRGB();
                             _RGB[_rgbCount]->name(_name);
                             _rgbCount++;
                         }
@@ -1895,7 +1933,7 @@ class BlinkerApi
 
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount] = new _BlinkerRGB();
                         _RGB[_rgbCount]->name(_rgbName);
                         _RGB[_rgbCount]->freshValue(R, _rValue);
                         _RGB[_rgbCount]->freshValue(G, _gValue);
@@ -1915,7 +1953,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount] = new _BlinkerRGB();
                         _RGB[_rgbCount]->name(_rgbName);
                         _rgbCount++;
                     }
@@ -2438,6 +2476,7 @@ class BlinkerApi
         bool        _switchFresh = false;
         uint8_t     _wCount_str = 0;
         uint8_t     _wCount_int = 0;
+        uint8_t     _wCount_rgb = 0;
         uint8_t     _bCount = 0;
         uint8_t     _nbCount = 0;
         uint8_t     _nbCount_test = 0;
@@ -2608,6 +2647,29 @@ class BlinkerApi
             }
         }
 
+        void rgbWidgetsParse(const String & _wName)
+        {
+            int8_t num = checkNum(_wName, _Widgets_rgb, _wCount_rgb);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            int16_t _rValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, R);
+
+            if (_rValue != FIND_KEY_VALUE_FAILED) {
+                // uint8_t _rValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, R);
+                uint8_t _gValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, G);
+                uint8_t _bValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, B);
+                uint8_t _brightValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, BRGB);
+
+                callback_with_rgb_arg_t wFunc = _Widgets_rgb[num]->getFunc();
+                if (wFunc) {
+                    wFunc(_rValue, _gValue, _bValue, _brightValue);
+                }
+            }
+        }
+
         void newButtonParse(const String & _bName)
         {
             int8_t num = checkNum(_bName, _NewButton, _nbCount);
@@ -2741,6 +2803,29 @@ class BlinkerApi
                 callback_with_int32_arg_t wFunc = _Widgets_int[num]->getFunc();
                 if (wFunc) {
                     wFunc(_number);
+                }
+            }
+        }
+
+        void rgbWidgetsParse(const String & _wName, const JsonObject& data)
+        {
+            int8_t num = checkNum(_wName, _Widgets_rgb, _wCount_rgb);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            if (data.containsKey(_wName)) {
+                uint8_t _rValue = data[_wName][R];
+                uint8_t _gValue = data[_wName][G];
+                uint8_t _bValue = data[_wName][B];
+                uint8_t _brightValue = data[_wName][BRGB];
+
+                _fresh = true;
+
+                callback_with_rgb_arg_t wFunc = _Widgets_rgb[num]->getFunc();
+                if (wFunc) {
+                    wFunc(_rValue, _gValue, _bValue, _brightValue);
                 }
             }
         }
@@ -2931,7 +3016,7 @@ class BlinkerApi
 
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount] = new _BlinkerRGB();
                         _RGB[_rgbCount]->name(_rgbName);
                         _RGB[_rgbCount]->freshValue(R, _rValue);
                         _RGB[_rgbCount]->freshValue(G, _gValue);
@@ -2951,7 +3036,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount] = new _BlinkerRGB();
                         _RGB[_rgbCount]->name(_rgbName);
                         _rgbCount++;
                     }
@@ -3140,6 +3225,29 @@ class BlinkerApi
             }
         }
 
+        void rgbWidgetsParse(const String & _wName, String _data)
+        {
+            int8_t num = checkNum(_wName, _Widgets_rgb, _wCount_rgb);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            int16_t _rValue = STRING_find_array_numberic_value(_data, _wName, R);
+
+            if (_rValue != FIND_KEY_VALUE_FAILED) {
+                // uint8_t _rValue = STRING_find_array_numberic_value(_data, _wName, R);
+                uint8_t _gValue = STRING_find_array_numberic_value(_data, _wName, G);
+                uint8_t _bValue = STRING_find_array_numberic_value(_data, _wName, B);
+                uint8_t _brightValue = STRING_find_array_numberic_value(_data, _wName, BRGB);
+
+                callback_with_rgb_arg_t wFunc = _Widgets_rgb[num]->getFunc();
+                if (wFunc) {
+                    wFunc(_rValue, _gValue, _bValue, _brightValue);
+                }
+            }
+        }
+
         void newButtonParse(const String & _bName, String _data)
         {
             int8_t num = checkNum(_bName, _NewButton, _nbCount);
@@ -3261,7 +3369,7 @@ class BlinkerApi
 
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount] = new _BlinkerRGB();
                         _RGB[_rgbCount]->name(_rgbName);
                         _RGB[_rgbCount]->freshValue(R, _rValue);
                         _RGB[_rgbCount]->freshValue(G, _gValue);
@@ -3281,7 +3389,7 @@ class BlinkerApi
             else {
                 if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                     if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new BlinkerRGB();
+                        _RGB[_rgbCount] = new _BlinkerRGB();
                         _RGB[_rgbCount]->name(_rgbName);
                         _rgbCount++;
                     }
@@ -5013,6 +5121,9 @@ class BlinkerApi
                     for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
                         intWidgetsParse(_Widgets_int[wNum_int]->getName(), root);
                     }
+                    for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
+                        rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), root);
+                    }
                     for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                         buttonParse(_Button[bNum]->getName(), root);
                     }
@@ -5042,6 +5153,9 @@ class BlinkerApi
                     }
                     for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
                         intWidgetsParse(_Widgets_int[wNum_int]->getName(), _data);
+                    }
+                    for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
+                        rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
                     }
                     for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                         buttonParse(_Button[bNum]->getName(), _data);
@@ -5133,6 +5247,9 @@ class BlinkerApi
                 }
                 for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
                     intWidgetsParse(_Widgets_int[wNum_int]->getName(), _data);
+                }
+                for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
+                    rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
                 }
                 for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                     buttonParse(_Button[bNum]->getName(), _data);
@@ -5235,6 +5352,9 @@ class BlinkerApi
             }
             for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
                 intWidgetsParse(_Widgets_int[wNum_int]->getName(), data);
+            }
+            for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
+                rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), data);
             }
             for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                 buttonParse(_Button[bNum]->getName(), data);

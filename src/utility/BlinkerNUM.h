@@ -14,9 +14,24 @@ class BlinkerNUM
         void icon(const String & _icon) { nicon = _icon; }
         void color(const String & _clr) { ncolor = _clr; }
         void unit(const String & _unit) { nunit = _unit; }
-        void print(const String & value) {
+        
+        void print(char value)              { _print(STRING_format(value)); }
+        void print(unsigned char value)     { _print(STRING_format(value)); }
+        void print(int value)               { _print(STRING_format(value)); }
+        void print(unsigned int value)      { _print(STRING_format(value)); }       
+        void print(long value)              { _print(STRING_format(value)); }        
+        void print(unsigned long value)     { _print(STRING_format(value)); }
+        void print(double value)            { _print(STRING_format(value)); }
+    
+    private :
+        String numName;
+        String nicon = "";
+        String ncolor = "";
+        String nunit = "";
 
-            String buttonData = "{\"val\":\"" + value + "\"";
+        void _print(const String & value) {
+
+            String buttonData = "{\"val\":" + value;
 
             if (nicon.length()) {
                 buttonData += ",\"ico\":\"" + nicon + "\"";
@@ -32,12 +47,6 @@ class BlinkerNUM
 
             Blinker.printArray(numName, buttonData);
         }
-    
-    private :
-        String numName;
-        String nicon = "";
-        String ncolor = "";
-        String nunit = "";
 };
 
 #endif

@@ -14,12 +14,26 @@ class BlinkerSlider
         }
         
         void color(const String & _clr) { textClr = _clr; }
-        void print(int n) {
+        
+        void print(char value)              { _print(STRING_format(value)); }
+        void print(unsigned char value)     { _print(STRING_format(value)); }
+        void print(int value)               { _print(STRING_format(value)); }
+        void print(unsigned int value)      { _print(STRING_format(value)); }       
+        void print(long value)              { _print(STRING_format(value)); }        
+        void print(unsigned long value)     { _print(STRING_format(value)); }
+        void print(double value)            { _print(STRING_format(value)); }
+    
+    private :
+        String sliderName;
+        bool registered = false;
+        String textClr = "";
+
+        void _print(const String & n) {
             if (!registered) {
                 return;
             }
 
-            String sliderData = "{\"val\":\"" + STRING_format(n) + "\"";
+            String sliderData = "{\"val\":" + n;
 
             if (textClr.length()) {
                 sliderData += ",\"col\":\"" + textClr + "\"";
@@ -29,11 +43,6 @@ class BlinkerSlider
 
             Blinker.printArray(sliderName, sliderData);
         }
-    
-    private :
-        String sliderName;
-        bool registered = false;
-        String textClr = "";
 };
 
 #endif

@@ -13,6 +13,7 @@ class BlinkerText
         
         template <typename T>
         void title(T _title) { tTitle = STRING_format(_title); }
+        
         template <typename T>
         void print(T _content) {
             // String textData = "[\"" + tTitle + "\",\"" + STRING_format(_content) + "\"]";
