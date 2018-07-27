@@ -1383,8 +1383,8 @@ class BlinkerApi
 {
     public :
         BlinkerApi() {
-            joyValue[J_Xaxis] = BLINKER_JOYSTICK_VALUE_DEFAULT;
-            joyValue[J_Yaxis] = BLINKER_JOYSTICK_VALUE_DEFAULT;
+            // joyValue[J_Xaxis] = BLINKER_JOYSTICK_VALUE_DEFAULT;
+            // joyValue[J_Yaxis] = BLINKER_JOYSTICK_VALUE_DEFAULT;
             ahrsValue[Yaw] = 0;
             ahrsValue[Roll] = 0;
             ahrsValue[Pitch] = 0;
@@ -3304,7 +3304,7 @@ class BlinkerApi
 
         void strWidgetsParse(const String & _wName, String _data)
         {
-            int8_t num = checkNum(_wName, _Widgets_str, _nbCount);
+            int8_t num = checkNum(_wName, _Widgets_str, _wCount_str);
 
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 return;
