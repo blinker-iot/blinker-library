@@ -23,14 +23,16 @@
     #include <utility/BlinkerUtility.h>
 #endif
 
-    extern "C" {
-        typedef void (*callbackFunction)(void);
+extern "C" {
+    typedef void (*callbackFunction)(void);
 
-        typedef void (*callback_t)(void);
-        typedef void (*callback_with_arg_t)(void*);
-        typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
-        typedef void (*callback_with_string_arg_t)(const String & data);
-    }
+    typedef void (*callback_t)(void);
+    typedef void (*callback_with_arg_t)(void*);
+#if defined(ESP8266) || defined(ESP32)
+    typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
+#endif
+    typedef void (*callback_with_string_arg_t)(const String & data);
+}
 // #include "modules/ArduinoJson/ArduinoJson.h"
 // #include <Blinker/BlinkerConfig.h>
 // #include <utility/BlinkerDebug.h>
