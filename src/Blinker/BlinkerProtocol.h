@@ -857,9 +857,9 @@ class BlinkerProtocol
             String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
             if (data.length() <= BLINKER_MAX_SEND_SIZE) {
                 conn.print(data);
-                if (needParse) {
-                    BApi::parse(data, true);
-                }
+                // if (needParse) {
+                //     BApi::parse(data, true);
+                // }
             }
             else {
                 BLINKER_ERR_LOG1(("SEND DATA BYTES MAX THAN LIMIT!"));
