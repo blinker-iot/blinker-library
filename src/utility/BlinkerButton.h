@@ -7,12 +7,21 @@
 class BlinkerButton
 {
     public :
-        BlinkerButton(const String & _name, callback_with_string_arg_t _func)
+        BlinkerButton(const String & _name, callback_with_string_arg_t _func = NULL)
             : buttonName(_name)
         {
             registered = Blinker.attachWidget(_name, _func);
         }
         
+        void attach(callback_with_string_arg_t _func)
+        {
+            if (!registered) {
+                return;
+            }
+
+            Blinker.freshAttachWidget(buttonName, _func);
+        }
+
         void icon(const String & _icon) { bicon = _icon; }
         void iconColor(const String & _clr) { iconClr = _clr; }
         template <typename T>
@@ -20,7 +29,9 @@ class BlinkerButton
         template <typename T>
         void text(T _text) { btext = STRING_format(_text); }
         void textColor(const String & _clr) { textClr = _clr; }
-        void print(const String & _state) {
+
+        void print(const String & _state)
+        {
             if (!registered) {
                 return;
             }

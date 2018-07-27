@@ -8,9 +8,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 #define Slider_1 "SliderKey"
 
-void slider1_callback(int32_t value);
-
-BlinkerSlider Slider1(Slider_1, slider1_callback);
+BlinkerSlider Slider1(Slider_1);
 
 void slider1_callback(int32_t value)
 {
@@ -26,6 +24,8 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
+
+    Slider1.attach(slider1_callback);
 }
 
 void loop()

@@ -8,9 +8,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 #define RGB_1 "RGBKey"
 
-void rgb1_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value);
-
-BlinkerRGB RGB1(RGB_1, rgb1_callback);
+BlinkerRGB RGB1(RGB_1);
 
 void rgb1_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
 {
@@ -29,6 +27,8 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
+
+    RGB1.attach(rgb1_callback);
 }
 
 void loop()

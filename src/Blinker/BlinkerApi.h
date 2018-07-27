@@ -23,12 +23,12 @@
     #include <utility/BlinkerUtility.h>
 #endif
 
-enum b_widgettype_t {
-    W_BUTTON,
-    W_SLIDER,
-    W_TOGGLE,
-    W_RGB
-};
+// enum b_widgettype_t {
+//     W_BUTTON,
+//     W_SLIDER,
+//     W_TOGGLE,
+//     W_RGB
+// };
 
 enum b_joystickaxis_t {
     J_Xaxis,
@@ -58,12 +58,12 @@ static class BlinkerWidgets_string * _BUILTIN_SWITCH;
 static class BlinkerWidgets_int32 * _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
 static class BlinkerWidgets_rgb * _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE];
 // BlinkerSwitch BUILTIN_SWITCH;
-static class _BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
-static class _BlinkerNewButton * _NewButton[BLINKER_MAX_WIDGET_SIZE];
-static class _BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
-static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
+// static class _BlinkerButton * _Button[BLINKER_MAX_WIDGET_SIZE];
+// static class _BlinkerNewButton * _NewButton[BLINKER_MAX_WIDGET_SIZE];
+// static class _BlinkerSlider * _Slider[BLINKER_MAX_WIDGET_SIZE];
+// static class BlinkerToggle * _Toggle[BLINKER_MAX_WIDGET_SIZE];
 // static class BlinkerToggle * _BUILTIN_SWITCH;
-static class _BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
+// static class _BlinkerRGB * _RGB[BLINKER_MAX_WIDGET_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
 static class BlinkerBridge * _Bridge[BLINKER_MAX_BRIDGE_SIZE];
@@ -87,11 +87,12 @@ class BlinkerWidgets_string
         BlinkerWidgets_string(const String & _name, callback_with_string_arg_t _func = NULL)
             : wName(_name), wfunc(_func)
         {}
-        
+
         String getName() { return wName; }
+        void setFunc(callback_with_string_arg_t _func) { wfunc = _func; }
         callback_with_string_arg_t getFunc() { return wfunc; }
         bool checkName(String name) { return ((wName == name) ? true : false); }
-    
+
     private :
         String wName;
         callback_with_string_arg_t wfunc;
@@ -103,11 +104,12 @@ class BlinkerWidgets_int32
         BlinkerWidgets_int32(const String & _name, callback_with_int32_arg_t _func = NULL)
             : wName(_name), wfunc(_func)
         {}
-        
+
         String getName() { return wName; }
+        void setFunc(callback_with_int32_arg_t _func) { wfunc = _func; }
         callback_with_int32_arg_t getFunc() { return wfunc; }
         bool checkName(String name) { return ((wName == name) ? true : false); }
-    
+
     private :
         String wName;
         callback_with_int32_arg_t wfunc;
@@ -119,11 +121,12 @@ class BlinkerWidgets_rgb
         BlinkerWidgets_rgb(const String & _name, callback_with_rgb_arg_t _func = NULL)
             : wName(_name), wfunc(_func)
         {}
-        
+
         String getName() { return wName; }
+        void setFunc(callback_with_rgb_arg_t _func) { wfunc = _func; }
         callback_with_rgb_arg_t getFunc() { return wfunc; }
         bool checkName(String name) { return ((wName == name) ? true : false); }
-    
+
     private :
         String wName;
         callback_with_rgb_arg_t wfunc;
@@ -135,133 +138,133 @@ class BlinkerWidgets_rgb
 //         BlinkerSwitch()
 //             : sName(BLINKER_CMD_SWITCH)
 //         {}
-        
+
 //         String getName() { return sName; }
 //         void attach(callback_with_string_arg_t _func) { sfunc = _func; }
 //         callback_with_string_arg_t getFunc() { return sfunc; }
 //         bool checkName(String name) { return ((sName == name) ? true : false); }
 //         void print(const String & state) {  }
-    
+
 //     private :
 //         String sName;
 //         callback_with_string_arg_t sfunc;
 // };
 
-class _BlinkerButton
-{
-    public :
-        _BlinkerButton()
-            : buttonName(NULL), buttonState(false)
-        {}
-        
-        void name(String name) { buttonName = name; }
-        String getName() { return buttonName; }
-        void freshState(bool state, bool isLong = false) { buttonState = state; isLPress = isLong; }
-        bool getState() { return buttonState; }
-        bool longPress() { return isLPress; }
-        bool checkName(String name) { return ((buttonName == name) ? true : false); }
-    
-    private :
-        String  buttonName;
-        bool    buttonState;
-        bool    isLPress;
-};
+// class _BlinkerButton
+// {
+//     public :
+//         _BlinkerButton()
+//             : buttonName(NULL), buttonState(false)
+//         {}
 
-class _BlinkerNewButton
-{
-    public :
-        _BlinkerNewButton()
-            : buttonName(NULL)
-        {}
-        
-        void name(String name) { buttonName = name; }
-        String getName() { return buttonName; }
-        void setFunc(callback_with_string_arg_t newFunc) { _bfunc = newFunc; }
-        callback_with_string_arg_t getFunc() { return _bfunc; }
-        void setIcon(String icon) { _icon = icon; }
-        String getIcon() { return _icon; }
-        void setText(String text) { _text = text; }
-        String getText() { return _text; }
-        bool checkName(String name) { return ((buttonName == name) ? true : false); }
-    
-    private :
-        String buttonName;
-        callback_with_string_arg_t _bfunc = NULL;
-        String _icon = "";
-        String _text = "";
-};
+//         void name(String name) { buttonName = name; }
+//         String getName() { return buttonName; }
+//         void freshState(bool state, bool isLong = false) { buttonState = state; isLPress = isLong; }
+//         bool getState() { return buttonState; }
+//         bool longPress() { return isLPress; }
+//         bool checkName(String name) { return ((buttonName == name) ? true : false); }
 
-class _BlinkerSlider
-{
-    public :
-        _BlinkerSlider()
-            : sliderName(NULL), sliderValue(0)
-        {}
-        
-        void name(String name) { sliderName = name; }
-        String getName() { return sliderName; }
-        void freshValue(uint8_t value) { sliderValue = value; }
-        uint8_t getValue() { return sliderValue; }
-        bool checkName(String name) { return ((sliderName == name) ? true : false); }
-    
-    private :
-        String  sliderName;
-        uint8_t sliderValue;
-};
+//     private :
+//         String  buttonName;
+//         bool    buttonState;
+//         bool    isLPress;
+// };
 
-class BlinkerToggle
-{
-    public :
-        BlinkerToggle()
-            : toggleName(NULL), toggleState(false)
-        {}
-        
-        void name(String name) { toggleName = name; }
-        String getName() { return toggleName; }
-        void freshState(bool state) { toggleState = state; }
-        bool getState() { return toggleState; }
-        bool checkName(String name) { return ((toggleName == name) ? true : false); }
-    
-    private :
-        String  toggleName;
-        bool    toggleState;
-};
+// class _BlinkerNewButton
+// {
+//     public :
+//         _BlinkerNewButton()
+//             : buttonName(NULL)
+//         {}
 
-class _BlinkerRGB
-{
-    public :
-        _BlinkerRGB()
-            : rgbName(NULL)
-        {}
-        
-        void name(String name) { rgbName = name; }
-        String getName() { return rgbName; }
-        void freshValue(b_rgb_t color,uint8_t value) { rgbValue[color] = value; }
-        uint8_t getValue(b_rgb_t color) { return rgbValue[color]; }
-        bool checkName(String name) { return ((rgbName == name) ? true : false); }
-    
-    private :
-        String  rgbName;
-        uint8_t rgbValue[3] = {0};
-};
+//         void name(String name) { buttonName = name; }
+//         String getName() { return buttonName; }
+//         void setFunc(callback_with_string_arg_t newFunc) { _bfunc = newFunc; }
+//         callback_with_string_arg_t getFunc() { return _bfunc; }
+//         void setIcon(String icon) { _icon = icon; }
+//         String getIcon() { return _icon; }
+//         void setText(String text) { _text = text; }
+//         String getText() { return _text; }
+//         bool checkName(String name) { return ((buttonName == name) ? true : false); }
 
-class BlinkerNewRGB
-{
-    public :
-        BlinkerNewRGB()
-            : rgbName(NULL)
-        {}
-        
-        void name(String name) { rgbName = name; }
-        String getName() { return rgbName; }
-        void freshValue(b_rgb_t color,uint8_t value) { rgbValue[color] = value; }
-        uint8_t getValue(b_rgb_t color) { return rgbValue[color]; }
-        bool checkName(String name) { return ((rgbName == name) ? true : false); }
-    
-    private :
-        String  rgbName;
-        uint8_t rgbValue[3] = {0};
-};
+//     private :
+//         String buttonName;
+//         callback_with_string_arg_t _bfunc = NULL;
+//         String _icon = "";
+//         String _text = "";
+// };
+
+// class _BlinkerSlider
+// {
+//     public :
+//         _BlinkerSlider()
+//             : sliderName(NULL), sliderValue(0)
+//         {}
+
+//         void name(String name) { sliderName = name; }
+//         String getName() { return sliderName; }
+//         void freshValue(uint8_t value) { sliderValue = value; }
+//         uint8_t getValue() { return sliderValue; }
+//         bool checkName(String name) { return ((sliderName == name) ? true : false); }
+
+//     private :
+//         String  sliderName;
+//         uint8_t sliderValue;
+// };
+
+// class BlinkerToggle
+// {
+//     public :
+//         BlinkerToggle()
+//             : toggleName(NULL), toggleState(false)
+//         {}
+
+//         void name(String name) { toggleName = name; }
+//         String getName() { return toggleName; }
+//         void freshState(bool state) { toggleState = state; }
+//         bool getState() { return toggleState; }
+//         bool checkName(String name) { return ((toggleName == name) ? true : false); }
+
+//     private :
+//         String  toggleName;
+//         bool    toggleState;
+// };
+
+// class _BlinkerRGB
+// {
+//     public :
+//         _BlinkerRGB()
+//             : rgbName(NULL)
+//         {}
+
+//         void name(String name) { rgbName = name; }
+//         String getName() { return rgbName; }
+//         void freshValue(b_rgb_t color,uint8_t value) { rgbValue[color] = value; }
+//         uint8_t getValue(b_rgb_t color) { return rgbValue[color]; }
+//         bool checkName(String name) { return ((rgbName == name) ? true : false); }
+
+//     private :
+//         String  rgbName;
+//         uint8_t rgbValue[3] = {0};
+// };
+
+// class BlinkerNewRGB
+// {
+//     public :
+//         BlinkerNewRGB()
+//             : rgbName(NULL)
+//         {}
+
+//         void name(String name) { rgbName = name; }
+//         String getName() { return rgbName; }
+//         void freshValue(b_rgb_t color,uint8_t value) { rgbValue[color] = value; }
+//         uint8_t getValue(b_rgb_t color) { return rgbValue[color]; }
+//         bool checkName(String name) { return ((rgbName == name) ? true : false); }
+
+//     private :
+//         String  rgbName;
+//         uint8_t rgbValue[3] = {0};
+// };
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 class BlinkerBridge
@@ -270,7 +273,7 @@ class BlinkerBridge
         BlinkerBridge()
             : _name(NULL)
         {}
-    
+
         void name(String name) { _name = name; }
         String getName() { return _name; }
         void freshBridge(String name) { bridgeName = name; }
@@ -348,9 +351,9 @@ class BlinkerData
 //                 }
 
 //                 if ((_logicType == BLINKER_TYPE_NUMERIC)
-//                     || (_logicType == BLINKER_TYPE_OR 
+//                     || (_logicType == BLINKER_TYPE_OR
 //                     && logic_type[_num] == BLINKER_TYPE_NUMERIC)
-//                     || (_logicType == BLINKER_TYPE_AND 
+//                     || (_logicType == BLINKER_TYPE_AND
 //                     && logic_type[_num] == BLINKER_TYPE_NUMERIC))
 //                 {
 //                     switch (_compareType[_num]) {
@@ -429,9 +432,9 @@ class BlinkerData
 
 //                 // if (_logicType == BLINKER_TYPE_STATE) {
 //                 if ((_logicType == BLINKER_TYPE_STATE)
-//                     || (_logicType == BLINKER_TYPE_OR 
+//                     || (_logicType == BLINKER_TYPE_OR
 //                     && logic_type[_num] == BLINKER_TYPE_STATE)
-//                     || (_logicType == BLINKER_TYPE_AND 
+//                     || (_logicType == BLINKER_TYPE_AND
 //                     && logic_type[_num] == BLINKER_TYPE_STATE))
 //                 {
 //                     if (state == BLINKER_CMD_ON) {
@@ -459,7 +462,7 @@ class BlinkerData
 //                         }
 //                     }
 //                 }
-//                 else if (_logicType == BLINKER_TYPE_OR 
+//                 else if (_logicType == BLINKER_TYPE_OR
 //                     && logic_type[_num] == BLINKER_TYPE_STATE)
 //                 {
 //                     if (state == BLINKER_CMD_ON) {
@@ -520,7 +523,7 @@ class BlinkerData
 //             // String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETKEY];
 //             // // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_TARGETKEY);
 //             // strcpy(_targetKey[0], target_key.c_str());
-            
+
 //             if (logicType == BLINKER_CMD_STATE) {
 // #ifdef BLINKER_DEBUG_ALL
 //                 BLINKER_LOG1(BLINKER_F("state!"));
@@ -528,7 +531,7 @@ class BlinkerData
 //                 String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETKEY];
 //                 // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_TARGETKEY);
 //                 strcpy(_targetKey[0], target_key.c_str());
-                
+
 //                 _targetNum = 1;
 
 //                 _logicType = BLINKER_TYPE_STATE;
@@ -561,9 +564,9 @@ class BlinkerData
 //                 String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][0][BLINKER_CMD_TARGETKEY];
 //                 // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_TARGETKEY);
 //                 strcpy(_targetKey[0], target_key.c_str());
-                
+
 //                 _targetNum = 1;
-                
+
 //                 _logicType = BLINKER_TYPE_NUMERIC;
 
 //                 logic_type[0] = BLINKER_TYPE_NUMERIC;
@@ -652,7 +655,7 @@ class BlinkerData
 //                         logic_type[t_num] = BLINKER_TYPE_STATE;
 
 //                         strcpy(_targetKey[t_num], target_key.c_str());
-                
+
 //                         // String target_state;
 //                         String target_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LOGICDATA][t_num][BLINKER_CMD_TARGETSTATE];
 //                         // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_state, BLINKER_CMD_TARGETSTATE)) {
@@ -719,7 +722,7 @@ class BlinkerData
 //                 String link_device = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKDEVICE];
 //                 String link_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKTYPE];
 //                 String link_data = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][0][BLINKER_CMD_DATA];
-                
+
 //                 strcpy(_linkDevice[0], link_device.c_str());
 //                 strcpy(_linkType[0], link_type.c_str());
 //                 strcpy(_linkData[0], link_data.c_str());
@@ -732,7 +735,7 @@ class BlinkerData
 //                     String link_device1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKDEVICE];
 //                     String link_type1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKTYPE];
 //                     String link_data1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_LINKDATA][1][BLINKER_CMD_DATA];
-                    
+
 //                     strcpy(_linkDevice[1], link_device1.c_str());
 //                     strcpy(_linkType[1], link_type1.c_str());
 //                     strcpy(_linkData[1], link_data1.c_str());
@@ -841,7 +844,7 @@ class BlinkerData
 // #endif
 
 //             EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY1, _targetKey[0]);
-                
+
 //             if (logic_type[0] == BLINKER_TYPE_STATE) {
 //                 _targetState[0] = _autoData[0] >> 28 & 0x03;
 // #ifdef BLINKER_DEBUG_ALL
@@ -883,7 +886,7 @@ class BlinkerData
 // // #endif
 
 //                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY2, _targetKey[1]);
-                    
+
 //                 if (logic_type[1] == BLINKER_TYPE_STATE) {
 //                     _targetState[1] = _autoData[1] >> 28 & 0x03;
 // #ifdef BLINKER_DEBUG_ALL
@@ -928,7 +931,7 @@ class BlinkerData
 //                 BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
 
 //                 // BLINKER_LOG1("===============================================");
-// #endif          
+// #endif
 
 //                 if (_linkNum == 2) {
 //                     EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
@@ -942,7 +945,7 @@ class BlinkerData
 //                     BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
 
 //                     // BLINKER_LOG1("===============================================");
-// #endif              
+// #endif
 //                 }
 //             }
 // #ifdef BLINKER_DEBUG_ALL
@@ -980,7 +983,7 @@ class BlinkerData
 //                 _autoData[0] |= _compareType[0] << 28;
 //             }
 //             _autoData[0] |= _duration[0] / 60 << 22 | _time1[0] / 60 << 11 | _time2[0] / 60;
-        
+
 //             // EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
 
 //             // _autoId = _linkNum << 30 | _autoId;
@@ -988,7 +991,7 @@ class BlinkerData
 //             // EEPROM.put(BLINKER_EEP_ADDR_AUTO, _autoData);
 //             EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO1, _autoData[0]);
 //             EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY1, _targetKey[0]);
-                
+
 //             if (logic_type[0] == BLINKER_TYPE_NUMERIC) {
 //                 // EEPROM.put(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
 //                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA1, _targetData[0]);
@@ -996,7 +999,7 @@ class BlinkerData
 // #ifdef BLINKER_DEBUG_ALL
 //             BLINKER_LOG2(BLINKER_F("serialization _typeState: "), _typeState);
 //             BLINKER_LOG2(BLINKER_F("serialization _autoData: "), _autoData[0]);
-// #endif                 
+// #endif
 //             if (_targetNum == 2) {
 //                 _autoData[1] = logic_type[1] << 30 ;
 //                 if (logic_type[1] == BLINKER_TYPE_STATE) {
@@ -1006,7 +1009,7 @@ class BlinkerData
 //                     _autoData[1] |= _compareType[1] << 28;
 //                 }
 //                 _autoData[1] |= _duration[1] / 60 << 22 | _time1[1] / 60 << 11 | _time2[1] / 60;
-            
+
 //                 // EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
 
 //                 // _autoId = _linkNum << 30 | _autoId;
@@ -1014,7 +1017,7 @@ class BlinkerData
 //                 // EEPROM.put(BLINKER_EEP_ADDR_AUTO, _autoData);
 //                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_AUTO2, _autoData[1]);
 //                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETKEY2, _targetKey[1]);
-                    
+
 //                 if (logic_type[1] == BLINKER_TYPE_NUMERIC) {
 //                     // EEPROM.put(BLINKER_EEP_ADDR_TARGETDATA, _targetData);
 //                     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_TARGETDATA2, _targetData[1]);
@@ -1022,7 +1025,7 @@ class BlinkerData
 // #ifdef BLINKER_DEBUG_ALL
 //             // BLINKER_LOG2("serialization _typeState: ", _typeState);
 //                 BLINKER_LOG2(BLINKER_F("serialization _autoData: "), _autoData[1]);
-// #endif  
+// #endif
 //             }
 
 //             // EEPROM.put(BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
@@ -1032,14 +1035,14 @@ class BlinkerData
 //                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
 //                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
 //                 EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
-            
+
 //                 if (_linkNum == 2) {
 //                     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
 //                     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKTYPE2, _linkType[1]);
 //                     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + a_num * BLINKER_ONE_AUTO_DATA_SIZE + BLINKER_EEP_ADDR_LINKDATA2, _linkData[1]);
 //                 }
 //             }
-            
+
 //             EEPROM.commit();
 //             EEPROM.end();
 //         }
@@ -1074,18 +1077,18 @@ class BlinkerData
 //     private :
 //         uint8_t     a_num;
 //         // - - - - - - - -  - - - - - - - -  - - - - - - - -  - - - - - - - -
-//         // | | | | |            | _time1 0-1440min 11  | _time2 0-1440min 11                   
+//         // | | | | |            | _time1 0-1440min 11  | _time2 0-1440min 11
 //         // | | | | | _duration 0-60min 6
 //         // | | | | _targetState|_compareType on/off|less/equal/greater 2
 //         // | | | _targetState|_compareType on/off|less/equal/greater
-//         // |  
+//         // |
 //         // | logic_type state/numberic 2
 //         // autoData
 
 //         // - - - - - - - -
 //         // |   |   |
 //         // |   |   | _linkNum
-//         // |   | _autoState true/false 1  
+//         // |   | _autoState true/false 1
 //         // | _logicType state/numberic/and/or 2
 //         // typestate
 //         bool        _autoState;
@@ -1258,7 +1261,7 @@ static void disableTimer() {
 static void _cd_callback() {
     _cdState = false;
     _cdTrigged = true;
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1(("countdown trigged!"));
     #endif
 }
@@ -1290,7 +1293,7 @@ static void _lp_callback() {
         lpTicker.once(_lpTime2, _lp_callback);
     }
     _lpTrigged = true;
-    #ifdef BLINKER_DEBUG_ALL     
+    #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1(("loop trigged!"));
     #endif
 }
@@ -1301,9 +1304,9 @@ static void _lp_callback() {
 // }
 
 static bool isTimingDay(uint8_t _day) {
-    #ifdef BLINKER_DEBUG_ALL     
+    #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG2(("isTimingDay: "), _day);
-    #endif   
+    #endif
     if (_timingDay & (0x01 << _day))
         return true;
     else
@@ -1324,7 +1327,7 @@ static void _tm_callback() {
     #endif
 
     int32_t nowTime = timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG6(("nowTime: "), nowTime, (" _tmTime1: "), _tmTime1, (" _tmTime2: "), _tmTime2);
     #endif
 
@@ -1332,7 +1335,7 @@ static void _tm_callback() {
         if (_tmRun1) {
             if (!_isTimingLoop) {
                 tmTicker.detach();
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(("timing2 trigged! now need stop!"));
     #endif
                 _tmState = false;
@@ -1340,13 +1343,13 @@ static void _tm_callback() {
             else {
                 if (_tmTime1 >= nowTime) {
                     tmTicker.once(_tmTime1 - nowTime, _tm_callback);
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(("timing2 trigged! next time: "), _tmTime1 - nowTime);
     #endif
                 }
                 else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
                     tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(("timing2 trigged! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
     #endif
                 }
@@ -1354,7 +1357,7 @@ static void _tm_callback() {
         }
         else {
             tmTicker.once(_tmTime2 - _tmTime1, _tm_callback);
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(("timing1 trigged! next time: "), _tmTime2 - _tmTime1);
     #endif
         }
@@ -1362,7 +1365,7 @@ static void _tm_callback() {
     }
     else {
         tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
         BLINKER_LOG2(("timing trigged! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
     #endif
     }
@@ -1475,11 +1478,24 @@ class BlinkerApi
         }
 #endif
 
+        void attachJoystick(callback_with_joy_arg_t _func) {
+            _joyFunc = _func;
+        }
+
         void attachSwitch(callback_with_string_arg_t _func) {
             if (!_BUILTIN_SWITCH) {
                 _BUILTIN_SWITCH = new BlinkerWidgets_string(BLINKER_CMD_SWITCH, _func);
             }
-            // _BUILTIN_SWITCH->setFunc(_func);
+            else {
+                _BUILTIN_SWITCH->setFunc(_func);
+            }
+        }
+
+        void freshAttachWidget(const String & _name, callback_with_rgb_arg_t _func) {
+            int8_t num = checkNum(_name, _Widgets_rgb, _wCount_rgb);
+            if(num >= 0 ) {
+                _Widgets_rgb[num]->setFunc(_func);
+            }
         }
 
         bool attachWidget(const String & _name, callback_with_rgb_arg_t _func) {
@@ -1503,6 +1519,13 @@ class BlinkerApi
             }
             else {
                 return false;
+            }
+        }
+
+        void freshAttachWidget(const String & _name, callback_with_int32_arg_t _func) {
+            int8_t num = checkNum(_name, _Widgets_int, _wCount_int);
+            if(num >= 0 ) {
+                _Widgets_int[num]->setFunc(_func);
             }
         }
 
@@ -1530,6 +1553,13 @@ class BlinkerApi
             }
         }
 
+        void freshAttachWidget(const String & _name, callback_with_string_arg_t _func) {
+            int8_t num = checkNum(_name, _Widgets_str, _wCount_str);
+            if(num >= 0 ) {
+                _Widgets_str[num]->setFunc(_func);
+            }
+        }
+
         bool attachWidget(const String & _name, callback_with_string_arg_t _func) {
             int8_t num = checkNum(_name, _Widgets_str, _wCount_str);
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
@@ -1554,294 +1584,301 @@ class BlinkerApi
             }
         }
 
-        bool attachButton(const String & _name, callback_with_string_arg_t _func) {
-            int8_t num = checkNum(_name, _NewButton, _nbCount);
-            if (num == BLINKER_OBJECT_NOT_AVAIL) {
-                if (_nbCount < BLINKER_MAX_WIDGET_SIZE) {
-                    _NewButton[_nbCount] = new _BlinkerNewButton();
-                    _NewButton[_nbCount]->name(_name);
-                    _NewButton[_nbCount]->setFunc(_func);
-                    _nbCount++;
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG4("new button: ", _name, " _nbCount: ", _nbCount);
-#endif
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-            else if(num >= 0 ) {
-                _NewButton[num]->setFunc(_func);
-                return true;
-            }
-            else {
-                return false;
-            }
-        }
+        // void freshAttachButton(const String & _name, callback_with_string_arg_t _func) {
+        //     int8_t num = checkNum(_name, _NewButton, _nbCount);
+        //     if(num >= 0 ) {
+        //         _NewButton[num]->setFunc(_func);
+        //     }
+        // }
 
-        bool buttonIcon(const String & _name, const String & _icon) {
-            int8_t num = checkNum(_name, _NewButton, _nbCount);
-            if (num == BLINKER_OBJECT_NOT_AVAIL) {
-                BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
-                return false;
-            }
+//         bool attachButton(const String & _name, callback_with_string_arg_t _func) {
+//             int8_t num = checkNum(_name, _NewButton, _nbCount);
+//             if (num == BLINKER_OBJECT_NOT_AVAIL) {
+//                 if (_nbCount < BLINKER_MAX_WIDGET_SIZE) {
+//                     _NewButton[_nbCount] = new _BlinkerNewButton();
+//                     _NewButton[_nbCount]->name(_name);
+//                     _NewButton[_nbCount]->setFunc(_func);
+//                     _nbCount++;
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG4("new button: ", _name, " _nbCount: ", _nbCount);
+// #endif
+//                     return true;
+//                 }
+//                 else {
+//                     return false;
+//                 }
+//             }
+//             else if(num >= 0 ) {
+//                 _NewButton[num]->setFunc(_func);
+//                 return true;
+//             }
+//             else {
+//                 return false;
+//             }
+//         }
 
-            _NewButton[num]->setIcon(_icon);
-            return true;
-        }
+        // bool buttonIcon(const String & _name, const String & _icon) {
+        //     int8_t num = checkNum(_name, _NewButton, _nbCount);
+        //     if (num == BLINKER_OBJECT_NOT_AVAIL) {
+        //         BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
+        //         return false;
+        //     }
 
-        template <typename T1>
-        bool buttonText(const String & _name, T1 _text) {
-            int8_t num = checkNum(_name, _NewButton, _nbCount);
-            if (num == BLINKER_OBJECT_NOT_AVAIL) {
-                BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
-                return false;
-            }
+        //     _NewButton[num]->setIcon(_icon);
+        //     return true;
+        // }
 
-            _NewButton[num]->setText(STRING_format(_text));
-            return true;
-        }
+        // template <typename T1>
+        // bool buttonText(const String & _name, T1 _text) {
+        //     int8_t num = checkNum(_name, _NewButton, _nbCount);
+        //     if (num == BLINKER_OBJECT_NOT_AVAIL) {
+        //         BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
+        //         return false;
+        //     }
 
-        bool buttonPrint(const String & _name, const String & _state) {
-            int8_t num = checkNum(_name, _NewButton, _nbCount);
-            if (num == BLINKER_OBJECT_NOT_AVAIL) {
-                BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
-                return false;
-            }
+        //     _NewButton[num]->setText(STRING_format(_text));
+        //     return true;
+        // }
 
-            // bool _format_need = static_cast<Proto*>(this)->formatState();
+        // bool buttonPrint(const String & _name, const String & _state) {
+        //     int8_t num = checkNum(_name, _NewButton, _nbCount);
+        //     if (num == BLINKER_OBJECT_NOT_AVAIL) {
+        //         BLINKER_ERR_LOG2(_name, " , none button found! Make sure you have already registered this button!");
+        //         return false;
+        //     }
 
-            // if (!_format_need) static_cast<Proto*>(this)->beginFormat();
-            String buttonData = "[\"" + _state + "\",\"" + _NewButton[num]->getIcon() + \
-                                "\",\"" + _NewButton[num]->getText() + "\"]";
+        //     // bool _format_need = static_cast<Proto*>(this)->formatState();
 
-            static_cast<Proto*>(this)->printArray(_name, buttonData);
-        }
+        //     // if (!_format_need) static_cast<Proto*>(this)->beginFormat();
+        //     String buttonData = "[\"" + _state + "\",\"" + _NewButton[num]->getIcon() + \
+        //                         "\",\"" + _NewButton[num]->getText() + "\"]";
 
-        void wInit(const String & _name, b_widgettype_t _type) {
-            switch (_type) {
-                case W_BUTTON :
-                    if (checkNum(_name, _Button, _bCount) == BLINKER_OBJECT_NOT_AVAIL) {
-                        if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                            _Button[_bCount] = new _BlinkerButton();
-                            _Button[_bCount]->name(_name);
-                            _bCount++;
-                        }
-                    }
-                    break;
-                case W_SLIDER :
-                    if (checkNum(_name, _Slider, _sCount) == BLINKER_OBJECT_NOT_AVAIL) {
-                        if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                            _Slider[_sCount] = new _BlinkerSlider();
-                            _Slider[_sCount]->name(_name);
-                            _sCount++;
-                        }
-                    }
-                    break;
-                case W_TOGGLE :
-                    if (checkNum(_name, _Toggle, _tCount) == BLINKER_OBJECT_NOT_AVAIL) {
-                        if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                            _Toggle[_tCount] = new BlinkerToggle();
-                            _Toggle[_tCount]->name(_name);
-                            _tCount++;
-                        }
-                    }
-                    break;
-                case W_RGB :
-                    if (checkNum(_name, _RGB, _rgbCount) == BLINKER_OBJECT_NOT_AVAIL) {
-                        if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                            _RGB[_rgbCount] = new _BlinkerRGB();
-                            _RGB[_rgbCount]->name(_name);
-                            _rgbCount++;
-                        }
-                    }
-                    break;
-                default :
-                    break;
-            }
-        }
+        //     static_cast<Proto*>(this)->printArray(_name, buttonData);
+        // }
 
-        bool button(const String & _bName)
-        {
-            int8_t num = checkNum(_bName, _Button, _bCount);
-            String state;
+        // void wInit(const String & _name, b_widgettype_t _type) {
+        //     switch (_type) {
+        //         case W_BUTTON :
+        //             if (checkNum(_name, _Button, _bCount) == BLINKER_OBJECT_NOT_AVAIL) {
+        //                 if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                     _Button[_bCount] = new _BlinkerButton();
+        //                     _Button[_bCount]->name(_name);
+        //                     _bCount++;
+        //                 }
+        //             }
+        //             break;
+        //         case W_SLIDER :
+        //             if (checkNum(_name, _Slider, _sCount) == BLINKER_OBJECT_NOT_AVAIL) {
+        //                 if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                     _Slider[_sCount] = new _BlinkerSlider();
+        //                     _Slider[_sCount]->name(_name);
+        //                     _sCount++;
+        //                 }
+        //             }
+        //             break;
+        //         case W_TOGGLE :
+        //             if (checkNum(_name, _Toggle, _tCount) == BLINKER_OBJECT_NOT_AVAIL) {
+        //                 if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                     _Toggle[_tCount] = new BlinkerToggle();
+        //                     _Toggle[_tCount]->name(_name);
+        //                     _tCount++;
+        //                 }
+        //             }
+        //             break;
+        //         case W_RGB :
+        //             if (checkNum(_name, _RGB, _rgbCount) == BLINKER_OBJECT_NOT_AVAIL) {
+        //                 if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                     _RGB[_rgbCount] = new _BlinkerRGB();
+        //                     _RGB[_rgbCount]->name(_name);
+        //                     _rgbCount++;
+        //                 }
+        //             }
+        //             break;
+        //         default :
+        //             break;
+        //     }
+        // }
 
-            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _bName)) {
-                _fresh = true;
-            }
+        // bool button(const String & _bName)
+        // {
+        //     int8_t num = checkNum(_bName, _Button, _bCount);
+        //     String state;
 
-            if (state == BLINKER_CMD_BUTTON_TAP) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true);
-                }
+        //     if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _bName)) {
+        //         _fresh = true;
+        //     }
 
-                _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_BUTTON_PRESSED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true, true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true, true);
-                }
+        //     if (state == BLINKER_CMD_BUTTON_TAP) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(true);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(true);
+        //         }
 
-                _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_BUTTON_RELEASED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(false);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(false);
-                }
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else if (state == BLINKER_CMD_BUTTON_PRESSED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(true, true);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(true, true);
+        //         }
 
-                _fresh = true;
-                return false;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _bCount++;
-                    }
-                    return false;
-                }
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else if (state == BLINKER_CMD_BUTTON_RELEASED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(false);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(false);
+        //         }
 
-                bool _state = _Button[num]->getState();
-                if ( !_Button[num]->longPress() )
-                    _Button[num]->freshState(false);
+        //         _fresh = true;
+        //         return false;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _bCount++;
+        //             }
+        //             return false;
+        //         }
 
-                return _state;
-            }
-        }
+        //         bool _state = _Button[num]->getState();
+        //         if ( !_Button[num]->longPress() )
+        //             _Button[num]->freshState(false);
 
-        bool toggle(const String & _tName)
-        {
-            int8_t num = checkNum(_tName, _Toggle, _tCount);
-            String state = "";
+        //         return _state;
+        //     }
+        // }
 
-            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _tName)) {
-                _fresh = true;
-            }
+        // bool toggle(const String & _tName)
+        // {
+        //     int8_t num = checkNum(_tName, _Toggle, _tCount);
+        //     String state = "";
 
-            if (state == BLINKER_CMD_ON) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _Toggle[_tCount]->freshState(true);
-                        _tCount++;
-                    }
-                }
-                else {
-                    _Toggle[num]->freshState(true);
-                }
+        //     if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _tName)) {
+        //         _fresh = true;
+        //     }
 
-                _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_OFF) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _Toggle[_tCount]->freshState(false);
-                        _tCount++;
-                    }
-                }
-                else {
-                    _Toggle[num]->freshState(false);
-                }
+        //     if (state == BLINKER_CMD_ON) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Toggle[_tCount] = new BlinkerToggle();
+        //                 _Toggle[_tCount]->name(_tName);
+        //                 _Toggle[_tCount]->freshState(true);
+        //                 _tCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Toggle[num]->freshState(true);
+        //         }
 
-                _fresh = true;
-                return false;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _tCount++;
-                    }
-                    return false;
-                }
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else if (state == BLINKER_CMD_OFF) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Toggle[_tCount] = new BlinkerToggle();
+        //                 _Toggle[_tCount]->name(_tName);
+        //                 _Toggle[_tCount]->freshState(false);
+        //                 _tCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Toggle[num]->freshState(false);
+        //         }
 
-                return _Toggle[num]->getState();
-            }
-        }
+        //         _fresh = true;
+        //         return false;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Toggle[_tCount] = new BlinkerToggle();
+        //                 _Toggle[_tCount]->name(_tName);
+        //                 _tCount++;
+        //             }
+        //             return false;
+        //         }
 
-        uint8_t slider(const String & _sName)
-        {
-            int8_t num = checkNum(_sName, _Slider, _sCount);
-            int16_t value = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), _sName);
+        //         return _Toggle[num]->getState();
+        //     }
+        // }
 
-            if (value != FIND_KEY_VALUE_FAILED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new _BlinkerSlider();
-                        _Slider[_sCount]->name(_sName);
-                        _Slider[_sCount]->freshValue(value);
-                        _sCount++;
-                    }
-                }
-                else {
-                    _Slider[num]->freshValue(value);
-                }
+        // uint8_t slider(const String & _sName)
+        // {
+        //     int8_t num = checkNum(_sName, _Slider, _sCount);
+        //     int16_t value = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), _sName);
 
-                _fresh = true;
-                return value;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new _BlinkerSlider();
-                        _Slider[_sCount]->name(_sName);
-                        _sCount++;
-                    }
-                    return 0;
-                }
-                
-                return _Slider[num]->getValue();
-            }
-        }
+        //     if (value != FIND_KEY_VALUE_FAILED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Slider[_sCount] = new _BlinkerSlider();
+        //                 _Slider[_sCount]->name(_sName);
+        //                 _Slider[_sCount]->freshValue(value);
+        //                 _sCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Slider[num]->freshValue(value);
+        //         }
 
-        uint8_t joystick(b_joystickaxis_t axis)
-        {
-            int16_t jAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, axis);
+        //         _fresh = true;
+        //         return value;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Slider[_sCount] = new _BlinkerSlider();
+        //                 _Slider[_sCount]->name(_sName);
+        //                 _sCount++;
+        //             }
+        //             return 0;
+        //         }
 
-            if (jAxisValue != FIND_KEY_VALUE_FAILED) {
-                joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
-                joyValue[J_Yaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
+        //         return _Slider[num]->getValue();
+        //     }
+        // }
 
-                _fresh = true;
-                return jAxisValue;
-            }
-            else {
-                return joyValue[axis];
-            }
-        }
+        // void joystick()
+        // {
+        //     int16_t jAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, axis);
+
+        //     if (jAxisValue != FIND_KEY_VALUE_FAILED) {
+        //         joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
+        //         joyValue[J_Yaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
+
+        //         _fresh = true;
+        //         return jAxisValue;
+        //     }
+        //     else {
+        //         return joyValue[axis];
+        //     }
+        // }
 
         int16_t ahrs(b_ahrsattitude_t attitude)
         {
@@ -1860,7 +1897,7 @@ class BlinkerApi
                 return ahrsValue[attitude];
             }
         }
-        
+
         void attachAhrs()
         {
             bool state = false;
@@ -1874,7 +1911,7 @@ class BlinkerApi
                         break;
                     }
                 }
-                
+
                 ::delay(100);
 
                 if (static_cast<Proto*>(this)->checkAvail()) {
@@ -1936,47 +1973,47 @@ class BlinkerApi
             }
         }
 
-        uint8_t rgb(const String & _rgbName, b_rgb_t color) {
-            int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
-            int16_t value = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, color);
+        // uint8_t rgb(const String & _rgbName, b_rgb_t color) {
+        //     int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
+        //     int16_t value = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, color);
 
-            if (value != FIND_KEY_VALUE_FAILED) {
-                uint8_t _rValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, R);
-                uint8_t _gValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, G);
-                uint8_t _bValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, B);
+        //     if (value != FIND_KEY_VALUE_FAILED) {
+        //         uint8_t _rValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, R);
+        //         uint8_t _gValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, G);
+        //         uint8_t _bValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _rgbName, B);
 
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new _BlinkerRGB();
-                        _RGB[_rgbCount]->name(_rgbName);
-                        _RGB[_rgbCount]->freshValue(R, _rValue);
-                        _RGB[_rgbCount]->freshValue(G, _gValue);
-                        _RGB[_rgbCount]->freshValue(B, _bValue);
-                        _rgbCount++;
-                    }
-                }
-                else {
-                    _RGB[num]->freshValue(R, _rValue);
-                    _RGB[num]->freshValue(G, _gValue);
-                    _RGB[num]->freshValue(B, _bValue);
-                }
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _RGB[_rgbCount] = new _BlinkerRGB();
+        //                 _RGB[_rgbCount]->name(_rgbName);
+        //                 _RGB[_rgbCount]->freshValue(R, _rValue);
+        //                 _RGB[_rgbCount]->freshValue(G, _gValue);
+        //                 _RGB[_rgbCount]->freshValue(B, _bValue);
+        //                 _rgbCount++;
+        //             }
+        //         }
+        //         else {
+        //             _RGB[num]->freshValue(R, _rValue);
+        //             _RGB[num]->freshValue(G, _gValue);
+        //             _RGB[num]->freshValue(B, _bValue);
+        //         }
 
-                _fresh = true;
-                return value;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new _BlinkerRGB();
-                        _RGB[_rgbCount]->name(_rgbName);
-                        _rgbCount++;
-                    }
-                    return 0;
-                }
-                
-                return _RGB[num]->getValue(color);
-            }
-        }
+        //         _fresh = true;
+        //         return value;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _RGB[_rgbCount] = new _BlinkerRGB();
+        //                 _RGB[_rgbCount]->name(_rgbName);
+        //                 _rgbCount++;
+        //             }
+        //             return 0;
+        //         }
+
+        //         return _RGB[num]->getValue(color);
+        //     }
+        // }
 
         // void freshGPS()
         // {
@@ -2000,7 +2037,7 @@ class BlinkerApi
                 static_cast<Proto*>(this)->run();
 
                 yield();
-                
+
                 if ((micros() - start)/1000 >= ms) {
                     ms = 0;
                 }
@@ -2083,7 +2120,7 @@ class BlinkerApi
             for (uint8_t _num = 0; _num < _aCount; _num++) {
                 if (_AUTO[_num]->isTrigged()) {
                     uint8_t link_num = _AUTO[_num]->linkNum();
-                    
+
                     if (link_num == 0) {
                         if (static_cast<Proto*>(this)->autoTrigged(_AUTO[_num]->id()))
                         {
@@ -2095,13 +2132,13 @@ class BlinkerApi
                         else {
     #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("trigged failed"));
-    #endif                            
+    #endif
                         }
                     }
                     else if (link_num == 1) {
                         if (static_cast<Proto*>(this)->autoTrigged(
-                            _AUTO[_num]->name(0) , 
-                            _AUTO[_num]->type(0) , 
+                            _AUTO[_num]->name(0) ,
+                            _AUTO[_num]->type(0) ,
                             _AUTO[_num]->data(0)))
                         {
     #ifdef BLINKER_DEBUG_ALL
@@ -2112,16 +2149,16 @@ class BlinkerApi
                         else {
     #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("trigged failed"));
-    #endif                            
+    #endif
                         }
                     }
                     else if (link_num == 2) {
                         if (static_cast<Proto*>(this)->autoTrigged(
-                            _AUTO[_num]->name(0) , 
-                            _AUTO[_num]->type(0) , 
-                            _AUTO[_num]->data(0) , 
-                            _AUTO[_num]->name(1) , 
-                            _AUTO[_num]->type(1) , 
+                            _AUTO[_num]->name(0) ,
+                            _AUTO[_num]->type(0) ,
+                            _AUTO[_num]->data(0) ,
+                            _AUTO[_num]->name(1) ,
+                            _AUTO[_num]->type(1) ,
                             _AUTO[_num]->data(1)))
                         {
     #ifdef BLINKER_DEBUG_ALL
@@ -2132,7 +2169,7 @@ class BlinkerApi
                         else {
     #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG1(BLINKER_F("trigged failed"));
-    #endif                            
+    #endif
                         }
                     }
                 }
@@ -2305,7 +2342,7 @@ class BlinkerApi
     #if defined(BLINKER_MQTT)
             // String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
             //                 "\",\"city\":\"" + _city + "\"}";
-            
+
             data += "deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName);
     #elif defined(BLINKER_WIFI) ||  defined(BLINKER_PRO)
             // String data = "{\"deviceName\":\"" + macDeviceName() + \
@@ -2409,7 +2446,7 @@ class BlinkerApi
 
         void tick()
         {
-            // Detect the input information 
+            // Detect the input information
             int buttonLevel = digitalRead(_pin); // current button signal.
             unsigned long now = millis(); // current (relative) time in msecs.
 
@@ -2439,7 +2476,7 @@ class BlinkerApi
                     _longPress();
                     if (_duringLongPressFunc) _duringLongPressFunc();
                     _state = 6; // step to state 6
-                
+
                 } else {
                 // wait. Stay in this state.
                 } // if
@@ -2478,26 +2515,26 @@ class BlinkerApi
                     _isLongPressed = true; // Keep track of long press state
                     _longPress();
                     if (_duringLongPressFunc) _duringLongPressFunc();
-                } // if  
+                } // if
 
-            } // if  
+            } // if
 
             // BLINKER_LOG2("_state: ", _state);
         }
 #endif
-    
+
     private :
         // bool        _switchFresh = false;
         uint8_t     _wCount_str = 0;
         uint8_t     _wCount_int = 0;
         uint8_t     _wCount_rgb = 0;
-        uint8_t     _bCount = 0;
-        uint8_t     _nbCount = 0;
-        uint8_t     _nbCount_test = 0;
-        uint8_t     _sCount = 0;
-        uint8_t     _tCount = 0;
-        uint8_t     _rgbCount = 0;
-        uint8_t     joyValue[2];
+        // uint8_t     _bCount = 0;
+        // uint8_t     _nbCount = 0;
+        // uint8_t     _nbCount_test = 0;
+        // uint8_t     _sCount = 0;
+        // uint8_t     _tCount = 0;
+        // uint8_t     _rgbCount = 0;
+        // uint8_t     joyValue[2];
         int16_t     ahrsValue[3];
         uint32_t    gps_get_time;
         String      gpsValue[2];
@@ -2550,75 +2587,113 @@ class BlinkerApi
         void freshNTP() {}
 #endif
 
-        bool buttonParse(const String & _bName)
+        // bool buttonParse(const String & _bName)
+        // {
+        //     int8_t num = checkNum(_bName, _Button, _bCount);
+        //     String state;
+
+        //     if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _bName)) {
+        //         _fresh = true;
+        //     }
+
+        //     if (state == BLINKER_CMD_BUTTON_TAP) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(true);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(true);
+        //         }
+
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(true, true);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(true, true);
+        //         }
+
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else if (state == BLINKER_CMD_BUTTON_RELEASED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(false);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(false);
+        //         }
+
+        //         _fresh = true;
+        //         return false;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _bCount++;
+        //             }
+        //             return false;
+        //         }
+
+        //         return _Button[num]->getState();
+        //     }
+        // }
+
+        void joystick()
         {
-            int8_t num = checkNum(_bName, _Button, _bCount);
-            String state;
+            int16_t jxAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
 
-            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _bName)) {
-                _fresh = true;
-            }
-
-            if (state == BLINKER_CMD_BUTTON_TAP) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true);
-                }
+            if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
+                // joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
+                uint8_t jyAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
 
                 _fresh = true;
-                return true;
+                // return jAxisValue;
+                if (_joyFunc) {
+                    _joyFunc(jxAxisValue, jyAxisValue);
+                }
             }
-            else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true, true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true, true);
-                }
+            // else {
+            //     return joyValue[axis];
+            // }
+        }
+
+        void joystick(const String & _data)
+        {
+            int16_t jxAxisValue = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Xaxis);
+
+            if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
+                // joyValue[J_Xaxis] = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Xaxis);
+                uint8_t jyAxisValue = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Yaxis);
 
                 _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_BUTTON_RELEASED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(false);
-                        _bCount++;
-                    }
+                // return jAxisValue;
+                if (_joyFunc) {
+                    _joyFunc(jxAxisValue, jyAxisValue);
                 }
-                else {
-                    _Button[num]->freshState(false);
-                }
-
-                _fresh = true;
-                return false;
             }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _bCount++;
-                    }
-                    return false;
-                }
-
-                return _Button[num]->getState();
-            }
+            // else {
+            //     return joyValue[axis];
+            // }
         }
 
         void strWidgetsParse(const String & _wName)
@@ -2684,99 +2759,117 @@ class BlinkerApi
             }
         }
 
-        void newButtonParse(const String & _bName)
-        {
-            int8_t num = checkNum(_bName, _NewButton, _nbCount);
+        // void newButtonParse(const String & _bName)
+        // {
+        //     int8_t num = checkNum(_bName, _NewButton, _nbCount);
 
-            if (num == BLINKER_OBJECT_NOT_AVAIL) {
-                return;
-            }
+        //     if (num == BLINKER_OBJECT_NOT_AVAIL) {
+        //         return;
+        //     }
 
-            String state;
+        //     String state;
 
-            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _bName)) {
-                _fresh = true;
+        //     if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, _bName)) {
+        //         _fresh = true;
 
-                callback_with_string_arg_t nbFunc = _NewButton[num]->getFunc();
-                if (nbFunc) {
-                    nbFunc(state);
-                }
-            }
-        }
+        //         callback_with_string_arg_t nbFunc = _NewButton[num]->getFunc();
+        //         if (nbFunc) {
+        //             nbFunc(state);
+        //         }
+        //     }
+        // }
 
 #if defined(ESP8266) || defined(ESP32)
-        bool buttonParse(const String & _bName, const JsonObject& data)
+        // bool buttonParse(const String & _bName, const JsonObject& data)
+        // {
+        //     int8_t num = checkNum(_bName, _Button, _bCount);
+        //     String state = data[_bName];
+
+        //     if (data.containsKey(_bName)) {
+        //         _fresh = true;
+        //     }
+        //     else {
+        //         state = "";
+        //     }
+
+        //     if (state == BLINKER_CMD_BUTTON_TAP) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(true);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(true);
+        //         }
+
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(true, true);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(true, true);
+        //         }
+
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else if (state == BLINKER_CMD_BUTTON_RELEASED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(false);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(false);
+        //         }
+
+        //         _fresh = true;
+        //         return false;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _bCount++;
+        //             }
+        //             return false;
+        //         }
+
+        //         return _Button[num]->getState();
+        //     }
+        // }
+
+        void joystick(const JsonObject& data)
         {
-            int8_t num = checkNum(_bName, _Button, _bCount);
-            String state = data[_bName];
-
-            if (data.containsKey(_bName)) {
-                _fresh = true;
-            }
-            else {
-                state = "";
-            }
-
-            if (state == BLINKER_CMD_BUTTON_TAP) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true);
-                }
+            if (data.containsKey(BLINKER_CMD_JOYSTICK)) {
+                int16_t jxAxisValue = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
+                // joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
+                uint8_t jyAxisValue = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
 
                 _fresh = true;
-                return true;
+                // return jAxisValue;
+                if (_joyFunc) {
+                    _joyFunc(jxAxisValue, jyAxisValue);
+                }
             }
-            else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true, true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true, true);
-                }
-
-                _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_BUTTON_RELEASED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(false);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(false);
-                }
-
-                _fresh = true;
-                return false;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _bCount++;
-                    }
-                    return false;
-                }
-
-                return _Button[num]->getState();
-            }
+            // else {
+            //     return joyValue[axis];
+            // }
         }
 
         void strWidgetsParse(const String & _wName, const JsonObject& data)
@@ -2844,136 +2937,136 @@ class BlinkerApi
             }
         }
 
-        void newButtonParse(const String & _bName, const JsonObject& data)
-        {
-            int8_t num = checkNum(_bName, _NewButton, _nbCount);
+    //     void newButtonParse(const String & _bName, const JsonObject& data)
+    //     {
+    //         int8_t num = checkNum(_bName, _NewButton, _nbCount);
 
-            if (num == BLINKER_OBJECT_NOT_AVAIL) {
-                return;
-            }
+    //         if (num == BLINKER_OBJECT_NOT_AVAIL) {
+    //             return;
+    //         }
 
-            String state = data[_bName];
+    //         String state = data[_bName];
 
-            if (data.containsKey(_bName)) {
-                _fresh = true;
-    #if defined(BLINKER_DEBUG_ALL)
-                BLINKER_LOG2("newButtonParse: ", _bName);
-    #endif
-                callback_with_string_arg_t nbFunc = _NewButton[num]->getFunc();
-                if (nbFunc) {
-                    nbFunc(state);
-                }
-            }
-        }
+    //         if (data.containsKey(_bName)) {
+    //             _fresh = true;
+    // #if defined(BLINKER_DEBUG_ALL)
+    //             BLINKER_LOG2("newButtonParse: ", _bName);
+    // #endif
+    //             callback_with_string_arg_t nbFunc = _NewButton[num]->getFunc();
+    //             if (nbFunc) {
+    //                 nbFunc(state);
+    //             }
+    //         }
+    //     }
 
-        bool toggle(const String & _tName, const JsonObject& data)
-        {
-            int8_t num = checkNum(_tName, _Toggle, _tCount);
-            String state = data[_tName];
+        // bool toggle(const String & _tName, const JsonObject& data)
+        // {
+        //     int8_t num = checkNum(_tName, _Toggle, _tCount);
+        //     String state = data[_tName];
 
-            if (data.containsKey(_tName)) {
-                // BLINKER_LOG2("STATE: ", state);
-                _fresh = true;
-            }
-            // else {
-            //     state = "";
-            // }
+        //     if (data.containsKey(_tName)) {
+        //         // BLINKER_LOG2("STATE: ", state);
+        //         _fresh = true;
+        //     }
+        //     // else {
+        //     //     state = "";
+        //     // }
 
-            if (state == BLINKER_CMD_ON) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _Toggle[_tCount]->freshState(true);
-                        _tCount++;
-                    }
-                }
-                else {
-                    _Toggle[num]->freshState(true);
-                }
+        //     if (state == BLINKER_CMD_ON) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Toggle[_tCount] = new BlinkerToggle();
+        //                 _Toggle[_tCount]->name(_tName);
+        //                 _Toggle[_tCount]->freshState(true);
+        //                 _tCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Toggle[num]->freshState(true);
+        //         }
 
-                _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_OFF) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _Toggle[_tCount]->freshState(false);
-                        _tCount++;
-                    }
-                }
-                else {
-                    _Toggle[num]->freshState(false);
-                }
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else if (state == BLINKER_CMD_OFF) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Toggle[_tCount] = new BlinkerToggle();
+        //                 _Toggle[_tCount]->name(_tName);
+        //                 _Toggle[_tCount]->freshState(false);
+        //                 _tCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Toggle[num]->freshState(false);
+        //         }
 
-                _fresh = true;
-                return false;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _tCount++;
-                    }
-                    return false;
-                }
+        //         _fresh = true;
+        //         return false;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Toggle[_tCount] = new BlinkerToggle();
+        //                 _Toggle[_tCount]->name(_tName);
+        //                 _tCount++;
+        //             }
+        //             return false;
+        //         }
 
-                return _Toggle[num]->getState();
-            }
-        }
+        //         return _Toggle[num]->getState();
+        //     }
+        // }
 
-        uint8_t slider(const String & _sName, const JsonObject& data)
-        {
-            int8_t num = checkNum(_sName, _Slider, _sCount);
-            
-            if (data.containsKey(_sName)) {
-                int16_t value = data[_sName];
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new _BlinkerSlider();
-                        _Slider[_sCount]->name(_sName);
-                        _Slider[_sCount]->freshValue(value);
-                        _sCount++;
-                    }
-                }
-                else {
-                    _Slider[num]->freshValue(value);
-                }
+        // uint8_t slider(const String & _sName, const JsonObject& data)
+        // {
+        //     int8_t num = checkNum(_sName, _Slider, _sCount);
 
-                _fresh = true;
-                return value;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new _BlinkerSlider();
-                        _Slider[_sCount]->name(_sName);
-                        _sCount++;
-                    }
-                    return 0;
-                }
-                
-                return _Slider[num]->getValue();
-            }
-        }
+        //     if (data.containsKey(_sName)) {
+        //         int16_t value = data[_sName];
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Slider[_sCount] = new _BlinkerSlider();
+        //                 _Slider[_sCount]->name(_sName);
+        //                 _Slider[_sCount]->freshValue(value);
+        //                 _sCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Slider[num]->freshValue(value);
+        //         }
 
-        uint8_t joystick(b_joystickaxis_t axis, const JsonObject& data)
-        {
-            if (data.containsKey(BLINKER_CMD_JOYSTICK)) {
-                int16_t jAxisValue = data[BLINKER_CMD_JOYSTICK][axis];
-                joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
-                joyValue[J_Yaxis] = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
+        //         _fresh = true;
+        //         return value;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Slider[_sCount] = new _BlinkerSlider();
+        //                 _Slider[_sCount]->name(_sName);
+        //                 _sCount++;
+        //             }
+        //             return 0;
+        //         }
 
-                _fresh = true;
-                return jAxisValue;
-            }
-            else {
-                return joyValue[axis];
-            }
-        }
+        //         return _Slider[num]->getValue();
+        //     }
+        // }
+
+        // uint8_t joystick(b_joystickaxis_t axis, const JsonObject& data)
+        // {
+        //     if (data.containsKey(BLINKER_CMD_JOYSTICK)) {
+        //         int16_t jAxisValue = data[BLINKER_CMD_JOYSTICK][axis];
+        //         joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
+        //         joyValue[J_Yaxis] = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
+
+        //         _fresh = true;
+        //         return jAxisValue;
+        //     }
+        //     else {
+        //         return joyValue[axis];
+        //     }
+        // }
 
         int16_t ahrs(b_ahrsattitude_t attitude, const JsonObject& data)
         {
@@ -3019,47 +3112,47 @@ class BlinkerApi
             }
         }
 
-        uint8_t rgb(const String & _rgbName, b_rgb_t color, const JsonObject& data) {
-            int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
-            
-            if (data.containsKey(_rgbName)) {
-                int16_t value = data[_rgbName][color];
-                uint8_t _rValue = data[_rgbName][R];
-                uint8_t _gValue = data[_rgbName][G];
-                uint8_t _bValue = data[_rgbName][B];
+        // uint8_t rgb(const String & _rgbName, b_rgb_t color, const JsonObject& data) {
+        //     int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
 
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new _BlinkerRGB();
-                        _RGB[_rgbCount]->name(_rgbName);
-                        _RGB[_rgbCount]->freshValue(R, _rValue);
-                        _RGB[_rgbCount]->freshValue(G, _gValue);
-                        _RGB[_rgbCount]->freshValue(B, _bValue);
-                        _rgbCount++;
-                    }
-                }
-                else {
-                    _RGB[num]->freshValue(R, _rValue);
-                    _RGB[num]->freshValue(G, _gValue);
-                    _RGB[num]->freshValue(B, _bValue);
-                }
+        //     if (data.containsKey(_rgbName)) {
+        //         int16_t value = data[_rgbName][color];
+        //         uint8_t _rValue = data[_rgbName][R];
+        //         uint8_t _gValue = data[_rgbName][G];
+        //         uint8_t _bValue = data[_rgbName][B];
 
-                _fresh = true;
-                return value;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new _BlinkerRGB();
-                        _RGB[_rgbCount]->name(_rgbName);
-                        _rgbCount++;
-                    }
-                    return 0;
-                }
-                
-                return _RGB[num]->getValue(color);
-            }
-        }
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _RGB[_rgbCount] = new _BlinkerRGB();
+        //                 _RGB[_rgbCount]->name(_rgbName);
+        //                 _RGB[_rgbCount]->freshValue(R, _rValue);
+        //                 _RGB[_rgbCount]->freshValue(G, _gValue);
+        //                 _RGB[_rgbCount]->freshValue(B, _bValue);
+        //                 _rgbCount++;
+        //             }
+        //         }
+        //         else {
+        //             _RGB[num]->freshValue(R, _rValue);
+        //             _RGB[num]->freshValue(G, _gValue);
+        //             _RGB[num]->freshValue(B, _bValue);
+        //         }
+
+        //         _fresh = true;
+        //         return value;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _RGB[_rgbCount] = new _BlinkerRGB();
+        //                 _RGB[_rgbCount]->name(_rgbName);
+        //                 _rgbCount++;
+        //             }
+        //             return 0;
+        //         }
+
+        //         return _RGB[num]->getValue(color);
+        //     }
+        // }
 
         void heartBeat(const JsonObject& data) {
             String state = data[BLINKER_CMD_GET];
@@ -3068,11 +3161,11 @@ class BlinkerApi
             if (state.length()) {
                 // _fresh = true;
                 if (state == BLINKER_CMD_STATE) {
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
                     // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
-                    stateData();
+                    // stateData();
         // #if defined(BLINKER_PRO)
                     if (_heartbeatFunc) {
                         _heartbeatFunc();
@@ -3083,22 +3176,22 @@ class BlinkerApi
                         // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
                         static_cast<Proto*>(this)->endFormat();
                     }
-    #else
-                    static_cast<Proto*>(this)->beginFormat();
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                    // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
-                    stateData();
+    // #else
+    //                 static_cast<Proto*>(this)->beginFormat();
+    //                 static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+    //                 // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+    //                 // stateData();
 
-                    if (_heartbeatFunc) {
-                        _heartbeatFunc();
-                    }
+    //                 if (_heartbeatFunc) {
+    //                     _heartbeatFunc();
+    //                 }
 
-                    if (!static_cast<Proto*>(this)->endFormat()) {
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                        // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
-                        static_cast<Proto*>(this)->endFormat();
-                    }
-    #endif
+    //                 if (!static_cast<Proto*>(this)->endFormat()) {
+    //                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+    //                     // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+    //                     static_cast<Proto*>(this)->endFormat();
+    //                 }
+    // #endif
                     _fresh = true;
                 }
             }
@@ -3138,76 +3231,76 @@ class BlinkerApi
             }
         }
 #else
-        bool buttonParse(const String & _bName, String _data)
-        {
-            int8_t num = checkNum(_bName, _Button, _bCount);
-            String state;
+        // bool buttonParse(const String & _bName, String _data)
+        // {
+        //     int8_t num = checkNum(_bName, _Button, _bCount);
+        //     String state;
 
-            if (STRING_find_string_value(_data, state, _bName)) {
-                _fresh = true;
-            }
+        //     if (STRING_find_string_value(_data, state, _bName)) {
+        //         _fresh = true;
+        //     }
 
-            if (state == BLINKER_CMD_BUTTON_TAP) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true);
-                }
+        //     if (state == BLINKER_CMD_BUTTON_TAP) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(true);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(true);
+        //         }
 
-                _fresh = true;
-                return true;
-            }
-            else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(true, true);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(true, true);
-                }
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else  if (state == BLINKER_CMD_BUTTON_PRESSED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(true, true);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(true, true);
+        //         }
 
-                _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_BUTTON_RELEASED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _Button[_bCount]->freshState(false);
-                        _bCount++;
-                    }
-                }
-                else {
-                    _Button[num]->freshState(false);
-                }
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else if (state == BLINKER_CMD_BUTTON_RELEASED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _Button[_bCount]->freshState(false);
+        //                 _bCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Button[num]->freshState(false);
+        //         }
 
-                _fresh = true;
-                return false;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Button[_bCount] = new _BlinkerButton();
-                        _Button[_bCount]->name(_bName);
-                        _bCount++;
-                    }
-                    return false;
-                }
+        //         _fresh = true;
+        //         return false;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _bCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Button[_bCount] = new _BlinkerButton();
+        //                 _Button[_bCount]->name(_bName);
+        //                 _bCount++;
+        //             }
+        //             return false;
+        //         }
 
-                return _Button[num]->getState();
-            }
-        }
+        //         return _Button[num]->getState();
+        //     }
+        // }
 
         void strWidgetsParse(const String & _wName, String _data)
         {
@@ -3221,7 +3314,7 @@ class BlinkerApi
 
             if (STRING_find_string_value(_data, state, _wName)) {
                 _fresh = true;
-            
+
                 callback_with_string_arg_t nbFunc = _Widgets_str[num]->getFunc();
                 if (nbFunc) {
                     nbFunc(state);
@@ -3272,158 +3365,158 @@ class BlinkerApi
             }
         }
 
-        void newButtonParse(const String & _bName, String _data)
-        {
-            int8_t num = checkNum(_bName, _NewButton, _nbCount);
+        // void newButtonParse(const String & _bName, String _data)
+        // {
+        //     int8_t num = checkNum(_bName, _NewButton, _nbCount);
 
-            if (num == BLINKER_OBJECT_NOT_AVAIL) {
-                return;
-            }
+        //     if (num == BLINKER_OBJECT_NOT_AVAIL) {
+        //         return;
+        //     }
 
-            String state;
+        //     String state;
 
-            if (STRING_find_string_value(_data, state, _bName)) {
-                _fresh = true;
-            
-                callback_with_string_arg_t nbFunc = _NewButton[num]->getFunc();
-                if (nbFunc) {
-                    nbFunc(state);
-                }
-            }
-        }
+        //     if (STRING_find_string_value(_data, state, _bName)) {
+        //         _fresh = true;
 
-        uint8_t slider(const String & _sName, String _data)
-        {
-            int8_t num = checkNum(_sName, _Slider, _sCount);
-            int16_t value = STRING_find_numberic_value(_data, _sName);
+        //         callback_with_string_arg_t nbFunc = _NewButton[num]->getFunc();
+        //         if (nbFunc) {
+        //             nbFunc(state);
+        //         }
+        //     }
+        // }
 
-            if (value != FIND_KEY_VALUE_FAILED) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new _BlinkerSlider();
-                        _Slider[_sCount]->name(_sName);
-                        _Slider[_sCount]->freshValue(value);
-                        _sCount++;
-                    }
-                }
-                else {
-                    _Slider[num]->freshValue(value);
-                }
+        // uint8_t slider(const String & _sName, String _data)
+        // {
+        //     int8_t num = checkNum(_sName, _Slider, _sCount);
+        //     int16_t value = STRING_find_numberic_value(_data, _sName);
 
-                _fresh = true;
-                return value;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Slider[_sCount] = new _BlinkerSlider();
-                        _Slider[_sCount]->name(_sName);
-                        _sCount++;
-                    }
-                    return 0;
-                }
-                
-                return _Slider[num]->getValue();
-            }
-        }
+        //     if (value != FIND_KEY_VALUE_FAILED) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Slider[_sCount] = new _BlinkerSlider();
+        //                 _Slider[_sCount]->name(_sName);
+        //                 _Slider[_sCount]->freshValue(value);
+        //                 _sCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Slider[num]->freshValue(value);
+        //         }
 
-        bool toggle(const String & _tName, String _data)
-        {
-            int8_t num = checkNum(_tName, _Toggle, _tCount);
-            String state;
+        //         _fresh = true;
+        //         return value;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _sCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Slider[_sCount] = new _BlinkerSlider();
+        //                 _Slider[_sCount]->name(_sName);
+        //                 _sCount++;
+        //             }
+        //             return 0;
+        //         }
 
-            if (STRING_find_string_value(_data, state, _tName)) {
-                _fresh = true;
-            }
+        //         return _Slider[num]->getValue();
+        //     }
+        // }
 
-            if (state == BLINKER_CMD_ON) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _Toggle[_tCount]->freshState(true);
-                        _tCount++;
-                    }
-                }
-                else {
-                    _Toggle[num]->freshState(true);
-                }
+        // bool toggle(const String & _tName, String _data)
+        // {
+        //     int8_t num = checkNum(_tName, _Toggle, _tCount);
+        //     String state;
 
-                _fresh = true;
-                return true;
-            }
-            else if (state == BLINKER_CMD_OFF) {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _Toggle[_tCount]->freshState(false);
-                        _tCount++;
-                    }
-                }
-                else {
-                    _Toggle[num]->freshState(false);
-                }
+        //     if (STRING_find_string_value(_data, state, _tName)) {
+        //         _fresh = true;
+        //     }
 
-                _fresh = true;
-                return false;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _Toggle[_tCount] = new BlinkerToggle();
-                        _Toggle[_tCount]->name(_tName);
-                        _tCount++;
-                    }
-                    return false;
-                }
+        //     if (state == BLINKER_CMD_ON) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Toggle[_tCount] = new BlinkerToggle();
+        //                 _Toggle[_tCount]->name(_tName);
+        //                 _Toggle[_tCount]->freshState(true);
+        //                 _tCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Toggle[num]->freshState(true);
+        //         }
 
-                return _Toggle[num]->getState();
-            }
-        }
+        //         _fresh = true;
+        //         return true;
+        //     }
+        //     else if (state == BLINKER_CMD_OFF) {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Toggle[_tCount] = new BlinkerToggle();
+        //                 _Toggle[_tCount]->name(_tName);
+        //                 _Toggle[_tCount]->freshState(false);
+        //                 _tCount++;
+        //             }
+        //         }
+        //         else {
+        //             _Toggle[num]->freshState(false);
+        //         }
 
-        uint8_t rgb(const String & _rgbName, b_rgb_t color, String _data) {
-            int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
-            int16_t value = STRING_find_array_numberic_value(_data, _rgbName, color);
+        //         _fresh = true;
+        //         return false;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _tCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _Toggle[_tCount] = new BlinkerToggle();
+        //                 _Toggle[_tCount]->name(_tName);
+        //                 _tCount++;
+        //             }
+        //             return false;
+        //         }
 
-            if (value != FIND_KEY_VALUE_FAILED) {
-                uint8_t _rValue = STRING_find_array_numberic_value(_data, _rgbName, R);
-                uint8_t _gValue = STRING_find_array_numberic_value(_data, _rgbName, G);
-                uint8_t _bValue = STRING_find_array_numberic_value(_data, _rgbName, B);
+        //         return _Toggle[num]->getState();
+        //     }
+        // }
 
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new _BlinkerRGB();
-                        _RGB[_rgbCount]->name(_rgbName);
-                        _RGB[_rgbCount]->freshValue(R, _rValue);
-                        _RGB[_rgbCount]->freshValue(G, _gValue);
-                        _RGB[_rgbCount]->freshValue(B, _bValue);
-                        _rgbCount++;
-                    }
-                }
-                else {
-                    _RGB[num]->freshValue(R, _rValue);
-                    _RGB[num]->freshValue(G, _gValue);
-                    _RGB[num]->freshValue(B, _bValue);
-                }
+        // uint8_t rgb(const String & _rgbName, b_rgb_t color, String _data) {
+        //     int8_t num = checkNum(_rgbName, _RGB, _rgbCount);
+        //     int16_t value = STRING_find_array_numberic_value(_data, _rgbName, color);
 
-                _fresh = true;
-                return value;
-            }
-            else {
-                if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                    if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
-                        _RGB[_rgbCount] = new _BlinkerRGB();
-                        _RGB[_rgbCount]->name(_rgbName);
-                        _rgbCount++;
-                    }
-                    return 0;
-                }
-                
-                return _RGB[num]->getValue(color);
-            }
-        }
-#endif 
+        //     if (value != FIND_KEY_VALUE_FAILED) {
+        //         uint8_t _rValue = STRING_find_array_numberic_value(_data, _rgbName, R);
+        //         uint8_t _gValue = STRING_find_array_numberic_value(_data, _rgbName, G);
+        //         uint8_t _bValue = STRING_find_array_numberic_value(_data, _rgbName, B);
+
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _RGB[_rgbCount] = new _BlinkerRGB();
+        //                 _RGB[_rgbCount]->name(_rgbName);
+        //                 _RGB[_rgbCount]->freshValue(R, _rValue);
+        //                 _RGB[_rgbCount]->freshValue(G, _gValue);
+        //                 _RGB[_rgbCount]->freshValue(B, _bValue);
+        //                 _rgbCount++;
+        //             }
+        //         }
+        //         else {
+        //             _RGB[num]->freshValue(R, _rValue);
+        //             _RGB[num]->freshValue(G, _gValue);
+        //             _RGB[num]->freshValue(B, _bValue);
+        //         }
+
+        //         _fresh = true;
+        //         return value;
+        //     }
+        //     else {
+        //         if( num == BLINKER_OBJECT_NOT_AVAIL ) {
+        //             if ( _rgbCount < BLINKER_MAX_WIDGET_SIZE ) {
+        //                 _RGB[_rgbCount] = new _BlinkerRGB();
+        //                 _RGB[_rgbCount]->name(_rgbName);
+        //                 _rgbCount++;
+        //             }
+        //             return 0;
+        //         }
+
+        //         return _RGB[num]->getValue(color);
+        //     }
+        // }
+#endif
 
         void heartBeat() {
             String state;
@@ -3435,7 +3528,12 @@ class BlinkerApi
                     static_cast<Proto*>(this)->beginFormat();
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
                     // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
-                    stateData();
+                    // stateData();
+
+                    if (_heartbeatFunc) {
+                        _heartbeatFunc();
+                    }
+
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->beginFormat();
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
@@ -3514,17 +3612,17 @@ class BlinkerApi
             }
         }
 
-        void stateData() {
-            for (uint8_t _tNum = 0; _tNum < _tCount; _tNum++) {
-                static_cast<Proto*>(this)->print(_Toggle[_tNum]->getName(), _Toggle[_tNum]->getState() ? "on" : "off");
-            }
-            for (uint8_t _sNum = 0; _sNum < _sCount; _sNum++) {
-                static_cast<Proto*>(this)->print(_Slider[_sNum]->getName(), _Slider[_sNum]->getValue());
-            }
-            // for (uint8_t _rgbNum = 0; _rgbNum < _rgbCount; _rgbNum++) {
-            //     static_cast<Proto*>(this)->printArray(_RGB[_rgbNum]->getName(), "[" + STRING_format(_RGB[_rgbNum]->getValue(R)) + "," + STRING_format(_RGB[_rgbNum]->getValue(G)) + "," + STRING_format(_RGB[_rgbNum]->getValue(B)) + "]");
-            // }
-        }
+        // void stateData() {
+        //     for (uint8_t _tNum = 0; _tNum < _tCount; _tNum++) {
+        //         static_cast<Proto*>(this)->print(_Toggle[_tNum]->getName(), _Toggle[_tNum]->getState() ? "on" : "off");
+        //     }
+        //     for (uint8_t _sNum = 0; _sNum < _sCount; _sNum++) {
+        //         static_cast<Proto*>(this)->print(_Slider[_sNum]->getName(), _Slider[_sNum]->getValue());
+        //     }
+        //     // for (uint8_t _rgbNum = 0; _rgbNum < _rgbCount; _rgbNum++) {
+        //     //     static_cast<Proto*>(this)->printArray(_RGB[_rgbNum]->getName(), "[" + STRING_format(_RGB[_rgbNum]->getValue(R)) + "," + STRING_format(_RGB[_rgbNum]->getValue(G)) + "," + STRING_format(_RGB[_rgbNum]->getValue(B)) + "]");
+        //     // }
+        // }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool autoManager(const JsonObject& data) {
@@ -3586,7 +3684,7 @@ class BlinkerApi
                         if(_autoData_array.length()) {
                             DynamicJsonBuffer _jsonBuffer;
                             JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
-                            
+
                             json_parse(_array);
                             timerManager(_array, true);
                         }
@@ -3601,7 +3699,7 @@ class BlinkerApi
                     uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_AUTOID];
 
                     // _aCount = 0;
-                    
+
                     if (_aCount) {
                         for (uint8_t _num = 0; _num < _aCount; _num++) {
                             if (_AUTO[_num]->id() == _autoId) {
@@ -3669,7 +3767,7 @@ class BlinkerApi
                 EEPROM.end();
                 return;
             }
-            EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);         
+            EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
             if (_aCount > 2) {
                 _aCount = 0;
                 EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
@@ -3751,7 +3849,7 @@ class BlinkerApi
                         int32_t _runTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
                         _runTime = 60 * _runTime;
                         String _action = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_ACTION];
-                    
+
                         _cdAction = _action;
                         _cdTime1 = _totalTime;
                         _cdTime2 = _runTime;
@@ -3766,7 +3864,7 @@ class BlinkerApi
                         int32_t _runTime = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
                         _runTime = 60 * _runTime;
                         String _action = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_ACTION];
-                    
+
                         _cdAction = _action;
                         _cdTime1 = _totalTime;
                         _cdTime2 = _runTime;
@@ -3783,11 +3881,11 @@ class BlinkerApi
                     // _cdAction = _action;
                     // _cdTime1 = _totalTime;
                     // _cdTime2 = _runTime;
-                    
+
                     // _cdState = (cd_state == BLINKER_CMD_TRUE) ? true : false;
                     if (_cdState) {
                         cdTicker.once(_cdTime1 - _cdTime2, _cd_callback);
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG1(BLINKER_F("countdown start!"));
     #endif
                     }
@@ -3828,7 +3926,7 @@ class BlinkerApi
                         int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME2];
                         _time2 = 60 * _time2;
                         String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION2];
-                        
+
                         _lpAction1 = _action1;
                         _lpAction2 = _action2;
 
@@ -3848,7 +3946,7 @@ class BlinkerApi
                         int32_t _time2 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME2];
                         _time2 = 60 * _time2;
                         String _action2 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION2];
-                        
+
                         _lpAction1 = _action1;
                         _lpAction2 = _action2;
 
@@ -3879,7 +3977,7 @@ class BlinkerApi
                         _lpRun1 = true;
                         _lpTrigged_times = 0;
                         lpTicker.once(_lpTime1, _lp_callback);
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG1(BLINKER_F("loop start!"));
     #endif
                     }
@@ -3919,7 +4017,7 @@ class BlinkerApi
                         int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME2];
                         _time2 = 60 * _time2;
                         String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION2];
-                    
+
                         _tmAction1 = _action1;
                         _tmAction2 = _action2;
 
@@ -3938,7 +4036,7 @@ class BlinkerApi
                             }
 
                             _isTimingLoop = false;
-    #ifdef BLINKER_DEBUG_ALL                            
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
     #endif
                         }
@@ -3946,15 +4044,15 @@ class BlinkerApi
                             uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
                             // timingDay = 0x80;
                             _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-    #ifdef BLINKER_DEBUG_ALL                            
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-    #endif                            
+    #endif
 
                             for (uint8_t day = 1;day < 7;day++) {
                                 taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
                                 if (taskDay > 0) {
                                     _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-    #ifdef BLINKER_DEBUG_ALL                                    
+    #ifdef BLINKER_DEBUG_ALL
                                     BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
     #endif
                                 }
@@ -3962,7 +4060,7 @@ class BlinkerApi
 
                             _isTimingLoop = true;
                         }
-                        
+
     #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
                         BLINKER_LOG2(BLINKER_F("_state: "), _state);
@@ -3976,7 +4074,7 @@ class BlinkerApi
                         int32_t _time2 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME2];
                         _time2 = 60 * _time2;
                         String _action2 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION2];
-                    
+
                         _tmAction1 = _action1;
                         _tmAction2 = _action2;
 
@@ -3995,7 +4093,7 @@ class BlinkerApi
                             }
 
                             _isTimingLoop = false;
-    #ifdef BLINKER_DEBUG_ALL                            
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
     #endif
                         }
@@ -4003,15 +4101,15 @@ class BlinkerApi
                             uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
                             // timingDay = 0x80;
                             _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-    #ifdef BLINKER_DEBUG_ALL                            
+    #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-    #endif                            
+    #endif
 
                             for (uint8_t day = 1;day < 7;day++) {
                                 taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
                                 if (taskDay > 0) {
                                     _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-    #ifdef BLINKER_DEBUG_ALL                                    
+    #ifdef BLINKER_DEBUG_ALL
                                     BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
     #endif
                                 }
@@ -4019,7 +4117,7 @@ class BlinkerApi
 
                             _isTimingLoop = true;
                         }
-                        
+
     #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
                         BLINKER_LOG2(BLINKER_F("_state: "), _state);
@@ -4043,28 +4141,28 @@ class BlinkerApi
                     if (_tmState) {
                         if (isTimingDay(wday())) {
                             int32_t nowTime = dtime();
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                                 BLINKER_LOG2(BLINKER_F("nowTime: "), nowTime);
     #endif
 
                             if (_tmTime1 >= nowTime) {
                                 _tmRun1 = true;
                                 tmTicker.once(_tmTime1 - nowTime, _tm_callback);
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                                 BLINKER_LOG2(BLINKER_F("timing1 start! next time: "), _tmTime1 - nowTime);
     #endif
                             }
                             else if (_tmTime1 < nowTime && _tmTime2 > nowTime) {
                                 _tmRun1 = false;
                                 tmTicker.once(_tmTime2 - nowTime, _tm_callback);
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                                 BLINKER_LOG2(BLINKER_F("timing2 start! next time: "), _tmTime2 - nowTime);
-    #endif                               
+    #endif
                             }
                             else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
                                 _tmRun1 = false;
                                 tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                                 BLINKER_LOG2(BLINKER_F("next day start! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
     #endif
                             }
@@ -4075,7 +4173,7 @@ class BlinkerApi
                             _tmRun1 = false;
                             tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
                         }
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG1(BLINKER_F("timing start!"));
     #endif
                     }
@@ -4118,7 +4216,7 @@ class BlinkerApi
             return lpData;
         }
 
-        String timingDay() {    
+        String timingDay() {
             String timingDayStr = "";
             // uint8_t _timingDay;// = timingTask[task]->getTimingday();
             if (_isTimingLoop) {
@@ -4283,8 +4381,8 @@ class BlinkerApi
             // client_s.print(String("POST ") + url + " HTTP/1.1\r\n" +
             //     "Host: " + host + ":" + httpsPort + "\r\n" +
             //     "Content-Type: application/json;charset=utf-8\r\n" +
-            //     "Content-Length: " + msg.length() + "\r\n" +  
-            //     "Connection: Keep Alive\r\n\r\n" +  
+            //     "Content-Length: " + msg.length() + "\r\n" +
+            //     "Connection: Keep Alive\r\n\r\n" +
             //     msg + "\r\n");
             String client_msg;
 
@@ -4295,8 +4393,8 @@ class BlinkerApi
                     client_msg = STRING_format("POST " + url + " HTTP/1.1\r\n" +
                         "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
                         "Content-Type: application/json;charset=utf-8\r\n" +
-                        "Content-Length: " + STRING_format(msg.length()) + "\r\n" +  
-                        "Connection: Keep Alive\r\n\r\n" +  
+                        "Content-Length: " + STRING_format(msg.length()) + "\r\n" +
+                        "Connection: Keep Alive\r\n\r\n" +
                         msg + "\r\n");
 
                     client_s.print(client_msg);
@@ -4350,8 +4448,8 @@ class BlinkerApi
                     client_msg = STRING_format("POST " + url + " HTTP/1.1\r\n" +
                         "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
                         "Content-Type: application/json;charset=utf-8\r\n" +
-                        "Content-Length: " + STRING_format(msg.length()) + "\r\n" +  
-                        "Connection: Keep Alive\r\n\r\n" +  
+                        "Content-Length: " + STRING_format(msg.length()) + "\r\n" +
+                        "Connection: Keep Alive\r\n\r\n" +
                         msg + "\r\n");
 
                     client_s.print(client_msg);
@@ -4377,8 +4475,8 @@ class BlinkerApi
                     client_msg = STRING_format("POST " + url + " HTTP/1.1\r\n" +
                         "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
                         "Content-Type: application/json;charset=utf-8\r\n" +
-                        "Content-Length: " + STRING_format(msg.length()) + "\r\n" +  
-                        "Connection: Keep Alive\r\n\r\n" +  
+                        "Content-Length: " + STRING_format(msg.length()) + "\r\n" +
+                        "Connection: Keep Alive\r\n\r\n" +
                         msg + "\r\n");
 
                     client_s.print(client_msg);
@@ -4414,7 +4512,7 @@ class BlinkerApi
                 }
 
                 if (dataGet == "\r") {
-        #ifdef BLINKER_DEBUG_ALL                    
+        #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(BLINKER_F("headers received"));
         #endif
                     break;
@@ -4424,7 +4522,7 @@ class BlinkerApi
             for(int i=0;i<lengthOfJson.toInt();i++){
                 lastGet += (char)client_s.read();
             }
-            
+
             dataGet = lastGet;
 
         #ifdef BLINKER_DEBUG_ALL
@@ -4592,7 +4690,7 @@ class BlinkerApi
             const char* host = "http://192.168.0.104:5000";
         #endif
 
-            // const char* ca = \ 
+            // const char* ca = \
             //     "-----BEGIN CERTIFICATE-----\n" \
             //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
             //     "MQswCQYDVQQGEwJDTjElMCMGA1UEChMcVHJ1c3RBc2lhIFRlY2hub2xvZ2llcywg\n" \
@@ -4626,7 +4724,7 @@ class BlinkerApi
             String url_iot;
 
             int httpCode;
-            
+
             // if (_type == BLINKER_CMD_SMS_NUMBER) {
             //     url_iot = String(host) + "/api/v1/user/device/sms";
             // }
@@ -4683,19 +4781,19 @@ class BlinkerApi
                 default :
                     return BLINKER_CMD_FALSE;
             }
-            
-        #ifdef BLINKER_DEBUG_ALL 
+
+        #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("HTTPS begin: "), url_iot);
         #endif
-            
+
             // http.begin(url_iot, ca); TODO
             // http.begin(url_iot);
-            
+
             // http.addHeader("Content-Type", "application/json");
 
             // httpCode = http.POST(msg);
 
-        #ifdef BLINKER_DEBUG_ALL 
+        #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("HTTPS POST: "), msg);
         #endif
 
@@ -4863,7 +4961,7 @@ class BlinkerApi
                 //     _smsTime = millis();
                 // }
                 http.end();
-                
+
                 return payload;
             }
             else {
@@ -4970,7 +5068,7 @@ class BlinkerApi
     #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(BLINKER_F("not getRegister!"));
     #endif
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "deviceType check fail");                    
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "deviceType check fail");
                 }
             }
         }
@@ -4979,6 +5077,8 @@ class BlinkerApi
     protected :
         callbackFunction            _heartbeatFunc = NULL;
 
+        callback_with_joy_arg_t     _joyFunc = NULL;
+
 #if defined(BLINKER_PRO)
         const char* _deviceType;
         BlinkerWlan Bwlan;
@@ -4986,11 +5086,11 @@ class BlinkerApi
         callback_with_json_arg_t    _parseFunc = NULL;
         // OneButton   button1;
 
-        int _pin;        // hardware pin number. 
+        int _pin;        // hardware pin number.
         int _debounceTicks; // number of ticks for debounce times.
         int _clickTicks; // number of ticks that have to pass by before a click is detected
         int _pressTicks; // number of ticks that have to pass by before a long button press is detected
-        
+
         int _buttonReleased;
         int _buttonPressed;
 
@@ -5079,7 +5179,7 @@ class BlinkerApi
             _debounceTicks = 50;      // number of millisec that have to pass by before a click is assumed as safe.
             _clickTicks = 600;        // number of millisec that have to pass by before a click is detected.
             _pressTicks = 1000;       // number of millisec that have to pass by before a long button press is detected.
-            
+
             _state = 0; // starting with state 0: waiting for button to be pressed
             _isLongPressed = false;  // Keep track of long press state
 
@@ -5159,23 +5259,23 @@ class BlinkerApi
                     for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
                         rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), root);
                     }
-                    for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                        buttonParse(_Button[bNum]->getName(), root);
-                    }
-                    for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
-                        newButtonParse(_NewButton[nbNum]->getName(), root);
-                    }
-                    for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                        slider(_Slider[sNum]->getName(), root);
-                    }
-                    for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                        toggle(_Toggle[kNum]->getName(), root);
-                    }
-                    for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                        rgb(_RGB[rgbNum]->getName(), R, root);
-                    }
+                    // for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                    //     buttonParse(_Button[bNum]->getName(), root);
+                    // }
+                    // for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
+                    //     newButtonParse(_NewButton[nbNum]->getName(), root);
+                    // }
+                    // for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                    //     slider(_Slider[sNum]->getName(), root);
+                    // }
+                    // for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                    //     toggle(_Toggle[kNum]->getName(), root);
+                    // }
+                    // for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                    //     rgb(_RGB[rgbNum]->getName(), R, root);
+                    // }
 
-                    joystick(J_Xaxis, root);
+                    joystick(root);
                     ahrs(Yaw, root);
                     gps(LONG, true, root);
 #else
@@ -5192,30 +5292,30 @@ class BlinkerApi
                     for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
                         rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
                     }
-                    for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                        buttonParse(_Button[bNum]->getName(), _data);
-                    }
-                    for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
-                        newButtonParse(_NewButton[nbNum]->getName(), _data);
-                    }
-                    for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                        slider(_Slider[sNum]->getName(), _data);
-                    }
-                    for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                        toggle(_Toggle[kNum]->getName(), _data);
-                    }
-                    for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                        rgb(_RGB[rgbNum]->getName(), R, _data);
-                    }
+                    // for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+                    //     buttonParse(_Button[bNum]->getName(), _data);
+                    // }
+                    // for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
+                    //     newButtonParse(_NewButton[nbNum]->getName(), _data);
+                    // }
+                    // for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                    //     slider(_Slider[sNum]->getName(), _data);
+                    // }
+                    // for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                    //     toggle(_Toggle[kNum]->getName(), _data);
+                    // }
+                    // for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                    //     rgb(_RGB[rgbNum]->getName(), R, _data);
+                    // }
 
-                    joystick(J_Xaxis);
+                    joystick();
                     ahrs(Yaw);
                     gps(LONG, true);
 #endif
                     if (_fresh) {
                         static_cast<Proto*>(this)->isParsed();
                     }
-                    else {     
+                    else {
         #if defined(BLINKER_PRO)
                         if (_parseFunc) {
                             if(_parseFunc(root)) {
@@ -5240,13 +5340,11 @@ class BlinkerApi
                     return;
                 }
 
-                // setSwitch(root);
-
                 String arrayData = root["data"][0];
     #ifdef BLINKER_DEBUG_ALL
                 // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
                 BLINKER_LOG2(BLINKER_F("_parse data: "), _data);
-    #endif            
+    #endif
                 if (arrayData.length()) {
                     for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
                         String array_data = root["data"][a_num];
@@ -5256,7 +5354,7 @@ class BlinkerApi
                         if(array_data.length()) {
                             DynamicJsonBuffer _jsonBuffer;
                             JsonObject& _array = _jsonBuffer.parseObject(array_data);
-                            
+
                             json_parse(_array);
                             timerManager(_array, true);
                         }
@@ -5275,32 +5373,34 @@ class BlinkerApi
                     json_parse(root);
                 }
 #else
-                // setSwitch(_data);
+                setSwitch(_data);
 
-                // for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
-                //     strWidgetsParse(_Widgets_str[wNum]->getName(), _data);
-                // }
-                // for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
-                //     intWidgetsParse(_Widgets_int[wNum_int]->getName(), _data);
-                // }
-                // for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
-                //     rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
-                // }
+                for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
+                    strWidgetsParse(_Widgets_str[wNum]->getName(), _data);
+                }
+                for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
+                    intWidgetsParse(_Widgets_int[wNum_int]->getName(), _data);
+                }
+                for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
+                    rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
+                }
+
+                joystick(_data);
                 // for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
                 //     buttonParse(_Button[bNum]->getName(), _data);
                 // }
                 // for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
                 //     newButtonParse(_NewButton[nbNum]->getName(), _data);
                 // }
-                for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                    slider(_Slider[sNum]->getName(), _data);
-                }
-                for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                    toggle(_Toggle[kNum]->getName(), _data);
-                }
-                for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                    rgb(_RGB[rgbNum]->getName(), R, _data);
-                }
+                // for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+                //     slider(_Slider[sNum]->getName(), _data);
+                // }
+                // for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+                //     toggle(_Toggle[kNum]->getName(), _data);
+                // }
+                // for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+                //     rgb(_RGB[rgbNum]->getName(), R, _data);
+                // }
 #endif
             }
         }
@@ -5320,7 +5420,7 @@ class BlinkerApi
 // #ifdef BLINKER_DEBUG_ALL
 //             // BLINKER_LOG4("data1: ", data1, " arrayData: ", arrayData);
 //             BLINKER_LOG2("_parse data: ", data);
-// #endif            
+// #endif
 //             if (arrayData.length()) {
 //                 for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
 //                     String array_data = root["data"][a_num];
@@ -5330,7 +5430,7 @@ class BlinkerApi
 //                     if(array_data.length()) {
 //                         DynamicJsonBuffer _jsonBuffer;
 //                         JsonObject& _array = _jsonBuffer.parseObject(array_data);
-                        
+
 //                         json_parse(_array);
 //                         timerManager(_array, true);
 //                     }
@@ -5391,43 +5491,56 @@ class BlinkerApi
             for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
                 rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), data);
             }
-            for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                buttonParse(_Button[bNum]->getName(), data);
-            }
-            for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
-                newButtonParse(_NewButton[nbNum]->getName(), data);
-            }
-            for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                slider(_Slider[sNum]->getName(), data);
-            }
-            for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                toggle(_Toggle[kNum]->getName(), data);
-            }
-            for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                rgb(_RGB[rgbNum]->getName(), R, data);
-            }
+            // for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+            //     buttonParse(_Button[bNum]->getName(), data);
+            // }
+            // for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
+            //     newButtonParse(_NewButton[nbNum]->getName(), data);
+            // }
+            // for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+            //     slider(_Slider[sNum]->getName(), data);
+            // }
+            // for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+            //     toggle(_Toggle[kNum]->getName(), data);
+            // }
+            // for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+            //     rgb(_RGB[rgbNum]->getName(), R, data);
+            // }
 
-            joystick(J_Xaxis, data);
+            joystick(data);
             ahrs(Yaw, data);
             gps(LONG, true, data);
         }
 
         void json_parse(const JsonObject& data) {
-            for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
-                buttonParse(_Button[bNum]->getName(), data);
+            setSwitch(data);
+
+            for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
+                strWidgetsParse(_Widgets_str[wNum]->getName(), data);
             }
+            for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
+                intWidgetsParse(_Widgets_int[wNum_int]->getName(), data);
+            }
+            for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
+                rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), data);
+            }
+
+            joystick(data);
+            // for (uint8_t bNum = 0; bNum < _bCount; bNum++) {
+            //     buttonParse(_Button[bNum]->getName(), data);
+            // }
             // for (uint8_t nbNum = 0; nbNum < _nbCount; nbNum++) {
             //     newButtonParse(_NewButton[nbNum]->getName(), data);
             // }
-            for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
-                slider(_Slider[sNum]->getName(), data);
-            }
-            for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
-                toggle(_Toggle[kNum]->getName(), data);
-            }
-            for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
-                rgb(_RGB[rgbNum]->getName(), R, data);
-            }
+            // for (uint8_t sNum = 0; sNum < _sCount; sNum++) {
+            //     slider(_Slider[sNum]->getName(), data);
+            // }
+            // for (uint8_t kNum = 0; kNum < _tCount; kNum++) {
+            //     toggle(_Toggle[kNum]->getName(), data);
+            // }
+            // for (uint8_t rgbNum = 0; rgbNum < _rgbCount; rgbNum++) {
+            //     rgb(_RGB[rgbNum]->getName(), R, data);
+            // }
         }
 
         bool ntpInit() {
@@ -5444,9 +5557,9 @@ class BlinkerApi
                 configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
 
                 now_ntp = ::time(nullptr);//getLocalTime(&timeinfo)
-            
+
                 // BLINKER_LOG4("Setting time using SNTP: ", now_ntp, " ", _timezone * 3600 * 2);
-                
+
                 if (now_ntp < _timezone * 3600 * 2) {
                     configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
                     now_ntp = ::time(nullptr);
@@ -5467,7 +5580,7 @@ class BlinkerApi
     #elif defined(ESP32)
                 localtime_r(&now_ntp, &timeinfo);
     #endif
-    #ifdef BLINKER_DEBUG_ALL                
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("Current time: "), asctime(&timeinfo));
     #endif
                 _isNTPInit = true;
@@ -5480,7 +5593,7 @@ class BlinkerApi
         bool checkTimer() {
             if (_cdTrigged) {
                 _cdTrigged = false;
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("countdown trigged, action is: "), _cdAction);
     #endif
                 // _parse(_cdAction);
@@ -5490,14 +5603,14 @@ class BlinkerApi
                 _lpTrigged = false;
 
                 if (_lpRun1) {
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("loop trigged, action is: "), _lpAction2);
     #endif
                     // _parse(_lpAction2);
                     parse(_lpAction2, true);
                 }
                 else {
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("loop trigged, action is: "), _lpAction1);
     #endif
                     // _parse(_lpAction1);
@@ -5508,14 +5621,14 @@ class BlinkerApi
                 _tmTrigged = false;
 
                 if (_tmRun1) {
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("timing trigged, action is: "), _tmAction2);
     #endif
                     // _parse(_tmAction2);
                     parse(_tmAction2, true);
                 }
                 else {
-    #ifdef BLINKER_DEBUG_ALL 
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("timing trigged, action is: "), _tmAction1);
     #endif
                     // _parse(_tmAction1);

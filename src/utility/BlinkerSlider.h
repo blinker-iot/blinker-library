@@ -7,10 +7,19 @@
 class BlinkerSlider
 {
     public :
-        BlinkerSlider(const String & _name, callback_with_int32_arg_t _func)
+        BlinkerSlider(const String & _name, callback_with_int32_arg_t _func = NULL)
             : sliderName(_name)
         {
             registered = Blinker.attachWidget(_name, _func);
+        }
+        
+        void attach(callback_with_int32_arg_t _func)
+        {
+            if (!registered) {
+                return;
+            }
+
+            Blinker.freshAttachWidget(sliderName, _func);
         }
         
         void color(const String & _clr) { textClr = _clr; }

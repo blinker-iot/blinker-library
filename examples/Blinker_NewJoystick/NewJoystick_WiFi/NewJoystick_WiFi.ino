@@ -6,19 +6,10 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#define BUTTON_1 "ButtonKey"
-
-BlinkerButton Button1(BUTTON_1);
-
-void button1_callback(const String & state)
+void joystick_callback(uint8_t xAxis, uint8_t yAxis)
 {
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    BLINKER_LOG2("get button state: ", state);
-
-    Button1.icon("icon_1");
-    Button1.iconColor("#FFFFFF");
-    Button1.text("Your button name or describe");
-    Button1.print("on");
+    BLINKER_LOG2("Joystick X axis: ", xAxis);
+    BLINKER_LOG2("Joystick Y axis: ", yAxis);
 }
 
 void setup()
@@ -30,7 +21,7 @@ void setup()
 
     Blinker.begin(ssid, pswd);
 
-    Button1.attach(button1_callback);
+    Joystick.attach(joystick_callback);
 }
 
 void loop()

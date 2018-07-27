@@ -1,24 +1,16 @@
 #define BLINKER_PRINT Serial
-#define BLINKER_WIFI
+#define BLINKER_BLE
 
 #include <Blinker.h>
 
-char ssid[] = "Your WiFi network SSID or name";
-char pswd[] = "Your WiFi network WPA password or WEP key";
+#define Slider_1 "SliderKey"
 
-#define BUTTON_1 "ButtonKey"
+BlinkerSlider Slider1(Slider_1);
 
-BlinkerButton Button1(BUTTON_1);
-
-void button1_callback(const String & state)
+void slider1_callback(int32_t value)
 {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    BLINKER_LOG2("get button state: ", state);
-
-    Button1.icon("icon_1");
-    Button1.iconColor("#FFFFFF");
-    Button1.text("Your button name or describe");
-    Button1.print("on");
+    BLINKER_LOG2("get slider value: ", value);
 }
 
 void setup()
@@ -28,9 +20,9 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-    Blinker.begin(ssid, pswd);
+    Blinker.begin();
 
-    Button1.attach(button1_callback);
+    Slider1.attach(slider1_callback);
 }
 
 void loop()
@@ -45,5 +37,8 @@ void loop()
         uint32_t BlinkerTime = millis();
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
+
+        Slider1.color("#FFFFFF");
+        Slider1.print(random(0, 128));
     }
 }
