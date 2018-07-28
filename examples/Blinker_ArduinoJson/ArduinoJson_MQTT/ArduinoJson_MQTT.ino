@@ -3,9 +3,9 @@
 
 #include <Blinker.h>
 
-char auth[] = "c64a7289ui86";
-char ssid[] = "有没有wifi";
-char pswd[] = "i8888888";
+char auth[] = "Your MQTT Secret Key";
+char ssid[] = "Your WiFi network SSID or name";
+char pswd[] = "Your WiFi network WPA password or WEP key";
 
 void setup()
 {
