@@ -792,10 +792,10 @@ class BlinkerProtocol
         #if defined(BLINKER_NO_LOGO)
             BLINKER_LOG1("Blinker v"BLINKER_VERSION"\n"
                         "    Give Blinker a Github star, thanks!\n"
-                        "    => https://github.com/blinker-iot/blinker-library");
+                        "    => https://github.com/blinker-iot/blinker-library\n");
 
             BLINKER_LOG1(("Give Blinker a Github star, thanks!"));
-            BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
+            BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library\n"));
         #elif defined(BLINKER_LOGO_3D)
             BLINKER_LOG1(("\n"
                 " ____    ___                __                       \n"
@@ -806,7 +806,7 @@ class BlinkerProtocol
                 "   \\ \\____//\\____\\\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\____\\\\ \\_\\  \n"
                 "    \\/___/ \\/____/ \\/_/\\/_/\\/_/\\/_/\\/_/\\/____/ \\/_/  \n"
                 "   Give Blinker a Github star, thanks!\n"
-                "   => https://github.com/blinker-iot/blinker-library"));
+                "   => https://github.com/blinker-iot/blinker-library\n"));
 
             // BLINKER_LOG1(("Give Blinker a github star, thanks!"));
             // BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
@@ -817,7 +817,7 @@ class BlinkerProtocol
                 " / _  / / / _ \\/  '_/ -_) __/\n"
                 "/____/_/_/_//_/_/\\_\\\\__/_/   \n"
                 "Give Blinker a github star, thanks!\n"
-                "=> https://github.com/blinker-iot/blinker-library"));
+                "=> https://github.com/blinker-iot/blinker-library\n"));
 
             // BLINKER_LOG1(("Give Blinker a github star, thanks!"));
             // BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
@@ -837,16 +837,21 @@ class BlinkerProtocol
         {
             begin();
 
-            BLINKER_LOG1(("==========================================================="));
-            BLINKER_LOG1(("================= Blinker PRO mode init ! ================="));
-            BLINKER_LOG1(("Warning! EEPROM address 1280-1535 is used for Auto Control!"));
-            BLINKER_LOG1(("============= DON'T USE THESE EEPROM ADDRESS! ============="));
-            BLINKER_LOG1(("==========================================================="));
+            BLINKER_LOG1((
+                        "\n==========================================================="
+                        "\n================= Blinker PRO mode init ! ================="
+                        "\nWarning! EEPROM address 1280-1535 is used for Auto Control!"
+                        "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
+                        "\n===========================================================\n"));
 
             BLINKER_LOG2(("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
     #if defined(BLINKER_BUTTON)
+        #if defined(BLINKER_BUTTON_PULLDOWN)
+            BApi::buttonInit(false);
+        #else
             BApi::buttonInit();
+        #endif
     #endif
             BApi::setType(_type);
         }

@@ -6,8 +6,6 @@
 
 char auth[] = "Your MQTT Secret Key";
 
-#define BUTTON_1 "ButtonKey"
-
 void setup()
 {
     Serial.begin(115200);
@@ -16,7 +14,6 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
     
     Blinker.begin(auth);
-    Blinker.wInit(BUTTON_1, W_BUTTON);
 }
 
 void loop()
@@ -32,9 +29,5 @@ void loop()
         Blinker.vibrate();        
         Blinker.print("millis", BlinkerTime);
         Blinker.endFormat();
-    }
-
-    if (Blinker.button(BUTTON_1)) {
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
 }

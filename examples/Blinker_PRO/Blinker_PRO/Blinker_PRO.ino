@@ -16,8 +16,6 @@
 
 #include <Blinker.h>
 
-#define BUTTON_1 "ButtonKey"
-
 /* 
  * Add your command parse code in this function
  * 
@@ -91,7 +89,6 @@ void setup()
 
     
     Blinker.begin(BLINKER_AIR_DETECTOR);
-    Blinker.wInit(BUTTON_1, W_BUTTON);
 
     Blinker.attachParse(dataParse);
     Blinker.attachHeartbeat(heartbeat);
