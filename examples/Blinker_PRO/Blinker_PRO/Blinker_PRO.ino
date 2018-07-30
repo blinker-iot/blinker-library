@@ -114,8 +114,4 @@ void loop()
         Blinker.print("millis", BlinkerTime);
         Blinker.endFormat();
     }
-
-    if (Blinker.button(BUTTON_1)) {
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    }
 }
