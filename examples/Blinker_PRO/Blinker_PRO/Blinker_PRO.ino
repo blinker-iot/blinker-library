@@ -87,7 +87,6 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-    
     Blinker.begin(BLINKER_AIR_DETECTOR);
 
     Blinker.attachParse(dataParse);
