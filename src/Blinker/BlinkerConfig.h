@@ -39,6 +39,12 @@
 
 #define BLINKER_SMS_MAX_SEND_SIZE       128
 
+#if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+    #define BLINKER_PRESSTIME_POWERDOWN     2000UL
+    
+    #define BLINKER_PRESSTIME_RESET         10000UL
+#endif
+
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else

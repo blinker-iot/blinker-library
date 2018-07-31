@@ -220,21 +220,36 @@ uint8_t result_Y = Blinker.joystick(J_Yaxis);
 **开关** 模式下支持 打开/关闭(on/off) 两个动作  
 **自定义** 模式下支持 自定义指令 发送  
 
+初始化, 创建对象
 ```
 #define BUTTON_1 "ButtonKey"
 
 BlinkerButton Button1(BUTTON_1);
-
+```
+用于处理 **button** 收到数据的回调函数
+```
 void button1_callback(const String & state)
 {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     BLINKER_LOG2("get button state: ", state);
 }
 ```
+> 在回调函数中, **state** 的值为:  
+> **按键** : 点按(tap)/长按(pre)/释放(pup)  
+> **开关** : 打开(on)/关闭(off)
+> **自定义** : 你设置的值  
 
+在 **setup()** 中注册回调函数
 ```
 Button1.attach(button1_callback);
 ```
+> 也可以在初始化时注册回调函数:
+> BlinkerButton Button1(BUTTON_1, button1_callback);  
+
+#### Button1.icon();
+Button1.iconColor("#FFFFFF");
+Button1.text("Your button name or describe");
+Button1.print("on");
 ### BlinkerJoystick
 ### BlinkerRGB
 ### BlinkerSlider

@@ -1073,6 +1073,16 @@ class BlinkerApi
             _duringLongPressFunc = newFunction;
         }
 
+    #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+        void attachLongPressPowerdown(callbackFunction newFunction) {
+            _powerdownFunc = newFunction;
+        }
+
+        void attachLongPressReset(callbackFunction newFunction) {
+            _resetFunc = newFunction;
+        }
+    #endif
+
         void setType(const char* _type) {
             _deviceType = _type;
 
@@ -3146,6 +3156,11 @@ class BlinkerApi
         BlinkerWlan Bwlan;
 
         callback_with_json_arg_t    _parseFunc = NULL;
+
+    #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+        callbackFunction _powerdownFunc = NULL;
+        callbackFunction _resetFunc = NULL;
+    #endif
         // OneButton   button1;
 
         int _pin;        // hardware pin number.
@@ -3231,7 +3246,35 @@ class BlinkerApi
             // Bwlan.deleteConfig();
             // Bwlan.reset();
             // ESP.restart();
+            // reset();
+
+            uint32_t _pressedTime = millis() - _startTime;
+
+            BLINKER_LOG4("_stopTime: ", millis(), " ,_startTime: ", _startTime);
+            BLINKER_LOG2("long pressed time: ", _pressedTime);
+
+    #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+            if (_pressedTime >= BLINKER_PRESSTIME_RESET) {
+                if (_resetFunc) {
+                    _resetFunc();
+                }
+
+                reset();
+            }
+            else {
+                BLINKER_LOG1(BLINKER_F("BLINKER_PRESSTIME_POWERDOWN"));
+
+                if (_powerdownFunc) {
+                    _powerdownFunc();
+                }
+            }
+    #else
+            if (_resetFunc) {
+                _resetFunc();
+            }
+
             reset();
+    #endif
         } // longPressStop
 
         void buttonInit(int activeLow = true)
