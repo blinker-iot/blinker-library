@@ -3250,8 +3250,10 @@ class BlinkerApi
 
             uint32_t _pressedTime = millis() - _startTime;
 
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG4("_stopTime: ", millis(), " ,_startTime: ", _startTime);
             BLINKER_LOG2("long pressed time: ", _pressedTime);
+    #endif
 
     #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
             if (_pressedTime >= BLINKER_PRESSTIME_RESET) {
@@ -3269,9 +3271,9 @@ class BlinkerApi
                 }
             }
     #else
-            if (_resetFunc) {
-                _resetFunc();
-            }
+            // if (_resetFunc) {
+            //     _resetFunc();
+            // }
 
             reset();
     #endif

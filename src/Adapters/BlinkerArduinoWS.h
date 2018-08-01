@@ -20,7 +20,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
     {
         case WStype_DISCONNECTED:
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("Disconnected! "), num);
+            BLINKER_LOG2(("Disconnected! "), num);
 #endif
 
             isConnect = false;
@@ -30,7 +30,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
                 IPAddress ip = webSocket.remoteIP(num);
 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG6(BLINKER_F("num: "), num, BLINKER_F(", Connected from: "), ip, BLINKER_F(", url: "), (char *)payload);
+                BLINKER_LOG6(("num: "), num, (", Connected from: "), ip, (", url: "), (char *)payload);
 #endif
 
                 // send message to client
@@ -42,7 +42,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
         case WStype_TEXT:
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG6(BLINKER_F("num: "), num, BLINKER_F(", get Text: "), (char *)payload, BLINKER_F(", length: "), length);
+            BLINKER_LOG6(("num: "), num, (", get Text: "), (char *)payload, (", length: "), length);
 #endif
             if (length < BLINKER_MAX_READ_SIZE) {
                 // msgBuf = (char*)malloc((length+1)*sizeof(char));
