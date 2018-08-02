@@ -23,7 +23,7 @@ class BlinkerButton
         }
 
         void icon(const String & _icon) { bicon = _icon; }
-        void iconColor(const String & _clr) { iconClr = _clr; }
+        void color(const String & _clr) { iconClr = _clr; }
         template <typename T>
         void content(T _con) { bcon = STRING_format(_con); }
         template <typename T>

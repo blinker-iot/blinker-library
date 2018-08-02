@@ -11,20 +11,20 @@ class BlinkerText
             : textName(_name)
         {}
         
-        template <typename T>
-        void title(T _title) { tTitle = STRING_format(_title); }
+        // template <typename T>
+        // void title(T _title) { tTitle = STRING_format(_title); }
         
         template <typename T>
-        void print(T _content) {
-            // String textData = "[\"" + tTitle + "\",\"" + STRING_format(_content) + "\"]";
+        void print(T _text) {
+            String textData = "{\""BLINKER_CMD_TEXT"\":\"" + STRING_format(_text) + "\"}";
 
-            String textData = "{\""BLINKER_CMD_CONTENT"\":\"" + STRING_format(_content) + "\"";
+            Blinker.printArray(textName, textData);
+        }
 
-            if (tTitle.length()) {
-                textData += ",\""BLINKER_CMD_TITLE"\":\"" + tTitle + "\"";
-            }
-
-            textData += "}";
+        template <typename T1, typename T2>
+        void print(T1 _text1, T2 _text2) {
+            String textData = "{\""BLINKER_CMD_TEXT"\":\"" + STRING_format(_text1) + "\"," + \
+                                "\""BLINKER_CMD_TEXT1"\":" + STRING_format(_text2) + "\"}";
 
             Blinker.printArray(textName, textData);
         }

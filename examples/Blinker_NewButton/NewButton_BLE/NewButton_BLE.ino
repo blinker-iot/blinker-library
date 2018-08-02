@@ -13,7 +13,7 @@ void button1_callback(const String & state)
     BLINKER_LOG2("get button state: ", state);
 
     Button1.icon("icon_1");
-    Button1.iconColor("#FFFFFF");
+    Button1.color("#FFFFFF");
     Button1.text("Your button name or describe");
     Button1.print("on");
 }

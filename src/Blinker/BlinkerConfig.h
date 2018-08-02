@@ -247,6 +247,8 @@
 
 #define BLINKER_CMD_TEXT                "tex"
 
+#define BLINKER_CMD_TEXT1               "tex1"
+
 #define BLINKER_CMD_TEXTCOLOR           "tco"
 
 #define BLINKER_CMD_UNIT                "uni"

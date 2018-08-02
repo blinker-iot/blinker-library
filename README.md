@@ -247,7 +247,7 @@ Button1.attach(button1_callback);
 > BlinkerButton Button1(BUTTON_1, button1_callback);  
 
 #### Button1.icon();
-Button1.iconColor("#FFFFFF");
+Button1.color("#FFFFFF");
 Button1.text("Your button name or describe");
 Button1.print("on");
 ### BlinkerJoystick

@@ -30,7 +30,6 @@ void loop()
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
 
-        Text1.title("os time");
-        Text1.print(BlinkerTime);
+        Text1.print("os time", BlinkerTime);
     }
 }
