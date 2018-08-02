@@ -235,6 +235,22 @@
 
 #define BLINKER_CMD_DEFAULT             "default"
 
+#define BLINKER_CMD_VALUE               "val"
+
+#define BLINKER_CMD_ICON                "ico"
+
+#define BLINKER_CMD_COLOR               "col"
+
+#define BLINKER_CMD_TITLE               "tit"
+
+#define BLINKER_CMD_CONTENT             "con"
+
+#define BLINKER_CMD_TEXT                "tex"
+
+#define BLINKER_CMD_TEXTCOLOR           "tco"
+
+#define BLINKER_CMD_UNIT                "uni"
+
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
 #define BLINKER_ONE_DAY_TIME            86400UL

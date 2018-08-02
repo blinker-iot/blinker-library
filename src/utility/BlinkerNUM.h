@@ -31,16 +31,16 @@ class BlinkerNUM
 
         void _print(const String & value) {
 
-            String buttonData = "{\"val\":" + value;
+            String buttonData = "{\""BLINKER_CMD_VALUE"\":" + value;
 
             if (nicon.length()) {
-                buttonData += ",\"ico\":\"" + nicon + "\"";
+                buttonData += ",\""BLINKER_CMD_ICON"\":\"" + nicon + "\"";
             }
             if (ncolor.length()) {
-                buttonData += ",\"col\":\"" + ncolor + "\"";
+                buttonData += ",\""BLINKER_CMD_COLOR"\":\"" + ncolor + "\"";
             }
             if (nunit.length()) {
-                buttonData += ",\"uin\":\"" + nunit + "\"";
+                buttonData += ",\""BLINKER_CMD_UNIT"\":\"" + nunit + "\"";
             }
 
             buttonData += "}";

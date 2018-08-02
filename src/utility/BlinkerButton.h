@@ -43,19 +43,19 @@ class BlinkerButton
             String buttonData = "{\"swi\":\"" + _state + "\"";
 
             if (bicon.length()) {
-                buttonData += ",\"ico\":\"" + bicon + "\"";
+                buttonData += ",\""BLINKER_CMD_ICON"\":\"" + bicon + "\"";
             }
             if (iconClr.length()) {
-                buttonData += ",\"col\":\"" + iconClr + "\"";
+                buttonData += ",\""BLINKER_CMD_COLOR"\":\"" + iconClr + "\"";
             }
             if (bcon.length()) {
-                buttonData += ",\"con\":\"" + bcon + "\"";
+                buttonData += ",\""BLINKER_CMD_CONTENT"\":\"" + bcon + "\"";
             }
             if (btext.length()) {
-                buttonData += ",\"tex\":\"" + btext + "\"";
+                buttonData += ",\""BLINKER_CMD_TEXT"\":\"" + btext + "\"";
             }
             if (textClr.length()) {
-                buttonData += ",\"tco\":\"" + textClr + "\"";
+                buttonData += ",\""BLINKER_CMD_TEXTCOLOR"\":\"" + textClr + "\"";
             }
 
             buttonData += "}";

@@ -18,10 +18,10 @@ class BlinkerText
         void print(T _content) {
             // String textData = "[\"" + tTitle + "\",\"" + STRING_format(_content) + "\"]";
 
-            String textData = "{\"con\":\"" + STRING_format(_content) + "\"";
+            String textData = "{\""BLINKER_CMD_CONTENT"\":\"" + STRING_format(_content) + "\"";
 
             if (tTitle.length()) {
-                textData += ",\"tit\":\"" + tTitle + "\"";
+                textData += ",\""BLINKER_CMD_TITLE"\":\"" + tTitle + "\"";
             }
 
             textData += "}";

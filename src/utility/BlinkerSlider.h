@@ -42,10 +42,10 @@ class BlinkerSlider
                 return;
             }
 
-            String sliderData = "{\"val\":" + n;
+            String sliderData = "{\""BLINKER_CMD_VALUE"\":" + n;
 
             if (textClr.length()) {
-                sliderData += ",\"col\":\"" + textClr + "\"";
+                sliderData += ",\""BLINKER_CMD_COLOR"\":\"" + textClr + "\"";
             }
 
             sliderData += "}";
