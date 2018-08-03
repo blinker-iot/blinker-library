@@ -28,6 +28,8 @@ class BlinkerButton
         void content(T _con) { bcon = STRING_format(_con); }
         template <typename T>
         void text(T _text) { btext = STRING_format(_text); }
+        template <typename T1, typename T2>
+        void text(T1 _text1, T2 _text2) { btext = STRING_format(_text1); btext1 = STRING_format(_text2); }
         void textColor(const String & _clr) { textClr = _clr; }
 
         void print(const String & _state)
@@ -54,6 +56,9 @@ class BlinkerButton
             if (btext.length()) {
                 buttonData += ",\""BLINKER_CMD_TEXT"\":\"" + btext + "\"";
             }
+            if (btext1.length()) {
+                buttonData += ",\""BLINKER_CMD_TEXT1"\":\"" + btext1 + "\"";
+            }
             if (textClr.length()) {
                 buttonData += ",\""BLINKER_CMD_TEXTCOLOR"\":\"" + textClr + "\"";
             }
@@ -72,6 +77,7 @@ class BlinkerButton
         String iconClr = "";
         String bcon = "";
         String btext = "";
+        String btext1 = "";
         String textClr = "";
 };
 
