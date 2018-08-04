@@ -1413,11 +1413,11 @@ class BlinkerApi
                 return;
             }
 
-            int16_t jxAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
+            int16_t jxAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, J_Xaxis);
 
             if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
-                // joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
-                uint8_t jyAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
+                // joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, J_Xaxis);
+                uint8_t jyAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, J_Yaxis);
 
                 _fresh = true;
                 // return jAxisValue;
@@ -1523,9 +1523,9 @@ class BlinkerApi
             }
 
             if (data.containsKey(_wName)) {
-                int16_t jxAxisValue = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
-                // joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
-                uint8_t jyAxisValue = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
+                int16_t jxAxisValue = data[_wName][J_Xaxis];
+                // joyValue[J_Xaxis] = data[_wName][J_Xaxis];
+                uint8_t jyAxisValue = data[_wName][J_Yaxis];
 
                 _fresh = true;
 

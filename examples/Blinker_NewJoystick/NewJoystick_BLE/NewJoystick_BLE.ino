@@ -5,7 +5,7 @@
 
 #define JOY_1 "JOYKey"
 
-BlinkerJoystick JOY1(RGB_1);
+BlinkerJoystick JOY1(JOY_1);
 
 void joystick1_callback(uint8_t xAxis, uint8_t yAxis)
 {
