@@ -34,7 +34,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
 #endif
 
                 // send message to client
-                webSocket.sendTXT(num, "{\"state\":\"connected\"}");
+                webSocket.sendTXT(num, "{\"state\":\"connected\"}\n");
 
                 isConnect = true;
             }
