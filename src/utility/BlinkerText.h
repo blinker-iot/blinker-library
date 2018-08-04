@@ -24,7 +24,7 @@ class BlinkerText
         template <typename T1, typename T2>
         void print(T1 _text1, T2 _text2) {
             String textData = "{\""BLINKER_CMD_TEXT"\":\"" + STRING_format(_text1) + "\"," + \
-                                "\""BLINKER_CMD_TEXT1"\":" + STRING_format(_text2) + "\"}";
+                                "\""BLINKER_CMD_TEXT1"\":\"" + STRING_format(_text2) + "\"}";
 
             Blinker.printArray(textName, textData);
         }
