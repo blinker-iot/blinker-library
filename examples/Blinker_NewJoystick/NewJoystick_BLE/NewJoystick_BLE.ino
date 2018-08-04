@@ -3,10 +3,14 @@
 
 #include <Blinker.h>
 
-void joystick_callback(uint8_t xAxis, uint8_t yAxis)
+#define JOY_1 "JOYKey"
+
+BlinkerJoystick JOY1(RGB_1);
+
+void joystick1_callback(uint8_t xAxis, uint8_t yAxis)
 {
-    BLINKER_LOG2("Joystick X axis: ", xAxis);
-    BLINKER_LOG2("Joystick Y axis: ", yAxis);
+    BLINKER_LOG2("Joystick1 X axis: ", xAxis);
+    BLINKER_LOG2("Joystick1 Y axis: ", yAxis);
 }
 
 void setup()
@@ -18,7 +22,7 @@ void setup()
 
     Blinker.begin();
 
-    Joystick.attach(joystick_callback);
+    JOY1.attach(joystick1_callback);
 }
 
 void loop()

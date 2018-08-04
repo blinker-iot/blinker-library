@@ -56,7 +56,8 @@ enum b_rgb_t {
 static class BlinkerWidgets_string * _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
 static class BlinkerWidgets_string * _BUILTIN_SWITCH;
 static class BlinkerWidgets_int32 * _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
-static class BlinkerWidgets_rgb * _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE];
+static class BlinkerWidgets_rgb * _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
+static class BlinkerWidgets_joy * _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
 static class BlinkerBridge * _Bridge[BLINKER_MAX_BRIDGE_SIZE];
@@ -119,6 +120,23 @@ class BlinkerWidgets_rgb
     private :
         String wName;
         callback_with_rgb_arg_t wfunc;
+};
+
+class BlinkerWidgets_joy
+{
+    public :
+        BlinkerWidgets_joy(const String & _name, callback_with_joy_arg_t _func = NULL)
+            : wName(_name), wfunc(_func)
+        {}
+
+        String getName() { return wName; }
+        void setFunc(callback_with_joy_arg_t _func) { wfunc = _func; }
+        callback_with_joy_arg_t getFunc() { return wfunc; }
+        bool checkName(String name) { return ((wName == name) ? true : false); }
+
+    private :
+        String wName;
+        callback_with_joy_arg_t wfunc;
 };
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -489,6 +507,37 @@ class BlinkerApi
             }
             else {
                 _BUILTIN_SWITCH->setFunc(_func);
+            }
+        }
+
+        void freshAttachWidget(const String & _name, callback_with_joy_arg_t _func) {
+            int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
+            if(num >= 0 ) {
+                _Widgets_joy[num]->setFunc(_func);
+            }
+        }
+
+        bool attachWidget(const String & _name, callback_with_joy_arg_t _func) {
+            int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                if (_wCount_joy < BLINKER_MAX_WIDGET_SIZE) {
+                    _Widgets_joy[_wCount_joy] = new BlinkerWidgets_joy(_name, _func);
+                    _wCount_joy++;
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG4("new widgets: ", _name, " _wCount_joy: ", _wCount_joy);
+#endif
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            else if(num >= 0 ) {
+                BLINKER_ERR_LOG3("widgets name > ", _name, " < has been registered, please register another name!");
+                return false;
+            }
+            else {
+                return false;
             }
         }
 
@@ -1195,6 +1244,7 @@ class BlinkerApi
         uint8_t     _wCount_str = 0;
         uint8_t     _wCount_int = 0;
         uint8_t     _wCount_rgb = 0;
+        uint8_t     _wCount_joy = 0;
         // uint8_t     _bCount = 0;
         // uint8_t     _nbCount = 0;
         // uint8_t     _nbCount_test = 0;
@@ -1254,43 +1304,43 @@ class BlinkerApi
         void freshNTP() {}
 #endif
 
-        void joystick()
-        {
-            int16_t jxAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
+        // void joystick()
+        // {
+        //     int16_t jxAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
 
-            if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
-                // joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
-                uint8_t jyAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
+        //     if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
+        //         // joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
+        //         uint8_t jyAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
 
-                _fresh = true;
-                // return jAxisValue;
-                if (_joyFunc) {
-                    _joyFunc(jxAxisValue, jyAxisValue);
-                }
-            }
-            // else {
-            //     return joyValue[axis];
-            // }
-        }
+        //         _fresh = true;
+        //         // return jAxisValue;
+        //         if (_joyFunc) {
+        //             _joyFunc(jxAxisValue, jyAxisValue);
+        //         }
+        //     }
+        //     // else {
+        //     //     return joyValue[axis];
+        //     // }
+        // }
 
-        void joystick(const String & _data)
-        {
-            int16_t jxAxisValue = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Xaxis);
+        // void joystick(const String & _data)
+        // {
+        //     int16_t jxAxisValue = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Xaxis);
 
-            if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
-                // joyValue[J_Xaxis] = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Xaxis);
-                uint8_t jyAxisValue = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Yaxis);
+        //     if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
+        //         // joyValue[J_Xaxis] = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Xaxis);
+        //         uint8_t jyAxisValue = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Yaxis);
 
-                _fresh = true;
-                // return jAxisValue;
-                if (_joyFunc) {
-                    _joyFunc(jxAxisValue, jyAxisValue);
-                }
-            }
-            // else {
-            //     return joyValue[axis];
-            // }
-        }
+        //         _fresh = true;
+        //         // return jAxisValue;
+        //         if (_joyFunc) {
+        //             _joyFunc(jxAxisValue, jyAxisValue);
+        //         }
+        //     }
+        //     // else {
+        //     //     return joyValue[axis];
+        //     // }
+        // }
 
         void strWidgetsParse(const String & _wName)
         {
@@ -1355,25 +1405,49 @@ class BlinkerApi
             }
         }
 
-#if defined(ESP8266) || defined(ESP32)
-
-        void joystick(const JsonObject& data)
+        void joyWidgetsParse(const String & _wName)
         {
-            if (data.containsKey(BLINKER_CMD_JOYSTICK)) {
-                int16_t jxAxisValue = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
-                // joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
-                uint8_t jyAxisValue = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
+            int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            int16_t jxAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
+
+            if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
+                // joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
+                uint8_t jyAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
 
                 _fresh = true;
                 // return jAxisValue;
-                if (_joyFunc) {
-                    _joyFunc(jxAxisValue, jyAxisValue);
+                callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
+
+                if (wFunc) {
+                    wFunc(jxAxisValue, jyAxisValue);
                 }
             }
-            // else {
-            //     return joyValue[axis];
-            // }
         }
+
+#if defined(ESP8266) || defined(ESP32)
+
+        // void joystick(const JsonObject& data)
+        // {
+        //     if (data.containsKey(BLINKER_CMD_JOYSTICK)) {
+        //         int16_t jxAxisValue = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
+        //         // joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
+        //         uint8_t jyAxisValue = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
+
+        //         _fresh = true;
+        //         // return jAxisValue;
+        //         if (_joyFunc) {
+        //             _joyFunc(jxAxisValue, jyAxisValue);
+        //         }
+        //     }
+        //     // else {
+        //     //     return joyValue[axis];
+        //     // }
+        // }
 
         void strWidgetsParse(const String & _wName, const JsonObject& data)
         {
@@ -1440,6 +1514,28 @@ class BlinkerApi
             }
         }
 
+        void joyWidgetsParse(const String & _wName, const JsonObject& data)
+        {
+            int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            if (data.containsKey(_wName)) {
+                int16_t jxAxisValue = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
+                // joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
+                uint8_t jyAxisValue = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
+
+                _fresh = true;
+
+                callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
+                if (wFunc) {
+                    wFunc(jxAxisValue, jyAxisValue);
+                }
+            }
+        }
+
         int16_t ahrs(b_ahrsattitude_t attitude, const JsonObject& data)
         {
             if (data.containsKey(BLINKER_CMD_AHRS)) {
@@ -1490,12 +1586,24 @@ class BlinkerApi
             if (state.length()) {
                 if (state == BLINKER_CMD_STATE) {
                     static_cast<Proto*>(this)->beginFormat();
+
+#if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+#else
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+#endif  
+
                     if (_heartbeatFunc) {
                         _heartbeatFunc();
                     }
                     if (!static_cast<Proto*>(this)->endFormat()) {
+                        
+#if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+#else
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+#endif  
+
                         static_cast<Proto*>(this)->endFormat();
                     }
                     _fresh = true;
@@ -1600,6 +1708,29 @@ class BlinkerApi
                 }
             }
         }
+
+        void joyWidgetsParse(const String & _wName, String _data)
+        {
+            int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
+
+            if (num == BLINKER_OBJECT_NOT_AVAIL) {
+                return;
+            }
+
+            int16_t jxAxisValue = STRING_find_array_numberic_value(_data, _wName, J_Xaxis);
+
+            if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
+                // joyValue[J_Xaxis] = STRING_find_array_numberic_value(_data, _wName, J_Xaxis);
+                uint8_t jyAxisValue = STRING_find_array_numberic_value(_data, _wName, J_Yaxis);
+
+                // return jAxisValue;
+                callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
+
+                if (wFunc) {
+                    wFunc(jxAxisValue, jyAxisValue);
+                }
+            }
+        }
 #endif
 
         void heartBeat() {
@@ -1610,9 +1741,12 @@ class BlinkerApi
                 // _fresh = true;
                 if (state == BLINKER_CMD_STATE) {
                     static_cast<Proto*>(this)->beginFormat();
+
+#if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                    // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
-                    // stateData();
+#else
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+#endif
 
                     if (_heartbeatFunc) {
                         _heartbeatFunc();
@@ -1620,8 +1754,12 @@ class BlinkerApi
 
                     if (!static_cast<Proto*>(this)->endFormat()) {
                         static_cast<Proto*>(this)->beginFormat();
+
+#if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-                        // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+#else
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+#endif                        
                         static_cast<Proto*>(this)->endFormat();
                     }
                     _fresh = true;
@@ -3366,8 +3504,11 @@ class BlinkerApi
                     for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
                         rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), root);
                     }
+                    for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
+                        joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), root);
+                    }
 
-                    joystick(root);
+                    // joystick(root);
                     ahrs(Yaw, root);
                     gps(LONG, true, root);
 #else
@@ -3384,8 +3525,11 @@ class BlinkerApi
                     for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
                         rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
                     }
+                    for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
+                        joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), _data);
+                    }
 
-                    joystick();
+                    // joystick();
                     ahrs(Yaw);
                     gps(LONG, true);
 #endif
@@ -3461,8 +3605,11 @@ class BlinkerApi
                 for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
                     rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
                 }
+                for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
+                    joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), _data);
+                }
 
-                joystick(_data);
+                // joystick(_data);
 #endif
             }
         }
@@ -3494,8 +3641,11 @@ class BlinkerApi
             for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
                 rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), data);
             }
+            for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
+                joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), data);
+            }
 
-            joystick(data);
+            // joystick(data);
             ahrs(Yaw, data);
             gps(LONG, true, data);
         }
@@ -3512,8 +3662,11 @@ class BlinkerApi
             for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
                 rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), data);
             }
+            for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
+                joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), data);
+            }
 
-            joystick(data);
+            // joystick(data);
         }
 
         bool ntpInit() {

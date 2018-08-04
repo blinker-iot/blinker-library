@@ -10,6 +10,5 @@
 #include <utility/BlinkerText.h>
 
 BlinkerSwitch BUILTIN_SWITCH;
-BlinkerJoystick Joystick;
 
 #endif

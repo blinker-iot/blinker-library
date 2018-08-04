@@ -6,17 +6,37 @@
 
 class BlinkerJoystick
 {
-    public :
-        BlinkerJoystick()
-            : jName(BLINKER_CMD_JOYSTICK)
-        {}
+    // public :
+    //     BlinkerJoystick()
+    //         : jName(BLINKER_CMD_JOYSTICK)
+    //     {}
         
-        void attach(callback_with_joy_arg_t _func) {
-            Blinker.attachJoystick(_func);
+    //     void attach(callback_with_joy_arg_t _func) {
+    //         Blinker.attachJoystick(_func);
+    //     }
+    
+    // private :
+    //     String jName;
+
+    public :
+        BlinkerJoystick(const String & _name, callback_with_joy_arg_t _func = NULL)
+            : jName(_name)
+        {
+            registered = Blinker.attachWidget(_name, _func);
+        }
+        
+        void attach(callback_with_joy_arg_t _func)
+        {
+            if (!registered) {
+                return;
+            }
+
+            Blinker.freshAttachWidget(jName, _func);
         }
     
     private :
         String jName;
+        bool registered = false;
 };
 
 #endif
