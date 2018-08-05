@@ -244,6 +244,9 @@ Ticker cdTicker;
 Ticker lpTicker;
 Ticker tmTicker;
 
+static bool _cdRunState = false;
+static bool _lpRunState = false;
+static bool _tmRunState = false;
 static bool _cdState = false;
 static bool _lpState = false;
 static bool _tmState = false;
@@ -269,11 +272,11 @@ static uint8_t  _timingDay = 0;
 // static String _cbData2;
 
 static void disableTimer() {
-    _cdState = false;
+    _cdRunState = false;
     cdTicker.detach();
-    _lpState = false;
+    _lpRunState = false;
     lpTicker.detach();
-    _tmState = false;
+    _tmRunState = false;
     tmTicker.detach();
 }
 
@@ -2053,7 +2056,8 @@ class BlinkerApi
                     // int32_t _runTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RUNTIME);
                     // String _action = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION, "]", 3);
                     if (isSet) {
-                        String _state = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
+                        // String _state = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
+                        _cdRunState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
                         int32_t _totalTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_TOTALTIME];
                         _totalTime = 60 * _totalTime;
                         int32_t _runTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
@@ -2064,11 +2068,13 @@ class BlinkerApi
                         _cdTime1 = _totalTime;
                         _cdTime2 = _runTime;
     #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        // BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
     #endif
                     }
                     else if (_noSet) {
-                        String _state = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
+                        // String _state = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
+                        _cdRunState = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
                         int32_t _totalTime = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_TOTALTIME];
                         _totalTime = 60 * _totalTime;
                         int32_t _runTime = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
@@ -2079,7 +2085,8 @@ class BlinkerApi
                         _cdTime1 = _totalTime;
                         _cdTime2 = _runTime;
     #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        // BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
     #endif
                     }
 
@@ -2093,7 +2100,8 @@ class BlinkerApi
                     // _cdTime2 = _runTime;
 
                     // _cdState = (cd_state == BLINKER_CMD_TRUE) ? true : false;
-                    if (_cdState) {
+                    // if (_cdState) {
+                    if (_cdState && _cdRunState) {
                         cdTicker.once(_cdTime1 - _cdTime2, _cd_callback);
     #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG1(BLINKER_F("countdown start!"));
@@ -2129,7 +2137,8 @@ class BlinkerApi
                     // String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
                     if (isSet) {
                         int8_t _times = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIMES];
-                        String _state = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
+                        // String _state = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
+                        _lpRunState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
                         int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME1];
                         _time1 = 60 * _time1;
                         String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION1];
@@ -2144,12 +2153,14 @@ class BlinkerApi
                         _lpTime1 = _time1;
                         _lpTime2 = _time2;
     #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        // BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        BLINKER_LOG2(BLINKER_F("_lpRunState: "), _lpRunState);
     #endif
                     }
                     else if (_noSet) {
                         int8_t _times = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIMES];
-                        String _state = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
+                        // String _state = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
+                        _lpRunState = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
                         int32_t _time1 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME1];
                         _time1 = 60 * _time1;
                         String _action1 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION1];
@@ -2164,7 +2175,8 @@ class BlinkerApi
                         _lpTime1 = _time1;
                         _lpTime2 = _time2;
     #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        // BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        BLINKER_LOG2(BLINKER_F("_lpRunState: "), _lpRunState);
     #endif
                     }
 
@@ -2183,7 +2195,8 @@ class BlinkerApi
                     // _lpTime2 = _time2;
 
                     // _lpState = (lp_state == BLINKER_CMD_TRUE) ? true : false;
-                    if (_lpState) {
+                    // if (_lpState) {
+                    if (_lpState && _lpRunState) {
                         _lpRun1 = true;
                         _lpTrigged_times = 0;
                         lpTicker.once(_lpTime1, _lp_callback);
@@ -2220,7 +2233,8 @@ class BlinkerApi
                     // int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
                     // String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
                     if (isSet) {
-                        String _state = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
+                        // String _state = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
+                        _tmRunState = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
                         int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME1];
                         _time1 = 60 * _time1;
                         String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION1];
@@ -2273,11 +2287,13 @@ class BlinkerApi
 
     #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
-                        BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        // BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        BLINKER_LOG2(BLINKER_F("_tmRunState: "), _tmRunState);
     #endif
                     }
                     else if (_noSet) {
-                        String _state = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
+                        // String _state = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
+                        _tmRunState = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
                         int32_t _time1 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME1];
                         _time1 = 60 * _time1;
                         String _action1 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION1];
@@ -2330,7 +2346,8 @@ class BlinkerApi
 
     #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
-                        BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        // BLINKER_LOG2(BLINKER_F("_state: "), _state);
+                        BLINKER_LOG2(BLINKER_F("_tmRunState: "), _tmRunState);
     #endif
                     }
 
@@ -2348,7 +2365,8 @@ class BlinkerApi
                     // _tmTime2 = _time2;
 
                     // _tmState = (tm_state == BLINKER_CMD_TRUE) ? true : false;
-                    if (_tmState) {
+                    // if (_tmState) {
+                    if (_tmState && _tmRunState) {
                         if (isTimingDay(wday())) {
                             int32_t nowTime = dtime();
     #ifdef BLINKER_DEBUG_ALL
@@ -2403,25 +2421,36 @@ class BlinkerApi
 
         String countdownData() {
             String cdData;
-            cdData = "{\"countdown\":" + STRING_format(_cdState ? "true" : "false") + \
-                ",\"countdownData\":{\"state\":" + STRING_format(_cdState ? "\"run\"" : "\"parse\"") + \
-                ",\"totalTime\":" + STRING_format(_cdTime1/60) + ",\"runTime\":" + STRING_format(_cdTime2) + \
-                ",\"action\":" + _cdAction + \
-                "}}";
+
+            if (!_cdState) {
+                cdData = "{\"countdown\":false}";
+            }
+            else {
+                cdData = "{\"countdown\":true" + \
+                    ",\"countdownData\":{\"state\":" + STRING_format(_cdRunState ? "\"run\"" : "\"parse\"") + \
+                    ",\"totalTime\":" + STRING_format(_cdTime1/60) + ",\"runTime\":" + STRING_format(_cdTime2) + \
+                    ",\"action\":" + _cdAction + \
+                    "}}";
+            }
 
             return cdData;
         }
 
         String loopData() {
             String lpData;
-            lpData = "{\"loop\":" + STRING_format(_lpState ? "true" : "false") + \
-                ",\"loopData\":{\"times\":" + _lpTimes + \
-                ",\"state\":" + STRING_format(_lpState ? "\"run\"" : "\"parse\"") + \
-                ",\"time1\":" + STRING_format(_lpTime1/60) + \
-                ",\"action1\":" + _lpAction1 + \
-                ",\"time2\":" + STRING_format(_lpTime2/60) + \
-                ",\"action2\":" + _lpAction2 + \
-                "}}";
+            if (!_lpState) {
+                lpData = "{\"loop\":false}";
+            }
+            else {
+                lpData = "{\"loop\":true" + \
+                    ",\"loopData\":{\"times\":" + _lpTimes + \
+                    ",\"state\":" + STRING_format(_lpRunState ? "\"run\"" : "\"parse\"") + \
+                    ",\"time1\":" + STRING_format(_lpTime1/60) + \
+                    ",\"action1\":" + _lpAction1 + \
+                    ",\"time2\":" + STRING_format(_lpTime2/60) + \
+                    ",\"action2\":" + _lpAction2 + \
+                    "}}";
+            }
 
             return lpData;
         }
@@ -2455,15 +2484,20 @@ class BlinkerApi
 
         String timingData() {
             String tmData;
-            tmData = "{\"timing\":" + STRING_format(_tmState ? "true" : "false") + \
-                ",\"timingData\":{\"task\":0" + \
-                ",\"state\":" + STRING_format(_tmState ? "\"run\"" : "\"parse\"") + \
-                ",\"day\":[" + timingDay() + "]" + \
-                ",\"time1\":" + STRING_format(_tmTime1/60) + \
-                ",\"action1\":" + _tmAction1 + \
-                ",\"time2\":" + STRING_format(_tmTime2/60) + \
-                ",\"action2\":" + _tmAction2 + \
-                "}}";
+            if (!_tmState) {
+                tmData = "{\"timing\":false}";
+            }
+            else {
+                tmData = "{\"timing\":true" + \
+                    ",\"timingData\":{\"task\":0" + \
+                    ",\"state\":" + STRING_format(_tmRunState ? "\"run\"" : "\"parse\"") + \
+                    ",\"day\":[" + timingDay() + "]" + \
+                    ",\"time1\":" + STRING_format(_tmTime1/60) + \
+                    ",\"action1\":" + _tmAction1 + \
+                    ",\"time2\":" + STRING_format(_tmTime2/60) + \
+                    ",\"action2\":" + _tmAction2 + \
+                    "}}";
+            }
 
             return tmData;
         }
