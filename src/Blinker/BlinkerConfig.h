@@ -123,7 +123,7 @@
 
 #define BLINKER_CMD_NOTICE              "notice"
 
-#define BLINKER_CMD_SWITCH              "switch"
+#define BLINKER_CMD_BUILTIN_SWITCH      "switch"
 
 #define BLINKER_CMD_NOTFOUND            "device not found"
 
@@ -172,6 +172,8 @@
 #define BLINKER_CMD_LINKDATA            "linkData"
 
 #define BLINKER_CMD_TRIGGEDDATA         "triggedData"
+
+#define BLINKER_CMD_TIMER               "timer"
 
 #define BLINKER_CMD_COUNTDOWN           "countdown"
 
@@ -234,6 +236,8 @@
 #define BLINKER_CMD_CONFIG              "config"
 
 #define BLINKER_CMD_DEFAULT             "default"
+
+#define BLINKER_CMD_SWITCH              "swi"
 
 #define BLINKER_CMD_VALUE               "val"
 

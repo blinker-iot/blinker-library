@@ -414,7 +414,7 @@ class BlinkerApi
             gpsValue[LAT] = "0.000000";
 
             // _BUILTIN_SWITCH = new BlinkerToggle();
-            // _BUILTIN_SWITCH->name(BLINKER_CMD_SWITCH);
+            // _BUILTIN_SWITCH->name(BLINKER_CMD_BUILTIN_SWITCH);
             // _BUILTIN_SWITCH->freshState(true);
             // rgbValue[R] = 0;
             // rgbValue[G] = 0;
@@ -424,14 +424,14 @@ class BlinkerApi
         // void switchOn() {
         //     _BUILTIN_SWITCH->freshState(true);
         //     String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
-        //                     BLINKER_CMD_SWITCH + "\":\"on\"}}";
+        //                     BLINKER_CMD_BUILTIN_SWITCH + "\":\"on\"}}";
         //     parse(data, true);
         // }
 
         // void switchOff() {
         //     _BUILTIN_SWITCH->freshState(false);
         //     String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
-        //                     BLINKER_CMD_SWITCH + "\":\"off\"}}";
+        //                     BLINKER_CMD_BUILTIN_SWITCH + "\":\"off\"}}";
         //     parse(data, true);
         // }
 
@@ -467,7 +467,7 @@ class BlinkerApi
         // }
 
         // void switchUpdate() {
-        //     static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+        //     static_cast<Proto*>(this)->print(BLINKER_CMD_BUILTIN_SWITCH, builtInSwitch()?"on":"off");
         // }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -506,7 +506,7 @@ class BlinkerApi
 
         void attachSwitch(callback_with_string_arg_t _func) {
             if (!_BUILTIN_SWITCH) {
-                _BUILTIN_SWITCH = new BlinkerWidgets_string(BLINKER_CMD_SWITCH, _func);
+                _BUILTIN_SWITCH = new BlinkerWidgets_string(BLINKER_CMD_BUILTIN_SWITCH, _func);
             }
             else {
                 _BUILTIN_SWITCH->setFunc(_func);
@@ -1615,7 +1615,7 @@ class BlinkerApi
         }
 
         void setSwitch(const JsonObject& data) {
-            String state = data[BLINKER_CMD_SET][BLINKER_CMD_SWITCH];
+            String state = data[BLINKER_CMD_SET][BLINKER_CMD_BUILTIN_SWITCH];
 
             if (state.length()) {
                 // if (state == BLINKER_CMD_ON) {
@@ -1631,7 +1631,7 @@ class BlinkerApi
                 }
                 _fresh = true;
                 // _switchFresh = true;
-                // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                // static_cast<Proto*>(this)->print(BLINKER_CMD_BUILTIN_SWITCH, builtInSwitch()?"on":"off");
             }
         }
 
@@ -1773,7 +1773,7 @@ class BlinkerApi
         void setSwitch() {
             String state;
 
-            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_SWITCH)) {
+            if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_BUILTIN_SWITCH)) {
                 if (STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET)) {
                     // if (state == BLINKER_CMD_ON) {
                     //     _BUILTIN_SWITCH->freshState(true);
@@ -1788,7 +1788,7 @@ class BlinkerApi
                     }
                     _fresh = true;
                     // _switchFresh = true;
-                    // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                    // static_cast<Proto*>(this)->print(BLINKER_CMD_BUILTIN_SWITCH, builtInSwitch()?"on":"off");
                 }
             }
             // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
@@ -1804,7 +1804,7 @@ class BlinkerApi
         void setSwitch(const String & data) {
             String state;
 
-            if (STRING_find_string_value(data, state, BLINKER_CMD_SWITCH)) {
+            if (STRING_find_string_value(data, state, BLINKER_CMD_BUILTIN_SWITCH)) {
                 if (STRING_contains_string(data, BLINKER_CMD_SET)) {
                     // if (state == BLINKER_CMD_ON) {
                     //     _BUILTIN_SWITCH->freshState(true);
@@ -1819,7 +1819,7 @@ class BlinkerApi
                     }
                     _fresh = true;
                     // _switchFresh = true;
-                    // static_cast<Proto*>(this)->print(BLINKER_CMD_SWITCH, builtInSwitch()?"on":"off");
+                    // static_cast<Proto*>(this)->print(BLINKER_CMD_BUILTIN_SWITCH, builtInSwitch()?"on":"off");
                 }
             }
         }
@@ -2026,14 +2026,17 @@ class BlinkerApi
             }
 
             // if (isSet && (isCount || isLoop || isTiming)) {
-            if (isCount || isLoop || isTiming) {
+            if ((isSet || _noSet) && (isCount || isLoop || isTiming)) {
+
+                // if (!isSet && !_noSet) {
+                //     return false;
+                // }
+
                 _fresh = true;
+
     #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("get timer setting"));
     #endif
-                if(!isSet && !_noSet) {
-                    return false;
-                }
 
                 if (isCount) {
                     // String cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", ",", 1);
@@ -2414,9 +2417,33 @@ class BlinkerApi
 
                 return true;
             }
+            else if (data.containsKey(BLINKER_CMD_GET)) {
+                String get_timer = data[BLINKER_CMD_GET];
+
+                if (get_timer == BLINKER_CMD_TIMER) {
+                    static_cast<Proto*>(this)->_print(timerData(), false);
+                }
+                else if (get_timer == BLINKER_CMD_COUNTDOWN) {
+                    static_cast<Proto*>(this)->_print(countdownData(), false);
+                }
+                else if (get_timer == BLINKER_CMD_LOOP) {
+                    static_cast<Proto*>(this)->_print(loopData(), false);
+                }
+                else if (get_timer == BLINKER_CMD_TIMING) {
+                    static_cast<Proto*>(this)->_print(timingData(), false);
+                }
+            }
             else {
                 return false;
             }
+        }
+
+        String timerData() {
+            String _data = "{\"countdown\":" + STRING_format(_cdState ? "true" : "false") + \
+                            "\"loop\":" + STRING_format(_lpState ? "true" : "false") + \
+                            "\"timing\":" + STRING_format(_tmState ? "true" : "false") + "}";
+
+            return _data;
         }
 
         String countdownData() {

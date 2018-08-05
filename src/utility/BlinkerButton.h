@@ -42,7 +42,7 @@ class BlinkerButton
             //                     "\",\"" + iconClr + "\",\"" + btext + \
             //                     "\",\"" + textClr + "\"}";
 
-            String buttonData = "{\"swi\":\"" + _state + "\"";
+            String buttonData = "{\""BLINKER_CMD_SWITCH"\":\"" + _state + "\"";
 
             if (bicon.length()) {
                 buttonData += ",\""BLINKER_CMD_ICON"\":\"" + bicon + "\"";

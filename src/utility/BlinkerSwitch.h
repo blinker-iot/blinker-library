@@ -8,7 +8,7 @@ class BlinkerSwitch
 {
     public :
         BlinkerSwitch()
-            : sName(BLINKER_CMD_SWITCH)
+            : sName(BLINKER_CMD_BUILTIN_SWITCH)
         {}
         
         void attach(callback_with_string_arg_t _func) {
