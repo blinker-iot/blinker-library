@@ -2453,7 +2453,7 @@ class BlinkerApi
                 cdData = "{\"countdown\":false}";
             }
             else {
-                cdData = "{\"countdown\":true" + \
+                cdData = STRING_format("{\"countdown\":true") + \
                     ",\"countdownData\":{\"state\":" + STRING_format(_cdRunState ? "\"run\"" : "\"parse\"") + \
                     ",\"totalTime\":" + STRING_format(_cdTime1/60) + ",\"runTime\":" + STRING_format(_cdTime2) + \
                     ",\"action\":" + _cdAction + \
@@ -2469,8 +2469,8 @@ class BlinkerApi
                 lpData = "{\"loop\":false}";
             }
             else {
-                lpData = "{\"loop\":true" + \
-                    ",\"loopData\":{\"times\":" + _lpTimes + \
+                lpData = STRING_format("{\"loop\":true") + \
+                    ",\"loopData\":{\"times\":" + STRING_format(_lpTimes) + \
                     ",\"state\":" + STRING_format(_lpRunState ? "\"run\"" : "\"parse\"") + \
                     ",\"time1\":" + STRING_format(_lpTime1/60) + \
                     ",\"action1\":" + _lpAction1 + \
@@ -2515,7 +2515,7 @@ class BlinkerApi
                 tmData = "{\"timing\":false}";
             }
             else {
-                tmData = "{\"timing\":true" + \
+                tmData = STRING_format("{\"timing\":true") + \
                     ",\"timingData\":{\"task\":0" + \
                     ",\"state\":" + STRING_format(_tmRunState ? "\"run\"" : "\"parse\"") + \
                     ",\"day\":[" + timingDay() + "]" + \
