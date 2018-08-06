@@ -2061,6 +2061,8 @@ class BlinkerApi
             uint32_t checkSeconds = 86400;
             uint32_t nowSeconds = dtime();
 
+            BLINKER_LOG4("freshTiming wDay: ", wDay, ", nowMins: ", nowMins);
+
             for (uint8_t task = 0; task < taskCount; task++) {
                 if (timingTask[task]->isTimingDay(wDay) && timingTask[task]->state()) {
                     if (timingTask[task]->getTime() > nowMins) {
@@ -2072,6 +2074,12 @@ class BlinkerApi
                         }
                     }
                 }
+
+                BLINKER_LOG2("isTimingDay: ", timingTask[task]->isTimingDay(wDay));
+                BLINKER_LOG2("state: ", timingTask[task]->state());
+                BLINKER_LOG2("getTime: ", timingTask[task]->getTime());
+
+                BLINKER_LOG6("for nextTask: ", nextTask, "  apartSeconds: ", apartSeconds, " wDay: ", wDay);
             }
 
             if (apartSeconds == 864000) {
@@ -2122,7 +2130,7 @@ class BlinkerApi
 
                 timingTask[taskSet] = new BlinkerTimingTimer(timerData, action, text);
 
-                if (taskSet == taskCount) taskCount++;
+                if (taskSet <= taskCount) taskCount++;
                 
     #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("taskCount: "), taskCount);
@@ -2321,7 +2329,7 @@ class BlinkerApi
                         // _tmRunState = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_STATE];
                         _tmRunState = _tmState;
                         _time = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_TIME];
-                        _time = 60 * _time;
+                        // _time = 60 * _time;
                         String tm_action = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_ACTION];
                         String tm_text = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_TEXT];
                         _task = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_TASK];
@@ -2387,7 +2395,7 @@ class BlinkerApi
                         // _tmRunState = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_STATE];
                         _tmRunState = _tmState;
                         _time = data[BLINKER_CMD_TIMING][0][BLINKER_CMD_TIME];
-                        _time = 60 * _time;
+                        // _time = 60 * _time;
                         String tm_action = data[BLINKER_CMD_TIMING][0][BLINKER_CMD_ACTION];
                         String tm_text = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_TEXT];
                         _task = data[BLINKER_CMD_TIMING][0][BLINKER_CMD_TASK];
