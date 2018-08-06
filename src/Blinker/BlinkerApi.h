@@ -2125,15 +2125,28 @@ class BlinkerApi
         }
 
         void addTimingTask(uint8_t taskSet, uint32_t timerData, String action, String text) {
+            BLINKER_LOG2("addTimingTask taskSet: ", taskSet);
+            BLINKER_LOG2("addTimingTask timerData: ", timerData);
+
             if (taskSet <= taskCount && taskCount <= BLINKER_TIMING_TIMER_SIZE) {
                 tmTicker.detach();
 
-                timingTask[taskSet] = new BlinkerTimingTimer(timerData, action, text);
+                if (taskSet == taskCount) {
+                    timingTask[taskSet] = new BlinkerTimingTimer(timerData, action, text);
+                    taskCount++;
 
-                if (taskSet <= taskCount) taskCount++;
+                    BLINKER_LOG1(BLINKER_F("new BlinkerTimingTimer"));
+                }
+                else {
+                    timingTask[taskSet]->freshTimer(timerData, action, text);
+
+                    BLINKER_LOG1(BLINKER_F("freshTimer"));
+                }
+
+                // if (taskSet <= taskCount) taskCount++;
                 
     #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("taskCount: "), taskCount);
+                BLINKER_LOG2(BLINKER_F("taskCount: "), taskCount);
     #endif
                 uint8_t  wDay = wday();
                 uint16_t nowMins = hour() * 60 + minute();
