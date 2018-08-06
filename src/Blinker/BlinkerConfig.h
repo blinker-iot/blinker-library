@@ -175,29 +175,35 @@
 
 #define BLINKER_CMD_TIMER               "timer"
 
+#define BLINKER_CMD_RUN                 "run"
+
+#define BLINKER_CMD_ENABLE              "ena"
+
 #define BLINKER_CMD_COUNTDOWN           "countdown"
 
 #define BLINKER_CMD_COUNTDOWNDATA       "countdownData"
 
-#define BLINKER_CMD_TOTALTIME           "totalTime"
+#define BLINKER_CMD_TOTALTIME           "ttim"
 
-#define BLINKER_CMD_RUNTIME             "runTime"
+#define BLINKER_CMD_RUNTIME             "rtim"
 
-#define BLINKER_CMD_ACTION              "action"
+#define BLINKER_CMD_ACTION              "act"
 
-#define BLINKER_CMD_ACTION1             "action1"
+#define BLINKER_CMD_ACTION1             "act1"
 
-#define BLINKER_CMD_ACTION2             "action2"
+#define BLINKER_CMD_ACTION2             "act2"
 
 #define BLINKER_CMD_LOOP                "loop"
 
 #define BLINKER_CMD_LOOPDATA            "loopData"
 
-#define BLINKER_CMD_TIMES               "times"
+#define BLINKER_CMD_TIME                "tim"
 
-#define BLINKER_CMD_TIME1               "time1"
+#define BLINKER_CMD_TIMES               "tis"
 
-#define BLINKER_CMD_TIME2               "time2"
+#define BLINKER_CMD_TIME1               "dur1"
+
+#define BLINKER_CMD_TIME2               "dur2"
 
 #define BLINKER_CMD_TIMING              "timing"
 
@@ -206,6 +212,8 @@
 #define BLINKER_CMD_DAY                 "day"
 
 #define BLINKER_CMD_TASK                "task"
+
+#define BLINKER_CMD_DELETETASK          "dlt"
 
 #define BLINKER_CMD_DETAIL              "detail"
 
@@ -332,6 +340,8 @@
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
+
+    #define BLINKER_TIMING_TIMER_SIZE       32
 
     #define BLINKER_TYPE_STATE              0
 
