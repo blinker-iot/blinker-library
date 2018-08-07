@@ -3091,7 +3091,7 @@ class BlinkerApi
             }
 
             String timingConfig = "{\"task\":" + STRING_format(task) + ",\"state\":\"" + STRING_format((timingTask[task]->state())?"run":"pause") + \
-                "\",\"day\":" + timingDayStr + ",\"tim\":" + STRING_format(timingTask[task]->getTime()) + \
+                "\",\"day\":\"" + timingDayStr + "\",\"tim\":" + STRING_format(timingTask[task]->getTime()) + \
                 ",\"act\":" + timingTask[task]->getAction() + "}";
                 //String((this -> timingAction1[0])?"turnOn":"turnOff")
                 //String((this -> timingAction2[0])?"turnOn":"turnOff")
