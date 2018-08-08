@@ -1151,6 +1151,18 @@ class BlinkerApi
             loadCountdown();
             loadLoop();
         }
+
+        void deletTimer() {
+            EEPROM.begin(BLINKER_EEP_SIZE);
+
+            for (uint16_t _addr = BLINKER_EEP_ADDR_TIMER;
+                _addr < BLINKER_EEP_ADD_TIMER_END; _addr++) {
+                EEPROM.put(_addr, "\0");
+            }
+
+            EEPROM.commit();
+            EEPROM.end();
+        }
 #endif
 
         void attachHeartbeat(callbackFunction newFunction) {
@@ -2341,13 +2353,13 @@ class BlinkerApi
             for(uint8_t task = 0; task < taskCount; task++) {
                 EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE, 
                             _tmData);
-                EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE,
-                            _tmAction_);
+                EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE +
+                            BLINKER_TIMER_TIMING_ACTION_SIZE, _tmAction_);
 
                 timingTask[task] = new BlinkerTimingTimer(_tmData, STRING_format(_tmAction_));
     #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("_tmData: "), _tmData);
-                BLINKER_LOG2(BLINKER_F("_tmAction: "), _tmAction_);
+                BLINKER_LOG2(BLINKER_F("_tmAction: "), STRING_format(_tmAction_));
     #endif
             }
             EEPROM.commit();
@@ -2791,7 +2803,7 @@ class BlinkerApi
                         EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE, 
                                     timingTask[task]->getTimerData());
                         EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE
-                                    + BLINKER_TIMER_TIMING_SIZE, _tmAction_);
+                                    + BLINKER_TIMER_TIMING_ACTION_SIZE, _tmAction_);
                     }
                     EEPROM.commit();
                     EEPROM.end();
