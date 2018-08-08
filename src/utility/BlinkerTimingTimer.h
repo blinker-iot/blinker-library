@@ -13,13 +13,14 @@ class BlinkerTimingTimer
             , isLoopTask(false)
         {}
 
-        BlinkerTimingTimer(uint32_t _timerData, String _action, String _text)
+        // BlinkerTimingTimer(uint32_t _timerData, String _action, String _text)
+        BlinkerTimingTimer(uint32_t _timerData, String _action)
             : timerState(false)
             , isLoopTask(false)
         {
             timerData = _timerData;
             actionData = _action;
-            timerText = _text;
+            // timerText = _text;
 
             isLoopTask = timerData >> 31;
             timerState = timerData >> 23 & 0x01;
@@ -27,7 +28,8 @@ class BlinkerTimingTimer
             times = timerData & 0x7FF;
         }
 
-        BlinkerTimingTimer(bool _state, uint8_t _timingDay, uint16_t _times, String _action, String _text, bool _isLoop)
+        // BlinkerTimingTimer(bool _state, uint8_t _timingDay, uint16_t _times, String _action, String _text, bool _isLoop)
+        BlinkerTimingTimer(bool _state, uint8_t _timingDay, uint16_t _times, String _action, bool _isLoop)
             : timerState(false)
             , isLoopTask(false)
         {
@@ -35,16 +37,17 @@ class BlinkerTimingTimer
             timingDay = timingDay;
             times = _times;
             actionData = _action;
-            timerText = _text;
+            // timerText = _text;
             isLoopTask = _isLoop;
 
             timerData = isLoopTask << 31 | timerState << 23 | timingDay << 11 | times;
         }
 
-        void freshTimer(uint32_t _timerData, String _action, String _text) {
+        // void freshTimer(uint32_t _timerData, String _action, String _text) {
+        void freshTimer(uint32_t _timerData, String _action) {
             timerData = _timerData;
             actionData = _action;
-            timerText = _text;
+            // timerText = _text;
 
             isLoopTask = timerData >> 31;
             timerState = timerData >> 23 & 0x01;
@@ -61,7 +64,7 @@ class BlinkerTimingTimer
 
         String getAction() { return actionData; }
 
-        String getText() { return timerText; }
+        // String getText() { return timerText; }
 
         uint32_t getTimerData() { return timerData; }
 
@@ -86,7 +89,7 @@ class BlinkerTimingTimer
         uint32_t timerData;
         uint8_t  timingDay;
         String   actionData;
-        String   timerText;
+        // String   timerText;
         uint16_t times;
         bool     timerState;
         bool     isLoopTask;
