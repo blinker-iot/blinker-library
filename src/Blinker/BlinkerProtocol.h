@@ -823,9 +823,9 @@ class BlinkerProtocol
             // BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
         #endif
 
-#if defined(ESP8266) || defined(ESP32)
-            BApi::loadTimer();
-#endif
+// #if defined(ESP8266) || defined(ESP32)
+//             BApi::loadTimer();
+// #endif
         }
 
 #if defined(BLINKER_MQTT)
