@@ -299,7 +299,7 @@ static void disableTimer() {
 }
 
 static void _cd_callback() {
-    _cdState = false;
+    // _cdState = false;
     _cdTrigged = true;
     #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1(("countdown trigged!"));
@@ -4731,7 +4731,8 @@ class BlinkerApi
                 _cdTrigged = false;
 
                 _cdRunState = false;
-                _cdData |= _cdRunState << 14;
+                // _cdData |= _cdRunState << 14;
+                _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
                 saveCountDown(_cdData, _cdAction);
 
     #ifdef BLINKER_DEBUG_ALL
@@ -4745,7 +4746,8 @@ class BlinkerApi
 
                 if (_lpStop) {
                     _lpRunState = false;
-                    _lpData |= _lpRunState << 30;
+                    // _lpData |= _lpRunState << 30;
+                    _lpData = _lpState << 31 | _lpRunState << 30 | _lpTimes << 22 | _lpTime1 << 11 | _lpTime2;
                     saveLoop(_lpData, _lpAction1, _lpAction2);
                 }
 
