@@ -1143,7 +1143,7 @@ class BlinkerApi
             BLINKER_LOG1((
                 "\n==========================================================="
                 "\n================== Blinker Timer loaded! =================="
-                "\nWarning!EEPROM address 1536-2688 is used for Blinker Timer!"
+                "\nWarning!EEPROM address 1536-2432 is used for Blinker Timer!"
                 "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
                 "\n===========================================================\n"));
 
@@ -2351,10 +2351,10 @@ class BlinkerApi
             BLINKER_LOG2(BLINKER_F("load timing taskCount: "), taskCount);
     #endif
             for(uint8_t task = 0; task < taskCount; task++) {
-                EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE, 
-                            _tmData);
-                EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE +
-                            BLINKER_TIMER_TIMING_ACTION_SIZE, _tmAction_);
+                EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE 
+                            , _tmData);
+                EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE + 
+                            BLINKER_TIMER_TIMING_SIZE, _tmAction_);
 
                 timingTask[task] = new BlinkerTimingTimer(_tmData, STRING_format(_tmAction_));
     #ifdef BLINKER_DEBUG_ALL
@@ -2800,10 +2800,10 @@ class BlinkerApi
                     for(uint8_t task = 0; task < taskCount; task++) {
                         strcpy(_tmAction_, timingTask[task]->getAction().c_str());
 
-                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE, 
-                                    timingTask[task]->getTimerData());
                         EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE
-                                    + BLINKER_TIMER_TIMING_ACTION_SIZE, _tmAction_);
+                                    , timingTask[task]->getTimerData());
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE + 
+                                    BLINKER_TIMER_TIMING_SIZE, _tmAction_);
                     }
                     EEPROM.commit();
                     EEPROM.end();

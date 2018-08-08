@@ -341,7 +341,7 @@
 
 #if defined(ESP8266) || defined(ESP32)
 
-    #define BLINKER_TIMING_TIMER_SIZE       32
+    #define BLINKER_TIMING_TIMER_SIZE       10
 
     #define BLINKER_TYPE_STATE              0
 
@@ -539,8 +539,8 @@
 
     #define BLINKER_EEP_ADD_TIMER_END               (BLINKER_EEP_ADDR_TIMER_ERASE + BLINKER_TIMER_ERASE_SIZE)
 
-    // 2 60 | 4 120 | 1 4 30 x 32
-    // 1151 1152
+    // 2 60 | 4 120 | 1 4 60 x 10
+    // 793 896
 
 #endif
 
