@@ -2786,10 +2786,10 @@ class BlinkerApi
                     EEPROM.begin(BLINKER_EEP_SIZE);
                     EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, taskCount);
                     for(uint8_t task = 0; task < taskCount; task++) {
-                        strcpy(_tmAction_, timingTask[task + 1]->getAction().c_str());
+                        strcpy(_tmAction_, timingTask[task]->getAction().c_str());
 
                         EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE, 
-                                    timingTask[task + 1]->getTimerData());
+                                    timingTask[task]->getTimerData());
                         EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE
                                     + BLINKER_TIMER_TIMING_SIZE, _tmAction_);
                     }
