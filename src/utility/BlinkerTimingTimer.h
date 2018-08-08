@@ -18,29 +18,29 @@ class BlinkerTimingTimer
             : timerState(false)
             , isLoopTask(false)
         {
-            timerData = _timerData;
+            timerData  = _timerData;
             actionData = _action;
             // timerText = _text;
 
             isLoopTask = timerData >> 31;
-            timerState = timerData >> 23 & 0x01;
-            timingDay = timerData >> 11 & 0x7F;
-            times = timerData & 0x7FF;
+            timerState = timerData >> 23 & 0x0001;
+            timingDay  = timerData >> 11 & 0x007F;
+            timingTime = timerData       & 0x07FF;
         }
 
-        // BlinkerTimingTimer(bool _state, uint8_t _timingDay, uint16_t _times, String _action, String _text, bool _isLoop)
-        BlinkerTimingTimer(bool _state, uint8_t _timingDay, uint16_t _times, String _action, bool _isLoop)
+        // BlinkerTimingTimer(bool _state, uint8_t _timingDay, uint16_t _timingTime, String _action, String _text, bool _isLoop)
+        BlinkerTimingTimer(bool _state, uint8_t _timingDay, uint16_t _timingTime, String _action, bool _isLoop)
             : timerState(false)
             , isLoopTask(false)
         {
             timerState = _state;
-            timingDay = timingDay;
-            times = _times;
+            timingDay  = timingDay;
+            timingTime = _timingTime;
             actionData = _action;
             // timerText = _text;
             isLoopTask = _isLoop;
 
-            timerData = isLoopTask << 31 | timerState << 23 | timingDay << 11 | times;
+            timerData  = isLoopTask << 31 | timerState << 23 | timingDay << 11 | timingTime;
         }
 
         // void freshTimer(uint32_t _timerData, String _action, String _text) {
@@ -50,9 +50,9 @@ class BlinkerTimingTimer
             // timerText = _text;
 
             isLoopTask = timerData >> 31;
-            timerState = timerData >> 23 & 0x01;
-            timingDay = timerData >> 11 & 0x7F;
-            times = timerData & 0x7FF;
+            timerState = timerData >> 23 & 0x0001;
+            timingDay  = timerData >> 11 & 0x007F;
+            timingTime = timerData       & 0x07FF;
         }
 
         bool isTimingDay(uint8_t _day) {
@@ -68,7 +68,7 @@ class BlinkerTimingTimer
 
         uint32_t getTimerData() { return timerData; }
 
-        uint16_t getTime() { return times; }
+        uint16_t getTime() { return timingTime; }
 
         bool state() { return timerState; }
 
@@ -77,12 +77,12 @@ class BlinkerTimingTimer
         void disableTask() {
             timerState = false;
 
-            timerData = isLoopTask << 31 | timerState << 23 | timingDay << 11 | times;
+            timerData = isLoopTask << 31 | timerState << 23 | timingDay << 11 | timingTime;
         }
 
     private :
         // - - - - - - - - | - - - - - - - - | - - - - - - - - | - - - - - - - -
-        // |                 |           |               | 11 0-0x7FF times
+        // |                 |           |               | 11 0-0x7FF timingTime
         // |                 |           | 18 timingDay
         // |                 | 24 timerState
         // | 32 isLoopTask
@@ -90,7 +90,7 @@ class BlinkerTimingTimer
         uint8_t  timingDay;
         String   actionData;
         // String   timerText;
-        uint16_t times;
+        uint16_t timingTime;
         bool     timerState;
         bool     isLoopTask;
 };

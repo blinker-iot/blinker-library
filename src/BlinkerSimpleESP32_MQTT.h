@@ -25,6 +25,7 @@ class BlinkerSimpleESP32_MQTT
             smartconfig();
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
+            Base::loadTimer();
             BLINKER_LOG1("ESP32_MQTT Initialled...");
         }
 // #endif
@@ -37,6 +38,7 @@ class BlinkerSimpleESP32_MQTT
 
                 ::delay(10);
             }
+            Base::loadTimer();
             BLINKER_LOG1("ESP8266_WiFi Initialled...");
         }
 #else
@@ -48,6 +50,7 @@ class BlinkerSimpleESP32_MQTT
             connectWiFi(_ssid, _pswd);
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
+            Base::loadTimer();
             BLINKER_LOG1("ESP32_MQTT Initialled...");
         }
 #endif

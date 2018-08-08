@@ -19,6 +19,7 @@ class BlinkerSimpleESP8266_PRO
             //     ::delay(1);
             // }
             // this->conn.begin(_type);
+            Base::loadTimer();
             BLINKER_LOG1("ESP8266_PRO Initialled...");
         }
 

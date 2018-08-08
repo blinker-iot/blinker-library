@@ -60,6 +60,8 @@ class BlinkerTransportESP32_BLE
             pAdvertising->setAdvertisementData(pAdvertisementData);
             pAdvertising->addServiceUUID(BLEUUID((uint16_t)0xffe0));
             pAdvertising->start();
+
+            // Base::loadTimer();
         }
 
         bool available()
