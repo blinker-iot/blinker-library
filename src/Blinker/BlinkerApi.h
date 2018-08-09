@@ -2522,7 +2522,7 @@ class BlinkerApi
                         cdTicker.detach();
                     }
 
-                    static_cast<Proto*>(this)->_print(countdownConfig(), false);
+                    static_cast<Proto*>(this)->_print(countdownConfig(), false, false);
                     return true;
                 }
                 else if (isLoop) {
@@ -2643,7 +2643,7 @@ class BlinkerApi
                         lpTicker.detach();
                     }
 
-                    static_cast<Proto*>(this)->_print(loopConfig(), false);
+                    static_cast<Proto*>(this)->_print(loopConfig(), false, false);
                     return true;
                 }
                 else if (isTiming) {
@@ -2892,7 +2892,7 @@ class BlinkerApi
                     EEPROM.commit();
                     EEPROM.end();
 
-                    static_cast<Proto*>(this)->_print(timingConfig(), false);
+                    static_cast<Proto*>(this)->_print(timingConfig(), false, false);
                     return true;
                 }
             }
@@ -2900,19 +2900,19 @@ class BlinkerApi
                 String get_timer = data[BLINKER_CMD_GET];
 
                 if (get_timer == BLINKER_CMD_TIMER) {
-                    static_cast<Proto*>(this)->_print(timerSetting(), false);
+                    static_cast<Proto*>(this)->_print(timerSetting(), false, false);
                     return true;
                 }
                 else if (get_timer == BLINKER_CMD_COUNTDOWN) {
-                    static_cast<Proto*>(this)->_print(countdownConfig(), false);
+                    static_cast<Proto*>(this)->_print(countdownConfig(), false, false);
                     return true;
                 }
                 else if (get_timer == BLINKER_CMD_LOOP) {
-                    static_cast<Proto*>(this)->_print(loopConfig(), false);
+                    static_cast<Proto*>(this)->_print(loopConfig(), false, false);
                     return true;
                 }
                 else if (get_timer == BLINKER_CMD_TIMING) {
-                    static_cast<Proto*>(this)->_print(timingConfig(), false);
+                    static_cast<Proto*>(this)->_print(timingConfig(), false, false);
                     return true;
                 }
             }

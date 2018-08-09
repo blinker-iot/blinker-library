@@ -102,7 +102,13 @@ class BlinkerArduinoWS
             BLINKER_LOG2(BLINKER_F("Response: "), s_data);
 #endif
             if(connected()) {
-                bool state = STRING_contains_string(s_data, BLINKER_CMD_NOTICE);
+                bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
+                            (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
+                             STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
+                            (STRING_contains_string(data, BLINKER_CMD_LOOP) && 
+                             STRING_contains_string(data, BLINKER_CMD_TIMES)) ||
+                            (STRING_contains_string(data, BLINKER_CMD_COUNTDOWN) &&
+                             STRING_contains_string(data, BLINKER_CMD_TOTALTIME));
 
                 if (!state) {
                     state = (STRING_contains_string(s_data, BLINKER_CMD_STATE) 

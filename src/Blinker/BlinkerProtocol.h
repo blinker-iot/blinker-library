@@ -862,9 +862,9 @@ class BlinkerProtocol
 #endif
 
         template <typename T>
-        void _print(T n, bool needParse = true) {
+        void _print(T n, bool needParse = true, bool needCheckLength = true) {
             String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
-            if (data.length() <= BLINKER_MAX_SEND_SIZE) {
+            if (data.length() <= BLINKER_MAX_SEND_SIZE || !needCheckLength) {
                 conn.print(data);
                 // if (needParse) {
                 //     BApi::parse(data, true);
