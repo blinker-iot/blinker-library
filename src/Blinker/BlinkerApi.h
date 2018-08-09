@@ -2901,18 +2901,22 @@ class BlinkerApi
 
                 if (get_timer == BLINKER_CMD_TIMER) {
                     static_cast<Proto*>(this)->_print(timerSetting(), false, false);
+                    _fresh = true;
                     return true;
                 }
                 else if (get_timer == BLINKER_CMD_COUNTDOWN) {
                     static_cast<Proto*>(this)->_print(countdownConfig(), false, false);
+                    _fresh = true;
                     return true;
                 }
                 else if (get_timer == BLINKER_CMD_LOOP) {
                     static_cast<Proto*>(this)->_print(loopConfig(), false, false);
+                    _fresh = true;
                     return true;
                 }
                 else if (get_timer == BLINKER_CMD_TIMING) {
                     static_cast<Proto*>(this)->_print(timingConfig(), false, false);
+                    _fresh = true;
                     return true;
                 }
             }
@@ -4584,7 +4588,7 @@ class BlinkerApi
                     //     static_cast<Proto*>(this)->isParsed();
                     //     return;
                     // }
-                    _fresh = timerManager(root);
+                    timerManager(root);
                     heartBeat(root);
                     setSwitch(root);
                     getVersion(root);
