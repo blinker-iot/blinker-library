@@ -2113,19 +2113,22 @@ class BlinkerApi
                                 , timingTask[task]->getTimerData());
                     // EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE + 
                     //             BLINKER_TIMER_TIMING_SIZE, _tmAction_);
-    #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("disable timerData: "), timingTask[task]->getTimerData());
-                    // BLINKER_LOG2(BLINKER_F("disable _tmAction_: "), _tmAction_);
-    #endif
+    
                     EEPROM.commit();
                     EEPROM.end();
                     
+    #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2(BLINKER_F("disable timerData: "), timingTask[task]->getTimerData());
+                    // BLINKER_LOG2(BLINKER_F("disable _tmAction_: "), _tmAction_);
                     BLINKER_LOG2(F("disableTask: "), task);
+    #endif
                 }
             }
         }
 
         void freshTiming(uint8_t wDay, uint16_t nowMins) {
+            tmTicker.detach();
+            
             uint8_t  cbackData;
             uint8_t  nextTask = BLINKER_TIMING_TIMER_SIZE;
             uint16_t timingMinsNext;
@@ -2133,7 +2136,9 @@ class BlinkerApi
             uint32_t checkSeconds = BLINKER_ONE_DAY_TIME;
             uint32_t nowSeconds = dtime();
 
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG6("freshTiming wDay: ", wDay, ", nowMins: ", nowMins, ", nowSeconds: ", nowSeconds);
+    #endif
 
             for (uint8_t task = 0; task < taskCount; task++) {
                 if (timingTask[task]->isTimingDay(wDay) && timingTask[task]->state()) {
@@ -2146,29 +2151,31 @@ class BlinkerApi
                         }
                     }
                 }
-
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2("isTimingDay: ", timingTask[task]->isTimingDay(wDay));
                 BLINKER_LOG2("state: ", timingTask[task]->state());
                 BLINKER_LOG2("getTime: ", timingTask[task]->getTime());
 
                 BLINKER_LOG6("for nextTask: ", nextTask, "  apartSeconds: ", apartSeconds, " wDay: ", wDay);
+    #endif
             }
 
             if (apartSeconds == BLINKER_ONE_DAY_TIME) {
                 apartSeconds -= nowSeconds;
-
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG6("nextTask: ", nextTask, "  apartSeconds: ", apartSeconds, " wDay: ", wDay);
-        
+    #endif
                 cbackData = nextTask;
             }
             else {
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG6("nextTask: ", nextTask, "  apartSeconds: ", apartSeconds, " wDay: ", wDay);
-        
+    #endif
                 cbackData = nextTask;
             }
-
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("cbackData: ", cbackData);
-
+    #endif
             tmTicker.once(apartSeconds, timingHandle, cbackData);
         }
 
@@ -2186,38 +2193,47 @@ class BlinkerApi
                 delete timingTask[taskCount - 1];
 
                 taskCount--;
-
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG3(("delete task: "), taskDel, " success!");
-
+    #endif
                 uint8_t  wDay = wday();
                 uint16_t nowMins = hour() * 60 + minute();
                 freshTiming(wDay, nowMins);
             }
             else {
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1("none task to delete!");
+    #endif
             }
         }
 
         // void addTimingTask(uint8_t taskSet, uint32_t timerData, String action, String text) {
         void addTimingTask(uint8_t taskSet, uint32_t timerData, String action) {
+    #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("addTimingTask taskSet: ", taskSet);
             BLINKER_LOG2("addTimingTask timerData: ", timerData);
-
+    #endif
             if (taskSet <= taskCount && taskCount <= BLINKER_TIMING_TIMER_SIZE) {
-                tmTicker.detach();
+                // tmTicker.detach();
 
                 if (taskSet == taskCount) {
+                    if (taskCount == BLINKER_TIMING_TIMER_SIZE) {
+                        BLINKER_ERR_LOG1("timing timer task is full");
+                        return;
+                    }
                     // timingTask[taskSet] = new BlinkerTimingTimer(timerData, action, text);
                     timingTask[taskSet] = new BlinkerTimingTimer(timerData, action);
                     taskCount++;
-
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(BLINKER_F("new BlinkerTimingTimer"));
+    #endif
                 }
                 else {
                     // timingTask[taskSet]->freshTimer(timerData, action, text);
                     timingTask[taskSet]->freshTimer(timerData, action);
-
+    #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(BLINKER_F("freshTimer"));
+    #endif
                 }
 
                 // if (taskSet <= taskCount) taskCount++;
@@ -2231,7 +2247,9 @@ class BlinkerApi
                 freshTiming(wDay, nowMins);
             }
             else {
+    #ifdef BLINKER_DEBUG_ALL
                 BLINKER_ERR_LOG1("timing timer task is full");
+    #endif
             }
         }
 
