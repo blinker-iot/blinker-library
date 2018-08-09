@@ -2102,6 +2102,23 @@ class BlinkerApi
                     && timingTask[task]->state() && timingTask[task]->isTimingDay(checkDays)) {
 
                     timingTask[task]->disableTask();
+
+                    EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, taskCount);
+                    
+                    // char _tmAction_[BLINKER_TIMER_TIMING_ACTION_SIZE];
+                    // strcpy(_tmAction_, timingTask[task]->getAction().c_str());
+
+                    EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE
+                                , timingTask[task]->getTimerData());
+                    // EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE + 
+                    //             BLINKER_TIMER_TIMING_SIZE, _tmAction_);
+    #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2(BLINKER_F("disable timerData: "), timingTask[task]->getTimerData());
+                    // BLINKER_LOG2(BLINKER_F("disable _tmAction_: "), _tmAction_);
+    #endif
+                    EEPROM.commit();
+                    EEPROM.end();
                     
                     BLINKER_LOG2(F("disableTask: "), task);
                 }
@@ -2110,7 +2127,7 @@ class BlinkerApi
 
         void freshTiming(uint8_t wDay, uint16_t nowMins) {
             uint8_t  cbackData;
-            uint8_t  nextTask = 32;
+            uint8_t  nextTask = BLINKER_TIMING_TIMER_SIZE;
             uint16_t timingMinsNext;
             uint32_t apartSeconds = BLINKER_ONE_DAY_TIME;
             uint32_t checkSeconds = BLINKER_ONE_DAY_TIME;
