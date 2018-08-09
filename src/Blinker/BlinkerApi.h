@@ -2620,7 +2620,7 @@ class BlinkerApi
                         String tm_day = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_DAY];
 
                         if (tm_day.toInt() == 0) {
-                            if (_tmTime2 > dtime()) {
+                            if (60 * _time > dtime()) {
                                 _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
                             }
                             else {
@@ -2633,6 +2633,9 @@ class BlinkerApi
     #endif
                         }
                         else {
+
+                            _isTimingLoop = true;
+
                             // uint8_t taskDay;
 
                             for (uint8_t day = 0; day < 7; day++) {
@@ -2713,7 +2716,7 @@ class BlinkerApi
                         String tm_day = data[BLINKER_CMD_TIMING][0][BLINKER_CMD_DAY];
 
                         if (tm_day.toInt() == 0) {
-                            if (_tmTime2 > dtime()) {
+                            if (60 * _time > dtime()) {
                                 _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
                             }
                             else {
@@ -2727,6 +2730,8 @@ class BlinkerApi
                         }
                         else {
                             // uint8_t taskDay;
+
+                            _isTimingLoop = true;
 
                             for (uint8_t day = 0; day < 7; day++) {
                                 if (tm_day.substring(day, day+1) == "1") {
@@ -2804,6 +2809,10 @@ class BlinkerApi
                                     , timingTask[task]->getTimerData());
                         EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE + 
                                     BLINKER_TIMER_TIMING_SIZE, _tmAction_);
+    #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("getTimerData: "), timingTask[task]->getTimerData());
+                        BLINKER_LOG2(BLINKER_F("_tmAction_: "), _tmAction_);
+    #endif
                     }
                     EEPROM.commit();
                     EEPROM.end();
