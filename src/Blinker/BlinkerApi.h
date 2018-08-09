@@ -4584,7 +4584,7 @@ class BlinkerApi
                     //     static_cast<Proto*>(this)->isParsed();
                     //     return;
                     // }
-                    timerManager(root);
+                    _fresh = timerManager(root);
                     heartBeat(root);
                     setSwitch(root);
                     getVersion(root);

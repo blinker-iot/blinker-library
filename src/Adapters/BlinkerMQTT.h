@@ -757,7 +757,13 @@ bool BlinkerMQTT::print(String data) {
         BLINKER_LOG1("MQTT Publish...");
 #endif
         bool _alive = isAlive;
-        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
+        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
+                    (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
+                     STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_LOOP) && 
+                     STRING_contains_string(data, BLINKER_CMD_TIMES)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_COUNTDOWN) &&
+                     STRING_contains_string(data, BLINKER_CMD_TOTALTIME));
 
         if (!state) {
             state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
@@ -769,6 +775,16 @@ bool BlinkerMQTT::print(String data) {
             }
             respTime = millis();
         }
+
+// #ifdef BLINKER_DEBUG_ALL
+//         BLINKER_LOG2("state: ", state);
+
+//         BLINKER_LOG2("state: ", STRING_contains_string(data, BLINKER_CMD_TIMING));
+
+//         BLINKER_LOG2("state: ", data.indexOf(BLINKER_CMD_TIMING));
+
+//         BLINKER_LOG2("data: ", data);
+// #endif
 
         if (mqtt->connected()) {
             if (!state) {
