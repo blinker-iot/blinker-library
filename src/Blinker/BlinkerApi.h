@@ -2128,7 +2128,7 @@ class BlinkerApi
 
         void freshTiming(uint8_t wDay, uint16_t nowMins) {
             tmTicker.detach();
-            
+
             uint8_t  cbackData;
             uint8_t  nextTask = BLINKER_TIMING_TIMER_SIZE;
             uint16_t timingMinsNext;
@@ -2458,6 +2458,11 @@ class BlinkerApi
                         // _runTime = 60 * _runTime;
                         String _action = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_ACTION];
 
+                        if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE) {
+                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            return true;
+                        }
+
                         _cdAction = _action;
                         _cdTime1 = _totalTime;
                         _cdTime2 = _runTime;
@@ -2473,6 +2478,11 @@ class BlinkerApi
                         int32_t _runTime = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUNTIME];
                         // _runTime = 60 * _runTime;
                         String _action = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_ACTION];
+
+                        if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE) {
+                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            return true;
+                        }
 
                         _cdAction = _action;
                         _cdTime1 = _totalTime;
@@ -2543,6 +2553,16 @@ class BlinkerApi
                         // _time2 = 60 * _time2;
                         String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_ACTION2];
 
+                        if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE) {
+                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            return true;
+                        }
+
+                        if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE) {
+                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            return true;
+                        }
+
                         _lpAction1 = _action1;
                         _lpAction2 = _action2;
 
@@ -2563,6 +2583,16 @@ class BlinkerApi
                         int32_t _time2 = data[BLINKER_CMD_LOOP][BLINKER_CMD_TIME2];
                         // _time2 = 60 * _time2;
                         String _action2 = data[BLINKER_CMD_LOOP][BLINKER_CMD_ACTION2];
+
+                        if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE) {
+                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            return true;
+                        }
+
+                        if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE) {
+                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            return true;
+                        }
 
                         _lpAction1 = _action1;
                         _lpAction2 = _action2;
@@ -2646,6 +2676,11 @@ class BlinkerApi
                         _task = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_TASK];
 
                         // _tmAction = _action;
+
+                        if (tm_action.length() > BLINKER_TIMER_TIMING_ACTION_SIZE) {
+                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            return true;
+                        }
 
                         _action = tm_action;
                         // _text = tm_text;
@@ -2742,6 +2777,11 @@ class BlinkerApi
                         _task = data[BLINKER_CMD_TIMING][0][BLINKER_CMD_TASK];
 
                         // _tmAction = _action;
+
+                        if (tm_action.length() > BLINKER_TIMER_TIMING_ACTION_SIZE) {
+                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            return true;
+                        }
 
                         _action = tm_action;
                         // _text = tm_text;
