@@ -68,6 +68,13 @@ class BlinkerButton
             buttonData += "}";
 
             Blinker.printArray(buttonName, buttonData);
+
+            bicon = "";
+            iconClr = "";
+            bcon = "";
+            btext = "";
+            btext1 = "";
+            textClr = "";
         }
         // bool checkName(String name) { return ((buttonName == name) ? true : false); }
     

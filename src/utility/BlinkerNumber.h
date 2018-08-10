@@ -46,6 +46,10 @@ class BlinkerNumber
             buttonData += "}";
 
             Blinker.printArray(numName, buttonData);
+
+            nicon = "";
+            ncolor = "";
+            nunit = "";
         }
 };
 

@@ -51,6 +51,8 @@ class BlinkerSlider
             sliderData += "}";
 
             Blinker.printArray(sliderName, sliderData);
+
+            textClr = "";
         }
 };
 
