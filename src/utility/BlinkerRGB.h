@@ -39,11 +39,6 @@ class BlinkerRGB
 
             Blinker.printArray(rgbName, rgbData);
         }
-        // void name(String name) { rgbName = name; }
-        // String getName() { return rgbName; }
-        // void freshValue(b_rgb_t color,uint8_t value) { rgbValue[color] = value; }
-        // uint8_t getValue(b_rgb_t color) { return rgbValue[color]; }
-        // bool checkName(String name) { return ((rgbName == name) ? true : false); }
     
     private :
         String  rgbName;

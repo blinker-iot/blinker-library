@@ -10,7 +10,7 @@ Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.
 * [EN-英文](https://github.com/blinker-iot/blinker-doc/wiki/Blinker-Arduino-library-reference)  
 * [CN-中文](https://github.com/blinker-iot/blinker-doc/wiki/Blinker-Arduino-%E5%BA%93%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C)  
 * [CN-中文/官网](https://doc.blinker.app/?file=003-%E7%A1%AC%E4%BB%B6%E5%BC%80%E5%8F%91/02-Arduino%E6%94%AF%E6%8C%81)  
-
+<!-- 
 ---  
 
 # 目前支持的硬件
@@ -178,7 +178,7 @@ Blinker.notify("notify");
 ```
 
 ## App Widgets
-<!-- ### Blinker.wInit()
+### Blinker.wInit()
 组件初始化, 建议在使用前初始化 **Button** 、**Slider** 、 **Toggle** 及 **RGB**
 ```
 Blinker.wInit("ButtonName", W_BUTTON);  
@@ -213,7 +213,7 @@ bool result = Blinker.toggle("Toggle1");
 ```
 uint8_t result_X = Blinker.joystick(J_Xaxis);
 uint8_t result_Y = Blinker.joystick(J_Yaxis);
-``` -->
+```
 ### BlinkerButton  
 按键组件在App中可以设置 按键/开关/自定义 三种模式,  
 **按键** 模式下支持 点按/长按/释放(tap/pre/pup) 三个动作  
@@ -272,10 +272,10 @@ int16_t result_Pitch = Blinker.ahrs(Pitch);
 Blinker.dettachAhrs();
 ```
 ### Blinker.gps()
-<!-- 刷新手机 **GPS** 功能
+刷新手机 **GPS** 功能
 ```
 Blinker.freshAhrs();
-``` -->
+```
 读取 **GPS** 数据
 ```
 String result_LONG = Blinker.gps(LONG);  
@@ -290,14 +290,14 @@ String result_LAT = Blinker.gps(LAT);
 uint8_t result_R = Blinker.rgb("RGBKEY", R);
 uint8_t result_G = Blinker.rgb("RGBKEY", G);
 uint8_t result_B = Blinker.rgb("RGBKEY", B);
-``` -->
+```
 ### Blinker.vibrate()
 发送手机振动指令, 震动时间, 单位ms 毫秒, 数值范围0-1000, 默认为500
 ```
 Blinker.vibrate();
 Blinker.vibrate(255);  
 ```
-<!-- ## SWITCH
+## SWITCH
 APP中默认 **SWITCH** 组件
 ### Blinker.switchAvailable()
 是否收到APP发来 **SWITCH** 控制指令
@@ -323,7 +323,7 @@ Blinker.switchOn();
 设置 **SWITCH** 状态为关闭, 会触发 **Blinker.switchAvailable()**
 ```
 Blinker.switchOff();
-``` -->
+```
 ## NTP time  
 > NTP 目前仅试用于WiFi/MQTT接入  
 ### Blinker.setTimezone()  
@@ -412,10 +412,10 @@ String data = Blinker.bridgeRead(bridgeKey);
 ```
 `*读取数据最大为 256 字节`
 ### Blinker.bridgePrint()
-<!-- 发送数据
+发送数据
 ```
 Blinker.print(data);
-``` -->
+```
 发送一个Json数据, 如 {text1:data}
 ```
 char bridgeKey[] = "Your MQTT Secret Key of bridge to device";
@@ -428,7 +428,7 @@ char bridgeKey[] = "Your MQTT Secret Key of bridge to device";
 
 Blinker.bridgePrint(bridgeKey, "temp", 30.2, "°C");
 ```
-<!-- >发送的Json数据可以在 Blinker APP 的 TEXT 组件中显示   -->
+>发送的Json数据可以在 Blinker APP 的 TEXT 组件中显示  
 
 ```
 *发送数据最大为 128 字节  
@@ -650,4 +650,4 @@ BLINKER_LOG6("detail message 1", " 2", " 3", " 4", " 5", " 6");
 # 感谢
 [WebSockets](https://github.com/Links2004/arduinoWebSockets) - Blinker 用这个库建立了一个 websocket 服务器  
 [Adafruit_MQTT_Library](https://github.com/adafruit/Adafruit_MQTT_Library) - Blinker 用这个库建立了一个 MQTT 客户端  
-[ArduinoJson](https://github.com/bblanchon/ArduinoJson) - Blinker 用这个库解析 Json  
+[ArduinoJson](https://github.com/bblanchon/ArduinoJson) - Blinker 用这个库解析 Json   -->
