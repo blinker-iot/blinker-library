@@ -5,10 +5,16 @@
 
 void switch_callback(const String & state)
 {
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     BLINKER_LOG2("get switch state: ", state);
 
-    BUILTIN_SWITCH.print("on");
+    if (state == BLINKER_CMD_ON) {
+        digitalWrite(LED_BUILTIN, HIGH);
+        BUILTIN_SWITCH.print("on");
+    }
+    else {
+        digitalWrite(LED_BUILTIN, LOW);
+        BUILTIN_SWITCH.print("off");
+    }
 }
 
 void setup()

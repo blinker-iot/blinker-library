@@ -18,6 +18,7 @@ void button1_callback(const String & state)
         Button1.icon("icon_1");
         Button1.color("#FFFFFF");
         Button1.text("Your button name or describe");
+        // Button1.text("Your button name", "describe");
         Button1.print();
     }
     else if (state == BLINKER_CMD_BUTTON_PRESSED) {
@@ -26,6 +27,7 @@ void button1_callback(const String & state)
         Button1.icon("icon_1");
         Button1.color("#FFFFFF");
         Button1.text("Your button name or describe");
+        // Button1.text("Your button name", "describe");
         Button1.print();
     }
     else if (state == BLINKER_CMD_BUTTON_RELEASED) {
@@ -34,6 +36,7 @@ void button1_callback(const String & state)
         Button1.icon("icon_1");
         Button1.color("#FFFFFF");
         Button1.text("Your button name or describe");
+        // Button1.text("Your button name", "describe");
         Button1.print();
     }
     else if (state == BLINKER_CMD_ON) {
@@ -42,6 +45,7 @@ void button1_callback(const String & state)
         Button1.icon("icon_1");
         Button1.color("#FFFFFF");
         Button1.text("Your button name or describe");
+        // Button1.text("Your button name", "describe");
         Button1.print("on");
     }
     else if (state == BLINKER_CMD_OFF) {
@@ -50,6 +54,7 @@ void button1_callback(const String & state)
         Button1.icon("icon_1");
         Button1.color("#FFFFFF");
         Button1.text("Your button name or describe");
+        // Button1.text("Your button name", "describe");
         Button1.print("off");
     }
     else {
