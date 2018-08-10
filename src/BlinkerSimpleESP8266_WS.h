@@ -28,7 +28,7 @@ class BlinkerSimpleESP8266_WS
             Base::begin();
             smartconfig();
             Base::loadTimer();
-            BLINKER_LOG1("ESP8266_WiFi Initialled...");
+            BLINKER_LOG1("ESP8266_WiFi initialized...");
         }
 // #endif
 #elif defined(BLINKER_APCONFIG)
@@ -41,7 +41,7 @@ class BlinkerSimpleESP8266_WS
                 ::delay(10);
             }
             Base::loadTimer();
-            BLINKER_LOG1("ESP8266_WiFi Initialled...");
+            BLINKER_LOG1("ESP8266_WiFi initialized...");
         }
 #else
         void begin(const char* _ssid,
@@ -50,7 +50,7 @@ class BlinkerSimpleESP8266_WS
             Base::begin();
             connectWiFi(_ssid, _pswd);
             Base::loadTimer();
-            BLINKER_LOG1("ESP8266_WiFi Initialled...");
+            BLINKER_LOG1("ESP8266_WiFi initialized...");
         }
 #endif
     

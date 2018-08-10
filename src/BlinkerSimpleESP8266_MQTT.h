@@ -30,7 +30,7 @@ class BlinkerSimpleESP8266_MQTT
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             Base::loadTimer();
-            BLINKER_LOG1("ESP8266_MQTT Initialled...");
+            BLINKER_LOG1("ESP8266_MQTT initialized...");
         }
 // #endif
 #elif defined(BLINKER_APCONFIG)
@@ -45,7 +45,7 @@ class BlinkerSimpleESP8266_MQTT
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             Base::loadTimer();
-            BLINKER_LOG1("ESP8266_MQTT Initialled...");
+            BLINKER_LOG1("ESP8266_MQTT initialized...");
         }
 #else
         void begin( const char* _auth,
@@ -57,7 +57,7 @@ class BlinkerSimpleESP8266_MQTT
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             Base::loadTimer();
-            BLINKER_LOG1("ESP8266_MQTT Initialled...");
+            BLINKER_LOG1("ESP8266_MQTT initialized...");
         }
 #endif
     

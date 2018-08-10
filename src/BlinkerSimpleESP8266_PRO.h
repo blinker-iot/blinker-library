@@ -20,7 +20,7 @@ class BlinkerSimpleESP8266_PRO
             // }
             // this->conn.begin(_type);
             Base::loadTimer();
-            BLINKER_LOG1("ESP8266_PRO Initialled...");
+            BLINKER_LOG1("ESP8266_PRO initialized...");
         }
 
 // #if defined(BLINKER_ESP_SMARTCONFIG)
@@ -28,7 +28,7 @@ class BlinkerSimpleESP8266_PRO
 //             Base::begin(_auth);
 //             smartconfig();
 //             this->conn.begin(_auth);
-//             BLINKER_LOG1("ESP8266_MQTT Initialled...");
+//             BLINKER_LOG1("ESP8266_MQTT initialized...");
 //         }
 // #endif
 
@@ -39,7 +39,7 @@ class BlinkerSimpleESP8266_PRO
 //             Base::begin(_auth);
 //             connectWiFi(_ssid, _pswd);
 //             this->conn.begin(_auth);
-//             BLINKER_LOG1("ESP8266_MQTT Initialled...");
+//             BLINKER_LOG1("ESP8266_MQTT initialized...");
 //         }
     
 //     private :

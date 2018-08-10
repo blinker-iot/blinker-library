@@ -143,7 +143,7 @@ class BlinkerSerial
                 Serial.begin(ss_baud);
                 this->conn.begin(Serial, true);
     #endif
-                BLINKER_LOG1(BLINKER_F("SerialBLE Initialled..."));
+                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
                 return;
             }
     #if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__SAM3X8E__)
@@ -151,21 +151,21 @@ class BlinkerSerial
                 Base::begin();
                 Serial1.begin(ss_baud);
                 this->conn.begin(Serial1, true);
-                BLINKER_LOG1(BLINKER_F("SerialBLE Initialled..."));
+                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
                 return;
             }
             else if (ss_rx_pin == 17 && ss_tx_pin == 16){
                 Base::begin();
                 Serial2.begin(ss_baud);
                 this->conn.begin(Serial2, true);
-                BLINKER_LOG1(BLINKER_F("SerialBLE Initialled..."));
+                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
                 return;
             }
             else if (ss_rx_pin == 15 && ss_tx_pin == 14){
                 Base::begin();
                 Serial3.begin(ss_baud);
                 this->conn.begin(Serial3, true);
-                BLINKER_LOG1(BLINKER_F("SerialBLE Initialled..."));
+                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
                 return;
             }
     #endif  
@@ -174,14 +174,14 @@ class BlinkerSerial
                 SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
                 SSerialBLE->begin(ss_baud);
                 this->conn.begin(*SSerialBLE, false);
-                BLINKER_LOG1(BLINKER_F("SerialBLE Initialled..."));
+                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
             }
 #else
             Base::begin();
             SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
             SSerialBLE->begin(ss_baud);
             this->conn.begin(*SSerialBLE, false);
-            BLINKER_LOG1(BLINKER_F("SerialBLE Initialled..."));
+            BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
 #endif
         }
 };
