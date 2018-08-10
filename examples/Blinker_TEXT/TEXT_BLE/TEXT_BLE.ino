@@ -31,5 +31,7 @@ void loop()
         Blinker.print("millis", BlinkerTime);
 
         Text1.print("os time", BlinkerTime);
+
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
 }

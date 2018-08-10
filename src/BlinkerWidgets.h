@@ -3,7 +3,7 @@
 
 #include <utility/BlinkerButton.h>
 #include <utility/BlinkerJoystick.h>
-#include <utility/BlinkerNUM.h>
+#include <utility/BlinkerNumber.h>
 #include <utility/BlinkerRGB.h>
 #include <utility/BlinkerSlider.h>
 #include <utility/BlinkerSwitch.h>

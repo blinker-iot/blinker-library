@@ -253,7 +253,7 @@ Button1.print("on");
 ### BlinkerJoystick
 ### BlinkerRGB
 ### BlinkerSlider
-### BlinkerNUM
+### BlinkerNumber
 ### BlinkerText
 ### BUILTIN_SWITCH
 ### Blinker.ahrs()

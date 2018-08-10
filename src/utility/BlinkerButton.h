@@ -32,6 +32,8 @@ class BlinkerButton
         void text(T1 _text1, T2 _text2) { btext = STRING_format(_text1); btext1 = STRING_format(_text2); }
         void textColor(const String & _clr) { textClr = _clr; }
 
+        void print() { print(""); }
+
         void print(const String & _state)
         {
             if (!registered) {

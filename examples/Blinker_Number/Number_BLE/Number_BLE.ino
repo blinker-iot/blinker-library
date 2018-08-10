@@ -3,9 +3,9 @@
 
 #include <Blinker.h>
 
-#define NUM_1 "NUMKey"
+#define Number_1 "NUMKey"
 
-BlinkerNUM NUM1(NUM_1);
+BlinkerNumber Number1(Number_1);
 
 void setup()
 {
@@ -30,9 +30,11 @@ void loop()
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
 
-        NUM1.icon("icon_1");
-        NUM1.color("#FFFFFF");
-        NUM1.unit("ms");
-        NUM1.print(BlinkerTime);
+        Number1.icon("icon_1");
+        Number1.color("#FFFFFF");
+        Number1.unit("ms");
+        Number1.print(BlinkerTime);
+
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
 }

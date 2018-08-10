@@ -29,5 +29,7 @@ void loop()
         Blinker.vibrate();        
         Blinker.print("millis", BlinkerTime);
         Blinker.endFormat();
+
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
 }

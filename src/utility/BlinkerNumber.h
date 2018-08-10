@@ -4,10 +4,10 @@
 #include <Blinker/BlinkerConfig.h>
 #include <utility/BlinkerUtility.h>
 
-class BlinkerNUM
+class BlinkerNumber
 {
     public :
-        BlinkerNUM(const String & _name)
+        BlinkerNumber(const String & _name)
             : numName(_name)
         {}
         
