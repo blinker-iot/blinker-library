@@ -4,7 +4,7 @@
 #include <Blinker.h>
 
 BlinkerButton Button1("btn-abc");
-BlinkerNumber Number1('num-abc');
+BlinkerNumber Number1("num-abc");
 
 int counter = 0;
 

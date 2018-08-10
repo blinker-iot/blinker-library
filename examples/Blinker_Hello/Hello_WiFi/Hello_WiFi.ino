@@ -7,7 +7,7 @@ char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
 BlinkerButton Button1("btn-abc");
-BlinkerNumber Number1('num-abc');
+BlinkerNumber Number1("num-abc");
 
 int counter = 0;
 
