@@ -449,70 +449,12 @@ class BlinkerApi
 {
     public :
         BlinkerApi() {
-            // joyValue[J_Xaxis] = BLINKER_JOYSTICK_VALUE_DEFAULT;
-            // joyValue[J_Yaxis] = BLINKER_JOYSTICK_VALUE_DEFAULT;
             ahrsValue[Yaw] = 0;
             ahrsValue[Roll] = 0;
             ahrsValue[Pitch] = 0;
             gpsValue[LONG] = "0.000000";
             gpsValue[LAT] = "0.000000";
-
-            // _BUILTIN_SWITCH = new BlinkerToggle();
-            // _BUILTIN_SWITCH->name(BLINKER_CMD_BUILTIN_SWITCH);
-            // _BUILTIN_SWITCH->freshState(true);
-            // rgbValue[R] = 0;
-            // rgbValue[G] = 0;
-            // rgbValue[B] = 0;
         }
-
-        // void switchOn() {
-        //     _BUILTIN_SWITCH->freshState(true);
-        //     String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
-        //                     BLINKER_CMD_BUILTIN_SWITCH + "\":\"on\"}}";
-        //     parse(data, true);
-        // }
-
-        // void switchOff() {
-        //     _BUILTIN_SWITCH->freshState(false);
-        //     String data = "{\"" + STRING_format(BLINKER_CMD_SET) + "\":{\"" + \
-        //                     BLINKER_CMD_BUILTIN_SWITCH + "\":\"off\"}}";
-        //     parse(data, true);
-        // }
-
-        // bool switchAvailable() {
-        //     // if ((builtInSwitch() && !_switchFresh)
-        //     //     || (!builtInSwitch() && _switchFresh)) {
-        //     if (_switchFresh) {
-        //         _switchFresh = false;
-        //         return true;
-        //     }
-        //     else {
-        //         return false;
-        //     }
-        // }
-
-        // bool switchGet() {
-        //     // if (builtInSwitch() && !_switchFresh) {
-        //     //     _switchFresh = true;
-        //     //     return true;
-        //     // }
-        //     // else if (!builtInSwitch() && _switchFresh) {
-        //     //     _switchFresh = false;
-        //     //     return false;
-        //     // }
-        //     // else {
-        //     //     return false;
-        //     // }
-        //     return _BUILTIN_SWITCH->getState();
-        // }
-
-        // bool builtInSwitch() {
-        //     return _BUILTIN_SWITCH->getState();
-        // }
-
-        // void switchUpdate() {
-        //     static_cast<Proto*>(this)->print(BLINKER_CMD_BUILTIN_SWITCH, builtInSwitch()?"on":"off");
-        // }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool bridge(const String & _name) {
@@ -1397,44 +1339,6 @@ class BlinkerApi
         }
 // #endif
 
-        // void joystick()
-        // {
-        //     int16_t jxAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
-
-        //     if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
-        //         // joyValue[J_Xaxis] = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Xaxis);
-        //         uint8_t jyAxisValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_JOYSTICK, J_Yaxis);
-
-        //         _fresh = true;
-        //         // return jAxisValue;
-        //         if (_joyFunc) {
-        //             _joyFunc(jxAxisValue, jyAxisValue);
-        //         }
-        //     }
-        //     // else {
-        //     //     return joyValue[axis];
-        //     // }
-        // }
-
-        // void joystick(const String & _data)
-        // {
-        //     int16_t jxAxisValue = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Xaxis);
-
-        //     if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
-        //         // joyValue[J_Xaxis] = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Xaxis);
-        //         uint8_t jyAxisValue = STRING_find_array_numberic_value(_data, BLINKER_CMD_JOYSTICK, J_Yaxis);
-
-        //         _fresh = true;
-        //         // return jAxisValue;
-        //         if (_joyFunc) {
-        //             _joyFunc(jxAxisValue, jyAxisValue);
-        //         }
-        //     }
-        //     // else {
-        //     //     return joyValue[axis];
-        //     // }
-        // }
-
         void strWidgetsParse(const String & _wName)
         {
             int8_t num = checkNum(_wName, _Widgets_str, _wCount_str);
@@ -1523,24 +1427,6 @@ class BlinkerApi
         }
 
 #if defined(ESP8266) || defined(ESP32)
-
-        // void joystick(const JsonObject& data)
-        // {
-        //     if (data.containsKey(BLINKER_CMD_JOYSTICK)) {
-        //         int16_t jxAxisValue = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
-        //         // joyValue[J_Xaxis] = data[BLINKER_CMD_JOYSTICK][J_Xaxis];
-        //         uint8_t jyAxisValue = data[BLINKER_CMD_JOYSTICK][J_Yaxis];
-
-        //         _fresh = true;
-        //         // return jAxisValue;
-        //         if (_joyFunc) {
-        //             _joyFunc(jxAxisValue, jyAxisValue);
-        //         }
-        //     }
-        //     // else {
-        //     //     return joyValue[axis];
-        //     // }
-        // }
 
         void strWidgetsParse(const String & _wName, const JsonObject& data)
         {
@@ -2925,443 +2811,10 @@ class BlinkerApi
             }
         }
 
-
-    //     bool timerManager(const JsonObject& data, bool _noSet = false) {
-    //     // bool timerManager() {
-    //         bool isSet = false;
-    //         bool isCount = false;
-    //         bool isLoop = false;
-    //         bool isTiming = false;
-
-    //         if (!_noSet) {
-    //             isSet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
-    //             isCount = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_COUNTDOWN);
-    //             isLoop = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_LOOP);
-    //             isTiming = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMING);
-    //         }
-    //         else {
-    //             isCount = data.containsKey(BLINKER_CMD_COUNTDOWN);
-    //             isLoop = data.containsKey(BLINKER_CMD_LOOP);
-    //             isTiming = data.containsKey(BLINKER_CMD_TIMING);
-    //         }
-
-    //         // if (isSet && (isCount || isLoop || isTiming)) {
-    //         if ((isSet || _noSet) && (isCount || isLoop || isTiming)) {
-
-    //             // if (!isSet && !_noSet) {
-    //             //     return false;
-    //             // }
-
-    //             _fresh = true;
-
-    // #ifdef BLINKER_DEBUG_ALL
-    //             BLINKER_LOG1(BLINKER_F("get timer setting"));
-    // #endif
-
-    //             if (isCount) {
-    //                 // String cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", ",", 1);
-    //                 // if (cd_state == "") {
-    //                 //     cd_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "countdown\"", "}", 1);
-    //                 // }
-    //                 if (isSet) {
-    //                     _cdState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN];
-    //                 }
-    //                 else if(_noSet) {
-    //                     _cdState = data[BLINKER_CMD_COUNTDOWN];
-    //                 }
-    // #ifdef BLINKER_DEBUG_ALL
-    //                 BLINKER_LOG2(BLINKER_F("countdown state: "), _cdState ? "true" : "false");
-    // #endif
-    //                 // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
-
-    //                 // String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
-    //                 // int32_t _totalTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TOTALTIME);
-    //                 // int32_t _runTime = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_RUNTIME);
-    //                 // String _action = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION, "]", 3);
-    //                 if (isSet) {
-    //                     // String _state = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
-    //                     _cdRunState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
-    //                     int32_t _totalTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_TOTALTIME];
-    //                     _totalTime = 60 * _totalTime;
-    //                     int32_t _runTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
-    //                     _runTime = 60 * _runTime;
-    //                     String _action = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_ACTION];
-
-    //                     _cdAction = _action;
-    //                     _cdTime1 = _totalTime;
-    //                     _cdTime2 = _runTime;
-    // #ifdef BLINKER_DEBUG_ALL
-    //                     // BLINKER_LOG2(BLINKER_F("_state: "), _state);
-    //                     BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
-    // #endif
-    //                 }
-    //                 else if (_noSet) {
-    //                     // String _state = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
-    //                     _cdRunState = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_STATE];
-    //                     int32_t _totalTime = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_TOTALTIME];
-    //                     _totalTime = 60 * _totalTime;
-    //                     int32_t _runTime = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_RUNTIME];
-    //                     _runTime = 60 * _runTime;
-    //                     String _action = data[BLINKER_CMD_COUNTDOWNDATA][BLINKER_CMD_ACTION];
-
-    //                     _cdAction = _action;
-    //                     _cdTime1 = _totalTime;
-    //                     _cdTime2 = _runTime;
-    // #ifdef BLINKER_DEBUG_ALL
-    //                     // BLINKER_LOG2(BLINKER_F("_state: "), _state);
-    //                     BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
-    // #endif
-    //                 }
-
-    // #ifdef BLINKER_DEBUG_ALL
-    //                 BLINKER_LOG2(BLINKER_F("_totalTime: "), _cdTime1);
-    //                 BLINKER_LOG2(BLINKER_F("_runTime: "), _cdTime2);
-    //                 BLINKER_LOG2(BLINKER_F("_action: "), _cdAction);
-    // #endif
-    //                 // _cdAction = _action;
-    //                 // _cdTime1 = _totalTime;
-    //                 // _cdTime2 = _runTime;
-
-    //                 // _cdState = (cd_state == BLINKER_CMD_TRUE) ? true : false;
-    //                 // if (_cdState) {
-    //                 if (_cdState && _cdRunState) {
-    //                     cdTicker.once(_cdTime1 - _cdTime2, _cd_callback);
-    // #ifdef BLINKER_DEBUG_ALL
-    //                     BLINKER_LOG1(BLINKER_F("countdown start!"));
-    // #endif
-    //                 }
-    //                 else {
-    //                     cdTicker.detach();
-    //                 }
-
-    //                 static_cast<Proto*>(this)->_print(countdownConfig(), false);
-    //             }
-    //             else if (isLoop) {
-    //                 // String lp_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "loop\"", ",", 1);
-    //                 // if (lp_state == "") {
-    //                 //     lp_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "loop\"", "}", 1);
-    //                 // }
-    //                 if (isSet) {
-    //                     _lpState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP];
-    //                 }
-    //                 else if (_noSet) {
-    //                     _lpState = data[BLINKER_CMD_LOOP];
-    //                 }
-    // #ifdef BLINKER_DEBUG_ALL
-    //                 BLINKER_LOG2(BLINKER_F("loop state: "), _lpState ? "true" : "false");
-    // #endif
-    //                 // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
-
-    //                 // int8_t _times = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMES);
-    //                 // String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
-    //                 // int32_t _time1 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME1);
-    //                 // String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
-    //                 // int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
-    //                 // String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
-    //                 if (isSet) {
-    //                     int8_t _times = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIMES];
-    //                     // String _state = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
-    //                     _lpRunState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
-    //                     int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME1];
-    //                     _time1 = 60 * _time1;
-    //                     String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION1];
-    //                     int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME2];
-    //                     _time2 = 60 * _time2;
-    //                     String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION2];
-
-    //                     _lpAction1 = _action1;
-    //                     _lpAction2 = _action2;
-
-    //                     _lpTimes = _times;
-    //                     _lpTime1 = _time1;
-    //                     _lpTime2 = _time2;
-    // #ifdef BLINKER_DEBUG_ALL
-    //                     // BLINKER_LOG2(BLINKER_F("_state: "), _state);
-    //                     BLINKER_LOG2(BLINKER_F("_lpRunState: "), _lpRunState);
-    // #endif
-    //                 }
-    //                 else if (_noSet) {
-    //                     int8_t _times = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIMES];
-    //                     // String _state = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
-    //                     _lpRunState = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_STATE];
-    //                     int32_t _time1 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME1];
-    //                     _time1 = 60 * _time1;
-    //                     String _action1 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION1];
-    //                     int32_t _time2 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_TIME2];
-    //                     _time2 = 60 * _time2;
-    //                     String _action2 = data[BLINKER_CMD_LOOPDATA][BLINKER_CMD_ACTION2];
-
-    //                     _lpAction1 = _action1;
-    //                     _lpAction2 = _action2;
-
-    //                     _lpTimes = _times;
-    //                     _lpTime1 = _time1;
-    //                     _lpTime2 = _time2;
-    // #ifdef BLINKER_DEBUG_ALL
-    //                     // BLINKER_LOG2(BLINKER_F("_state: "), _state);
-    //                     BLINKER_LOG2(BLINKER_F("_lpRunState: "), _lpRunState);
-    // #endif
-    //                 }
-
-    // #ifdef BLINKER_DEBUG_ALL
-    //                 BLINKER_LOG2(BLINKER_F("_times: "), _lpTimes);
-    //                 BLINKER_LOG2(BLINKER_F("_time1: "), _lpTime1);
-    //                 BLINKER_LOG2(BLINKER_F("_action1: "), _lpAction1);
-    //                 BLINKER_LOG2(BLINKER_F("_time2: "), _lpTime2);
-    //                 BLINKER_LOG2(BLINKER_F("_action2: "), _lpAction2);
-    // #endif
-    //                 // _lpAction1 = _action1;
-    //                 // _lpAction2 = _action2;
-
-    //                 // _lpTimes = _times;
-    //                 // _lpTime1 = _time1;
-    //                 // _lpTime2 = _time2;
-
-    //                 // _lpState = (lp_state == BLINKER_CMD_TRUE) ? true : false;
-    //                 // if (_lpState) {
-    //                 if (_lpState && _lpRunState) {
-    //                     _lpRun1 = true;
-    //                     _lpTrigged_times = 0;
-    //                     lpTicker.once(_lpTime1, _lp_callback);
-    // #ifdef BLINKER_DEBUG_ALL
-    //                     BLINKER_LOG1(BLINKER_F("loop start!"));
-    // #endif
-    //                 }
-    //                 else {
-    //                     lpTicker.detach();
-    //                 }
-
-    //                 static_cast<Proto*>(this)->_print(loopConfig(), false);
-    //             }
-    //             else if (isTiming) {
-    //                 // String tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", ",", 1);
-    //                 // if (tm_state == "") {
-    //                 //     tm_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "timing\"", "}", 1);
-    //                 // }
-    //                 if (isSet) {
-    //                     _tmState = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING];
-    //                 }
-    //                 else if (_noSet) {
-    //                     _tmState = data[BLINKER_CMD_TIMING];
-    //                 }
-    // #ifdef BLINKER_DEBUG_ALL
-    //                 BLINKER_LOG2(BLINKER_F("timing state: "), _tmState ? "true" : "false");
-    // #endif
-    //                 // _autoState = (auto_state == BLINKER_CMD_TRUE) ? true : false;
-
-    //                 // int8_t _times = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIMES);
-    //                 // String _state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_STATE, "\"", 3);
-    //                 // int32_t _time1 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME1);
-    //                 // String _action1 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION1, "]", 3);
-    //                 // int32_t _time2 = 60 * STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_TIME2);
-    //                 // String _action2 = STRING_find_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ACTION2, "]", 3);
-    //                 if (isSet) {
-    //                     // String _state = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
-    //                     _tmRunState = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
-    //                     int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME1];
-    //                     _time1 = 60 * _time1;
-    //                     String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION1];
-    //                     int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME2];
-    //                     _time2 = 60 * _time2;
-    //                     String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION2];
-
-    //                     _tmAction1 = _action1;
-    //                     _tmAction2 = _action2;
-
-    //                     _tmTime1 = _time1;
-    //                     _tmTime2 = _time2;
-
-    //                     if (data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0] == 7) {
-    //                         // now_ntp = time(nullptr);
-    //                         // gmtime_r(&now_ntp, &timeinfo);
-
-    //                         if (_tmTime2 > dtime()) {
-    //                             _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
-    //                         }
-    //                         else {
-    //                             _timingDay |= (0x01 << ((wday() + 1) % 7));//timeinfo.tm_wday(uint8_t)pow(2,(timeinfo.tm_wday + 1) % 7);
-    //                         }
-
-    //                         _isTimingLoop = false;
-    // #ifdef BLINKER_DEBUG_ALL
-    //                         BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
-    // #endif
-    //                     }
-    //                     else {
-    //                         uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
-    //                         // timingDay = 0x80;
-    //                         _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-    // #ifdef BLINKER_DEBUG_ALL
-    //                         BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-    // #endif
-
-    //                         for (uint8_t day = 1;day < 7;day++) {
-    //                             taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
-    //                             if (taskDay > 0) {
-    //                                 _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-    // #ifdef BLINKER_DEBUG_ALL
-    //                                 BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-    // #endif
-    //                             }
-    //                         }
-
-    //                         _isTimingLoop = true;
-    //                     }
-
-    // #ifdef BLINKER_DEBUG_ALL
-    //                     BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
-    //                     // BLINKER_LOG2(BLINKER_F("_state: "), _state);
-    //                     BLINKER_LOG2(BLINKER_F("_tmRunState: "), _tmRunState);
-    // #endif
-    //                 }
-    //                 else if (_noSet) {
-    //                     // String _state = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
-    //                     _tmRunState = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_STATE];
-    //                     int32_t _time1 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME1];
-    //                     _time1 = 60 * _time1;
-    //                     String _action1 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION1];
-    //                     int32_t _time2 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_TIME2];
-    //                     _time2 = 60 * _time2;
-    //                     String _action2 = data[BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_ACTION2];
-
-    //                     _tmAction1 = _action1;
-    //                     _tmAction2 = _action2;
-
-    //                     _tmTime1 = _time1;
-    //                     _tmTime2 = _time2;
-
-    //                     if (data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0] == 7) {
-    //                         // now_ntp = time(nullptr);
-    //                         // gmtime_r(&now_ntp, &timeinfo);
-
-    //                         if (_tmTime2 > dtime()) {
-    //                             _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
-    //                         }
-    //                         else {
-    //                             _timingDay |= (0x01 << ((wday() + 1) % 7));//timeinfo.tm_wday(uint8_t)pow(2,(timeinfo.tm_wday + 1) % 7);
-    //                         }
-
-    //                         _isTimingLoop = false;
-    // #ifdef BLINKER_DEBUG_ALL
-    //                         BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
-    // #endif
-    //                     }
-    //                     else {
-    //                         uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][0];
-    //                         // timingDay = 0x80;
-    //                         _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-    // #ifdef BLINKER_DEBUG_ALL
-    //                         BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-    // #endif
-
-    //                         for (uint8_t day = 1;day < 7;day++) {
-    //                             taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMINGDATA][0][BLINKER_CMD_DAY][day];
-    //                             if (taskDay > 0) {
-    //                                 _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-    // #ifdef BLINKER_DEBUG_ALL
-    //                                 BLINKER_LOG4(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-    // #endif
-    //                             }
-    //                         }
-
-    //                         _isTimingLoop = true;
-    //                     }
-
-    // #ifdef BLINKER_DEBUG_ALL
-    //                     BLINKER_LOG2(BLINKER_F("timingDay: "), _timingDay);
-    //                     // BLINKER_LOG2(BLINKER_F("_state: "), _state);
-    //                     BLINKER_LOG2(BLINKER_F("_tmRunState: "), _tmRunState);
-    // #endif
-    //                 }
-
-    // #ifdef BLINKER_DEBUG_ALL
-    //                 BLINKER_LOG2(BLINKER_F("_isTimingLoop: "), _isTimingLoop ? "true":"false");
-    //                 BLINKER_LOG2(BLINKER_F("_time1: "), _tmTime1);
-    //                 BLINKER_LOG2(BLINKER_F("_action1: "), _tmAction1);
-    //                 BLINKER_LOG2(BLINKER_F("_time2: "), _tmTime2);
-    //                 BLINKER_LOG2(BLINKER_F("_action2: "), _tmAction2);
-    // #endif
-    //                 // _tmAction1 = _action1;
-    //                 // _tmAction2 = _action2;
-
-    //                 // _tmTime1 = _time1;
-    //                 // _tmTime2 = _time2;
-
-    //                 // _tmState = (tm_state == BLINKER_CMD_TRUE) ? true : false;
-    //                 // if (_tmState) {
-    //                 if (_tmState && _tmRunState) {
-    //                     if (isTimingDay(wday())) {
-    //                         int32_t nowTime = dtime();
-    // #ifdef BLINKER_DEBUG_ALL
-    //                             BLINKER_LOG2(BLINKER_F("nowTime: "), nowTime);
-    // #endif
-
-    //                         if (_tmTime1 >= nowTime) {
-    //                             _tmRun1 = true;
-    //                             tmTicker.once(_tmTime1 - nowTime, _tm_callback);
-    // #ifdef BLINKER_DEBUG_ALL
-    //                             BLINKER_LOG2(BLINKER_F("timing1 start! next time: "), _tmTime1 - nowTime);
-    // #endif
-    //                         }
-    //                         else if (_tmTime1 < nowTime && _tmTime2 > nowTime) {
-    //                             _tmRun1 = false;
-    //                             tmTicker.once(_tmTime2 - nowTime, _tm_callback);
-    // #ifdef BLINKER_DEBUG_ALL
-    //                             BLINKER_LOG2(BLINKER_F("timing2 start! next time: "), _tmTime2 - nowTime);
-    // #endif
-    //                         }
-    //                         else if (_tmTime2 <= nowTime && _tmTime1 < nowTime) {
-    //                             _tmRun1 = false;
-    //                             tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
-    // #ifdef BLINKER_DEBUG_ALL
-    //                             BLINKER_LOG2(BLINKER_F("next day start! next time: "), BLINKER_ONE_DAY_TIME - nowTime);
-    // #endif
-    //                         }
-    //                     }
-    //                     else {
-    //                         int32_t nowTime = dtime();
-
-    //                         _tmRun1 = false;
-    //                         tmTicker.once(BLINKER_ONE_DAY_TIME - nowTime, _tm_callback);
-    //                     }
-    // #ifdef BLINKER_DEBUG_ALL
-    //                     BLINKER_LOG1(BLINKER_F("timing start!"));
-    // #endif
-    //                 }
-    //                 else {
-    //                     tmTicker.detach();
-    //                 }
-
-    //                 static_cast<Proto*>(this)->_print(timingData(), false);
-    //             }
-
-    //             return true;
-    //         }
-    //         else if (data.containsKey(BLINKER_CMD_GET)) {
-    //             String get_timer = data[BLINKER_CMD_GET];
-
-    //             if (get_timer == BLINKER_CMD_TIMER) {
-    //                 static_cast<Proto*>(this)->_print(timerSetting(), false);
-    //             }
-    //             else if (get_timer == BLINKER_CMD_COUNTDOWN) {
-    //                 static_cast<Proto*>(this)->_print(countdownConfig(), false);
-    //             }
-    //             else if (get_timer == BLINKER_CMD_LOOP) {
-    //                 static_cast<Proto*>(this)->_print(loopConfig(), false);
-    //             }
-    //             else if (get_timer == BLINKER_CMD_TIMING) {
-    //                 static_cast<Proto*>(this)->_print(timingData(), false);
-    //             }
-    //         }
-    //         else {
-    //             return false;
-    //         }
-    //     }
-
         String timerSetting() {
-            String _data = "{\"countdown\":" + STRING_format(_cdState ? "true" : "false") + \
-                            "\"loop\":" + STRING_format(_lpState ? "true" : "false") + \
-                            "\"timing\":" + STRING_format(taskCount ? "true" : "false") + "}";
+            String _data = "{\""BLINKER_CMD_COUNTDOWN"\":" + STRING_format(_cdState ? "true" : "false") + \
+                            "\""BLINKER_CMD_LOOP"\":" + STRING_format(_lpState ? "true" : "false") + \
+                            "\""BLINKER_CMD_TIMING"\":" + STRING_format(taskCount ? "true" : "false") + "}";
 
             return _data;
         }
@@ -3370,72 +2823,36 @@ class BlinkerApi
             String cdData;
 
             if (!_cdState) {
-                cdData = "{\"countdown\":false}";
+                cdData = "{\""BLINKER_CMD_COUNTDOWN"\":false}";
             }
             else {
-                cdData = "{\"countdown\":{\"run\":" + STRING_format(_cdRunState ? 1 : 0) + \
-                    ",\"ttim\":" + STRING_format(_cdTime1) + \
-                    ",\"rtim\":" + STRING_format((millis() - _cdStart) / 1000 / 60) + \
-                    ",\"act\":" + _cdAction + \
+                cdData = "{\""BLINKER_CMD_COUNTDOWN"\":{\""BLINKER_CMD_RUN"\":" + STRING_format(_cdRunState ? 1 : 0) + \
+                    ",\""BLINKER_CMD_TOTALTIME"\":" + STRING_format(_cdTime1) + \
+                    ",\""BLINKER_CMD_RUNTIME"\":" + STRING_format((millis() - _cdStart) / 1000 / 60) + \
+                    ",\""BLINKER_CMD_ACTION"\":" + _cdAction + \
                     "}}";
             }
 
             return cdData;
         }
 
-        // String countdownConfig() {
-        //     String cdData;
-
-        //     if (!_cdState) {
-        //         cdData = "{\"countdown\":false}";
-        //     }
-        //     else {
-        //         cdData = STRING_format("{\"countdown\":true") + \
-        //             ",\"countdownConfig\":{\"state\":" + STRING_format(_cdRunState ? "\"run\"" : "\"parse\"") + \
-        //             ",\"totalTime\":" + STRING_format(_cdTime1/60) + ",\"runTime\":" + STRING_format(_cdTime2) + \
-        //             ",\"action\":" + _cdAction + \
-        //             "}}";
-        //     }
-
-        //     return cdData;
-        // }
-
         String loopConfig() {
             String lpData;
             if (!_lpState) {
-                lpData = "{\"loop\":false}";
+                lpData = "{\""BLINKER_CMD_LOOP"\":false}";
             }
             else {
-                lpData = "{\"loop\":{\"tis\":" + STRING_format(_lpTimes) + \
-                    ",\"run\":" + STRING_format(_lpRunState ? 1 : 0) + \
-                    ",\"dur1\":" + STRING_format(_lpTime1) + \
-                    ",\"act1\":" + _lpAction1 + \
-                    ",\"dur2\":" + STRING_format(_lpTime2) + \
-                    ",\"act2\":" + _lpAction2 + \
+                lpData = "{\""BLINKER_CMD_LOOP"\":{\""BLINKER_CMD_TIMES"\":" + STRING_format(_lpTimes) + \
+                    ",\""BLINKER_CMD_RUN"\":" + STRING_format(_lpRunState ? 1 : 0) + \
+                    ",\""BLINKER_CMD_TIME1"\":" + STRING_format(_lpTime1) + \
+                    ",\""BLINKER_CMD_ACTION1"\":" + _lpAction1 + \
+                    ",\""BLINKER_CMD_TIME2"\":" + STRING_format(_lpTime2) + \
+                    ",\""BLINKER_CMD_ACTION2"\":" + _lpAction2 + \
                     "}}";
             }
 
             return lpData;
         }
-
-        // String loopConfig() {
-        //     String lpData;
-        //     if (!_lpState) {
-        //         lpData = "{\"loop\":false}";
-        //     }
-        //     else {
-        //         lpData = STRING_format("{\"loop\":true") + \
-        //             ",\"loopConfig\":{\"times\":" + STRING_format(_lpTimes) + \
-        //             ",\"state\":" + STRING_format(_lpRunState ? "\"run\"" : "\"parse\"") + \
-        //             ",\"time1\":" + STRING_format(_lpTime1/60) + \
-        //             ",\"action1\":" + _lpAction1 + \
-        //             ",\"time2\":" + STRING_format(_lpTime2/60) + \
-        //             ",\"action2\":" + _lpAction2 + \
-        //             "}}";
-        //     }
-
-        //     return lpData;
-        // }
 
         String getTimingCfg(uint8_t task) {
             String timingDayStr = "";
@@ -3463,17 +2880,17 @@ class BlinkerApi
                 BLINKER_LOG2(F("timingDayStr: "), timingDay);
             }
 
-            String timingConfig = "{\"task\":" + STRING_format(task) + ",\"ena\":\"" + STRING_format((timingTask[task]->state()) ? 1 : 0) + \
-                "\",\"day\":\"" + timingDayStr + "\",\"tim\":" + STRING_format(timingTask[task]->getTime()) + \
-                ",\"act\":" + timingTask[task]->getAction() + "}";
-                //String((this -> timingAction1[0])?"turnOn":"turnOff")
-                //String((this -> timingAction2[0])?"turnOn":"turnOff")
+            String timingConfig = "{\""BLINKER_CMD_TASK"\":" + STRING_format(task) + \
+                ",\""BLINKER_CMD_ENABLE"\":" + STRING_format((timingTask[task]->state()) ? 1 : 0) + \
+                ",\""BLINKER_CMD_DAY"\":\"" + timingDayStr + "\"" + \
+                ",\""BLINKER_CMD_TIME"\":" + STRING_format(timingTask[task]->getTime()) + \
+                ",\""BLINKER_CMD_ACTION"\":" + timingTask[task]->getAction() + "}";
 
             return timingConfig;
         }
 
         String timingConfig() {
-            String timingTaskStr = "{\"timing\":[";
+            String timingTaskStr = "{\""BLINKER_CMD_TIMING"\":[";
             for (uint8_t task = 0; task < taskCount; task++) {
                 //Serial.print(timingTask[task].getTimingCfg());
                 timingTaskStr += getTimingCfg(task);
@@ -3491,80 +2908,6 @@ class BlinkerApi
             
             return timingTaskStr;
         }
-
-        //     String timingDay() {
-    //         String timingDayStr = "";
-    //         // uint8_t _timingDay;// = timingTask[task]->getTimingday();
-    //         if (_isTimingLoop) {
-    //             for (uint8_t day = 0; day < 7; day++) {
-    //                 // timingDayStr += (timingDay & (uint8_t)pow(2,day)) ? String(day):String("");
-    //                 if ((_timingDay >> day) & 0x01) {
-    //                     timingDayStr += STRING_format(day);
-    //                     if (day < 6 && (_timingDay >> (day + 1)))
-    //                         timingDayStr += STRING_format(",");
-    //                 }
-    //                 // timingDayStr += String((day < 6) ? ((timingDay >> (day + 1)) ? ",":""):"");
-    //             }
-    // #ifdef BLINKER_DEBUG_ALL
-    //             BLINKER_LOG4(("timingDayStr: "), timingDayStr, (" timingDay: "), _timingDay);
-    // #endif
-    //         }
-    //         else {
-    //             timingDayStr = STRING_format("7");
-    // #ifdef BLINKER_DEBUG_ALL
-    //             BLINKER_LOG2(("timingDayStr: "), timingDayStr);
-    // #endif
-    //         }
-
-    //         return timingDayStr;
-    //     }
-
-    //     String timingDay() {
-    //         String timingDayStr = "";
-    //         // uint8_t _timingDay;// = timingTask[task]->getTimingday();
-    //         if (_isTimingLoop) {
-    //             for (uint8_t day = 0; day < 7; day++) {
-    //                 // timingDayStr += (timingDay & (uint8_t)pow(2,day)) ? String(day):String("");
-    //                 if ((_timingDay >> day) & 0x01) {
-    //                     timingDayStr += STRING_format(day);
-    //                     if (day < 6 && (_timingDay >> (day + 1)))
-    //                         timingDayStr += STRING_format(",");
-    //                 }
-    //                 // timingDayStr += String((day < 6) ? ((timingDay >> (day + 1)) ? ",":""):"");
-    //             }
-    // #ifdef BLINKER_DEBUG_ALL
-    //             BLINKER_LOG4(("timingDayStr: "), timingDayStr, (" timingDay: "), _timingDay);
-    // #endif
-    //         }
-    //         else {
-    //             timingDayStr = STRING_format("7");
-    // #ifdef BLINKER_DEBUG_ALL
-    //             BLINKER_LOG2(("timingDayStr: "), timingDayStr);
-    // #endif
-    //         }
-
-    //         return timingDayStr;
-    //     }
-
-        // String timingData() {
-        //     String tmData;
-        //     if (!_tmState) {
-        //         tmData = "{\"timing\":false}";
-        //     }
-        //     else {
-        //         tmData = STRING_format("{\"timing\":true") + \
-        //             ",\"timingData\":{\"task\":0" + \
-        //             ",\"state\":" + STRING_format(_tmRunState ? "\"run\"" : "\"parse\"") + \
-        //             ",\"day\":[" + timingDay() + "]" + \
-        //             ",\"time1\":" + STRING_format(_tmTime1/60) + \
-        //             ",\"action1\":" + _tmAction1 + \
-        //             ",\"time2\":" + STRING_format(_tmTime2/60) + \
-        //             ",\"action2\":" + _tmAction2 + \
-        //             "}}";
-        //     }
-
-        //     return tmData;
-        // }
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
