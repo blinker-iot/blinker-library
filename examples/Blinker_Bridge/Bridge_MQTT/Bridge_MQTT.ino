@@ -9,8 +9,6 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 char bridgeKey[] = "Your MQTT Secret Key of bridge to device";
 
-#define BUTTON_1 "ButtonKey"
-
 void setup() {
     Serial.begin(115200);
 
@@ -19,7 +17,6 @@ void setup() {
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.bridge(bridgeKey);
-    Blinker.wInit(BUTTON_1, W_BUTTON);
 
     while (!Blinker.connected()) {
         Blinker.delay(10);
@@ -39,16 +36,8 @@ void loop()
         Blinker.vibrate();        
         Blinker.print("millis", BlinkerTime);
         Blinker.endFormat();
-    }
 
-    if (Blinker.bridgeAvailable(bridgeKey)) {
-        BLINKER_LOG2("Blinker.bridgeRead(): ", Blinker.bridgeRead(bridgeKey));
-    }
-
-    if (Blinker.button(BUTTON_1)) {
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-
-        uint32_t BlinkerTime = millis();
 
         Blinker.bridgeBeginFormat();
         Blinker.bridgePrint(bridgeKey, "Hello", "Blinker");
@@ -56,5 +45,9 @@ void loop()
         Blinker.bridgeEndFormat();
 
         Blinker.delay(60000);
+    }
+
+    if (Blinker.bridgeAvailable(bridgeKey)) {
+        BLINKER_LOG2("Blinker.bridgeRead(): ", Blinker.bridgeRead(bridgeKey));
     }
 }

@@ -16,8 +16,6 @@
 
 #include <Blinker.h>
 
-#define BUTTON_1 "ButtonKey"
-
 /* 
  * Add your command parse code in this function
  * 
@@ -89,9 +87,7 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-    
     Blinker.begin(BLINKER_AIR_DETECTOR);
-    Blinker.wInit(BUTTON_1, W_BUTTON);
 
     Blinker.attachParse(dataParse);
     Blinker.attachHeartbeat(heartbeat);
@@ -116,9 +112,5 @@ void loop()
         Blinker.vibrate();        
         Blinker.print("millis", BlinkerTime);
         Blinker.endFormat();
-    }
-
-    if (Blinker.button(BUTTON_1)) {
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
 }

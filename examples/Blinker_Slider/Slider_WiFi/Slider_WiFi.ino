@@ -6,7 +6,15 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#define SLIDER_1 "SliderKey"
+#define Slider_1 "SliderKey"
+
+BlinkerSlider Slider1(Slider_1);
+
+void slider1_callback(int32_t value)
+{
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    BLINKER_LOG2("get slider value: ", value);
+}
 
 void setup()
 {
@@ -16,7 +24,8 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
-    Blinker.wInit(SLIDER_1, W_SLIDER);
+
+    Slider1.attach(slider1_callback);
 }
 
 void loop()
@@ -31,9 +40,8 @@ void loop()
         uint32_t BlinkerTime = millis();
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
+
+        Slider1.color("#FFFFFF");
+        Slider1.print(random(0, 128));
     }
-
-    BLINKER_LOG2("Slider read: ", Blinker.slider(SLIDER_1));
-
-    Blinker.delay(2000);
 }

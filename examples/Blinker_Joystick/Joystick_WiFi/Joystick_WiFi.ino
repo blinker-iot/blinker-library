@@ -6,6 +6,16 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
+#define JOY_1 "JOYKey"
+
+BlinkerJoystick JOY1(JOY_1);
+
+void joystick1_callback(uint8_t xAxis, uint8_t yAxis)
+{
+    BLINKER_LOG2("Joystick1 X axis: ", xAxis);
+    BLINKER_LOG2("Joystick1 Y axis: ", yAxis);
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -14,6 +24,8 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
+
+    JOY1.attach(joystick1_callback);
 }
 
 void loop()
@@ -29,9 +41,4 @@ void loop()
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
     }
-
-    BLINKER_LOG2("Joystick X axis: ", Blinker.joystick(J_Xaxis));
-    BLINKER_LOG2("Joystick Y axis: ", Blinker.joystick(J_Yaxis));
-
-    Blinker.delay(2000);
 }

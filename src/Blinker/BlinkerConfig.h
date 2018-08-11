@@ -3,7 +3,7 @@
 
 #include <utility/BlinkerDebug.h>
 
-#define BLINKER_VERSION                 "0.1.5"
+#define BLINKER_VERSION                 "0.2.0"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
@@ -39,10 +39,16 @@
 
 #define BLINKER_SMS_MAX_SEND_SIZE       128
 
+#if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+    #define BLINKER_PRESSTIME_POWERDOWN     2000UL
+    
+    #define BLINKER_PRESSTIME_RESET         10000UL
+#endif
+
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else
-    #define BLINKER_MAX_WIDGET_SIZE         16
+    #define BLINKER_MAX_WIDGET_SIZE         8
 #endif
 
 #define BLINKER_OBJECT_NOT_AVAIL        -1
@@ -65,9 +71,9 @@
 
 #define BLINKER_AUTHKEY_SIZE            14
 
-#define BLINKER_NO_LOGO
+// #define BLINKER_NO_LOGO
 
-//#define BLINKER_LOGO_3D
+#define BLINKER_LOGO_3D
 
 // #define	BLINKER_DEBUG
 
@@ -93,9 +99,9 @@
 
 #define BLINKER_CMD_BUTTON_TAP          "tap"
 
-#define BLINKER_CMD_BUTTON_PRESSED      "press"
+#define BLINKER_CMD_BUTTON_PRESSED      "pre"
 
-#define BLINKER_CMD_BUTTON_RELEASED     "pressup"
+#define BLINKER_CMD_BUTTON_RELEASED     "pup"
 
 #define BLINKER_CMD_NEWLINE             "\n"
 
@@ -117,7 +123,7 @@
 
 #define BLINKER_CMD_NOTICE              "notice"
 
-#define BLINKER_CMD_SWITCH              "switch"
+#define BLINKER_CMD_BUILTIN_SWITCH      "switch"
 
 #define BLINKER_CMD_NOTFOUND            "device not found"
 
@@ -167,29 +173,37 @@
 
 #define BLINKER_CMD_TRIGGEDDATA         "triggedData"
 
+#define BLINKER_CMD_TIMER               "timer"
+
+#define BLINKER_CMD_RUN                 "run"
+
+#define BLINKER_CMD_ENABLE              "ena"
+
 #define BLINKER_CMD_COUNTDOWN           "countdown"
 
 #define BLINKER_CMD_COUNTDOWNDATA       "countdownData"
 
-#define BLINKER_CMD_TOTALTIME           "totalTime"
+#define BLINKER_CMD_TOTALTIME           "ttim"
 
-#define BLINKER_CMD_RUNTIME             "runTime"
+#define BLINKER_CMD_RUNTIME             "rtim"
 
-#define BLINKER_CMD_ACTION              "action"
+#define BLINKER_CMD_ACTION              "act"
 
-#define BLINKER_CMD_ACTION1             "action1"
+#define BLINKER_CMD_ACTION1             "act1"
 
-#define BLINKER_CMD_ACTION2             "action2"
+#define BLINKER_CMD_ACTION2             "act2"
 
 #define BLINKER_CMD_LOOP                "loop"
 
 #define BLINKER_CMD_LOOPDATA            "loopData"
 
-#define BLINKER_CMD_TIMES               "times"
+#define BLINKER_CMD_TIME                "tim"
 
-#define BLINKER_CMD_TIME1               "time1"
+#define BLINKER_CMD_TIMES               "tis"
 
-#define BLINKER_CMD_TIME2               "time2"
+#define BLINKER_CMD_TIME1               "dur1"
+
+#define BLINKER_CMD_TIME2               "dur2"
 
 #define BLINKER_CMD_TIMING              "timing"
 
@@ -198,6 +212,8 @@
 #define BLINKER_CMD_DAY                 "day"
 
 #define BLINKER_CMD_TASK                "task"
+
+#define BLINKER_CMD_DELETETASK          "dlt"
 
 #define BLINKER_CMD_DETAIL              "detail"
 
@@ -228,6 +244,26 @@
 #define BLINKER_CMD_CONFIG              "config"
 
 #define BLINKER_CMD_DEFAULT             "default"
+
+#define BLINKER_CMD_SWITCH              "swi"
+
+#define BLINKER_CMD_VALUE               "val"
+
+#define BLINKER_CMD_ICON                "ico"
+
+#define BLINKER_CMD_COLOR               "col"
+
+#define BLINKER_CMD_TITLE               "tit"
+
+#define BLINKER_CMD_CONTENT             "con"
+
+#define BLINKER_CMD_TEXT                "tex"
+
+#define BLINKER_CMD_TEXT1               "tex1"
+
+#define BLINKER_CMD_TEXTCOLOR           "tco"
+
+#define BLINKER_CMD_UNIT                "uni"
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
@@ -304,6 +340,8 @@
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
+
+    #define BLINKER_TIMING_TIMER_SIZE       10
 
     #define BLINKER_TYPE_STATE              0
 
@@ -407,6 +445,8 @@
 
     #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
 
+    #define BLINKER_SMART_LAMP              "OwnLamp"
+
     #ifndef BLINKER_PRO_VERSION
         #define BLINKER_PRO_VERSION             "1.0.0"
     #endif
@@ -450,6 +490,57 @@
     #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
 
     #define BLINKER_OTA_CHECK_SIZE          1
+
+#endif
+
+#if defined(ESP8266) || defined(ESP32)
+
+    #define BLINKER_ACTION_SIZE                     30
+
+    #define BLINKER_ACTION_NUM                      2
+
+    #define BLINKER_EEP_ADDR_TIMER                  1536
+
+    #define BLINKER_EEP_ADDR_TIMER_COUNTDOWN        BLINKER_EEP_ADDR_TIMER
+
+    #define BLINKER_TIMER_COUNTDOWN_SIZE            2
+
+    #define BLINKER_EEP_ADDR_TIMER_COUNTDOWN_ACTION (BLINKER_EEP_ADDR_TIMER + BLINKER_TIMER_COUNTDOWN_SIZE)
+
+    #define BLINKER_TIMER_COUNTDOWN_ACTION_SIZE     (BLINKER_ACTION_SIZE * BLINKER_ACTION_NUM)
+
+    #define BLINKER_EEP_ADDR_TIMER_LOOP             (BLINKER_EEP_ADDR_TIMER_COUNTDOWN_ACTION + BLINKER_TIMER_COUNTDOWN_ACTION_SIZE)
+
+    #define BLINKER_TIMER_LOOP_SIZE                 4
+
+    #define BLINKER_EEP_ADDR_TIMER_LOOP_ACTION1     (BLINKER_EEP_ADDR_TIMER_LOOP + BLINKER_TIMER_LOOP_SIZE)
+
+    #define BLINKER_TIMER_LOOP_ACTION1_SIZE         (BLINKER_ACTION_SIZE * BLINKER_ACTION_NUM)
+
+    #define BLINKER_EEP_ADDR_TIMER_LOOP_ACTION2     (BLINKER_EEP_ADDR_TIMER_LOOP_ACTION1 + BLINKER_TIMER_LOOP_ACTION1_SIZE)
+
+    #define BLINKER_TIMER_LOOP_ACTION2_SIZE         (BLINKER_ACTION_SIZE * BLINKER_ACTION_NUM)
+
+    #define BLINKER_EEP_ADDR_TIMER_TIMING_COUNT     (BLINKER_EEP_ADDR_TIMER_LOOP_ACTION2 + BLINKER_TIMER_LOOP_ACTION2_SIZE)
+
+    #define BLINKER_TIMER_TIMING_COUNT_SIZE         1
+
+    #define BLINKER_EEP_ADDR_TIMER_TIMING           (BLINKER_EEP_ADDR_TIMER_TIMING_COUNT + BLINKER_TIMER_TIMING_COUNT_SIZE)
+
+    #define BLINKER_TIMER_TIMING_SIZE               4
+
+    #define BLINKER_TIMER_TIMING_ACTION_SIZE        (BLINKER_ACTION_SIZE * BLINKER_ACTION_NUM)
+
+    #define BLINKER_ONE_TIMER_TIMING_SIZE           (BLINKER_TIMER_TIMING_SIZE + BLINKER_TIMER_TIMING_ACTION_SIZE)
+
+    #define BLINKER_EEP_ADDR_TIMER_ERASE            2687
+
+    #define BLINKER_TIMER_ERASE_SIZE                1
+
+    #define BLINKER_EEP_ADD_TIMER_END               (BLINKER_EEP_ADDR_TIMER_ERASE + BLINKER_TIMER_ERASE_SIZE)
+
+    // 2 60 | 4 120 | 1 4 60 x 10
+    // 793 896
 
 #endif
 

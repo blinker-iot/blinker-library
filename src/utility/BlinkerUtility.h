@@ -21,6 +21,21 @@
 
 #define FIND_KEY_VALUE_FAILED               -1000
 
+extern "C" {
+    typedef void (*callbackFunction)(void);
+
+    typedef void (*callback_t)(void);
+    typedef void (*callback_with_arg_t)(void*);
+    typedef void (*callback_with_string_arg_t)(const String & data);
+    typedef void (*callback_with_int32_arg_t)(int32_t data);
+    typedef void (*callback_with_rgb_arg_t)(uint8_t r_data, uint8_t g_data, uint8_t b_data, uint8_t bright_data);
+    typedef void (*callback_with_joy_arg_t)(uint8_t x_data, uint8_t y_data);
+#if defined(ESP8266) || defined(ESP32)
+    typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
+#endif
+    // typedef void (*callback_with_bool_arg_t)(bool state);
+}
+
 template<class T>
 String STRING_format(T p)
 {

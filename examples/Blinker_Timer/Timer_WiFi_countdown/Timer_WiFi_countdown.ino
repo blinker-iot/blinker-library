@@ -6,8 +6,6 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#define BUTTON_1 "ButtonKey"
-
 BlinkerTimer BlinkerCountDown;
 
 void blink() {
@@ -22,7 +20,7 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
-    Blinker.wInit(BUTTON_1, W_BUTTON);
+    
     BlinkerCountDown.countdown(5, blink);
 }
 
@@ -39,8 +37,4 @@ void loop()
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
     }
-    
-    if (Blinker.button(BUTTON_1)) {
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    } // simple tap
 }

@@ -29,7 +29,8 @@ class BlinkerSimpleESP8266_MQTT
             smartconfig();
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
-            BLINKER_LOG1("ESP8266_MQTT Initialled...");
+            Base::loadTimer();
+            BLINKER_LOG1("ESP8266_MQTT initialized...");
         }
 // #endif
 #elif defined(BLINKER_APCONFIG)
@@ -43,7 +44,8 @@ class BlinkerSimpleESP8266_MQTT
             }
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
-            BLINKER_LOG1("ESP8266_MQTT Initialled...");
+            Base::loadTimer();
+            BLINKER_LOG1("ESP8266_MQTT initialized...");
         }
 #else
         void begin( const char* _auth,
@@ -54,7 +56,8 @@ class BlinkerSimpleESP8266_MQTT
             connectWiFi(_ssid, _pswd);
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
-            BLINKER_LOG1("ESP8266_MQTT Initialled...");
+            Base::loadTimer();
+            BLINKER_LOG1("ESP8266_MQTT initialized...");
         }
 #endif
     
@@ -227,5 +230,7 @@ class BlinkerSimpleESP8266_MQTT
 
 static BlinkerMQTT  _blinkerTransport;
 BlinkerSimpleESP8266_MQTT Blinker(_blinkerTransport);
+
+#include <BlinkerWidgets.h>
 
 #endif

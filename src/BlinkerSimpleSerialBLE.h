@@ -6,4 +6,6 @@
 static BlinkerTransportStream _blinkerTransport;
 BlinkerSerial Blinker(_blinkerTransport);
 
+#include <BlinkerWidgets.h>
+
 #endif

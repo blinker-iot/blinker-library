@@ -63,7 +63,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
 #endif
 
                 // send message to client
-                webSocket.sendTXT(num, "{\"state\":\"connected\"}");
+                webSocket.sendTXT(num, "{\"state\":\"connected\"}\n");
 
                 isConnect = true;
             }
@@ -705,12 +705,18 @@ void BlinkerMQTT::subscribe() {
 
 bool BlinkerMQTT::print(String data) {
     if (*isHandle) {
-        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
+        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
+                    (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
+                     STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_LOOP) && 
+                     STRING_contains_string(data, BLINKER_CMD_TIMES)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_COUNTDOWN) &&
+                     STRING_contains_string(data, BLINKER_CMD_TOTALTIME));
 
         if (!state) {
             state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
                 && STRING_contains_string(data, BLINKER_CMD_ONLINE))
-                || (STRING_contains_string(data, BLINKER_CMD_SWITCH)));
+                || (STRING_contains_string(data, BLINKER_CMD_BUILTIN_SWITCH)));
 
             if (!checkPrintSpan()) {
                 respTime = millis();
@@ -751,18 +757,34 @@ bool BlinkerMQTT::print(String data) {
         BLINKER_LOG1("MQTT Publish...");
 #endif
         bool _alive = isAlive;
-        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
+        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
+                    (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
+                     STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_LOOP) && 
+                     STRING_contains_string(data, BLINKER_CMD_TIMES)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_COUNTDOWN) &&
+                     STRING_contains_string(data, BLINKER_CMD_TOTALTIME));
 
         if (!state) {
             state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
                 && STRING_contains_string(data, BLINKER_CMD_ONLINE))
-                || (STRING_contains_string(data, BLINKER_CMD_SWITCH)));
+                || (STRING_contains_string(data, BLINKER_CMD_BUILTIN_SWITCH)));
 
             if (!checkPrintSpan()) {
                 return false;
             }
             respTime = millis();
         }
+
+// #ifdef BLINKER_DEBUG_ALL
+//         BLINKER_LOG2("state: ", state);
+
+//         BLINKER_LOG2("state: ", STRING_contains_string(data, BLINKER_CMD_TIMING));
+
+//         BLINKER_LOG2("state: ", data.indexOf(BLINKER_CMD_TIMING));
+
+//         BLINKER_LOG2("data: ", data);
+// #endif
 
         if (mqtt->connected()) {
             if (!state) {

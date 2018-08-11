@@ -62,7 +62,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
 #endif
 
                 // send message to client
-                webSocket.sendTXT(num, "{\"state\":\"connected\"}");
+                webSocket.sendTXT(num, "{\"state\":\"connected\"}\n");
 
                 isConnect = true;
             }
@@ -795,12 +795,18 @@ void BlinkerPRO::subscribe() {
 
 bool BlinkerPRO::print(String data) {
     if (*isHandle) {
-        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
+        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
+                    (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
+                     STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_LOOP) && 
+                     STRING_contains_string(data, BLINKER_CMD_TIMES)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_COUNTDOWN) &&
+                     STRING_contains_string(data, BLINKER_CMD_TOTALTIME));
 
         if (!state) {
             state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
                 && STRING_contains_string(data, BLINKER_CMD_ONLINE))
-                || (STRING_contains_string(data, BLINKER_CMD_SWITCH)));
+                || (STRING_contains_string(data, BLINKER_CMD_BUILTIN_SWITCH)));
 
             if (!checkPrintSpan()) {
                 respTime = millis();
@@ -845,12 +851,18 @@ bool BlinkerPRO::print(String data) {
         BLINKER_LOG1(("MQTT Publish..."));
 #endif
         bool _alive = isAlive;
-        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
+        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
+                    (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
+                     STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_LOOP) && 
+                     STRING_contains_string(data, BLINKER_CMD_TIMES)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_COUNTDOWN) &&
+                     STRING_contains_string(data, BLINKER_CMD_TOTALTIME));
 
         if (!state) {
             state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
                 && STRING_contains_string(data, BLINKER_CMD_ONLINE))
-                || (STRING_contains_string(data, BLINKER_CMD_SWITCH)));
+                || (STRING_contains_string(data, BLINKER_CMD_BUILTIN_SWITCH)));
 
             if (!checkPrintSpan()) {
                 respTime = millis();

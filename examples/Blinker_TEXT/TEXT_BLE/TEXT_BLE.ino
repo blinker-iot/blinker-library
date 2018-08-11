@@ -1,12 +1,11 @@
 #define BLINKER_PRINT Serial
-#define BLINKER_WIFI
+#define BLINKER_BLE
 
 #include <Blinker.h>
 
-char ssid[] = "Your WiFi network SSID or name";
-char pswd[] = "Your WiFi network WPA password or WEP key";
+#define TEXTE_1 "TextKey"
 
-#define TOGGLE_1 "ToggleKey"
+BlinkerText Text1(TEXTE_1);
 
 void setup()
 {
@@ -15,8 +14,7 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-    Blinker.begin(ssid, pswd);
-    Blinker.wInit(TOGGLE_1, W_TOGGLE);
+    Blinker.begin();
 }
 
 void loop()
@@ -31,12 +29,9 @@ void loop()
         uint32_t BlinkerTime = millis();
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
-    }
 
-    if (Blinker.toggle(TOGGLE_1)) {
-        digitalWrite(LED_BUILTIN, HIGH);
-    }
-    else {
-        digitalWrite(LED_BUILTIN, LOW);
+        Text1.print("os time", BlinkerTime);
+
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
 }

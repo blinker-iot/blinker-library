@@ -3,7 +3,19 @@
 
 #include <Blinker.h>
 
-#define TOGGLE_1 "ToggleKey"
+void switch_callback(const String & state)
+{
+    BLINKER_LOG2("get switch state: ", state);
+
+    if (state == BLINKER_CMD_ON) {
+        digitalWrite(LED_BUILTIN, HIGH);
+        BUILTIN_SWITCH.print("on");
+    }
+    else {
+        digitalWrite(LED_BUILTIN, LOW);
+        BUILTIN_SWITCH.print("off");
+    }
+}
 
 void setup()
 {
@@ -11,9 +23,10 @@ void setup()
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
-    
+
     Blinker.begin();
-    Blinker.wInit(TOGGLE_1, W_TOGGLE);
+    
+    BUILTIN_SWITCH.attach(switch_callback);
 }
 
 void loop()
@@ -28,12 +41,5 @@ void loop()
         uint32_t BlinkerTime = millis();
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
-    }
-
-    if (Blinker.toggle(TOGGLE_1)) {
-        digitalWrite(LED_BUILTIN, HIGH);
-    }
-    else {
-        digitalWrite(LED_BUILTIN, LOW);
     }
 }

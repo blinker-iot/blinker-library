@@ -22,12 +22,13 @@ void loop()
 
     if (Blinker.available()) {
         BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
-
-        Blinker.vibrate();
         
         uint32_t BlinkerTime = millis();
+        Blinker.vibrate();
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
+
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
 
     BLINKER_LOG2("GPS LONG.: ", Blinker.gps(LONG));

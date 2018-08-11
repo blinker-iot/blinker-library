@@ -6,7 +6,18 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#define RGB1 "RGBKEY"
+#define RGB_1 "RGBKey"
+
+BlinkerRGB RGB1(RGB_1);
+
+void rgb1_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
+{
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    BLINKER_LOG2("R value: ", r_value);
+    BLINKER_LOG2("G value: ", g_value);
+    BLINKER_LOG2("B value: ", b_value);
+    BLINKER_LOG2("Rrightness value: ", bright_value);
+}
 
 void setup()
 {
@@ -16,7 +27,8 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
-    Blinker.wInit(RGB1, W_RGB);
+
+    RGB1.attach(rgb1_callback);
 }
 
 void loop()
@@ -31,11 +43,8 @@ void loop()
         uint32_t BlinkerTime = millis();
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
+
+        RGB1.brightness(random(0, 255));
+        RGB1.print(random(0, 255), random(0, 255), random(0, 255));
     }
-
-    BLINKER_LOG2("Red color: ", Blinker.rgb(RGB1,R));
-    BLINKER_LOG2("Green color: ", Blinker.rgb(RGB1,G));
-    BLINKER_LOG2("Blue color: ", Blinker.rgb(RGB1,B));
-
-    Blinker.delay(2000);
 }

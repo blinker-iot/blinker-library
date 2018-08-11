@@ -651,6 +651,7 @@ class BlinkerProtocol
         template <typename T>
         void notify(T n) {
             String _msg = "\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"";
+            
             if (isFormat) {
                 formatData(_msg);
             }
@@ -662,6 +663,17 @@ class BlinkerProtocol
 // #else
 //             _print("{\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"}");
 // #endif
+        }
+
+        void textPrint(const String & tName, const String & title, const String & payload) {
+            String _msg = "\"" + tName + "\":[\"" + title + "\",\"" + payload + "\"]";
+
+            if (isFormat) {
+                formatData(_msg);
+            }
+            else {
+                _print("{" + _msg + "}");
+            }
         }
         
         void flush() {
@@ -778,12 +790,9 @@ class BlinkerProtocol
         {
             BLINKER_LOG1((""));
         #if defined(BLINKER_NO_LOGO)
-            BLINKER_LOG1("\nBlinker v"BLINKER_VERSION"\n"
-                        "Give Blinker a Github star, thanks!\n"
-                        "=> https://github.com/blinker-iot/blinker-library\n");
-
-            // BLINKER_LOG1(("Give Blinker a Github star, thanks!"));
-            // BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
+            BLINKER_LOG1("Blinker v"BLINKER_VERSION"\n"
+                        "    Give Blinker a Github star, thanks!\n"
+                        "    => https://github.com/blinker-iot/blinker-library\n");
         #elif defined(BLINKER_LOGO_3D)
             BLINKER_LOG1(("\n"
                 " ____    ___                __                       \n"
@@ -804,12 +813,16 @@ class BlinkerProtocol
                 "  / _ )/ (_)__  / /_____ ____\n"
                 " / _  / / / _ \\/  '_/ -_) __/\n"
                 "/____/_/_/_//_/_/\\_\\\\__/_/   \n"
-                "Give Blinker a Github star, thanks!\n"
+                "Give Blinker a github star, thanks!\n"
                 "=> https://github.com/blinker-iot/blinker-library\n"));
 
             // BLINKER_LOG1(("Give Blinker a github star, thanks!"));
             // BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
         #endif
+
+// #if defined(ESP8266) || defined(ESP32)
+//             BApi::loadTimer();
+// #endif
         }
 
 #if defined(BLINKER_MQTT)
@@ -825,29 +838,34 @@ class BlinkerProtocol
         {
             begin();
 
-            BLINKER_LOG1(("==========================================================="));
-            BLINKER_LOG1(("================= Blinker PRO mode init ! ================="));
-            BLINKER_LOG1(("Warning! EEPROM address 1280-1535 is used for Auto Control!"));
-            BLINKER_LOG1(("============= DON'T USE THESE EEPROM ADDRESS! ============="));
-            BLINKER_LOG1(("==========================================================="));
+            BLINKER_LOG1((
+                        "\n==========================================================="
+                        "\n================= Blinker PRO mode init ! ================="
+                        "\nWarning! EEPROM address 1280-1535 is used for Auto Control!"
+                        "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
+                        "\n===========================================================\n"));
 
             BLINKER_LOG2(("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
     #if defined(BLINKER_BUTTON)
+        #if defined(BLINKER_BUTTON_PULLDOWN)
+            BApi::buttonInit(false);
+        #else
             BApi::buttonInit();
+        #endif
     #endif
             BApi::setType(_type);
         }
 #endif
 
         template <typename T>
-        void _print(T n, bool needParse = true) {
+        void _print(T n, bool needParse = true, bool needCheckLength = true) {
             String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
-            if (data.length() <= BLINKER_MAX_SEND_SIZE) {
+            if (data.length() <= BLINKER_MAX_SEND_SIZE || !needCheckLength) {
                 conn.print(data);
-                if (needParse) {
-                    BApi::parse(data, true);
-                }
+                // if (needParse) {
+                //     BApi::parse(data, true);
+                // }
             }
             else {
                 BLINKER_ERR_LOG1(("SEND DATA BYTES MAX THAN LIMIT!"));

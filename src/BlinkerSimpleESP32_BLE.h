@@ -60,6 +60,8 @@ class BlinkerTransportESP32_BLE
             pAdvertising->setAdvertisementData(pAdvertisementData);
             pAdvertising->addServiceUUID(BLEUUID((uint16_t)0xffe0));
             pAdvertising->start();
+
+            // Base::loadTimer();
         }
 
         bool available()
@@ -228,11 +230,13 @@ class BlinkerESP32_BLE
         {
             Base::begin();
             this->conn.begin();
-            BLINKER_LOG1("ESP32_BLE Initialled...");
+            BLINKER_LOG1("ESP32_BLE initialized...");
         }
 };
 
 static BlinkerTransportESP32_BLE _blinkerTransportBLE;
 BlinkerESP32_BLE Blinker(_blinkerTransportBLE);
+
+#include <BlinkerWidgets.h>
 
 #endif

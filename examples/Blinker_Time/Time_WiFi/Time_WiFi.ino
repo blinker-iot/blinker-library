@@ -6,8 +6,6 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#define BUTTON_1 "ButtonKey"
-
 void setup()
 {
     Serial.begin(115200);
@@ -17,7 +15,6 @@ void setup()
 
     Blinker.begin(ssid, pswd);
     Blinker.setTimezone(8.0);
-    Blinker.wInit(BUTTON_1, W_BUTTON);
 }
 
 void loop()
@@ -32,9 +29,7 @@ void loop()
         uint32_t BlinkerTime = millis();
         Blinker.print(BlinkerTime);
         Blinker.print("millis", BlinkerTime);
-    }
-    
-    if (Blinker.button(BUTTON_1)) {
+
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 
         BLINKER_LOG2("Now second: ", Blinker.second());
@@ -46,5 +41,5 @@ void loop()
         BLINKER_LOG2("Now year: ", Blinker.year());
         BLINKER_LOG2("Now yday: ", Blinker.yday());
         BLINKER_LOG2("Now ntp time: ", Blinker.time());
-    } // simple tap
+    }
 }
