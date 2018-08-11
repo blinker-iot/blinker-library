@@ -25,12 +25,14 @@
     #include <utility/BlinkerUtility.h>
 #endif
 
+
 // enum b_widgettype_t {
 //     W_BUTTON,
 //     W_SLIDER,
 //     W_TOGGLE,
 //     W_RGB
 // };
+
 
 enum b_joystickaxis_t {
     J_Xaxis,
@@ -55,6 +57,7 @@ enum b_rgb_t {
     BRGB
 };
 
+
 static class BlinkerWidgets_string * _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
 static class BlinkerWidgets_string * _BUILTIN_SWITCH;
 static class BlinkerWidgets_int32 * _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
@@ -64,6 +67,7 @@ static class BlinkerWidgets_joy * _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
 #if defined(ESP8266) || defined(ESP32)
 static class BlinkerTimingTimer * timingTask[BLINKER_TIMING_TIMER_SIZE];
 #endif
+
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerAUTO * _AUTO[2];
@@ -949,6 +953,7 @@ class BlinkerApi
                             // "\"}}";
             if (blinkServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE) {
                 return false;
+
             }
             else {
                 for (uint8_t _num = 0; _num < _dataCount; _num++) {

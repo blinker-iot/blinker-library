@@ -793,9 +793,6 @@ class BlinkerProtocol
             BLINKER_LOG1("Blinker v"BLINKER_VERSION"\n"
                         "    Give Blinker a Github star, thanks!\n"
                         "    => https://github.com/blinker-iot/blinker-library\n");
-
-            BLINKER_LOG1(("Give Blinker a Github star, thanks!"));
-            BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library\n"));
         #elif defined(BLINKER_LOGO_3D)
             BLINKER_LOG1(("\n"
                 " ____    ___                __                       \n"
