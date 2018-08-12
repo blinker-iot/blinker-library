@@ -348,15 +348,15 @@ static void _lp_callback() {
 //     lpTicker.attach(seconds, _lp_callback);
 // }
 
-static bool isTimingDay(uint8_t _day) {
-    #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG2(("isTimingDay: "), _day);
-    #endif
-    if (_timingDay & (0x01 << _day))
-        return true;
-    else
-        return false;
-}
+// static bool isTimingDay(uint8_t _day) {
+//     #ifdef BLINKER_DEBUG_ALL
+//     BLINKER_LOG2(("isTimingDay: "), _day);
+//     #endif
+//     if (_timingDay & (0x01 << _day))
+//         return true;
+//     else
+//         return false;
+// }
 
 static void timingHandle(uint8_t cbackData) {
     // time_t      now_ntp;
