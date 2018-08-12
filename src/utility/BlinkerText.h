@@ -28,17 +28,10 @@ class BlinkerText
 
             Blinker.printArray(textName, textData);
         }
-        // bool checkName(String name) { return ((buttonName == name) ? true : false); }
     
     private :
         String textName;
-        // callback_with_string_arg_t _bfunc = NULL;
-        // bool registered = false;
-        String tTitle = "";
-        // String bicon = "";
-        // String iconClr = "";
-        // String btext = "";
-        // String textClr = "";
+        // String tTitle = "";
 };
 
 #endif
