@@ -788,13 +788,13 @@ class BlinkerProtocol
 
         void begin()
         {
-            BLINKER_LOG1((""));
+            BLINKER_LOG1(BLINKER_F(""));
         #if defined(BLINKER_NO_LOGO)
-            BLINKER_LOG1("Blinker v"BLINKER_VERSION"\n"
+            BLINKER_LOG1(BLINKER_F("Blinker v"BLINKER_VERSION"\n"
                         "    Give Blinker a Github star, thanks!\n"
-                        "    => https://github.com/blinker-iot/blinker-library\n");
+                        "    => https://github.com/blinker-iot/blinker-library\n"));
         #elif defined(BLINKER_LOGO_3D)
-            BLINKER_LOG1(("\n"
+            BLINKER_LOG1(BLINKER_F("\n"
                 " ____    ___                __                       \n"
                 "/\\  _`\\ /\\_ \\    __        /\\ \\               v"BLINKER_VERSION"\n"
                 "\\ \\ \\L\\ \\//\\ \\  /\\_\\    ___\\ \\ \\/'\\      __   _ __   \n"
@@ -808,7 +808,7 @@ class BlinkerProtocol
             // BLINKER_LOG1(("Give Blinker a github star, thanks!"));
             // BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
         #else
-            BLINKER_LOG1(("\n"
+            BLINKER_LOG1(BLINKER_F("\n"
                 "   ___  ___      __    v"BLINKER_VERSION"\n"
                 "  / _ )/ (_)__  / /_____ ____\n"
                 " / _  / / / _ \\/  '_/ -_) __/\n"
@@ -838,14 +838,14 @@ class BlinkerProtocol
         {
             begin();
 
-            BLINKER_LOG1((
+            BLINKER_LOG1(BLINKER_F(
                         "\n==========================================================="
                         "\n================= Blinker PRO mode init ! ================="
                         "\nWarning! EEPROM address 1280-1535 is used for Auto Control!"
                         "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
                         "\n===========================================================\n"));
 
-            BLINKER_LOG2(("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+            BLINKER_LOG2(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
     #if defined(BLINKER_BUTTON)
         #if defined(BLINKER_BUTTON_PULLDOWN)
@@ -868,7 +868,7 @@ class BlinkerProtocol
                 // }
             }
             else {
-                BLINKER_ERR_LOG1(("SEND DATA BYTES MAX THAN LIMIT!"));
+                BLINKER_ERR_LOG1(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
             }
         }
 
@@ -885,11 +885,11 @@ class BlinkerProtocol
                     // }
                 }
                 else {
-                    BLINKER_ERR_LOG1(("SEND DATA BYTES MAX THAN LIMIT!"));
+                    BLINKER_ERR_LOG1(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
                 }
             }
             else {
-                BLINKER_ERR_LOG1(("MAKE SURE THE BRIDGE DEVICE IS REGISTERED!"));
+                BLINKER_ERR_LOG1(BLINKER_F("MAKE SURE THE BRIDGE DEVICE IS REGISTERED!"));
             }
         }
 

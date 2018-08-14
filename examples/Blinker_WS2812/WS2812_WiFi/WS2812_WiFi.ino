@@ -33,7 +33,9 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#include <modules/NeoPixel/Adafruit_NeoPixel.h>
+// Download Adafruit_NeoPixel library here:
+// https://github.com/adafruit/Adafruit_NeoPixel
+#include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
   #include <avr/power.h>
 #endif

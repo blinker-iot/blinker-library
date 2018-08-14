@@ -48,7 +48,7 @@
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else
-    #define BLINKER_MAX_WIDGET_SIZE         8
+    #define BLINKER_MAX_WIDGET_SIZE         4
 #endif
 
 #define BLINKER_OBJECT_NOT_AVAIL        -1
@@ -71,9 +71,11 @@
 
 #define BLINKER_AUTHKEY_SIZE            14
 
-// #define BLINKER_NO_LOGO
-
-#define BLINKER_LOGO_3D
+#if defined(ESP8266) || defined(ESP32)
+    #define BLINKER_LOGO_3D    
+#else
+    #define BLINKER_NO_LOGO
+#endif
 
 // #define	BLINKER_DEBUG
 

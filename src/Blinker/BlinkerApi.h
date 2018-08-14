@@ -86,8 +86,12 @@ class BlinkerWidgets_string
 {
     public :
         BlinkerWidgets_string(const String & _name, callback_with_string_arg_t _func = NULL)
-            : wName(_name), wfunc(_func)
-        {}
+            : wName(_name)
+            , wfunc(_func)
+        {
+            // wName = (char*)malloc(_name.length()*sizeof(char));
+            // strcpy(wName, _name.c_str());
+        }
 
         String getName() { return wName; }
         void setFunc(callback_with_string_arg_t _func) { wfunc = _func; }
@@ -103,8 +107,12 @@ class BlinkerWidgets_int32
 {
     public :
         BlinkerWidgets_int32(const String & _name, callback_with_int32_arg_t _func = NULL)
-            : wName(_name), wfunc(_func)
-        {}
+            : wName(_name)
+            , wfunc(_func)
+        {
+            // wName = (char*)malloc(_name.length()*sizeof(char));
+            // strcpy(wName, _name.c_str());
+        }
 
         String getName() { return wName; }
         void setFunc(callback_with_int32_arg_t _func) { wfunc = _func; }
@@ -120,8 +128,12 @@ class BlinkerWidgets_rgb
 {
     public :
         BlinkerWidgets_rgb(const String & _name, callback_with_rgb_arg_t _func = NULL)
-            : wName(_name), wfunc(_func)
-        {}
+            : wName(_name)
+            , wfunc(_func)
+        {
+            // wName = (char*)malloc(_name.length()*sizeof(char));
+            // strcpy(wName, _name.c_str());
+        }
 
         String getName() { return wName; }
         void setFunc(callback_with_rgb_arg_t _func) { wfunc = _func; }
@@ -137,8 +149,12 @@ class BlinkerWidgets_joy
 {
     public :
         BlinkerWidgets_joy(const String & _name, callback_with_joy_arg_t _func = NULL)
-            : wName(_name), wfunc(_func)
-        {}
+            : wName(_name)
+            , wfunc(_func)
+        {
+            // wName = (char*)malloc(_name.length()*sizeof(char));
+            // strcpy(wName, _name.c_str());
+        }
 
         String getName() { return wName; }
         void setFunc(callback_with_joy_arg_t _func) { wfunc = _func; }

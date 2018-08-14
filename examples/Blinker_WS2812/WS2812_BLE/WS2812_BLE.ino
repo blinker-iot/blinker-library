@@ -30,7 +30,9 @@
 
 #include <Blinker.h>
 
-#include <modules/NeoPixel/Adafruit_NeoPixel.h>
+// Download Adafruit_NeoPixel library here:
+// https://github.com/adafruit/Adafruit_NeoPixel
+#include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
   #include <avr/power.h>
 #endif
