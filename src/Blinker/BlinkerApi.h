@@ -1479,6 +1479,8 @@ class BlinkerApi
                 uint8_t _bValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, B);
                 uint8_t _brightValue = STRING_find_array_numberic_value(static_cast<Proto*>(this)->dataParse(), _wName, BRGB);
 
+                _fresh = true;
+
                 callback_with_rgb_arg_t wFunc = _Widgets_rgb[num]->getFunc();
                 if (wFunc) {
                     wFunc(_rValue, _gValue, _bValue, _brightValue);
@@ -1765,6 +1767,8 @@ class BlinkerApi
                 uint8_t _bValue = STRING_find_array_numberic_value(_data, _wName, B);
                 uint8_t _brightValue = STRING_find_array_numberic_value(_data, _wName, BRGB);
 
+                _fresh = true;
+
                 callback_with_rgb_arg_t wFunc = _Widgets_rgb[num]->getFunc();
                 if (wFunc) {
                     wFunc(_rValue, _gValue, _bValue, _brightValue);
@@ -1785,6 +1789,8 @@ class BlinkerApi
             if (jxAxisValue != FIND_KEY_VALUE_FAILED) {
                 // joyValue[J_Xaxis] = STRING_find_array_numberic_value(_data, _wName, J_Xaxis);
                 uint8_t jyAxisValue = STRING_find_array_numberic_value(_data, _wName, J_Yaxis);
+
+                _fresh = true;
 
                 // return jAxisValue;
                 callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
