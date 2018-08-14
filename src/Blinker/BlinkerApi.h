@@ -125,7 +125,7 @@ class BlinkerWidgets_int32
             // : wName(_name)
             // , wfunc(_func)
         {
-            wName = (char*)malloc(_name.length()*sizeof(char));
+            wName = (char*)malloc((_name.length()+1)*sizeof(char));
             strcpy(wName, _name.c_str());
 
             wfunc = _func;
@@ -160,7 +160,7 @@ class BlinkerWidgets_rgb
             // : wName(_name)
             // , wfunc(_func)
         {
-            wName = (char*)malloc(_name.length()*sizeof(char));
+            wName = (char*)malloc((_name.length()+1)*sizeof(char));
             strcpy(wName, _name.c_str());
 
             wfunc = _func;
@@ -195,7 +195,7 @@ class BlinkerWidgets_joy
             // : wName(_name)
             // , wfunc(_func)
         {
-            wName = (char*)malloc(_name.length()*sizeof(char));
+            wName = (char*)malloc((_name.length()+1)*sizeof(char));
             strcpy(wName, _name.c_str());
 
             wfunc = _func;
