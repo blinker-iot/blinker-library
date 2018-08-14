@@ -8,8 +8,11 @@ class BlinkerText
 {
     public :
         BlinkerText(const String & _name)
-            : textName(_name)
-        {}
+            // : textName(_name)
+        {
+            textName = (char*)malloc((_name.length()+1)*sizeof(char));
+            strcpy(textName, _name.c_str());
+        }
         
         // template <typename T>
         // void title(T _title) { tTitle = STRING_format(_title); }
@@ -30,7 +33,8 @@ class BlinkerText
         }
     
     private :
-        String textName;
+        // String textName;
+        char * textName;
         // String tTitle = "";
 };
 

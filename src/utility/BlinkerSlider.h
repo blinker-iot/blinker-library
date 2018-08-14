@@ -8,9 +8,12 @@ class BlinkerSlider
 {
     public :
         BlinkerSlider(const String & _name, callback_with_int32_arg_t _func = NULL)
-            : sliderName(_name)
+            // : sliderName(_name)
         {
             registered = Blinker.attachWidget(_name, _func);
+
+            sliderName = (char*)malloc((_name.length()+1)*sizeof(char));
+            strcpy(sliderName, _name.c_str());
         }
         
         void attach(callback_with_int32_arg_t _func)
@@ -22,7 +25,12 @@ class BlinkerSlider
             Blinker.freshAttachWidget(sliderName, _func);
         }
         
-        void color(const String & _clr) { textClr = _clr; }
+        void color(const String & _clr) { 
+            // textClr = _clr; 
+            
+            textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
+            strcpy(textClr, _clr.c_str());
+        }
         
         void print(char value)              { _print(STRING_format(value)); }
         void print(unsigned char value)     { _print(STRING_format(value)); }
@@ -33,26 +41,34 @@ class BlinkerSlider
         void print(double value)            { _print(STRING_format(value)); }
     
     private :
-        String sliderName;
+        // String sliderName;
+        char * sliderName;
         bool registered = false;
-        String textClr = "";
+        // String textClr = "";
+        char * textClr = "";
 
         void _print(const String & n) {
             if (!registered) {
                 return;
             }
 
-            String sliderData = "{\""BLINKER_CMD_VALUE"\":" + n;
+            String sliderData;
+            sliderData += BLINKER_F("{\""BLINKER_CMD_VALUE"\":");
+            sliderData += n;
 
-            if (textClr.length()) {
-                sliderData += ",\""BLINKER_CMD_COLOR"\":\"" + textClr + "\"";
+            // if (textClr.length()) {
+            if (strlen(textClr)) {
+                sliderData += BLINKER_F(",\""BLINKER_CMD_COLOR"\":\"");
+                sliderData += (textClr);
+                sliderData += BLINKER_F("\"");
+                free(textClr);
             }
 
-            sliderData += "}";
+            sliderData += BLINKER_F("}");
 
             Blinker.printArray(sliderName, sliderData);
 
-            textClr = "";
+            // textClr = "";
         }
 };
 

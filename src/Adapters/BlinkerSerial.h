@@ -70,7 +70,7 @@ class BlinkerTransportStream
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("Succese..."));
 #endif
-                stream->print(s);
+                stream->println(s);
                 return true;
             }
             else {
