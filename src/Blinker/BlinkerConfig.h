@@ -71,9 +71,11 @@
 
 #define BLINKER_AUTHKEY_SIZE            14
 
-// #define BLINKER_NO_LOGO
-
-#define BLINKER_LOGO_3D
+#if defined(ESP8266) || defined(ESP32)
+    #define BLINKER_LOGO_3D    
+#else
+    #define BLINKER_NO_LOGO
+#endif
 
 // #define	BLINKER_DEBUG
 
