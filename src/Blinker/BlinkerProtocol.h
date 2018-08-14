@@ -299,13 +299,15 @@ class BlinkerProtocol
         // }
         template <typename T1>
         void printArray(T1 n1, const String &s2) {
-            String _msg = "\"" + STRING_format(n1) + "\":" + s2;
+            // String _msg = "\"" + STRING_format(n1) + "\":" + s2;
+
+            // BLINKER_LOG2(BLINKER_F("_msg: "), _msg);
 
             if (isFormat) {
-                formatData(_msg);
+                formatData("\"" + STRING_format(n1) + "\":" + s2);
             }
             else {
-                _print("{" + _msg + "}");
+                _print("{\"" + STRING_format(n1) + "\":" + s2 + "}");
             }
         }
 
@@ -858,11 +860,31 @@ class BlinkerProtocol
         }
 #endif
 
-        template <typename T>
-        void _print(T n, bool needParse = true, bool needCheckLength = true) {
-            String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
-            if (data.length() <= BLINKER_MAX_SEND_SIZE || !needCheckLength) {
-                conn.print(data);
+        // template <typename T>
+        // void _print(T n, bool needParse = true, bool needCheckLength = true) {
+        //     String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
+
+        //     BLINKER_LOG2(BLINKER_F("data: "), data);
+        //     BLINKER_LOG2(BLINKER_F("n: "), n);
+
+        //     if (data.length() <= BLINKER_MAX_SEND_SIZE || !needCheckLength) {
+        //         conn.print(data);
+        //         // if (needParse) {
+        //         //     BApi::parse(data, true);
+        //         // }
+        //     }
+        //     else {
+        //         BLINKER_ERR_LOG1(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        //     }
+        // }
+
+        void _print(const String & n, bool needParse = true, bool needCheckLength = true) {
+            // String data = n + BLINKER_CMD_NEWLINE;
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("n: "), n);
+#endif
+            if (n.length() <= BLINKER_MAX_SEND_SIZE || !needCheckLength) {
+                conn.print(n);
                 // if (needParse) {
                 //     BApi::parse(data, true);
                 // }

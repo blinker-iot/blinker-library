@@ -86,20 +86,35 @@ class BlinkerWidgets_string
 {
     public :
         BlinkerWidgets_string(const String & _name, callback_with_string_arg_t _func = NULL)
-            : wName(_name)
-            , wfunc(_func)
+            // : wName(_name)
+            // , wfunc(_func)
         {
-            // wName = (char*)malloc(_name.length()*sizeof(char));
-            // strcpy(wName, _name.c_str());
+            wName = (char*)malloc((_name.length()+1)*sizeof(char));
+            strcpy(wName, _name.c_str());
+
+            wfunc = _func;
         }
 
-        String getName() { return wName; }
+        String getName() { return (wName); }
         void setFunc(callback_with_string_arg_t _func) { wfunc = _func; }
         callback_with_string_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) { return ((wName == name) ? true : false); }
+        bool checkName(String name) { 
+            // return ((wName == name) ? true : false); 
+            
+            String cmp_name = STRING_format(wName);
+            // BLINKER_LOG2(BLINKER_F("wName: "), wName);
+            // BLINKER_LOG4("cmp_name: ", cmp_name, " ,len: ", cmp_name.length());
+            // BLINKER_LOG4("name: ", name, " ,len: ", name.length());
+            // BLINKER_LOG2("indexOf: ", strcmp(cmp_name.c_str(), name.c_str()));
+            // BLINKER_LOG2(BLINKER_F("indexOf: "), cmp_name == name);
+            // BLINKER_LOG2("indexOf: ", STRING_format(wName) == name);
+            return ((cmp_name == name) ? true : false); 
+            // return strcmp(wName, name.c_str()) == 0 ? true : false;
+        }
 
     private :
-        String wName;
+        // String wName;
+        char *wName;
         callback_with_string_arg_t wfunc;
 };
 
@@ -107,20 +122,34 @@ class BlinkerWidgets_int32
 {
     public :
         BlinkerWidgets_int32(const String & _name, callback_with_int32_arg_t _func = NULL)
-            : wName(_name)
-            , wfunc(_func)
+            // : wName(_name)
+            // , wfunc(_func)
         {
-            // wName = (char*)malloc(_name.length()*sizeof(char));
-            // strcpy(wName, _name.c_str());
+            wName = (char*)malloc((_name.length()+1)*sizeof(char));
+            strcpy(wName, _name.c_str());
+
+            wfunc = _func;
         }
 
         String getName() { return wName; }
         void setFunc(callback_with_int32_arg_t _func) { wfunc = _func; }
         callback_with_int32_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) { return ((wName == name) ? true : false); }
+        bool checkName(String name) { 
+            // return ((wName == name) ? true : false); 
+            
+            String cmp_name = STRING_format(wName);
+            // BLINKER_LOG2(BLINKER_F("wName: "), wName);
+            // BLINKER_LOG4("cmp_name: ", cmp_name, " ,len: ", cmp_name.length());
+            // BLINKER_LOG4("name: ", name, " ,len: ", name.length());
+            // BLINKER_LOG2("indexOf: ", strcmp(cmp_name.c_str(), name.c_str()));
+            // BLINKER_LOG2(BLINKER_F("indexOf: "), cmp_name == name);
+            // BLINKER_LOG2("indexOf: ", STRING_format(wName) == name);
+            return ((cmp_name == name) ? true : false); 
+        }
 
     private :
-        String wName;
+        // String wName;
+        char *wName;
         callback_with_int32_arg_t wfunc;
 };
 
@@ -128,20 +157,34 @@ class BlinkerWidgets_rgb
 {
     public :
         BlinkerWidgets_rgb(const String & _name, callback_with_rgb_arg_t _func = NULL)
-            : wName(_name)
-            , wfunc(_func)
+            // : wName(_name)
+            // , wfunc(_func)
         {
-            // wName = (char*)malloc(_name.length()*sizeof(char));
-            // strcpy(wName, _name.c_str());
+            wName = (char*)malloc((_name.length()+1)*sizeof(char));
+            strcpy(wName, _name.c_str());
+
+            wfunc = _func;
         }
 
         String getName() { return wName; }
         void setFunc(callback_with_rgb_arg_t _func) { wfunc = _func; }
         callback_with_rgb_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) { return ((wName == name) ? true : false); }
+        bool checkName(String name) { 
+            // return ((wName == name) ? true : false); 
+            
+            String cmp_name = STRING_format(wName);
+            // BLINKER_LOG2(BLINKER_F("wName: "), wName);
+            // BLINKER_LOG4("cmp_name: ", cmp_name, " ,len: ", cmp_name.length());
+            // BLINKER_LOG4("name: ", name, " ,len: ", name.length());
+            // BLINKER_LOG2("indexOf: ", strcmp(cmp_name.c_str(), name.c_str()));
+            // BLINKER_LOG2(BLINKER_F("indexOf: "), cmp_name == name);
+            // BLINKER_LOG2("indexOf: ", STRING_format(wName) == name);
+            return ((cmp_name == name) ? true : false); 
+        }
 
     private :
-        String wName;
+        // String wName;
+        char *wName;
         callback_with_rgb_arg_t wfunc;
 };
 
@@ -149,20 +192,34 @@ class BlinkerWidgets_joy
 {
     public :
         BlinkerWidgets_joy(const String & _name, callback_with_joy_arg_t _func = NULL)
-            : wName(_name)
-            , wfunc(_func)
+            // : wName(_name)
+            // , wfunc(_func)
         {
-            // wName = (char*)malloc(_name.length()*sizeof(char));
-            // strcpy(wName, _name.c_str());
+            wName = (char*)malloc((_name.length()+1)*sizeof(char));
+            strcpy(wName, _name.c_str());
+
+            wfunc = _func;
         }
 
         String getName() { return wName; }
         void setFunc(callback_with_joy_arg_t _func) { wfunc = _func; }
         callback_with_joy_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) { return ((wName == name) ? true : false); }
+        bool checkName(String name) { 
+            // return ((wName == name) ? true : false); 
+            
+            String cmp_name = STRING_format(wName);
+            // BLINKER_LOG2(BLINKER_F("wName: "), wName);
+            // BLINKER_LOG4("cmp_name: ", cmp_name, " ,len: ", cmp_name.length());
+            // BLINKER_LOG4("name: ", name, " ,len: ", name.length());
+            // BLINKER_LOG2("indexOf: ", strcmp(cmp_name.c_str(), name.c_str()));
+            // BLINKER_LOG2(BLINKER_F("indexOf: "), cmp_name == name);
+            // BLINKER_LOG2("indexOf: ", STRING_format(wName) == name);
+            return ((cmp_name == name) ? true : false); 
+        }
 
     private :
-        String wName;
+        // String wName;
+        char *wName;
         callback_with_joy_arg_t wfunc;
 };
 
@@ -533,7 +590,7 @@ class BlinkerApi
                     _Widgets_joy[_wCount_joy] = new BlinkerWidgets_joy(_name, _func);
                     _wCount_joy++;
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG4("new widgets: ", _name, " _wCount_joy: ", _wCount_joy);
+                    BLINKER_LOG4(BLINKER_F("new widgets: "), _name, BLINKER_F(" _wCount_joy: "), _wCount_joy);
 #endif
                     return true;
                 }
@@ -542,7 +599,7 @@ class BlinkerApi
                 }
             }
             else if(num >= 0 ) {
-                BLINKER_ERR_LOG3("widgets name > ", _name, " < has been registered, please register another name!");
+                BLINKER_ERR_LOG3(BLINKER_F("widgets name > "), _name, BLINKER_F(" < has been registered, please register another name!"));
                 return false;
             }
             else {
@@ -564,7 +621,7 @@ class BlinkerApi
                     _Widgets_rgb[_wCount_rgb] = new BlinkerWidgets_rgb(_name, _func);
                     _wCount_rgb++;
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG4("new widgets: ", _name, " _wCount_rgb: ", _wCount_rgb);
+                    BLINKER_LOG4(BLINKER_F("new widgets: "), _name, BLINKER_F(" _wCount_rgb: "), _wCount_rgb);
 #endif
                     return true;
                 }
@@ -573,7 +630,7 @@ class BlinkerApi
                 }
             }
             else if(num >= 0 ) {
-                BLINKER_ERR_LOG3("widgets name > ", _name, " < has been registered, please register another name!");
+                BLINKER_ERR_LOG3(BLINKER_F("widgets name > "), _name, BLINKER_F(" < has been registered, please register another name!"));
                 return false;
             }
             else {
@@ -595,7 +652,7 @@ class BlinkerApi
                     _Widgets_int[_wCount_int] = new BlinkerWidgets_int32(_name, _func);
                     _wCount_int++;
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG4("new widgets: ", _name, " _wCount_int: ", _wCount_int);
+                    BLINKER_LOG4(BLINKER_F("new widgets: "), _name, BLINKER_F(" _wCount_int: "), _wCount_int);
 #endif
                     return true;
                 }
@@ -604,7 +661,7 @@ class BlinkerApi
                 }
             }
             else if(num >= 0 ) {
-                BLINKER_ERR_LOG3("widgets name > ", _name, " < has been registered, please register another name!");
+                BLINKER_ERR_LOG3(BLINKER_F("widgets name > "), _name, BLINKER_F(" < has been registered, please register another name!"));
                 return false;
             }
             else {
@@ -617,6 +674,12 @@ class BlinkerApi
             if(num >= 0 ) {
                 _Widgets_str[num]->setFunc(_func);
             }
+
+            // BLINKER_LOG2("_wCount_str: ", _wCount_str);
+            // BLINKER_LOG2("_wCount_int: ", _wCount_int);
+            // BLINKER_LOG2("_wCount_rgb: ", _wCount_rgb);
+            // BLINKER_LOG2("_wCount_joy: ", _wCount_joy);
+            // BLINKER_LOG2("getName: ", _Widgets_str[num]->getName());
         }
 
         bool attachWidget(const String & _name, callback_with_string_arg_t _func) {
@@ -626,7 +689,7 @@ class BlinkerApi
                     _Widgets_str[_wCount_str] = new BlinkerWidgets_string(_name, _func);
                     _wCount_str++;
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG4("new widgets: ", _name, " _wCount_str: ", _wCount_str);
+                    BLINKER_LOG4(BLINKER_F("new widgets: "), _name, BLINKER_F(" _wCount_str: "), _wCount_str);
 #endif
                     return true;
                 }
@@ -635,7 +698,7 @@ class BlinkerApi
                 }
             }
             else if(num >= 0 ) {
-                BLINKER_ERR_LOG3("widgets name > ", _name, " < has been registered, please register another name!");
+                BLINKER_ERR_LOG3(BLINKER_F("widgets name > "), _name, BLINKER_F(" < has been registered, please register another name!"));
                 return false;
             }
             else {

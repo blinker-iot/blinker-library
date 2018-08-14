@@ -128,7 +128,7 @@ class BlinkerArduinoWS
                 BLINKER_LOG1(BLINKER_F("Succese..."));
 #endif
 
-                webSocket.broadcastTXT(s_data);
+                webSocket.broadcastTXT(s_data + BLINKER_CMD_NEWLINE);
             }
             else {
 #ifdef BLINKER_DEBUG_ALL

@@ -8,11 +8,14 @@ class BlinkerRGB
 {
     public :
         BlinkerRGB(const String & _name, callback_with_rgb_arg_t _func = NULL)
-            : rgbName(_name)
+            // : rgbName(_name)
         {
             registered = Blinker.attachWidget(_name, _func);
+
+            rgbName = (char*)malloc((_name.length()+1)*sizeof(char));
+            strcpy(rgbName, _name.c_str());
         }
-        
+
         void attach(callback_with_rgb_arg_t _func)
         {
             if (!registered) {
@@ -21,7 +24,7 @@ class BlinkerRGB
 
             Blinker.freshAttachWidget(rgbName, _func);
         }
-        
+
         void brightness(uint8_t _bright) { rgbrightness = _bright; }
 
         void print(uint8_t _r, uint8_t _g, uint8_t _b)
@@ -39,9 +42,10 @@ class BlinkerRGB
 
             Blinker.printArray(rgbName, rgbData);
         }
-    
+
     private :
-        String  rgbName;
+        // String  rgbName;
+        char *  rgbName;
         bool    registered = false;
         uint8_t rgbrightness = 0;
 };

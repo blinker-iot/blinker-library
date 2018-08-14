@@ -8,9 +8,12 @@ class BlinkerJoystick
 {
     public :
         BlinkerJoystick(const String & _name, callback_with_joy_arg_t _func = NULL)
-            : jName(_name)
+            // : jName(_name)
         {
             registered = Blinker.attachWidget(_name, _func);
+
+            jName = (char*)malloc((_name.length()+1)*sizeof(char));
+            strcpy(jName, _name.c_str());
         }
         
         void attach(callback_with_joy_arg_t _func)
@@ -23,7 +26,8 @@ class BlinkerJoystick
         }
     
     private :
-        String jName;
+        // String jName;
+        char * jName;
         bool registered = false;
 };
 
