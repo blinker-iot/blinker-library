@@ -1076,6 +1076,21 @@ class BlinkerApi
 
             return blinkServer(BLINKER_CMD_DATA_GET_NUMBER, data);
         }
+
+        bool dataDelet() {
+            String   data = "/delete_cloudStorage?deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+                            "&key=" + STRING_format(static_cast<Proto*>(this)->_authKey);
+
+            return (blinkServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        }
+
+        bool dataDelet(const String & _type) {
+            String   data = "/delete_cloudStorage?deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+                            "&key=" + STRING_format(static_cast<Proto*>(this)->_authKey) + \
+                            "&dataType=" + _type;
+
+            return (blinkServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        }
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
