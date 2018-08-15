@@ -271,7 +271,7 @@ class BlinkerMQTT {
             }
         }
 
-        String deviceName() { return MQTT_ID; }
+        String deviceName() { return DEVICE_NAME;/*MQTT_ID;*/ }
 
     private :    
 

@@ -59,10 +59,10 @@ void loop()
         Blinker.endFormat();
 
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-        if (Blinker.cloudUpdate("Hello blinker!")) {
-            String cloud_data = Blinker.cloudGet();
+        if (Blinker.configUpdate("Hello blinker!")) {
+            String config_data = Blinker.configGet();
 
-            BLINKER_LOG2("Blinker.cloudGet(): ", cloud_data);
+            BLINKER_LOG2("Blinker.configGet(): ", config_data);
         }
 
         Blinker.delay(60000);
