@@ -773,6 +773,7 @@ class BlinkerProtocol
 #endif
 
 #if defined(BLINKER_PRO)
+        char            _authKey[BLINKER_MQTT_KEY_SIZE];
         char            _deviceName[BLINKER_MQTT_DEVICEID_SIZE];
         
         bool            _isConnBegin = false;
@@ -1003,6 +1004,7 @@ void BlinkerProtocol<Transp>::run()
     else {
         if (!_isInit) {
             _isInit = true;
+            strcpy(_authKey, conn.key().c_str());
             strcpy(_deviceName, conn.deviceName().c_str());
         }
     }

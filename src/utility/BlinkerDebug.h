@@ -78,9 +78,9 @@
     #define BLINKER_ERR_LOG6(p1, p2, p3, p4, p5, p6){ BLINKER_LOG_TIME(); BLINKER_PRINT.print(("ERROR: ")); BLINKER_PRINT.print(p1); BLINKER_PRINT.print(p2); BLINKER_PRINT.print(p3); BLINKER_PRINT.print(p4); BLINKER_PRINT.print(p5); BLINKER_PRINT.println(p6); }
 
     static void BLINKER_LOG_TIME() {
-        BLINKER_PRINT.print("[");
+        BLINKER_PRINT.print(("["));
         BLINKER_PRINT.print(millis());
-        BLINKER_PRINT.print("] ");
+        BLINKER_PRINT.print(("] "));
     }
 #else
     #define BLINKER_LOG_FreeHeap()

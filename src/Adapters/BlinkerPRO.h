@@ -300,6 +300,8 @@ class BlinkerPRO {
 
         String deviceName() { return MQTT_DEVICEID; }
 
+        String key() { return MQTT_KEY; }
+
         bool init() { return isMQTTinit; }
 
         bool authCheck() {
