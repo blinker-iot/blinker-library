@@ -254,6 +254,11 @@ class BlinkerData
         void name(String name) { _dname = name; }
         String getName() { return _dname; }
         void saveData(time_t _time, String _data) {
+            if (data.length() >= BLINKER_MAX_SEND_SIZE / 2 ||
+                _data.length() >= BLINKER_MAX_SEND_SIZE / 2){
+                BLINKER_ERR_LOG1("MAX THAN DATA STORAGE SIZE");
+                return;
+            }
             if (data != "") {
                 data += ",";
             }
@@ -4033,7 +4038,7 @@ class BlinkerApi
         }
 
         bool checkDataGet() {
-            if ((millis() - _dGetTime) >= BLINKER_CONFIG_UPDATE_LIMIT * 60 || _dGetTime == 0) {
+            if ((millis() - _dGetTime) >= BLINKER_CONFIG_UPDATE_LIMIT || _dGetTime == 0) {
                 return true;
             }
             else {
@@ -4042,7 +4047,7 @@ class BlinkerApi
         }
 
         bool checkDataDel() {
-            if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT * 60 || _dDelTime == 0) {
+            if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT || _dDelTime == 0) {
                 return true;
             }
             else {
