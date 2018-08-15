@@ -107,6 +107,9 @@ class BlinkerTransportESP32_BLE
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("Succese..."));
 #endif
+
+                s += BLINKER_CMD_NEWLINE;
+                
                 String s_send;
                 uint8_t parts = s.length()/20 + 1;
                 for (uint8_t num = 0; num < parts; num++) {

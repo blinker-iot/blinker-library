@@ -1000,7 +1000,7 @@ class BlinkerApi
             // BLINKER_LOG2("num: ", num);
 
             if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                if (_dataCount == 5) {
+                if (_dataCount == 6) {
                     return;
                 }
                 _Data[_dataCount] = new BlinkerData();
