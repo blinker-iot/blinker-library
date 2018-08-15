@@ -36,7 +36,7 @@ BlinkerNumber Number1("num-abc");
 int counter = 0;
 
 void button1_callback(const String & state) {
-	BLINKER_LOG2("get button state: ", state);
+    BLINKER_LOG2("get button state: ", state);
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
@@ -55,7 +55,7 @@ void loop() {
     
     if (Blinker.available()) {
         BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
-		counter++;
-		Number1.print(counter);
+        counter++;
+        Number1.print(counter);
     }
 }
