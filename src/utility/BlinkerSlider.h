@@ -27,7 +27,7 @@ class BlinkerSlider
         
         void color(const String & _clr) { 
             // textClr = _clr; 
-            if (strlen(textClr)) free(textClr);
+            // if (strlen(textClr)) free(textClr);
             
             textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());

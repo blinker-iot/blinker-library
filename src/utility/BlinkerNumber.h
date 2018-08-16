@@ -16,21 +16,21 @@ class BlinkerNumber
         
         void icon(const String & _icon) { 
             // nicon = _icon; 
-            if (strlen(nicon)) free(nicon);
+            // if (strlen(nicon)) free(nicon);
 
             nicon = (char*)malloc((_icon.length()+1)*sizeof(char));
             strcpy(nicon, _icon.c_str());
         }
         void color(const String & _clr) { 
             // ncolor = _clr; 
-            if (strlen(ncolor)) free(ncolor);
+            // if (strlen(ncolor)) free(ncolor);
 
             ncolor = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(ncolor, _clr.c_str());
         }
         void unit(const String & _unit) { 
             // nunit = _unit; 
-            if (strlen(nunit)) free(nunit);
+            // if (strlen(nunit)) free(nunit);
 
             nunit = (char*)malloc((_unit.length()+1)*sizeof(char));
             strcpy(nunit, _unit.c_str());
