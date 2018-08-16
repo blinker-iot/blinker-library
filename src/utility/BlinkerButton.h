@@ -34,6 +34,7 @@ class BlinkerButton
 
         void icon(const String & _icon) {
             // bicon = _icon;
+            if (strlen(bicon)) free(bicon);
 
             bicon = (char*)malloc((_icon.length()+1)*sizeof(char));
             strcpy(bicon, _icon.c_str());
@@ -41,6 +42,7 @@ class BlinkerButton
 
         void color(const String & _clr) {
             // iconClr = _clr;
+            if (strlen(iconClr)) free(iconClr);
 
             iconClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(iconClr, _clr.c_str());
@@ -49,6 +51,7 @@ class BlinkerButton
         template <typename T>
         void content(T _con) {
             // bcon = STRING_format(_con);
+            if (strlen(bcon)) free(bcon);
 
             String _bcon = STRING_format(_con);
             bcon = (char*)malloc((_bcon.length()+1)*sizeof(char));
@@ -58,6 +61,7 @@ class BlinkerButton
         template <typename T>
         void text(T _text) {
             // btext = STRING_format(_text);
+            if (strlen(btext)) free(btext);
 
             String _btext = STRING_format(_text);
             btext = (char*)malloc((_btext.length()+1)*sizeof(char));
@@ -67,6 +71,8 @@ class BlinkerButton
         template <typename T1, typename T2>
         void text(T1 _text1, T2 _text2) {
             // btext = STRING_format(_text1); btext1 = STRING_format(_text2);
+            if (strlen(btext)) free(btext);
+            if (strlen(btext1)) free(btext1);
 
             String _btext = STRING_format(_text1);
             btext = (char*)malloc((_btext.length()+1)*sizeof(char));
@@ -79,6 +85,7 @@ class BlinkerButton
 
         void textColor(const String & _clr) {
             // textClr = _clr;
+            if (strlen(textClr)) free(textClr);
 
             textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());
