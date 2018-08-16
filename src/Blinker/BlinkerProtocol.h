@@ -300,9 +300,9 @@ class BlinkerProtocol
         template <typename T1>
         void printArray(T1 n1, const String &s2) {
             // String _msg = "\"" + STRING_format(n1) + "\":" + s2;
-
-            // BLINKER_LOG2(BLINKER_F("_msg: "), _msg);
-
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG2(BLINKER_F("printArray _msg: "), "\"" + STRING_format(n1) + "\":" + s2);
+// #endif
             if (isFormat) {
                 formatData("\"" + STRING_format(n1) + "\":" + s2);
             }
@@ -689,6 +689,14 @@ class BlinkerProtocol
 
     private :
         void formatData(String data) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("formatData data: "), data);
+#endif
+            if ((strlen(_sendBuf) + data.length()) >= BLINKER_MAX_SEND_SIZE) {
+                BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+                return;
+            }
+
             if (strlen(_sendBuf) > 0) {
                 data = "," + data;
                 strcat(_sendBuf, data.c_str());
