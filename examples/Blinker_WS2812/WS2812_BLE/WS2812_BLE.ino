@@ -72,6 +72,8 @@ void setup()
 
     Blinker.begin();
 
+    pixels.begin();
+
     WS2812.attach(ws2812_callback);
 }
 

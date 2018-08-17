@@ -75,6 +75,8 @@ void setup()
 
     Blinker.begin(ssid, pswd);
 
+    pixels.begin();
+
     WS2812.attach(ws2812_callback);
 }
 
