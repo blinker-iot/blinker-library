@@ -451,7 +451,9 @@ void BlinkerMQTT::connectServer() {
 
     if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success()) {
         while(1) {
-            BLINKER_ERR_LOG1("May you have put in the wrong AuthKey!Or maybe your request is too frequently!");
+            BLINKER_ERR_LOG1("Maybe you have put in the wrong AuthKey!");
+            BLINKER_ERR_LOG1("Or maybe your request is too frequently!");
+            BLINKER_ERR_LOG1("Or maybe your network is disconnected!");
             ::delay(10000);
         }
     }
