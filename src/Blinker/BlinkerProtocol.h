@@ -685,6 +685,8 @@ class BlinkerProtocol
 
 #if defined(BLINKER_PRO)
         bool inited() { return _isInit;}
+
+        bool registered() { return conn.authCheck(); }
 #endif
 
     private :
