@@ -4480,11 +4480,14 @@ class BlinkerApi
 
                 // BLINKER_LOG4("Setting time using SNTP: ", now_ntp, " ", _timezone * 3600 * 2);
 
-                if (now_ntp < _timezone * 3600 * 2) {
+                float _com_timezone = abs(_timezone);
+                if (_com_timezone < 1.0) _com_timezone = 1.0;
+
+                if (now_ntp < _com_timezone * 3600 * 12) {
                     configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");// cn.pool.ntp.org
                     now_ntp = ::time(nullptr);
 
-                    if (now_ntp < _timezone * 3600 * 2) {
+                    if (now_ntp < _com_timezone * 3600 * 12) {
                         ::delay(50);
 
                         now_ntp = ::time(nullptr);
