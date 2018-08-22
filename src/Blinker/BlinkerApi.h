@@ -1742,7 +1742,7 @@ class BlinkerApi
         }
 
         void setSwitch(const JsonObject& data) {
-            String state = data[BLINKER_CMD_SET][BLINKER_CMD_BUILTIN_SWITCH];
+            String state = data[BLINKER_CMD_BUILTIN_SWITCH];
 
             if (state.length()) {
                 // if (state == BLINKER_CMD_ON) {
@@ -1905,7 +1905,7 @@ class BlinkerApi
             String state;
 
             if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_BUILTIN_SWITCH)) {
-                if (STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET)) {
+                // if (STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET)) {
                     // if (state == BLINKER_CMD_ON) {
                     //     _BUILTIN_SWITCH->freshState(true);
                     // }
@@ -1920,7 +1920,7 @@ class BlinkerApi
                     _fresh = true;
                     // _switchFresh = true;
                     // static_cast<Proto*>(this)->print(BLINKER_CMD_BUILTIN_SWITCH, builtInSwitch()?"on":"off");
-                }
+                // }
             }
             // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), state, BLINKER_CMD_GET)) {
             // // if (state.length()) {
@@ -1936,7 +1936,7 @@ class BlinkerApi
             String state;
 
             if (STRING_find_string_value(data, state, BLINKER_CMD_BUILTIN_SWITCH)) {
-                if (STRING_contains_string(data, BLINKER_CMD_SET)) {
+                // if (STRING_contains_string(data, BLINKER_CMD_SET)) {
                     // if (state == BLINKER_CMD_ON) {
                     //     _BUILTIN_SWITCH->freshState(true);
                     // }
@@ -1951,7 +1951,7 @@ class BlinkerApi
                     _fresh = true;
                     // _switchFresh = true;
                     // static_cast<Proto*>(this)->print(BLINKER_CMD_BUILTIN_SWITCH, builtInSwitch()?"on":"off");
-                }
+                // }
             }
         }
 
