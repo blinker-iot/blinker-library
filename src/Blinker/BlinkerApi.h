@@ -2730,6 +2730,8 @@ class BlinkerApi
 
                         String tm_day = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_DAY];
 
+                        _timingDay = 0;
+
                         if (tm_day.toInt() == 0) {
                             if (60 * _time > dtime()) {
                                 _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
