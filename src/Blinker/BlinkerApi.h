@@ -2221,6 +2221,14 @@ class BlinkerApi
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("cbackData: ", cbackData);
     #endif
+
+            if (apartSeconds > BLINKER_ONE_HOUR_TIME) {
+                apartSeconds = BLINKER_ONE_HOUR_TIME;
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("change apartSeconds: ", apartSeconds);
+    #endif
+            }
+
             tmTicker.once(apartSeconds, timingHandle, cbackData);
         }
 
