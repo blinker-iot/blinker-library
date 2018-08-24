@@ -2168,7 +2168,7 @@ class BlinkerApi
         }
 
         void freshTiming(uint8_t wDay, uint16_t nowMins) {
-            tmTicker.detach();
+            // tmTicker.detach();
 
             uint8_t  cbackData;
             uint8_t  nextTask = BLINKER_TIMING_TIMER_SIZE;
@@ -2221,12 +2221,12 @@ class BlinkerApi
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("cbackData: ", cbackData);
     #endif
-            tmTicker.once_ms(apartSeconds * 1000, timingHandle, cbackData);
+            tmTicker.once(apartSeconds, timingHandle, cbackData);
         }
 
         void deleteTiming(uint8_t taskDel) {
             if (taskDel < taskCount) {
-                tmTicker.detach();
+                // tmTicker.detach();
 
                 for (uint8_t task = taskDel; task < (taskCount - 2); task++) {
                     // timingTask[task]->freshTimer(timingTask[task + 1]->getTimerData(), 
@@ -4590,6 +4590,21 @@ class BlinkerApi
     //             }
 
                 uint8_t wDay =  wday();
+
+    #ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG5(hour(), ":", minute(), ":", second());
+    #endif
+
+                uint16_t nowMins = hour() * 60 + minute();
+
+                if (nowMins != timingTask[triggedTask]->getTime()) {
+    #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG1(BLINKER_F("timing trigged, now minutes check error!"));
+    #endif
+                    freshTiming(wDay, nowMins);
+
+                    return;
+                }
 
                 if (triggedTask < BLINKER_TIMING_TIMER_SIZE) {
                     String _tmAction = timingTask[triggedTask]->getAction();
