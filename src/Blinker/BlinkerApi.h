@@ -4603,7 +4603,7 @@ class BlinkerApi
     #endif
                     freshTiming(wDay, nowMins);
 
-                    return;
+                    return false;
                 }
 
                 if (triggedTask < BLINKER_TIMING_TIMER_SIZE) {
