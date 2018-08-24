@@ -405,15 +405,15 @@ static void _lp_callback() {
                 _lpStop = true;
             }
             else {
-                lpTicker.once(_lpTime1 * 60, _lp_callback);
+                lpTicker.once_ms(_lpTime1 * 60 * 1000, _lp_callback);
             }
         }
         else {
-            lpTicker.once(_lpTime1 * 60, _lp_callback);
+            lpTicker.once_ms(_lpTime1 * 60 * 1000, _lp_callback);
         }
     }
     else {
-        lpTicker.once(_lpTime2 * 60, _lp_callback);
+        lpTicker.once_ms(_lpTime2 * 60 * 1000, _lp_callback);
     }
     _lpTrigged = true;
     #ifdef BLINKER_DEBUG_ALL
@@ -2186,6 +2186,8 @@ class BlinkerApi
                     if (timingTask[task]->getTime() > nowMins) {
                         checkSeconds = timingTask[task]->getTime() * 60 - nowSeconds;
 
+                        // checkSeconds =  checkSeconds / 60 / 30;
+
                         if (checkSeconds <= apartSeconds) {
                             apartSeconds = checkSeconds;
                             nextTask = task;
@@ -2203,6 +2205,8 @@ class BlinkerApi
 
             if (apartSeconds == BLINKER_ONE_DAY_TIME) {
                 apartSeconds -= nowSeconds;
+
+                // apartSeconds = apartSeconds / 60 / 30;
     #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG6("nextTask: ", nextTask, "  apartSeconds: ", apartSeconds, " wDay: ", wDay);
     #endif
@@ -2217,7 +2221,7 @@ class BlinkerApi
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("cbackData: ", cbackData);
     #endif
-            tmTicker.once(apartSeconds, timingHandle, cbackData);
+            tmTicker.once_ms(apartSeconds * 1000, timingHandle, cbackData);
         }
 
         void deleteTiming(uint8_t taskDel) {
@@ -2350,7 +2354,7 @@ class BlinkerApi
     #endif
 
             if (_cdState && _cdRunState) {
-                cdTicker.once(_cdTime1 * 60, _cd_callback);
+                cdTicker.once_ms(_cdTime1 * 60 * 1000, _cd_callback);
 
                 _cdStart = millis();
     #ifdef BLINKER_DEBUG_ALL
@@ -2411,7 +2415,7 @@ class BlinkerApi
                 _lpRun1 = true;
                 _lpTrigged_times = 0;
                 _lpStop = false;
-                lpTicker.once(_lpTime1 * 60, _lp_callback);
+                lpTicker.once_ms(_lpTime1 * 60 * 1000, _lp_callback);
     #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("loop start!"));
     #endif
@@ -2552,7 +2556,7 @@ class BlinkerApi
                     EEPROM.end();
     
                     if (_cdState && _cdRunState) {
-                        cdTicker.once((_cdTime1 - _cdTime2) * 60, _cd_callback);
+                        cdTicker.once_ms((_cdTime1 - _cdTime2) * 60 * 1000, _cd_callback);
 
                         _cdStart = millis();
     #ifdef BLINKER_DEBUG_ALL
@@ -2675,7 +2679,7 @@ class BlinkerApi
                         _lpRun1 = true;
                         _lpTrigged_times = 0;
                         _lpStop = false;
-                        lpTicker.once(_lpTime1 * 60, _lp_callback);
+                        lpTicker.once_ms(_lpTime1 * 60 * 1000, _lp_callback);
     #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG1(BLINKER_F("loop start!"));
     #endif
