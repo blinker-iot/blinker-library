@@ -382,6 +382,10 @@ static void disableTimer() {
     tmTicker.detach();
 }
 
+static void _cd_callback();
+
+static void _lp_callback();
+
 static void _cd_callback() {
     uint32_t cd_during = millis() -_cdStart;
     uint32_t cd_remain = _cdTime1 * 60 - cd_during / 1000;
@@ -390,7 +394,7 @@ static void _cd_callback() {
         if (cd_remain > 0) {
             if (cd_remain > BLINKER_ONE_HOUR_TIME) cd_remain = BLINKER_ONE_HOUR_TIME;
 
-            cdTicker.once(cd_remain, _lp_callback);
+            cdTicker.once(cd_remain, _cd_callback);
 
             return;
         }
@@ -409,17 +413,17 @@ static void _cd_callback() {
 
 static void _lp_callback() {
     // _lpState = false;
-    // if (_lpTim1 * 60 > BLINKER_ONE_HOUR_TIME) _lpTime1_ = BLINKER_ONE_HOUR_TIME;
-    // else _lpTime1_ = _lpTim1 * 60;
+    // if (_lpTime1 * 60 > BLINKER_ONE_HOUR_TIME) _lpTime1_ = BLINKER_ONE_HOUR_TIME;
+    // else _lpTime1_ = _lpTime1 * 60;
 
     // _lpTime1_start = millis();
     // lpTicker.once(_lpTime1_, _lp_callback);
 
     if (_lpRun1) {
         uint32_t lp_1_during = millis() -_lpTime1_start;
-        uint32_t lp_1_remain = _lpTim1 * 60 - lp_1_during / 1000;
+        uint32_t lp_1_remain = _lpTime1 * 60 - lp_1_during / 1000;
 
-        if (_lpTim1 * 60 > BLINKER_ONE_HOUR_TIME) {
+        if (_lpTime1 * 60 > BLINKER_ONE_HOUR_TIME) {
             if (lp_1_remain > 0) {
                 if (lp_1_remain > BLINKER_ONE_HOUR_TIME) lp_1_remain = BLINKER_ONE_HOUR_TIME;
 
@@ -431,9 +435,9 @@ static void _lp_callback() {
     }
     else {
         uint32_t lp_2_during = millis() -_lpTime2_start;
-        uint32_t lp_2_remain = _lpTim2 * 60 - lp_2_during / 1000;
+        uint32_t lp_2_remain = _lpTime2 * 60 - lp_2_during / 1000;
 
-        if (_lpTim2 * 60 > BLINKER_ONE_HOUR_TIME) {
+        if (_lpTime2 * 60 > BLINKER_ONE_HOUR_TIME) {
             if (lp_2_remain > 0) {
                 if (lp_2_remain > BLINKER_ONE_HOUR_TIME) lp_2_remain = BLINKER_ONE_HOUR_TIME;
 
@@ -2482,8 +2486,8 @@ class BlinkerApi
 
                 uint32_t _lpTime1_;
 
-                if (_lpTim1 * 60 > BLINKER_ONE_HOUR_TIME) _lpTime1_ = BLINKER_ONE_HOUR_TIME;
-                else _lpTime1_ = _lpTim1 * 60;
+                if (_lpTime1 * 60 > BLINKER_ONE_HOUR_TIME) _lpTime1_ = BLINKER_ONE_HOUR_TIME;
+                else _lpTime1_ = _lpTime1 * 60;
 
                 _lpTime1_start = millis();
                 lpTicker.once(_lpTime1_, _lp_callback);
@@ -2760,8 +2764,10 @@ class BlinkerApi
                         _lpTrigged_times = 0;
                         _lpStop = false;
 
-                        if (_lpTim1 * 60 > BLINKER_ONE_HOUR_TIME) _lpTime1_ = BLINKER_ONE_HOUR_TIME;
-                        else _lpTime1_ = _lpTim1 * 60;
+                        uint32_t _lpTime1_;
+
+                        if (_lpTime1 * 60 > BLINKER_ONE_HOUR_TIME) _lpTime1_ = BLINKER_ONE_HOUR_TIME;
+                        else _lpTime1_ = _lpTime1 * 60;
 
                         _lpTime1_start = millis();
                         lpTicker.once(_lpTime1_, _lp_callback);
