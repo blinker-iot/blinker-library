@@ -1303,6 +1303,12 @@ class BlinkerApi
             EEPROM.commit();
             EEPROM.end();
         }
+
+        bool countdownState() { return _cdState; }
+
+        bool loopState() { return _lpState; }
+
+        bool timingState() { return taskCount ? true : false; }
 #endif
 
         void attachHeartbeat(callbackFunction newFunction) {
