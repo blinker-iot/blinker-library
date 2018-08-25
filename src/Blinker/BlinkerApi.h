@@ -4689,7 +4689,7 @@ class BlinkerApi
 
                 uint16_t nowMins = hour() * 60 + minute();
 
-                if (nowMins != timingTask[triggedTask]->getTime()) {
+                if (triggedTask < BLINKER_TIMING_TIMER_SIZE && nowMins != timingTask[triggedTask]->getTime()) {
     #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG1(BLINKER_F("timing trigged, now minutes check error!"));
     #endif
