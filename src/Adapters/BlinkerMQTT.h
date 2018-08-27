@@ -41,6 +41,7 @@ WebSocketsServer webSocket = WebSocketsServer(WS_SERVERPORT);
 static char msgBuf[BLINKER_MAX_READ_SIZE];
 static bool isConnect = false;
 static bool isAvail = false;
+static uint8_t ws_num = 0;
 
 static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
 {
@@ -65,6 +66,8 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
                 // send message to client
                 webSocket.sendTXT(num, "{\"state\":\"connected\"}\n");
 
+                ws_num = num;
+
                 isConnect = true;
             }
             break;
@@ -80,6 +83,8 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
                 strcpy(msgBuf, (char*)payload);
                 isAvail = true;
             }
+
+            ws_num = num;
 
             // send message to client
             // webSocket.sendTXT(num, "message here");
@@ -739,7 +744,7 @@ bool BlinkerMQTT::print(String data) {
 #ifdef BLINKER_DEBUG_ALL
         BLINKER_LOG1(("Succese..."));
 #endif
-        webSocket.broadcastTXT(data + BLINKER_CMD_NEWLINE);
+        webSocket.sendTXT(ws_num, s_data + BLINKER_CMD_NEWLINE);
 
         return true;
 // #ifdef BLINKER_DEBUG_ALL
