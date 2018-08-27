@@ -1781,7 +1781,11 @@ class BlinkerApi
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
 #else
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
-#endif  
+#endif
+
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+                    static_cast<Proto*>(this)->printJson(timerSetting());
+#endif
 
                     if (_heartbeatFunc) {
                         _heartbeatFunc();
@@ -1792,7 +1796,11 @@ class BlinkerApi
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
 #else
                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
-#endif  
+#endif
+
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+                        static_cast<Proto*>(this)->printJson(timerSetting());
+#endif
 
                         static_cast<Proto*>(this)->endFormat();
                     }
@@ -3071,9 +3079,13 @@ class BlinkerApi
         }
 
         String timerSetting() {
-            String _data = "{\""BLINKER_CMD_COUNTDOWN"\":" + STRING_format(_cdState ? "true" : "false") + \
-                            "\""BLINKER_CMD_LOOP"\":" + STRING_format(_lpState ? "true" : "false") + \
-                            "\""BLINKER_CMD_TIMING"\":" + STRING_format(taskCount ? "true" : "false") + "}";
+            String _data = "\""BLINKER_CMD_COUNTDOWN"\":" + STRING_format(_cdState ? "true" : "false") + \
+                            ",\""BLINKER_CMD_LOOP"\":" + STRING_format(_lpState ? "true" : "false") + \
+                            ",\""BLINKER_CMD_TIMING"\":" + STRING_format(taskCount ? "true" : "false");
+
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("timerSetting: "), _data);
+    #endif
 
             return _data;
         }
