@@ -1784,7 +1784,13 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-                    static_cast<Proto*>(this)->printJson(timerSetting());
+                    String _timer = taskCount ? "1":"0";
+                    _timer += _lpState ? "1":"0";
+                    _timer += _cdState ? "1":"0";
+
+                    BLINKER_LOG1(_timer);
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
+                    // static_cast<Proto*>(this)->printJson(timerSetting());
 #endif
 
                     if (_heartbeatFunc) {
@@ -1799,7 +1805,13 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-                        static_cast<Proto*>(this)->printJson(timerSetting());
+                        String _timer = taskCount ? "1":"0";
+                        _timer += _lpState ? "1":"0";
+                        _timer += _cdState ? "1":"0";
+
+                        BLINKER_LOG1(_timer);
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
+                        // static_cast<Proto*>(this)->printJson(timerSetting());
 #endif
 
                         static_cast<Proto*>(this)->endFormat();
