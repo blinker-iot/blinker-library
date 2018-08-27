@@ -326,7 +326,7 @@ class BlinkerProtocol
 #if defined(ESP8266) || defined(ESP32)
         void printJson(const String &s) {
             DynamicJsonBuffer jsonBuffer;
-            JsonObject& json_data = jsonBuffer.parseObject(s);
+            JsonObject& json_data = jsonBuffer.parseObject("{" + s + "}");
 
             if (!json_data.success()) {
                 BLINKER_ERR_LOG1("data is not a JSON!");
@@ -337,7 +337,7 @@ class BlinkerProtocol
                 formatData(s);
             }
             else {
-                _print(s);
+                _print("{" + s + "}");
             }
         }
 #endif
