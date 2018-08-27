@@ -744,7 +744,7 @@ bool BlinkerMQTT::print(String data) {
 #ifdef BLINKER_DEBUG_ALL
         BLINKER_LOG1(("Succese..."));
 #endif
-        webSocket.sendTXT(ws_num, s_data + BLINKER_CMD_NEWLINE);
+        webSocket.sendTXT(ws_num, data + BLINKER_CMD_NEWLINE);
 
         return true;
 // #ifdef BLINKER_DEBUG_ALL
