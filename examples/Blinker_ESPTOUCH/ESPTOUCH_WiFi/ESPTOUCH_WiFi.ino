@@ -50,10 +50,8 @@ void loop()
 
         uint32_t BlinkerTime = millis();
 
-        Blinker.beginFormat();
         Blinker.vibrate();        
         Blinker.print("millis", BlinkerTime);
-        Blinker.endFormat();
 
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
