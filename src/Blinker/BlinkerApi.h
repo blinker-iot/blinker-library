@@ -1823,8 +1823,9 @@ class BlinkerApi
                     String _timer = taskCount ? "1":"0";
                     _timer += _lpState ? "1":"0";
                     _timer += _cdState ? "1":"0";
-
-                    BLINKER_LOG1(_timer);
+    #if defined(BLINKER_DEBUG_ALL)
+                    BLINKER_LOG2("timer codes: ", _timer);
+    #endif
                     static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
                     // static_cast<Proto*>(this)->printJson(timerSetting());
 #endif
@@ -1844,8 +1845,9 @@ class BlinkerApi
                         String _timer = taskCount ? "1":"0";
                         _timer += _lpState ? "1":"0";
                         _timer += _cdState ? "1":"0";
-
-                        BLINKER_LOG1(_timer);
+    #if defined(BLINKER_DEBUG_ALL)
+                        BLINKER_LOG2("timer codes: ", _timer);
+    #endif
                         static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
                         // static_cast<Proto*>(this)->printJson(timerSetting());
 #endif
