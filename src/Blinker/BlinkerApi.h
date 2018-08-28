@@ -1292,13 +1292,49 @@ class BlinkerApi
             loadLoop();
         }
 
-        void deletTimer() {
+        void deleteTimer() {
+            // EEPROM.begin(BLINKER_EEP_SIZE);
+
+            // for (uint16_t _addr = BLINKER_EEP_ADDR_TIMER;
+            //     _addr < BLINKER_EEP_ADD_TIMER_END; _addr++) {
+            //     EEPROM.put(_addr, "\0");
+            // }
+
+            // EEPROM.commit();
+            // EEPROM.end();
+
             EEPROM.begin(BLINKER_EEP_SIZE);
 
-            for (uint16_t _addr = BLINKER_EEP_ADDR_TIMER;
-                _addr < BLINKER_EEP_ADD_TIMER_END; _addr++) {
-                EEPROM.put(_addr, "\0");
-            }
+            EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN, 0);
+            EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP, 0);
+            EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, 0);
+
+            EEPROM.commit();
+            EEPROM.end();
+        }
+
+        void deleteCountdown() {
+            EEPROM.begin(BLINKER_EEP_SIZE);
+
+            EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN, 0);
+
+            EEPROM.commit();
+            EEPROM.end();
+        }
+
+        void deleteLoop() {
+            EEPROM.begin(BLINKER_EEP_SIZE);
+
+            EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP, 0);
+
+            EEPROM.commit();
+            EEPROM.end();
+        }
+
+        void deleteTiming() {
+            EEPROM.begin(BLINKER_EEP_SIZE);
+
+            EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, 0);
 
             EEPROM.commit();
             EEPROM.end();
