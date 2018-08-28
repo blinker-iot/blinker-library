@@ -910,12 +910,12 @@ class BlinkerProtocol
 
         void checkAutoFormat()
         {
-            if (autoFormat && (millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT) {
-                autoFormat = false;
-
+            if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT) {
                 if (strlen(_sendBuf)) {
                     _print("{" + STRING_format(_sendBuf) + "}");
                 }
+
+                autoFormat = false;
             }
         }
 
@@ -1190,6 +1190,8 @@ void BlinkerProtocol<Transp>::run()
     BApi::checkTimer();
 #endif
 
+    if (autoFormat) checkAutoFormat();
+
     bool conState = conn.connected();
 
     switch (state)
@@ -1201,7 +1203,6 @@ void BlinkerProtocol<Transp>::run()
             break;
         case CONNECTED :
             if (conState) {
-                checkAutoFormat();
                 checkAvail();
                 if (isAvail) {
                     BApi::parse(dataParse());

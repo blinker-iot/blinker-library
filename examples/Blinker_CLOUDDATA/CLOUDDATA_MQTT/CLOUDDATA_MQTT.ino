@@ -53,10 +53,8 @@ void loop()
 
         uint32_t BlinkerTime = millis();
 
-        Blinker.beginFormat();
         Blinker.vibrate();        
         Blinker.print("millis", BlinkerTime);
-        Blinker.endFormat();
 
         Blinker.dataUpdate();
 
