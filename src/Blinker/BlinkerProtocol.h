@@ -926,14 +926,14 @@ class BlinkerProtocol
 
         void checkAutoFormat()
         {
-            if (!autoFormat) return;
-             
-            if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT) {
-                if (strlen(_sendBuf)) {
-                    _print("{" + STRING_format(_sendBuf) + "}");
-                }
+            if (autoFormat) {
+                if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT) {
+                    if (strlen(_sendBuf)) {
+                        _print("{" + STRING_format(_sendBuf) + "}");
+                    }
 
-                autoFormat = false;
+                    autoFormat = false;
+                }
             }
         }
 
