@@ -34,9 +34,9 @@
 #define ADAFRUIT_MQTT_VERSION_PATCH 0
 
 // Uncomment/comment to turn on/off debug output messages.
-// #define MQTT_DEBUG
+//#define MQTT_DEBUG
 // Uncomment/comment to turn on/off error output messages.
-// #define MQTT_ERROR
+#define MQTT_ERROR
 
 // Set where debug messages will be printed.
 #define DEBUG_PRINTER Serial
@@ -95,7 +95,7 @@
 // Largest full packet we're able to send.
 // Need to be able to store at least ~90 chars for a connect packet with full
 // 23 char client ID.
-#define MAXBUFFERSIZE (1250)
+#define MAXBUFFERSIZE (1024)
 
 #define MQTT_CONN_USERNAMEFLAG    0x80
 #define MQTT_CONN_PASSWORDFLAG    0x40
@@ -105,15 +105,14 @@
 #define MQTT_CONN_WILLFLAG        0x04
 #define MQTT_CONN_CLEANSESSION    0x02
 
-// how many subscriptions we want to be able to track
-#define MAXSUBSCRIPTIONS 5
-
 // how much data we save in a subscription object
-// eg max-subscription-payload-size
+// and how many subscriptions we want to be able to track.
 #if defined  (__AVR_ATmega32U4__) || defined(__AVR_ATmega328P__)
+  #define MAXSUBSCRIPTIONS 5
   #define SUBSCRIPTIONDATALEN 20
 #else
-  #define SUBSCRIPTIONDATALEN 1250
+  #define MAXSUBSCRIPTIONS 15
+  #define SUBSCRIPTIONDATALEN 100
 #endif
 
 class AdafruitIO_MQTT;   // forward decl

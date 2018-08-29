@@ -148,13 +148,11 @@ Adafruit_MQTT::Adafruit_MQTT(const char *server,
 
 int8_t Adafruit_MQTT::connect() {
   // Connect to the server.
-  
   if (!connectServer())
     return -1;
   
   // Construct and send connect packet.
   uint8_t len = connectPacket(buffer);
-  
   if (!sendPacket(buffer, len))
     return -1;
 
@@ -162,10 +160,8 @@ int8_t Adafruit_MQTT::connect() {
   len = readFullPacket(buffer, MAXBUFFERSIZE, CONNECT_TIMEOUT_MS);
   if (len != 4) 
 	  return -1;
-  
   if ((buffer[0] != (MQTT_CTRL_CONNECTACK << 4)) || (buffer[1] != 2))
     return -1;
-  
   if (buffer[3] != 0)
     return buffer[3];
   
@@ -174,7 +170,7 @@ int8_t Adafruit_MQTT::connect() {
     // Ignore subscriptions that aren't defined.
     if (subscriptions[i] == 0) continue;
 
-    bool success = false;
+    boolean success = false;
     for (uint8_t retry=0; (retry<3) && !success; retry++) { // retry until we get a suback    
       // Construct and send subscription packet.
       uint8_t len = subscribePacket(buffer, subscriptions[i]->topic, subscriptions[i]->qos);
@@ -193,7 +189,6 @@ int8_t Adafruit_MQTT::connect() {
 	success = true;
 	break;
       }
-      //Serial.println("\t**failed, retrying!");
     }
     if (! success) return -2; // failed to sub for some reason
   }
@@ -210,15 +205,20 @@ int8_t Adafruit_MQTT::connect(const char *user, const char *pass)
 
 uint16_t Adafruit_MQTT::processPacketsUntil(uint8_t *buffer, uint8_t waitforpackettype, uint16_t timeout) {
   uint16_t len;
-  while (len = readFullPacket(buffer, MAXBUFFERSIZE, timeout)) {
 
-    //DEBUG_PRINT("Packet read size: "); DEBUG_PRINTLN(len);
-    // TODO: add subscription reading & call back processing here
+  while(true) {
+    len = readFullPacket(buffer, MAXBUFFERSIZE, timeout);
 
-    if ((buffer[0] >> 4) == waitforpackettype) {
-      //DEBUG_PRINTLN(F("Found right packet")); 
+    if(len == 0){
+      break;
+    }
+
+    if ((buffer[0] >> 4) == waitforpackettype)
+    {
       return len;
-    }else {
+    }
+    else
+    {
       ERROR_PRINTLN(F("Dropped a packet"));
     }
   }
@@ -229,7 +229,7 @@ uint16_t Adafruit_MQTT::readFullPacket(uint8_t *buffer, uint16_t maxsize, uint16
   // will read a packet and Do The Right Thing with length
   uint8_t *pbuff = buffer;
 
-  uint16_t rlen;
+  uint8_t rlen;
 
   // read the packet type:
   rlen = readPacket(pbuff, 1, timeout);
@@ -260,13 +260,13 @@ uint16_t Adafruit_MQTT::readFullPacket(uint8_t *buffer, uint16_t maxsize, uint16
   DEBUG_PRINT(F("Packet Length:\t")); DEBUG_PRINTLN(value);
 
   if (value > (maxsize - (pbuff-buffer) - 1)) {
+      DEBUG_PRINTLN(F("Packet too big for buffer"));
       rlen = readPacket(pbuff, (maxsize - (pbuff-buffer) - 1), timeout);
   } else {
     rlen = readPacket(pbuff, value, timeout);
   }
   //DEBUG_PRINT(F("Remaining packet:\t")); DEBUG_PRINTBUFFER(pbuff, rlen);
   
-
   return ((pbuff - buffer)+rlen);
 }
 
@@ -411,7 +411,6 @@ bool Adafruit_MQTT::unsubscribe(Adafruit_MQTT_Subscribe *sub) {
 }
 
 void Adafruit_MQTT::processPackets(int16_t timeout) {
-  uint16_t len;
 
   uint32_t elapsed = 0, endtime, starttime = millis();
 
@@ -497,7 +496,7 @@ Adafruit_MQTT_Subscribe *Adafruit_MQTT::readSubscription(int16_t timeout) {
   if (i==MAXSUBSCRIPTIONS) return NULL; // matching sub not found ???
 
   uint8_t packet_id_len = 0;
-  uint16_t packetid;
+  uint16_t packetid = 0;
   // Check if it is QoS 1, TODO: we dont support QoS 2
   if ((buffer[0] & 0x6) == 0x2) {
     packet_id_len = 2;
@@ -514,7 +513,6 @@ Adafruit_MQTT_Subscribe *Adafruit_MQTT::readSubscription(int16_t timeout) {
       datalen = SUBSCRIPTIONDATALEN-1; // cut it off
     }
     // extract out just the data, into the subscription object itself
-
     memmove(subscriptions[i]->lastread, buffer+4+topiclen+packet_id_len, datalen);
     subscriptions[i]->datalen = datalen;
     DEBUG_PRINT(F("Data len: ")); DEBUG_PRINTLN(datalen);
@@ -562,7 +560,7 @@ void Adafruit_MQTT::flushIncoming(uint16_t timeout) {
 }
 
 bool Adafruit_MQTT::ping(uint8_t num) {
-  // flushIncoming(100);
+  //flushIncoming(100);
 
   while (num--) {
     // Construct and send ping packet.
@@ -663,6 +661,8 @@ uint8_t Adafruit_MQTT::connectPacket(uint8_t *packet) {
 
   len = p - packet;
 
+//   packet[1] = len-2;  // don't include the 2 bytes of fixed header data
+
   if(len <= 129){
     packet[1] = len-2;  // don't include the 2 bytes of fixed header data
   }
@@ -679,7 +679,6 @@ uint8_t Adafruit_MQTT::connectPacket(uint8_t *packet) {
   }
   DEBUG_PRINTLN(F("MQTT connect packet:"));
   DEBUG_PRINTBUFFER(buffer, len);
-
   return len;
 }
 
