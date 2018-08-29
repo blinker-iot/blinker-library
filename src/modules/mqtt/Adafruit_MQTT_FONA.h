@@ -120,7 +120,7 @@ class Adafruit_MQTT_FONA : public Adafruit_MQTT {
   bool sendPacket(uint8_t *buffer, uint16_t len) {
     DEBUG_PRINTLN(F("Writing packet"));
     if (fona->TCPconnected()) {
-      bool ret = fona->TCPsend((char *)buffer, len);
+      boolean ret = fona->TCPsend((char *)buffer, len);
       //DEBUG_PRINT(F("sendPacket returned: ")); DEBUG_PRINTLN(ret);
       if (!ret) {
         DEBUG_PRINTLN("Failed to send packet.");
