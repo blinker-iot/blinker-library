@@ -1006,11 +1006,11 @@ class BlinkerProtocol
             if (autoFormat) {
                 if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT) {
                     if (strlen(_sendBuf)) {
-#if defined(ESP8266) || defined(ESP32)
-                        _print(STRING_format(_sendBuf));
-#else
+// #if defined(ESP8266) || defined(ESP32)
+//                         _print(STRING_format(_sendBuf));
+// #else
                         _print("{" + STRING_format(_sendBuf) + "}");
-#endif
+// #endif
                     }
 
                     autoFormat = false;
