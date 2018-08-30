@@ -1811,7 +1811,7 @@ class BlinkerApi
 
             if (state.length()) {
                 if (state == BLINKER_CMD_STATE) {
-                    static_cast<Proto*>(this)->beginFormat();
+                    // static_cast<Proto*>(this)->beginFormat();
 
 #if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
@@ -1833,27 +1833,27 @@ class BlinkerApi
                     if (_heartbeatFunc) {
                         _heartbeatFunc();
                     }
-                    if (!static_cast<Proto*>(this)->endFormat()) {
-                        static_cast<Proto*>(this)->beginFormat();
-#if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-#else
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
-#endif
+//                     if (!static_cast<Proto*>(this)->endFormat()) {
+//                         static_cast<Proto*>(this)->beginFormat();
+// #if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
+//                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+// #else
+//                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+// #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-                        String _timer = taskCount ? "1":"0";
-                        _timer += _lpState ? "1":"0";
-                        _timer += _cdState ? "1":"0";
-    #if defined(BLINKER_DEBUG_ALL)
-                        BLINKER_LOG2("timer codes: ", _timer);
-    #endif
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
-                        // static_cast<Proto*>(this)->printJson(timerSetting());
-#endif
+// #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+//                         String _timer = taskCount ? "1":"0";
+//                         _timer += _lpState ? "1":"0";
+//                         _timer += _cdState ? "1":"0";
+//     #if defined(BLINKER_DEBUG_ALL)
+//                         BLINKER_LOG2("timer codes: ", _timer);
+//     #endif
+//                         static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
+//                         // static_cast<Proto*>(this)->printJson(timerSetting());
+// #endif
 
-                        static_cast<Proto*>(this)->endFormat();
-                    }
+//                         static_cast<Proto*>(this)->endFormat();
+//                     }
                     _fresh = true;
                 }
             }
@@ -1992,7 +1992,7 @@ class BlinkerApi
             // if (state.length()) {
                 // _fresh = true;
                 if (state == BLINKER_CMD_STATE) {
-                    static_cast<Proto*>(this)->beginFormat();
+                    // static_cast<Proto*>(this)->beginFormat();
 
 #if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
@@ -2004,16 +2004,16 @@ class BlinkerApi
                         _heartbeatFunc();
                     }
 
-                    if (!static_cast<Proto*>(this)->endFormat()) {
-                        static_cast<Proto*>(this)->beginFormat();
+//                     if (!static_cast<Proto*>(this)->endFormat()) {
+//                         static_cast<Proto*>(this)->beginFormat();
 
-#if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
-#else
-                        static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
-#endif                        
-                        static_cast<Proto*>(this)->endFormat();
-                    }
+// #if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
+//                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+// #else
+//                         static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+// #endif                        
+//                         static_cast<Proto*>(this)->endFormat();
+//                     }
                     _fresh = true;
                 }
             }

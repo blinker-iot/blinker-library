@@ -816,7 +816,7 @@ bool BlinkerMQTT::print(String data) {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(payload, ("...OK!"));
 #endif
-                printTime = millis();
+                if (!state) printTime = millis();
 
                 if (!_alive) {
                     isAlive = false;
