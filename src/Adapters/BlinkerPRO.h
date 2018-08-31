@@ -40,6 +40,8 @@ WebSocketsServer webSocket = WebSocketsServer(WS_SERVERPORT);
 static char msgBuf[BLINKER_MAX_READ_SIZE];
 static bool isConnect = false;
 static bool isAvail = false;
+static uint8_t ws_num = 0;
+static uint8_t dataFrom = BLINKER_MSG_FROM_MQTT;
 
 static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
 {
@@ -64,6 +66,8 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
                 // send message to client
                 webSocket.sendTXT(num, "{\"state\":\"connected\"}\n");
 
+                ws_num = num;
+
                 isConnect = true;
             }
             break;
@@ -79,6 +83,10 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
                 strcpy(msgBuf, (char*)payload);
                 isAvail = true;
             }
+
+            dataFrom = BLINKER_MSG_FROM_WS;
+
+            ws_num = num;
 
             // send message to client
             // webSocket.sendTXT(num, "message here");
@@ -793,12 +801,14 @@ void BlinkerPRO::subscribe() {
             memcpy(msgBuf, dataGet.c_str(), dataGet.length());
             
             this->latestTime = millis();
+
+            dataFrom = BLINKER_MSG_FROM_MQTT;
         }
     }
 }
 
 bool BlinkerPRO::print(String data) {
-    if (*isHandle) {
+    if (*isHandle && dataFrom == BLINKER_MSG_FROM_WS) {
         bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
                     (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
                      STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
@@ -831,7 +841,7 @@ bool BlinkerPRO::print(String data) {
 #ifdef BLINKER_DEBUG_ALL
         BLINKER_LOG1(("Succese..."));
 #endif
-        webSocket.broadcastTXT(data);
+        webSocket.sendTXT(ws_num, data + BLINKER_CMD_NEWLINE);
 
         return true;
 // #ifdef BLINKER_DEBUG_ALL
