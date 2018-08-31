@@ -1833,6 +1833,8 @@ class BlinkerApi
                     if (_heartbeatFunc) {
                         _heartbeatFunc();
                     }
+
+                    static_cast<Proto*>(this)->printNow();
 //                     if (!static_cast<Proto*>(this)->endFormat()) {
 //                         static_cast<Proto*>(this)->beginFormat();
 // #if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
@@ -2003,7 +2005,8 @@ class BlinkerApi
                     if (_heartbeatFunc) {
                         _heartbeatFunc();
                     }
-
+                    
+                    static_cast<Proto*>(this)->printNow();
 //                     if (!static_cast<Proto*>(this)->endFormat()) {
 //                         static_cast<Proto*>(this)->beginFormat();
 
