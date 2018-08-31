@@ -39,11 +39,11 @@
 
 #define BLINKER_MDNS_SERVICE_BLINKER    "blinker"
 
-#if defined(BLINKER_MQTT)
-    #define BLINKER_MSG_AUTOFORMAT_TIMEOUT  1000
-#else
+// #if defined(BLINKER_MQTT)
+//     #define BLINKER_MSG_AUTOFORMAT_TIMEOUT  1000
+// #else
     #define BLINKER_MSG_AUTOFORMAT_TIMEOUT  100
-#endif
+// #endif
 
 #define BLINKER_SMS_MAX_SEND_SIZE       128
 
