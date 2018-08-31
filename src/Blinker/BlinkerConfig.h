@@ -60,23 +60,35 @@
 #define BLINKER_OBJECT_NOT_AVAIL        -1
 
 #ifndef BLINKER_MAX_READ_SIZE
-#if defined(ESP8266) || defined(ESP32)
-    #define BLINKER_MAX_READ_SIZE       512
-#else
-    #define BLINKER_MAX_READ_SIZE       256
-#endif
+    #if defined(ESP8266) || defined(ESP32)
+        #define BLINKER_MAX_READ_SIZE       512
+    #else
+        #define BLINKER_MAX_READ_SIZE       256
+    #endif
 #endif
 
 #ifndef BLINKER_MAX_SEND_SIZE
-#if defined(ESP8266) || defined(ESP32)
-    #if defined(BLINKER_MQTT)
-        #define BLINKER_MAX_SEND_SIZE       512 - 128
+    #if defined(ESP8266) || defined(ESP32)
+        #if defined(BLINKER_MQTT)
+            #define BLINKER_MAX_SEND_SIZE       1024
+        #else
+            #define BLINKER_MAX_SEND_SIZE       512
+        #endif
     #else
-        #define BLINKER_MAX_SEND_SIZE       512
+        #define BLINKER_MAX_SEND_SIZE       128
     #endif
-#else
-    #define BLINKER_MAX_SEND_SIZE       128
 #endif
+
+#ifndef BLINKER_MAX_SEND_BUFFER_SIZE
+    #if defined(ESP8266) || defined(ESP32)
+        #if defined(BLINKER_MQTT)
+            #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE - 128
+        #else
+            #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
+        #endif
+    #else
+        #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
+    #endif
 #endif
 
 #define BLINKER_AUTHKEY_SIZE            14
