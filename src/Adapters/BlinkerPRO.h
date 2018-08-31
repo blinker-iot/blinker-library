@@ -337,9 +337,11 @@ class BlinkerPRO {
             }
 
             BLINKER_LOG1(BLINKER_F("mDNS responder started"));
+
+            String _service = STRING_format(BLINKER_MDNS_SERVICE_BLINKER) + _deviceType;
             
-            MDNS.addService(_deviceType, "tcp", WS_SERVERPORT);
-            MDNS.addServiceTxt(_deviceType, "tcp", "deviceName", String(macDeviceName()));
+            MDNS.addService(_service.c_str(), "tcp", WS_SERVERPORT);
+            MDNS.addServiceTxt(_service.c_str(), "tcp", "deviceName", String(macDeviceName()));
 
             webSocket.begin();
             webSocket.onEvent(webSocketEvent);

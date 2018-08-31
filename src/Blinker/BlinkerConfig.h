@@ -37,6 +37,8 @@
 
 #define BLINKER_CONFIG_GET_LIMIT        60000UL
 
+#define BLINKER_MDNS_SERVICE_BLINKER    "blinker"
+
 #if defined(BLINKER_MQTT)
     #define BLINKER_MSG_AUTOFORMAT_TIMEOUT  1000
 #else
