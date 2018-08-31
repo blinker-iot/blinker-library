@@ -921,6 +921,9 @@ class BlinkerProtocol
             String _data;
 
             if (strlen(_sendBuf)) {
+    #ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(BLINKER_F("autoFormatData add"));
+    #endif
                 JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
 
                 if (root.containsKey(key)) {
@@ -933,6 +936,9 @@ class BlinkerProtocol
                 _data += "," + jsonValue + "}";
             }
             else {
+    #ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(BLINKER_F("autoFormatData new"));
+    #endif
                 _data = "{" + jsonValue + "}";
             }
 
@@ -1066,13 +1072,13 @@ class BlinkerProtocol
         bool            isFormat;
         bool            autoFormat = false;
         uint32_t        autoFormatFreshTime;
-        char            _sendBuf[BLINKER_MAX_SEND_SIZE];
+        char            _sendBuf[BLINKER_MAX_SEND_BUFFER_SIZE];
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         bool            isBridgeFresh = false;
         bool            isExtraAvail = false;
         bool            isBridgeAvail = false;
         bool            isBformat = false;
-        char            _bSendBuf[BLINKER_MAX_SEND_SIZE];
+        char            _bSendBuf[BLINKER_MAX_SEND_BUFFER_SIZE];
         String          _bridgeKey;
         String          _bKey_forwhile;
 #endif
