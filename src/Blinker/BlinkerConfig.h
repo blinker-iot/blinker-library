@@ -39,6 +39,10 @@
 
 #define BLINKER_MDNS_SERVICE_BLINKER    "blinker"
 
+#define BLINKER_MSG_FROM_MQTT           0
+
+#define BLINKER_MSG_FROM_WS             1
+
 // #if defined(BLINKER_MQTT)
 //     #define BLINKER_MSG_AUTOFORMAT_TIMEOUT  1000
 // #else

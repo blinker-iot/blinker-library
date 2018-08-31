@@ -42,6 +42,7 @@ static char msgBuf[BLINKER_MAX_READ_SIZE];
 static bool isConnect = false;
 static bool isAvail = false;
 static uint8_t ws_num = 0;
+static uint8_t dataFrom = BLINKER_MSG_FROM_MQTT;
 
 static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
 {
@@ -83,6 +84,8 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
                 strcpy(msgBuf, (char*)payload);
                 isAvail = true;
             }
+
+            dataFrom = BLINKER_MSG_FROM_WS;
 
             ws_num = num;
 
@@ -706,12 +709,14 @@ void BlinkerMQTT::subscribe() {
             memcpy(msgBuf, dataGet.c_str(), dataGet.length());
             
             this->latestTime = millis();
+
+            dataFrom = BLINKER_MSG_FROM_MQTT;
         }
     }
 }
 
 bool BlinkerMQTT::print(String data) {
-    if (*isHandle) {
+    if (*isHandle && dataFrom == BLINKER_MSG_FROM_WS) {
         bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
                     (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
                      STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
