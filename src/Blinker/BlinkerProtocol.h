@@ -912,7 +912,9 @@ class BlinkerProtocol
             //     return;
             // }
 
-
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG4(BLINKER_F("autoFormatData key: "), key, BLINKER_F(", jsonValue: "), jsonValue);
+    #endif
 
             DynamicJsonBuffer jsonSendBuffer;
 
@@ -932,6 +934,11 @@ class BlinkerProtocol
             }
             else {
                 _data = "{" + jsonValue + "}";
+            }
+
+            if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE) {
+                BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+                return;
             }
 
             strcpy(_sendBuf, _data.c_str());
