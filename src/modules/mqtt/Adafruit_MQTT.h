@@ -34,7 +34,7 @@
 #define ADAFRUIT_MQTT_VERSION_PATCH 0
 
 // Uncomment/comment to turn on/off debug output messages.
-//#define MQTT_DEBUG
+// #define MQTT_DEBUG
 // Uncomment/comment to turn on/off error output messages.
 // #define MQTT_ERROR
 
