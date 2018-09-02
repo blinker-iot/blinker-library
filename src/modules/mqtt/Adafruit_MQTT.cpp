@@ -229,7 +229,7 @@ uint16_t Adafruit_MQTT::readFullPacket(uint8_t *buffer, uint16_t maxsize, uint16
   // will read a packet and Do The Right Thing with length
   uint8_t *pbuff = buffer;
 
-  uint8_t rlen;
+  uint16_t rlen;
 
   // read the packet type:
   rlen = readPacket(pbuff, 1, timeout);
