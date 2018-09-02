@@ -152,7 +152,8 @@ class BlinkerSimpleESP32_MQTT
 
             WiFi.begin();
             ::delay(500);
-            BLINKER_LOG1("Waiting for WiFi");
+            BLINKER_LOG3("Waiting for WiFi ",BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
+                "s, will enter SMARTCONFIG or APCONFIG while WiFi not connect!");
             uint8_t _times = 0;
             while (WiFi.status() != WL_CONNECTED) {
                 ::delay(500);
