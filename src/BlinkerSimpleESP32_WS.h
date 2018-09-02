@@ -151,7 +151,7 @@ class BlinkerSimpleESP32_WS
             uint8_t _times = 0;
             while (WiFi.status() != WL_CONNECTED) {
                 ::delay(500);
-                if (_times > 60) break;
+                if (_times > BLINKER_WIFI_AUTO_INIT_TIMEOUT / 500) break;
                 _times++;
             }
 
