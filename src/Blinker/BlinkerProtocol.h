@@ -26,7 +26,7 @@ class BlinkerProtocol
             , isAvail(false)
             , availState(false)
             , canParse(false)
-            , isFormat(false)
+            // , isFormat(false)
         {}
 
         bool connected() { return state == CONNECTED; }
@@ -180,7 +180,7 @@ class BlinkerProtocol
 // #else
 //         void print(T n) {
 //             String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
-//             if (data.length() <= BLINKER_MAX_SEND_SIZE) {
+//             if (data.length() <= BLINKER_MAX_SEND_BUFFER_SIZE) {
 //                 conn.print(data);
 //             }
 //             else {
@@ -189,33 +189,33 @@ class BlinkerProtocol
 //             _print(n);
 //         }
 // #endif
-        void beginFormat() {
-            isFormat = true;
-            memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
-        }
+        // void beginFormat() {
+        //     isFormat = true;
+        //     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
+        // }
 
-        bool endFormat() {
-            isFormat = false;
-            if (strlen(_sendBuf)) {
-                _print("{" + STRING_format(_sendBuf) + "}");
-            }
-            else {
-                return true;
-            }
+        // bool endFormat() {
+        //     isFormat = false;
+        //     if (strlen(_sendBuf)) {
+        //         _print("{" + STRING_format(_sendBuf) + "}");
+        //     }
+        //     else {
+        //         return true;
+        //     }
 
-            if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE - 3) {
-                return false;
-            }
-            else {
-                return true;
-            }
-        }
+        //     if (strlen(_sendBuf) > BLINKER_MAX_SEND_BUFFER_SIZE - 3) {
+        //         return false;
+        //     }
+        //     else {
+        //         return true;
+        //     }
+        // }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         void bridgeBeginFormat() {
             isBformat = true;
             _bridgeKey = "";
-            memset(_bSendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+            memset(_bSendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
         }
 
         bool bridgeEndFormat() {
@@ -235,21 +235,21 @@ class BlinkerProtocol
 
         template <typename T>
         void print(T n) {
-            if (!isFormat)
+            // if (!isFormat)
                 _print("\""  + STRING_format(n)+ "\"");
         }
         void print() {
-            if (!isFormat)
+            // if (!isFormat)
                 _print("\"\"");
         }
         
         template <typename T>
         void println(T n) {
-            if (!isFormat)
+            // if (!isFormat)
                 _print("\""  + STRING_format(n)+ "\"");
         }
         void println() {
-            if (!isFormat)
+            // if (!isFormat)
                 _print("\"\"");
         }
 
@@ -257,16 +257,16 @@ class BlinkerProtocol
         void print(T1 n1, T2 n2, T3 n3) {
             String _msg = "\""  + STRING_format(n1) + "\":\"" + STRING_format(n2) + BLINKER_CMD_INTERSPACE + STRING_format(n3) + "\"";
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -274,23 +274,23 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
         
         template <typename T1, typename T2, typename T3>
         void println(T1 n1, T2 n2, T3 n3) {
             String _msg = "\""  + STRING_format(n1) + "\":\"" + STRING_format(n2) + BLINKER_CMD_INTERSPACE + STRING_format(n3) + "\"";
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -298,7 +298,7 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         // template <typename T1, typename T2>
@@ -330,16 +330,16 @@ class BlinkerProtocol
 // #ifdef BLINKER_DEBUG_ALL
 //             BLINKER_LOG2(BLINKER_F("printArray _msg: "), "\"" + STRING_format(n1) + "\":" + s2);
 // #endif
-            if (isFormat) {
-                formatData("\"" + STRING_format(n1) + "\":" + s2);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData("\"" + STRING_format(n1) + "\":" + s2);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 
                 // autoFormatData("\"" + STRING_format(n1) + "\":" + s2);
@@ -349,23 +349,23 @@ class BlinkerProtocol
                 autoFormatData("\"" + STRING_format(n1) + "\":" + s2);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
         void printObject(T1 n1, const String &s2) {
             String _msg = "\"" + STRING_format(n1) + "\":" + s2;
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -373,7 +373,7 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
 // #if defined(ESP8266) || defined(ESP32)
@@ -395,7 +395,7 @@ class BlinkerProtocol
 
 //                 if (!autoFormat) {
 //                     autoFormat = true;
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
 //                 }
 
 //                 autoFormatData(s);
@@ -408,16 +408,16 @@ class BlinkerProtocol
         void print(T1 n1, const String &s2) {
             String _msg = "\"" + STRING_format(n1) + "\":\"" + s2 + "\"";
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -425,23 +425,23 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
         void print(T1 n1, const char str2[]) {
             String _msg = "\"" + STRING_format(n1) + "\":\"" + STRING_format(str2) + "\"";
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -449,23 +449,23 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
         void print(T1 n1, char c) {
             String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(c);
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -473,23 +473,23 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
         void print(T1 n1, unsigned char b) {
             String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(b);
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -497,23 +497,23 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
         void print(T1 n1, int n) {
             String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -521,23 +521,23 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
         void print(T1 n1, unsigned int n) {
             String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -545,23 +545,23 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
         void print(T1 n1, long n) {
             String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -569,23 +569,23 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
         void print(T1 n1, unsigned long n) {
             String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -593,23 +593,23 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
         void print(T1 n1, double n) {
             String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
                 if (!autoFormat) {
                     autoFormat = true;
-                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -617,7 +617,7 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
 
         template <typename T1>
@@ -824,10 +824,10 @@ class BlinkerProtocol
         void notify(T n) {
             String _msg = "\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"";
             
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
@@ -841,7 +841,7 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 // #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
 
 // #if defined(BLINKER_MQTT)
 //             print("{\"" + STRING_format(BLINKER_CMD_NOTICE) + "\":\"" + STRING_format(n) + "\"}", true);
@@ -853,10 +853,10 @@ class BlinkerProtocol
         void textPrint(const String & tName, const String & title, const String & payload) {
             String _msg = "\"" + tName + "\":[\"" + title + "\",\"" + payload + "\"]";
 
-            if (isFormat) {
-                formatData(_msg);
-            }
-            else {
+            // if (isFormat) {
+            //     formatData(_msg);
+            // }
+            // else {
             //     _print("{" + _msg + "}");
             // }
 
@@ -870,7 +870,7 @@ class BlinkerProtocol
                 autoFormatData(_msg);
 // #endif
                 autoFormatFreshTime = millis();
-            }
+            // }
         }
         
         void flush() {
@@ -885,23 +885,23 @@ class BlinkerProtocol
 #endif
 
     private :
-        void formatData(String data) {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("formatData data: "), data);
-#endif
-            if ((strlen(_sendBuf) + data.length()) >= BLINKER_MAX_SEND_SIZE) {
-                BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
-                return;
-            }
+//         void formatData(String data) {
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG2(BLINKER_F("formatData data: "), data);
+// #endif
+//             if ((strlen(_sendBuf) + data.length()) >= BLINKER_MAX_SEND_SIZE) {
+//                 BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+//                 return;
+//             }
 
-            if (strlen(_sendBuf) > 0) {
-                data = "," + data;
-                strcat(_sendBuf, data.c_str());
-            }
-            else {
-                strcpy(_sendBuf, data.c_str());
-            }
-        }
+//             if (strlen(_sendBuf) > 0) {
+//                 data = "," + data;
+//                 strcat(_sendBuf, data.c_str());
+//             }
+//             else {
+//                 strcpy(_sendBuf, data.c_str());
+//             }
+//         }
 
 #if defined(ESP8266) || defined(ESP32)
         //template <typename T>
@@ -995,6 +995,51 @@ class BlinkerProtocol
             }
         }
 
+        void autoBridgeFormatData(String key, String jsonValue) {
+            // String _value = STRING_format(value);
+            // if ((strlen(_sendBuf) + key.length() + _value.length()) >= BLINKER_MAX_SEND_SIZE) {
+            //     BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+            //     return;
+            // }
+
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG4(BLINKER_F("autoBridgeFormatData key: "), key, BLINKER_F(", jsonValue: "), jsonValue);
+    #endif
+
+            DynamicJsonBuffer jsonSendBuffer;
+
+            String _data;
+
+            if (strlen(_bSendBuf)) {
+    #ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(BLINKER_F("autoBridgeFormatData add"));
+    #endif
+                JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_bSendBuf));
+
+                if (root.containsKey(key)) {
+                    root.remove(key);
+                }
+                root.printTo(_data);
+
+                _data = _data.substring(0, _data.length() - 1);
+
+                _data += "," + jsonValue + "}";
+            }
+            else {
+    #ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(BLINKER_F("autoBridgeFormatData new"));
+    #endif
+                _data = "{" + jsonValue + "}";
+            }
+
+            if (strlen(_bSendBuf) > BLINKER_MAX_SEND_SIZE) {
+                BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+                return;
+            }
+
+            strcpy(_bSendBuf, _data.c_str());
+        }
+
         bool checkExtraAvail()
         {
             if (conn.extraAvailable()) {
@@ -1069,7 +1114,7 @@ class BlinkerProtocol
         bool            isAvail;
         bool            availState;
         bool            canParse;
-        bool            isFormat;
+        // bool            isFormat;
         bool            autoFormat = false;
         uint32_t        autoFormatFreshTime;
         char            _sendBuf[BLINKER_MAX_SEND_BUFFER_SIZE];
@@ -1078,6 +1123,7 @@ class BlinkerProtocol
         bool            isExtraAvail = false;
         bool            isBridgeAvail = false;
         bool            isBformat = false;
+        bool            autoBFormat = false;
         char            _bSendBuf[BLINKER_MAX_SEND_BUFFER_SIZE];
         String          _bridgeKey;
         String          _bKey_forwhile;
