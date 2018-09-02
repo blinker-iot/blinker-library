@@ -26,7 +26,8 @@ class BlinkerSimpleESP8266_WS
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void begin() {
             Base::begin();
-            smartconfig();
+            if (!autoInit())
+                smartconfig();
             Base::loadTimer();
             BLINKER_LOG1("ESP8266_WiFi initialized...");
         }
@@ -34,11 +35,13 @@ class BlinkerSimpleESP8266_WS
 #elif defined(BLINKER_APCONFIG)
         void begin() {
             Base::begin();
-            softAPinit();
-            while(WiFi.status() != WL_CONNECTED) {
-                serverClient();
+            if (!autoInit()) {
+                softAPinit();
+                while(WiFi.status() != WL_CONNECTED) {
+                    serverClient();
 
-                ::delay(10);
+                    ::delay(10);
+                }
             }
             Base::loadTimer();
             BLINKER_LOG1("ESP8266_WiFi initialized...");
@@ -139,11 +142,38 @@ class BlinkerSimpleESP8266_WS
         }
 #endif
 
+        bool autoInit() {
+            WiFi.mode(WIFI_AP_STA);
+            String _hostname = "DiyArduino_" + macDeviceName();
+            WiFi.setHostname(_hostname.c_str());
+
+            WiFi.begin();
+            ::delay(500);
+            BLINKER_LOG1("Waiting for WiFi");
+            uint8_t _times = 0;
+            while (WiFi.status() != WL_CONNECTED) {
+                ::delay(500);
+                if (_times > 60) break;
+                _times++;
+            }
+
+            if (WiFi.status() != WL_CONNECTED) return false;
+            else {
+                BLINKER_LOG1("WiFi Connected.");
+
+                BLINKER_LOG1("IP Address: ");
+                BLINKER_LOG1(WiFi.localIP());
+
+                mDNSInit();
+                return true;
+            }
+        }
+
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
-            WiFi.mode(WIFI_STA);
+            WiFi.mode(WIFI_AP_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
-            WiFi.hostname(_hostname);
+            WiFi.setHostname(_hostname.c_str());
             WiFi.beginSmartConfig();
             
             BLINKER_LOG1("Waiting for SmartConfig.");

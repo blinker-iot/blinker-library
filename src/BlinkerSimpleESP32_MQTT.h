@@ -22,7 +22,8 @@ class BlinkerSimpleESP32_MQTT
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void begin(const char* _auth) {
             Base::begin(_auth);
-            smartconfig();
+            if (!autoInit())
+                smartconfig();
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             Base::loadTimer();
@@ -32,12 +33,16 @@ class BlinkerSimpleESP32_MQTT
 #elif defined(BLINKER_APCONFIG)
         void begin() {
             Base::begin();
-            softAPinit();
-            while(WiFi.status() != WL_CONNECTED) {
-                serverClient();
+            if (!autoInit()) {
+                softAPinit();
+                while(WiFi.status() != WL_CONNECTED) {
+                    serverClient();
 
-                ::delay(10);
+                    ::delay(10);
+                }
             }
+            this->conn.begin(_auth);
+            strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             Base::loadTimer();
             BLINKER_LOG1("ESP8266_WiFi initialized...");
         }
@@ -140,10 +145,37 @@ class BlinkerSimpleESP32_MQTT
         }
 #endif
 
+        bool autoInit() {
+            WiFi.mode(WIFI_AP_STA);
+            String _hostname = "DiyArduino_" + macDeviceName();
+            WiFi.setHostname(_hostname.c_str());
+
+            WiFi.begin();
+            ::delay(500);
+            BLINKER_LOG1("Waiting for WiFi");
+            uint8_t _times = 0;
+            while (WiFi.status() != WL_CONNECTED) {
+                ::delay(500);
+                if (_times > 60) break;
+                _times++;
+            }
+
+            if (WiFi.status() != WL_CONNECTED) return false;
+            else {
+                BLINKER_LOG1("WiFi Connected.");
+
+                BLINKER_LOG1("IP Address: ");
+                BLINKER_LOG1(WiFi.localIP());
+
+                // mDNSInit();
+                return true;
+            }
+        }
+
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
             WiFi.mode(WIFI_AP_STA);
-            String _hostname = "DiyArduinoMQTT_" + macDeviceName();
+            String _hostname = "DiyArduino_" + macDeviceName();
             WiFi.setHostname(_hostname.c_str());
             WiFi.beginSmartConfig();
             
