@@ -1365,9 +1365,11 @@ void BlinkerProtocol<Transp>::run()
     }
     else {
         if (!_isInit) {
-            _isInit = true;
-            strcpy(_authKey, conn.key().c_str());
-            strcpy(_deviceName, conn.deviceName().c_str());
+            if (BApi::ntpInit()) {
+                _isInit = true;
+                strcpy(_authKey, conn.key().c_str());
+                strcpy(_deviceName, conn.deviceName().c_str());
+            }
         }
     }
 #endif

@@ -4267,6 +4267,7 @@ class BlinkerApi
     #endif
                     static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "deviceType check fail");
                 }
+                static_cast<Proto*>(this)->printNow();
             }
         }
 #endif
