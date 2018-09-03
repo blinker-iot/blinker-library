@@ -19,7 +19,7 @@
 #elif defined(BLINKER_PRO)
     #include <utility/BlinkerAuto.h>
     #include <utility/BlinkerWlan.h>
-    #include "modules/OneButton/OneButton.h"
+    // #include "modules/OneButton/OneButton.h"
 #else
     #include <Blinker/BlinkerConfig.h>
     #include <utility/BlinkerUtility.h>
@@ -252,22 +252,46 @@ class BlinkerData
         {}
 
         void name(String name) { _dname = name; }
+
         String getName() { return _dname; }
+
         void saveData(time_t _time, String _data) {
-            if (data.length() >= BLINKER_MAX_SEND_SIZE / 2 ||
-                _data.length() >= BLINKER_MAX_SEND_SIZE / 2){
+            if (data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2 ||
+                _data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2){
                 BLINKER_ERR_LOG1("MAX THAN DATA STORAGE SIZE");
                 return;
             }
+
             if (data != "") {
                 data += ",";
             }
             data += "[" + STRING_format(_time) + "," + _data + "]";
+
+            dataCount++;
         }
-        String getData() { return data; }
+
+        String getData() {
+            // DynamicJsonBuffer jsonDataBuffer;
+
+            // JsonArray& dataArray = jsonBuffer.parseArray(json);
+
+            // uint32_t now_millis = millis();
+            // uint32_t now_time = time();
+
+            // for (uint8_t num; num < dataCount; num++) {
+            //     uint32_t data_time = dataArray[num][0];
+
+            //     if (data_time < millis())
+            // }
+
+            dataCount = 0;
+            return data;
+        }
+
         bool checkName(String name) { return ((_dname == name) ? true : false); }
 
     private :
+        uint8_t dataCount = 0;
         String _dname;
         String data = "";
 };

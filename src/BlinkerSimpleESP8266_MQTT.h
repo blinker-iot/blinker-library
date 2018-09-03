@@ -152,7 +152,7 @@ class BlinkerSimpleESP8266_MQTT
         bool autoInit() {
             WiFi.mode(WIFI_AP_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
-            WiFi.setHostname(_hostname.c_str());
+            WiFi.hostname(_hostname.c_str());
 
             WiFi.begin();
             ::delay(500);
@@ -179,9 +179,9 @@ class BlinkerSimpleESP8266_MQTT
 
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
-            WiFi.mode(WIFI_AP_STA);
+            WiFi.mode(WIFI_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
-            WiFi.setHostname(_hostname.c_str());
+            WiFi.hostname(_hostname.c_str());
             WiFi.beginSmartConfig();
             
             BLINKER_LOG1("Waiting for SmartConfig.");
