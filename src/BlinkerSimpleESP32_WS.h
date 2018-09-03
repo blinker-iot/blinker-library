@@ -170,7 +170,7 @@ class BlinkerSimpleESP32_WS
 
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
-            WiFi.mode(WIFI_AP_STA);
+            WiFi.mode(WIFI_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
             WiFi.setHostname(_hostname.c_str());
             WiFi.beginSmartConfig();
