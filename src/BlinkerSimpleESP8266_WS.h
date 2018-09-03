@@ -26,7 +26,7 @@ class BlinkerSimpleESP8266_WS
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void begin() {
             Base::begin();
-            if (!autoInit())
+            // if (!autoInit())
                 smartconfig();
             Base::loadTimer();
             BLINKER_LOG1("ESP8266_WiFi initialized...");
@@ -145,7 +145,7 @@ class BlinkerSimpleESP8266_WS
         bool autoInit() {
             WiFi.mode(WIFI_AP_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
-            WiFi.setHostname(_hostname.c_str());
+            WiFi.hostname(_hostname.c_str());
 
             WiFi.begin();
             ::delay(500);
@@ -174,7 +174,7 @@ class BlinkerSimpleESP8266_WS
         void smartconfig() {
             WiFi.mode(WIFI_AP_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
-            WiFi.setHostname(_hostname.c_str());
+            WiFi.hostname(_hostname.c_str());
             WiFi.beginSmartConfig();
             
             BLINKER_LOG1("Waiting for SmartConfig.");
