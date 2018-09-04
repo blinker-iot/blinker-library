@@ -74,7 +74,7 @@ static class BlinkerAUTO * _AUTO[2];
 static class BlinkerBridge * _Bridge[BLINKER_MAX_BRIDGE_SIZE];
 // #endif
 // #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-static class BlinkerData *_Data[6];
+static class BlinkerData *_Data[BLINKER_MAX_BLINKER_DATA_SIZE];
 #endif
 
 #if defined(BLINKER_WIFI)
@@ -249,42 +249,104 @@ class BlinkerData
     public :
         BlinkerData()
             : _dname(NULL)
-        {}
+        {
+            memcpy(data,"\0",256);
+        }
 
         void name(String name) { _dname = name; }
 
         String getName() { return _dname; }
 
-        void saveData(time_t _time, String _data) {
-            if (data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2 ||
-                _data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2){
-                BLINKER_ERR_LOG1("MAX THAN DATA STORAGE SIZE");
-                return;
-            }
+        // void saveData(time_t _time, String _data) {
+        //     // if (data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2 ||
+        //     //     _data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2){
+        //     //     BLINKER_ERR_LOG1("MAX THAN DATA STORAGE SIZE");
+        //     //     return;
+        //     // }
 
-            if (data != "") {
-                data += ",";
-            }
-            data += "[" + STRING_format(_time) + "," + _data + "]";
+        //     // if (data != "") {
+        //     //     data += ",";
+        //     // }
+        //     // data += "[" + STRING_format(_time) + "," + _data + "]";
 
-            dataCount++;
-        }
+        //     String _data_ = STRING_format(data);
+        //     if (_data_ != "") {
+        //         _data_ += ",";
+        //     }
+        //     _data_ += "[" + STRING_format(_time) + "," + _data + "]";
 
-        String getData() {
-            // DynamicJsonBuffer jsonDataBuffer;
+        //     strcpy(data, _data_.c_str());
 
-            // JsonArray& dataArray = jsonBuffer.parseArray(json);
+        //     dataCount++;
+        // }
 
-            // uint32_t now_millis = millis();
-            // uint32_t now_time = time();
-
-            // for (uint8_t num; num < dataCount; num++) {
-            //     uint32_t data_time = dataArray[num][0];
-
-            //     if (data_time < millis())
+        void saveData(String _data) {
+            // if (data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2 ||
+            //     _data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2){
+            //     BLINKER_ERR_LOG1("MAX THAN DATA STORAGE SIZE");
+            //     return;
             // }
 
+            // if (data != "") {
+            //     data += ",";
+            // }
+            // data += "[" + STRING_format(millis()) + "," + _data + "]";
+            String _data_;
+
+            if(strlen(data))
+                _data_ = STRING_format(data);
+
+            if (_data_.length()) {
+                _data_ += ",";
+            }
+            _data_ += "[" + STRING_format(millis()) + "," + _data + "]";
+            if (_data_.length() < 256) {
+                strcpy(data, _data_.c_str());
+                dataCount++;
+            }
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("saveData: "), data);
+            BLINKER_LOG2(BLINKER_F("saveData dataCount: "), dataCount);
+    #endif
+        }
+
+        String getData(time_t now_time) {
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("getData data: "), data);
+    #endif
+            String _data_ = "{\"data\":[" + STRING_format(data) + "]}";
+
+            // DynamicJsonBuffer jsonDataBuffer;
+            // JsonArray& dataArray = jsonDataBuffer.parseArray(_data_);
+
+            DynamicJsonBuffer jsonDataBuffer;
+            JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
+
+            uint32_t now_millis = millis();
+            // uint32_t now_time = time();
+            uint32_t last_millis = now_millis;
+    // #ifdef BLINKER_DEBUG_ALL
+    //         BLINKER_LOG2(BLINKER_F("now_time: "), now_time);
+    // #endif
+            for (uint8_t num = dataCount; num > 0; num--) {
+                uint32_t data_time = dataArray["data"][num-1][0];
+                uint32_t real_time = now_time - (last_millis - data_time)/1000;
+                dataArray["data"][num-1][0] = real_time;
+    #ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG4(BLINKER_F("now_time: "), now_time, BLINKER_F(" real_time: "), real_time);
+    #endif
+                last_millis = data_time;
+            }
+
             dataCount = 0;
+
+            String _data_decode = dataArray["data"];
+            // dataArray.printTo(_data_decode);
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("getData _data_: "), _data_decode);
+    #endif
+            strcpy(data, _data_decode.c_str());
+
             return data;
         }
 
@@ -293,7 +355,7 @@ class BlinkerData
     private :
         uint8_t dataCount = 0;
         String _dname;
-        String data = "";
+        char data[256];
 };
 #endif
 
@@ -1073,25 +1135,27 @@ class BlinkerApi
         void dataStorage(const String & _name, const T& msg) {
             String _msg = STRING_format(msg);
 
-            int8_t num = checkNum(_name, _Data, _dataCount);
-
-            // BLINKER_LOG2("num: ", num);
-
+            int8_t num = checkNum(_name, _Data, data_dataCount);
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2("dataStorage num: ", num);
+    #endif
             if( num == BLINKER_OBJECT_NOT_AVAIL ) {
-                if (_dataCount == 6) {
+                if (data_dataCount == BLINKER_MAX_BLINKER_DATA_SIZE) {
                     return;
                 }
-                _Data[_dataCount] = new BlinkerData();
-                _Data[_dataCount]->name(_name);
-                _Data[_dataCount]->saveData(time(), _msg);
-                _dataCount++;
+                _Data[data_dataCount] = new BlinkerData();
+                _Data[data_dataCount]->name(_name);
+                // _Data[data_dataCount]->saveData(time(), _msg);
+                _Data[data_dataCount]->saveData(_msg);
+                data_dataCount++;
             }
             else {
-                _Data[num]->saveData(time(), _msg);
+                // _Data[num]->saveData(time(), _msg);
+                _Data[num]->saveData(_msg);
             }
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG3(_name, " save: ", _msg);
-            BLINKER_LOG2("_dataCount: ", _dataCount);
+            BLINKER_LOG2("data_dataCount: ", data_dataCount);
     #endif
         }
 
@@ -1101,14 +1165,16 @@ class BlinkerApi
                             ",\"data\":{";
             // String _sdata;
 
-            if (!_dataCount) {
+            if (!data_dataCount) {
                 BLINKER_ERR_LOG1("none data storaged!");
                 return false;
             }
 
-            for (uint8_t _num = 0; _num < _dataCount; _num++) {
-                data += "\"" + _Data[_num]->getName() + "\":[" + _Data[_num]->getData() + "]";
-                if (_num < _dataCount - 1) {
+            uint32_t now_time = time();
+
+            for (uint8_t _num = 0; _num < data_dataCount; _num++) {
+                data += "\"" + _Data[_num]->getName() + "\":" + _Data[_num]->getData(now_time);
+                if (_num < data_dataCount - 1) {
                     data += ",";
                 }
     #ifdef BLINKER_DEBUG_ALL
@@ -1123,15 +1189,15 @@ class BlinkerApi
             // return true;
                             //  + \ _msg + \
                             // "\"}}";
+
             if (blinkServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE) {
                 return false;
-
             }
             else {
-                for (uint8_t _num = 0; _num < _dataCount; _num++) {
+                for (uint8_t _num = 0; _num < data_dataCount; _num++) {
                     delete _Data[_num];
                 }
-                _dataCount = 0;
+                data_dataCount = 0;
                 return true;
             }
         }
@@ -1556,7 +1622,7 @@ class BlinkerApi
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         uint8_t     _bridgeCount = 0;
-        uint8_t     _dataCount = 0;
+        uint8_t     data_dataCount = 0;
         uint8_t     _aCount = 0;
 #endif
 

@@ -311,6 +311,10 @@
     #endif
 #endif
 
+#define BLINKER_MAX_BLINKER_DATA_SIZE   6
+
+#define BLINKER_MAX_DATA_COUNT          24
+
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     #define BLINKER_CMD_SMS_NUMBER              1
 
