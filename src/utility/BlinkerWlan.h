@@ -180,7 +180,10 @@ bool BlinkerWlan::smartconfigDone() {
         _status = BWL_SMARTCONFIG_DONE;
 
         BLINKER_LOG1(("SmartConfig Success"));
-
+#if defined(ESP8266)
+        BLINKER_LOG4(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
+        WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
+#endif
         return true;
     }
     else {
