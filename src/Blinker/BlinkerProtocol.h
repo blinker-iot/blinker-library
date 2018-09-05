@@ -836,7 +836,7 @@ class BlinkerProtocol
                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
-                autoFormatData(STRING_format(BLINKER_CMD_NOTICE), STRING_format(n));
+                autoFormatData(STRING_format(BLINKER_CMD_NOTICE), _msg);
 #else
                 autoFormatData(_msg);
 #endif
