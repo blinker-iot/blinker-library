@@ -864,11 +864,11 @@ class BlinkerProtocol
                     autoFormat = true;
                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
-// #if defined(ESP8266) || defined(ESP32)
-//                 autoFormatData(tName, "[\"" + title + "\",\"" + payload + "\"]");
-// #else
+#if defined(ESP8266) || defined(ESP32)
+                autoFormatData(tName, _msg);
+#else
                 autoFormatData(_msg);
-// #endif
+#endif
                 autoFormatFreshTime = millis();
             // }
         }
@@ -904,7 +904,6 @@ class BlinkerProtocol
 //         }
 
 #if defined(ESP8266) || defined(ESP32)
-        //template <typename T>
         void autoFormatData(String key, String jsonValue) {
             // String _value = STRING_format(value);
             // if ((strlen(_sendBuf) + key.length() + _value.length()) >= BLINKER_MAX_SEND_SIZE) {
@@ -948,21 +947,6 @@ class BlinkerProtocol
             }
 
             strcpy(_sendBuf, _data.c_str());
-
-            // if (!strlen(_sendBuf)) {
-            //     JsonObject& root = jsonSendBuffer.createObject();
-
-            //     root[key] = value;
-            //     root.printTo(_data);
-            // }
-            // else {
-            //     JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
-
-            //     root[key] = value;
-            //     root.printTo(_data);
-            // }
-
-            // strcpy(_sendBuf, _data.c_str());
         }
 #endif
 
@@ -996,12 +980,6 @@ class BlinkerProtocol
         }
 
         void autoBridgeFormatData(String key, String jsonValue) {
-            // String _value = STRING_format(value);
-            // if ((strlen(_sendBuf) + key.length() + _value.length()) >= BLINKER_MAX_SEND_SIZE) {
-            //     BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
-            //     return;
-            // }
-
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG4(BLINKER_F("autoBridgeFormatData key: "), key, BLINKER_F(", jsonValue: "), jsonValue);
     #endif
