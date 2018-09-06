@@ -324,30 +324,38 @@ class BlinkerData
 
             uint32_t now_millis = millis();
             // uint32_t now_time = time();
-            uint32_t last_millis = now_millis;
+            // uint32_t last_millis = now_millis;
+            // uint32_t data_time;
+            // uint32_t real_time;
     // #ifdef BLINKER_DEBUG_ALL
     //         BLINKER_LOG2(BLINKER_F("now_time: "), now_time);
     // #endif
             for (uint8_t num = dataCount; num > 0; num--) {
                 uint32_t data_time = dataArray["data"][num-1][0];
-                uint32_t real_time = now_time - (last_millis - data_time)/1000;
+                uint32_t real_time = now_time - (now_millis - data_time)/1000;
                 dataArray["data"][num-1][0] = real_time;
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG4(BLINKER_F("now_time: "), now_time, BLINKER_F(" real_time: "), real_time);
+                // BLINKER_LOG4(BLINKER_F("data_time: "), data_time, BLINKER_F(" last_millis: "), last_millis);
+                // BLINKER_LOG4(BLINKER_F("now_time: "), now_time, BLINKER_F(" real_time: "), real_time);
+                BLINKER_LOG6(BLINKER_F("data_time: "), data_time, BLINKER_F(" now_time: "), now_time, BLINKER_F(" real_time: "), real_time);
     #endif
-                last_millis = data_time;
+                // last_millis = data_time;
             }
 
-            dataCount = 0;
+            // dataCount = 0;
 
             String _data_decode = dataArray["data"];
             // dataArray.printTo(_data_decode);
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("getData _data_: "), _data_decode);
     #endif
-            strcpy(data, _data_decode.c_str());
+            // strcpy(data, _data_decode.c_str());
 
-            return data;
+            // memcpy(data,"\0",256);
+
+            // return data;
+
+            return _data_decode;
         }
 
         bool checkName(String name) { return ((_dname == name) ? true : false); }
@@ -1191,6 +1199,11 @@ class BlinkerApi
                             // "\"}}";
 
             if (blinkServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE) {
+                for (uint8_t _num = 0; _num < data_dataCount; _num++) {
+                    delete _Data[_num];
+                }
+                data_dataCount = 0;
+
                 return false;
             }
             else {
@@ -1198,6 +1211,7 @@ class BlinkerApi
                     delete _Data[_num];
                 }
                 data_dataCount = 0;
+
                 return true;
             }
         }
@@ -3422,17 +3436,30 @@ class BlinkerApi
             BLINKER_LOG2(BLINKER_F("connecting to "), host);
         #endif
 
-            if (!client_s.connect(host, httpsPort)) {
+            ::delay(100);
+
+            uint8_t connet_times = 0;
+            while (1) {
+                bool cl_connected = false;
+                if (!client_s.connect(host, httpsPort)) {
+            // #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG1(BLINKER_F("server connection failed"));
+            // #endif
+                    // return BLINKER_CMD_FALSE;
+
+                    connet_times++;
+                }
+                else {
         #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("connection failed"));
+                    BLINKER_LOG1(BLINKER_F("connection succeed"));
         #endif
-                return BLINKER_CMD_FALSE;
-            }
-            else {
-        #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("connection succeed"));
-        #endif
-                // return true;
+                    // return true;
+                    cl_connected = true;
+
+                    break;
+                }
+
+                if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
             }
 
         #ifndef BLINKER_LAN_DEBUG

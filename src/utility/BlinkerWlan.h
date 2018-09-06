@@ -308,6 +308,8 @@ bool BlinkerWlan::connected() {
                 return true;
             }
         case BWL_CONNECTED_CHECK :
+            if (WiFi.status() != WL_CONNECTED)
+                _status = BWL_DISCONNECTED;
             return (WiFi.status() == WL_CONNECTED);
         case BWL_RESET :
             return false;
@@ -321,6 +323,7 @@ void BlinkerWlan::disconnect() {
     WiFi.disconnect(true);
     delay(100);
     _status = BWL_DISCONNECTED;
+    BLINKER_LOG1(("WiFi disconnected"));
 }
 
 void BlinkerWlan::reset() {
@@ -500,8 +503,8 @@ bool BlinkerWlan::run() {
         case BWL_CONNECTING :
             return connected();
             break;
-        case BWL_DISCONNECTED :
-            connect();
+        case BWL_CONNECTED :
+            return connected();
             break;
         case BWL_SMARTCONFIG_BEGIN :
             smartconfigDone();
