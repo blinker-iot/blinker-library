@@ -3390,9 +3390,9 @@ class BlinkerApi
                     }
                     break;
                 case BLINKER_CMD_DATA_STORAGE_NUMBER :
-                    if (!checkDataUpdata()) {
-                        return BLINKER_CMD_FALSE;
-                    }
+                    // if (!checkDataUpdata()) {
+                    //     return BLINKER_CMD_FALSE;
+                    // }
                     break;
                 case BLINKER_CMD_DATA_GET_NUMBER :
                     if (!checkDataGet()) {
@@ -3426,9 +3426,10 @@ class BlinkerApi
             const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             #ifndef BLINKER_LAN_DEBUG
-            extern WiFiClientSecure client_s;
+                extern WiFiClientSecure client_s;
+                // WiFiClientSecure client_s;
             #elif defined(BLINKER_LAN_DEBUG)
-            WiFiClient client_s;
+                WiFiClient client_s;
             #endif
         #endif
 
@@ -3436,9 +3437,11 @@ class BlinkerApi
             BLINKER_LOG2(BLINKER_F("connecting to "), host);
         #endif
 
+            
+            uint8_t connet_times = 0;
+            client_s.stop();
             ::delay(100);
 
-            uint8_t connet_times = 0;
             while (1) {
                 bool cl_connected = false;
                 if (!client_s.connect(host, httpsPort)) {

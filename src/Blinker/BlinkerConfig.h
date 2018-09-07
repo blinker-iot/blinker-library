@@ -263,6 +263,8 @@
 
 #define BLINKER_CMD_UUID                "uuid"
 
+#define BLINKER_CMD_KEY                 "key"
+
 #define BLINKER_CMD_SMS                 "sms"
 
 #define BLINKER_CMD_PUSH                "push"
