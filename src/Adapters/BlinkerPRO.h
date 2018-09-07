@@ -179,8 +179,8 @@ class BlinkerPRO {
             mDNSInit();
         }
 
-        void deviceRegister() {
-            connectServer();
+        bool deviceRegister() {
+            return connectServer();
         }
 
         bool autoPrint(uint32_t id) {
@@ -331,7 +331,7 @@ class BlinkerPRO {
     private :
         bool isMQTTinit = false;
 
-        void connectServer();
+        bool connectServer();
 
         void mDNSInit()
         {
@@ -432,7 +432,7 @@ class BlinkerPRO {
         bool        isAuth = false;
 };
 
-void BlinkerPRO::connectServer() {
+bool BlinkerPRO::connectServer() {
     const int httpsPort = 443;
     const char* host = "https://iotdev.clz.me";
 #if defined(ESP8266)
@@ -522,7 +522,7 @@ void BlinkerPRO::connectServer() {
         !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
         BLINKER_ERR_LOG1(("Please make sure you have register this device!"));
 
-        return;
+        return false;
     }
 
     // String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
@@ -676,6 +676,8 @@ void BlinkerPRO::connectServer() {
     mqtt->subscribe(iotSub);
     isMQTTinit = true;
     connect();
+
+    return true;
 }
 
 bool BlinkerPRO::connect() {

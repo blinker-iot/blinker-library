@@ -287,22 +287,48 @@ class BlinkerData
             //     return;
             // }
 
-            // if (data != "") {
-            //     data += ",";
-            // }
-            // data += "[" + STRING_format(millis()) + "," + _data + "]";
             String _data_;
 
-            if(strlen(data))
-                _data_ = STRING_format(data);
+            if (strlen(data)) _data_ = STRING_format(data);
 
-            if (_data_.length()) {
+            if (dataCount == 6) {
                 _data_ += ",";
+                _data_ += "[" + STRING_format(millis()) + "," + _data + "]";
+
+                _data_ = "{\"data\":[" + STRING_format(_data_) + "]}";
+
+                DynamicJsonBuffer jsonDataBuffer;
+                JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
+
+                for (uint8_t num = 0; num < dataCount; num++) {
+                    dataArray["data"][num][0] = dataArray["data"][num+1][0];
+                    dataArray["data"][num][1] = dataArray["data"][num+1][1];
+                }
+                
+                _data_ = "";
+                for (uint8_t num = 0; num < dataCount; num++) {
+                    String data_get = dataArray["data"][num];
+
+                    _data_ += data_get;
+
+                    if (num != dataCount - 1) _data_ += ",";
+                }
+
+                if (_data_.length() < 256) {
+                    strcpy(data, _data_.c_str());
+                }
             }
-            _data_ += "[" + STRING_format(millis()) + "," + _data + "]";
-            if (_data_.length() < 256) {
-                strcpy(data, _data_.c_str());
-                dataCount++;
+            else {
+                if (_data_.length()) {
+                    _data_ += ",";
+                }
+
+                _data_ += "[" + STRING_format(millis()) + "," + _data + "]";
+
+                if (_data_.length() < 256) {
+                    strcpy(data, _data_.c_str());
+                    dataCount++;
+                }
             }
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("saveData: "), data);
@@ -323,13 +349,7 @@ class BlinkerData
             JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
 
             uint32_t now_millis = millis();
-            // uint32_t now_time = time();
-            // uint32_t last_millis = now_millis;
-            // uint32_t data_time;
-            // uint32_t real_time;
-    // #ifdef BLINKER_DEBUG_ALL
-    //         BLINKER_LOG2(BLINKER_F("now_time: "), now_time);
-    // #endif
+
             for (uint8_t num = dataCount; num > 0; num--) {
                 uint32_t data_time = dataArray["data"][num-1][0];
                 uint32_t real_time = now_time - (now_millis - data_time)/1000;
@@ -339,7 +359,6 @@ class BlinkerData
                 // BLINKER_LOG4(BLINKER_F("now_time: "), now_time, BLINKER_F(" real_time: "), real_time);
                 BLINKER_LOG6(BLINKER_F("data_time: "), data_time, BLINKER_F(" now_time: "), now_time, BLINKER_F(" real_time: "), real_time);
     #endif
-                // last_millis = data_time;
             }
 
             // dataCount = 0;
