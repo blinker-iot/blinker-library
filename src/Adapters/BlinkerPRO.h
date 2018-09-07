@@ -24,6 +24,7 @@ static char MQTT_NAME[BLINKER_MQTT_NAME_SIZE];
 static char MQTT_KEY[BLINKER_MQTT_KEY_SIZE];
 static char MQTT_PRODUCTINFO[BLINKER_MQTT_PINFO_SIZE];
 static char UUID[BLINKER_MQTT_UUID_SIZE];
+static char AUTHKEY[14];
 // static char DEVICE_NAME[BLINKER_MQTT_DEVICENAME_SIZE];
 static char *BLINKER_PUB_TOPIC;
 static char *BLINKER_SUB_TOPIC;
@@ -178,8 +179,8 @@ class BlinkerPRO {
             mDNSInit();
         }
 
-        void deviceRegister() {
-            connectServer();
+        bool deviceRegister() {
+            return connectServer();
         }
 
         bool autoPrint(uint32_t id) {
@@ -308,7 +309,7 @@ class BlinkerPRO {
 
         String deviceName() { return MQTT_DEVICEID; }
 
-        String key() { return MQTT_KEY; }
+        String key() { return AUTHKEY; }
 
         bool init() { return isMQTTinit; }
 
@@ -330,7 +331,7 @@ class BlinkerPRO {
     private :
         bool isMQTTinit = false;
 
-        void connectServer();
+        bool connectServer();
 
         void mDNSInit()
         {
@@ -431,7 +432,7 @@ class BlinkerPRO {
         bool        isAuth = false;
 };
 
-void BlinkerPRO::connectServer() {
+bool BlinkerPRO::connectServer() {
     const int httpsPort = 443;
     const char* host = "https://iotdev.clz.me";
 #if defined(ESP8266)
@@ -521,7 +522,7 @@ void BlinkerPRO::connectServer() {
         !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
         BLINKER_ERR_LOG1(("Please make sure you have register this device!"));
 
-        return;
+        return false;
     }
 
     // String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
@@ -536,6 +537,7 @@ void BlinkerPRO::connectServer() {
     String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
+    String _authKey = root[BLINKER_CMD_DETAIL][BLINKER_CMD_KEY];
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         String _deviceName = _userID.substring(12, 36);
@@ -546,6 +548,7 @@ void BlinkerPRO::connectServer() {
         strcpy(MQTT_KEY, _key.c_str());
         strcpy(MQTT_PRODUCTINFO, _productInfo.c_str());
         strcpy(MQTT_HOST, BLINKER_MQTT_ALIYUN_HOST);
+        strcpy(AUTHKEY, _authKey.c_str());
         MQTT_PORT = BLINKER_MQTT_ALIYUN_PORT;
     }
     // else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
@@ -599,6 +602,7 @@ void BlinkerPRO::connectServer() {
     BLINKER_LOG2(("HOST: "), MQTT_HOST);
     BLINKER_LOG2(("PORT: "), MQTT_PORT);
     BLINKER_LOG2(("UUID: "), UUID);
+    BLINKER_LOG2(("AUTHKEY: "), AUTHKEY);
     BLINKER_LOG1(("===================="));
 #endif
 
@@ -672,6 +676,8 @@ void BlinkerPRO::connectServer() {
     mqtt->subscribe(iotSub);
     isMQTTinit = true;
     connect();
+
+    return true;
 }
 
 bool BlinkerPRO::connect() {

@@ -1120,6 +1120,9 @@ class BlinkerProtocol
         bool            _getRegister = false;
         bool            _isInit = false;
 
+        bool            _isRegistered = false;
+        uint32_t        _register_fresh = 0;
+
         uint32_t        _initTime;
 #endif
 
@@ -1323,18 +1326,32 @@ void BlinkerProtocol<Transp>::run()
     #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("is auth, conn deviceRegister"));
     #endif
-                conn.deviceRegister();
+                _isRegistered = conn.deviceRegister();
+
+                if (!_isRegistered) _register_fresh = millis();
             }
         }
     }
 
-    if (_getRegister) {
+    // if (_getRegister) {
+    // #ifdef BLINKER_DEBUG_ALL
+    //     BLINKER_LOG1(BLINKER_F("conn deviceRegister"));
+    // #endif
+    //     _isRegistered = conn.deviceRegister();
+
+    //     if (!_isRegistered) _register_fresh = millis();
+    //     _getRegister = false;
+    // }
+
+    if (!_isRegistered && ((millis() - _register_fresh) > 60000 || _register_fresh == 0)) {
     #ifdef BLINKER_DEBUG_ALL
         BLINKER_LOG1(BLINKER_F("conn deviceRegister"));
     #endif
-        conn.deviceRegister();
-        _getRegister = false;
-    }
+        _isRegistered = conn.deviceRegister();
+
+        if (!_isRegistered) _register_fresh = millis();
+        else _isRegistered = true;
+    }    
 
     if (!conn.init()) {
         if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME) {
