@@ -1,0 +1,89 @@
+#######################################
+# Data types (KEYWORD1)
+#######################################
+Blinker	KEYWORD1
+BlinkerButton	KEYWORD1
+BlinkerRGB	KEYWORD1
+BlinkerSlider	KEYWORD1
+BlinkerNumber	KEYWORD1
+BlinkerTEXT	KEYWORD1
+BlinkerJoystick	KEYWORD1
+BUILTIN_SWITCH	KEYWORD1
+BlinkerTimer	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+begin	KEYWORD2
+connect	KEYWORD2
+disconnect	KEYWORD2
+connected	KEYWORD2
+connected	KEYWORD2
+available	KEYWORD2
+readString	KEYWORD2
+print	KEYWORD2
+delay	KEYWORD2
+notify	KEYWORD2
+attachHeartbeat	KEYWORD2
+attach	KEYWORD2
+icon	KEYWORD2
+color	KEYWORD2
+text	KEYWORD2
+brightness	KEYWORD2
+unit	KEYWORD2
+ahrs	KEYWORD2
+gps	KEYWORD2
+vibrate	KEYWORD2
+#timingState	KEYWORD2
+loopState	KEYWORD2
+countdownState	KEYWORD2
+deleteTiming	KEYWORD2
+deleteLoop	KEYWORD2
+deleteCountdown	KEYWORD2
+deleteTimer	KEYWORD2
+setTimezone	KEYWORD2
+timingState	KEYWORD2
+second	KEYWORD2
+minute	KEYWORD2
+hour	KEYWORD2
+wday	KEYWORD2
+mday	KEYWORD2
+yday	KEYWORD2
+month	KEYWORD2
+year	KEYWORD2
+bridge	KEYWORD2
+bridgeAvailable	KEYWORD2
+bridgeRead	KEYWORD2
+bridgePrint	KEYWORD2
+bridgeBeginFormat	KEYWORD2
+bridgeEndFormat	KEYWORD2
+configUpdate	KEYWORD2
+configGet	KEYWORD2
+configDelete	KEYWORD2
+dataStorage	KEYWORD2
+dataUpdate	KEYWORD2
+dataGet	KEYWORD2
+dataDelete	KEYWORD2
+sms	KEYWORD2
+weather	KEYWORD2
+aqi	KEYWORD2
+BLINKER_LOG1	KEYWORD2
+BLINKER_LOG2	KEYWORD2
+BLINKER_LOG3	KEYWORD2
+BLINKER_LOG4	KEYWORD2
+BLINKER_LOG5	KEYWORD2
+BLINKER_LOG6	KEYWORD2
+BLINKER_PRINT	KEYWORD2
+BLINKER_DEBUG_ALL	KEYWORD2
+BLINKER_BLE	KEYWORD2
+BLINKER_WIFI	KEYWORD2
+BLINKER_MQTT	KEYWORD2
+
+#######################################
+# Literals (LITERAL1)
+#######################################
+Yaw	LITERAL1
+Roll	LITERAL1
+Pitch	LITERAL1
+LONG	LITERAL1
+LAT	LITERAL1
