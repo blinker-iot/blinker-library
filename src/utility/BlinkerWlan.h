@@ -79,6 +79,7 @@ class BlinkerWlan {
         uint32_t connectTime;
         uint16_t timeout;
         bwl_status_t _status;
+        uint32_t debugStatusTime;
 };
 
 bool BlinkerWlan::checkConfig() {
@@ -486,6 +487,14 @@ void BlinkerWlan::connectWiFi(const char* _ssid, const char* _pswd)
 }
 
 bool BlinkerWlan::run() {
+#if defined(BLINKER_DEBUG_ALL)
+    if (millis() - debugStatusTime > 10000) {
+        debugStatusTime = millis();
+
+        BLINKER_LOG2("WLAN status: ", _status);
+    }
+#endif
+
     switch (_status) {
         case BWL_CONFIG_CKECK :
             checkConfig();
