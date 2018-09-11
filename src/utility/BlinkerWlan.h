@@ -175,7 +175,8 @@ void BlinkerWlan::smartconfigBegin(uint16_t _time) {
 bool BlinkerWlan::smartconfigDone() {
     if (WiFi.smartConfigDone())
     {
-        WiFi.setAutoConnect(true);
+        // WiFi.setAutoConnect(true);
+        // WiFi.setAutoReconnect(true);
         connectTime = millis();
 
         _status = BWL_SMARTCONFIG_DONE;
@@ -183,7 +184,8 @@ bool BlinkerWlan::smartconfigDone() {
         BLINKER_LOG1(("SmartConfig Success"));
 #if defined(ESP8266)
         BLINKER_LOG4(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
-        WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
+        // WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
+        connectWiFi(WiFi.SSID().c_str(), WiFi.psk().c_str());
 #endif
         return true;
     }
@@ -195,13 +197,15 @@ bool BlinkerWlan::smartconfigDone() {
 void BlinkerWlan::connect() {
     switch (_status) {
         case BWL_CONFIG_SUCCESS :
-            WiFi.setAutoConnect(false);
+            // WiFi.setAutoConnect(false);
+            // WiFi.setAutoReconnect(true);
 
             SSID = (char*)malloc(BLINKER_SSID_SIZE*sizeof(char));
             PSWD = (char*)malloc(BLINKER_PSWD_SIZE*sizeof(char));
 
             loadConfig(SSID, PSWD);
-            WiFi.begin(SSID, PSWD);
+            // WiFi.begin(SSID, PSWD);
+            connectWiFi(SSID, PSWD);
 
             free(SSID);
             free(PSWD);
@@ -209,17 +213,33 @@ void BlinkerWlan::connect() {
             _status = BWL_CONNECTING;
             break;
         case BWL_DISCONNECTED :
-            disconnect();
-            SSID = (char*)malloc(BLINKER_SSID_SIZE*sizeof(char));
-            PSWD = (char*)malloc(BLINKER_PSWD_SIZE*sizeof(char));
+            if (millis() - connectTime > 30000 && WiFi.status() != WL_CONNECTED) {
+                BLINKER_LOG2("status: ", WiFi.status());
 
-            loadConfig(SSID, PSWD);
-            WiFi.begin(SSID, PSWD);
+                disconnect();
+                // SSID = (char*)malloc(BLINKER_SSID_SIZE*sizeof(char));
+                // PSWD = (char*)malloc(BLINKER_PSWD_SIZE*sizeof(char));
+                // WiFi.reconnect();
 
-            free(SSID);
-            free(PSWD);
-            connectTime = millis();
-            BLINKER_LOG1(("connecting BWL_DISCONNECTED"));
+                char _ssid_[BLINKER_SSID_SIZE];
+                char _pswd_[BLINKER_PSWD_SIZE];
+
+                loadConfig(_ssid_, _pswd_);
+                connectWiFi(_ssid_, _pswd_);
+
+                // WiFi.setAutoConnect(false);
+                // WiFi.setAutoReconnect(true);
+
+                // free(SSID);
+                // free(PSWD);
+                connectTime = millis();
+                BLINKER_LOG1(("connecting BWL_DISCONNECTED"));
+                
+                BLINKER_LOG4(("_ssid_: "), _ssid_, (" _pswd_: "), _pswd_);
+            }
+            else if(WiFi.status() == WL_CONNECTED) {
+                _status = BWL_CONNECTED;
+            }
             break;
     }
 }
@@ -237,7 +257,7 @@ bool BlinkerWlan::connected() {
                 }
                 return false;
             }
-            else {
+            else if (WiFi.status() == WL_CONNECTED) {
                 IPAddress deviceIP = WiFi.localIP();
                 BLINKER_LOG1(("WiFi connected"));
                 BLINKER_LOG1(("IP address: "));
@@ -254,7 +274,8 @@ bool BlinkerWlan::connected() {
                 free(SSID);
                 free(PSWD);
 
-                WiFi.setAutoConnect(false);
+                // WiFi.setAutoConnect(true);
+                // WiFi.setAutoReconnect(true);
 
                 _status = BWL_CONNECTED_CHECK;
                 return true;
@@ -271,7 +292,7 @@ bool BlinkerWlan::connected() {
                 }
                 return false;
             }
-            else {
+            else if (WiFi.status() == WL_CONNECTED) {
                 IPAddress deviceIP = WiFi.localIP();
                 BLINKER_LOG1(("WiFi connected"));
                 BLINKER_LOG1(("IP address: "));
@@ -288,17 +309,18 @@ bool BlinkerWlan::connected() {
                 free(SSID);
                 free(PSWD);
 
-                WiFi.setAutoConnect(false);
+                // WiFi.setAutoConnect(true);
+                // WiFi.setAutoReconnect(true);
 
                 _status = BWL_CONNECTED_CHECK;
                 return true;
             }
             break;
         case BWL_CONNECTING :
-            if(WiFi.status() != WL_CONNECTED) {
+            if (WiFi.status() != WL_CONNECTED) {
                 return false;
             }
-            else {
+            else if (WiFi.status() == WL_CONNECTED) {
                 IPAddress deviceIP = WiFi.localIP();
                 BLINKER_LOG1(("WiFi connected"));
                 BLINKER_LOG1(("IP address: "));
@@ -309,8 +331,8 @@ bool BlinkerWlan::connected() {
                 return true;
             }
         case BWL_CONNECTED_CHECK :
-            if (WiFi.status() != WL_CONNECTED)
-                _status = BWL_DISCONNECTED;
+            // if (WiFi.status() != WL_CONNECTED)
+            //     _status = BWL_DISCONNECTED;
             return (WiFi.status() == WL_CONNECTED);
         case BWL_RESET :
             return false;
@@ -321,7 +343,7 @@ bool BlinkerWlan::connected() {
 }
 
 void BlinkerWlan::disconnect() {
-    WiFi.disconnect(true);
+    WiFi.disconnect();
     delay(100);
     _status = BWL_DISCONNECTED;
     BLINKER_LOG1(("WiFi disconnected"));
@@ -512,9 +534,12 @@ bool BlinkerWlan::run() {
         case BWL_CONNECTING :
             return connected();
             break;
-        case BWL_CONNECTED :
-            return connected();
-            break;
+        // case BWL_CONNECTED :
+        //     return connected();
+        //     break;
+        // case BWL_DISCONNECTED :
+        //     connect();
+        //     break;
         case BWL_SMARTCONFIG_BEGIN :
             smartconfigDone();
             break;
