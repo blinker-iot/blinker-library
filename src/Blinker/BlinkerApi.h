@@ -3532,7 +3532,21 @@ class BlinkerApi
         #endif
                     break;
                 case BLINKER_CMD_PUSH_NUMBER :
-                    return BLINKER_CMD_FALSE;
+                    url = "/api/v1/user/device/push";
+
+                    client_msg = STRING_format("POST " + url + " HTTP/1.1\r\n" +
+                        "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
+                        "Content-Type: application/json;charset=utf-8\r\n" +
+                        "Content-Length: " + STRING_format(msg.length()) + "\r\n" +
+                        "Connection: Keep Alive\r\n\r\n" +
+                        msg + "\r\n");
+
+                    client_s.print(client_msg);
+        #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
+                    break;
+                    // return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WECHAT_NUMBER :
                     return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WEATHER_NUMBER :
@@ -3731,7 +3745,26 @@ class BlinkerApi
         #endif
                     break;
                 case BLINKER_CMD_PUSH_NUMBER :
-                    return BLINKER_CMD_FALSE;
+                    // DynamicJsonBuffer jsonBuffer;
+                    // JsonObject& sms_rp = jsonBuffer.parseObject(_dataGet);
+
+                    if (data_rp.success()) {
+                        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000) {
+                            String _detail = data_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG1(_detail);
+                        }
+                        else {
+                            String _dataGet_ = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                            _dataGet = _dataGet_;
+                        }
+                    }
+                    _pushTime = millis();
+        #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_dataGet: ", _dataGet);
+        #endif
+                    break;
+                    // return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WECHAT_NUMBER :
                     return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WEATHER_NUMBER :
@@ -3953,7 +3986,13 @@ class BlinkerApi
                     httpCode = http.POST(msg);
                     break;
                 case BLINKER_CMD_PUSH_NUMBER :
-                    return BLINKER_CMD_FALSE;
+                    url_iot = String(host) + "/api/v1/user/device/push";
+
+                    http.begin(url_iot);
+                    http.addHeader("Content-Type", "application/json;charset=utf-8");
+                    httpCode = http.POST(msg);
+                    break;
+                    // return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WECHAT_NUMBER :
                     return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WEATHER_NUMBER :
@@ -4077,7 +4116,26 @@ class BlinkerApi
             #endif
                             break;
                         case BLINKER_CMD_PUSH_NUMBER :
-                            return BLINKER_CMD_FALSE;
+                            // DynamicJsonBuffer jsonBuffer;
+                            // JsonObject& sms_rp = jsonBuffer.parseObject(payload);
+
+                            if (data_rp.success()) {
+                                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                                if (msg_code != 1000) {
+                                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                                    BLINKER_ERR_LOG1(_detail);
+                                }
+                                else {
+                                    String _payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                                    payload = _payload;
+                                }
+                            }
+                            _pushTime = millis();
+            #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2("payload: ", payload);
+            #endif
+                            break;
+                            // return BLINKER_CMD_FALSE;
                         case BLINKER_CMD_WECHAT_NUMBER :
                             return BLINKER_CMD_FALSE;
                         case BLINKER_CMD_WEATHER_NUMBER :
