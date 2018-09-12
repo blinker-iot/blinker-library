@@ -1948,8 +1948,8 @@ class BlinkerApi
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     String _timer = taskCount ? "1":"0";
-                    _timer += _lpState ? "1":"0";
                     _timer += _cdState ? "1":"0";
+                    _timer += _lpState ? "1":"0";
     #if defined(BLINKER_DEBUG_ALL)
                     BLINKER_LOG2("timer codes: ", _timer);
     #endif
@@ -2749,6 +2749,7 @@ class BlinkerApi
                 if (isCount) {
 
                     String _delete = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN];
+                    uint32_t cd_time;
 
                     if (_delete == "dlt") _cdState = false;
                     else _cdState = true;
@@ -2784,6 +2785,13 @@ class BlinkerApi
                                 _cdTime1 = _totalTime;
                                 _cdTime2 = _runTime;
                             }
+
+                            if (!_cdRunState && _action.length() == 0) {
+                                cd_time = _cdTime1 - (millis() - _cdStart) / 1000 / 60;
+                            }
+                            else {
+                                cd_time = (_cdTime1 - _cdTime2);
+                            }
     #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
     #endif
@@ -2807,12 +2815,18 @@ class BlinkerApi
                                 _cdTime1 = _totalTime;
                                 _cdTime2 = _runTime;
                             }
+
+                            if (!_cdRunState && _action.length() == 0) {
+                                cd_time = _cdTime1 - (millis() - _cdStart) / 1000 / 60;
+                            }
+                            else {
+                                cd_time = (_cdTime1 - _cdTime2);
+                            }
     #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
     #endif
                         }
-
-                        _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
+                        _cdData = _cdState << 15 | _cdRunState << 14 | cd_time;//(_cdTime1 - _cdTime2);
 
     #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_totalTime: "), _cdTime1);
@@ -2855,6 +2869,7 @@ class BlinkerApi
                         _cdTime1 = 0;
                         _cdTime2 = 0;
                         _cdAction = "";
+
                         _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
 
     #ifdef BLINKER_DEBUG_ALL
@@ -2886,124 +2901,165 @@ class BlinkerApi
 
                     String _delete = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP];
 
-                    if (_delete == "del") _lpState = false;
+                    if (_delete == "dlt") _lpState = false;
                     else _lpState = true;
 
-                    if (isSet) {
-                        _lpRunState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_RUN];
-                    }
-                    else if (_noSet) {
-                        _lpRunState = data[BLINKER_CMD_LOOP][BLINKER_CMD_RUN];
-                    }
+                    if (_lpState) {
+                        if (isSet) {
+                            _lpRunState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_RUN];
+                        }
+                        else if (_noSet) {
+                            _lpRunState = data[BLINKER_CMD_LOOP][BLINKER_CMD_RUN];
+                        }
     #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("loop state: "), _lpState ? "true" : "false");
+                        BLINKER_LOG2(BLINKER_F("loop state: "), _lpState ? "true" : "false");
     #endif
-                    if (isSet) {
-                        int8_t _times = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_TIMES];
-                        // _lpRunState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_STATE];
-                        // _lpRunState = _lpState;
-                        int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_TIME1];
-                        // _time1 = 60 * _time1;
-                        String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_ACTION1];
-                        int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_TIME2];
-                        // _time2 = 60 * _time2;
-                        String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_ACTION2];
+                        if (isSet) {
+                            int8_t _times = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_TIMES];
+                            // _lpRunState = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_STATE];
+                            // _lpRunState = _lpState;
+                            int32_t _time1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_TIME1];
+                            // _time1 = 60 * _time1;
+                            String _action1 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_ACTION1];
+                            int32_t _time2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_TIME2];
+                            // _time2 = 60 * _time2;
+                            String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_ACTION2];
 
-                        if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE) {
-                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
-                            return true;
+                            if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE) {
+                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                return true;
+                            }
+
+                            if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE) {
+                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                return true;
+                            }
+
+                            if (_lpRunState && _action2.length()) {
+                                _lpAction1 = _action1;
+                                _lpAction2 = _action2;
+
+                                _lpTimes = _times;
+                                _lpTime1 = _time1;
+                                _lpTime2 = _time2;
+                            }
+    #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2(BLINKER_F("_lpRunState: "), _lpRunState);
+    #endif
+                        }
+                        else if (_noSet) {
+                            int8_t _times = data[BLINKER_CMD_LOOP][BLINKER_CMD_TIMES];
+                            // _lpRunState = data[BLINKER_CMD_LOOP][BLINKER_CMD_STATE];
+                            // _lpRunState = _lpState;
+                            int32_t _time1 = data[BLINKER_CMD_LOOP][BLINKER_CMD_TIME1];
+                            // _time1 = 60 * _time1;
+                            String _action1 = data[BLINKER_CMD_LOOP][BLINKER_CMD_ACTION1];
+                            int32_t _time2 = data[BLINKER_CMD_LOOP][BLINKER_CMD_TIME2];
+                            // _time2 = 60 * _time2;
+                            String _action2 = data[BLINKER_CMD_LOOP][BLINKER_CMD_ACTION2];
+
+                            if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE) {
+                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                return true;
+                            }
+
+                            if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE) {
+                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                return true;
+                            }
+
+                            if (_lpRunState && _action2.length()) {
+                                _lpAction1 = _action1;
+                                _lpAction2 = _action2;
+
+                                _lpTimes = _times;
+                                _lpTime1 = _time1;
+                                _lpTime2 = _time2;
+                            }
+    #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2(BLINKER_F("_lpRunState: "), _lpRunState);
+    #endif
                         }
 
-                        if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE) {
-                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
-                            return true;
+                        if (_lpTimes > 100) _lpTimes = 0;
+
+                        _lpData = _lpState << 31 | _lpRunState << 30 | _lpTimes << 22 | _lpTime1 << 11 | _lpTime2;
+
+    #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("_times: "), _lpTimes);
+                        BLINKER_LOG2(BLINKER_F("_time1: "), _lpTime1);
+                        BLINKER_LOG2(BLINKER_F("_action1: "), _lpAction1);
+                        BLINKER_LOG2(BLINKER_F("_time2: "), _lpTime2);
+                        BLINKER_LOG2(BLINKER_F("_action2: "), _lpAction2);
+                        BLINKER_LOG2(BLINKER_F("_lpData: "), _lpData);
+    #endif
+
+                        char _lpAction_1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
+                        char _lpAction_2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
+                        strcpy(_lpAction_1, _lpAction1.c_str());
+                        strcpy(_lpAction_2, _lpAction2.c_str());
+
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP, _lpData);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP_ACTION1, _lpAction_1);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP_ACTION2, _lpAction_2);
+                        EEPROM.commit();
+                        EEPROM.end();
+
+                        if (_lpState && _lpRunState) {
+                            _lpRun1 = true;
+                            _lpTrigged_times = 0;
+                            _lpStop = false;
+
+                            uint32_t _lpTime1_;
+
+                            if (_lpTime1 * 60 > BLINKER_ONE_HOUR_TIME) _lpTime1_ = BLINKER_ONE_HOUR_TIME;
+                            else _lpTime1_ = _lpTime1 * 60;
+
+                            _lpTime1_start = millis();
+                            lpTicker.once(_lpTime1_, _lp_callback);
+
+    #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG1(BLINKER_F("loop start!"));
+    #endif
                         }
-
-                        _lpAction1 = _action1;
-                        _lpAction2 = _action2;
-
-                        _lpTimes = _times;
-                        _lpTime1 = _time1;
-                        _lpTime2 = _time2;
-    #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_lpRunState: "), _lpRunState);
-    #endif
-                    }
-                    else if (_noSet) {
-                        int8_t _times = data[BLINKER_CMD_LOOP][BLINKER_CMD_TIMES];
-                        // _lpRunState = data[BLINKER_CMD_LOOP][BLINKER_CMD_STATE];
-                        // _lpRunState = _lpState;
-                        int32_t _time1 = data[BLINKER_CMD_LOOP][BLINKER_CMD_TIME1];
-                        // _time1 = 60 * _time1;
-                        String _action1 = data[BLINKER_CMD_LOOP][BLINKER_CMD_ACTION1];
-                        int32_t _time2 = data[BLINKER_CMD_LOOP][BLINKER_CMD_TIME2];
-                        // _time2 = 60 * _time2;
-                        String _action2 = data[BLINKER_CMD_LOOP][BLINKER_CMD_ACTION2];
-
-                        if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE) {
-                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
-                            return true;
+                        else {
+                            lpTicker.detach();
                         }
-
-                        if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE) {
-                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
-                            return true;
-                        }
-
-                        _lpAction1 = _action1;
-                        _lpAction2 = _action2;
-
-                        _lpTimes = _times;
-                        _lpTime1 = _time1;
-                        _lpTime2 = _time2;
-    #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_lpRunState: "), _lpRunState);
-    #endif
-                    }
-
-                    if (_lpTimes > 100) _lpTimes = 0;
-
-                    _lpData = _lpState << 31 | _lpRunState << 30 | _lpTimes << 22 | _lpTime1 << 11 | _lpTime2;
-
-    #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_times: "), _lpTimes);
-                    BLINKER_LOG2(BLINKER_F("_time1: "), _lpTime1);
-                    BLINKER_LOG2(BLINKER_F("_action1: "), _lpAction1);
-                    BLINKER_LOG2(BLINKER_F("_time2: "), _lpTime2);
-                    BLINKER_LOG2(BLINKER_F("_action2: "), _lpAction2);
-                    BLINKER_LOG2(BLINKER_F("_lpData: "), _lpData);
-    #endif
-
-                    char _lpAction_1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
-                    char _lpAction_2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
-                    strcpy(_lpAction_1, _lpAction1.c_str());
-                    strcpy(_lpAction_2, _lpAction2.c_str());
-
-                    EEPROM.begin(BLINKER_EEP_SIZE);
-                    EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP, _lpData);
-                    EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP_ACTION1, _lpAction_1);
-                    EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP_ACTION2, _lpAction_2);
-                    EEPROM.commit();
-                    EEPROM.end();
-
-                    if (_lpState && _lpRunState) {
-                        _lpRun1 = true;
-                        _lpTrigged_times = 0;
-                        _lpStop = false;
-
-                        uint32_t _lpTime1_;
-
-                        if (_lpTime1 * 60 > BLINKER_ONE_HOUR_TIME) _lpTime1_ = BLINKER_ONE_HOUR_TIME;
-                        else _lpTime1_ = _lpTime1 * 60;
-
-                        _lpTime1_start = millis();
-                        lpTicker.once(_lpTime1_, _lp_callback);
-
-    #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG1(BLINKER_F("loop start!"));
-    #endif
                     }
                     else {
+                        _lpRunState = 0;
+                        _lpTimes = 0;
+                        _lpTime1 = 0;
+                        _lpTime2 = 0;
+                        _lpAction1 = "";
+                        _lpAction2 = "";
+
+                        _lpData = _lpState << 31 | _lpRunState << 30 | _lpTimes << 22 | _lpTime1 << 11 | _lpTime2;
+
+    #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("loop state: "), _lpState ? "true" : "false");
+                        BLINKER_LOG2(BLINKER_F("_lpRunState: "), _lpRunState);
+                        BLINKER_LOG2(BLINKER_F("_times: "), _lpTimes);
+                        BLINKER_LOG2(BLINKER_F("_time1: "), _lpTime1);
+                        BLINKER_LOG2(BLINKER_F("_action1: "), _lpAction1);
+                        BLINKER_LOG2(BLINKER_F("_time2: "), _lpTime2);
+                        BLINKER_LOG2(BLINKER_F("_action2: "), _lpAction2);
+                        BLINKER_LOG2(BLINKER_F("_lpData: "), _lpData);
+    #endif
+
+                        char _lpAction_1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
+                        char _lpAction_2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
+                        strcpy(_lpAction_1, _lpAction1.c_str());
+                        strcpy(_lpAction_2, _lpAction2.c_str());
+
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP, _lpData);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP_ACTION1, _lpAction_1);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP_ACTION2, _lpAction_2);
+                        EEPROM.commit();
+                        EEPROM.end();
+
                         lpTicker.detach();
                     }
 
