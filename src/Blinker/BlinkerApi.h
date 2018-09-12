@@ -2831,7 +2831,7 @@ class BlinkerApi
                             BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
     #endif
                         }
-                        _cdData = _cdState << 15 | _cdRunState << 14 | cd_time;//(_cdTime1 - _cdTime2);
+                        _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
 
     #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_totalTime: "), _cdTime1);
