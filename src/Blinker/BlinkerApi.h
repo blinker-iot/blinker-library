@@ -986,10 +986,14 @@ class BlinkerApi
             while (ms > 0) {
                 static_cast<Proto*>(this)->run();
 
-                yield();
+                // yield();
 
-                if ((micros() - start)/1000 >= ms) {
-                    ms = 0;
+                // if ((micros() - start)/1000 >= ms) {
+                //     ms = 0;
+                // }
+                if ((micros() - start) >= 1000) {
+                    ms--;
+                    start += 1000;
                 }
             }
         }
