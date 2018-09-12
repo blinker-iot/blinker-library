@@ -2753,95 +2753,128 @@ class BlinkerApi
                     if (_delete == "dlt") _cdState = false;
                     else _cdState = true;
 
-                    if (isSet) {
-                        _cdRunState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUN];
-                    }
-                    else if(_noSet) {
-                        _cdRunState = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUN];
-                    }
-
-    #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("countdown state: "), _cdState ? "true" : "false");
-    #endif
-
-                    if (isSet) {
-                        // _cdRunState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_STATE];
-                        // _cdRunState = _cdState;
-                        int32_t _totalTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_TOTALTIME];
-                        // _totalTime = 60 * _totalTime;
-                        int32_t _runTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUNTIME];
-                        // _runTime = 60 * _runTime;
-                        String _action = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_ACTION];
-
-                        if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE) {
-                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
-                            return true;
+                    if (_cdState) {
+                        if (isSet) {
+                            _cdRunState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUN];
+                        }
+                        else if(_noSet) {
+                            _cdRunState = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUN];
                         }
 
-                        _cdAction = _action;
-                        _cdTime1 = _totalTime;
-                        _cdTime2 = _runTime;
     #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
+                        BLINKER_LOG2(BLINKER_F("countdown state: "), _cdState ? "true" : "false");
     #endif
-                    }
-                    else if (_noSet) {
-                        // _cdRunState = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_STATE];
-                        // _cdRunState = _cdState;
-                        int32_t _totalTime = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_TOTALTIME];
-                        // _totalTime = 60 * _totalTime;
-                        int32_t _runTime = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUNTIME];
-                        // _runTime = 60 * _runTime;
-                        String _action = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_ACTION];
 
-                        if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE) {
-                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
-                            return true;
+                        if (isSet) {
+                            // _cdRunState = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_STATE];
+                            // _cdRunState = _cdState;
+                            int32_t _totalTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_TOTALTIME];
+                            // _totalTime = 60 * _totalTime;
+                            int32_t _runTime = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUNTIME];
+                            // _runTime = 60 * _runTime;
+                            String _action = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_ACTION];
+
+                            if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE) {
+                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                return true;
+                            }
+
+                            if (_cdRunState && _action.length()) {
+                                _cdAction = _action;
+                                _cdTime1 = _totalTime;
+                                _cdTime2 = _runTime;
+                            }
+    #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
+    #endif
+                        }
+                        else if (_noSet) {
+                            // _cdRunState = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_STATE];
+                            // _cdRunState = _cdState;
+                            int32_t _totalTime = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_TOTALTIME];
+                            // _totalTime = 60 * _totalTime;
+                            int32_t _runTime = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUNTIME];
+                            // _runTime = 60 * _runTime;
+                            String _action = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_ACTION];
+
+                            if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE) {
+                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                return true;
+                            }
+
+                            if (_cdRunState && _action.length()) {
+                                _cdAction = _action;
+                                _cdTime1 = _totalTime;
+                                _cdTime2 = _runTime;
+                            }
+    #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
+    #endif
                         }
 
-                        _cdAction = _action;
-                        _cdTime1 = _totalTime;
-                        _cdTime2 = _runTime;
-    #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
-    #endif
-                    }
-
-                    _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
+                        _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
 
     #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_totalTime: "), _cdTime1);
-                    BLINKER_LOG2(BLINKER_F("_runTime: "), _cdTime2);
-                    BLINKER_LOG2(BLINKER_F("_action: "), _cdAction);
-                    BLINKER_LOG2(BLINKER_F("_cdData: "), _cdData);
+                        BLINKER_LOG2(BLINKER_F("_totalTime: "), _cdTime1);
+                        BLINKER_LOG2(BLINKER_F("_runTime: "), _cdTime2);
+                        BLINKER_LOG2(BLINKER_F("_action: "), _cdAction);
+                        BLINKER_LOG2(BLINKER_F("_cdData: "), _cdData);
     #endif
 
-                    char _cdAction_[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
-                    strcpy(_cdAction_, _cdAction.c_str());
+                        char _cdAction_[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
+                        strcpy(_cdAction_, _cdAction.c_str());
 
-                    EEPROM.begin(BLINKER_EEP_SIZE);
-                    EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN, _cdData);
-                    EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN_ACTION, _cdAction_);
-                    EEPROM.commit();
-                    EEPROM.end();
-    
-                    if (_cdState && _cdRunState) {
-                        _cdTime1 = _cdTime1 - _cdTime2;
-                        _cdTime2 = 0;
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN, _cdData);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN_ACTION, _cdAction_);
+                        EEPROM.commit();
+                        EEPROM.end();
+        
+                        if (_cdState && _cdRunState) {
+                            _cdTime1 = _cdTime1 - _cdTime2;
+                            _cdTime2 = 0;
 
-                        uint32_t _cdTime1_;
+                            uint32_t _cdTime1_;
 
-                        if (_cdTime1 * 60 > BLINKER_ONE_HOUR_TIME) _cdTime1_ = BLINKER_ONE_HOUR_TIME;
-                        else _cdTime1_ = _cdTime1 * 60;
+                            if (_cdTime1 * 60 > BLINKER_ONE_HOUR_TIME) _cdTime1_ = BLINKER_ONE_HOUR_TIME;
+                            else _cdTime1_ = _cdTime1 * 60;
 
-                        cdTicker.once(_cdTime1_, _cd_callback);
+                            cdTicker.once(_cdTime1_, _cd_callback);
 
-                        _cdStart = millis();
+                            _cdStart = millis();
     #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG1(BLINKER_F("countdown start!"));
+                            BLINKER_LOG1(BLINKER_F("countdown start!"));
     #endif
+                        }
+                        else {
+                            cdTicker.detach();
+                        }
                     }
                     else {
+                        _cdRunState = 0;
+                        _cdTime1 = 0;
+                        _cdTime2 = 0;
+                        _cdAction = "";
+                        _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
+
+    #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("countdown state: "), _cdState ? "true" : "false");
+                        BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
+                        BLINKER_LOG2(BLINKER_F("_totalTime: "), _cdTime1);
+                        BLINKER_LOG2(BLINKER_F("_runTime: "), _cdTime2);
+                        BLINKER_LOG2(BLINKER_F("_action: "), _cdAction);
+                        BLINKER_LOG2(BLINKER_F("_cdData: "), _cdData);
+    #endif
+
+                        char _cdAction_[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
+                        strcpy(_cdAction_, _cdAction.c_str());
+
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN, _cdData);
+                        EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN_ACTION, _cdAction_);
+                        EEPROM.commit();
+                        EEPROM.end();
+
                         cdTicker.detach();
                     }
 
