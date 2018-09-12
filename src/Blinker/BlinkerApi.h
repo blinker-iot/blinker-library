@@ -2754,7 +2754,6 @@ class BlinkerApi
                 if (isCount) {
 
                     String _delete = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN];
-                    uint32_t cd_time;
 
                     if (_delete == "dlt") _cdState = false;
                     else _cdState = true;
