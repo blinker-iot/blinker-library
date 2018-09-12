@@ -1343,15 +1343,17 @@ void BlinkerProtocol<Transp>::run()
     //     _getRegister = false;
     // }
 
-    if (!_isRegistered && ((millis() - _register_fresh) > 60000 || _register_fresh == 0)) {
+    if (_getRegister) {
+        if (!_isRegistered && ((millis() - _register_fresh) > 60000 || _register_fresh == 0)) {
     #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG1(BLINKER_F("conn deviceRegister"));
+            BLINKER_LOG1(BLINKER_F("conn deviceRegister"));
     #endif
-        _isRegistered = conn.deviceRegister();
+            _isRegistered = conn.deviceRegister();
 
-        if (!_isRegistered) _register_fresh = millis();
-        else _isRegistered = true;
-    }    
+            if (!_isRegistered) _register_fresh = millis();
+            else _isRegistered = true;
+        }
+    }
 
     if (!conn.init()) {
         if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME) {
