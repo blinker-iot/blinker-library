@@ -2601,6 +2601,11 @@ class BlinkerApi
 
             _cdAction = STRING_format(_cdAction_);
 
+            if (_cdTime1 == 0) {
+                _cdState = 0;
+                _cdRunState = 0;
+            }
+
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("countdown state: "), _cdState ? "true" : "false");
             BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
@@ -2787,11 +2792,11 @@ class BlinkerApi
                             }
 
                             if (!_cdRunState && _action.length() == 0) {
-                                cd_time = _cdTime1 - (millis() - _cdStart) / 1000 / 60;
+                                _cdTime2 += (millis() - _cdStart) / 1000 / 60;
                             }
-                            else {
-                                cd_time = (_cdTime1 - _cdTime2);
-                            }
+                            // else if (_cdRunState && _action.length() == 0) {
+                            //     _cdTime2 = 0;
+                            // }
     #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
     #endif
@@ -2817,11 +2822,11 @@ class BlinkerApi
                             }
 
                             if (!_cdRunState && _action.length() == 0) {
-                                cd_time = _cdTime1 - (millis() - _cdStart) / 1000 / 60;
+                                _cdTime2 += (millis() - _cdStart) / 1000 / 60;
                             }
-                            else {
-                                cd_time = (_cdTime1 - _cdTime2);
-                            }
+                            // else if (_cdRunState && _action.length() == 0) {
+                            //     _cdTime2 = 0;
+                            // }
     #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2(BLINKER_F("_cdRunState: "), _cdRunState);
     #endif
@@ -2857,7 +2862,7 @@ class BlinkerApi
 
                             _cdStart = millis();
     #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG1(BLINKER_F("countdown start!"));
+                            BLINKER_LOG2(BLINKER_F("countdown start! time: "), _cdTime1);
     #endif
                         }
                         else {
@@ -3368,7 +3373,7 @@ class BlinkerApi
             else {
                 cdData = "{\""BLINKER_CMD_COUNTDOWN"\":{\""BLINKER_CMD_RUN"\":" + STRING_format(_cdRunState ? 1 : 0) + \
                     ",\""BLINKER_CMD_TOTALTIME"\":" + STRING_format(_cdTime1) + \
-                    ",\""BLINKER_CMD_RUNTIME"\":" + STRING_format((millis() - _cdStart) / 1000 / 60) + \
+                    ",\""BLINKER_CMD_RUNTIME"\":" + STRING_format(_cdTime2) + \
                     ",\""BLINKER_CMD_ACTION"\":" + _cdAction + \
                     "}}";
             }
