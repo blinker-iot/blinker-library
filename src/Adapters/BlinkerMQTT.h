@@ -173,7 +173,7 @@ class BlinkerMQTT {
             // }
             // else {
                 uint32_t re_time = millis();
-                // bool isConnect = true;
+                bool isConnect = true;
                 while(1) {
                     re_time = millis();
                     // ::delay(10000);
@@ -187,14 +187,14 @@ class BlinkerMQTT {
                     }
                     // delay(10000);
                     while ((millis() - re_time) < 10000) {
-                        if (WiFi.status() != WL_CONNECTED) {
-                            // isConnect = false;
-                            // WiFi.begin();
+                        if (WiFi.status() != WL_CONNECTED && isConnect) {
+                            isConnect = false;
+                            WiFi.begin();
                             WiFi.reconnect();
                         }
-                        // else if (WiFi.status() == WL_CONNECTED && !isConnect) {
-                        //     isConnect = true;
-                        // }
+                        else if (WiFi.status() == WL_CONNECTED && !isConnect) {
+                            isConnect = true;
+                        }
                         ::delay(10);
                         // WiFi.status();
                     }
