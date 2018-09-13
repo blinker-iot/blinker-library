@@ -2571,7 +2571,7 @@ class BlinkerApi
             EEPROM.end();
         }
 
-        void saveCountDown(uint16_t _data, const String & _action) {
+        void saveCountDown(uint32_t _data, const String & _action) {
             char _action_[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
 
             strcpy(_action_, _action.c_str());
@@ -5020,7 +5020,8 @@ class BlinkerApi
 
                 _cdRunState = false;
                 // _cdData |= _cdRunState << 14;
-                _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
+                // _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
+                _cdData = _cdState << 31 | _cdRunState << 30 | _cdTime1 << 12 | _cdTime2;
                 saveCountDown(_cdData, _cdAction);
 
     #ifdef BLINKER_DEBUG_ALL

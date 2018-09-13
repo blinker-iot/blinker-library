@@ -111,7 +111,11 @@ class BlinkerMQTT {
             authkey(NULL) {}
         
         bool connect();
-        bool connected() { return mqtt->connected()||*isHandle; }
+
+        bool connected() { 
+            return mqtt->connected();//||*isHandle; 
+        }
+
         void disconnect() {
             mqtt->disconnect();
 
@@ -163,8 +167,25 @@ class BlinkerMQTT {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2("authkey: ", auth);
 #endif
-            connectServer();
-            mDNSInit();
+            // if (connectServer()) {
+            //     mDNSInit();
+            //     isMQTTinit = true;
+            // }
+            // else {
+            //     uint8_t warn_count = 0;
+                while(1) {
+                    // ::delay(10000);
+                    // BLINKER_ERR_LOG1("Maybe you have put in the wrong AuthKey!");
+                    // BLINKER_ERR_LOG1("Or maybe your request is too frequently!");
+                    // BLINKER_ERR_LOG1("Or maybe your network is disconnected!");
+                    if (connectServer()) {
+                        mDNSInit();
+                        isMQTTinit = true;
+                        return;
+                    }
+                    ::delay(10000);
+                }
+            // }
         }
 
         bool autoPrint(uint32_t id) {
@@ -281,9 +302,15 @@ class BlinkerMQTT {
 
         String deviceName() { return DEVICE_NAME;/*MQTT_ID;*/ }
 
+        bool init() { return isMQTTinit; }
+
+        bool reRegister() { return connectServer(); }
+
     private :    
 
-        void connectServer();
+        bool isMQTTinit = false;
+
+        bool connectServer();
 
         void mDNSInit()
         {
@@ -372,7 +399,7 @@ class BlinkerMQTT {
         uint32_t    respTime = 0;
 };
 
-void BlinkerMQTT::connectServer() {
+bool BlinkerMQTT::connectServer() {
     const int httpsPort = 443;
     const char* host = "https://iotdev.clz.me";
 #if defined(ESP8266)
@@ -457,13 +484,16 @@ void BlinkerMQTT::connectServer() {
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(payload);
 
-    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success()) {
-        while(1) {
+    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
+        !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
+        // while(1) {
             BLINKER_ERR_LOG1("Maybe you have put in the wrong AuthKey!");
             BLINKER_ERR_LOG1("Or maybe your request is too frequently!");
             BLINKER_ERR_LOG1("Or maybe your network is disconnected!");
-            ::delay(10000);
-        }
+            // ::delay(60000);
+
+            return false;
+        // }
     }
 
     // String _userID = STRING_find_string(payload, "deviceName", "\"", 4);
@@ -597,6 +627,8 @@ void BlinkerMQTT::connectServer() {
     this->latestTime = millis();
     mqtt->subscribe(iotSub);
     connect();
+
+    return true;
 }
 
 bool BlinkerMQTT::connect() {

@@ -1130,6 +1130,10 @@ class BlinkerProtocol
 #if defined(BLINKER_MQTT)
         char            _authKey[BLINKER_AUTHKEY_SIZE];
         char            _deviceName[BLINKER_MQTT_DEVICEID_SIZE];
+        bool            _isInit = false;
+        uint8_t         _disconnectCount = 0;
+        uint32_t        _disFreshTime = 0;
+        uint32_t        _disconnectTime = 0;
 #endif
 
 #if defined(BLINKER_PRO)
@@ -1436,11 +1440,42 @@ void BlinkerProtocol<Transp>::run()
     }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO)
     BApi::ntpInit();
 // #endif
 // #if defined(ESP8266) || defined(ESP32)
     BApi::checkTimer();
+#endif
+
+#if defined(BLINKER_MQTT)
+    BApi::checkTimer();
+
+    if (!_isInit) {
+        if (conn.init() && BApi::ntpInit()) {
+            _isInit =true;
+            _disconnectTime = millis();
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(BLINKER_F("MQTT conn init success"));
+    #endif
+        }
+    }
+    else {
+        if (((millis() - _disconnectTime) > 60000 && _disconnectCount) 
+            || _disconnectCount >= 12) {
+        // if (_disconnectCount >= 12) {
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(BLINKER_F("device reRegister"));
+    #endif
+            if (conn.reRegister()) {
+                _disconnectCount = 0;
+                _disconnectTime = millis();
+            }
+            else {
+                _disconnectCount = 0;
+                _disconnectTime = millis() - 10000;
+            }
+        }
+    }
 #endif
 
     bool conState = conn.connected();
@@ -1450,6 +1485,32 @@ void BlinkerProtocol<Transp>::run()
         case CONNECTING :
             if (conn.connect()) {
                 state = CONNECTED;
+#if defined(BLINKER_MQTT)
+                _disconnectCount = 0;
+#endif
+            }
+            else {
+#if defined(BLINKER_MQTT)
+                if (_isInit) {
+                    if (_disconnectCount == 0) {
+                        _disconnectCount++;
+                        _disconnectTime = millis();
+                        _disFreshTime = millis();
+                    }
+                    else {
+                        if ((millis() - _disFreshTime) >= 5000) {
+                            _disFreshTime = millis();
+                            _disconnectCount++;
+
+                            if (_disconnectCount > 12) _disconnectCount = 12;
+    #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2(BLINKER_F("_disFreshTime: "), _disFreshTime);
+                            BLINKER_LOG2(BLINKER_F("_disconnectCount: "), _disconnectCount);
+    #endif
+                        }
+                    }
+                }
+#endif   
             }
             break;
         case CONNECTED :
@@ -1460,7 +1521,30 @@ void BlinkerProtocol<Transp>::run()
                 }
             }
             else {
-                state = DISCONNECTED;
+                // state = DISCONNECTED;
+                conn.disconnect();
+                state = CONNECTING;
+#if defined(BLINKER_MQTT)
+                if (_isInit) {
+                    if (_disconnectCount == 0) {
+                        _disconnectCount++;
+                        _disconnectTime = millis();
+                        _disFreshTime = millis();
+                    }
+                    else {
+                        if ((millis() - _disFreshTime) >= 5000) {
+                            _disFreshTime = millis();
+                            _disconnectCount++;
+
+                            if (_disconnectCount > 12) _disconnectCount = 12;
+    #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2(BLINKER_F("_disFreshTime: "), _disFreshTime);
+                            BLINKER_LOG2(BLINKER_F("_disconnectCount: "), _disconnectCount);
+    #endif
+                        }
+                    }
+                }
+#endif
             }
             break;
         case DISCONNECTED :
