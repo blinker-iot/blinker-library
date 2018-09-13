@@ -3,6 +3,24 @@
 
 #include <Blinker/BlinkerApi.h>
 
+#if defined(BLINKER_PRO)
+enum BlinkerStatus{
+    PRO_WLAN_CONNECTING,
+    PRO_WLAN_CONNECTED,
+    // PRO_WLAN_DISCONNECTED,
+    PRO_WLAN_SMARTCONFIG_BEGIN,
+    PRO_WLAN_SMARTCONFIG_DONE,
+    PRO_DEV_AUTHCHECK_FAIL,
+    PRO_DEV_AUTHCHECK_SUCCESS,
+    PRO_DEV_REGISTER_FAIL,
+    PRO_DEV_REGISTER_SUCCESS,
+    PRO_DEV_INIT_SUCCESS,
+    PRO_DEV_CONNECTING,
+    PRO_DEV_CONNECTED,
+    PRO_DEV_DISCONNECTED
+};
+#endif
+
 template <class Transp>
 class BlinkerProtocol
     : public BlinkerApi< BlinkerProtocol<Transp> >
@@ -882,6 +900,8 @@ class BlinkerProtocol
         bool init() { return _isInit;}
 
         bool registered() { return conn.authCheck(); }
+
+        uint8_t status() { return _proStatus; }
 #endif
 
     private :
@@ -1124,6 +1144,8 @@ class BlinkerProtocol
         uint32_t        _register_fresh = 0;
 
         uint32_t        _initTime;
+
+        uint8_t         _proStatus = PRO_WLAN_CONNECTING;
 #endif
 
 #if defined(BLINKER_PRO)
@@ -1312,10 +1334,23 @@ void BlinkerProtocol<Transp>::run()
 #if defined(BLINKER_PRO)
 
     if (!BApi::wlanRun()) {
+        uint8_t wl_status = BApi::wlanStatus();
+        
+        if (wl_status == BWL_SMARTCONFIG_BEGIN) {
+            _proStatus = PRO_WLAN_SMARTCONFIG_BEGIN;
+        }
+        else if (wl_status == BWL_SMARTCONFIG_DONE) {
+            _proStatus = PRO_WLAN_SMARTCONFIG_DONE;
+        }
+        else {
+            _proStatus = PRO_WLAN_CONNECTING;
+        }
         return;
     }
     else {
         if (!_isConnBegin) {
+            _proStatus = PRO_WLAN_CONNECTED;
+
             conn.begin(BApi::type());
             _isConnBegin = true;
             _initTime = millis();
@@ -1323,12 +1358,24 @@ void BlinkerProtocol<Transp>::run()
             BLINKER_LOG2(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
     #endif
             if (conn.authCheck()) {
+                _proStatus = PRO_DEV_AUTHCHECK_SUCCESS;
     #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("is auth, conn deviceRegister"));
     #endif
                 _isRegistered = conn.deviceRegister();
+                _getRegister = true;
 
-                if (!_isRegistered) _register_fresh = millis();
+                if (!_isRegistered) {
+                    _register_fresh = millis();
+
+                    _proStatus = PRO_DEV_REGISTER_FAIL;
+                }
+                else {
+                    _proStatus = PRO_DEV_REGISTER_SUCCESS;
+                }
+            }
+            else {
+                _proStatus = PRO_DEV_AUTHCHECK_FAIL;
             }
         }
     }
@@ -1350,8 +1397,14 @@ void BlinkerProtocol<Transp>::run()
     #endif
             _isRegistered = conn.deviceRegister();
 
-            if (!_isRegistered) _register_fresh = millis();
-            else _isRegistered = true;
+            if (!_isRegistered) {
+                _register_fresh = millis();
+                _proStatus = PRO_DEV_REGISTER_FAIL;
+            }
+            else {
+                _isRegistered = true;
+                _proStatus = PRO_DEV_REGISTER_SUCCESS;
+            }
         }
     }
 
@@ -1366,6 +1419,18 @@ void BlinkerProtocol<Transp>::run()
                 _isInit = true;
                 strcpy(_authKey, conn.key().c_str());
                 strcpy(_deviceName, conn.deviceName().c_str());
+                _proStatus = PRO_DEV_INIT_SUCCESS;
+            }
+        }
+        else {
+            if (state == CONNECTING && _proStatus != PRO_DEV_CONNECTING) {
+                _proStatus = PRO_DEV_CONNECTING;
+            }
+            else if (state == CONNECTED && _proStatus != PRO_DEV_CONNECTED) {
+                _proStatus = PRO_DEV_CONNECTED;
+            }
+            else if (state == DISCONNECTED && _proStatus != PRO_DEV_DISCONNECTED) {
+                _proStatus = PRO_DEV_DISCONNECTED;
             }
         }
     }
