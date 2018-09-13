@@ -172,8 +172,10 @@ class BlinkerMQTT {
             //     isMQTTinit = true;
             // }
             // else {
-            //     uint8_t warn_count = 0;
+                uint32_t re_time = millis();
+                // bool isConnect = true;
                 while(1) {
+                    re_time = millis();
                     // ::delay(10000);
                     // BLINKER_ERR_LOG1("Maybe you have put in the wrong AuthKey!");
                     // BLINKER_ERR_LOG1("Or maybe your request is too frequently!");
@@ -183,7 +185,19 @@ class BlinkerMQTT {
                         isMQTTinit = true;
                         return;
                     }
-                    ::delay(10000);
+                    // delay(10000);
+                    while ((millis() - re_time) < 10000) {
+                        if (WiFi.status() != WL_CONNECTED) {
+                            // isConnect = false;
+                            // WiFi.begin();
+                            WiFi.reconnect();
+                        }
+                        // else if (WiFi.status() == WL_CONNECTED && !isConnect) {
+                        //     isConnect = true;
+                        // }
+                        ::delay(10);
+                        // WiFi.status();
+                    }
                 }
             // }
         }
