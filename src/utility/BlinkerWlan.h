@@ -70,6 +70,8 @@ class BlinkerWlan {
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
 
+        // uint8_t status() { return _status; }
+
     private :
 
     protected :

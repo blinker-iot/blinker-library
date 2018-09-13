@@ -4611,6 +4611,10 @@ class BlinkerApi
             return Bwlan.run();
         }
 
+        uint8_t wlanStatus() {
+            return Bwlan.status();
+        }
+
         bool isPressed = false;
 
         // void checkButton()
