@@ -1251,7 +1251,7 @@ class BlinkerProtocol
         void _print(const String & n, bool needParse = true, bool needCheckLength = true) {
             // String data = n + BLINKER_CMD_NEWLINE;
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("n: "), n);
+            BLINKER_LOG2(BLINKER_F("print: "), n);
 #endif
             if (n.length() <= BLINKER_MAX_SEND_SIZE || !needCheckLength) {
                 conn.print(n);

@@ -1410,7 +1410,7 @@ class BlinkerApi
             BLINKER_LOG1((
                 "\n==========================================================="
                 "\n================== Blinker Timer loaded! =================="
-                "\nWarning!EEPROM address 1536-2432 is used for Blinker Timer!"
+                "\nWarning!EEPROM address 1536-2431 is used for Blinker Timer!"
                 "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
                 "\n===========================================================\n"));
 
