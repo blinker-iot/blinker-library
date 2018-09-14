@@ -205,13 +205,15 @@ class BlinkerPRO {
 
                     if (! iotPub->publish(payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(payload, BLINKER_F("...Failed"));
+                        BLINKER_LOG1(payload);
+                        BLINKER_LOG1(BLINKER_F("...Failed"));
 #endif
                         return false;
                     }
                     else {
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(payload, BLINKER_F("...OK!"));
+                        BLINKER_LOG1(payload);
+                        BLINKER_LOG1(BLINKER_F("...OK!"));
 #endif
                         linkTime = millis();
                         return true;
@@ -846,7 +848,9 @@ bool BlinkerPRO::print(String data) {
         respTime = millis();
 
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG1(("Succese..."));
+        BLINKER_LOG1("WS response: ");
+        BLINKER_LOG1(data);
+        BLINKER_LOG1("Succese...");
 #endif
         webSocket.sendTXT(ws_num, data + BLINKER_CMD_NEWLINE);
 
@@ -904,7 +908,8 @@ bool BlinkerPRO::print(String data) {
 
             if (! iotPub->publish(payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(payload, ("...Failed"));
+                BLINKER_LOG1(payload);
+                BLINKER_LOG1(("...Failed"));
 #endif
                 if (!_alive) {
                     isAlive = false;
@@ -913,7 +918,8 @@ bool BlinkerPRO::print(String data) {
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(payload, ("...OK!"));
+                BLINKER_LOG1(payload);
+                BLINKER_LOG1(("...OK!"));
 #endif
                 if (!state) printTime = millis();
 
@@ -963,7 +969,8 @@ bool BlinkerPRO::bPrint(String name, String data) {
 
         if (! iotPub->publish(payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(payload, ("...Failed"));
+            BLINKER_LOG1(payload);
+            BLINKER_LOG1(("...Failed"));
 #endif
             // if (!_alive) {
             //     isAlive = false;
@@ -972,7 +979,8 @@ bool BlinkerPRO::bPrint(String name, String data) {
         }
         else {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(payload, ("...OK!"));
+            BLINKER_LOG1(payload);
+            BLINKER_LOG1(("...OK!"));
 #endif
             bPrintTime = millis();
 
