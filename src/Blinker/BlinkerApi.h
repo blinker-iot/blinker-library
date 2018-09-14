@@ -982,7 +982,10 @@ class BlinkerApi
 
         void delay(unsigned long ms)
         {
-            uint32_t start = micros();
+            uint32_t _start = micros();
+            // uint16_t start = (uint16_t)_start;
+            uint32_t start = _start;
+            unsigned long _ms = ms;
             while (ms > 0) {
                 static_cast<Proto*>(this)->run();
 
@@ -990,10 +993,28 @@ class BlinkerApi
 
                 // if ((micros() - start)/1000 >= ms) {
                 //     ms = 0;
-                // }
+                // }(uint16_t)
+
                 if ((micros() - start) >= 1000) {
-                    ms--;
+                    ms -= 1;
                     start += 1000;
+#ifdef BLINKER_DEBUG_ALL
+                    if(ms == 0) {
+                        BLINKER_LOG2("ms0: ", ms);
+                        BLINKER_LOG4("_start: ", _start, " start: ", start);
+                        BLINKER_LOG2("micros: ", micros());
+                    }
+#endif
+                }
+                else {
+                    if ((micros() - _start)/1000 >= _ms) {
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2("ms1: ", ms);
+                        BLINKER_LOG4("_start: ", _start, " start: ", start);
+                        BLINKER_LOG2("micros: ", micros());
+#endif
+                        ms = 0;
+                    }
                 }
             }
         }

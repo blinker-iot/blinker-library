@@ -81,7 +81,8 @@ aqi	KEYWORD2
 status	KEYWORD2
 flush	KEYWORD2
 init	KEYWORD2
-registered	KEYWORD2
+beginAuto	KEYWORD2
+autoInput	KEYWORD2
 autoInput	KEYWORD2
 autoRun	KEYWORD2
 setType	KEYWORD2
