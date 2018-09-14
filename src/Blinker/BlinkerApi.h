@@ -1000,7 +1000,7 @@ class BlinkerApi
                     start += 1000;
 #ifdef BLINKER_DEBUG_ALL
                     if(ms == 0) {
-                        BLINKER_LOG2("ms0: ", ms);
+                        BLINKER_LOG4("ms0: ", ms, " _ms0: ", _ms);
                         BLINKER_LOG4("_start: ", _start, " start: ", start);
                         BLINKER_LOG2("micros: ", micros());
                     }
@@ -1009,7 +1009,7 @@ class BlinkerApi
                 else {
                     if ((micros() - _start)/1000 >= _ms) {
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2("ms1: ", ms);
+                        BLINKER_LOG4("ms1: ", ms, " _ms1: ", _ms);
                         BLINKER_LOG4("_start: ", _start, " start: ", start);
                         BLINKER_LOG2("micros: ", micros());
 #endif
