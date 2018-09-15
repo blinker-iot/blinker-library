@@ -906,6 +906,7 @@ class BlinkerApi
                     static_cast<Proto*>(this)->run();
                     if (static_cast<Proto*>(this)->connect()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_AHRS, BLINKER_CMD_ON);
+                        static_cast<Proto*>(this)->printNow();
                         break;
                     }
                 }
@@ -923,7 +924,9 @@ class BlinkerApi
                     else {
                         BLINKER_LOG1(BLINKER_F("AHRS attach failed...Try again"));
                         startTime = millis();
+                        parse(static_cast<Proto*>(this)->dataParse());
                         static_cast<Proto*>(this)->print(BLINKER_CMD_AHRS, BLINKER_CMD_ON);
+                        static_cast<Proto*>(this)->printNow();
                     }
                 }
                 else {
@@ -931,6 +934,7 @@ class BlinkerApi
                         BLINKER_LOG1(BLINKER_F("AHRS attach failed...Try again"));
                         startTime = millis();
                         static_cast<Proto*>(this)->print(BLINKER_CMD_AHRS, BLINKER_CMD_ON);
+                        static_cast<Proto*>(this)->printNow();
                     }
                 }
             }
@@ -945,11 +949,12 @@ class BlinkerApi
         }
 
         String gps(b_gps_t axis, bool newData = false) {
-            if (!newData && (millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT) {
+            if (!newData && ((millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT || gps_get_time == 0)) {
                 static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
+                static_cast<Proto*>(this)->printNow();
                 delay(100);
 
-                gps_get_time = millis();
+                // gps_get_time = millis();
             }
 
             String axisValue = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, axis);
@@ -962,6 +967,7 @@ class BlinkerApi
 
                 if (_fresh) {
                     static_cast<Proto*>(this)->isParsed();
+                    gps_get_time = millis();
                 }
 
                 return gpsValue[axis];
@@ -1925,11 +1931,12 @@ class BlinkerApi
         }
 
         String gps(b_gps_t axis, bool newData, const JsonObject& data) {
-            if (!newData && (millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT) {
+            if (!newData && ((millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT || gps_get_time == 0)) {
                 static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
+                static_cast<Proto*>(this)->printNow();
                 delay(100);
 
-                gps_get_time = millis();
+                // gps_get_time = millis();
             }
 
             if (data.containsKey(BLINKER_CMD_GPS)) {
@@ -1942,6 +1949,7 @@ class BlinkerApi
 
                 if (_fresh) {
                     static_cast<Proto*>(this)->isParsed();
+                    gps_get_time = millis();
                 }
 
                 return gpsValue[axis];
