@@ -906,6 +906,7 @@ class BlinkerApi
                     static_cast<Proto*>(this)->run();
                     if (static_cast<Proto*>(this)->connect()) {
                         static_cast<Proto*>(this)->print(BLINKER_CMD_AHRS, BLINKER_CMD_ON);
+                        static_cast<Proto*>(this)->printNow();
                         break;
                     }
                 }
@@ -923,7 +924,9 @@ class BlinkerApi
                     else {
                         BLINKER_LOG1(BLINKER_F("AHRS attach failed...Try again"));
                         startTime = millis();
+                        parse(static_cast<Proto*>(this)->dataParse());
                         static_cast<Proto*>(this)->print(BLINKER_CMD_AHRS, BLINKER_CMD_ON);
+                        static_cast<Proto*>(this)->printNow();
                     }
                 }
                 else {
@@ -931,6 +934,7 @@ class BlinkerApi
                         BLINKER_LOG1(BLINKER_F("AHRS attach failed...Try again"));
                         startTime = millis();
                         static_cast<Proto*>(this)->print(BLINKER_CMD_AHRS, BLINKER_CMD_ON);
+                        static_cast<Proto*>(this)->printNow();
                     }
                 }
             }
