@@ -1447,7 +1447,7 @@ class BlinkerApi
             // EEPROM.begin(BLINKER_EEP_SIZE);
 
             // for (uint16_t _addr = BLINKER_EEP_ADDR_TIMER;
-            //     _addr < BLINKER_EEP_ADD_TIMER_END; _addr++) {
+            //     _addr < BLINKER_EEP_ADDR_TIMER_END; _addr++) {
             //     EEPROM.put(_addr, "\0");
             // }
 
@@ -2588,7 +2588,7 @@ class BlinkerApi
 
             if (isErase) {
                 for (uint16_t _addr = BLINKER_EEP_ADDR_TIMER;
-                    _addr < BLINKER_EEP_ADD_TIMER_END; _addr++) {
+                    _addr < BLINKER_EEP_ADDR_TIMER_END; _addr++) {
                     EEPROM.put(_addr, "\0");
                 }
             }
