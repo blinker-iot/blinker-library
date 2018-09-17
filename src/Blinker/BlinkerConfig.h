@@ -159,6 +159,10 @@
 
 #define BLINKER_CMD_NOTFOUND            "device not found"
 
+#define BLINKER_CMD_COMMAND             "cmd"
+
+#define BLINKER_CMD_EVENT               "event"
+
 #define BLINKER_CMD_AUTO                "auto"
 
 #define BLINKER_CMD_AUTOID              "autoId"
@@ -166,6 +170,8 @@
 #define BLINKER_CMD_AUTODATA            "autoData"
 
 #define BLINKER_CMD_DELETID             "deletId"
+
+#define BLINKER_CMD_LOGIC               "logic"
 
 #define BLINKER_CMD_LOGICDATA           "logicData"
 
@@ -204,6 +210,8 @@
 #define BLINKER_CMD_LINKDATA            "linkData"
 
 #define BLINKER_CMD_TRIGGEDDATA         "triggedData"
+
+#define BLINKER_CMD_TYPE                "type"
 
 #define BLINKER_CMD_TIMER               "timer"
 
