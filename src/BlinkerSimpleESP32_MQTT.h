@@ -146,7 +146,7 @@ class BlinkerSimpleESP32_MQTT
 #endif
 
         bool autoInit() {
-            WiFi.mode(WIFI_AP_STA);
+            WiFi.mode(WIFI_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
             WiFi.setHostname(_hostname.c_str());
 
