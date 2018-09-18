@@ -15,7 +15,20 @@ class BlinkerEVENT
             , _trigged(false)
         {}
 
-        void run(String key, float data, int32_t nowTime) {}
+        void run(String key, float data, int32_t nowTime) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG6(BLINKER_F("BlinkerAUTO run key: "), key, 
+                        BLINKER_F(" data: "), data, 
+                        BLINKER_F(" nowTime: "), nowTime);
+#endif
+            for (uint8_t _num = 0; _num < _dataNum; _num++) {
+                if (!_eventState) return;
+
+                if (key != STRING_format(_targetKey[_num])) return;
+
+                // if ()
+            }
+        }
 
         void run(String key, String state, int32_t nowTime) {}
 

@@ -167,6 +167,8 @@
 
 #define BLINKER_CMD_AUTOID              "autoId"
 
+#define BLINKER_CMD_ID                  "id"
+
 #define BLINKER_CMD_AUTODATA            "autoData"
 
 #define BLINKER_CMD_DELETID             "deletId"
@@ -177,11 +179,11 @@
 
 #define BLINKER_CMD_LOGICTYPE           "logicType"
 
-#define BLINKER_CMD_LESS                "less"
+#define BLINKER_CMD_LESS                "<"//"less"
 
-#define BLINKER_CMD_EQUAL               "equal"
+#define BLINKER_CMD_EQUAL               "="//"equal"
 
-#define BLINKER_CMD_GREATER             "greater"
+#define BLINKER_CMD_GREATER             ">"//"greater"
 
 #define BLINKER_CMD_NUMBERIC            "numberic"
 
@@ -202,6 +204,8 @@
 #define BLINKER_CMD_TARGETDATA          "targetData"
 
 #define BLINKER_CMD_TIMESLOT            "timeSlot"
+
+#define BLINKER_CMD_RANGE               "range"
 
 #define BLINKER_CMD_LINKDEVICE          "linkDevice"
 
