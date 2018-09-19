@@ -1055,14 +1055,14 @@ class BlinkerApi
         }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-        void beginAuto() {
-            BLINKER_LOG1(BLINKER_F("======================================================="));
-            BLINKER_LOG1(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
-            BLINKER_LOG1(BLINKER_F("Warning!EEPROM address 0-1279 is used for Auto Control!"));
-            BLINKER_LOG1(BLINKER_F("=========== DON'T USE THESE EEPROM ADDRESS! ==========="));
-            BLINKER_LOG1(BLINKER_F("======================================================="));
+        void autoInit() {
+            // BLINKER_LOG1(BLINKER_F("======================================================="));
+            // BLINKER_LOG1(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
+            // BLINKER_LOG1(BLINKER_F("Warning!EEPROM address 0-1279 is used for Auto Control!"));
+            // BLINKER_LOG1(BLINKER_F("=========== DON'T USE THESE EEPROM ADDRESS! ==========="));
+            // BLINKER_LOG1(BLINKER_F("======================================================="));
 
-            BLINKER_LOG2(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+            // BLINKER_LOG2(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
             // deserialization();
             autoStart();
@@ -1097,9 +1097,9 @@ class BlinkerApi
         void autoRun() {
             for (uint8_t _num = 0; _num < _aCount; _num++) {
                 if (_AUTO[_num]->isTrigged()) {
-                    uint8_t link_num = _AUTO[_num]->linkNum();
+                    // uint8_t link_num = _AUTO[_num]->linkNum();
 
-                    if (link_num == 0) {
+                    // if (link_num == 0) {
                         if (static_cast<Proto*>(this)->autoTrigged(_AUTO[_num]->id()))
                         {
     #ifdef BLINKER_DEBUG_ALL
@@ -1112,44 +1112,44 @@ class BlinkerApi
                             BLINKER_LOG1(BLINKER_F("trigged failed"));
     #endif
                         }
-                    }
-                    else if (link_num == 1) {
-                        if (static_cast<Proto*>(this)->autoTrigged(
-                            _AUTO[_num]->name(0) ,
-                            _AUTO[_num]->type(0) ,
-                            _AUTO[_num]->data(0)))
-                        {
-    #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG1(BLINKER_F("trigged sucessed"));
-    #endif
-                            _AUTO[_num]->fresh();
-                        }
-                        else {
-    #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG1(BLINKER_F("trigged failed"));
-    #endif
-                        }
-                    }
-                    else if (link_num == 2) {
-                        if (static_cast<Proto*>(this)->autoTrigged(
-                            _AUTO[_num]->name(0) ,
-                            _AUTO[_num]->type(0) ,
-                            _AUTO[_num]->data(0) ,
-                            _AUTO[_num]->name(1) ,
-                            _AUTO[_num]->type(1) ,
-                            _AUTO[_num]->data(1)))
-                        {
-    #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG1(BLINKER_F("trigged sucessed"));
-    #endif
-                            _AUTO[_num]->fresh();
-                        }
-                        else {
-    #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG1(BLINKER_F("trigged failed"));
-    #endif
-                        }
-                    }
+                    // }
+    //                 else if (link_num == 1) {
+    //                     if (static_cast<Proto*>(this)->autoTrigged(
+    //                         _AUTO[_num]->name(0) ,
+    //                         _AUTO[_num]->type(0) ,
+    //                         _AUTO[_num]->data(0)))
+    //                     {
+    // #ifdef BLINKER_DEBUG_ALL
+    //                         BLINKER_LOG1(BLINKER_F("trigged sucessed"));
+    // #endif
+    //                         _AUTO[_num]->fresh();
+    //                     }
+    //                     else {
+    // #ifdef BLINKER_DEBUG_ALL
+    //                         BLINKER_LOG1(BLINKER_F("trigged failed"));
+    // #endif
+    //                     }
+    //                 }
+    //                 else if (link_num == 2) {
+    //                     if (static_cast<Proto*>(this)->autoTrigged(
+    //                         _AUTO[_num]->name(0) ,
+    //                         _AUTO[_num]->type(0) ,
+    //                         _AUTO[_num]->data(0) ,
+    //                         _AUTO[_num]->name(1) ,
+    //                         _AUTO[_num]->type(1) ,
+    //                         _AUTO[_num]->data(1)))
+    //                     {
+    // #ifdef BLINKER_DEBUG_ALL
+    //                         BLINKER_LOG1(BLINKER_F("trigged sucessed"));
+    // #endif
+    //                         _AUTO[_num]->fresh();
+    //                     }
+    //                     else {
+    // #ifdef BLINKER_DEBUG_ALL
+    //                         BLINKER_LOG1(BLINKER_F("trigged failed"));
+    // #endif
+    //                     }
+    //                 }
                 }
             }
         }
@@ -1300,6 +1300,27 @@ class BlinkerApi
                             "&dataType=" + _type;
 
             return (blinkServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        }
+
+        bool autoPull() {
+            String   data = "/auto/pull?deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
+                            "&key=" + STRING_format(static_cast<Proto*>(this)->_authKey);
+
+            // return (blinkServer(BLINKER_CMD_AUTO_PULL_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+
+            String payload = blinkServer(BLINKER_CMD_AUTO_PULL_NUMBER, data);
+
+            if (payload == BLINKER_CMD_FALSE) {
+                return false;
+            }
+            else {
+                DynamicJsonBuffer jsonBuffer;
+                JsonObject& autoJson = jsonBuffer.parseObject(payload);
+
+                // return true;
+
+                return autoManager(autoJson);
+            }
         }
 #endif
 
@@ -1703,6 +1724,8 @@ class BlinkerApi
 
         uint32_t    _dGetTime = 0;
         uint32_t    _dDelTime = 0;
+
+        uint32_t    _autoPullTime = 0;
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
@@ -2249,24 +2272,83 @@ class BlinkerApi
             bool isAuto = false;
 
             // isSet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
-            // isAuto = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTODATA);
+            // isAuto = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTO);
             isSet = data.containsKey(BLINKER_CMD_SET);
-            String aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA];
+            String aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
+            String aDataArray = data[BLINKER_CMD_AUTO][0];
+
             if (aData.length()) {
                 isAuto = true;
             }
 
-            if (isSet && isAuto) {
+            if (aDataArray.length() && !isAuto) {
+                for (uint8_t num = 0; num < 2; num++) {
+                    uint32_t _autoId = data[BLINKER_CMD_AUTO][num][BLINKER_CMD_AUTOID];
+                    String arrayData = data[BLINKER_CMD_AUTO][num];
+
+                    if (_aCount) {
+                        for (uint8_t _num = 0; _num < _aCount; _num++) {
+                            if (_AUTO[_num]->id() == _autoId) {
+                                _AUTO[_num]->manager(arrayData);
+                                return true;
+                            }
+                        }
+                        if (_aCount == 1) {
+                            _AUTO[_aCount] = new BlinkerAUTO();
+                            _AUTO[_aCount]->setNum(_aCount);
+                            _AUTO[_aCount]->manager(arrayData);
+
+                            // _aCount = 1;
+                            _aCount++;
+                            EEPROM.begin(BLINKER_EEP_SIZE);
+                            EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                            EEPROM.commit();
+                            EEPROM.end();
+
+    #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2(BLINKER_F("_aCount: "), _aCount);
+    #endif
+                            // static_cast<Proto*>(this)->_print(autoData(), false);
+                            // return true;
+                        }
+                        else {
+                            _AUTO[_aCount - 1]->manager(arrayData);
+                            // return true;
+                        }
+                    }
+                    else {
+                        _AUTO[_aCount] = new BlinkerAUTO();
+                        _AUTO[_aCount]->setNum(_aCount);
+                        _AUTO[_aCount]->manager(arrayData);
+
+                        _aCount = 1;
+                        // _aCount++;
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                        EEPROM.commit();
+                        EEPROM.end();
+
+    #ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("_aCount: "), _aCount);
+    #endif
+                        // static_cast<Proto*>(this)->_print(autoData(), false);
+                        // return true;
+                    }
+                }
+                return true;
+            }
+            else if (isSet && isAuto) {
                 _fresh = true;
     #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("get auto setting"));
     #endif
                 bool isDelet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
-                String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][0];
+                String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                                            [BLINKER_CMD_ACTION][0];
 
                 if (isDelet) {
                     // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
-                    uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_DELETID];
+                    uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE];
 
                     if (_aCount) {
                         for (uint8_t _num = 0; _num < _aCount; _num++) {
@@ -2297,7 +2379,8 @@ class BlinkerApi
                 }
                 else if(isTriggedArray.length()) {
                     for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++) {
-                        String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][a_num];
+                        String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                                                    [BLINKER_CMD_ACTION][a_num];
 
                         if(_autoData_array.length()) {
                             DynamicJsonBuffer _jsonBuffer;
@@ -2314,7 +2397,7 @@ class BlinkerApi
                 }
                 else {
                     // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
-                    uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTODATA][BLINKER_CMD_AUTOID];
+                    uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_AUTOID];
 
                     // _aCount = 0;
 
@@ -2380,6 +2463,11 @@ class BlinkerApi
             EEPROM.begin(BLINKER_EEP_SIZE);
             EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
             if (checkData != BLINKER_CHECK_DATA) {
+                for (uint16_t _addr = BLINKER_EEP_ADDR_AUTO_START;
+                    _addr < BLINKER_EEP_ADDR_AUTO_START + 
+                    BLINKER_ONE_AUTO_DATA_SIZE * 2; _addr++) {
+                    EEPROM.put(_addr, "\0");
+                }
                 EEPROM.put(BLINKER_EEP_ADDR_CHECK, BLINKER_CHECK_DATA);
                 EEPROM.commit();
                 EEPROM.end();
@@ -3567,6 +3655,11 @@ class BlinkerApi
                         return BLINKER_CMD_FALSE;
                     }
                     break;
+                case BLINKER_CMD_AUTO_PULL_NUMBER :
+                    if (!checkAutoPull()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -3796,6 +3889,18 @@ class BlinkerApi
         #endif
                     break;
                 case BLINKER_CMD_DATA_DELETE_NUMBER :
+                    url = "/api/v1/user/device" + msg;
+
+                    client_msg = STRING_format("GET " + url + " HTTP/1.1\r\n" +
+                        "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
+                        "Connection: close\r\n\r\n");
+
+                    client_s.print(client_msg);
+        #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("client_msg: ", client_msg);
+        #endif
+                    break;
+                case BLINKER_CMD_AUTO_PULL_NUMBER :
                     url = "/api/v1/user/device" + msg;
 
                     client_msg = STRING_format("GET " + url + " HTTP/1.1\r\n" +
@@ -4069,6 +4174,23 @@ class BlinkerApi
                     BLINKER_LOG2("_dataGet: ", _dataGet);
             #endif
                     break;
+                case BLINKER_CMD_AUTO_PULL_NUMBER :
+                    if (data_rp.success()) {
+                        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000) {
+                            String _detail = data_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG1(_detail);
+                        }
+                        else {
+                            String _dataGet_ = data_rp[BLINKER_CMD_DETAIL];
+                            _dataGet = _dataGet_;
+                        }
+                    }
+                    _autoPullTime = millis();
+            #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2("_dataGet: ", _dataGet);
+            #endif
+                    break;
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -4190,6 +4312,12 @@ class BlinkerApi
                     httpCode = http.GET();
                     break;
                 case BLINKER_CMD_DATA_DELETE_NUMBER :
+                    url_iot = String(host) + "/api/v1/user/device" + msg;
+
+                    http.begin(url_iot);
+                    httpCode = http.GET();
+                    break;
+                case BLINKER_CMD_AUTO_PULL_NUMBER :
                     url_iot = String(host) + "/api/v1/user/device" + msg;
 
                     http.begin(url_iot);
@@ -4440,6 +4568,23 @@ class BlinkerApi
                             BLINKER_LOG2("payload: ", payload);
             #endif
                             break;
+                        case BLINKER_CMD_AUTO_PULL_NUMBER :
+                            if (data_rp.success()) {
+                                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                                if (msg_code != 1000) {
+                                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                                    BLINKER_ERR_LOG1(_detail);
+                                }
+                                else {
+                                    String _payload = data_rp[BLINKER_CMD_DETAIL];
+                                    payload = _payload;
+                                }
+                            }
+                            _autoPullTime = millis();
+            #ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2("payload: ", payload);
+            #endif
+                            break;
                         default :
                             return BLINKER_CMD_FALSE;
                     }
@@ -4558,6 +4703,15 @@ class BlinkerApi
 
         bool checkDataDel() {
             if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT || _dDelTime == 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool checkAutoPull() {
+            if ((millis() - _autoPullTime) >= 60000 || _autoPullTime == 0) {
                 return true;
             }
             else {

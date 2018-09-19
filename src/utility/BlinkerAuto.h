@@ -10,7 +10,8 @@ class BlinkerAUTO
 {
     public :
         BlinkerAUTO()
-            : _autoState(false)
+            : _haveAuto(false)
+            , _autoState(false)
             , _trigged(false)
         {}
 
@@ -185,15 +186,40 @@ class BlinkerAUTO
             }
         }
 
-        void manager(String data) {
+        void manager(String data, bool isSet = true) {
+            if (isSet) {
+                DynamicJsonBuffer _jsonBuffer;
+                JsonObject& setRoot = _jsonBuffer.parseObject(data);
+                String setData = setRoot[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
+
+                data = setData;
+            }
+
             DynamicJsonBuffer jsonBuffer;
             JsonObject& root = jsonBuffer.parseObject(data);
+            // if (STRING_contains_string(data, BLINKER_CMD_DELETE)) {
+            //     String deleteId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE];
+            //     if (deleteId.length()) {
+            //         if (deleteId.toInt() == _autoId) {
+            //             _haveAuto = false;
+            //             serialization();
+            //             return;
+            //         }
+            //         else {
+            //             return;
+            //         }
+            //     }
+            //     else {
+            //         return;
+            //     }
+            // }
 
             // String auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", ",", 1);
-            _autoState = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_ENABLE];
+            _autoState = root[BLINKER_CMD_ENABLE];
             // if (auto_state == "") {
             //     auto_state = STRING_find_string(static_cast<Proto*>(this)->dataParse(), "auto\"", "}", 1);
             // }
+            _haveAuto = true;
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("==============================================="));
             BLINKER_LOG2(BLINKER_F("auto state: "), _autoState);
@@ -202,10 +228,27 @@ class BlinkerAUTO
             // _autoState = auto_state;
 
             // _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
-            _autoId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_ID];
+            // if (isSet) {
+            //     _autoId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_ID];
+            // }
+            // else {
+                _autoId = root[BLINKER_CMD_ID];
+            // }
 
             // String logicType;
-            String logicType = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_LOGIC];
+            String logicType = root[BLINKER_CMD_LOGIC];
+            // if (isSet) {
+            //     String logic_set = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+            //                             [BLINKER_CMD_LOGIC];
+                
+            //     logicType = logic_set;            
+            // }
+            // else {
+            //     String logic_set = root[BLINKER_CMD_LOGIC];
+                
+            //     logicType = logic_set;            
+            // }
+
             // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), logicType, BLINKER_CMD_LOGICTYPE)) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("_autoId: "), _autoId);
@@ -220,8 +263,18 @@ class BlinkerAUTO
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("state!"));
 #endif
-                String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_DATA][0][BLINKER_CMD_KEY];
+                String target_key = root[BLINKER_CMD_DATA][0][BLINKER_CMD_KEY];
+                // if (isSet) {
+                //     String target_key_set = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                //                     [BLINKER_CMD_DATA][0][BLINKER_CMD_KEY];
+
+                //     target_key = target_key_set;
+                // }
+                // else {
+                //     String target_key_set = root[BLINKER_CMD_DATA][0][BLINKER_CMD_KEY];
+
+                //     target_key = target_key_set;
+                // }
                 // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_KEY);
                 strcpy(_targetKey[0], target_key.c_str());
                 
@@ -231,8 +284,20 @@ class BlinkerAUTO
 
                 logic_type[0] = BLINKER_TYPE_STATE;
                 // String target_state;
-                String target_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_DATA][0][BLINKER_CMD_VALUE];
+
+                String target_state = root[BLINKER_CMD_DATA][0][BLINKER_CMD_VALUE];
+                
+                // if (isSet) {
+                //     String target_state_set = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                //                     [BLINKER_CMD_DATA][0][BLINKER_CMD_VALUE];
+
+                //     target_state = target_state_set;
+                // }
+                // else {
+                //     String target_state_set = root[BLINKER_CMD_DATA][0][BLINKER_CMD_VALUE];
+                    
+                //     target_state = target_state_set;
+                // }
                 // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_state, BLINKER_CMD_VALUE)) {
                 if (target_state == BLINKER_CMD_ON) {
                     _targetState[0] = true;
@@ -241,8 +306,9 @@ class BlinkerAUTO
                     _targetState[0] = false;
                 }
 
-                _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                [BLINKER_CMD_DATA][0][BLINKER_CMD_DURATION];
+                // _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                //                 [BLINKER_CMD_DATA][0][BLINKER_CMD_DURATION];
+                _duration[0] = root[BLINKER_CMD_DATA][0][BLINKER_CMD_DURATION];
                 _duration[0] = 60 * _duration[0];
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
@@ -256,8 +322,9 @@ class BlinkerAUTO
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("numberic!"));
 #endif
-                String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_DATA][0][BLINKER_CMD_KEY];
+                // String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                //                     [BLINKER_CMD_DATA][0][BLINKER_CMD_KEY];
+                String target_key = root[BLINKER_CMD_DATA][0][BLINKER_CMD_KEY];
                 // STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_key, BLINKER_CMD_KEY);
                 strcpy(_targetKey[0], target_key.c_str());
                 
@@ -267,8 +334,9 @@ class BlinkerAUTO
 
                 logic_type[0] = BLINKER_TYPE_NUMERIC;
                 // String _type;
-                String _type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                            [BLINKER_CMD_DATA][0][BLINKER_CMD_TYPE];
+                // String _type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                //             [BLINKER_CMD_DATA][0][BLINKER_CMD_TYPE];
+                String _type = root[BLINKER_CMD_DATA][0][BLINKER_CMD_TYPE];
                 // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), _type, BLINKER_CMD_TYPE)) {
                     if (_type == BLINKER_CMD_LESS) {
                         _compareType[0] = BLINKER_COMPARE_LESS;
@@ -281,10 +349,12 @@ class BlinkerAUTO
                     }
 
                     // _targetData = STRING_find_float_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_VALUE);
-                    _targetData[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_DATA][0][BLINKER_CMD_VALUE];
-                    _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_DATA][0][BLINKER_CMD_DURATION];
+                    // _targetData[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                    //                 [BLINKER_CMD_DATA][0][BLINKER_CMD_VALUE];
+                    // _duration[0] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                    //                 [BLINKER_CMD_DATA][0][BLINKER_CMD_DURATION];
+                    _targetData[0] = root[BLINKER_CMD_DATA][0][BLINKER_CMD_VALUE];
+                    _duration[0] = root[BLINKER_CMD_DATA][0][BLINKER_CMD_DURATION];
                     _duration[0] = 60 * _duration[0];
 
 #ifdef BLINKER_DEBUG_ALL
@@ -314,11 +384,15 @@ class BlinkerAUTO
                 _targetNum = 2;
 
                 for (uint8_t t_num = 0; t_num < _targetNum; t_num++) {
-                    String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                        [BLINKER_CMD_DATA][t_num][BLINKER_CMD_KEY];
+                    // String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                    //                     [BLINKER_CMD_DATA][t_num][BLINKER_CMD_KEY];
 
-                    String compare_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                        [BLINKER_CMD_DATA][t_num][BLINKER_CMD_TYPE];
+                    // String compare_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                    //                     [BLINKER_CMD_DATA][t_num][BLINKER_CMD_TYPE];
+
+                    String target_key = root[BLINKER_CMD_DATA][t_num][BLINKER_CMD_KEY];
+
+                    String compare_type = root[BLINKER_CMD_DATA][t_num][BLINKER_CMD_TYPE];
 
                     if (compare_type.length()) {
 #ifdef BLINKER_DEBUG_ALL
@@ -341,10 +415,13 @@ class BlinkerAUTO
                         }
 
                         // _targetData = STRING_find_float_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_VALUE);
-                        _targetData[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                            [BLINKER_CMD_DATA][t_num][BLINKER_CMD_VALUE];
-                        _duration[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                            [BLINKER_CMD_DATA][t_num][BLINKER_CMD_DURATION];
+                        // _targetData[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                        //                     [BLINKER_CMD_DATA][t_num][BLINKER_CMD_VALUE];
+                        // _duration[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                        //                     [BLINKER_CMD_DATA][t_num][BLINKER_CMD_DURATION];
+
+                        _targetData[t_num] = root[BLINKER_CMD_DATA][t_num][BLINKER_CMD_VALUE];
+                        _duration[t_num] = root[BLINKER_CMD_DATA][t_num][BLINKER_CMD_DURATION];
                         _duration[t_num] = 60 * _duration[t_num];
 #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
@@ -362,8 +439,9 @@ class BlinkerAUTO
                         strcpy(_targetKey[t_num], target_key.c_str());
                 
                         // String target_state;
-                        String target_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_DATA][t_num][BLINKER_CMD_VALUE];
+                        // String target_state = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                        //             [BLINKER_CMD_DATA][t_num][BLINKER_CMD_VALUE];
+                        String target_state = root[BLINKER_CMD_DATA][t_num][BLINKER_CMD_VALUE];
                         // if (STRING_find_string_value(static_cast<Proto*>(this)->dataParse(), target_state, BLINKER_CMD_VALUE)) {
                         if (target_state == BLINKER_CMD_ON) {
                             _targetState[t_num] = true;
@@ -372,8 +450,9 @@ class BlinkerAUTO
                             _targetState[t_num] = false;
                         }
 
-                        _duration[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_DATA][t_num][BLINKER_CMD_DURATION];
+                        // _duration[t_num] = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                        //             [BLINKER_CMD_DATA][t_num][BLINKER_CMD_DURATION];
+                        _duration[t_num] = root[BLINKER_CMD_DATA][t_num][BLINKER_CMD_DURATION];
                         _duration[t_num] = 60 * _duration[t_num];
 #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_logicType: "), _logicType);
@@ -426,67 +505,68 @@ class BlinkerAUTO
             // strcpy(_linkType[0], STRING_find_string(datas, BLINKER_CMD_LINKTYPE, "\"", 3).c_str());
             // strcpy(_linkData[0], STRING_find_string(datas, BLINKER_CMD_DATA, "}", 3).c_str());
             // _aCount++;
-            String linkData = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_LINKDATA];
 
-            if (linkData.length() > 0) {
-                String link_device = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKDEVICE];
-                String link_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKTYPE];
-                String link_data = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_LINKDATA][0][BLINKER_CMD_DATA];
+//             String linkData = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_LINKDATA];
+
+//             if (linkData.length() > 0) {
+//                 String link_device = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+//                                     [BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKDEVICE];
+//                 String link_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+//                                     [BLINKER_CMD_LINKDATA][0][BLINKER_CMD_LINKTYPE];
+//                 String link_data = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+//                                     [BLINKER_CMD_LINKDATA][0][BLINKER_CMD_DATA];
                 
-                strcpy(_linkDevice[0], link_device.c_str());
-                strcpy(_linkType[0], link_type.c_str());
-                strcpy(_linkData[0], link_data.c_str());
+//                 strcpy(_linkDevice[0], link_device.c_str());
+//                 strcpy(_linkType[0], link_type.c_str());
+//                 strcpy(_linkData[0], link_data.c_str());
 
-                const char* link_device2 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKDEVICE];
+//                 const char* link_device2 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+//                                     [BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKDEVICE];
 
-                if (link_device2) {
-                    _linkNum = 2;
+//                 if (link_device2) {
+//                     _linkNum = 2;
 
-                    String link_device1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKDEVICE];
-                    String link_type1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKTYPE];
-                    String link_data1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                    [BLINKER_CMD_LINKDATA][1][BLINKER_CMD_DATA];
+//                     String link_device1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+//                                     [BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKDEVICE];
+//                     String link_type1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+//                                     [BLINKER_CMD_LINKDATA][1][BLINKER_CMD_LINKTYPE];
+//                     String link_data1 = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+//                                     [BLINKER_CMD_LINKDATA][1][BLINKER_CMD_DATA];
                     
-                    strcpy(_linkDevice[1], link_device1.c_str());
-                    strcpy(_linkType[1], link_type1.c_str());
-                    strcpy(_linkData[1], link_data1.c_str());
+//                     strcpy(_linkDevice[1], link_device1.c_str());
+//                     strcpy(_linkType[1], link_type1.c_str());
+//                     strcpy(_linkData[1], link_data1.c_str());
 
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
-                    BLINKER_LOG2(BLINKER_F("_linkDevice1: "), _linkDevice[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkType1: "), _linkType[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkData1: "), _linkData[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkDevice2: "), _linkDevice[1]);
-                    BLINKER_LOG2(BLINKER_F("_linkType2: "), _linkType[1]);
-                    BLINKER_LOG2(BLINKER_F("_linkData2: "), _linkData[1]);
-                    BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
-                    // BLINKER_LOG2("_aCount: ", _aCount);
-                    BLINKER_LOG1(BLINKER_F("==============================================="));
-#endif
-                }
-                else {
-                    _linkNum = 1;
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
+//                     BLINKER_LOG2(BLINKER_F("_linkDevice1: "), _linkDevice[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkType1: "), _linkType[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkData1: "), _linkData[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkDevice2: "), _linkDevice[1]);
+//                     BLINKER_LOG2(BLINKER_F("_linkType2: "), _linkType[1]);
+//                     BLINKER_LOG2(BLINKER_F("_linkData2: "), _linkData[1]);
+//                     BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
+//                     // BLINKER_LOG2("_aCount: ", _aCount);
+//                     BLINKER_LOG1(BLINKER_F("==============================================="));
+// #endif
+//                 }
+//                 else {
+//                     _linkNum = 1;
 
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
-                    BLINKER_LOG2(BLINKER_F("_linkDevice1: "), _linkDevice[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkType1: "), _linkType[0]);
-                    BLINKER_LOG2(BLINKER_F("_linkData1: "), _linkData[0]);
-                    BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
-                    // BLINKER_LOG2("_aCount: ", _aCount);
-                    BLINKER_LOG1(BLINKER_F("==============================================="));
-#endif
-                }
-            }
-            else {
-                _linkNum = 0;
-            }
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
+//                     BLINKER_LOG2(BLINKER_F("_linkDevice1: "), _linkDevice[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkType1: "), _linkType[0]);
+//                     BLINKER_LOG2(BLINKER_F("_linkData1: "), _linkData[0]);
+//                     BLINKER_LOG2(BLINKER_F("_targetNum: "), _targetNum);
+//                     // BLINKER_LOG2("_aCount: ", _aCount);
+//                     BLINKER_LOG1(BLINKER_F("==============================================="));
+// #endif
+//                 }
+//             }
+//             else {
+//                 _linkNum = 0;
+//             }
 
             serialization();
         }
@@ -497,6 +577,7 @@ class BlinkerAUTO
             EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
 
             if (checkData != BLINKER_CHECK_DATA) {
+                _haveAuto  = false;
                 _autoState = false;
                 EEPROM.commit();
                 EEPROM.end();
@@ -516,13 +597,21 @@ class BlinkerAUTO
                         a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
                         BLINKER_EEP_ADDR_TYPESTATE, _typeState);
 
-            _logicType = _typeState >> 6;// | _autoState << 4 | _linkNum;
-            _autoState = _typeState >> 4 & 0x03;
-            _linkNum = _typeState & 0x0F;
+            _haveAuto  = _typeState >> 7 & 0x01;
+            _autoState = _typeState >> 6 & 0x01;
+            _logicType = _typeState      & 0x3F;// | _autoState << 4 | _linkNum;
+            // _linkNum = _typeState & 0x0F;
 
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
+            BLINKER_LOG2(BLINKER_F("_haveAuto: "), _haveAuto);
 #endif
+
+            if (!_haveAuto) {
+                EEPROM.commit();
+                EEPROM.end();
+                return;
+            }
 
             if (_logicType == BLINKER_TYPE_STATE || _logicType == BLINKER_TYPE_NUMERIC) {
                 _targetNum = 1;
@@ -651,48 +740,48 @@ class BlinkerAUTO
             // EEPROM.get(BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
             // EEPROM.get(BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
             // EEPROM.get(BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
-            if (_linkNum > 0) {
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
-                            a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                            BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
-                            a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                            BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
-                EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
-                            a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                            BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
+//             if (_linkNum > 0) {
+//                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
+//                             a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+//                             BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
+//                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
+//                             a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+//                             BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
+//                 EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
+//                             a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+//                             BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
 
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
-                BLINKER_LOG2(BLINKER_F("_linkDevice: "), _linkDevice[0]);
-                BLINKER_LOG2(BLINKER_F("_linkType: "), _linkType[0]);
-                BLINKER_LOG2(BLINKER_F("_linkData: "), _linkData[0]);
-                BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
+//                 BLINKER_LOG2(BLINKER_F("_linkDevice: "), _linkDevice[0]);
+//                 BLINKER_LOG2(BLINKER_F("_linkType: "), _linkType[0]);
+//                 BLINKER_LOG2(BLINKER_F("_linkData: "), _linkData[0]);
+//                 BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
 
-                // BLINKER_LOG1("===============================================");
-#endif          
+//                 // BLINKER_LOG1("===============================================");
+// #endif          
 
-                if (_linkNum == 2) {
-                    EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
-                                a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                                BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
-                    EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
-                                a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                                BLINKER_EEP_ADDR_LINKTYPE2, _linkType[1]);
-                    EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
-                                a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                                BLINKER_EEP_ADDR_LINKDATA2, _linkData[1]);
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
-                    BLINKER_LOG2(BLINKER_F("_linkDevice: "), _linkDevice[1]);
-                    BLINKER_LOG2(BLINKER_F("_linkType: "), _linkType[1]);
-                    BLINKER_LOG2(BLINKER_F("_linkData: "), _linkData[1]);
-                    BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
+//                 if (_linkNum == 2) {
+//                     EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
+//                                 a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+//                                 BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
+//                     EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
+//                                 a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+//                                 BLINKER_EEP_ADDR_LINKTYPE2, _linkType[1]);
+//                     EEPROM.get(BLINKER_EEP_ADDR_AUTO_START + 
+//                                 a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+//                                 BLINKER_EEP_ADDR_LINKDATA2, _linkData[1]);
+// #ifdef BLINKER_DEBUG_ALL
+//                     // BLINKER_LOG2(BLINKER_F("_linkNum: "), _linkNum);
+//                     BLINKER_LOG2(BLINKER_F("_linkDevice: "), _linkDevice[1]);
+//                     BLINKER_LOG2(BLINKER_F("_linkType: "), _linkType[1]);
+//                     BLINKER_LOG2(BLINKER_F("_linkData: "), _linkData[1]);
+//                     BLINKER_LOG2(BLINKER_F("_typeState: "), _typeState);
 
-                    // BLINKER_LOG1("===============================================");
-#endif              
-                }
-            }
+//                     // BLINKER_LOG1("===============================================");
+// #endif              
+//                 }
+//             }
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("==============================================="));
 #endif
@@ -705,7 +794,7 @@ class BlinkerAUTO
             uint8_t checkData;
 
             // _autoData = _autoState << 31 | _logicType << 30 ;
-            _typeState = _logicType << 6 | _autoState << 4 | _linkNum;
+            _typeState = _haveAuto << 7 | _autoState << 6 | _logicType;// | _linkNum;
 
             EEPROM.begin(BLINKER_EEP_SIZE);
 
@@ -792,29 +881,29 @@ class BlinkerAUTO
             // EEPROM.put(BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
             // EEPROM.put(BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
             // EEPROM.put(BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
-            if (_linkNum > 0) {
-                EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
-                            a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                            BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
-                EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
-                            a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                            BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
-                EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
-                            a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                            BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
+            // if (_linkNum > 0) {
+            //     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
+            //                 a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+            //                 BLINKER_EEP_ADDR_LINKDEVICE1, _linkDevice[0]);
+            //     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
+            //                 a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+            //                 BLINKER_EEP_ADDR_LINKTYPE1, _linkType[0]);
+            //     EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
+            //                 a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+            //                 BLINKER_EEP_ADDR_LINKDATA1, _linkData[0]);
             
-                if (_linkNum == 2) {
-                    EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
-                                a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                                BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
-                    EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
-                                a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                                BLINKER_EEP_ADDR_LINKTYPE2, _linkType[1]);
-                    EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
-                                a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
-                                BLINKER_EEP_ADDR_LINKDATA2, _linkData[1]);
-                }
-            }
+            //     if (_linkNum == 2) {
+            //         EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
+            //                     a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+            //                     BLINKER_EEP_ADDR_LINKDEVICE2, _linkDevice[1]);
+            //         EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
+            //                     a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+            //                     BLINKER_EEP_ADDR_LINKTYPE2, _linkType[1]);
+            //         EEPROM.put(BLINKER_EEP_ADDR_AUTO_START + 
+            //                     a_num * BLINKER_ONE_AUTO_DATA_SIZE + 
+            //                     BLINKER_EEP_ADDR_LINKDATA2, _linkData[1]);
+            //     }
+            // }
             
             EEPROM.commit();
             EEPROM.end();
@@ -839,13 +928,13 @@ class BlinkerAUTO
 
         // uint8_t type() { return _logicType; }
 
-        uint8_t linkNum() { return _linkNum; }
+        // uint8_t linkNum() { return _linkNum; }
 
-        char * name(uint8_t num) { return _linkDevice[num]; }
+        // char * name(uint8_t num) { return _linkDevice[num]; }
 
-        char * type(uint8_t num) { return _linkType[num]; }
+        // char * type(uint8_t num) { return _linkType[num]; }
 
-        char * data(uint8_t num) { return _linkData[num]; }
+        // char * data(uint8_t num) { return _linkData[num]; }
 
     private :
         uint8_t     a_num;
@@ -877,12 +966,14 @@ class BlinkerAUTO
         // | logic_type state/numberic 2
         // autoData
 
+        // | _linkNum
         // - - - - - - - -
-        // |   |   |
-        // |   |   | _linkNum
-        // |   | _autoState true/false 1  
-        // | _logicType state/numberic/and/or 2
+        // | | |_logicType state/numberic/and/or 2    
+        // | | _autoState true/false 1    
+        // | _haveAuto     
+        // | 
         // typestate
+        bool        _haveAuto;
         bool        _autoState;
         uint32_t    _autoId = 0;
         uint8_t     _logicType;
@@ -903,10 +994,10 @@ class BlinkerAUTO
         bool        isRecord[2];
         bool        _isTrigged[2];
         bool        _trigged;
-        uint8_t     _linkNum;
-        char        _linkDevice[2][BLINKER_LINKDEVICE_SIZE];
-        char        _linkType[2][BLINKER_LINKTYPE_SIZE];
-        char        _linkData[2][BLINKER_LINKDATA_SIZE];
+        // uint8_t     _linkNum;
+        // char        _linkDevice[2][BLINKER_LINKDEVICE_SIZE];
+        // char        _linkType[2][BLINKER_LINKTYPE_SIZE];
+        // char        _linkData[2][BLINKER_LINKDATA_SIZE];
 
         void triggerCheck(String state, uint8_t num) {
             if (!isRecord[num]) {
