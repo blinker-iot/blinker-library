@@ -143,7 +143,7 @@ class BlinkerSimpleESP8266_WS
 #endif
 
         bool autoInit() {
-            WiFi.mode(WIFI_AP_STA);
+            WiFi.mode(WIFI_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
             WiFi.hostname(_hostname.c_str());
 

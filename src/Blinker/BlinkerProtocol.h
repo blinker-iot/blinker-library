@@ -658,6 +658,22 @@ class BlinkerProtocol
         void println(T1 n1, double n)            { print(n1, n); }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+
+        void beginAuto() {
+            BLINKER_LOG1(BLINKER_F("======================================================="));
+            BLINKER_LOG1(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
+            BLINKER_LOG1(BLINKER_F("Warning!EEPROM address 0-1279 is used for Auto Control!"));
+            BLINKER_LOG1(BLINKER_F("=========== DON'T USE THESE EEPROM ADDRESS! ==========="));
+            BLINKER_LOG1(BLINKER_F("======================================================="));
+
+            BLINKER_LOG2(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+
+            _isAuto = true;
+            // deserialization();
+            // autoStart();
+            BApi::autoInit();
+        }
+
         // template <typename T>
         // void bridgePrint(const String & bKey, T n) {
         //     if (!isBformat) {
@@ -1125,6 +1141,9 @@ class BlinkerProtocol
         char            _bSendBuf[BLINKER_MAX_SEND_BUFFER_SIZE];
         String          _bridgeKey;
         String          _bKey_forwhile;
+
+        bool            _isAuto = false;
+        bool            _isAutoInit = false;
 #endif
 
 #if defined(BLINKER_MQTT)
@@ -1553,6 +1572,12 @@ void BlinkerProtocol<Transp>::run()
             break;
     }
 
+    
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO)
+    if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit) {
+        if (autoPull()) _isAutoInit = true;
+    }
+#endif
     // if (autoFormat) 
     checkAutoFormat();
 }

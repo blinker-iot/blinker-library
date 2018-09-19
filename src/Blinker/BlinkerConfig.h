@@ -159,23 +159,31 @@
 
 #define BLINKER_CMD_NOTFOUND            "device not found"
 
+#define BLINKER_CMD_COMMAND             "cmd"
+
+#define BLINKER_CMD_EVENT               "event"
+
 #define BLINKER_CMD_AUTO                "auto"
 
 #define BLINKER_CMD_AUTOID              "autoId"
+
+#define BLINKER_CMD_ID                  "id"
 
 #define BLINKER_CMD_AUTODATA            "autoData"
 
 #define BLINKER_CMD_DELETID             "deletId"
 
+#define BLINKER_CMD_LOGIC               "logic"
+
 #define BLINKER_CMD_LOGICDATA           "logicData"
 
 #define BLINKER_CMD_LOGICTYPE           "logicType"
 
-#define BLINKER_CMD_LESS                "less"
+#define BLINKER_CMD_LESS                "<"//"less"
 
-#define BLINKER_CMD_EQUAL               "equal"
+#define BLINKER_CMD_EQUAL               "="//"equal"
 
-#define BLINKER_CMD_GREATER             "greater"
+#define BLINKER_CMD_GREATER             ">"//"greater"
 
 #define BLINKER_CMD_NUMBERIC            "numberic"
 
@@ -197,6 +205,8 @@
 
 #define BLINKER_CMD_TIMESLOT            "timeSlot"
 
+#define BLINKER_CMD_RANGE               "range"
+
 #define BLINKER_CMD_LINKDEVICE          "linkDevice"
 
 #define BLINKER_CMD_LINKTYPE            "linkType"
@@ -204,6 +214,8 @@
 #define BLINKER_CMD_LINKDATA            "linkData"
 
 #define BLINKER_CMD_TRIGGEDDATA         "triggedData"
+
+#define BLINKER_CMD_TYPE                "type"
 
 #define BLINKER_CMD_TIMER               "timer"
 
@@ -248,6 +260,8 @@
 #define BLINKER_CMD_TASK                "task"
 
 #define BLINKER_CMD_DELETETASK          "dlt"
+
+#define BLINKER_CMD_DELETE              "dlt"
 
 #define BLINKER_CMD_DETAIL              "detail"
 
@@ -344,6 +358,8 @@
 
     #define BLINKER_CMD_DATA_DELETE_NUMBER      12
 
+    #define BLINKER_CMD_AUTO_PULL_NUMBER        13
+
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 
 #endif
@@ -415,9 +431,9 @@
 
     #define BLINKER_EEP_ADDR_AUTONUM        (BLINKER_EEP_ADDR_CHECK + BLINKER_CHECK_SIZE)
 
-    #define BLINKER_AUTONUM_SIZ             1
+    #define BLINKER_AUTONUM_SIZE            1
 
-    #define BLINKER_EEP_ADDR_AUTO_START     (BLINKER_EEP_ADDR_AUTONUM + BLINKER_AUTONUM_SIZ)
+    #define BLINKER_EEP_ADDR_AUTO_START     (BLINKER_EEP_ADDR_AUTONUM + BLINKER_AUTONUM_SIZE)
 
     ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -453,33 +469,35 @@
 
     #define BLINKER_TARGETDATA_SIZE         4
 
-    // #define BLINKER_TARGET_DATA_SIZE        (BLINKER_AUTOID_SIZE + BLINKER_AUTODATA_SIZE + BLINKER_TARGETKEY_SIZE + BLINKER_TARGETDATA_SIZE)
+    // // #define BLINKER_TARGET_DATA_SIZE        (BLINKER_AUTOID_SIZE + BLINKER_AUTODATA_SIZE + BLINKER_TARGETKEY_SIZE + BLINKER_TARGETDATA_SIZE)
 
-    #define BLINKER_EEP_ADDR_LINKDEVICE1    (BLINKER_EEP_ADDR_TARGETDATA2 + BLINKER_TARGETDATA_SIZE)
+    // #define BLINKER_EEP_ADDR_LINKDEVICE1    (BLINKER_EEP_ADDR_TARGETDATA2 + BLINKER_TARGETDATA_SIZE)
 
-    #define BLINKER_LINKDEVICE_SIZE         26
+    // #define BLINKER_LINKDEVICE_SIZE         26
 
-    #define BLINKER_EEP_ADDR_LINKTYPE1      (BLINKER_EEP_ADDR_LINKDEVICE1 + BLINKER_LINKDEVICE_SIZE)
+    // #define BLINKER_EEP_ADDR_LINKTYPE1      (BLINKER_EEP_ADDR_LINKDEVICE1 + BLINKER_LINKDEVICE_SIZE)
 
-    #define BLINKER_LINKTYPE_SIZE           18
+    // #define BLINKER_LINKTYPE_SIZE           18
 
-    #define BLINKER_EEP_ADDR_LINKDATA1      (BLINKER_EEP_ADDR_LINKTYPE1 + BLINKER_LINKTYPE_SIZE)
+    // #define BLINKER_EEP_ADDR_LINKDATA1      (BLINKER_EEP_ADDR_LINKTYPE1 + BLINKER_LINKTYPE_SIZE)
 
-    #define BLINKER_LINKDATA_SIZE           212
+    // #define BLINKER_LINKDATA_SIZE           212
 
-    #define BLINKER_EEP_ADDR_LINKDEVICE2    (BLINKER_EEP_ADDR_LINKDATA1 + BLINKER_LINKDATA_SIZE)
+    // #define BLINKER_EEP_ADDR_LINKDEVICE2    (BLINKER_EEP_ADDR_LINKDATA1 + BLINKER_LINKDATA_SIZE)
 
-    #define BLINKER_LINKDEVICE_SIZE         26
+    // #define BLINKER_LINKDEVICE_SIZE         26
 
-    #define BLINKER_EEP_ADDR_LINKTYPE2      (BLINKER_EEP_ADDR_LINKDEVICE2 + BLINKER_LINKDEVICE_SIZE)
+    // #define BLINKER_EEP_ADDR_LINKTYPE2      (BLINKER_EEP_ADDR_LINKDEVICE2 + BLINKER_LINKDEVICE_SIZE)
 
-    #define BLINKER_LINKTYPE_SIZE           18
+    // #define BLINKER_LINKTYPE_SIZE           18
 
-    #define BLINKER_EEP_ADDR_LINKDATA2      (BLINKER_EEP_ADDR_LINKTYPE2 + BLINKER_LINKTYPE_SIZE)
+    // #define BLINKER_EEP_ADDR_LINKDATA2      (BLINKER_EEP_ADDR_LINKTYPE2 + BLINKER_LINKTYPE_SIZE)
 
-    #define BLINKER_LINKDATA_SIZE           212
+    // #define BLINKER_LINKDATA_SIZE           212
 
-    #define BLINKER_ONE_AUTO_DATA_SIZE      (BLINKER_AUTOID_SIZE + BLINKER_TYPESTATE_SIZE + (BLINKER_AUTODATA_SIZE + BLINKER_TARGETKEY_SIZE + BLINKER_TARGETDATA_SIZE + BLINKER_LINKDEVICE_SIZE + BLINKER_LINKTYPE_SIZE + BLINKER_LINKDATA_SIZE) * 2)
+    #define BLINKER_ONE_AUTO_DATA_SIZE      (BLINKER_AUTOID_SIZE + BLINKER_TYPESTATE_SIZE + \
+                                            (BLINKER_AUTODATA_SIZE + BLINKER_TARGETKEY_SIZE + \
+                                            BLINKER_TARGETDATA_SIZE) * 2)// + BLINKER_LINKDEVICE_SIZE + BLINKER_LINKTYPE_SIZE + BLINKER_LINKDATA_SIZE) * 2)
 
 #endif
 
@@ -585,14 +603,60 @@
 
     #define BLINKER_ONE_TIMER_TIMING_SIZE           (BLINKER_TIMER_TIMING_SIZE + BLINKER_TIMER_TIMING_ACTION_SIZE)
 
-    #define BLINKER_EEP_ADDR_TIMER_ERASE            2687
+    #define BLINKER_EEP_ADDR_TIMER_ERASE            2430
 
     #define BLINKER_TIMER_ERASE_SIZE                1
 
-    #define BLINKER_EEP_ADD_TIMER_END               (BLINKER_EEP_ADDR_TIMER_ERASE + BLINKER_TIMER_ERASE_SIZE)
+    #define BLINKER_EEP_ADDR_TIMER_END              (BLINKER_EEP_ADDR_TIMER_ERASE + BLINKER_TIMER_ERASE_SIZE)
 
     // 2 60 | 4 120 | 1 4 60 x 10 + 2 + 1
     // 793 896
+
+
+
+    #define BLINKER_EVENT_MSG_SMS                   0
+
+    #define BLINKER_EVENT_MSG_PUSH                  1
+
+    #define BLINKER_EVENT_KEY_SIZE                  15
+
+    #define BLINKER_EVENT_NUM_SIZE                  2
+
+    #define BLINKER_EEP_ADDR_EVENT                  (BLINKER_EEP_ADDR_TIMER_END + BLINKER_TIMER_ERASE_SIZE)
+
+    #define BLINKER_EEP_ADDR_EVENTDATA              BLINKER_EEP_ADDR_EVENT
+
+    #define BLINKER_EVENTDATA_SIZE                  1
+
+    // #define BLINKER_EEP_ADDR_EVENT_DATA1            (BLINKER_EEP_ADDR_EVENTDATA + BLINKER_EVENTDATA_SIZE)
+
+    // #define BLINKER_EVENT_DATA1_SIZE                2
+
+    #define BLINKER_EEP_ADDR_EVENT_DATA             (BLINKER_EEP_ADDR_EVENTDATA + BLINKER_EVENTDATA_SIZE)
+
+    #define BLINKER_EVENT_DATA_SIZE                 4
+
+    #define BLINKER_EEP_ADDR_EVENT_KEY1             (BLINKER_EEP_ADDR_EVENT_DATA + BLINKER_EVENT_DATA_SIZE)
+
+    #define BLINKER_EVENT_KEY1_SIZE                 BLINKER_EVENT_KEY_SIZE
+
+    // #define BLINKER_EEP_ADDR_EVENT_DATA2            (BLINKER_EEP_ADDR_EVENT_KEY1 + BLINKER_EVENT_KEY1_SIZE)
+
+    #define BLINKER_EEP_ADDR_EVENT_KEY2             (BLINKER_EEP_ADDR_EVENT_KEY1 + BLINKER_EVENT_KEY1_SIZE)
+
+    #define BLINKER_EVENT_KEY2_SIZE                 BLINKER_EVENT_KEY_SIZE
+
+    #define BLINKER_EEP_ADDR_EVENT_MSG              (BLINKER_EEP_ADDR_EVENT_KEY2 + BLINKER_EVENT_KEY2_SIZE)
+
+    #define BLINKER_EVENT_MSG_SIZE                  20
+
+    #define BLINKER_EEP_ADDR_EVENT_ERASE            (BLINKER_EEP_ADDR_EVENT_MSG + BLINKER_EVENT_MSG_SIZE)
+
+    #define BLINKER_EVENT_ERASE_SIZE                1
+
+    #define BLINKER_EEP_ADDR_EVENT_END              (BLINKER_EEP_ADDR_EVENT_ERASE + BLINKER_EVENT_ERASE_SIZE)
+
+    // 56
 
 #endif
 
