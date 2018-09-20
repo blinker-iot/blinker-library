@@ -1575,7 +1575,7 @@ void BlinkerProtocol<Transp>::run()
     
 #if defined(BLINKER_WIFI) || defined(BLINKER_PRO)
     if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit) {
-        if (autoPull()) _isAutoInit = true;
+        if (BApi::autoPull()) _isAutoInit = true;
     }
 #endif
     // if (autoFormat) 
