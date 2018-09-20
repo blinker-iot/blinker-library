@@ -1399,6 +1399,9 @@ void BlinkerProtocol<Transp>::run()
             }
             else {
                 _proStatus = PRO_DEV_AUTHCHECK_FAIL;
+    #ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(BLINKER_F("not auth, conn deviceRegister"));
+    #endif
             }
         }
     }
@@ -1430,7 +1433,9 @@ void BlinkerProtocol<Transp>::run()
             }
         }
     }
-
+#ifdef BLINKER_DEBUG_ALL
+    BLINKER_LOG1(BLINKER_F("check conn init"));
+#endif
     if (!conn.init()) {
         if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && !conn.authCheck()) {
             BApi::reset();
@@ -1457,6 +1462,7 @@ void BlinkerProtocol<Transp>::run()
             }
         }
     }
+
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_PRO)
@@ -1479,6 +1485,9 @@ void BlinkerProtocol<Transp>::run()
         }
     }
     else {
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(BLINKER_F("MQTT conn init failed"));
+    #endif
         if (((millis() - _disconnectTime) > 60000 && _disconnectCount) 
             || _disconnectCount >= 12) {
         // if (_disconnectCount >= 12) {
@@ -1575,7 +1584,7 @@ void BlinkerProtocol<Transp>::run()
     
 #if defined(BLINKER_WIFI) || defined(BLINKER_PRO)
     if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit) {
-        if (autoPull()) _isAutoInit = true;
+        if (BApi::autoPull()) _isAutoInit = true;
     }
 #endif
     // if (autoFormat) 

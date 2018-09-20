@@ -317,17 +317,26 @@ class BlinkerPRO {
         bool init() { return isMQTTinit; }
 
         bool authCheck() {
-            char _authCheck;
+            uint8_t _authCheck;
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(BLINKER_F("authCheck start"));
+#endif
             EEPROM.begin(BLINKER_EEP_SIZE);
             EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
             if (_authCheck == BLINKER_AUTH_CHECK_DATA) {
                 EEPROM.commit();
                 EEPROM.end();
                 isAuth = true;
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(BLINKER_F("authCheck end"));
+#endif
                 return true;
             }
             EEPROM.commit();
             EEPROM.end();
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(BLINKER_F("authCheck end"));
+#endif
             return false;
         }
 

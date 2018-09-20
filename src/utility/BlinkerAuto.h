@@ -186,14 +186,15 @@ class BlinkerAUTO
             }
         }
 
-        void manager(String data, bool isSet = true) {
-            if (isSet) {
-                DynamicJsonBuffer _jsonBuffer;
-                JsonObject& setRoot = _jsonBuffer.parseObject(data);
-                String setData = setRoot[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
+        // void manager(String data, bool isSet = true) {
+        void manager(String data) {
+            // if (isSet) {
+            //     DynamicJsonBuffer _jsonBuffer;
+            //     JsonObject& setRoot = _jsonBuffer.parseObject(data);
+            //     String setData = setRoot[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
 
-                data = setData;
-            }
+            //     data = setData;
+            // }
 
             DynamicJsonBuffer jsonBuffer;
             JsonObject& root = jsonBuffer.parseObject(data);
