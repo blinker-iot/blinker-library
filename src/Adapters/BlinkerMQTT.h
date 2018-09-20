@@ -113,7 +113,16 @@ class BlinkerMQTT {
         bool connect();
 
         bool connected() { 
-            return mqtt->connected();//||*isHandle; 
+            if (!isMQTTinit) {
+                return *isHandle;
+            }
+
+            return mqtt->connected()||*isHandle; 
+        }
+
+        bool mConnected() {
+            if (!isMQTTinit) return false;
+            else return mqtt->connected();
         }
 
         void disconnect() {

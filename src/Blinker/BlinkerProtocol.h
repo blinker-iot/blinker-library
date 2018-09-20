@@ -1466,6 +1466,9 @@ void BlinkerProtocol<Transp>::run()
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_PRO)
+// #ifdef BLINKER_DEBUG_ALL
+//     BLINKER_LOG1(BLINKER_F("check ntp init"));
+// #endif
     BApi::ntpInit();
 // #endif
 // #if defined(ESP8266) || defined(ESP32)
@@ -1485,9 +1488,6 @@ void BlinkerProtocol<Transp>::run()
         }
     }
     else {
-    #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("MQTT conn init failed"));
-    #endif
         if (((millis() - _disconnectTime) > 60000 && _disconnectCount) 
             || _disconnectCount >= 12) {
         // if (_disconnectCount >= 12) {
@@ -1512,7 +1512,11 @@ void BlinkerProtocol<Transp>::run()
     {
         case CONNECTING :
             if (conn.connect()) {
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+                if (conn.mConnected()) state = CONNECTED;
+#else
                 state = CONNECTED;
+#endif
 #if defined(BLINKER_MQTT)
                 _disconnectCount = 0;
 #endif
@@ -1580,7 +1584,6 @@ void BlinkerProtocol<Transp>::run()
             state = CONNECTING;
             break;
     }
-
     
 #if defined(BLINKER_WIFI) || defined(BLINKER_PRO)
     if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit) {

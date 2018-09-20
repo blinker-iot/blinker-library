@@ -29,7 +29,7 @@ enum bwl_status_t{
     BWL_SMARTCONFIG_BEGIN,
     BWL_SMARTCONFIG_DONE,
     BWL_SMARTCONFIG_TIMEOUT,
-    // BWL_STACONFIG_BEGIN,
+    BWL_STACONFIG_BEGIN,
     BWL_APCONFIG_BEGIN,
     BWL_APCONFIG_DONE,
     BWL_APCONFIG_TIMEOUT,
@@ -536,12 +536,12 @@ bool BlinkerWlan::run() {
         case BWL_CONNECTING :
             return connected();
             break;
-        // case BWL_CONNECTED :
-        //     return connected();
-        //     break;
-        // case BWL_DISCONNECTED :
-        //     connect();
-        //     break;
+        case BWL_CONNECTED :
+            return connected();
+            break;
+        case BWL_DISCONNECTED :
+            connect();
+            break;
         case BWL_SMARTCONFIG_BEGIN :
             smartconfigDone();
             break;
@@ -551,9 +551,9 @@ bool BlinkerWlan::run() {
         case BWL_SMARTCONFIG_TIMEOUT :
             _status = BWL_CONFIG_FAIL;
             break;
-        // case BWL_STACONFIG_BEGIN :
-        //     connect();
-        //     break;
+        case BWL_STACONFIG_BEGIN :
+            connect();
+            break;
         case BWL_APCONFIG_BEGIN :
             serverClient();
             break;

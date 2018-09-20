@@ -113,11 +113,16 @@ class BlinkerPRO {
         bool connect();
 
         bool connected() {
-            // if (!isMQTTinit) {
-            //     return *isHandle;
-            // }
+            if (!isMQTTinit) {
+                return *isHandle;
+            }
 
-            return mqtt->connected();//||*isHandle;
+            return mqtt->connected()||*isHandle;
+        }
+
+        bool mConnected() {
+            if (!isMQTTinit) return false;
+            else return mqtt->connected();
         }
 
         void disconnect() {
@@ -697,9 +702,9 @@ bool BlinkerPRO::connect() {
 
     webSocket.loop();
 
-    // if (!isMQTTinit) {
-    //     return *isHandle;
-    // }
+    if (!isMQTTinit) {
+        return *isHandle;
+    }
 
     if (mqtt->connected()) {
         return true;
