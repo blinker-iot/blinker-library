@@ -1433,9 +1433,7 @@ void BlinkerProtocol<Transp>::run()
             }
         }
     }
-#ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1(BLINKER_F("check conn init"));
-#endif
+    
     if (!conn.init()) {
         if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && !conn.authCheck()) {
             BApi::reset();
@@ -1455,7 +1453,7 @@ void BlinkerProtocol<Transp>::run()
                 _proStatus = PRO_DEV_CONNECTING;
             }
             else if (state == CONNECTED && _proStatus != PRO_DEV_CONNECTED) {
-                _proStatus = PRO_DEV_CONNECTED;
+                if (conn.mConnected()) _proStatus = PRO_DEV_CONNECTED;
             }
             else if (state == DISCONNECTED && _proStatus != PRO_DEV_DISCONNECTED) {
                 _proStatus = PRO_DEV_DISCONNECTED;
@@ -1512,11 +1510,11 @@ void BlinkerProtocol<Transp>::run()
     {
         case CONNECTING :
             if (conn.connect()) {
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-                if (conn.mConnected()) state = CONNECTED;
-#else
+// #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+//                 if (conn.mConnected()) state = CONNECTED;
+// #else
                 state = CONNECTED;
-#endif
+// #endif
 #if defined(BLINKER_MQTT)
                 _disconnectCount = 0;
 #endif
