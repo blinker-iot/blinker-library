@@ -76,6 +76,7 @@ dataUpdate	KEYWORD2
 dataGet	KEYWORD2
 dataDelete	KEYWORD2
 sms	KEYWORD2
+push	KEYWORD2
 weather	KEYWORD2
 aqi	KEYWORD2
 status	KEYWORD2

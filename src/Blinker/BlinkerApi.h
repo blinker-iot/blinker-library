@@ -3671,13 +3671,13 @@ class BlinkerApi
         #ifndef BLINKER_LAN_DEBUG
             const int httpsPort = 443;
         #elif defined(BLINKER_LAN_DEBUG)
-            const int httpsPort = 5000;
+            const int httpsPort = 9090;
         #endif
     #if defined(ESP8266)
         #ifndef BLINKER_LAN_DEBUG
             const char* host = "iotdev.clz.me";
         #elif defined(BLINKER_LAN_DEBUG)
-            const char* host = "192.168.0.104";
+            const char* host = "192.168.1.121";
         #endif
             const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -4202,7 +4202,7 @@ class BlinkerApi
         #ifndef BLINKER_LAN_DEBUG
             const char* host = "https://iotdev.clz.me";
         #elif defined(BLINKER_LAN_DEBUG)
-            const char* host = "http://192.168.0.104:5000";
+            const char* host = "http://192.168.1.121:9090";
         #endif
 
             // const char* ca = \
