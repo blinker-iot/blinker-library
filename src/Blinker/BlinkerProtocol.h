@@ -1433,9 +1433,7 @@ void BlinkerProtocol<Transp>::run()
             }
         }
     }
-#ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1(BLINKER_F("check conn init"));
-#endif
+    
     if (!conn.init()) {
         if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && !conn.authCheck()) {
             BApi::reset();
