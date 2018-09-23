@@ -2598,7 +2598,7 @@ class BlinkerApi
             if (taskDel < taskCount) {
                 // tmTicker.detach();
 
-                for (uint8_t task = taskDel; task < (taskCount - 2); task++) {
+                for (uint8_t task = taskDel; task < (taskCount - 1); task++) {
                     // timingTask[task]->freshTimer(timingTask[task + 1]->getTimerData(), 
                     //     timingTask[task + 1]->getAction(), timingTask[task + 1]->getText());
                     timingTask[task]->freshTimer(timingTask[task + 1]->getTimerData(), 
@@ -3419,7 +3419,7 @@ class BlinkerApi
                         addTimingTask(_task, _timerData, _action);
                     }
                     else if (isDelet) {
-                        uint8_t _delTask = data[BLINKER_CMD_TIMING][0][BLINKER_CMD_DELETETASK];
+                        uint8_t _delTask = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_DELETETASK];
 
                         deleteTiming(_delTask);
                     }
