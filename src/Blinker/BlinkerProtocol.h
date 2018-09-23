@@ -1501,6 +1501,8 @@ void BlinkerProtocol<Transp>::run()
                 _disconnectTime = millis() - 10000;
             }
         }
+
+        BApi::ntpInit();
     }
 #endif
 
