@@ -44,6 +44,7 @@ class BlinkerSlider
         void print(long value)              { _print(STRING_format(value)); }        
         void print(unsigned long value)     { _print(STRING_format(value)); }
         void print(double value)            { _print(STRING_format(value)); }
+        void print()                        { _print(""); }
     
     private :
         // String sliderName;
@@ -58,8 +59,11 @@ class BlinkerSlider
             }
 
             String sliderData;
-            sliderData += BLINKER_F("{\""BLINKER_CMD_VALUE"\":");
-            sliderData += n;
+
+            if (n.length()) {
+                sliderData += BLINKER_F("{\""BLINKER_CMD_VALUE"\":");
+                sliderData += n;
+            }
 
             // if (textClr.length()) {
             if (strlen(textClr)) {
