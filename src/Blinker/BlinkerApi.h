@@ -5198,7 +5198,8 @@ class BlinkerApi
             if (_cdTrigged) {
                 _cdTrigged = false;
 
-                _cdRunState = false;
+                // _cdRunState = false;
+                _cdState = false;
                 // _cdData |= _cdRunState << 14;
                 // _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
                 _cdData = _cdState << 31 | _cdRunState << 30 | _cdTime1 << 12 | _cdTime2;
@@ -5214,7 +5215,8 @@ class BlinkerApi
                 _lpTrigged = false;
 
                 if (_lpStop) {
-                    _lpRunState = false;
+                    // _lpRunState = false;
+                    _lpState = false;
                     // _lpData |= _lpRunState << 30;
                     _lpData = _lpState << 31 | _lpRunState << 30 | _lpTimes << 22 | _lpTime1 << 11 | _lpTime2;
                     saveLoop(_lpData, _lpAction1, _lpAction2);
