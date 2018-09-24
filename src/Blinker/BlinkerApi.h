@@ -3495,20 +3495,20 @@ class BlinkerApi
                 cdData = "{\""BLINKER_CMD_COUNTDOWN"\":false}";
             }
             else {
-                // if (_cdRunState) {
-                //     cdData = "{\""BLINKER_CMD_COUNTDOWN"\":{\""BLINKER_CMD_RUN"\":" + STRING_format(_cdRunState ? 1 : 0) + \
-                //         ",\""BLINKER_CMD_TOTALTIME"\":" + STRING_format(_cdTime1) + \
-                //         ",\""BLINKER_CMD_RUNTIME"\":" + STRING_format((millis() - _cdStart) / 1000 / 60) + \
-                //         ",\""BLINKER_CMD_ACTION"\":" + _cdAction + \
-                //         "}}";
-                // }
-                // else {
-                cdData = "{\""BLINKER_CMD_COUNTDOWN"\":{\""BLINKER_CMD_RUN"\":" + STRING_format(_cdRunState ? 1 : 0) + \
-                    ",\""BLINKER_CMD_TOTALTIME"\":" + STRING_format(_cdTime1) + \
-                    ",\""BLINKER_CMD_RUNTIME"\":" + STRING_format(_cdTime2) + \
-                    ",\""BLINKER_CMD_ACTION"\":" + _cdAction + \
-                    "}}";
-                // }
+                if (_cdRunState) {
+                    cdData = "{\""BLINKER_CMD_COUNTDOWN"\":{\""BLINKER_CMD_RUN"\":" + STRING_format(_cdRunState ? 1 : 0) + \
+                        ",\""BLINKER_CMD_TOTALTIME"\":" + STRING_format(_cdTime1) + \
+                        ",\""BLINKER_CMD_RUNTIME"\":" + STRING_format((millis() - _cdStart) / 1000 / 60) + \
+                        ",\""BLINKER_CMD_ACTION"\":" + _cdAction + \
+                        "}}";
+                }
+                else {
+                    cdData = "{\""BLINKER_CMD_COUNTDOWN"\":{\""BLINKER_CMD_RUN"\":" + STRING_format(_cdRunState ? 1 : 0) + \
+                        ",\""BLINKER_CMD_TOTALTIME"\":" + STRING_format(_cdTime1) + \
+                        ",\""BLINKER_CMD_RUNTIME"\":" + STRING_format(_cdTime2) + \
+                        ",\""BLINKER_CMD_ACTION"\":" + _cdAction + \
+                        "}}";
+                }
             }
 
             return cdData;
