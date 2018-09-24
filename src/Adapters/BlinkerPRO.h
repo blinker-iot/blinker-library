@@ -812,7 +812,7 @@ void BlinkerPRO::subscribe() {
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1(("No authority uuid"));
+                BLINKER_LOG1(("No authority uuid, check is from bridge device"));
 #endif
                 // return;
                 dataGet = String((char *)iotSub->lastread);
