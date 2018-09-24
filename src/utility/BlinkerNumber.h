@@ -66,6 +66,7 @@ class BlinkerNumber
         void print(long value)              { _print(STRING_format(value)); }        
         void print(unsigned long value)     { _print(STRING_format(value)); }
         void print(double value)            { _print(STRING_format(value)); }
+        void print()                        { _print(""); }
     
     private :
         // String numName;
@@ -82,8 +83,11 @@ class BlinkerNumber
         void _print(const String & value) {
 
             String numberData;
-            numberData += BLINKER_F("{\""BLINKER_CMD_VALUE"\":");
-            numberData += value;
+
+            if (value.length()) {
+                numberData += BLINKER_F("{\""BLINKER_CMD_VALUE"\":");
+                numberData += value;
+            }
 
             // if (nicon.length()) {
             if (strlen(nicon)) {
