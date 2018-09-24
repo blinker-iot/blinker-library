@@ -567,7 +567,7 @@ static void _lp_callback() {
         _lpTrigged_times++;
 
         if (_lpTimes) {
-            if (_lpTimes == _lpTrigged_times) {
+            if (_lpTimes == _lpTrigged_times && _lpTimes != 0) {
                 lpTicker.detach();
                 _lpStop = true;
             }
@@ -3522,7 +3522,7 @@ class BlinkerApi
             else {
                 lpData = "{\""BLINKER_CMD_LOOP"\":{\""BLINKER_CMD_TIMES"\":" + STRING_format(_lpTimes) + \
                     ",\""BLINKER_CMD_RUN"\":" + STRING_format(_lpRunState ? 1 : 0) + \
-                    ",\""BLINKER_CMD_TRIGGED"\":" + STRING_format(_lpTrigged_times ? 1 : 0) + \
+                    ",\""BLINKER_CMD_TRIGGED"\":" + STRING_format(_lpTimes ? _lpTrigged_times : 0) + \
                     ",\""BLINKER_CMD_TIME1"\":" + STRING_format(_lpTime1) + \
                     ",\""BLINKER_CMD_ACTION1"\":" + _lpAction1 + \
                     ",\""BLINKER_CMD_TIME2"\":" + STRING_format(_lpTime2) + \
