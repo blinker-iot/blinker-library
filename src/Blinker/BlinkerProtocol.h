@@ -1435,7 +1435,7 @@ void BlinkerProtocol<Transp>::run()
     }
     
     if (!conn.init()) {
-        if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && !conn.authCheck()) {
+        if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && !_getRegister) {
             BApi::reset();
         }
     }
