@@ -3,6 +3,12 @@
 
 #if defined(BLINKER_BLE)
 
+    #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) \
+    ||  defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
+        #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
+    
+    #endif
+
     #if defined(ESP32)
         #include <BlinkerSimpleESP32_BLE.h>
     #else
@@ -10,6 +16,11 @@
     #endif
 
 #elif defined(BLINKER_WIFI)
+
+    #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) \
+    ||  defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
+        #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
+    #endif
 
     #if defined(ESP8266)
         #include <BlinkerSimpleESP8266_WS.h>
@@ -21,6 +32,24 @@
 
 #elif defined(BLINKER_MQTT)
 
+    #if defined(BLINKER_ALIGENIE_LIGHT)
+        #undef(BLINKER_ALIGENIE_OUTLET)
+        #undef(BLINKER_ALIGENIE_SWITCH)
+        #undef(BLINKER_ALIGENIE_SENSOR)
+    #elif defined(BLINKER_ALIGENIE_OUTLET)
+        #undef(BLINKER_ALIGENIE_LIGHT)
+        #undef(BLINKER_ALIGENIE_SWITCH)
+        #undef(BLINKER_ALIGENIE_SENSOR)
+    #elif defined(BLINKER_ALIGENIE_SWITCH)
+        #undef(BLINKER_ALIGENIE_LIGHT)
+        #undef(BLINKER_ALIGENIE_OUTLET)
+        #undef(BLINKER_ALIGENIE_SENSOR)
+    #elif defined(BLINKER_ALIGENIE_SENSOR)
+        #undef(BLINKER_ALIGENIE_LIGHT)
+        #undef(BLINKER_ALIGENIE_OUTLET)
+        #undef(BLINKER_ALIGENIE_SWITCH)
+    #endif
+
     #if defined(ESP8266)
         #include <BlinkerSimpleESP8266_MQTT.h>
     #elif defined(ESP32)
@@ -30,6 +59,11 @@
     #endif
 
 #elif defined(BLINKER_PRO)
+
+    #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) \
+    ||  defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
+        #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
+    #endif
 
     #ifndef BLINKER_ESP_SMARTCONFIG
         #ifndef BLINKER_APCONFIG

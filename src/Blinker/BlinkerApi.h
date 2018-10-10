@@ -1678,6 +1678,39 @@ class BlinkerApi
         }
 #endif
 
+#if defined(BLINKER_MQTT) && defined(BLINKER_ALIGENIE)
+        // callback_with_string_arg_t  _powerStateFunc = NULL;
+        // callback_with_int32_arg_t   _setBrightnessFunc = NULL;
+        // callback_with_string_arg_t  _setColorFunc = NULL;
+        // callback_with_int32_arg_t   _setColorTemperature = NULL;
+        // callback_with_string_arg_t  _queryFunc = NULL;
+
+        void attachSetPowerState(callback_with_string_arg_t newFunction)
+        {
+            _powerStateFunc = newFunction;
+        }
+
+        void attachSetBrightness(callback_with_int32_arg_t newFunction)
+        {
+            _setBrightnessFunc = newFunction;
+        }
+
+        void attachSetColor(callback_with_string_arg_t newFunction)
+        {
+            _setColorFunc = newFunction;
+        }
+
+        void attachSetColorTemperature(callback_with_int32_arg_t newFunction)
+        {
+            _setColorTemperature = newFunction;
+        }
+
+        void attachQuery(callback_with_string_arg_t newFunction)
+        {
+            _queryFunc = newFunction;
+        }
+#endif
+
     private :
         // bool        _switchFresh = false;
         uint8_t     _wCount_str = 0;
@@ -4744,6 +4777,14 @@ class BlinkerApi
 #endif
 
     protected :
+#if defined(BLINKER_MQTT) && defined(BLINKER_ALIGENIE)
+        callback_with_string_arg_t  _powerStateFunc = NULL;
+        callback_with_int32_arg_t   _setBrightnessFunc = NULL;
+        callback_with_string_arg_t  _setColorFunc = NULL;
+        callback_with_int32_arg_t   _setColorTemperature = NULL;
+        callback_with_string_arg_t  _queryFunc = NULL;
+#endif
+
         callbackFunction            _heartbeatFunc = NULL;
 
         callback_with_joy_arg_t     _joyFunc = NULL;
