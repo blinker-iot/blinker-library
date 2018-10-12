@@ -5051,7 +5051,7 @@ class BlinkerApi
                 else if (rootSet.containsKey(BLINKER_CMD_COLORTEMP)) {
                     String setValue = rootSet[BLINKER_CMD_COLORTEMP];
 
-                    if (_setColorTemperature) _setColorTemperature(setValue);
+                    if (_setColorTemperature) _setColorTemperature(setValue.toInt());
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_UPCOLORTEMP)) {
                     String setValue = rootSet[BLINKER_CMD_UPCOLORTEMP];

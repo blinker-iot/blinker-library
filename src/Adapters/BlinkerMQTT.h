@@ -380,9 +380,11 @@ class BlinkerMQTT {
                 isAlive = false;
         }
 
-        void checkAliKA() {
+        bool checkAliKA() {
             if (millis() - aliKaTime >= 10000)
-                isAliAlive = false;
+                return false;
+            else
+                return true;
         }
 
         bool checkCanPrint() {
