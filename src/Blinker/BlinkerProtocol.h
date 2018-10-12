@@ -853,6 +853,71 @@ class BlinkerProtocol
             }
         }
 #endif
+
+#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
+        template <typename T1>
+        void aligeniePrint(T1 n1, const String &s2) {
+            String _msg = "\"" + STRING_format(n1) + "\":\"" + s2 + "\"";
+
+            conn.aliPrint(_msg);
+        }
+
+        template <typename T1>
+        void aligeniePrint(T1 n1, const char str2[]) {
+            String _msg = "\"" + STRING_format(n1) + "\":\"" + STRING_format(str2) + "\"";
+
+            conn.aliPrint(_msg);
+        }
+
+        template <typename T1>
+        void aligeniePrint(T1 n1, char c) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(c);
+
+            conn.aliPrint(_msg);
+        }
+
+        template <typename T1>
+        void aligeniePrint(T1 n1, unsigned char b) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(b);
+
+            conn.aliPrint(_msg);
+        }
+
+        template <typename T1>
+        void aligeniePrint(T1 n1, int n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
+
+            conn.aliPrint(_msg);
+        }
+
+        template <typename T1>
+        void aligeniePrint(T1 n1, unsigned int n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
+
+            conn.aliPrint(_msg);
+        }
+
+        template <typename T1>
+        void aligeniePrint(T1 n1, long n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
+
+            conn.aliPrint(_msg);
+        }
+
+        template <typename T1>
+        void aligeniePrint(T1 n1, unsigned long n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
+
+            conn.aliPrint(_msg);
+        }
+
+        template <typename T1>
+        void aligeniePrint(T1 n1, double n) {
+            String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
+
+            conn.aliPrint(_msg);
+        }
+#endif
         
         template <typename T>
         void notify(T n) {
@@ -1077,6 +1142,11 @@ class BlinkerProtocol
                 availState = true;
             }
             return isAvail;
+        }
+
+        bool checkAliAvail()
+        {
+            return conn.aligenieAvail();
         }
 
         String dataParse()
@@ -1551,6 +1621,11 @@ void BlinkerProtocol<Transp>::run()
                 if (isAvail) {
                     BApi::parse(dataParse());
                 }
+#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
+                if (checkAliAvail()) {
+                    BApi::aliParse(conn.lastRead());
+                }
+#endif
             }
             else {
                 // state = DISCONNECTED;

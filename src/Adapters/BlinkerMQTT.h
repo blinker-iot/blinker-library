@@ -133,7 +133,7 @@ class BlinkerMQTT {
         }
         void ping();
         
-        bool available () {
+        bool available() {
             webSocket.loop();
 
             checkKA();
@@ -147,6 +147,17 @@ class BlinkerMQTT {
 
             if (isAvail) {
                 isAvail = false;
+
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        bool aligenieAvail() {
+            if (isAliAvail) {
+                isAliAvail = false;
 
                 return true;
             }
@@ -170,7 +181,11 @@ class BlinkerMQTT {
         String lastRead() { return STRING_format(msgBuf); }
         bool print(String data);
         bool bPrint(String name, String data);
-        
+
+#if defined(BLINKER_ALIGENIE)
+        bool aliPrint(String data);
+#endif
+
         void begin(const char* auth) {
             authkey = auth;
 #ifdef BLINKER_DEBUG_ALL
@@ -365,6 +380,11 @@ class BlinkerMQTT {
                 isAlive = false;
         }
 
+        void checkAliKA() {
+            if (millis() - aliKaTime >= 10000)
+                isAliAlive = false;
+        }
+
         bool checkCanPrint() {
             if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
                 return true;
@@ -422,6 +442,10 @@ class BlinkerMQTT {
         uint32_t    linkTime = 0;
         uint8_t     respTimes = 0;
         uint32_t    respTime = 0;
+
+        uint32_t    aliKaTime = 0;
+        bool        isAliAlive = false;
+        bool        isAliAvail = false;
 };
 
 bool BlinkerMQTT::connectServer() {
@@ -751,11 +775,21 @@ void BlinkerMQTT::subscribe() {
                 isAvail = true;
                 isAlive = true;
             }
+            else if (_uuid == BLINKER_CMD_ALIGENIE) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1("form AliGenie");
+#endif
+                aliKaTime = millis();
+                isAliAlive = true;
+                isAliAvail = true;
+            }
             else {
                 dataGet = String((char *)iotSub->lastread);
 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG2("No authority uuid, data: ", dataGet);
+                BLINKER_ERR_LOG2("No authority uuid, 
+                    check is from bridge/share device, 
+                    data: ", dataGet);
 #endif
                 // return;
 
@@ -959,5 +993,45 @@ bool BlinkerMQTT::bPrint(String name, String data) {
     }
     // }
 }
+
+#if defined(BLINKER_ALIGENIE)
+bool BlinkerMQTT::aliPrint(String data)
+{
+    String payload;
+
+    payload = "{\"data\":" + data + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + UUID + "\"}";
+    
+#ifdef BLINKER_DEBUG_ALL
+    BLINKER_LOG1("MQTT AliGenie Publish...");
+#endif
+
+    if (mqtt->connected()) {
+        if (!checkAliKA()) {
+            return false;
+        }
+
+        if (! iotPub->publish(payload.c_str())) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(payload);
+            BLINKER_LOG1("...Failed");
+#endif
+            isAliAlive = false;
+            return false;
+        }
+        else {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(payload);
+            BLINKER_LOG1("...OK!");
+#endif
+            isAliAlive = false;
+            return true;
+        }      
+}
+    else {
+        BLINKER_ERR_LOG1("MQTT Disconnected");
+        return false;
+    }
+}
+#endif
 
 #endif

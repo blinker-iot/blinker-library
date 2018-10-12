@@ -1678,7 +1678,7 @@ class BlinkerApi
         }
 #endif
 
-#if defined(BLINKER_MQTT) && defined(BLINKER_ALIGENIE)
+#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
         // callback_with_string_arg_t  _powerStateFunc = NULL;
         // callback_with_int32_arg_t   _setBrightnessFunc = NULL;
         // callback_with_string_arg_t  _setColorFunc = NULL;
@@ -1690,14 +1690,19 @@ class BlinkerApi
             _powerStateFunc = newFunction;
         }
 
-        void attachSetBrightness(callback_with_int32_arg_t newFunction)
+        void attachSetColor(callback_with_string_arg_t newFunction)
+        {
+            _setColorFunc = newFunction;
+        }
+
+        void attachSetBrightness(callback_with_string_arg_t newFunction)
         {
             _setBrightnessFunc = newFunction;
         }
 
-        void attachSetColor(callback_with_string_arg_t newFunction)
+        void attachRelativeBrightness(callback_with_int32_arg_t newFunction)
         {
-            _setColorFunc = newFunction;
+            _setRelativeBrightnessFunc = newFunction;
         }
 
         void attachSetColorTemperature(callback_with_int32_arg_t newFunction)
@@ -1705,7 +1710,12 @@ class BlinkerApi
             _setColorTemperature = newFunction;
         }
 
-        void attachQuery(callback_with_string_arg_t newFunction)
+        void attachRelativeColorTemperature(callback_with_int32_arg_t newFunction)
+        {
+            _setRelativeColorTemperature = newFunction;
+        }
+
+        void attachQuery(callback_with_int32_arg_t newFunction)
         {
             _queryFunc = newFunction;
         }
@@ -4777,12 +4787,14 @@ class BlinkerApi
 #endif
 
     protected :
-#if defined(BLINKER_MQTT) && defined(BLINKER_ALIGENIE)
+#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
         callback_with_string_arg_t  _powerStateFunc = NULL;
-        callback_with_int32_arg_t   _setBrightnessFunc = NULL;
         callback_with_string_arg_t  _setColorFunc = NULL;
+        callback_with_string_arg_t  _setBrightnessFunc = NULL;
+        callback_with_int32_arg_t   _setRelativeBrightnessFunc = NULL;
         callback_with_int32_arg_t   _setColorTemperature = NULL;
-        callback_with_string_arg_t  _queryFunc = NULL;
+        callback_with_int32_arg_t   _setRelativeColorTemperature = NULL;
+        callback_with_int32_arg_t   _queryFunc = NULL;
 #endif
 
         callbackFunction            _heartbeatFunc = NULL;
@@ -4962,6 +4974,99 @@ class BlinkerApi
     #endif
         }
 #endif
+
+#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
+        void aliParse(String _data)
+        {
+    #ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("AliGenie parse data: "), _data);
+    #endif
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& root = jsonBuffer.parseObject(_data);
+
+            if (!root.success()) {
+                return;
+            }
+
+            if (root.containsKey(BLINKER_CMD_GET)) {
+                String value = root[BLINKER_CMD_GET];
+
+                if (value == BLINKER_CMD_POWERSTATE) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_POWERSTATE_NUMBER);
+                }
+                else if (value == BLINKER_CMD_COLOR) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_COLOR_NUMBER);
+                }
+                else if (value == BLINKER_CMD_COLORTEMP) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_COLORTEMP_NUMBER);
+                }
+                else if (value == BLINKER_CMD_BRIGHTNESS) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_BRIGHTNESS_NUMBER);
+                }
+                else if (value == BLINKER_CMD_TEMP) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_TEMP_NUMBER);
+                }
+                else if (value == BLINKER_CMD_HUMI) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_HUMI_NUMBER);
+                }
+                else if (value == BLINKER_CMD_PM25) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_PM25_NUMBER);
+                }
+            }
+            else if (root.containsKey(BLINKER_CMD_SET)) {
+                String value = root[BLINKER_CMD_SET];
+
+                DynamicJsonBuffer jsonBufferSet;
+                JsonObject& rootSet = jsonBufferSet.parseObject(value);
+
+                if (!rootSet.success()) {
+                    return;
+                }
+
+                if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
+                    String setValue = rootSet[BLINKER_CMD_POWERSTATE];
+
+                    if (_powerStateFunc) _powerStateFunc(setValue);
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
+                    String setValue = rootSet[BLINKER_CMD_COLOR];
+
+                    if (_setColorFunc) _setColorFunc(setValue);
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_BRIGHTNESS)) {
+                    String setValue = rootSet[BLINKER_CMD_BRIGHTNESS];
+
+                    if (_setBrightnessFunc) _setBrightnessFunc(setValue);
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_UPBRIGHTNESS)) {
+                    String setValue = rootSet[BLINKER_CMD_UPBRIGHTNESS];
+
+                    if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_DOWNBRIGHTNESS)) {
+                    String setValue = rootSet[BLINKER_CMD_DOWNBRIGHTNESS];
+
+                    if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(- setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_COLORTEMP)) {
+                    String setValue = rootSet[BLINKER_CMD_COLORTEMP];
+
+                    if (_setColorTemperature) _setColorTemperature(setValue);
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_UPCOLORTEMP)) {
+                    String setValue = rootSet[BLINKER_CMD_UPCOLORTEMP];
+
+                    if (_setRelativeColorTemperature) _setRelativeColorTemperature(setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_DOWNCOLORTEMP)) {
+                    String setValue = rootSet[BLINKER_CMD_DOWNCOLORTEMP];
+
+                    if (_setRelativeColorTemperature) _setRelativeColorTemperature(- setValue.toInt());
+                }
+            }
+        }
+#endif
+
         void parse(String _data, bool ex_data = false)
         {
     #ifdef BLINKER_DEBUG_ALL

@@ -315,6 +315,42 @@
 
 #define BLINKER_CMD_UNIT                "uni"
 
+#define BLINKER_CMD_POWERSTATE          "pState"
+
+#define BLINKER_CMD_BRIGHTNESS          "bright"
+
+#define BLINKER_CMD_UPBRIGHTNESS        "upBright"
+
+#define BLINKER_CMD_DOWNBRIGHTNESS      "downBright"
+
+#define BLINKER_CMD_COLORTEMP           "colTemp"
+
+#define BLINKER_CMD_UPCOLORTEMP         "upColTemp"
+
+#define BLINKER_CMD_DOWNCOLORTEMP       "downColTemp"
+
+#define BLINKER_CMD_TEMP                "temp"
+
+#define BLINKER_CMD_HUMI                "humi"
+
+#define BLINKER_CMD_PM25                "pm25"
+
+#define BLINKER_CMD_ALIGENIE            "aligenie"
+
+#define BLINKER_CMD_POWERSTATE_NUMBER   0
+
+#define BLINKER_CMD_COLOR_NUMBER        1
+
+#define BLINKER_CMD_COLORTEMP_NUMBER    2
+
+#define BLINKER_CMD_BRIGHTNESS_NUMBER   3
+
+#define BLINKER_CMD_TEMP_NUMBER         4
+
+#define BLINKER_CMD_HUMI_NUMBER         5
+
+#define BLINKER_CMD_PM25_NUMBER         6
+
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 
 #define BLINKER_ONE_HOUR_TIME           3600UL
