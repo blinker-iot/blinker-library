@@ -114,13 +114,17 @@ BLINKER_ALIGENIE_OUTLET	KEYWORD2
 BLINKER_ALIGENIE_SWITCH	KEYWORD2
 BLINKER_ALIGENIE_SENSOR	KEYWORD2
 
-attachSetPowerState	KEYWORD2
-attachSetColor	KEYWORD2
-attachSetBrightness	KEYWORD2
+attachPowerState	KEYWORD2
+attachColor	KEYWORD2
+attachBrightness	KEYWORD2
 attachRelativeBrightness	KEYWORD2
-attachSetColorTemperature	KEYWORD2
+attachColorTemperature	KEYWORD2
 attachRelativeColorTemperature	KEYWORD2
 attachQuery	KEYWORD2
+powerState	KEYWORD2
+temp	KEYWORD2
+humi	KEYWORD2
+pm25	KEYWORD2
 
 #######################################
 # Literals (LITERAL1)

@@ -9,17 +9,17 @@ class BLINKERALIGENIE
     public :
         BLINKERALIGENIE() {}
 
-        void attachSetPowerState(callback_with_string_arg_t newFunction)
+        void attachPowerState(callback_with_string_arg_t newFunction)
         {
             Blinker.attachSetPowerState(newFunction);
         }
 
-        void attachSetColor(callback_with_string_arg_t newFunction)
+        void attachColor(callback_with_string_arg_t newFunction)
         {
             Blinker.attachSetColor(newFunction);
         }
 
-        void attachSetBrightness(callback_with_string_arg_t newFunction)
+        void attachBrightness(callback_with_string_arg_t newFunction)
         {
             Blinker.attachSetBrightness(newFunction);
         }
@@ -29,7 +29,7 @@ class BLINKERALIGENIE
             Blinker.attachRelativeBrightness(newFunction);
         }
 
-        void attachSetColorTemperature(callback_with_int32_arg_t newFunction)
+        void attachColorTemperature(callback_with_int32_arg_t newFunction)
         {
             Blinker.attachSetColorTemperature(newFunction);
         }
@@ -42,6 +42,62 @@ class BLINKERALIGENIE
         void attachQuery(callback_with_int32_arg_t newFunction)
         {
             Blinker.attachQuery(newFunction);
+        }
+
+        void powerState(const String & state)
+        {
+            String payload = "{\"" + STRING_format(BLINKER_CMD_POWERSTATE) + 
+                "\":\"" + state + "\"}";
+
+            Blinker.aligeniePrint(payload);
+        }
+
+        void color(const String & clr)
+        {
+            String payload = "{\"" + STRING_format(BLINKER_CMD_COLOR) + 
+                "\":\"" + clr + "\"}";
+
+            Blinker.aligeniePrint(payload);
+        }
+
+        void colorTemp(int clrTemp)
+        {
+            String payload = "{\"" + STRING_format(BLINKER_CMD_COLORTEMP) + 
+                "\":\"" + STRING_format(clrTemp) + "\"}";
+
+            Blinker.aligeniePrint(payload);
+        }
+
+        void brightness(int bright)
+        {
+            String payload = "{\"" + STRING_format(BLINKER_CMD_BRIGHTNESS) + 
+                "\":\"" + STRING_format(bright) + "\"}";
+
+            Blinker.aligeniePrint(payload);
+        }
+
+        void temp(int _temp)
+        {
+            String payload = "{\"" + STRING_format(BLINKER_CMD_TEMP) + 
+                "\":\"" + STRING_format(_temp) + "\"}";
+
+            Blinker.aligeniePrint(payload);
+        }
+
+        void humi(int _humi)
+        {
+            String payload = "{\"" + STRING_format(BLINKER_CMD_HUMI) + 
+                "\":\"" + STRING_format(_humi) + "\"}";
+
+            Blinker.aligeniePrint(payload);
+        }
+
+        void pm25(int _pm25)
+        {
+            String payload = "{\"" + STRING_format(BLINKER_CMD_PM25) + 
+                "\":\"" + STRING_format(_pm25) + "\"}";
+
+            Blinker.aligeniePrint(payload);
         }
 };
 
