@@ -448,6 +448,7 @@ class BlinkerMQTT {
         uint32_t    aliKaTime = 0;
         bool        isAliAlive = false;
         bool        isAliAvail = false;
+        // String      mqtt_broker;
 };
 
 bool BlinkerMQTT::connectServer() {
@@ -673,6 +674,8 @@ bool BlinkerMQTT::connectServer() {
 
     iotPub = new Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
     iotSub = new Adafruit_MQTT_Subscribe(mqtt, BLINKER_SUB_TOPIC);
+
+    // mqtt_broker = _broker;
 
     // mDNSInit(MQTT_ID);
     this->latestTime = millis();
@@ -904,7 +907,7 @@ bool BlinkerMQTT::print(String data) {
                 }
             }
 
-            if (! iotPub->publish(payload.c_str())) {
+            if (!iotPub->publish(payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(payload);
                 BLINKER_LOG1("...Failed");
@@ -914,6 +917,36 @@ bool BlinkerMQTT::print(String data) {
                 }
                 return false;
             }
+//             else if (mqtt_broker == BLINKER_MQTT_BORKER_ONENET) {
+//                 char buf[BLINKER_MAX_SEND_BUFFER_SIZE];
+//                 buf[0] = 0x01;
+//                 buf[1] = 0x00;
+//                 buf[2] = (uint8_t)payload.length();
+
+//                 memcpy(buf+3, payload.c_str(), payload.length());
+
+//                 if (!iotPub.publish((uint8_t *)buf, payload.length()+3)) {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG1(payload);
+//                     BLINKER_LOG1("...Failed");
+// #endif
+//                     if (!_alive) {
+//                         isAlive = false;
+//                     }
+//                     return false;
+//                 } else {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG1(payload);
+//                     BLINKER_LOG1("...OK!");
+// #endif
+//                     if (!state) printTime = millis();
+
+//                     if (!_alive) {
+//                         isAlive = false;
+//                     }
+//                     return true;
+//                 }
+//             }
             else {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(payload);
