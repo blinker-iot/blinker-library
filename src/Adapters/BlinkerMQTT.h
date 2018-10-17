@@ -792,9 +792,7 @@ void BlinkerMQTT::subscribe() {
                 dataGet = String((char *)iotSub->lastread);
 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG2("No authority uuid, 
-                    check is from bridge/share device, 
-                    data: ", dataGet);
+                BLINKER_ERR_LOG2("No authority uuid, check is from bridge/share device, data: ", dataGet);
 #endif
                 // return;
 
