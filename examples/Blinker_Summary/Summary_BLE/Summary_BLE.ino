@@ -50,6 +50,12 @@ void switch_callback(const String & state)
     }
 }
 
+void heartbeat()
+{
+    if (switch_state) BUILTIN_SWITCH.print("on");
+    else BUILTIN_SWITCH.print("off");
+}
+
 String summary()
 {
     String data = "online, switch: " + STRING_format(switch_state ? "on" : "off");
@@ -66,6 +72,7 @@ void setup()
 
     Blinker.begin();
     
+    Blinker.attachHeartbeat(heartbeat);
     Blinker.attachSummary(summary);
     
     BUILTIN_SWITCH.attach(switch_callback);

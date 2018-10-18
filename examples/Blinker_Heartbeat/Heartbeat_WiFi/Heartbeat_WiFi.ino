@@ -59,6 +59,13 @@ void heartbeat()
     else BUILTIN_SWITCH.print("off");
 }
 
+String summary()
+{
+    String data = "online, switch: " + STRING_format(switch_state ? "on" : "off");
+
+    return data;
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -69,6 +76,7 @@ void setup()
     Blinker.begin(ssid, pswd);
     
     Blinker.attachHeartbeat(heartbeat);
+    Blinker.attachSummary(summary);
     
     BUILTIN_SWITCH.attach(switch_callback);
 }
