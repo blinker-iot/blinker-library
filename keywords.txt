@@ -121,6 +121,8 @@ attachRelativeBrightness	KEYWORD2
 attachColorTemperature	KEYWORD2
 attachRelativeColorTemperature	KEYWORD2
 attachQuery	KEYWORD2
+attachSummary	KEYWORD2
+STRING_format	KEYWORD2
 powerState	KEYWORD2
 temp	KEYWORD2
 humi	KEYWORD2

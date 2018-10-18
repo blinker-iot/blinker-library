@@ -107,6 +107,8 @@
     #define BLINKER_NO_LOGO
 #endif
 
+#define BLINKER_MAX_SUMMARY_DATA_SIZE   20
+
 // #define	BLINKER_DEBUG
 
 #define BLINKER_CMD_ON                  "on"
@@ -336,6 +338,8 @@
 #define BLINKER_CMD_PM25                "pm25"
 
 #define BLINKER_CMD_ALIGENIE            "aligenie"
+
+#define BLINKER_CMD_SUMMARY             "sum"
 
 #define BLINKER_CMD_POWERSTATE_NUMBER   0
 

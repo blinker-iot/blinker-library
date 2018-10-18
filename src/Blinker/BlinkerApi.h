@@ -1523,6 +1523,10 @@ class BlinkerApi
             _heartbeatFunc = newFunction;
         }
 
+        void attachSummary(callback_return_string_t newFunction) {
+            _summaryFunc = newFunction;
+        }
+
 #if defined(BLINKER_PRO)
         void attachParse(callback_with_json_arg_t newFunction) {
             _parseFunc = newFunction;
@@ -2053,6 +2057,19 @@ class BlinkerApi
                         _heartbeatFunc();
                     }
 
+                    if (_summaryFunc) {
+                        String summary_data = _summaryFunc();
+                        if (summary_data.length()) {
+                            summary_data = summary_data.substring(0, BLINKER_MAX_SUMMARY_DATA_SIZE);
+
+    #if defined(BLINKER_DEBUG_ALL)
+                            BLINKER_LOG2("summary_data: ", summary_data);
+    #endif
+
+                            static_cast<Proto*>(this)->print(BLINKER_CMD_SUMMARY, summary_data);
+                        }
+                    }
+
                     static_cast<Proto*>(this)->printNow();
 //                     if (!static_cast<Proto*>(this)->endFormat()) {
 //                         static_cast<Proto*>(this)->beginFormat();
@@ -2223,6 +2240,19 @@ class BlinkerApi
 
                     if (_heartbeatFunc) {
                         _heartbeatFunc();
+                    }
+
+                    if (_summaryFunc) {
+                        String summary_data = _summaryFunc();
+                        if (summary_data.length()) {
+                            summary_data = summary_data.substring(0, BLINKER_MAX_SUMMARY_DATA_SIZE);
+
+    #if defined(BLINKER_DEBUG_ALL)
+                            BLINKER_LOG2("summary_data: ", summary_data);
+    #endif
+
+                            static_cast<Proto*>(this)->print(BLINKER_CMD_SUMMARY, summary_data);
+                        }
                     }
                     
                     static_cast<Proto*>(this)->printNow();
@@ -4798,6 +4828,7 @@ class BlinkerApi
 #endif
 
         callbackFunction            _heartbeatFunc = NULL;
+        callback_return_string_t    _summaryFunc = NULL;
 
         callback_with_joy_arg_t     _joyFunc = NULL;
 

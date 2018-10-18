@@ -30,6 +30,7 @@ extern "C" {
     typedef void (*callback_with_int32_arg_t)(int32_t data);
     typedef void (*callback_with_rgb_arg_t)(uint8_t r_data, uint8_t g_data, uint8_t b_data, uint8_t bright_data);
     typedef void (*callback_with_joy_arg_t)(uint8_t x_data, uint8_t y_data);
+    typedef String (*callback_return_string_t)(void);
 #if defined(ESP8266) || defined(ESP32)
     typedef bool (*callback_with_json_arg_t)(const JsonObject & data);
 #endif
