@@ -9,6 +9,12 @@
 #include <utility/BlinkerSwitch.h>
 #include <utility/BlinkerText.h>
 
+#if defined(BLINKER_ALIGENIE)
+    #include <utility/BlinkerAliGenie.h>
+
+    BLINKERALIGENIE BlinkerAliGenie;
+#endif
+
 BlinkerSwitch BUILTIN_SWITCH;
 
 #endif

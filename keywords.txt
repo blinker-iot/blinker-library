@@ -11,6 +11,8 @@ BlinkerJoystick	KEYWORD1
 BUILTIN_SWITCH	KEYWORD1
 BlinkerTimer	KEYWORD1
 
+BlinkerAliGenie	KEYWORD1
+
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
@@ -106,6 +108,25 @@ BLINKER_WIFI	KEYWORD2
 BLINKER_MQTT	KEYWORD2
 BLINKER_PRO	KEYWORD2
 BLINKER_BUTTON_LONGPRESS_POWERDOWN	KEYWORD2
+
+BLINKER_ALIGENIE_LIGHT	KEYWORD2
+BLINKER_ALIGENIE_OUTLET	KEYWORD2
+BLINKER_ALIGENIE_SWITCH	KEYWORD2
+BLINKER_ALIGENIE_SENSOR	KEYWORD2
+
+attachPowerState	KEYWORD2
+attachColor	KEYWORD2
+attachBrightness	KEYWORD2
+attachRelativeBrightness	KEYWORD2
+attachColorTemperature	KEYWORD2
+attachRelativeColorTemperature	KEYWORD2
+attachQuery	KEYWORD2
+attachSummary	KEYWORD2
+STRING_format	KEYWORD2
+powerState	KEYWORD2
+temp	KEYWORD2
+humi	KEYWORD2
+pm25	KEYWORD2
 
 #######################################
 # Literals (LITERAL1)
