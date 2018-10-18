@@ -26,10 +26,11 @@
  * *****************************************************************/
 
 #define BLINKER_PRINT Serial
-#define BLINKER_WIFI
+#define BLINKER_MQTT
 
 #include <Blinker.h>
 
+char auth[] = "Your MQTT Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
@@ -53,6 +54,12 @@ void switch_callback(const String & state)
     }
 }
 
+void heartbeat()
+{
+    if (switch_state) BUILTIN_SWITCH.print("on");
+    else BUILTIN_SWITCH.print("off");
+}
+
 String summary()
 {
     String data = "online, switch: " + STRING_format(switch_state ? "on" : "off");
@@ -67,8 +74,9 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-    Blinker.begin(ssid, pswd);
+    Blinker.begin(auth, ssid, pswd);
     
+    Blinker.attachHeartbeat(heartbeat);
     Blinker.attachSummary(summary);
     
     BUILTIN_SWITCH.attach(switch_callback);
