@@ -32,7 +32,7 @@ static char *BLINKER_SUB_TOPIC;
 WiFiClientSecure        client_s;
 WiFiClient              client;
 Adafruit_MQTT_Client    *mqtt;
-Adafruit_MQTT_Publish   *iotPub;
+// Adafruit_MQTT_Publish   *iotPub;
 Adafruit_MQTT_Subscribe *iotSub;
 
 #define WS_SERVERPORT                       81
@@ -241,7 +241,11 @@ class BlinkerMQTT {
                 if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || linkTime == 0) {
                     // linkTime = millis();
 
-                    if (! iotPub->publish(payload.c_str())) {
+                    // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
+
+                    // if (! iotPub.publish(payload.c_str())) {
+
+                    if (! mqtt->publish(BLINKER_PUB_TOPIC, payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG1(payload);
                         BLINKER_LOG1("...Failed");
@@ -448,7 +452,7 @@ class BlinkerMQTT {
         uint32_t    aliKaTime = 0;
         bool        isAliAlive = false;
         bool        isAliAvail = false;
-        // String      mqtt_broker;
+        String      mqtt_broker;
 };
 
 bool BlinkerMQTT::connectServer() {
@@ -672,10 +676,10 @@ bool BlinkerMQTT::connectServer() {
         mqtt = new Adafruit_MQTT_Client(&client, MQTT_HOST, MQTT_PORT, MQTT_ID, MQTT_NAME, MQTT_KEY);
     }
 
-    iotPub = new Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
+    // iotPub = new Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
     iotSub = new Adafruit_MQTT_Subscribe(mqtt, BLINKER_SUB_TOPIC);
 
-    // mqtt_broker = _broker;
+    mqtt_broker = _broker;
 
     // mDNSInit(MQTT_ID);
     this->latestTime = millis();
@@ -905,7 +909,11 @@ bool BlinkerMQTT::print(String data) {
                 }
             }
 
-            if (!iotPub->publish(payload.c_str())) {
+            // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
+
+            // if (!iotPub.publish(payload.c_str())) {
+
+            if (! mqtt->publish(BLINKER_PUB_TOPIC, payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(payload);
                 BLINKER_LOG1("...Failed");
@@ -996,7 +1004,20 @@ bool BlinkerMQTT::bPrint(String name, String data) {
         }
         // }
 
-        if (! iotPub->publish(payload.c_str())) {
+        // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
+
+        // if (! iotPub.publish(payload.c_str())) {
+
+        String bPubTopic = "";
+
+        if (mqtt_broker == BLINKER_MQTT_BORKER_ONENET) {
+            bPubTopic = STRING_format(MQTT_PRODUCTINFO) + "/" + name + "/r";
+        }
+        else {
+            bPubTopic = STRING_format(BLINKER_PUB_TOPIC);
+        }
+
+        if (! mqtt->publish(bPubTopic.c_str(), payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(payload);
             BLINKER_LOG1("...Failed");
@@ -1043,7 +1064,11 @@ bool BlinkerMQTT::aliPrint(String data)
             return false;
         }
 
-        if (! iotPub->publish(payload.c_str())) {
+        // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
+
+        // if (! iotPub.publish(payload.c_str())) {
+
+        if (! mqtt->publish(BLINKER_PUB_TOPIC, payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(payload);
             BLINKER_LOG1("...Failed");
