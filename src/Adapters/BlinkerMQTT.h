@@ -1053,7 +1053,7 @@ bool BlinkerMQTT::aliPrint(String data)
 {
     String payload;
 
-    payload = "{\"data\":" + data + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + UUID + "\"}";
+    payload = "{\"data\":" + data + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"AliGenie\",\"deviceType\":\"vAssistant\"}";
     
 #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1("MQTT AliGenie Publish...");
@@ -1084,7 +1084,7 @@ bool BlinkerMQTT::aliPrint(String data)
             isAliAlive = false;
             return true;
         }      
-}
+    }
     else {
         BLINKER_ERR_LOG1("MQTT Disconnected");
         return false;
