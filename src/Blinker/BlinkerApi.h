@@ -2107,10 +2107,13 @@ class BlinkerApi
                 // else {
                 //     _BUILTIN_SWITCH->freshState(false);
                 // }
-                callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
 
-                if (sFunc) {
-                    sFunc(state);
+                if (_BUILTIN_SWITCH) {
+                    callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
+
+                    if (sFunc) {
+                        sFunc(state);
+                    }
                 }
                 _fresh = true;
                 // _switchFresh = true;
@@ -2282,10 +2285,13 @@ class BlinkerApi
                     // else {
                     //     _BUILTIN_SWITCH->freshState(false);
                     // }
-                    callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
 
-                    if (sFunc) {
-                        sFunc(state);
+                    if (_BUILTIN_SWITCH) {
+                        callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
+
+                        if (sFunc) {
+                            sFunc(state);
+                        }
                     }
                     _fresh = true;
                     // _switchFresh = true;
@@ -2313,10 +2319,13 @@ class BlinkerApi
                     // else {
                     //     _BUILTIN_SWITCH->freshState(false);
                     // }
-                    callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
 
-                    if (sFunc) {
-                        sFunc(state);
+                    if (_BUILTIN_SWITCH) {
+                        callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
+
+                        if (sFunc) {
+                            sFunc(state);
+                        }
                     }
                     _fresh = true;
                     // _switchFresh = true;
