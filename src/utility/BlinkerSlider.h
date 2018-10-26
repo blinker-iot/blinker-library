@@ -32,8 +32,8 @@ class BlinkerSlider
             // textClr = _clr; 
             // if (strlen(textClr)) free(textClr);
             
-            // textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
-            textClr = (char*)realloc(textClr, (_clr.length()+1)*sizeof(char));
+            textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
+            // textClr = (char*)realloc(textClr, (_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());
         }
         
@@ -66,14 +66,14 @@ class BlinkerSlider
             }
 
             // if (textClr.length()) {
-            if (strlen(textClr)) {
+            if (textClr) {
                 sliderData += BLINKER_F(",\""BLINKER_CMD_COLOR"\":\"");
                 sliderData += (textClr);
                 sliderData += BLINKER_F("\"");
-                // free(textClr);
+                free(textClr);
 
-                textClr = (char*)realloc(textClr, 1*sizeof(char));
-                textClr[0] = '\0';
+                // textClr = (char*)realloc(textClr, 1*sizeof(char));
+                // textClr[0] = '\0';
             }
 
             sliderData += BLINKER_F("}");
