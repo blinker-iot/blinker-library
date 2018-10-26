@@ -122,9 +122,12 @@ class BlinkerButton
             // BLINKER_LOG2(BLINKER_F("strlen(textClr): "), strlen(textClr));
 #endif
             String buttonData;
-            buttonData += BLINKER_F("{\""BLINKER_CMD_SWITCH"\":\"");
-            buttonData += (_state);
-            buttonData += BLINKER_F("\"");
+
+            if (_state.length()) {
+                buttonData += BLINKER_F("{\""BLINKER_CMD_SWITCH"\":\"");
+                buttonData += (_state);
+                buttonData += BLINKER_F("\"");
+            }
             
             // char _buttonData[BLINKER_MAX_SEND_SIZE];
 
@@ -136,8 +139,10 @@ class BlinkerButton
             //     buttonData += ",\""BLINKER_CMD_ICON"\":\"" + (bicon) + "\"";
             // if (strlen(bicon) > 1) {
             if (bicon) {
+                if (buttonData.length()) buttonData += BLINKER_F(",");
+                else buttonData = BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button bicon: "));
-                buttonData += BLINKER_F(",\""BLINKER_CMD_ICON"\":\"");
+                buttonData += BLINKER_F("\""BLINKER_CMD_ICON"\":\"");
                 buttonData += (bicon);
                 buttonData += BLINKER_F("\"");
 
@@ -150,8 +155,10 @@ class BlinkerButton
             //     buttonData += ",\""BLINKER_CMD_COLOR"\":\"" + (iconClr) + "\"";
             // if (strlen(iconClr) > 1) {
             if (iconClr) {
+                if (buttonData.length()) buttonData += BLINKER_F(",");
+                else buttonData = BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button iconClr: "));
-                buttonData += BLINKER_F(",\""BLINKER_CMD_COLOR"\":\"");
+                buttonData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
                 buttonData += (iconClr);
                 buttonData += BLINKER_F("\"");
 
@@ -164,8 +171,10 @@ class BlinkerButton
             //     buttonData += ",\""BLINKER_CMD_CONTENT"\":\"" + (bcon) + "\"";
             // if (strlen(bcon) > 1) {
             if (bcon) {
-                BLINKER_LOG1(BLINKER_F("button bcon: "));
-                buttonData += BLINKER_F(",\""BLINKER_CMD_CONTENT"\":\"");
+                if (buttonData.length()) buttonData += BLINKER_F(",");
+                else buttonData = BLINKER_F("{");
+                // BLINKER_LOG1(BLINKER_F("button bcon: "));
+                buttonData += BLINKER_F("\""BLINKER_CMD_CONTENT"\":\"");
                 buttonData += (bcon);
                 buttonData += BLINKER_F("\"");
 
@@ -178,8 +187,10 @@ class BlinkerButton
             //     buttonData += ",\""BLINKER_CMD_TEXT"\":\"" + (btext) + "\"";
             // if (strlen(btext) > 1) {
             if (btext) {
+                if (buttonData.length()) buttonData += BLINKER_F(",");
+                else buttonData = BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button btext: "));
-                buttonData += BLINKER_F(",\""BLINKER_CMD_TEXT"\":\"");
+                buttonData += BLINKER_F("\""BLINKER_CMD_TEXT"\":\"");
                 buttonData += (btext);
                 buttonData += BLINKER_F("\"");
 
@@ -192,8 +203,10 @@ class BlinkerButton
             //     buttonData += ",\""BLINKER_CMD_TEXT1"\":\"" + (btext1) + "\"";
             // if (strlen(btext1) > 1) {
             if (btext1) {
+                if (buttonData.length()) buttonData += BLINKER_F(",");
+                else buttonData = BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button btext1: "));
-                buttonData += BLINKER_F(",\""BLINKER_CMD_TEXT1"\":\"");
+                buttonData += BLINKER_F("\""BLINKER_CMD_TEXT1"\":\"");
                 buttonData += (btext1);
                 buttonData += BLINKER_F("\"");
 
@@ -206,8 +219,10 @@ class BlinkerButton
             //     buttonData += ",\""BLINKER_CMD_TEXTCOLOR"\":\"" + (textClr) + "\"";
             // if (strlen(textClr) > 1) {
             if (textClr) {
+                if (buttonData.length()) buttonData += BLINKER_F(",");
+                else buttonData = BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button textClr: "));
-                buttonData += BLINKER_F(",\""BLINKER_CMD_TEXTCOLOR"\":\"");
+                buttonData += BLINKER_F("\""BLINKER_CMD_TEXTCOLOR"\":\"");
                 buttonData += (textClr);
                 buttonData += BLINKER_F("\"");
 
