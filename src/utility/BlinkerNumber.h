@@ -86,7 +86,7 @@ class BlinkerNumber
 
         void _print(const String & value) {
 
-            String numberData;
+            String numberData = "";
 
             if (value.length()) {
                 numberData += BLINKER_F("{\""BLINKER_CMD_VALUE"\":");
@@ -95,7 +95,9 @@ class BlinkerNumber
 
             // if (nicon.length()) {
             if (nicon) {
-                numberData += BLINKER_F(",\""BLINKER_CMD_ICON"\":\"");
+                if (numberData.length()) numberData += BLINKER_F(",");
+
+                numberData += BLINKER_F("\""BLINKER_CMD_ICON"\":\"");
                 numberData += nicon;
                 numberData += BLINKER_F("\"");
                 free(nicon);
@@ -106,7 +108,9 @@ class BlinkerNumber
 
             // if (ncolor.length()) {
             if (ncolor) {
-                numberData += BLINKER_F(",\""BLINKER_CMD_COLOR"\":\"");
+                if (numberData.length()) numberData += BLINKER_F(",");
+
+                numberData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
                 numberData += ncolor;
                 numberData += BLINKER_F("\"");
                 free(ncolor);
@@ -117,7 +121,9 @@ class BlinkerNumber
 
             // if (nunit.length()) {
             if (nunit) {
-                numberData += BLINKER_F(",\""BLINKER_CMD_UNIT"\":\"");
+                if (numberData.length()) numberData += BLINKER_F(",");
+
+                numberData += BLINKER_F("\""BLINKER_CMD_UNIT"\":\"");
                 numberData += nunit;
                 numberData += BLINKER_F("\"");
                 free(nunit);
@@ -127,7 +133,9 @@ class BlinkerNumber
             }
 
             if (ntext) {
-                numberData += BLINKER_F(",\""BLINKER_CMD_TEXT"\":\"");
+                if (numberData.length()) numberData += BLINKER_F(",");
+
+                numberData += BLINKER_F("\""BLINKER_CMD_TEXT"\":\"");
                 numberData += (ntext);
                 numberData += BLINKER_F("\"");
                 free(ntext);

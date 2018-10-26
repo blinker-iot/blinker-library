@@ -67,7 +67,10 @@ class BlinkerSlider
 
             // if (textClr.length()) {
             if (textClr) {
-                sliderData += BLINKER_F(",\""BLINKER_CMD_COLOR"\":\"");
+                if (sliderData.length()) sliderData += BLINKER_F(",");
+                else sliderData = BLINKER_F("{");
+
+                sliderData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
                 sliderData += (textClr);
                 sliderData += BLINKER_F("\"");
                 free(textClr);
