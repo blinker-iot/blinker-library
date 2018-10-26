@@ -15,8 +15,8 @@ class BlinkerSlider
             sliderName = (char*)malloc((_name.length()+1)*sizeof(char));
             strcpy(sliderName, _name.c_str());
 
-            textClr = (char*)malloc(1*sizeof(char));
-            textClr[0] = '\0';
+            // textClr = (char*)malloc(1*sizeof(char));
+            // textClr[0] = '\0';
         }
         
         void attach(callback_with_int32_arg_t _func)
