@@ -35,6 +35,8 @@ class BlinkerSlider
             textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             // textClr = (char*)realloc(textClr, (_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());
+
+            _fresh |= 0x01 << 0;
         }
         
         void print(char value)              { _print(STRING_format(value)); }
@@ -52,6 +54,7 @@ class BlinkerSlider
         bool registered = false;
         // String textClr = "";
         char * textClr;// = "";
+        uint8_t _fresh = 0;
 
         void _print(const String & n) {
             if (!registered) {
@@ -66,9 +69,9 @@ class BlinkerSlider
             }
 
             // if (textClr.length()) {
-            if (textClr) {
+            if (textClr && (_fresh >> 0 & 0x01)) {
                 if (sliderData.length()) sliderData += BLINKER_F(",");
-                else sliderData = BLINKER_F("{");
+                else sliderData += BLINKER_F("{");
 
                 sliderData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
                 sliderData += (textClr);
@@ -80,6 +83,8 @@ class BlinkerSlider
             }
 
             sliderData += BLINKER_F("}");
+
+            _fresh = 0;
 
             Blinker.printArray(sliderName, sliderData);
 

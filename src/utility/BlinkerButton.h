@@ -16,17 +16,23 @@ class BlinkerButton
             strcpy(buttonName, _name.c_str());
 
             // bicon = (char*)malloc(1*sizeof(char));
-            // bicon[0] = '\0';
+            // free(bicon);
+            // // bicon[0] = '\0';
             // iconClr = (char*)malloc(1*sizeof(char));
-            // iconClr[0] = '\0';
+            // free(iconClr);
+            // // iconClr[0] = '\0';
             // bcon = (char*)malloc(1*sizeof(char));
-            // bcon[0] = '\0';
+            // free(bcon);
+            // // bcon[0] = '\0';
             // btext = (char*)malloc(1*sizeof(char));
-            // btext[0] = '\0';
+            // free(btext);
+            // // btext[0] = '\0';
             // btext1 = (char*)malloc(1*sizeof(char));
-            // btext1[0] = '\0';
+            // free(btext1);
+            // // btext1[0] = '\0';
             // textClr = (char*)malloc(1*sizeof(char));
-            // textClr[0] = '\0';
+            // free(textClr);
+            // // textClr[0] = '\0';
         }
 
         void attach(callback_with_string_arg_t _func)
@@ -44,6 +50,10 @@ class BlinkerButton
             // bicon = (char*)realloc(bicon, (_icon.length()+1)*sizeof(char));
             bicon = (char*)malloc((_icon.length()+1)*sizeof(char));
             strcpy(bicon, _icon.c_str());
+
+            BLINKER_LOG2(BLINKER_F("bicon: "), bicon);
+
+            _fresh |= 0x01 << 0;
         }
 
         void color(const String & _clr) {
@@ -52,6 +62,10 @@ class BlinkerButton
             // iconClr = (char*)realloc(iconClr, (_clr.length()+1)*sizeof(char));
             iconClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(iconClr, _clr.c_str());
+
+            BLINKER_LOG2(BLINKER_F("iconClr: "), iconClr);
+
+            _fresh |= 0x01 << 1;
         }
 
         template <typename T>
@@ -62,6 +76,10 @@ class BlinkerButton
             // bcon = (char*)realloc(bcon, (_bcon.length()+1)*sizeof(char));
             bcon = (char*)malloc((_bcon.length()+1)*sizeof(char));
             strcpy(bcon, _bcon.c_str());
+
+            BLINKER_LOG2(BLINKER_F("bcon: "), bcon);
+
+            _fresh |= 0x01 << 2;
         }
 
         template <typename T>
@@ -72,6 +90,10 @@ class BlinkerButton
             // btext = (char*)realloc(btext, (_btext.length()+1)*sizeof(char));
             btext = (char*)malloc((_btext.length()+1)*sizeof(char));
             strcpy(btext, _btext.c_str());
+
+            BLINKER_LOG2(BLINKER_F("btext: "), btext);
+
+            _fresh |= 0x01 << 3;
         }
 
         template <typename T1, typename T2>
@@ -83,10 +105,18 @@ class BlinkerButton
             btext = (char*)malloc((_btext.length()+1)*sizeof(char));
             strcpy(btext, _btext.c_str());
 
+            BLINKER_LOG2(BLINKER_F("btext: "), btext);
+
+            _fresh |= 0x01 << 3;
+
             _btext = STRING_format(_text2);
             // btext1 = (char*)realloc(btext1, (_btext.length()+1)*sizeof(char));
             btext1 = (char*)malloc((_btext.length()+1)*sizeof(char));
             strcpy(btext1, _btext.c_str());
+
+            BLINKER_LOG2(BLINKER_F("btext1: "), btext1);
+
+            _fresh |= 0x01 << 4;
         }
 
         void textColor(const String & _clr) {
@@ -95,6 +125,10 @@ class BlinkerButton
             // textClr = (char*)realloc(textClr, (_clr.length()+1)*sizeof(char));
             textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());
+
+            BLINKER_LOG2(BLINKER_F("textClr: "), textClr);
+
+            _fresh |= 0x01 << 5;
         }
 
         void print() { print(""); }
@@ -110,6 +144,8 @@ class BlinkerButton
             //                     "\",\"" + textClr + "\"}";
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("button _state: "), _state);
+
+            BLINKER_LOG2(BLINKER_F("button _fresh: "), _fresh);
 
             // BLINKER_LOG2(BLINKER_F("bicon: "), bicon == NULL);
             // BLINKER_LOG2(BLINKER_F("iconClr: "), iconClr == NULL);
@@ -138,9 +174,17 @@ class BlinkerButton
             // if (bicon.length()) {
             //     buttonData += ",\""BLINKER_CMD_ICON"\":\"" + (bicon) + "\"";
             // if (strlen(bicon) > 1) {
-            if (bicon) {
+            
+            BLINKER_LOG2(BLINKER_F("buttonData: "), buttonData);
+            BLINKER_LOG2(BLINKER_F("buttonData.length(): "), buttonData.length());
+
+            if (bicon && (_fresh >> 0 & 0x01)) {
+                // BLINKER_LOG2(BLINKER_F("bicon: "), strlen(bicon));
+                // BLINKER_LOG2(BLINKER_F("bicon: "), sizeof(bicon));
+                // if (bicon == NULL)
+                //     BLINKER_LOG1("NULL");
                 if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData = BLINKER_F("{");
+                else buttonData += BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button bicon: "));
                 buttonData += BLINKER_F("\""BLINKER_CMD_ICON"\":\"");
                 buttonData += (bicon);
@@ -154,9 +198,9 @@ class BlinkerButton
             // if (iconClr.length()) {
             //     buttonData += ",\""BLINKER_CMD_COLOR"\":\"" + (iconClr) + "\"";
             // if (strlen(iconClr) > 1) {
-            if (iconClr) {
+            if (iconClr && (_fresh >> 1 & 0x01)) {
                 if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData = BLINKER_F("{");
+                else buttonData += STRING_format(BLINKER_F("{"));
                 // BLINKER_LOG1(BLINKER_F("button iconClr: "));
                 buttonData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
                 buttonData += (iconClr);
@@ -170,9 +214,9 @@ class BlinkerButton
             // if (bcon.length()) {
             //     buttonData += ",\""BLINKER_CMD_CONTENT"\":\"" + (bcon) + "\"";
             // if (strlen(bcon) > 1) {
-            if (bcon) {
+            if (bcon && (_fresh >> 2 & 0x01)) {
                 if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData = BLINKER_F("{");
+                else buttonData += BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button bcon: "));
                 buttonData += BLINKER_F("\""BLINKER_CMD_CONTENT"\":\"");
                 buttonData += (bcon);
@@ -186,9 +230,9 @@ class BlinkerButton
             // if (btext.length()) {
             //     buttonData += ",\""BLINKER_CMD_TEXT"\":\"" + (btext) + "\"";
             // if (strlen(btext) > 1) {
-            if (btext) {
+            if (btext && (_fresh >> 3 & 0x01)) {
                 if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData = BLINKER_F("{");
+                else buttonData += BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button btext: "));
                 buttonData += BLINKER_F("\""BLINKER_CMD_TEXT"\":\"");
                 buttonData += (btext);
@@ -202,9 +246,9 @@ class BlinkerButton
             // if (btext1.length()) {
             //     buttonData += ",\""BLINKER_CMD_TEXT1"\":\"" + (btext1) + "\"";
             // if (strlen(btext1) > 1) {
-            if (btext1) {
+            if (btext1 && (_fresh >> 4 & 0x01)) {
                 if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData = BLINKER_F("{");
+                else buttonData += BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button btext1: "));
                 buttonData += BLINKER_F("\""BLINKER_CMD_TEXT1"\":\"");
                 buttonData += (btext1);
@@ -218,9 +262,9 @@ class BlinkerButton
             // if (textClr.length()) {
             //     buttonData += ",\""BLINKER_CMD_TEXTCOLOR"\":\"" + (textClr) + "\"";
             // if (strlen(textClr) > 1) {
-            if (textClr) {
+            if (textClr && (_fresh >> 5 & 0x01)) {
                 if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData = BLINKER_F("{");
+                else buttonData += BLINKER_F("{");
                 // BLINKER_LOG1(BLINKER_F("button textClr: "));
                 buttonData += BLINKER_F("\""BLINKER_CMD_TEXTCOLOR"\":\"");
                 buttonData += (textClr);
@@ -232,6 +276,8 @@ class BlinkerButton
             }
 
             buttonData += BLINKER_F("}");
+
+            _fresh = 0;
 
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("buttonData: "), buttonData);
@@ -279,6 +325,7 @@ class BlinkerButton
         char * btext;
         char * btext1;
         char * textClr;
+        uint8_t _fresh = 0;
 };
 
 #endif

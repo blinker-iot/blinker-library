@@ -31,6 +31,8 @@ class BlinkerNumber
             // nicon = (char*)realloc(nicon, (_icon.length()+1)*sizeof(char));
             nicon = (char*)malloc((_icon.length()+1)*sizeof(char));
             strcpy(nicon, _icon.c_str());
+
+            _fresh |= 0x01 << 0;
         }
 
         void color(const String & _clr) { 
@@ -41,6 +43,8 @@ class BlinkerNumber
             // ncolor = (char*)realloc(ncolor, (_clr.length()+1)*sizeof(char));
             ncolor = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(ncolor, _clr.c_str());
+
+            _fresh |= 0x01 << 1;
         }
 
         void unit(const String & _unit) { 
@@ -51,6 +55,8 @@ class BlinkerNumber
             // nunit = (char*)realloc(nunit, (_unit.length()+1)*sizeof(char));
             nunit = (char*)malloc((_unit.length()+1)*sizeof(char));
             strcpy(nunit, _unit.c_str());
+
+            _fresh |= 0x01 << 2;
         }
 
         template <typename T>
@@ -61,6 +67,8 @@ class BlinkerNumber
             // ntext = (char*)realloc(ntext, (_ntext.length()+1)*sizeof(char));
             ntext = (char*)malloc((_ntext.length()+1)*sizeof(char));
             strcpy(ntext, _ntext.c_str());
+
+            _fresh |= 0x01 << 3;
         }
         
         void print(char value)              { _print(STRING_format(value)); }
@@ -83,6 +91,7 @@ class BlinkerNumber
         char * ncolor;// = "";
         char * nunit;// = "";
         char * ntext;
+        uint8_t _fresh = 0;
 
         void _print(const String & value) {
 
@@ -94,7 +103,7 @@ class BlinkerNumber
             }
 
             // if (nicon.length()) {
-            if (nicon) {
+            if (nicon && (_fresh >> 0 & 0x01)) {
                 if (numberData.length()) numberData += BLINKER_F(",");
 
                 numberData += BLINKER_F("\""BLINKER_CMD_ICON"\":\"");
@@ -107,8 +116,9 @@ class BlinkerNumber
             }
 
             // if (ncolor.length()) {
-            if (ncolor) {
+            if (ncolor && (_fresh >> 1 & 0x01)) {
                 if (numberData.length()) numberData += BLINKER_F(",");
+                else numberData += BLINKER_F("{");
 
                 numberData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
                 numberData += ncolor;
@@ -120,8 +130,9 @@ class BlinkerNumber
             }
 
             // if (nunit.length()) {
-            if (nunit) {
+            if (nunit && (_fresh >> 2 & 0x01)) {
                 if (numberData.length()) numberData += BLINKER_F(",");
+                else numberData += BLINKER_F("{");
 
                 numberData += BLINKER_F("\""BLINKER_CMD_UNIT"\":\"");
                 numberData += nunit;
@@ -132,8 +143,9 @@ class BlinkerNumber
                 // nunit[0] = '\0';
             }
 
-            if (ntext) {
+            if (ntext && (_fresh >> 3 & 0x01)) {
                 if (numberData.length()) numberData += BLINKER_F(",");
+                else numberData += BLINKER_F("{");
 
                 numberData += BLINKER_F("\""BLINKER_CMD_TEXT"\":\"");
                 numberData += (ntext);
@@ -145,6 +157,8 @@ class BlinkerNumber
             }
 
             numberData += BLINKER_F("}");
+
+            _fresh = 0;
 
             Blinker.printArray(numName, numberData);
 
