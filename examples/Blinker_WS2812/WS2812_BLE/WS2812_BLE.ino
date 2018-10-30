@@ -58,9 +58,9 @@ void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t 
     uint8_t colorB = map(b_value, 0, 255, 0, bright_value);
 
     for(int i = 0; i < NUMPIXELS; i++){
-        pixels.setPixelColor(i, pixels.Color(colorR,colorG,colorB));
-        pixels.show();
+        pixels.setPixelColor(i, colorR, colorG, colorB, bright_value);
     }
+    pixels.show();
 }
 
 void setup()
