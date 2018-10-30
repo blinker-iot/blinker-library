@@ -1051,7 +1051,7 @@ class BlinkerProtocol
             }
 
             if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE) {
-                BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+                BLINKER_ERR_LOG1(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
                 return;
             }
 
@@ -1064,7 +1064,7 @@ class BlinkerProtocol
             BLINKER_LOG2(BLINKER_F("autoFormatData data: "), data);
 #endif
             if ((strlen(_sendBuf) + data.length()) >= BLINKER_MAX_SEND_SIZE) {
-                BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+                BLINKER_ERR_LOG1(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
                 return;
             }
 
@@ -1120,7 +1120,7 @@ class BlinkerProtocol
             }
 
             if (strlen(_bSendBuf) > BLINKER_MAX_SEND_SIZE) {
-                BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+                BLINKER_ERR_LOG1(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
                 return;
             }
 
