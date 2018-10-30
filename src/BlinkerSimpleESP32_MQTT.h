@@ -27,7 +27,7 @@ class BlinkerSimpleESP32_MQTT
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             Base::loadTimer();
-            BLINKER_LOG1("ESP32_MQTT initialized...");
+            BLINKER_LOG1(BLINKER_F("ESP32_MQTT initialized..."));
         }
 // #endif
 #elif defined(BLINKER_APCONFIG)
@@ -44,7 +44,7 @@ class BlinkerSimpleESP32_MQTT
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             Base::loadTimer();
-            BLINKER_LOG1("ESP8266_WiFi initialized...");
+            BLINKER_LOG1(BLINKER_F("ESP8266_WiFi initialized..."));
         }
 #else
         void begin( const char* _auth,
@@ -56,7 +56,7 @@ class BlinkerSimpleESP32_MQTT
             this->conn.begin(_auth);
             strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             Base::loadTimer();
-            BLINKER_LOG1("ESP32_MQTT initialized...");
+            BLINKER_LOG1(BLINKER_F("ESP32_MQTT initialized..."));
         }
 #endif
 
@@ -74,9 +74,9 @@ class BlinkerSimpleESP32_MQTT
             delay(100);
 
             _server->begin();
-            BLINKER_LOG2(F("AP IP address: "), WiFi.softAPIP());
-            BLINKER_LOG1("HTTP _server started");
-            BLINKER_LOG1(String("URL: http://" + WiFi.softAPIP()));
+            BLINKER_LOG2(BLINKER_F("AP IP address: "), WiFi.softAPIP());
+            BLINKER_LOG1(BLINKER_F("HTTP _server started"));
+            BLINKER_LOG2(BLINKER_F("URL: http://"), WiFi.softAPIP());
         }
 
         void serverClient()
@@ -90,7 +90,7 @@ class BlinkerSimpleESP32_MQTT
                 if (!_client.connected())
                 {
                     _client.stop();
-                    BLINKER_LOG1(F("Connection closed on _client"));
+                    BLINKER_LOG1(BLINKER_F("Connection closed on _client"));
                 }
                 else
                 {
@@ -125,7 +125,7 @@ class BlinkerSimpleESP32_MQTT
 
         bool parseUrl(String data)
         {
-            BLINKER_LOG2("APCONFIG data: ", data);
+            BLINKER_LOG2(BLINKER_F("APCONFIG data: "), data);
             DynamicJsonBuffer jsonBuffer;
             JsonObject& wifi_data = jsonBuffer.parseObject(data);
 
@@ -136,8 +136,8 @@ class BlinkerSimpleESP32_MQTT
             String _ssid = wifi_data["ssid"];
             String _pswd = wifi_data["pswd"];
 
-            BLINKER_LOG2("ssid: ", _ssid);
-            BLINKER_LOG2("pswd: ", _pswd);
+            BLINKER_LOG2(BLINKER_F("ssid: "), _ssid);
+            BLINKER_LOG2(BLINKER_F("pswd: "), _pswd);
 
             free(_server);
             connectWiFi(_ssid, _pswd);
@@ -152,8 +152,8 @@ class BlinkerSimpleESP32_MQTT
 
             WiFi.begin();
             ::delay(500);
-            BLINKER_LOG3("Waiting for WiFi ",BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
-                "s, will enter SMARTCONFIG or APCONFIG while WiFi not connect!");
+            BLINKER_LOG3(BLINKER_F("Waiting for WiFi "),BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
+                BLINKER_F("s, will enter SMARTCONFIG or APCONFIG while WiFi not connect!"));
             uint8_t _times = 0;
             while (WiFi.status() != WL_CONNECTED) {
                 ::delay(500);
@@ -163,9 +163,9 @@ class BlinkerSimpleESP32_MQTT
 
             if (WiFi.status() != WL_CONNECTED) return false;
             else {
-                BLINKER_LOG1("WiFi Connected.");
+                BLINKER_LOG1(BLINKER_F("WiFi Connected."));
 
-                BLINKER_LOG1("IP Address: ");
+                BLINKER_LOG1(BLINKER_F("IP Address: "));
                 BLINKER_LOG1(WiFi.localIP());
 
                 // mDNSInit();
@@ -180,21 +180,21 @@ class BlinkerSimpleESP32_MQTT
             WiFi.setHostname(_hostname.c_str());
             WiFi.beginSmartConfig();
             
-            BLINKER_LOG1("Waiting for SmartConfig.");
+            BLINKER_LOG1(BLINKER_F("Waiting for SmartConfig."));
             while (!WiFi.smartConfigDone()) {
                 ::delay(500);
             }
 
-            BLINKER_LOG1("SmartConfig received.");
+            BLINKER_LOG1(BLINKER_F("SmartConfig received."));
             
-            BLINKER_LOG1("Waiting for WiFi");
+            BLINKER_LOG1(BLINKER_F("Waiting for WiFi"));
             while (WiFi.status() != WL_CONNECTED) {
                 ::delay(500);
             }
 
-            BLINKER_LOG1("WiFi Connected.");
+            BLINKER_LOG1(BLINKER_F("WiFi Connected."));
 
-            BLINKER_LOG1("IP Address: ");
+            BLINKER_LOG1(BLINKER_F("IP Address: "));
             BLINKER_LOG1(WiFi.localIP());
 
             // mDNSInit();
@@ -210,7 +210,7 @@ class BlinkerSimpleESP32_MQTT
         {
             uint32_t connectTime = millis();
 
-            BLINKER_LOG2(("Connecting to "), _ssid);
+            BLINKER_LOG2(BLINKER_F("Connecting to "), _ssid);
             
             WiFi.mode(WIFI_STA);
             String _hostname = "DiyArduinoMQTT_" + macDeviceName();
@@ -228,14 +228,14 @@ class BlinkerSimpleESP32_MQTT
 
                 if (millis() - connectTime > BLINKER_CONNECT_TIMEOUT_MS && WiFi.status() != WL_CONNECTED) {
                     connectTime = millis();
-                    BLINKER_LOG1(("WiFi connect timeout, please check ssid and pswd!"));
-                    BLINKER_LOG1(("Retring WiFi connect again!"));
+                    BLINKER_LOG1(BLINKER_F("WiFi connect timeout, please check ssid and pswd!"));
+                    BLINKER_LOG1(BLINKER_F("Retring WiFi connect again!"));
                 }
             }
-            BLINKER_LOG1(("Connected"));
+            BLINKER_LOG1(BLINKER_F("Connected"));
 
             IPAddress myip = WiFi.localIP();
-            BLINKER_LOG2(("Your IP is: "), myip);
+            BLINKER_LOG2(BLINKER_F("Your IP is: "), myip);
 
             // mDNSInit();
         }

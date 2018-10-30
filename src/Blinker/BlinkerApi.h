@@ -1192,7 +1192,7 @@ class BlinkerApi
 
             int8_t num = checkNum(_name, _Data, data_dataCount);
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("dataStorage num: ", num);
+            BLINKER_LOG2(BLINKER_F("dataStorage num: "), num);
     #endif
             if( num == BLINKER_OBJECT_NOT_AVAIL ) {
                 if (data_dataCount == BLINKER_MAX_BLINKER_DATA_SIZE) {
@@ -1209,8 +1209,8 @@ class BlinkerApi
                 _Data[num]->saveData(_msg);
             }
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG3(_name, " save: ", _msg);
-            BLINKER_LOG2("data_dataCount: ", data_dataCount);
+            BLINKER_LOG3(_name, BLINKER_F(" save: "), _msg);
+            BLINKER_LOG2(BLINKER_F("data_dataCount: "), data_dataCount);
     #endif
         }
 
@@ -1221,7 +1221,7 @@ class BlinkerApi
             // String _sdata;
 
             if (!data_dataCount) {
-                BLINKER_ERR_LOG1("none data storaged!");
+                BLINKER_ERR_LOG1(BLINKER_F("none data storaged!"));
                 return false;
             }
 
@@ -1233,13 +1233,13 @@ class BlinkerApi
                     data += ",";
                 }
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG4("num: ", _num, " name: ", _Data[_num]->getName());
+                BLINKER_LOG4(BLINKER_F("num: "), _num, BLINKER_F(" name: "), _Data[_num]->getName());
     #endif
             }
 
             data += "}}";
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("dataUpdate: ", data);
+            BLINKER_LOG2(BLINKER_F("dataUpdate: "), data);
     #endif
             // return true;
                             //  + \ _msg + \
@@ -1452,7 +1452,7 @@ class BlinkerApi
         }
 
         void loadTimer() {
-            BLINKER_LOG1((
+            BLINKER_LOG1(BLINKER_F(
                 "\n==========================================================="
                 "\n================== Blinker Timer loaded! =================="
                 "\nWarning!EEPROM address 1536-2431 is used for Blinker Timer!"
@@ -1909,7 +1909,7 @@ class BlinkerApi
 
                 _fresh = true;
     #if defined(BLINKER_DEBUG_ALL)
-                BLINKER_LOG2("strWidgetsParse: ", _wName);
+                BLINKER_LOG2(BLINKER_F("strWidgetsParse: "), _wName);
     #endif
                 callback_with_string_arg_t nbFunc = _Widgets_str[num]->getFunc();
                 if (nbFunc) {
@@ -2047,7 +2047,7 @@ class BlinkerApi
                     _timer += _cdState ? "1":"0";
                     _timer += _lpState ? "1":"0";
     #if defined(BLINKER_DEBUG_ALL)
-                    BLINKER_LOG2("timer codes: ", _timer);
+                    BLINKER_LOG2(BLINKER_F("timer codes: "), _timer);
     #endif
                     static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
                     // static_cast<Proto*>(this)->printJson(timerSetting());
@@ -2063,7 +2063,7 @@ class BlinkerApi
                             summary_data = summary_data.substring(0, BLINKER_MAX_SUMMARY_DATA_SIZE);
 
     #if defined(BLINKER_DEBUG_ALL)
-                            BLINKER_LOG2("summary_data: ", summary_data);
+                            BLINKER_LOG2(BLINKER_F("summary_data: "), summary_data);
     #endif
 
                             static_cast<Proto*>(this)->print(BLINKER_CMD_SUMMARY, summary_data);
@@ -2251,7 +2251,7 @@ class BlinkerApi
                             summary_data = summary_data.substring(0, BLINKER_MAX_SUMMARY_DATA_SIZE);
 
     #if defined(BLINKER_DEBUG_ALL)
-                            BLINKER_LOG2("summary_data: ", summary_data);
+                            BLINKER_LOG2(BLINKER_F("summary_data: "), summary_data);
     #endif
 
                             static_cast<Proto*>(this)->print(BLINKER_CMD_SUMMARY, summary_data);
@@ -2605,7 +2605,7 @@ class BlinkerApi
     #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("disable timerData: "), timingTask[task]->getTimerData());
                     // BLINKER_LOG2(BLINKER_F("disable _tmAction_: "), _tmAction_);
-                    BLINKER_LOG2(F("disableTask: "), task);
+                    BLINKER_LOG2(BLINKER_F("disableTask: "), task);
     #endif
                 }
             }
@@ -2622,7 +2622,9 @@ class BlinkerApi
             uint32_t nowSeconds = dtime();
 
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG6("freshTiming wDay: ", wDay, ", nowMins: ", nowMins, ", nowSeconds: ", nowSeconds);
+            BLINKER_LOG6(BLINKER_F("freshTiming wDay: "), wDay, 
+                        BLINKER_F(", nowMins: "), nowMins, 
+                        BLINKER_F(", nowSeconds: "), nowSeconds);
     #endif
 
             for (uint8_t task = 0; task < taskCount; task++) {
@@ -2639,11 +2641,13 @@ class BlinkerApi
                     }
                 }
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2("isTimingDay: ", timingTask[task]->isTimingDay(wDay));
-                BLINKER_LOG2("state: ", timingTask[task]->state());
-                BLINKER_LOG2("getTime: ", timingTask[task]->getTime());
+                BLINKER_LOG2(BLINKER_F("isTimingDay: "), timingTask[task]->isTimingDay(wDay));
+                BLINKER_LOG2(BLINKER_F("state: "), timingTask[task]->state());
+                BLINKER_LOG2(BLINKER_F("getTime: "), timingTask[task]->getTime());
 
-                BLINKER_LOG6("for nextTask: ", nextTask, "  apartSeconds: ", apartSeconds, " wDay: ", wDay);
+                BLINKER_LOG6(BLINKER_F("for nextTask: "), nextTask, 
+                            BLINKER_F("  apartSeconds: "), apartSeconds, 
+                            BLINKER_F(" wDay: "), wDay);
     #endif
             }
 
@@ -2652,24 +2656,28 @@ class BlinkerApi
 
                 // apartSeconds = apartSeconds / 60 / 30;
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG6("nextTask: ", nextTask, "  apartSeconds: ", apartSeconds, " wDay: ", wDay);
+                BLINKER_LOG6(BLINKER_F("nextTask: "), nextTask, 
+                            BLINKER_F("  apartSeconds: "), apartSeconds, 
+                            BLINKER_F(" wDay: "), wDay);
     #endif
                 cbackData = nextTask;
             }
             else {
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG6("nextTask: ", nextTask, "  apartSeconds: ", apartSeconds, " wDay: ", wDay);
+                BLINKER_LOG6(BLINKER_F("nextTask: "), nextTask, 
+                            BLINKER_F("  apartSeconds: "), apartSeconds, 
+                            BLINKER_F(" wDay: "), wDay);
     #endif
                 cbackData = nextTask;
             }
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("cbackData: ", cbackData);
+            BLINKER_LOG2(BLINKER_F("cbackData: "), cbackData);
     #endif
 
             if (apartSeconds > BLINKER_ONE_HOUR_TIME) {
                 apartSeconds = BLINKER_ONE_HOUR_TIME;
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("change apartSeconds: ", apartSeconds);
+            BLINKER_LOG2(BLINKER_F("change apartSeconds: "), apartSeconds);
     #endif
             }
 
@@ -2691,7 +2699,7 @@ class BlinkerApi
 
                 taskCount--;
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG3(("delete task: "), taskDel, " success!");
+                BLINKER_LOG3(BLINKER_F("delete task: "), taskDel, BLINKER_F(" success!"));
     #endif
                 uint8_t  wDay = wday();
                 uint16_t nowMins = hour() * 60 + minute();
@@ -2699,7 +2707,7 @@ class BlinkerApi
             }
             else {
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1("none task to delete!");
+                BLINKER_LOG1(BLINKER_F("none task to delete!"));
     #endif
             }
         }
@@ -2707,15 +2715,15 @@ class BlinkerApi
         // void addTimingTask(uint8_t taskSet, uint32_t timerData, String action, String text) {
         void addTimingTask(uint8_t taskSet, uint32_t timerData, String action) {
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("addTimingTask taskSet: ", taskSet);
-            BLINKER_LOG2("addTimingTask timerData: ", timerData);
+            BLINKER_LOG2(BLINKER_F("addTimingTask taskSet: "), taskSet);
+            BLINKER_LOG2(BLINKER_F("addTimingTask timerData: "), timerData);
     #endif
             if (taskSet <= taskCount && taskCount <= BLINKER_TIMING_TIMER_SIZE) {
                 // tmTicker.detach();
 
                 if (taskSet == taskCount) {
                     if (taskCount == BLINKER_TIMING_TIMER_SIZE) {
-                        BLINKER_ERR_LOG1("timing timer task is full");
+                        BLINKER_ERR_LOG1(BLINKER_F("timing timer task is full"));
                         return;
                     }
                     // timingTask[taskSet] = new BlinkerTimingTimer(timerData, action, text);
@@ -2745,7 +2753,7 @@ class BlinkerApi
             }
             else {
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1("timing timer task is full");
+                BLINKER_ERR_LOG1(BLINKER_F("timing timer task is full"));
     #endif
             }
         }
@@ -2978,7 +2986,7 @@ class BlinkerApi
                             String _action = data[BLINKER_CMD_SET][BLINKER_CMD_COUNTDOWN][BLINKER_CMD_ACTION];
 
                             if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE) {
-                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                BLINKER_ERR_LOG1(BLINKER_F("TIMER ACTION TOO LONG"));
                                 return true;
                             }
 
@@ -3129,12 +3137,12 @@ class BlinkerApi
                             String _action2 = data[BLINKER_CMD_SET][BLINKER_CMD_LOOP][BLINKER_CMD_ACTION2];
 
                             if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE) {
-                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                BLINKER_ERR_LOG1(BLINKER_F("TIMER ACTION TOO LONG"));
                                 return true;
                             }
 
                             if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE) {
-                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                BLINKER_ERR_LOG1(BLINKER_F("TIMER ACTION TOO LONG"));
                                 return true;
                             }
 
@@ -3164,12 +3172,12 @@ class BlinkerApi
                             String _action2 = data[BLINKER_CMD_LOOP][BLINKER_CMD_ACTION2];
 
                             if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE) {
-                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                BLINKER_ERR_LOG1(BLINKER_F("TIMER ACTION TOO LONG"));
                                 return true;
                             }
 
                             if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE) {
-                                BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                                BLINKER_ERR_LOG1(BLINKER_F("TIMER ACTION TOO LONG"));
                                 return true;
                             }
 
@@ -3309,7 +3317,7 @@ class BlinkerApi
                         // _tmAction = _action;
 
                         if (tm_action.length() > BLINKER_TIMER_TIMING_ACTION_SIZE) {
-                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            BLINKER_ERR_LOG1(BLINKER_F("TIMER ACTION TOO LONG"));
                             return true;
                         }
 
@@ -3412,7 +3420,7 @@ class BlinkerApi
                         // _tmAction = _action;
 
                         if (tm_action.length() > BLINKER_TIMER_TIMING_ACTION_SIZE) {
-                            BLINKER_ERR_LOG1("TIMER ACTION TOO LONG");
+                            BLINKER_ERR_LOG1(BLINKER_F("TIMER ACTION TOO LONG"));
                             return true;
                         }
 
@@ -3632,13 +3640,13 @@ class BlinkerApi
                     // timingDayStr += String((day < 6) ? ((timingDay >> (day + 1)) ? ",":""):"");
                 }
 
-                BLINKER_LOG2(F("timingDayStr: "), timingDayStr);
+                BLINKER_LOG2(BLINKER_F("timingDayStr: "), timingDayStr);
 
             }
             else {
                 timingDayStr = "0000000";
 
-                BLINKER_LOG2(F("timingDayStr: "), timingDay);
+                BLINKER_LOG2(BLINKER_F("timingDayStr: "), timingDay);
             }
 
             String timingConfig = "{\""BLINKER_CMD_TASK"\":" + STRING_format(task) + \
@@ -3665,7 +3673,7 @@ class BlinkerApi
             }
             timingTaskStr += "]}";
             
-            BLINKER_LOG2(F("timingTaskStr: "), timingTaskStr);
+            BLINKER_LOG2(BLINKER_F("timingTaskStr: "), timingTaskStr);
             
             return timingTaskStr;
         }
@@ -3847,7 +3855,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_PUSH_NUMBER :
@@ -3862,7 +3870,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                     // return BLINKER_CMD_FALSE;
@@ -3877,7 +3885,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_AQI_NUMBER :
@@ -3889,7 +3897,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_BRIDGE_NUMBER :
@@ -3901,7 +3909,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
@@ -3916,7 +3924,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_CONFIG_GET_NUMBER :
@@ -3928,7 +3936,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_CONFIG_DELETE_NUMBER :
@@ -3940,7 +3948,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_DATA_STORAGE_NUMBER :
@@ -3955,7 +3963,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_DATA_GET_NUMBER :
@@ -3967,7 +3975,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_DATA_DELETE_NUMBER :
@@ -3979,7 +3987,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 case BLINKER_CMD_AUTO_PULL_NUMBER :
@@ -3991,7 +3999,7 @@ class BlinkerApi
 
                     client_s.print(client_msg);
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("client_msg: ", client_msg);
+                    BLINKER_LOG2(BLINKER_F("client_msg: "), client_msg);
         #endif
                     break;
                 default :
@@ -4072,7 +4080,7 @@ class BlinkerApi
                     }
                     _smsTime = millis();
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
         #endif
                     break;
                 case BLINKER_CMD_PUSH_NUMBER :
@@ -4092,7 +4100,7 @@ class BlinkerApi
                     }
                     _pushTime = millis();
         #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
         #endif
                     break;
                     // return BLINKER_CMD_FALSE;
@@ -4115,7 +4123,7 @@ class BlinkerApi
                     }
                     _weatherTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 case BLINKER_CMD_AQI_NUMBER :
@@ -4135,7 +4143,7 @@ class BlinkerApi
                     }
                     _aqiTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 case BLINKER_CMD_BRIDGE_NUMBER :
@@ -4151,7 +4159,7 @@ class BlinkerApi
                         }
                     }
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
@@ -4168,7 +4176,7 @@ class BlinkerApi
                     }
                     _cUpdateTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 case BLINKER_CMD_CONFIG_GET_NUMBER :
@@ -4185,7 +4193,7 @@ class BlinkerApi
                     }
                     _cGetTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 case BLINKER_CMD_CONFIG_DELETE_NUMBER :
@@ -4202,7 +4210,7 @@ class BlinkerApi
                     }
                     _cDelTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 case BLINKER_CMD_DATA_STORAGE_NUMBER :
@@ -4219,7 +4227,7 @@ class BlinkerApi
                     }
                     _dUpdateTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 case BLINKER_CMD_DATA_GET_NUMBER :
@@ -4236,7 +4244,7 @@ class BlinkerApi
                     }
                     _dGetTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 case BLINKER_CMD_DATA_DELETE_NUMBER :
@@ -4253,7 +4261,7 @@ class BlinkerApi
                     }
                     _dDelTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 case BLINKER_CMD_AUTO_PULL_NUMBER :
@@ -4270,7 +4278,7 @@ class BlinkerApi
                     }
                     _autoPullTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2("_dataGet: ", _dataGet);
+                    BLINKER_LOG2(BLINKER_F("_dataGet: "), _dataGet);
             #endif
                     break;
                 default :
@@ -4466,7 +4474,7 @@ class BlinkerApi
                             }
                             _smsTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_PUSH_NUMBER :
@@ -4486,7 +4494,7 @@ class BlinkerApi
                             }
                             _pushTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                             // return BLINKER_CMD_FALSE;
@@ -4509,7 +4517,7 @@ class BlinkerApi
                             }
                             _weatherTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
@@ -4529,7 +4537,7 @@ class BlinkerApi
                             }
                             _aqiTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
@@ -4545,7 +4553,7 @@ class BlinkerApi
                                 }
                             }
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
@@ -4562,7 +4570,7 @@ class BlinkerApi
                             }
                             _cUpdateTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_CONFIG_GET_NUMBER :
@@ -4579,7 +4587,7 @@ class BlinkerApi
                             }
                             _cGetTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_CONFIG_DELETE_NUMBER :
@@ -4596,7 +4604,7 @@ class BlinkerApi
                             }
                             _cDelTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_DATA_STORAGE_NUMBER :
@@ -4613,7 +4621,7 @@ class BlinkerApi
                             }
                             _dUpdateTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_DATA_GET_NUMBER :
@@ -4630,7 +4638,7 @@ class BlinkerApi
                             }
                             _dGetTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_DATA_DELETE_NUMBER :
@@ -4647,7 +4655,7 @@ class BlinkerApi
                             }
                             _dDelTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         case BLINKER_CMD_AUTO_PULL_NUMBER :
@@ -4664,7 +4672,7 @@ class BlinkerApi
                             }
                             _autoPullTime = millis();
             #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2("payload: ", payload);
+                            BLINKER_LOG2(BLINKER_F("payload: "), payload);
             #endif
                             break;
                         default :
@@ -4945,8 +4953,8 @@ class BlinkerApi
             uint32_t _pressedTime = millis() - _startTime;
 
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG4("_stopTime: ", millis(), " ,_startTime: ", _startTime);
-            BLINKER_LOG2("long pressed time: ", _pressedTime);
+            BLINKER_LOG4(BLINKER_F("_stopTime: "), millis(), BLINKER_F(" ,_startTime: "), _startTime);
+            BLINKER_LOG2(BLINKER_F("long pressed time: "), _pressedTime);
     #endif
 
     #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
