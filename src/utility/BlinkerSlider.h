@@ -14,9 +14,6 @@ class BlinkerSlider
 
             sliderName = (char*)malloc((_name.length()+1)*sizeof(char));
             strcpy(sliderName, _name.c_str());
-
-            // textClr = (char*)malloc(1*sizeof(char));
-            // textClr[0] = '\0';
         }
         
         void attach(callback_with_int32_arg_t _func)
@@ -28,12 +25,8 @@ class BlinkerSlider
             Blinker.freshAttachWidget(sliderName, _func);
         }
         
-        void color(const String & _clr) { 
-            // textClr = _clr; 
-            // if (strlen(textClr)) free(textClr);
-            
+        void color(const String & _clr) {
             textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
-            // textClr = (char*)realloc(textClr, (_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());
 
             _fresh |= 0x01 << 0;
@@ -69,17 +62,16 @@ class BlinkerSlider
             }
 
             // if (textClr.length()) {
-            if (textClr && (_fresh >> 0 & 0x01)) {
+            // if (textClr && (_fresh >> 0 & 0x01)) {
+            if (_fresh >> 0 & 0x01) {
                 if (sliderData.length()) sliderData += BLINKER_F(",");
                 else sliderData += BLINKER_F("{");
 
                 sliderData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
                 sliderData += (textClr);
                 sliderData += BLINKER_F("\"");
-                free(textClr);
 
-                // textClr = (char*)realloc(textClr, 1*sizeof(char));
-                // textClr[0] = '\0';
+                free(textClr);
             }
 
             sliderData += BLINKER_F("}");
