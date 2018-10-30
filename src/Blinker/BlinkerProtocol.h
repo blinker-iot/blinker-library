@@ -1021,33 +1021,55 @@ class BlinkerProtocol
             // }
 
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG4(BLINKER_F("autoFormatData key: "), key, BLINKER_F(", jsonValue: "), jsonValue);
+            BLINKER_LOG4(BLINKER_F("autoFormatData key: "), key, BLINKER_F(", json: "), jsonValue);
     #endif
-
-            DynamicJsonBuffer jsonSendBuffer;
 
             String _data;
 
-            if (strlen(_sendBuf)) {
+            if (STRING_contains_string(STRING_format(_sendBuf), key)) {
+
+                DynamicJsonBuffer jsonSendBuffer;                
+
+                if (strlen(_sendBuf)) {
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("autoFormatData add"));
+                    BLINKER_LOG1(BLINKER_F("add"));
     #endif
-                JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
+                    JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
 
-                if (root.containsKey(key)) {
-                    root.remove(key);
+                    if (root.containsKey(key)) {
+                        root.remove(key);
+                    }
+                    root.printTo(_data);
+
+                    _data = _data.substring(0, _data.length() - 1);
+
+                    _data += "," + jsonValue + "}";
                 }
-                root.printTo(_data);
-
-                _data = _data.substring(0, _data.length() - 1);
-
-                _data += "," + jsonValue + "}";
+                else {
+    #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG1(BLINKER_F("new"));
+    #endif
+                    _data = "{" + jsonValue + "}";
+                }
             }
             else {
+                _data = STRING_format(_sendBuf);
+
+                if (_data.length()) {
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("autoFormatData new"));
+                    BLINKER_LOG1(BLINKER_F("add."));
+    #endif                    
+
+                    _data = _data.substring(0, _data.length() - 1);
+
+                    _data += "," + jsonValue + "}";
+                }
+                else {
+    #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG1(BLINKER_F("new."));
     #endif
-                _data = "{" + jsonValue + "}";
+                    _data = "{" + jsonValue + "}";
+                }
             }
 
             if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE) {

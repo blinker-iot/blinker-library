@@ -51,7 +51,7 @@ class BlinkerButton
             bicon = (char*)malloc((_icon.length()+1)*sizeof(char));
             strcpy(bicon, _icon.c_str());
 
-            BLINKER_LOG2(BLINKER_F("bicon: "), bicon);
+            // BLINKER_LOG2(BLINKER_F("bicon: "), bicon);
 
             _fresh |= 0x01 << 0;
         }
@@ -63,7 +63,7 @@ class BlinkerButton
             iconClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(iconClr, _clr.c_str());
 
-            BLINKER_LOG2(BLINKER_F("iconClr: "), iconClr);
+            // BLINKER_LOG2(BLINKER_F("iconClr: "), iconClr);
 
             _fresh |= 0x01 << 1;
         }
@@ -77,7 +77,7 @@ class BlinkerButton
             bcon = (char*)malloc((_bcon.length()+1)*sizeof(char));
             strcpy(bcon, _bcon.c_str());
 
-            BLINKER_LOG2(BLINKER_F("bcon: "), bcon);
+            // BLINKER_LOG2(BLINKER_F("bcon: "), bcon);
 
             _fresh |= 0x01 << 2;
         }
@@ -91,7 +91,7 @@ class BlinkerButton
             btext = (char*)malloc((_btext.length()+1)*sizeof(char));
             strcpy(btext, _btext.c_str());
 
-            BLINKER_LOG2(BLINKER_F("btext: "), btext);
+            // BLINKER_LOG2(BLINKER_F("btext: "), btext);
 
             _fresh |= 0x01 << 3;
         }
@@ -105,7 +105,7 @@ class BlinkerButton
             btext = (char*)malloc((_btext.length()+1)*sizeof(char));
             strcpy(btext, _btext.c_str());
 
-            BLINKER_LOG2(BLINKER_F("btext: "), btext);
+            // BLINKER_LOG2(BLINKER_F("btext: "), btext);
 
             _fresh |= 0x01 << 3;
 
@@ -114,7 +114,7 @@ class BlinkerButton
             btext1 = (char*)malloc((_btext.length()+1)*sizeof(char));
             strcpy(btext1, _btext.c_str());
 
-            BLINKER_LOG2(BLINKER_F("btext1: "), btext1);
+            // BLINKER_LOG2(BLINKER_F("btext1: "), btext1);
 
             _fresh |= 0x01 << 4;
         }
@@ -126,7 +126,7 @@ class BlinkerButton
             textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());
 
-            BLINKER_LOG2(BLINKER_F("textClr: "), textClr);
+            // BLINKER_LOG2(BLINKER_F("textClr: "), textClr);
 
             _fresh |= 0x01 << 5;
         }
@@ -142,10 +142,10 @@ class BlinkerButton
             // String buttonData = "{\"" + _state + "\",\"" + bicon + \
             //                     "\",\"" + iconClr + "\",\"" + btext + \
             //                     "\",\"" + textClr + "\"}";
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("button _state: "), _state);
+// #ifdef BLINKER_DEBUG_ALL
+            // BLINKER_LOG2(BLINKER_F("button _state: "), _state);
 
-            BLINKER_LOG2(BLINKER_F("button _fresh: "), _fresh);
+            // BLINKER_LOG2(BLINKER_F("button _fresh: "), _fresh);
 
             // BLINKER_LOG2(BLINKER_F("bicon: "), bicon == NULL);
             // BLINKER_LOG2(BLINKER_F("iconClr: "), iconClr == NULL);
@@ -156,7 +156,7 @@ class BlinkerButton
             // BLINKER_LOG2(BLINKER_F("strlen(btext): "), strlen(btext));
             // BLINKER_LOG2(BLINKER_F("strlen(btext1): "), strlen(btext1));
             // BLINKER_LOG2(BLINKER_F("strlen(textClr): "), strlen(textClr));
-#endif
+// #endif
             String buttonData;
 
             if (_state.length()) {
@@ -175,8 +175,8 @@ class BlinkerButton
             //     buttonData += ",\""BLINKER_CMD_ICON"\":\"" + (bicon) + "\"";
             // if (strlen(bicon) > 1) {
             
-            BLINKER_LOG2(BLINKER_F("buttonData: "), buttonData);
-            BLINKER_LOG2(BLINKER_F("buttonData.length(): "), buttonData.length());
+            // BLINKER_LOG2(BLINKER_F("buttonData: "), buttonData);
+            // BLINKER_LOG2(BLINKER_F("buttonData.length(): "), buttonData.length());
 
             if (bicon && (_fresh >> 0 & 0x01)) {
                 // BLINKER_LOG2(BLINKER_F("bicon: "), strlen(bicon));
@@ -279,8 +279,8 @@ class BlinkerButton
 
             _fresh = 0;
 
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("buttonData: "), buttonData);
+// #ifdef BLINKER_DEBUG_ALL
+            // BLINKER_LOG2(BLINKER_F("buttonData: "), buttonData);
 
 //             BLINKER_LOG4(BLINKER_F("bicon: "), bicon, " ,", bicon.length());
 //             BLINKER_LOG4(BLINKER_F("iconClr: "), iconClr, " ,", iconClr.length());
@@ -288,7 +288,7 @@ class BlinkerButton
 //             BLINKER_LOG4(BLINKER_F("btext: "), btext, " ,", btext.length());
 //             BLINKER_LOG4(BLINKER_F("btext1: "), btext1, " ,", btext1.length());
 //             BLINKER_LOG4(BLINKER_F("textClr: "), textClr, " ,", textClr.length());
-#endif
+// #endif
 
             Blinker.printArray(buttonName, buttonData);
 
