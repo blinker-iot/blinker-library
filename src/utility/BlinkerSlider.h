@@ -10,10 +10,12 @@ class BlinkerSlider
         BlinkerSlider(const String & _name, callback_with_int32_arg_t _func = NULL)
             // : sliderName(_name)
         {
-            registered = Blinker.attachWidget(_name, _func);
+            wNum = Blinker.attachWidget(_name, _func);
 
-            sliderName = (char*)malloc((_name.length()+1)*sizeof(char));
-            strcpy(sliderName, _name.c_str());
+            wNum ? (registered = true) : (registered = false);
+
+            // sliderName = (char*)malloc((_name.length()+1)*sizeof(char));
+            // strcpy(sliderName, _name.c_str());
         }
         
         void attach(callback_with_int32_arg_t _func)
@@ -22,7 +24,7 @@ class BlinkerSlider
                 return;
             }
 
-            Blinker.freshAttachWidget(sliderName, _func);
+            Blinker.freshAttachWidget(Blinker.widgetName_int(wNum), _func);
         }
         
         void color(const String & _clr) {
@@ -43,7 +45,8 @@ class BlinkerSlider
     
     private :
         // String sliderName;
-        char * sliderName;
+        // char * sliderName;
+        uint8_t wNum;
         bool registered = false;
         // String textClr = "";
         char * textClr;// = "";
@@ -78,7 +81,7 @@ class BlinkerSlider
 
             _fresh = 0;
 
-            Blinker.printArray(sliderName, sliderData);
+            Blinker.printArray(Blinker.widgetName_int(wNum), sliderData);
 
             // textClr = "";
         }
