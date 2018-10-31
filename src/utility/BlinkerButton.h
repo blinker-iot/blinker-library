@@ -10,10 +10,12 @@ class BlinkerButton
         BlinkerButton(const String & _name, callback_with_string_arg_t _func = NULL)
             // : buttonName(_name)
         {
-            registered = Blinker.attachWidget(_name, _func);
+            wNum = Blinker.attachWidget(_name, _func);
 
-            buttonName = (char*)malloc((_name.length()+1)*sizeof(char));
-            strcpy(buttonName, _name.c_str());
+            wNum ? (registered = true) : (registered = false);
+
+            // buttonName = (char*)malloc((_name.length()+1)*sizeof(char));
+            // strcpy(buttonName, _name.c_str());
         }
 
         void attach(callback_with_string_arg_t _func)
@@ -22,7 +24,7 @@ class BlinkerButton
                 return;
             }
 
-            Blinker.freshAttachWidget(buttonName, _func);
+            Blinker.freshAttachWidget(Blinker.widgetName_str(wNum), _func);
         }
 
         void icon(const String & _icon) {
@@ -171,11 +173,12 @@ class BlinkerButton
 
             _fresh = 0;
 
-            Blinker.printArray(buttonName, buttonData);
+            Blinker.printArray(Blinker.widgetName_str(wNum), buttonData);
         }
 
     private :
-        char * buttonName;
+        // char * buttonName;
+        uint8_t wNum;
         
         bool registered = false;
         

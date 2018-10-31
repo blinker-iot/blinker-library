@@ -755,7 +755,7 @@ class BlinkerApi
             }
         }
 
-        bool attachWidget(const String & _name, callback_with_joy_arg_t _func) {
+        uint8_t attachWidget(const String & _name, callback_with_joy_arg_t _func) {
             int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 if (_wCount_joy < BLINKER_MAX_WIDGET_SIZE) {
@@ -764,19 +764,24 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4(BLINKER_F("new widgets: "), _name, BLINKER_F(" _wCount_joy: "), _wCount_joy);
 #endif
-                    return true;
+                    return _wCount_joy;
                 }
                 else {
-                    return false;
+                    return 0;
                 }
             }
             else if(num >= 0 ) {
                 BLINKER_ERR_LOG3(BLINKER_F("widgets name > "), _name, BLINKER_F(" < has been registered, please register another name!"));
-                return false;
+                return 0;
             }
             else {
-                return false;
+                return 0;
             }
+        }
+
+        String widgetName_joy(uint8_t num) {
+            if (num) return _Widgets_joy[num - 1]->getName();
+            else return "";
         }
 
         void freshAttachWidget(const String & _name, callback_with_rgb_arg_t _func) {
@@ -786,7 +791,7 @@ class BlinkerApi
             }
         }
 
-        bool attachWidget(const String & _name, callback_with_rgb_arg_t _func) {
+        uint8_t attachWidget(const String & _name, callback_with_rgb_arg_t _func) {
             int8_t num = checkNum(_name, _Widgets_rgb, _wCount_rgb);
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 if (_wCount_rgb < BLINKER_MAX_WIDGET_SIZE) {
@@ -795,19 +800,24 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4(BLINKER_F("new widgets: "), _name, BLINKER_F(" _wCount_rgb: "), _wCount_rgb);
 #endif
-                    return true;
+                    return _wCount_rgb;
                 }
                 else {
-                    return false;
+                    return 0;
                 }
             }
             else if(num >= 0 ) {
                 BLINKER_ERR_LOG3(BLINKER_F("widgets name > "), _name, BLINKER_F(" < has been registered, please register another name!"));
-                return false;
+                return 0;
             }
             else {
-                return false;
+                return 0;
             }
+        }
+
+        String widgetName_rgb(uint8_t num) {
+            if (num) return _Widgets_rgb[num - 1]->getName();
+            else return "";
         }
 
         void freshAttachWidget(const String & _name, callback_with_int32_arg_t _func) {
@@ -817,7 +827,7 @@ class BlinkerApi
             }
         }
 
-        bool attachWidget(const String & _name, callback_with_int32_arg_t _func) {
+        uint8_t attachWidget(const String & _name, callback_with_int32_arg_t _func) {
             int8_t num = checkNum(_name, _Widgets_int, _wCount_int);
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 if (_wCount_int < BLINKER_MAX_WIDGET_SIZE) {
@@ -826,19 +836,24 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4(BLINKER_F("new widgets: "), _name, BLINKER_F(" _wCount_int: "), _wCount_int);
 #endif
-                    return true;
+                    return _wCount_int;
                 }
                 else {
-                    return false;
+                    return 0;
                 }
             }
             else if(num >= 0 ) {
                 BLINKER_ERR_LOG3(BLINKER_F("widgets name > "), _name, BLINKER_F(" < has been registered, please register another name!"));
-                return false;
+                return 0;
             }
             else {
-                return false;
+                return 0;
             }
+        }
+
+        String widgetName_int(uint8_t num) {
+            if (num) return _Widgets_int[num - 1]->getName();
+            else return "";
         }
 
         void freshAttachWidget(const String & _name, callback_with_string_arg_t _func) {
@@ -854,7 +869,7 @@ class BlinkerApi
             // BLINKER_LOG2("getName: ", _Widgets_str[num]->getName());
         }
 
-        bool attachWidget(const String & _name, callback_with_string_arg_t _func) {
+        uint8_t attachWidget(const String & _name, callback_with_string_arg_t _func) {
             int8_t num = checkNum(_name, _Widgets_str, _wCount_str);
             if (num == BLINKER_OBJECT_NOT_AVAIL) {
                 if (_wCount_str < BLINKER_MAX_WIDGET_SIZE) {
@@ -863,19 +878,24 @@ class BlinkerApi
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG4(BLINKER_F("new widgets: "), _name, BLINKER_F(" _wCount_str: "), _wCount_str);
 #endif
-                    return true;
+                    return _wCount_str;
                 }
                 else {
-                    return false;
+                    return 0;
                 }
             }
             else if(num >= 0 ) {
                 BLINKER_ERR_LOG3(BLINKER_F("widgets name > "), _name, BLINKER_F(" < has been registered, please register another name!"));
-                return false;
+                return 0;
             }
             else {
-                return false;
+                return 0;
             }
+        }
+
+        String widgetName_str(uint8_t num) {
+            if (num) return _Widgets_str[num - 1]->getName();
+            else return "";
         }
 
         int16_t ahrs(b_ahrsattitude_t attitude)
