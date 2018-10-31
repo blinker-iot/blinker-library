@@ -494,6 +494,15 @@ bool BlinkerMQTT::connectServer() {
     HTTPClient http;
 
     String url_iot = String(host) + "/api/v1/user/device/diy/auth?authKey=" + String(authkey);
+
+#if defined(BLINKER_ALIGENIE_LIGHT)
+    url_iot += "&aliType=light";
+#elif defined(BLINKER_ALIGENIE_OUTLET)
+    url_iot += "&aliType=outlet";
+#elif defined(BLINKER_ALIGENIE_SWITCH)
+#elif defined(BLINKER_ALIGENIE_SENSOR)
+#endif
+
 #ifdef BLINKER_DEBUG_ALL 
     BLINKER_LOG2("HTTPS begin: ", url_iot);
 #endif
