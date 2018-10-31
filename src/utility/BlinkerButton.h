@@ -12,7 +12,7 @@ class BlinkerButton
         {
             wNum = Blinker.attachWidget(_name, _func);
 
-            wNum ? (registered = true) : (registered = false);
+            // wNum ? (registered = true) : (registered = false);
 
             // buttonName = (char*)malloc((_name.length()+1)*sizeof(char));
             // strcpy(buttonName, _name.c_str());
@@ -20,7 +20,7 @@ class BlinkerButton
 
         void attach(callback_with_string_arg_t _func)
         {
-            if (!registered) {
+            if (!wNum) {
                 return;
             }
 
@@ -85,7 +85,7 @@ class BlinkerButton
 
         void print(const String & _state)
         {
-            if (!registered) {
+            if (!wNum) {
                 return;
             }
 
@@ -180,7 +180,7 @@ class BlinkerButton
         // char * buttonName;
         uint8_t wNum;
         
-        bool registered = false;
+        // bool registered = false;
         
         char * bicon;
         char * iconClr;

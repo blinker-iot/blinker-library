@@ -12,7 +12,7 @@ class BlinkerSlider
         {
             wNum = Blinker.attachWidget(_name, _func);
 
-            wNum ? (registered = true) : (registered = false);
+            // wNum ? (registered = true) : (registered = false);
 
             // sliderName = (char*)malloc((_name.length()+1)*sizeof(char));
             // strcpy(sliderName, _name.c_str());
@@ -20,7 +20,7 @@ class BlinkerSlider
         
         void attach(callback_with_int32_arg_t _func)
         {
-            if (!registered) {
+            if (!wNum) {
                 return;
             }
 
@@ -47,13 +47,13 @@ class BlinkerSlider
         // String sliderName;
         // char * sliderName;
         uint8_t wNum;
-        bool registered = false;
+        // bool registered = false;
         // String textClr = "";
         char * textClr;// = "";
         uint8_t _fresh = 0;
 
         void _print(const String & n) {
-            if (!registered) {
+            if (!wNum) {
                 return;
             }
 

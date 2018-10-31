@@ -12,7 +12,7 @@ class BlinkerRGB
         {
             wNum = Blinker.attachWidget(_name, _func);
 
-            wNum ? (registered = true) : (registered = false);
+            // wNum ? (registered = true) : (registered = false);
 
             // rgbName = (char*)malloc((_name.length()+1)*sizeof(char));
             // strcpy(rgbName, _name.c_str());
@@ -20,7 +20,7 @@ class BlinkerRGB
 
         void attach(callback_with_rgb_arg_t _func)
         {
-            if (!registered) {
+            if (!wNum) {
                 return;
             }
 
@@ -31,6 +31,10 @@ class BlinkerRGB
 
         void print(uint8_t _r, uint8_t _g, uint8_t _b)
         {
+            if (!wNum) {
+                return;
+            }
+
             String rgbData = "[" + STRING_format(_r) + "," + STRING_format(_g) + "," + \
                             STRING_format(_b) + "," + STRING_format(rgbrightness) + "]";
 
@@ -39,6 +43,10 @@ class BlinkerRGB
 
         void print(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _bright)
         {
+            if (!wNum) {
+                return;
+            }
+
             String rgbData = "[" + STRING_format(_r) + "," + STRING_format(_g) + "," + \
                             STRING_format(_b) + "," + STRING_format(_bright) + "]";
 
@@ -49,7 +57,7 @@ class BlinkerRGB
         // String  rgbName;
         // char *  rgbName;
         uint8_t wNum;
-        bool    registered = false;
+        // bool    registered = false;
         uint8_t rgbrightness = 0;
 };
 

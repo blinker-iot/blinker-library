@@ -12,7 +12,7 @@ class BlinkerJoystick
         {
             wNum = Blinker.attachWidget(_name, _func);
 
-            wNum ? (registered = true) : (registered = false);
+            // wNum ? (registered = true) : (registered = false);
 
             // jName = (char*)malloc((_name.length()+1)*sizeof(char));
             // strcpy(jName, _name.c_str());
@@ -20,7 +20,7 @@ class BlinkerJoystick
         
         void attach(callback_with_joy_arg_t _func)
         {
-            if (!registered) {
+            if (!wNum) {
                 return;
             }
 
@@ -31,7 +31,7 @@ class BlinkerJoystick
         // String jName;
         // char * jName;
         uint8_t wNum;
-        bool registered = false;
+        // bool registered = false;
 };
 
 #endif
