@@ -86,8 +86,6 @@ class BlinkerWidgets_string
 {
     public :
         BlinkerWidgets_string(const String & _name, callback_with_string_arg_t _func = NULL)
-            // : wName(_name)
-            // , wfunc(_func)
         {
             wName = (char*)malloc((_name.length()+1)*sizeof(char));
             strcpy(wName, _name.c_str());
@@ -98,22 +96,13 @@ class BlinkerWidgets_string
         String getName() { return (wName); }
         void setFunc(callback_with_string_arg_t _func) { wfunc = _func; }
         callback_with_string_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) { 
-            // return ((wName == name) ? true : false); 
-            
+        bool checkName(String name) {
             String cmp_name = STRING_format(wName);
-            // BLINKER_LOG2(BLINKER_F("wName: "), wName);
-            // BLINKER_LOG4("cmp_name: ", cmp_name, " ,len: ", cmp_name.length());
-            // BLINKER_LOG4("name: ", name, " ,len: ", name.length());
-            // BLINKER_LOG2("indexOf: ", strcmp(cmp_name.c_str(), name.c_str()));
-            // BLINKER_LOG2(BLINKER_F("indexOf: "), cmp_name == name);
-            // BLINKER_LOG2("indexOf: ", STRING_format(wName) == name);
+            
             return ((cmp_name == name) ? true : false); 
-            // return strcmp(wName, name.c_str()) == 0 ? true : false;
         }
 
     private :
-        // String wName;
         char *wName;
         callback_with_string_arg_t wfunc;
 };
@@ -122,8 +111,6 @@ class BlinkerWidgets_int32
 {
     public :
         BlinkerWidgets_int32(const String & _name, callback_with_int32_arg_t _func = NULL)
-            // : wName(_name)
-            // , wfunc(_func)
         {
             wName = (char*)malloc((_name.length()+1)*sizeof(char));
             strcpy(wName, _name.c_str());
@@ -134,21 +121,13 @@ class BlinkerWidgets_int32
         String getName() { return wName; }
         void setFunc(callback_with_int32_arg_t _func) { wfunc = _func; }
         callback_with_int32_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) { 
-            // return ((wName == name) ? true : false); 
-            
+        bool checkName(String name) {
             String cmp_name = STRING_format(wName);
-            // BLINKER_LOG2(BLINKER_F("wName: "), wName);
-            // BLINKER_LOG4("cmp_name: ", cmp_name, " ,len: ", cmp_name.length());
-            // BLINKER_LOG4("name: ", name, " ,len: ", name.length());
-            // BLINKER_LOG2("indexOf: ", strcmp(cmp_name.c_str(), name.c_str()));
-            // BLINKER_LOG2(BLINKER_F("indexOf: "), cmp_name == name);
-            // BLINKER_LOG2("indexOf: ", STRING_format(wName) == name);
+            
             return ((cmp_name == name) ? true : false); 
         }
 
     private :
-        // String wName;
         char *wName;
         callback_with_int32_arg_t wfunc;
 };
@@ -157,8 +136,6 @@ class BlinkerWidgets_rgb
 {
     public :
         BlinkerWidgets_rgb(const String & _name, callback_with_rgb_arg_t _func = NULL)
-            // : wName(_name)
-            // , wfunc(_func)
         {
             wName = (char*)malloc((_name.length()+1)*sizeof(char));
             strcpy(wName, _name.c_str());
@@ -169,21 +146,13 @@ class BlinkerWidgets_rgb
         String getName() { return wName; }
         void setFunc(callback_with_rgb_arg_t _func) { wfunc = _func; }
         callback_with_rgb_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) { 
-            // return ((wName == name) ? true : false); 
-            
+        bool checkName(String name) {
             String cmp_name = STRING_format(wName);
-            // BLINKER_LOG2(BLINKER_F("wName: "), wName);
-            // BLINKER_LOG4("cmp_name: ", cmp_name, " ,len: ", cmp_name.length());
-            // BLINKER_LOG4("name: ", name, " ,len: ", name.length());
-            // BLINKER_LOG2("indexOf: ", strcmp(cmp_name.c_str(), name.c_str()));
-            // BLINKER_LOG2(BLINKER_F("indexOf: "), cmp_name == name);
-            // BLINKER_LOG2("indexOf: ", STRING_format(wName) == name);
+            
             return ((cmp_name == name) ? true : false); 
         }
 
     private :
-        // String wName;
         char *wName;
         callback_with_rgb_arg_t wfunc;
 };
@@ -192,8 +161,6 @@ class BlinkerWidgets_joy
 {
     public :
         BlinkerWidgets_joy(const String & _name, callback_with_joy_arg_t _func = NULL)
-            // : wName(_name)
-            // , wfunc(_func)
         {
             wName = (char*)malloc((_name.length()+1)*sizeof(char));
             strcpy(wName, _name.c_str());
@@ -205,20 +172,12 @@ class BlinkerWidgets_joy
         void setFunc(callback_with_joy_arg_t _func) { wfunc = _func; }
         callback_with_joy_arg_t getFunc() { return wfunc; }
         bool checkName(String name) { 
-            // return ((wName == name) ? true : false); 
-            
             String cmp_name = STRING_format(wName);
-            // BLINKER_LOG2(BLINKER_F("wName: "), wName);
-            // BLINKER_LOG4("cmp_name: ", cmp_name, " ,len: ", cmp_name.length());
-            // BLINKER_LOG4("name: ", name, " ,len: ", name.length());
-            // BLINKER_LOG2("indexOf: ", strcmp(cmp_name.c_str(), name.c_str()));
-            // BLINKER_LOG2(BLINKER_F("indexOf: "), cmp_name == name);
-            // BLINKER_LOG2("indexOf: ", STRING_format(wName) == name);
+            
             return ((cmp_name == name) ? true : false); 
         }
 
     private :
-        // String wName;
         char *wName;
         callback_with_joy_arg_t wfunc;
 };
@@ -1008,21 +967,11 @@ class BlinkerApi
 
         void delay(unsigned long ms)
         {
-            // uint32_t _start = micros();
-            // uint16_t start = (uint16_t)_start;
-            uint32_t start = micros();//_start;
-            // uint16_t now_start = 0;
+            uint32_t start = micros();
             uint32_t __start = millis();
-            // uint32_t __start_ = millis();//__start;
             unsigned long _ms = ms;
             while (ms > 0) {
                 static_cast<Proto*>(this)->run();
-
-                // yield();
-
-                // if ((micros() - start)/1000 >= ms) {
-                //     ms = 0;
-                // }(uint16_t)
 
                 if ((micros() - start) >= 1000) {
                     ms -= 1;
@@ -1030,13 +979,6 @@ class BlinkerApi
                 }
 
                 if ((millis() - __start) >= _ms) {
-                    // if (now_start == 0) now_start = (uint16_t)micros();
-// #ifdef BLINKER_DEBUG_ALL
-                    // BLINKER_LOG4("ms1: ", ms, " _ms1: ", _ms);
-                    // BLINKER_LOG4("_start: ", _start, " start: ", start);
-                    // BLINKER_LOG2("micros: ", micros());
-// #endif
-                    // if (((uint16_t)micros() - now_start) >= 1000) 
                     ms = 0;
                 }
             }
