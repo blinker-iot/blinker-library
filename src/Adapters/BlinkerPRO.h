@@ -880,10 +880,16 @@ bool BlinkerPRO::print(String data) {
 
         String payload;
         if (STRING_contains_string(data, BLINKER_CMD_NEWLINE)) {
-            payload = "{\"data\":" + data.substring(0, data.length() - 1) + ",\"fromDevice\":\"" + MQTT_DEVICEID + "\",\"toDevice\":\"" + UUID + "\"}";
+            payload = "{\"data\":" + data.substring(0, data.length() - 1) + \
+                    ",\"fromDevice\":\"" + MQTT_DEVICEID + \
+                    "\",\"toDevice\":\"" + UUID + \
+                    "\",\"deviceType\":\"OwnApp\"}";
         }
         else {
-            payload = "{\"data\":" + data + ",\"fromDevice\":\"" + MQTT_DEVICEID + "\",\"toDevice\":\"" + UUID + "\"}";
+            payload = "{\"data\":" + data + \
+                    ",\"fromDevice\":\"" + MQTT_DEVICEID + \
+                    "\",\"toDevice\":\"" + UUID + \
+                    "\",\"deviceType\":\"OwnApp\"}";
         }
     
 #ifdef BLINKER_DEBUG_ALL
