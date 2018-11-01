@@ -1620,14 +1620,14 @@ void BlinkerProtocol<Transp>::run()
             WiFi.reconnect();
         }
 
-        if (millis() - _reconTime >= 10000) {
+        if ((millis() > _reconTime) && (millis() - _reconTime) >= 10000) {
             _reconTime += 10000;
 
             BLINKER_LOG1(BLINKER_F("WiFi disconnected! reconnecting!"));
 
             WiFi.reconnect();
         }
-        
+
         return;
     }
 #endif
@@ -1656,8 +1656,8 @@ void BlinkerProtocol<Transp>::run()
                         _disFreshTime = millis();
                     }
                     else {
-                        if ((millis() - _disFreshTime) >= 5000) {
-                            _disFreshTime = millis();
+                        if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
+                            _disFreshTime += 5000;
                             _disconnectCount++;
 
                             if (_disconnectCount > 12) _disconnectCount = 12;
@@ -1695,8 +1695,8 @@ void BlinkerProtocol<Transp>::run()
                         _disFreshTime = millis();
                     }
                     else {
-                        if ((millis() - _disFreshTime) >= 5000) {
-                            _disFreshTime = millis();
+                        if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
+                            _disFreshTime += 5000;
                             _disconnectCount++;
 
                             if (_disconnectCount > 12) _disconnectCount = 12;

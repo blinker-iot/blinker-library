@@ -74,18 +74,22 @@ void aligenieQuery(int32_t queryCode)
         case BLINKER_CMD_POWERSTATE_NUMBER :
             BLINKER_LOG1("AliGenie Query Power State");
             BlinkerAliGenie.powerState("on");
+            BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_COLOR_NUMBER :
             BLINKER_LOG1("AliGenie Query Color");
             BlinkerAliGenie.color("red");
+            BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_COLORTEMP_NUMBER :
             BLINKER_LOG1("AliGenie Query ColorTemperature");
             BlinkerAliGenie.colorTemp(50);
+            BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_BRIGHTNESS_NUMBER :
             BLINKER_LOG1("AliGenie Query Brightness");
             BlinkerAliGenie.brightness(50);
+            BlinkerAliGenie.print();
             break;
         default :
             break;
