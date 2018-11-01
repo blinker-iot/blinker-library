@@ -58,23 +58,23 @@ enum b_rgb_t {
 };
 
 
-static class BlinkerWidgets_string * _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
-static class BlinkerWidgets_string * _BUILTIN_SWITCH;
-static class BlinkerWidgets_int32 * _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
-static class BlinkerWidgets_rgb * _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
-static class BlinkerWidgets_joy * _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
+static class BlinkerWidgets_string *    _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
+static class BlinkerWidgets_string *    _BUILTIN_SWITCH;
+static class BlinkerWidgets_int32 *     _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
+static class BlinkerWidgets_rgb *       _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
+static class BlinkerWidgets_joy *       _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
 
 #if defined(ESP8266) || defined(ESP32)
-static class BlinkerTimingTimer * timingTask[BLINKER_TIMING_TIMER_SIZE];
+static class BlinkerTimingTimer *       timingTask[BLINKER_TIMING_TIMER_SIZE];
 #endif
 
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-static class BlinkerAUTO * _AUTO[2];
-static class BlinkerBridge * _Bridge[BLINKER_MAX_BRIDGE_SIZE];
+static class BlinkerAUTO *              _AUTO[2];
+static class BlinkerBridge *            _Bridge[BLINKER_MAX_BRIDGE_SIZE];
 // #endif
 // #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
-static class BlinkerData *_Data[BLINKER_MAX_BLINKER_DATA_SIZE];
+static class BlinkerData *              _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
 #endif
 
 #if defined(BLINKER_WIFI)
