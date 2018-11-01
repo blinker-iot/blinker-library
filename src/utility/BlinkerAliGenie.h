@@ -51,6 +51,10 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
+            if (_fresh >> 0 & 0x01) {
+                free(aState);
+            }
+
             aState = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aState, payload.c_str());
 
@@ -63,6 +67,10 @@ class BLINKERALIGENIE
                 "\":\"" + clr + "\"";
 
             // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 1 & 0x01) {
+                free(aColor);
+            }
 
             aColor = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aColor, payload.c_str());
@@ -77,6 +85,10 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
+            if (_fresh >> 2 & 0x01) {
+                free(aCtemp);
+            }
+
             aCtemp = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aCtemp, payload.c_str());
 
@@ -89,6 +101,10 @@ class BLINKERALIGENIE
                 "\":\"" + STRING_format(bright) + "\"";
 
             // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 3 & 0x01) {
+                free(aBright);
+            }
 
             aBright = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aBright, payload.c_str());
@@ -103,6 +119,10 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
+            if (_fresh >> 4 & 0x01) {
+                free(aTemp);
+            }
+
             aTemp = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aTemp, payload.c_str());
 
@@ -116,6 +136,10 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
+            if (_fresh >> 5 & 0x01) {
+                free(aHumi);
+            }
+
             aHumi = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aHumi, payload.c_str());
 
@@ -128,6 +152,10 @@ class BLINKERALIGENIE
                 "\":\"" + STRING_format(_pm25) + "\"";
 
             // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 6 & 0x01) {
+                free(aPm25);
+            }
 
             aPm25 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm25, payload.c_str());
