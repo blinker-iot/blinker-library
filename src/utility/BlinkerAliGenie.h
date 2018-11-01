@@ -165,7 +165,7 @@ class BLINKERALIGENIE
 
         void print()
         {
-            if (!_fresh) return;
+            if (_fresh == 0) return;
             
             String aliData;
 

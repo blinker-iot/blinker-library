@@ -20,7 +20,7 @@ class BlinkerButton
 
         void attach(callback_with_string_arg_t _func)
         {
-            if (!wNum) {
+            if (wNum == 0) {
                 return;
             }
 
@@ -113,7 +113,7 @@ class BlinkerButton
 
         void print(const String & _state)
         {
-            if (!wNum) {
+            if (wNum == 0 || (_fresh == 0 && _state.length() == 0)) {
                 return;
             }
 

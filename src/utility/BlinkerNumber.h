@@ -78,6 +78,9 @@ class BlinkerNumber
         uint8_t _fresh = 0;
 
         void _print(const String & value) {
+            if (_fresh == 0 && value.length() == 0) {
+                return;
+            }
 
             String numberData = "";
 
@@ -89,6 +92,7 @@ class BlinkerNumber
             // if (nicon && (_fresh >> 0 & 0x01)) {
             if (_fresh >> 0 & 0x01) {
                 if (numberData.length()) numberData += BLINKER_F(",");
+                else numberData += BLINKER_F("{");
 
                 numberData += BLINKER_F("\""BLINKER_CMD_ICON"\":\"");
                 numberData += nicon;

@@ -20,7 +20,7 @@ class BlinkerSlider
         
         void attach(callback_with_int32_arg_t _func)
         {
-            if (!wNum) {
+            if (wNum == 0) {
                 return;
             }
 
@@ -57,7 +57,7 @@ class BlinkerSlider
         uint8_t _fresh = 0;
 
         void _print(const String & n) {
-            if (!wNum) {
+            if (wNum == 0 || (_fresh == 0 && n.length() == 0)) {
                 return;
             }
 

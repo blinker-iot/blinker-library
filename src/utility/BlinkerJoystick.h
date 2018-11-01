@@ -20,7 +20,7 @@ class BlinkerJoystick
         
         void attach(callback_with_joy_arg_t _func)
         {
-            if (!wNum) {
+            if (wNum == 0) {
                 return;
             }
 
