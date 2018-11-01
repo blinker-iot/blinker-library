@@ -15,6 +15,10 @@ class BlinkerNumber
         }
         
         void icon(const String & _icon) {
+            if (_fresh >> 0 & 0x01) {
+                free(nicon);
+            }
+
             nicon = (char*)malloc((_icon.length()+1)*sizeof(char));
             strcpy(nicon, _icon.c_str());
 
@@ -22,6 +26,10 @@ class BlinkerNumber
         }
 
         void color(const String & _clr) {
+            if (_fresh >> 1 & 0x01) {
+                free(ncolor);
+            }
+
             ncolor = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(ncolor, _clr.c_str());
 
@@ -29,6 +37,10 @@ class BlinkerNumber
         }
 
         void unit(const String & _unit) {
+            if (_fresh >> 2 & 0x01) {
+                free(nunit);
+            }
+
             nunit = (char*)malloc((_unit.length()+1)*sizeof(char));
             strcpy(nunit, _unit.c_str());
 
@@ -37,6 +49,10 @@ class BlinkerNumber
 
         template <typename T>
         void text(T _text) {
+            if (_fresh >> 3 & 0x01) {
+                free(ntext);
+            }
+
             String _ntext = STRING_format(_text);
             ntext = (char*)malloc((_ntext.length()+1)*sizeof(char));
             strcpy(ntext, _ntext.c_str());
@@ -62,6 +78,9 @@ class BlinkerNumber
         uint8_t _fresh = 0;
 
         void _print(const String & value) {
+            if (_fresh == 0 && value.length() == 0) {
+                return;
+            }
 
             String numberData = "";
 
@@ -73,6 +92,7 @@ class BlinkerNumber
             // if (nicon && (_fresh >> 0 & 0x01)) {
             if (_fresh >> 0 & 0x01) {
                 if (numberData.length()) numberData += BLINKER_F(",");
+                else numberData += BLINKER_F("{");
 
                 numberData += BLINKER_F("\""BLINKER_CMD_ICON"\":\"");
                 numberData += nicon;

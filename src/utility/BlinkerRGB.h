@@ -20,7 +20,7 @@ class BlinkerRGB
 
         void attach(callback_with_rgb_arg_t _func)
         {
-            if (!wNum) {
+            if (wNum == 0) {
                 return;
             }
 
@@ -31,7 +31,7 @@ class BlinkerRGB
 
         void print(uint8_t _r, uint8_t _g, uint8_t _b)
         {
-            if (!wNum) {
+            if (wNum == 0) {
                 return;
             }
 
@@ -43,7 +43,7 @@ class BlinkerRGB
 
         void print(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _bright)
         {
-            if (!wNum) {
+            if (wNum == 0) {
                 return;
             }
 

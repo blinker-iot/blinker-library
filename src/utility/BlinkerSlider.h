@@ -20,7 +20,7 @@ class BlinkerSlider
         
         void attach(callback_with_int32_arg_t _func)
         {
-            if (!wNum) {
+            if (wNum == 0) {
                 return;
             }
 
@@ -28,6 +28,10 @@ class BlinkerSlider
         }
         
         void color(const String & _clr) {
+            if (_fresh >> 0 & 0x01) {
+                free(textClr);
+            }
+
             textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());
 
@@ -53,7 +57,7 @@ class BlinkerSlider
         uint8_t _fresh = 0;
 
         void _print(const String & n) {
-            if (!wNum) {
+            if (wNum == 0 || (_fresh == 0 && n.length() == 0)) {
                 return;
             }
 
