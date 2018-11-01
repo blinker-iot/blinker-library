@@ -1271,6 +1271,10 @@ class BlinkerProtocol
         uint8_t         _proStatus = PRO_WLAN_CONNECTING;
 #endif
 
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+        uint32_t        _reconTime = 0;
+#endif
+
 #if defined(BLINKER_PRO)
         bool beginPro() {
             return BApi::wlanRun();
@@ -1603,6 +1607,28 @@ void BlinkerProtocol<Transp>::run()
         }
 
         BApi::ntpInit();
+    }
+#endif
+
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+    if (WiFi.status() != WL_CONNECTED) {
+        if (_reconTime == 0) {
+            _reconTime = millis();
+
+            BLINKER_LOG1(BLINKER_F("WiFi disconnected! reconnecting!"));
+
+            WiFi.reconnect();
+        }
+
+        if (millis() - _reconTime >= 10000) {
+            _reconTime += 10000;
+
+            BLINKER_LOG1(BLINKER_F("WiFi disconnected! reconnecting!"));
+
+            WiFi.reconnect();
+        }
+        
+        return;
     }
 #endif
 
