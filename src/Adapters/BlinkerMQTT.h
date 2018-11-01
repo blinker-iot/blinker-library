@@ -436,6 +436,25 @@ class BlinkerMQTT {
             }
         }
 
+        bool checkAliPrintSpan() {
+            if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2) {
+                if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2) {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG1("ALIGENIE NOT ALIVE OR MSG LIMIT");
+#endif
+                    return false;
+                }
+                else {
+                    respAliTimes++;
+                    return true;
+                }
+            }
+            else {
+                respAliTimes = 0;
+                return true;
+            }
+        }
+
     protected :
         const char* authkey;
         bool*       isHandle = &isConnect;
@@ -448,6 +467,8 @@ class BlinkerMQTT {
         uint32_t    linkTime = 0;
         uint8_t     respTimes = 0;
         uint32_t    respTime = 0;
+        uint8_t     respAliTimes = 0;
+        uint32_t    respAliTime = 0;
 
         uint32_t    aliKaTime = 0;
         bool        isAliAlive = false;
@@ -992,10 +1013,16 @@ bool BlinkerMQTT::print(String data) {
 bool BlinkerMQTT::bPrint(String name, String data) {
     String payload;
     if (STRING_contains_string(data, BLINKER_CMD_NEWLINE)) {
-        payload = "{\"data\":" + data.substring(0, data.length() - 1) + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + name + "\",\"deviceType\":\"DiyBridge\"}";
+        payload = "{\"data\":" + data.substring(0, data.length() - 1) + \
+                ",\"fromDevice\":\"" + MQTT_ID + \
+                "\",\"toDevice\":\"" + name + \
+                "\",\"deviceType\":\"DiyBridge\"}";
     }
     else {
-        payload = "{\"data\":" + data + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"" + name + "\",\"deviceType\":\"DiyBridge\"}";
+        payload = "{\"data\":" + data + \
+                ",\"fromDevice\":\"" + MQTT_ID + \
+                "\",\"toDevice\":\"" + name + \
+                "\",\"deviceType\":\"DiyBridge\"}";
     }
 
 #ifdef BLINKER_DEBUG_ALL
@@ -1068,7 +1095,9 @@ bool BlinkerMQTT::aliPrint(String data)
 {
     String payload;
 
-    payload = "{\"data\":" + data + ",\"fromDevice\":\"" + MQTT_ID + "\",\"toDevice\":\"AliGenie\",\"deviceType\":\"vAssistant\"}";
+    payload = "{\"data\":" + data + \
+            ",\"fromDevice\":\"" + MQTT_ID + \
+            "\",\"toDevice\":\"AliGenie\",\"deviceType\":\"vAssistant\"}";
     
 #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1("MQTT AliGenie Publish...");
@@ -1078,6 +1107,12 @@ bool BlinkerMQTT::aliPrint(String data)
         if (!checkAliKA()) {
             return false;
         }
+
+        if (!checkAliPrintSpan()) {
+            respAliTime = millis();
+            return false;
+        }
+        respAliTime = millis();
 
         // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
 
