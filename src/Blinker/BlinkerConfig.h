@@ -373,6 +373,18 @@
 
 #define BLINKER_MAX_DATA_COUNT          24
 
+#if define(BLINKER_NBIOT)
+    #define BLINKER_CMD_CGATT                   "AT+CGATT?"
+
+    #define BLINKER_CMD_MIPLCREATE              "AT+MIPLCREATE"
+
+    // AT+MIPLADDOBJ=0,3303,1,1,1,0
+    // AT+MIPLNOTIFY=0,666,3303,0,5701,1,14,"4E4230382D3031",0,0,0
+    // AT+MIPLOPEN=0,86400,30
+
+    #define BLINKER_CMD_CGATT_SUCCESSED         "+CGATT:1"
+#endif
+
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     #define BLINKER_CMD_SMS_NUMBER              1
 
