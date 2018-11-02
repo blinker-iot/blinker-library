@@ -1097,7 +1097,7 @@ bool BlinkerMQTT::aliPrint(String data)
 
     payload = "{\"data\":" + data + \
             ",\"fromDevice\":\"" + MQTT_ID + \
-            "\",\"toDevice\":\"AliGenie\",\"deviceType\":\"vAssistant\"}";
+            "\",\"toDevice\":\"AliGenie_r\",\"deviceType\":\"vAssistant\"}";
     
 #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1("MQTT AliGenie Publish...");

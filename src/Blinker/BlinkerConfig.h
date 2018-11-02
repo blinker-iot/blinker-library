@@ -337,7 +337,7 @@
 
 #define BLINKER_CMD_PM25                "pm25"
 
-#define BLINKER_CMD_ALIGENIE            "aligenie"
+#define BLINKER_CMD_ALIGENIE            "AliGenie"
 
 #define BLINKER_CMD_SUMMARY             "sum"
 
@@ -373,7 +373,7 @@
 
 #define BLINKER_MAX_DATA_COUNT          24
 
-#if define(BLINKER_NBIOT)
+#if defined(BLINKER_NBIOT)
     #define BLINKER_CMD_CGATT                   "AT+CGATT?"
 
     #define BLINKER_CMD_MIPLCREATE              "AT+MIPLCREATE"
