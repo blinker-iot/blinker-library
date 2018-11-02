@@ -19,7 +19,7 @@ class BLINKERALIGENIE
             Blinker.attachSetColor(newFunction);
         }
 
-        void attachBrightness(callback_with_string_arg_t newFunction)
+        void attachBrightness(callback_with_int32_arg_t newFunction)
         {
             Blinker.attachSetBrightness(newFunction);
         }
