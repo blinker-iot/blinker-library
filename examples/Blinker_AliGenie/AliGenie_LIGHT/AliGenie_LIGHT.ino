@@ -38,63 +38,76 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 void aligeniePowerSate(const String & state)
 {
     BLINKER_LOG2("need set power state: ", state);
-}
 
-void aligenieColor(const String & color)
-{
-    BLINKER_LOG2("need set color: ", color);
-}
+    if (state == BLINKER_CMD_ON) {
+        digitalWrite(LED_BUILTIN, HIGH);
 
-void aligenieBright(const String & bright)
-{
-    BLINKER_LOG2("need set brightness: ", bright);
-}
+        BlinkerAliGenie.powerState("on");
+        BlinkerAliGenie.print();
+    }
+    else if (state == BLINKER_CMD_OFF) {
+        digitalWrite(LED_BUILTIN, LOW);
 
-void aligenieRelativeBright(int32_t bright)
-{
-    BLINKER_LOG2("need set relative brightness: ", bright);
-}
-
-void aligenieColoTemp(int32_t colorTemp)
-{
-    BLINKER_LOG2("need set colorTemperature: ", colorTemp);
-}
-
-void aligenieRelativeColoTemp(int32_t colorTemp)
-{
-    BLINKER_LOG2("need set relative colorTemperature: ", colorTemp);
-}
-
-void aligenieQuery(int32_t queryCode)
-{
-    BLINKER_LOG2("AliGenie Query codes: ", queryCode);
-
-    switch (queryCode)
-    {
-        case BLINKER_CMD_POWERSTATE_NUMBER :
-            BLINKER_LOG1("AliGenie Query Power State");
-            BlinkerAliGenie.powerState("on");
-            BlinkerAliGenie.print();
-            break;
-        case BLINKER_CMD_COLOR_NUMBER :
-            BLINKER_LOG1("AliGenie Query Color");
-            BlinkerAliGenie.color("red");
-            BlinkerAliGenie.print();
-            break;
-        case BLINKER_CMD_COLORTEMP_NUMBER :
-            BLINKER_LOG1("AliGenie Query ColorTemperature");
-            BlinkerAliGenie.colorTemp(50);
-            BlinkerAliGenie.print();
-            break;
-        case BLINKER_CMD_BRIGHTNESS_NUMBER :
-            BLINKER_LOG1("AliGenie Query Brightness");
-            BlinkerAliGenie.brightness(50);
-            BlinkerAliGenie.print();
-            break;
-        default :
-            break;
+        BlinkerAliGenie.powerState("off");
+        BlinkerAliGenie.print();
     }
 }
+
+// void aligenieColor(const String & color)
+// {
+//     BLINKER_LOG2("need set color: ", color);
+// }
+
+// void aligenieBright(const String & bright)
+// {
+//     BLINKER_LOG2("need set brightness: ", bright);
+// }
+
+// void aligenieRelativeBright(int32_t bright)
+// {
+//     BLINKER_LOG2("need set relative brightness: ", bright);
+// }
+
+// void aligenieColoTemp(int32_t colorTemp)
+// {
+//     BLINKER_LOG2("need set colorTemperature: ", colorTemp);
+// }
+
+// void aligenieRelativeColoTemp(int32_t colorTemp)
+// {
+//     BLINKER_LOG2("need set relative colorTemperature: ", colorTemp);
+// }
+
+// void aligenieQuery(int32_t queryCode)
+// {
+//     BLINKER_LOG2("AliGenie Query codes: ", queryCode);
+
+//     switch (queryCode)
+//     {
+//         case BLINKER_CMD_POWERSTATE_NUMBER :
+//             BLINKER_LOG1("AliGenie Query Power State");
+//             BlinkerAliGenie.powerState("on");
+//             BlinkerAliGenie.print();
+//             break;
+//         case BLINKER_CMD_COLOR_NUMBER :
+//             BLINKER_LOG1("AliGenie Query Color");
+//             BlinkerAliGenie.color("red");
+//             BlinkerAliGenie.print();
+//             break;
+//         case BLINKER_CMD_COLORTEMP_NUMBER :
+//             BLINKER_LOG1("AliGenie Query ColorTemperature");
+//             BlinkerAliGenie.colorTemp(50);
+//             BlinkerAliGenie.print();
+//             break;
+//         case BLINKER_CMD_BRIGHTNESS_NUMBER :
+//             BLINKER_LOG1("AliGenie Query Brightness");
+//             BlinkerAliGenie.brightness(50);
+//             BlinkerAliGenie.print();
+//             break;
+//         default :
+//             break;
+//     }
+// }
 
 void setup()
 {
