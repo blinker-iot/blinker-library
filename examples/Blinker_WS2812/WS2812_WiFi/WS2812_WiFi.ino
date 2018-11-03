@@ -40,7 +40,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
   #include <avr/power.h>
 #endif
 
-#define PIN            8
+#define PIN            13
 #define NUMPIXELS      9
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
@@ -56,12 +56,10 @@ void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t 
     BLINKER_LOG2("B value: ", b_value);
     BLINKER_LOG2("Rrightness value: ", bright_value);
 
-    uint8_t colorR = map(r_value, 0, 255, 0, bright_value);
-    uint8_t colorG = map(g_value, 0, 255, 0, bright_value);
-    uint8_t colorB = map(b_value, 0, 255, 0, bright_value);
+    pixels.setBrightness(bright_value);
 
     for(int i = 0; i < NUMPIXELS; i++){
-        pixels.setPixelColor(i, colorR, colorG, colorB, bright_value);
+        pixels.setPixelColor(i, r_value, g_value, b_value);
     }
     pixels.show();
 }

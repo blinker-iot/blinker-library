@@ -522,6 +522,7 @@ bool BlinkerMQTT::connectServer() {
     url_iot += "&aliType=outlet";
 #elif defined(BLINKER_ALIGENIE_SWITCH)
 #elif defined(BLINKER_ALIGENIE_SENSOR)
+    url_iot += "&aliType=sensor";
 #endif
 
 #ifdef BLINKER_DEBUG_ALL 
