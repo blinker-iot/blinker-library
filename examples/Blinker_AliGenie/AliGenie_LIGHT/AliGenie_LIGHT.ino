@@ -39,8 +39,8 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 // https://github.com/adafruit/Adafruit_NeoPixel
 #include <Adafruit_NeoPixel.h>
 
-#define PIN            5
-#define NUMPIXELS      9
+#define PIN            13
+#define NUMPIXELS      24
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 #define RGB_1 "RGBKey"
@@ -49,6 +49,16 @@ BlinkerRGB WS2812(RGB_1);
 
 uint8_t colorR, colorG, colorB, colorW;
 bool wsState;
+
+void pixelShow()
+{
+    pixels.setBrightness(colorW);
+
+    for(int i = 0; i < NUMPIXELS; i++){
+        pixels.setPixelColor(i, colorR, colorG, colorB);
+    }
+    pixels.show();
+}
 
 void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
 {
@@ -63,10 +73,36 @@ void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t 
     colorB = b_value;
     colorW = bright_value;
 
-    for(int i = 0; i < NUMPIXELS; i++){
-        pixels.setPixelColor(i, colorR, colorG, colorB, colorW);
+    pixelShow();
+}
+
+String getColor()
+{
+    uint32_t color = colorR << 16 | colorG << 8 | colorB;
+
+    switch (color)
+    {
+        case 0xFF0000 :
+            return "Red";
+        case 0xFFFF00 :
+            return "Yellow";
+        case 0x0000FF :
+            return "Blue";
+        case 0x00FF00 :
+            return "Green";
+        case 0xFFFFFF :
+            return "White";
+        case 0x000000 :
+            return "Black";
+        case 0x00FFFF :
+            return "Cyan";
+        case 0x800080 :
+            return "Purple";
+        case 0xFFA500 :
+            return "Orange";
+        default :
+            return "White";
     }
-    pixels.show();
 }
 
 void aligeniePowerSate(const String & state)
@@ -81,12 +117,7 @@ void aligeniePowerSate(const String & state)
 
         wsState = true;
 
-        colorW = 255;
-
-        for(int i = 0; i < NUMPIXELS; i++){
-            pixels.setPixelColor(i, colorR, colorG, colorB, colorW);
-        }
-        pixels.show();
+        if (colorW == 0) colorW = 255;
     }
     else if (state == BLINKER_CMD_OFF) {
         digitalWrite(LED_BUILTIN, LOW);
@@ -95,12 +126,9 @@ void aligeniePowerSate(const String & state)
         BlinkerAliGenie.print();
 
         wsState = false;
-
-        for(int i = 0; i < NUMPIXELS; i++){
-            pixels.setPixelColor(i, colorR, colorG, colorB, 0);
-        }
-        pixels.show();
     }
+
+    pixelShow();
 }
 
 void aligenieColor(const String & color)
@@ -162,10 +190,7 @@ void aligenieColor(const String & color)
         colorW = 255;
     }
 
-    for(int i = 0; i < NUMPIXELS; i++){
-        pixels.setPixelColor(i, colorR, colorG, colorB, colorW);
-    }
-    pixels.show();
+    pixelShow();
 
     BlinkerAliGenie.color(color);
     BlinkerAliGenie.print();
@@ -175,6 +200,12 @@ void aligenieBright(int32_t bright)
 {
     BLINKER_LOG2("need set brightness: ", bright);
 
+    colorW = bright;
+
+    BLINKER_LOG2("now set brightness: ", colorW);
+
+    pixelShow();
+
     BlinkerAliGenie.brightness(bright);
     BlinkerAliGenie.print();
 }
@@ -182,6 +213,12 @@ void aligenieBright(int32_t bright)
 void aligenieRelativeBright(int32_t bright)
 {
     BLINKER_LOG2("need set relative brightness: ", bright);
+
+    colorW += bright;
+
+    BLINKER_LOG2("now set brightness: ", colorW);
+
+    pixelShow();
 
     BlinkerAliGenie.brightness(bright);
     BlinkerAliGenie.print();
@@ -211,20 +248,20 @@ void aligenieQuery(int32_t queryCode)
     {
         case BLINKER_CMD_QUERY_ALL_NUMBER :
             BLINKER_LOG1("AliGenie Query All");
-            BlinkerAliGenie.powerState("on");
-            BlinkerAliGenie.color("red");
+            BlinkerAliGenie.powerState(wsState ? "on" : "off");
+            BlinkerAliGenie.color(getColor());
             BlinkerAliGenie.colorTemp(50);
-            BlinkerAliGenie.brightness(50);
+            BlinkerAliGenie.brightness(colorW);
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_POWERSTATE_NUMBER :
             BLINKER_LOG1("AliGenie Query Power State");
-            BlinkerAliGenie.powerState("on");
+            BlinkerAliGenie.powerState(wsState ? "on" : "off");
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_COLOR_NUMBER :
             BLINKER_LOG1("AliGenie Query Color");
-            BlinkerAliGenie.color("red");
+            BlinkerAliGenie.color(getColor());
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_COLORTEMP_NUMBER :
@@ -234,7 +271,7 @@ void aligenieQuery(int32_t queryCode)
             break;
         case BLINKER_CMD_BRIGHTNESS_NUMBER :
             BLINKER_LOG1("AliGenie Query Brightness");
-            BlinkerAliGenie.brightness(50);
+            BlinkerAliGenie.brightness(colorW);
             BlinkerAliGenie.print();
             break;
         default :
@@ -260,13 +297,21 @@ void setup()
     BlinkerAliGenie.attachRelativeColorTemperature(aligenieRelativeColoTemp);
     BlinkerAliGenie.attachQuery(aligenieQuery);
 
-    WS2812.attach(ws2812_callback);
+    pinMode(14, OUTPUT);
+    digitalWrite(14, HIGH);
+    pinMode(15, OUTPUT);
+    digitalWrite(15, HIGH);
 
-    colorR = 0;
-    colorG = 0;
-    colorB = 0;
+    colorR = 255;
+    colorG = 255;
+    colorB = 255;
     colorW = 0;
     wsState = true;
+
+    pixels.begin();
+    pixels.setBrightness(colorW);
+    WS2812.attach(ws2812_callback);
+    pixelShow();
 }
 
 void loop()
@@ -281,4 +326,9 @@ void loop()
         Blinker.vibrate();        
         Blinker.print("millis", BlinkerTime);
     }
+
+    // for(int i = 0; i < NUMPIXELS; i++){
+    //     pixels.setPixelColor(i, colorR, colorG, colorB);
+    // }
+    // pixels.show();
 }
