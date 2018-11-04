@@ -180,7 +180,7 @@ class BlinkerSimpleESP8266_MQTT
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void smartconfig() {
             WiFi.mode(WIFI_STA);
-            String _hostname = BLINKER_F("DiyArduino_") + macDeviceName();
+            String _hostname = ("DiyArduino_") + macDeviceName();
             WiFi.hostname(_hostname.c_str());
             WiFi.beginSmartConfig();
             
