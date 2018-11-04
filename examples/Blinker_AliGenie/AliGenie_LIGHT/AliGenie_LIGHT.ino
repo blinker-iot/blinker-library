@@ -254,22 +254,22 @@ void aligenieQuery(int32_t queryCode)
             BlinkerAliGenie.brightness(colorW);
             BlinkerAliGenie.print();
             break;
-        case BLINKER_CMD_POWERSTATE_NUMBER :
+        case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :
             BLINKER_LOG1("AliGenie Query Power State");
             BlinkerAliGenie.powerState(wsState ? "on" : "off");
             BlinkerAliGenie.print();
             break;
-        case BLINKER_CMD_COLOR_NUMBER :
+        case BLINKER_CMD_QUERY_COLOR_NUMBER :
             BLINKER_LOG1("AliGenie Query Color");
             BlinkerAliGenie.color(getColor());
             BlinkerAliGenie.print();
             break;
-        case BLINKER_CMD_COLORTEMP_NUMBER :
+        case BLINKER_CMD_QUERY_COLORTEMP_NUMBER :
             BLINKER_LOG1("AliGenie Query ColorTemperature");
             BlinkerAliGenie.colorTemp(50);
             BlinkerAliGenie.print();
             break;
-        case BLINKER_CMD_BRIGHTNESS_NUMBER :
+        case BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER :
             BLINKER_LOG1("AliGenie Query Brightness");
             BlinkerAliGenie.brightness(colorW);
             BlinkerAliGenie.print();
@@ -288,8 +288,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
 
-    Blinker.attachSetPowerState(aligeniePowerSate);
-    
+    BlinkerAliGenie.attachSetPowerState(aligeniePowerSate);
     BlinkerAliGenie.attachColor(aligenieColor);
     BlinkerAliGenie.attachBrightness(aligenieBright);
     BlinkerAliGenie.attachRelativeBrightness(aligenieRelativeBright);

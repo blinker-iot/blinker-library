@@ -5005,16 +5005,16 @@ class BlinkerApi
                     if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
                 }
                 else if (value == BLINKER_CMD_POWERSTATE) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_POWERSTATE_NUMBER);
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
                 }
                 else if (value == BLINKER_CMD_COLOR) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_COLOR_NUMBER);
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
                 }
                 else if (value == BLINKER_CMD_COLORTEMP) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_COLORTEMP_NUMBER);
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLORTEMP_NUMBER);
                 }
                 else if (value == BLINKER_CMD_BRIGHTNESS) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_BRIGHTNESS_NUMBER);
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
                 }
                 else if (value == BLINKER_CMD_TEMP) {
                     if (_queryFunc) _queryFunc(BLINKER_CMD_TEMP_NUMBER);
