@@ -3,6 +3,12 @@
 
 #include <Blinker/BlinkerApi.h>
 
+#if defined(ESP8266)
+    #include <ESP8266WiFi.h>
+#elif defined(ESP32)
+    #include <WiFi.h>
+#endif
+
 #if defined(BLINKER_PRO)
 enum BlinkerStatus{
     PRO_WLAN_CONNECTING,
