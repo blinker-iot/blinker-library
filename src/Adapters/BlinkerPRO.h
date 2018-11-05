@@ -536,13 +536,13 @@ bool BlinkerPRO::connectServer() {
     String url_iot = String(host) + "/api/v1/user/device/register?deviceType=" + \
                     String(_deviceType) + "&deviceName=" + macDeviceName();
 
-    if (_deviceType == OwnLamp) {
+    if (_deviceType == BLINKER_SMART_LAMP) {
         url_iot += "&aliType=light";
     }
-    else if (_deviceType == OwnPlugin) {
+    else if (_deviceType == BLINKER_SMART_PLUGIN) {
         url_iot += "&aliType=outlet";
     }
-    else if (_deviceType == OwnAirdetector) {
+    else if (_deviceType == BLINKER_AIR_DETECTOR) {
         url_iot += "&aliType=sensor";
     }
 

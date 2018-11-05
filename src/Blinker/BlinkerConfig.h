@@ -565,6 +565,8 @@
 
     #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
 
+    #define BLINKER_SMART_PLUGIN            "OwnPlug"
+
     #define BLINKER_SMART_LAMP              "OwnLamp"
 
     #ifndef BLINKER_PRO_VERSION
