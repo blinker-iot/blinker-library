@@ -42,7 +42,7 @@ void aligenieQuery(int32_t queryCode)
     switch (queryCode)
     {
         case BLINKER_CMD_QUERY_ALL_NUMBER :
-            BLINKER_LOG1("AliGenie Query Temp");
+            BLINKER_LOG1("AliGenie Query All");
             BlinkerAliGenie.temp(20);
             BlinkerAliGenie.humi(20);
             BlinkerAliGenie.pm25(20);

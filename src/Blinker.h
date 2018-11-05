@@ -97,6 +97,8 @@
         #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
     #endif
 
+    #define BLINKER_ALIGENIE
+
     #ifndef BLINKER_ESP_SMARTCONFIG
         #ifndef BLINKER_APCONFIG
             #define BLINKER_ESP_SMARTCONFIG

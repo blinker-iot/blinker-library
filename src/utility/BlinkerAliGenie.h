@@ -112,6 +112,40 @@ class BLINKERALIGENIE
             _fresh |= 0x01 << 3;
         }
 
+        void temp(double _temp)
+        {
+            String payload = "\"" + STRING_format(BLINKER_CMD_TEMP) + 
+                "\":\"" + STRING_format(_temp) + "\"";
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 4 & 0x01) {
+                free(aTemp);
+            }
+
+            aTemp = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aTemp, payload.c_str());
+
+            _fresh |= 0x01 << 4;
+        }
+
+        void temp(float _temp)
+        {
+            String payload = "\"" + STRING_format(BLINKER_CMD_TEMP) + 
+                "\":\"" + STRING_format(_temp) + "\"";
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 4 & 0x01) {
+                free(aTemp);
+            }
+
+            aTemp = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aTemp, payload.c_str());
+
+            _fresh |= 0x01 << 4;
+        }
+
         void temp(int _temp)
         {
             String payload = "\"" + STRING_format(BLINKER_CMD_TEMP) + 
@@ -129,6 +163,40 @@ class BLINKERALIGENIE
             _fresh |= 0x01 << 4;
         }
 
+        void humi(double _humi)
+        {
+            String payload = "\"" + STRING_format(BLINKER_CMD_HUMI) + 
+                "\":\"" + STRING_format(_humi) + "\"";
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 5 & 0x01) {
+                free(aHumi);
+            }
+
+            aHumi = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aHumi, payload.c_str());
+
+            _fresh |= 0x01 << 5;
+        }
+
+        void humi(float _humi)
+        {
+            String payload = "\"" + STRING_format(BLINKER_CMD_HUMI) + 
+                "\":\"" + STRING_format(_humi) + "\"";
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 5 & 0x01) {
+                free(aHumi);
+            }
+
+            aHumi = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aHumi, payload.c_str());
+
+            _fresh |= 0x01 << 5;
+        }
+
         void humi(int _humi)
         {
             String payload = "\"" + STRING_format(BLINKER_CMD_HUMI) + 
@@ -144,6 +212,40 @@ class BLINKERALIGENIE
             strcpy(aHumi, payload.c_str());
 
             _fresh |= 0x01 << 5;
+        }
+
+        void pm25(double _pm25)
+        {
+            String payload = "\"" + STRING_format(BLINKER_CMD_PM25) + 
+                "\":\"" + STRING_format(_pm25) + "\"";
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 6 & 0x01) {
+                free(aPm25);
+            }
+
+            aPm25 = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aPm25, payload.c_str());
+
+            _fresh |= 0x01 << 6;
+        }
+
+        void pm25(float _pm25)
+        {
+            String payload = "\"" + STRING_format(BLINKER_CMD_PM25) + 
+                "\":\"" + STRING_format(_pm25) + "\"";
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 6 & 0x01) {
+                free(aPm25);
+            }
+
+            aPm25 = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aPm25, payload.c_str());
+
+            _fresh |= 0x01 << 6;
         }
 
         void pm25(int _pm25)

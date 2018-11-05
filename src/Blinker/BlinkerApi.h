@@ -5017,13 +5017,13 @@ class BlinkerApi
                     if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
                 }
                 else if (value == BLINKER_CMD_TEMP) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_TEMP_NUMBER);
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
                 }
                 else if (value == BLINKER_CMD_HUMI) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_HUMI_NUMBER);
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
                 }
                 else if (value == BLINKER_CMD_PM25) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_PM25_NUMBER);
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
                 }
             }
             else if (root.containsKey(BLINKER_CMD_SET)) {

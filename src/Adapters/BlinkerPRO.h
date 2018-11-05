@@ -161,6 +161,17 @@ class BlinkerPRO {
             }
         }
 
+        bool aligenieAvail() {
+            if (isAliAvail) {
+                isAliAvail = false;
+
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
         bool extraAvailable() {
             if (isBavail) {
                 isBavail = false;
@@ -176,6 +187,8 @@ class BlinkerPRO {
         String lastRead() { return STRING_format(msgBuf); }
         bool print(String data);
         bool bPrint(String name, String data);
+
+        bool aliPrint(String data);
         
         void begin(const char* _type) {
             _deviceType = _type;
@@ -380,6 +393,13 @@ class BlinkerPRO {
                 isAlive = false;
         }
 
+        bool checkAliKA() {
+            if (millis() - aliKaTime >= 10000)
+                return false;
+            else
+                return true;
+        }
+
         bool checkCanPrint() {
             if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
                 return true;
@@ -425,6 +445,25 @@ class BlinkerPRO {
             }
         }
 
+        bool checkAliPrintSpan() {
+            if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2) {
+                if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2) {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG1("ALIGENIE NOT ALIVE OR MSG LIMIT");
+#endif
+                    return false;
+                }
+                else {
+                    respAliTimes++;
+                    return true;
+                }
+            }
+            else {
+                respAliTimes = 0;
+                return true;
+            }
+        }
+
         bool pubHello() {
             String stateJsonStr = "{\"message\":\"Registration successful\"}";
 #ifdef BLINKER_DEBUG_ALL
@@ -445,6 +484,13 @@ class BlinkerPRO {
         uint32_t    linkTime = 0;
         uint8_t     respTimes = 0;
         uint32_t    respTime = 0;
+        uint8_t     respAliTimes = 0;
+        uint32_t    respAliTime = 0;
+
+        uint32_t    aliKaTime = 0;
+        bool        isAliAlive = false;
+        bool        isAliAvail = false;
+
         bool        isNew = false;
         bool        isAuth = false;
 };
@@ -489,6 +535,16 @@ bool BlinkerPRO::connectServer() {
 
     String url_iot = String(host) + "/api/v1/user/device/register?deviceType=" + \
                     String(_deviceType) + "&deviceName=" + macDeviceName();
+
+#if defined(BLINKER_ALIGENIE_LIGHT)
+    url_iot += "&aliType=light";
+#elif defined(BLINKER_ALIGENIE_OUTLET)
+    url_iot += "&aliType=outlet";
+#elif defined(BLINKER_ALIGENIE_SWITCH)
+#elif defined(BLINKER_ALIGENIE_SENSOR)
+    url_iot += "&aliType=sensor";
+#endif
+
 #ifdef BLINKER_DEBUG_ALL 
     BLINKER_LOG2(("HTTPS begin: "), url_iot);
 #endif
@@ -810,6 +866,14 @@ void BlinkerPRO::subscribe() {
                 isAvail = true;
                 isAlive = true;
             }
+            else if (_uuid == BLINKER_CMD_ALIGENIE) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1("form AliGenie");
+#endif
+                aliKaTime = millis();
+                isAliAlive = true;
+                isAliAvail = true;
+            }
             else {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(("No authority uuid, check is from aligenie/bridge/share device"));
@@ -1022,6 +1086,56 @@ bool BlinkerPRO::bPrint(String name, String data) {
         return false;
     }
     // }
+}
+
+bool BlinkerPRO::aliPrint(String data)
+{
+    String payload;
+
+    payload = "{\"data\":" + data + \
+            ",\"fromDevice\":\"" + MQTT_ID + \
+            "\",\"toDevice\":\"AliGenie_r\",\"deviceType\":\"vAssistant\"}";
+    
+#ifdef BLINKER_DEBUG_ALL
+    BLINKER_LOG1("MQTT AliGenie Publish...");
+#endif
+
+    if (mqtt->connected()) {
+        if (!checkAliKA()) {
+            return false;
+        }
+
+        if (!checkAliPrintSpan()) {
+            respAliTime = millis();
+            return false;
+        }
+        respAliTime = millis();
+
+        // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
+
+        // if (! iotPub.publish(payload.c_str())) {
+
+        if (! mqtt->publish(BLINKER_PUB_TOPIC, payload.c_str())) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(payload);
+            BLINKER_LOG1("...Failed");
+#endif
+            isAliAlive = false;
+            return false;
+        }
+        else {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(payload);
+            BLINKER_LOG1("...OK!");
+#endif
+            isAliAlive = false;
+            return true;
+        }      
+    }
+    else {
+        BLINKER_ERR_LOG1("MQTT Disconnected");
+        return false;
+    }
 }
 
 #endif
