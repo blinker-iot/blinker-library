@@ -1026,13 +1026,13 @@ bool BlinkerPRO::bPrint(String name, String data) {
     String payload;
     if (STRING_contains_string(data, BLINKER_CMD_NEWLINE)) {
         payload = "{\"data\":" + data.substring(0, data.length() - 1) + \
-                ",\"fromDevice\":\"" + MQTT_ID + \
+                ",\"fromDevice\":\"" + MQTT_DEVICEID + \
                 "\",\"toDevice\":\"" + name + \
                 "\",\"deviceType\":\"DiyBridge\"}";
     }
     else {
         payload = "{\"data\":" + data + \
-                ",\"fromDevice\":\"" + MQTT_ID + \
+                ",\"fromDevice\":\"" + MQTT_DEVICEID + \
                 "\",\"toDevice\":\"" + name + \
                 "\",\"deviceType\":\"DiyBridge\"}";
     }
@@ -1094,7 +1094,7 @@ bool BlinkerPRO::aliPrint(String data)
     String payload;
 
     payload = "{\"data\":" + data + \
-            ",\"fromDevice\":\"" + MQTT_ID + \
+            ",\"fromDevice\":\"" + MQTT_DEVICEID + \
             "\",\"toDevice\":\"AliGenie_r\",\"deviceType\":\"vAssistant\"}";
     
 #ifdef BLINKER_DEBUG_ALL
