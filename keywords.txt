@@ -138,6 +138,7 @@ BLINKER_CMD_QUERY_PM25_NUMBER	KEYWORD2
 attachPowerState	KEYWORD2
 attachColor	KEYWORD2
 attachMode	KEYWORD2
+attachCancelMode	KEYWORD2
 attachBrightness	KEYWORD2
 attachRelativeBrightness	KEYWORD2
 attachColorTemperature	KEYWORD2
