@@ -49,6 +49,10 @@ void aligenieQuery(int32_t queryCode)
             BlinkerAliGenie.print();
             break;
         default :
+            BlinkerAliGenie.temp(20);
+            BlinkerAliGenie.humi(20);
+            BlinkerAliGenie.pm25(20);
+            BlinkerAliGenie.print();
             break;
     }
 }
