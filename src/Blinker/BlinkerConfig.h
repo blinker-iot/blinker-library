@@ -343,6 +343,8 @@
 
 #define BLINKER_CMD_MODE                "mode"
 
+#define BLINKER_CMD_CANCELMODE          "cMode"
+
 #define BLINKER_CMD_READING             "reading"
 
 #define BLINKER_CMD_MOVIE               "movie"

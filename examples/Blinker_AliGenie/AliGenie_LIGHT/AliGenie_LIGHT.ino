@@ -226,6 +226,35 @@ void aligenieMode(const String & mode)
     BlinkerAliGenie.print();
 }
 
+void aligeniecMode(const String & cmode)
+{
+    BLINKER_LOG2("need cancel mode: ", cmode);
+
+    if (cmode == BLINKER_CMD_READING) {
+        // Your mode function
+    }
+    else if (cmode == BLINKER_CMD_MOVIE) {
+        // Your mode function
+    }
+    else if (cmode == BLINKER_CMD_SLEEP) {
+        // Your mode function
+    }
+    else if (cmode == BLINKER_CMD_HOLIDAY) {
+        // Your mode function
+    }
+    else if (cmode == BLINKER_CMD_MUSIC) {
+        // Your mode function
+    }
+    else if (cmode == BLINKER_CMD_COMMON) {
+        // Your mode function
+    }
+
+    wsMode = BLINKER_CMD_COMMON; // new mode
+
+    BlinkerAliGenie.mode(wsMode); // must response
+    BlinkerAliGenie.print();
+}
+
 void aligenieBright(int32_t bright)
 {
     BLINKER_LOG2("need set brightness: ", bright);
@@ -327,6 +356,7 @@ void setup()
     BlinkerAliGenie.attachPowerState(aligeniePowerSate);
     BlinkerAliGenie.attachColor(aligenieColor);
     BlinkerAliGenie.attachMode(aligenieMode);
+    BlinkerAliGenie.attachCancelMode(aligenieMode);
     BlinkerAliGenie.attachBrightness(aligenieBright);
     BlinkerAliGenie.attachRelativeBrightness(aligenieRelativeBright);
     BlinkerAliGenie.attachColorTemperature(aligenieColoTemp);
@@ -363,8 +393,8 @@ void loop()
         Blinker.print("millis", BlinkerTime);
     }
 
-    // for(int i = 0; i < NUMPIXELS; i++){
-    //     pixels.setPixelColor(i, colorR, colorG, colorB);
-    // }
-    // pixels.show();
+    for(int i = 0; i < NUMPIXELS; i++){
+        pixels.setPixelColor(i, colorR, colorG, colorB);
+    }
+    pixels.show();
 }

@@ -1666,6 +1666,11 @@ class BlinkerApi
             _setModeFunc = newFunction;
         }
 
+        void attachSetcMode(callback_with_string_arg_t newFunction)
+        {
+            _setcModeFunc = newFunction;
+        }
+
         void attachSetBrightness(callback_with_int32_arg_t newFunction)
         {
             _setBrightnessFunc = newFunction;
@@ -4805,6 +4810,7 @@ class BlinkerApi
         callback_with_string_arg_t  _powerStateFunc = NULL;
         callback_with_string_arg_t  _setColorFunc = NULL;
         callback_with_string_arg_t  _setModeFunc = NULL;
+        callback_with_string_arg_t  _setcModeFunc = NULL;
         callback_with_int32_arg_t   _setBrightnessFunc = NULL;
         callback_with_int32_arg_t   _setRelativeBrightnessFunc = NULL;
         callback_with_int32_arg_t   _setColorTemperature = NULL;
@@ -5089,6 +5095,11 @@ class BlinkerApi
                     String setMode = rootSet[BLINKER_CMD_MODE];
 
                     if (_setModeFunc) _setModeFunc(setMode);
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_CANCELMODE)) {
+                    String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
+
+                    if (_setcModeFunc) _setcModeFunc(setcMode);
                 }
             }
         }
