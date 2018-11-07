@@ -324,8 +324,9 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
 
-    BlinkerAliGenie.attachSetPowerState(aligeniePowerSate);
+    BlinkerAliGenie.attachPowerState(aligeniePowerSate);
     BlinkerAliGenie.attachColor(aligenieColor);
+    BlinkerAliGenie.attachMode(aligenieMode);
     BlinkerAliGenie.attachBrightness(aligenieBright);
     BlinkerAliGenie.attachRelativeBrightness(aligenieRelativeBright);
     BlinkerAliGenie.attachColorTemperature(aligenieColoTemp);
