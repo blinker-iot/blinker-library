@@ -362,7 +362,7 @@ void setup()
     BlinkerAliGenie.attachPowerState(aligeniePowerSate);
     BlinkerAliGenie.attachColor(aligenieColor);
     BlinkerAliGenie.attachMode(aligenieMode);
-    BlinkerAliGenie.attachCancelMode(aligenieMode);
+    BlinkerAliGenie.attachCancelMode(aligeniecMode);
     BlinkerAliGenie.attachBrightness(aligenieBright);
     BlinkerAliGenie.attachRelativeBrightness(aligenieRelativeBright);
     BlinkerAliGenie.attachColorTemperature(aligenieColoTemp);
