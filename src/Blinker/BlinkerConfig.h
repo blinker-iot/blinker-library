@@ -341,21 +341,49 @@
 
 #define BLINKER_CMD_SUMMARY             "sum"
 
+#define BLINKER_CMD_MODE                "mode"
+
+#define BLINKER_CMD_READING             "reading"
+
+#define BLINKER_CMD_MOVIE               "movie"
+
+#define BLINKER_CMD_SLEEP               "sleep"
+
+#define BLINKER_CMD_HOLIDAY             "holiday"
+
+#define BLINKER_CMD_MUSIC               "music"
+
+#define BLINKER_CMD_COMMON              "common"
+
+#define BLINKER_CMD_MODE_READING_NUMBER         0
+
+#define BLINKER_CMD_MODE_MOVIE_NUMBER           1
+
+#define BLINKER_CMD_SLEEP_NUMBER                2
+
+#define BLINKER_CMD_HOLIDAY_NUMBER              3
+
+#define BLINKER_CMD_MUSIC_NUMBER                4
+
+#define BLINKER_CMD_COMMON_NUMBER               5
+
 #define BLINKER_CMD_QUERY_ALL_NUMBER            0
 
 #define BLINKER_CMD_QUERY_POWERSTATE_NUMBER     1
 
 #define BLINKER_CMD_QUERY_COLOR_NUMBER          2
 
-#define BLINKER_CMD_QUERY_COLORTEMP_NUMBER      3
+#define BLINKER_CMD_QUERY_MODE_NUMBER           3
 
-#define BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER     4
+#define BLINKER_CMD_QUERY_COLORTEMP_NUMBER      4
 
-#define BLINKER_CMD_QUERY_TEMP_NUMBER           5
+#define BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER     5
 
-#define BLINKER_CMD_QUERY_HUMI_NUMBER           6
+#define BLINKER_CMD_QUERY_TEMP_NUMBER           6
 
-#define BLINKER_CMD_QUERY_PM25_NUMBER           7
+#define BLINKER_CMD_QUERY_HUMI_NUMBER           7
+
+#define BLINKER_CMD_QUERY_PM25_NUMBER           8
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT  128
 

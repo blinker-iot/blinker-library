@@ -19,6 +19,11 @@ class BLINKERALIGENIE
             Blinker.attachSetColor(newFunction);
         }
 
+        void attachMode(callback_with_string_arg_t newFunction)
+        {
+            Blinker.attachSetMode(newFunction);
+        }
+
         void attachBrightness(callback_with_int32_arg_t newFunction)
         {
             Blinker.attachSetBrightness(newFunction);
@@ -78,6 +83,23 @@ class BLINKERALIGENIE
             _fresh |= 0x01 << 1;
         }
 
+        void mode(const String & md)
+        {
+            String payload = "\"" + STRING_format(BLINKER_CMD_MODE) + 
+                "\":\"" + md + "\"";
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 2 & 0x01) {
+                free(aMode);
+            }
+
+            aMode = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aMode, payload.c_str());
+
+            _fresh |= 0x01 << 2;
+        }
+
         void colorTemp(int clrTemp)
         {
             String payload = "\"" + STRING_format(BLINKER_CMD_COLORTEMP) + 
@@ -85,14 +107,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 2 & 0x01) {
+            if (_fresh >> 3 & 0x01) {
                 free(aCtemp);
             }
 
             aCtemp = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aCtemp, payload.c_str());
 
-            _fresh |= 0x01 << 2;
+            _fresh |= 0x01 << 3;
         }
 
         void brightness(int bright)
@@ -102,14 +124,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 3 & 0x01) {
+            if (_fresh >> 4 & 0x01) {
                 free(aBright);
             }
 
             aBright = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aBright, payload.c_str());
 
-            _fresh |= 0x01 << 3;
+            _fresh |= 0x01 << 4;
         }
 
         void temp(double _temp)
@@ -119,14 +141,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 4 & 0x01) {
+            if (_fresh >> 5 & 0x01) {
                 free(aTemp);
             }
 
             aTemp = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aTemp, payload.c_str());
 
-            _fresh |= 0x01 << 4;
+            _fresh |= 0x01 << 5;
         }
 
         void temp(float _temp)
@@ -136,14 +158,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 4 & 0x01) {
+            if (_fresh >> 5 & 0x01) {
                 free(aTemp);
             }
 
             aTemp = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aTemp, payload.c_str());
 
-            _fresh |= 0x01 << 4;
+            _fresh |= 0x01 << 5;
         }
 
         void temp(int _temp)
@@ -153,14 +175,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 4 & 0x01) {
+            if (_fresh >> 5 & 0x01) {
                 free(aTemp);
             }
 
             aTemp = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aTemp, payload.c_str());
 
-            _fresh |= 0x01 << 4;
+            _fresh |= 0x01 << 5;
         }
 
         void humi(double _humi)
@@ -170,14 +192,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 5 & 0x01) {
+            if (_fresh >> 6 & 0x01) {
                 free(aHumi);
             }
 
             aHumi = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aHumi, payload.c_str());
 
-            _fresh |= 0x01 << 5;
+            _fresh |= 0x01 << 6;
         }
 
         void humi(float _humi)
@@ -187,14 +209,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 5 & 0x01) {
+            if (_fresh >> 6 & 0x01) {
                 free(aHumi);
             }
 
             aHumi = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aHumi, payload.c_str());
 
-            _fresh |= 0x01 << 5;
+            _fresh |= 0x01 << 6;
         }
 
         void humi(int _humi)
@@ -204,14 +226,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 5 & 0x01) {
+            if (_fresh >> 6 & 0x01) {
                 free(aHumi);
             }
 
             aHumi = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aHumi, payload.c_str());
 
-            _fresh |= 0x01 << 5;
+            _fresh |= 0x01 << 6;
         }
 
         void pm25(double _pm25)
@@ -221,14 +243,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 6 & 0x01) {
+            if (_fresh >> 7 & 0x01) {
                 free(aPm25);
             }
 
             aPm25 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm25, payload.c_str());
 
-            _fresh |= 0x01 << 6;
+            _fresh |= 0x01 << 7;
         }
 
         void pm25(float _pm25)
@@ -238,14 +260,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 6 & 0x01) {
+            if (_fresh >> 7 & 0x01) {
                 free(aPm25);
             }
 
             aPm25 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm25, payload.c_str());
 
-            _fresh |= 0x01 << 6;
+            _fresh |= 0x01 << 7;
         }
 
         void pm25(int _pm25)
@@ -255,14 +277,14 @@ class BLINKERALIGENIE
 
             // Blinker.aligeniePrint(payload);
 
-            if (_fresh >> 6 & 0x01) {
+            if (_fresh >> 7 & 0x01) {
                 free(aPm25);
             }
 
             aPm25 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm25, payload.c_str());
 
-            _fresh |= 0x01 << 6;
+            _fresh |= 0x01 << 7;
         }
 
         void print()
@@ -293,12 +315,21 @@ class BLINKERALIGENIE
                 if (aliData.length()) aliData += BLINKER_F(",");
                 else aliData += BLINKER_F("{");
                 
+                aliData += aMode;
+                
+                free(aMode);
+            }
+
+            if (_fresh >> 3 & 0x01) {
+                if (aliData.length()) aliData += BLINKER_F(",");
+                else aliData += BLINKER_F("{");
+                
                 aliData += aCtemp;
                 
                 free(aCtemp);
             }
 
-            if (_fresh >> 3 & 0x01) {
+            if (_fresh >> 4 & 0x01) {
                 if (aliData.length()) aliData += BLINKER_F(",");
                 else aliData += BLINKER_F("{");
                 
@@ -307,7 +338,7 @@ class BLINKERALIGENIE
                 free(aBright);
             }
 
-            if (_fresh >> 4 & 0x01) {
+            if (_fresh >> 5 & 0x01) {
                 if (aliData.length()) aliData += BLINKER_F(",");
                 else aliData += BLINKER_F("{");
                 
@@ -316,7 +347,7 @@ class BLINKERALIGENIE
                 free(aTemp);
             }
 
-            if (_fresh >> 5 & 0x01) {
+            if (_fresh >> 6 & 0x01) {
                 if (aliData.length()) aliData += BLINKER_F(",");
                 else aliData += BLINKER_F("{");
                 
@@ -325,7 +356,7 @@ class BLINKERALIGENIE
                 free(aHumi);
             }
 
-            if (_fresh >> 6 & 0x01) {
+            if (_fresh >> 7 & 0x01) {
                 if (aliData.length()) aliData += BLINKER_F(",");
                 else aliData += BLINKER_F("{");
                 
@@ -344,6 +375,7 @@ class BLINKERALIGENIE
     private :
         char * aState;
         char * aColor;
+        char * aMode;
         char * aCtemp;
         char * aBright;
         char * aTemp;

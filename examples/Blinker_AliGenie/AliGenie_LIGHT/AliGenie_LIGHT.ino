@@ -49,6 +49,7 @@ BlinkerRGB WS2812(RGB_1);
 
 uint8_t colorR, colorG, colorB, colorW;
 bool wsState;
+String wsMode = BLINKER_CMD_COMMON;
 
 void pixelShow()
 {
@@ -196,6 +197,35 @@ void aligenieColor(const String & color)
     BlinkerAliGenie.print();
 }
 
+void aligenieMode(const String & mode)
+{
+    BLINKER_LOG2("need set mode: ", mode);
+
+    if (mode == BLINKER_CMD_READING) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_MOVIE) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_SLEEP) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_HOLIDAY) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_MUSIC) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_COMMON) {
+        // Your mode function
+    }
+
+    wsMode = mode;
+
+    BlinkerAliGenie.mode(mode);
+    BlinkerAliGenie.print();
+}
+
 void aligenieBright(int32_t bright)
 {
     BLINKER_LOG2("need set brightness: ", bright);
@@ -250,6 +280,7 @@ void aligenieQuery(int32_t queryCode)
             BLINKER_LOG1("AliGenie Query All");
             BlinkerAliGenie.powerState(wsState ? "on" : "off");
             BlinkerAliGenie.color(getColor());
+            BlinkerAliGenie.mode(wsMode);
             BlinkerAliGenie.colorTemp(50);
             BlinkerAliGenie.brightness(colorW);
             BlinkerAliGenie.print();
@@ -262,6 +293,11 @@ void aligenieQuery(int32_t queryCode)
         case BLINKER_CMD_QUERY_COLOR_NUMBER :
             BLINKER_LOG1("AliGenie Query Color");
             BlinkerAliGenie.color(getColor());
+            BlinkerAliGenie.print();
+            break;
+        case BLINKER_CMD_QUERY_MODE_NUMBER :
+            BLINKER_LOG1("AliGenie Query Mode");
+            BlinkerAliGenie.mode(wsMode);
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_QUERY_COLORTEMP_NUMBER :
@@ -288,8 +324,9 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
 
-    BlinkerAliGenie.attachSetPowerState(aligeniePowerSate);
+    BlinkerAliGenie.attachPowerState(aligeniePowerSate);
     BlinkerAliGenie.attachColor(aligenieColor);
+    BlinkerAliGenie.attachMode(aligenieMode);
     BlinkerAliGenie.attachBrightness(aligenieBright);
     BlinkerAliGenie.attachRelativeBrightness(aligenieRelativeBright);
     BlinkerAliGenie.attachColorTemperature(aligenieColoTemp);
