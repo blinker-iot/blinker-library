@@ -1661,6 +1661,11 @@ class BlinkerApi
             _setColorFunc = newFunction;
         }
 
+        void attachSetMode(callback_with_string_arg_t newFunction)
+        {
+            _setModeFunc = newFunction;
+        }
+
         void attachSetBrightness(callback_with_int32_arg_t newFunction)
         {
             _setBrightnessFunc = newFunction;
@@ -4799,6 +4804,7 @@ class BlinkerApi
 #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
         callback_with_string_arg_t  _powerStateFunc = NULL;
         callback_with_string_arg_t  _setColorFunc = NULL;
+        callback_with_string_arg_t  _setModeFunc = NULL;
         callback_with_int32_arg_t   _setBrightnessFunc = NULL;
         callback_with_int32_arg_t   _setRelativeBrightnessFunc = NULL;
         callback_with_int32_arg_t   _setColorTemperature = NULL;
@@ -5025,6 +5031,9 @@ class BlinkerApi
                 else if (value == BLINKER_CMD_PM25) {
                     if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
                 }
+                else if (value == BLINKER_CMD_MODE) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
+                }
             }
             else if (root.containsKey(BLINKER_CMD_SET)) {
                 String value = root[BLINKER_CMD_SET];
@@ -5075,6 +5084,11 @@ class BlinkerApi
                     String setValue = rootSet[BLINKER_CMD_DOWNCOLORTEMP];
 
                     if (_setRelativeColorTemperature) _setRelativeColorTemperature(- setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_MODE)) {
+                    String setMode = rootSet[BLINKER_CMD_MODE];
+
+                    if (_setModeFunc) _setModeFunc(setMode);
                 }
             }
         }
