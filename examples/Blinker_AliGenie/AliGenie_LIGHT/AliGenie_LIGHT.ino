@@ -273,7 +273,9 @@ void aligenieRelativeBright(int32_t bright)
 {
     BLINKER_LOG2("need set relative brightness: ", bright);
 
-    colorW += bright;
+    if (colorW + bright < 255 && colorW + bright >= 0) {
+        colorW += bright;
+    }
 
     BLINKER_LOG2("now set brightness: ", colorW);
 
