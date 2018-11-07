@@ -340,6 +340,12 @@ void aligenieQuery(int32_t queryCode)
             BlinkerAliGenie.print();
             break;
         default :
+            BlinkerAliGenie.powerState(wsState ? "on" : "off");
+            BlinkerAliGenie.color(getColor());
+            BlinkerAliGenie.mode(wsMode);
+            BlinkerAliGenie.colorTemp(50);
+            BlinkerAliGenie.brightness(colorW);
+            BlinkerAliGenie.print();
             break;
     }
 }
