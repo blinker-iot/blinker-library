@@ -255,17 +255,25 @@ void aligeniecMode(const String & cmode)
     BlinkerAliGenie.print();
 }
 
-void aligenieBright(int32_t bright)
+void aligenieBright(const String & bright)
 {
     BLINKER_LOG2("need set brightness: ", bright);
 
-    colorW = bright;
+    if (bright == BLINKER_CMD_MAX) {
+        colorW = 255;
+    }
+    else if (bright == BLINKER_CMD_MIN) {
+        colorW = 0;
+    }
+    else {
+        colorW = bright.toInt();
+    }
 
     BLINKER_LOG2("now set brightness: ", colorW);
 
     pixelShow();
 
-    BlinkerAliGenie.brightness(bright);
+    BlinkerAliGenie.brightness(colorW);
     BlinkerAliGenie.print();
 }
 
@@ -273,7 +281,9 @@ void aligenieRelativeBright(int32_t bright)
 {
     BLINKER_LOG2("need set relative brightness: ", bright);
 
-    colorW += bright;
+    if (colorW + bright < 255 && colorW + bright >= 0) {
+        colorW += bright;
+    }
 
     BLINKER_LOG2("now set brightness: ", colorW);
 

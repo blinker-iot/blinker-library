@@ -337,6 +337,10 @@
 
 #define BLINKER_CMD_PM25                "pm25"
 
+#define BLINKER_CMD_MAX                 "max"
+
+#define BLINKER_CMD_MIN                 "min"
+
 #define BLINKER_CMD_ALIGENIE            "AliGenie"
 
 #define BLINKER_CMD_SUMMARY             "sum"

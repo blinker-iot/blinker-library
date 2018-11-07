@@ -1671,7 +1671,7 @@ class BlinkerApi
             _setcModeFunc = newFunction;
         }
 
-        void attachSetBrightness(callback_with_int32_arg_t newFunction)
+        void attachSetBrightness(callback_with_string_arg_t newFunction)
         {
             _setBrightnessFunc = newFunction;
         }
@@ -4811,7 +4811,7 @@ class BlinkerApi
         callback_with_string_arg_t  _setColorFunc = NULL;
         callback_with_string_arg_t  _setModeFunc = NULL;
         callback_with_string_arg_t  _setcModeFunc = NULL;
-        callback_with_int32_arg_t   _setBrightnessFunc = NULL;
+        callback_with_string_arg_t  _setBrightnessFunc = NULL;
         callback_with_int32_arg_t   _setRelativeBrightnessFunc = NULL;
         callback_with_int32_arg_t   _setColorTemperature = NULL;
         callback_with_int32_arg_t   _setRelativeColorTemperature = NULL;
@@ -5064,7 +5064,7 @@ class BlinkerApi
                 else if (rootSet.containsKey(BLINKER_CMD_BRIGHTNESS)) {
                     String setValue = rootSet[BLINKER_CMD_BRIGHTNESS];
 
-                    if (_setBrightnessFunc) _setBrightnessFunc(setValue.toInt());
+                    if (_setBrightnessFunc) _setBrightnessFunc(setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_UPBRIGHTNESS)) {
                     String setValue = rootSet[BLINKER_CMD_UPBRIGHTNESS];
