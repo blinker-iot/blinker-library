@@ -478,10 +478,133 @@ class BlinkerMQTT {
 
 bool BlinkerMQTT::connectServer() {
     const int httpsPort = 443;
-    const char* host = "https://iotdev.clz.me";
 #if defined(ESP8266)
+    const char* host = "iotdev.clz.me";
     const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
+
+    // WiFiClientSecure client_s;
+
+#ifdef BLINKER_DEBUG_ALL
+    BLINKER_LOG2(("connecting to "), host);
+#endif
+
+    
+    uint8_t connet_times = 0;
+    client_s.stop();
+    ::delay(100);
+
+    while (1) {
+        bool cl_connected = false;
+        if (!client_s.connect(host, httpsPort)) {
+    // #ifdef BLINKER_DEBUG_ALL
+            BLINKER_ERR_LOG1(("server connection failed"));
+    // #endif
+            // return BLINKER_CMD_FALSE;
+
+            connet_times++;
+        }
+        else {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(("connection succeed"));
+#endif
+            // return true;
+            cl_connected = true;
+
+            break;
+        }
+
+        if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
+    }
+
+#ifndef BLINKER_LAN_DEBUG
+    if (client_s.verify(fingerprint, host)) {
+    #ifdef BLINKER_DEBUG_ALL
+        // _status = DH_VERIFIED;
+        BLINKER_LOG1(("Fingerprint verified"));
+        // return true;
+    #endif
+    }
+    else {
+    #ifdef BLINKER_DEBUG_ALL
+        // _status = DH_VERIFY_FAILED;
+        // _status = DH_VERIFIED;
+        BLINKER_LOG1(("Fingerprint verification failed!"));
+        // return false;
+    #endif
+    }
+#endif
+
+    // String url;
+    String client_msg;
+
+    String url_iot = "/api/v1/user/device/diy/auth?authKey=" + String(authkey);
+
+#if defined(BLINKER_ALIGENIE_LIGHT)
+    url_iot += "&aliType=light";
+#elif defined(BLINKER_ALIGENIE_OUTLET)
+    url_iot += "&aliType=outlet";
+#elif defined(BLINKER_ALIGENIE_SWITCH)
+#elif defined(BLINKER_ALIGENIE_SENSOR)
+    url_iot += "&aliType=sensor";
+#endif
+
+#ifdef BLINKER_DEBUG_ALL 
+    BLINKER_LOG3("HTTPS begin: ", host, url_iot);
+#endif
+
+    client_msg = STRING_format("GET " + url_iot + " HTTP/1.1\r\n" +
+        "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
+        "Connection: close\r\n\r\n");
+
+    client_s.print(client_msg);
+#ifdef BLINKER_DEBUG_ALL
+    BLINKER_LOG2(("client_msg: "), client_msg);
+#endif
+
+    unsigned long timeout = millis();
+    while (client_s.available() == 0) {
+        if (millis() - timeout > 5000) {
+            BLINKER_LOG1((">>> Client Timeout !"));
+            client_s.stop();
+            return BLINKER_CMD_FALSE;
+        }
+    }
+
+    String _dataGet;
+    String lastGet;
+    String lengthOfJson;
+    while (client_s.available()) {
+        // String line = client_s.readStringUntil('\r');
+        _dataGet = client_s.readStringUntil('\n');
+
+        if (_dataGet.startsWith("Content-Length: ")){
+            int addr_start = _dataGet.indexOf(' ');
+            int addr_end = _dataGet.indexOf('\0', addr_start + 1);
+            lengthOfJson = _dataGet.substring(addr_start + 1, addr_end);
+        }
+
+        if (_dataGet == "\r") {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(("headers received"));
+#endif
+            break;
+        }
+    }
+
+    for(int i=0;i<lengthOfJson.toInt();i++){
+        lastGet += (char)client_s.read();
+    }
+
+    _dataGet = lastGet;
+
+#ifdef BLINKER_DEBUG_ALL
+    BLINKER_LOG2(("_dataGet: "), _dataGet);
+#endif
+
+    String payload = _dataGet;
+
 #elif defined(ESP32)
+    const char* host = "https://iotdev.clz.me";
     // const char* ca = \ 
     //     "-----BEGIN CERTIFICATE-----\n" \
     //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
@@ -510,7 +633,7 @@ bool BlinkerMQTT::connectServer() {
     //     "oOdVycVtpLunyUoVAB2DcOElfDxxXCvDH3XsgoIU216VY03MCaUZf7kZ2GiNL+UX\n" \
     //     "9UBd0Q==\n" \
     //     "-----END CERTIFICATE-----\n";
-#endif
+// #endif
 
     HTTPClient http;
 
@@ -529,12 +652,12 @@ bool BlinkerMQTT::connectServer() {
     BLINKER_LOG2("HTTPS begin: ", url_iot);
 #endif
 
-#if defined(ESP8266)
-    http.begin(url_iot, fingerprint); //HTTP
-#elif defined(ESP32)
+// #if defined(ESP8266)
+//     http.begin(url_iot, fingerprint); //HTTP
+// #elif defined(ESP32)
     // http.begin(url_iot, ca); TODO
     http.begin(url_iot);
-#endif
+// #endif
     int httpCode = http.GET();
 
     String payload;
@@ -560,6 +683,7 @@ bool BlinkerMQTT::connectServer() {
     }
 
     http.end();
+#endif
 
 #ifdef BLINKER_DEBUG_ALL
     BLINKER_LOG1("reply was:");

@@ -1259,6 +1259,7 @@ class BlinkerProtocol
         uint8_t         _disconnectCount = 0;
         uint32_t        _disFreshTime = 0;
         uint32_t        _disconnectTime = 0;
+        uint32_t        _refreshTime = 0;
 #endif
 
 #if defined(BLINKER_PRO)
@@ -1527,7 +1528,7 @@ void BlinkerProtocol<Transp>::run()
     // }
 
     if (_getRegister) {
-        if (!_isRegistered && ((millis() - _register_fresh) > 60000 || _register_fresh == 0)) {
+        if (!_isRegistered && ((millis() - _register_fresh) > 5000 || _register_fresh == 0)) {
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("conn deviceRegister"));
     #endif
@@ -1601,7 +1602,15 @@ void BlinkerProtocol<Transp>::run()
         // if (_disconnectCount >= 12) {
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG1(BLINKER_F("device reRegister"));
+            BLINKER_LOG_FreeHeap();
     #endif
+            if (BLINKER_FreeHeap() < 15000) {
+                conn.disconnect();
+                return;
+            }
+
+            BLINKER_LOG_FreeHeap();
+
             if (conn.reRegister()) {
                 _disconnectCount = 0;
                 _disconnectTime = millis();
@@ -1613,6 +1622,27 @@ void BlinkerProtocol<Transp>::run()
         }
 
         BApi::ntpInit();
+    }
+
+    if ((millis() - _refreshTime) >= BLINKER_ONE_DAY_TIME * 2 * 1000) {
+    // if ((millis() - _refreshTime) >= 120000) {
+        conn.disconnect();
+
+    #ifdef BLINKER_DEBUG_ALL
+        BLINKER_LOG1(BLINKER_F("device reRegister"));
+        BLINKER_LOG_FreeHeap();
+    #endif
+
+        if (BLINKER_FreeHeap() < 15000) {
+            conn.disconnect();
+            return;
+        }
+
+        BLINKER_LOG_FreeHeap();
+
+        if (conn.reRegister()) {
+            _refreshTime = millis();
+        }
     }
 #endif
 
@@ -1626,8 +1656,9 @@ void BlinkerProtocol<Transp>::run()
             WiFi.reconnect();
         }
 
-        if ((millis() > _reconTime) && (millis() - _reconTime) >= 10000) {
-            _reconTime += 10000;
+        // if ((millis() > _reconTime) && (millis() - _reconTime) >= 10000) {
+        if ((millis() - _reconTime) >= 10000) {
+            _reconTime = millis();
 
             BLINKER_LOG1(BLINKER_F("WiFi disconnected! reconnecting!"));
 
@@ -1637,6 +1668,15 @@ void BlinkerProtocol<Transp>::run()
         return;
     }
 #endif
+
+// #if defined(BLINKER_MQTT)
+//     // if ((millis() - _refreshTime) >= BLINKER_ONE_DAY_TIME * 2 * 1000) {
+//     if ((millis() - _refreshTime) >= 120000) {
+//         conn.begin(_authKey);
+
+//         _refreshTime += BLINKER_ONE_DAY_TIME * 2 * 1000;
+//     }
+// #endif
 
     bool conState = conn.connected();
 
@@ -1662,8 +1702,9 @@ void BlinkerProtocol<Transp>::run()
                         _disFreshTime = millis();
                     }
                     else {
-                        if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
-                            _disFreshTime += 5000;
+                        // if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
+                        if ((millis() - _disFreshTime) >= 5000) {
+                            _disFreshTime = millis();
                             _disconnectCount++;
 
                             if (_disconnectCount > 12) _disconnectCount = 12;
@@ -1701,8 +1742,9 @@ void BlinkerProtocol<Transp>::run()
                         _disFreshTime = millis();
                     }
                     else {
-                        if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
-                            _disFreshTime += 5000;
+                        // if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
+                        if ((millis() - _disFreshTime) >= 5000) {
+                            _disFreshTime = millis();
                             _disconnectCount++;
 
                             if (_disconnectCount > 12) _disconnectCount = 12;
