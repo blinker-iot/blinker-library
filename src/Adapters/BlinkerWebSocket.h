@@ -73,10 +73,10 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
     }
 }
 
-class BlinkerArduinoWS
+class BlinkerWebSocket
 {
     public :
-        BlinkerArduinoWS() {}
+        BlinkerWebSocket() {}
 
         void begin(String deviceName)
         {

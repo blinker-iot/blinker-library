@@ -1,5 +1,5 @@
-#ifndef BlinkerSimplerESP8266_MQTT_H
-#define BlinkerSimplerESP8266_MQTT_H
+#ifndef BlinkerESP8266_MQTT_H
+#define BlinkerESP8266_MQTT_H
 
 #include "Adapters/BlinkerMQTT.h"
 #include <ESP8266mDNS.h>
@@ -13,13 +13,13 @@ static IPAddress apIP(192, 168, 4, 1);
 static IPAddress netMsk(255, 255, 255, 0);
 #endif
 
-class BlinkerSimpleESP8266_MQTT 
+class BlinkerESP8266_MQTT 
     : public BlinkerProtocol<BlinkerMQTT>
 {
     typedef BlinkerProtocol<BlinkerMQTT> Base;
 
     public : 
-        BlinkerSimpleESP8266_MQTT(BlinkerMQTT &transp)
+        BlinkerESP8266_MQTT(BlinkerMQTT &transp)
             : Base(transp)
         {}
 
@@ -260,7 +260,7 @@ class BlinkerSimpleESP8266_MQTT
 };
 
 static BlinkerMQTT  _blinkerTransport;
-BlinkerSimpleESP8266_MQTT Blinker(_blinkerTransport);
+BlinkerESP8266_MQTT Blinker(_blinkerTransport);
 
 #include <BlinkerWidgets.h>
 

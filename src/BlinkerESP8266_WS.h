@@ -1,23 +1,25 @@
-#ifndef BlinkerSimplerESP32_H
-#define BlinkerSimplerESP32_H
+#ifndef BlinkerESP8266_WS_H
+#define BlinkerESP8266_WS_H
 
-#include <Adapters/BlinkerArduinoWS.h>
-#include <ESPmDNS.h>
-#include <WiFi.h>
+#include <Adapters/BlinkerWebSocket.h>
+#include <ESP8266mDNS.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
 
 #if defined(BLINKER_APCONFIG)
 static WiFiServer *_server;
 static WiFiClient _client;
 static IPAddress apIP(192, 168, 4, 1);
+static IPAddress netMsk(255, 255, 255, 0);
 #endif
 
-class BlinkerSimpleESP32_WS 
-    : public BlinkerProtocol<BlinkerArduinoWS>
+class BlinkerESP8266_WS 
+    : public BlinkerProtocol<BlinkerWebSocket>
 {
-    typedef BlinkerProtocol<BlinkerArduinoWS> Base;
+    typedef BlinkerProtocol<BlinkerWebSocket> Base;
 
-    public :
-        BlinkerSimpleESP32_WS(BlinkerArduinoWS &transp)
+    public : 
+        BlinkerESP8266_WS(BlinkerWebSocket &transp)
             : Base(transp)
         {}
 
@@ -27,7 +29,7 @@ class BlinkerSimpleESP32_WS
             if (!autoInit())
                 smartconfig();
             Base::loadTimer();
-            BLINKER_LOG1(BLINKER_F("ESP32_WiFi initialized..."));
+            BLINKER_LOG1(BLINKER_F("ESP8266_WiFi initialized..."));
         }
 // #endif
 #elif defined(BLINKER_APCONFIG)
@@ -51,10 +53,10 @@ class BlinkerSimpleESP32_WS
             Base::begin();
             connectWiFi(_ssid, _pswd);
             Base::loadTimer();
-            BLINKER_LOG1(BLINKER_F("ESP32_WiFi initialized..."));
+            BLINKER_LOG1(BLINKER_F("ESP8266_WiFi initialized..."));
         }
 #endif
-
+    
     private :
 #if defined(BLINKER_APCONFIG)
         void softAPinit()
@@ -63,9 +65,9 @@ class BlinkerSimpleESP32_WS
 
             WiFi.mode(WIFI_AP);
             String softAP_ssid = "DiyArduino_" + macDeviceName();
-            WiFi.setHostname(softAP_ssid.c_str());            
-            WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-            WiFi.softAP(softAP_ssid.c_str(), "12345678");
+            WiFi.hostname(softAP_ssid);
+            WiFi.softAPConfig(apIP, apIP, netMsk);
+            WiFi.softAP(softAP_ssid.c_str(), ("12345678"));
             delay(100);
 
             _server->begin();
@@ -82,7 +84,7 @@ class BlinkerSimpleESP32_WS
             }
             else
             {
-                if (!_client.connected())
+                if (_client.status() == CLOSED)
                 {
                     _client.stop();
                     BLINKER_LOG1(BLINKER_F("Connection closed on _client"));
@@ -100,7 +102,7 @@ class BlinkerSimpleESP32_WS
 
                         if (STRING_contains_string(data, "ssid") && STRING_contains_string(data, "pswd")) {
 
-                            String msg = "{\"hello\":\"world\"}";
+                            String msg = ("{\"hello\":\"world\"}");
                             
                             String s= "HTTP/1.1 200 OK\r\nContent-Type: application/json;charset=utf-8\r\n";
                             s += String("Content-Length: " + String(msg.length()) + "\r\n" +  
@@ -123,11 +125,11 @@ class BlinkerSimpleESP32_WS
             BLINKER_LOG2(BLINKER_F("APCONFIG data: "), data);
             DynamicJsonBuffer jsonBuffer;
             JsonObject& wifi_data = jsonBuffer.parseObject(data);
-            
+
             if (!wifi_data.success()) {
                 return false;
             }
-
+                            
             String _ssid = wifi_data["ssid"];
             String _pswd = wifi_data["pswd"];
 
@@ -143,7 +145,7 @@ class BlinkerSimpleESP32_WS
         bool autoInit() {
             WiFi.mode(WIFI_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
-            WiFi.setHostname(_hostname.c_str());
+            WiFi.hostname(_hostname.c_str());
 
             WiFi.begin();
             ::delay(500);
@@ -172,7 +174,7 @@ class BlinkerSimpleESP32_WS
         void smartconfig() {
             WiFi.mode(WIFI_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
-            WiFi.setHostname(_hostname.c_str());
+            WiFi.hostname(_hostname.c_str());
             WiFi.beginSmartConfig();
             
             BLINKER_LOG1(BLINKER_F("Waiting for SmartConfig."));
@@ -182,7 +184,7 @@ class BlinkerSimpleESP32_WS
 
             BLINKER_LOG1(BLINKER_F("SmartConfig received."));
             
-            BLINKER_LOG1("Waiting for WiFi");
+            BLINKER_LOG1(BLINKER_F("Waiting for WiFi"));
             while (WiFi.status() != WL_CONNECTED) {
                 ::delay(500);
             }
@@ -198,7 +200,7 @@ class BlinkerSimpleESP32_WS
 
         void mDNSInit()
         {
-            if (!MDNS.begin(macDeviceName().c_str())) {
+            if (!MDNS.begin(macDeviceName().c_str(), WiFi.localIP())) {
                 while(1) {
                     ::delay(100);
                 }
@@ -222,11 +224,11 @@ class BlinkerSimpleESP32_WS
             uint32_t connectTime = millis();
 
             BLINKER_LOG2(BLINKER_F("Connecting to "), _ssid);
-            
-            WiFi.mode(WIFI_STA);
-            String _hostname = "DiyArduinoMQTT_" + macDeviceName();
-            WiFi.setHostname(_hostname.c_str());
 
+            WiFi.mode(WIFI_STA);
+            String _hostname = "DiyArduino_" + macDeviceName();
+            WiFi.hostname(_hostname);
+            
             if (_pswd && strlen(_pswd)) {
                 WiFi.begin(_ssid, _pswd);
             }
@@ -252,8 +254,8 @@ class BlinkerSimpleESP32_WS
         }
 };
 
-static BlinkerArduinoWS  _blinkerTransport;
-BlinkerSimpleESP32_WS Blinker(_blinkerTransport);
+static BlinkerWebSocket  _blinkerTransport;
+BlinkerESP8266_WS Blinker(_blinkerTransport);
 
 #include <BlinkerWidgets.h>
 

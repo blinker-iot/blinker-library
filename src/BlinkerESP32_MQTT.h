@@ -1,5 +1,5 @@
-#ifndef BlinkerSimplerESP32_MQTT_H
-#define BlinkerSimplerESP32_MQTT_H
+#ifndef BlinkerESP32_MQTT_H
+#define BlinkerESP32_MQTT_H
 
 #include "Adapters/BlinkerMQTT.h"
 
@@ -9,13 +9,13 @@ static WiFiClient _client;
 static IPAddress apIP(192, 168, 4, 1);
 #endif
 
-class BlinkerSimpleESP32_MQTT 
+class BlinkerESP32_MQTT 
     : public BlinkerProtocol<BlinkerMQTT>
 {
     typedef BlinkerProtocol<BlinkerMQTT> Base;
 
     public : 
-        BlinkerSimpleESP32_MQTT(BlinkerMQTT &transp)
+        BlinkerESP32_MQTT(BlinkerMQTT &transp)
             : Base(transp)
         {}
 
@@ -242,7 +242,7 @@ class BlinkerSimpleESP32_MQTT
 };
 
 static BlinkerMQTT  _blinkerTransport;
-BlinkerSimpleESP32_MQTT Blinker(_blinkerTransport);
+BlinkerESP32_MQTT Blinker(_blinkerTransport);
 
 #include <BlinkerWidgets.h>
 
