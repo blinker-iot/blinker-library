@@ -10,9 +10,9 @@
     #endif
 
     #if defined(ESP32)
-        #include <BlinkerSimpleESP32_BLE.h>
+        #include <BlinkerESP32_BLE.h>
     #else
-        #include <BlinkerSimpleSerialBLE.h>
+        #include <BlinkerSerialBLE.h>
     #endif
 
 #elif defined(BLINKER_WIFI)
@@ -23,9 +23,9 @@
     #endif
 
     #if defined(ESP8266)
-        #include <BlinkerSimpleESP8266_WS.h>
+        #include <BlinkerESP8266_WS.h>
     #elif defined(ESP32)
-        #include <BlinkerSimpleESP32_WS.h>
+        #include <BlinkerESP32_WS.h>
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
@@ -83,9 +83,9 @@
     #endif
 
     #if defined(ESP8266)
-        #include <BlinkerSimpleESP8266_MQTT.h>
+        #include <BlinkerESP8266_MQTT.h>
     #elif defined(ESP32)
-        #include <BlinkerSimpleESP32_MQTT.h>
+        #include <BlinkerESP32_MQTT.h>
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
@@ -106,9 +106,9 @@
     #endif
 
     #if defined(ESP8266)
-        #include <BlinkerSimpleESP8266_PRO.h>
+        #include <BlinkerESP8266_PRO.h>
     #elif defined(ESP32)
-        #include <BlinkerSimpleESP32_PRO.h>
+        #include <BlinkerESP32_PRO.h>
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif

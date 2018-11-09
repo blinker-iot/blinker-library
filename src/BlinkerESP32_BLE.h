@@ -1,5 +1,5 @@
-#ifndef BlinkerSimplerESP32_BLE_H
-#define BlinkerSimplerESP32_BLE_H
+#ifndef BlinkerESP32_BLE_H
+#define BlinkerESP32_BLE_H
 
 #include <Blinker/BlinkerProtocol.h>
 
@@ -11,13 +11,13 @@
 // #define SERVICE_UUID        "0000ffe0-1fb5-459e-8fcc-c5c9c331914b"
 // #define CHARACTERISTIC_UUID "0000ffe1-36e1-4688-b7f5-ea07361b26a8"
 
-class BlinkerTransportESP32_BLE
+class BlinkerESP32_BLE
     :
     public BLEServerCallbacks,
     public BLECharacteristicCallbacks
 {
     public :
-        BlinkerTransportESP32_BLE()
+        BlinkerESP32_BLE()
             : deviceConnected(false), isAvail(false)
         {}
 
@@ -220,12 +220,12 @@ class BlinkerTransportESP32_BLE
 };
 
 class BlinkerESP32_BLE
-    : public BlinkerProtocol<BlinkerTransportESP32_BLE>
+    : public BlinkerProtocol<BlinkerESP32_BLE>
 {
-    typedef BlinkerProtocol<BlinkerTransportESP32_BLE> Base;
+    typedef BlinkerProtocol<BlinkerESP32_BLE> Base;
 
     public:
-        BlinkerESP32_BLE(BlinkerTransportESP32_BLE & transp)
+        BlinkerESP32_BLE(BlinkerESP32_BLE & transp)
             : Base(transp)
         {}
 
@@ -237,7 +237,7 @@ class BlinkerESP32_BLE
         }
 };
 
-static BlinkerTransportESP32_BLE _blinkerTransportBLE;
+static BlinkerESP32_BLE _blinkerTransportBLE;
 BlinkerESP32_BLE Blinker(_blinkerTransportBLE);
 
 #include <BlinkerWidgets.h>

@@ -3,7 +3,7 @@
 
 #include <utility/BlinkerDebug.h>
 
-#define BLINKER_VERSION                 "0.2.2"
+#define BLINKER_VERSION                 "0.2.3"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
@@ -267,6 +267,8 @@
 
 #define BLINKER_CMD_DETAIL              "detail"
 
+#define BLINKER_CMD_OK                  "OK"
+
 #define BLINKER_CMD_MESSAGE             "message"
 
 #define BLINKER_CMD_DEVICENAME          "deviceName"
@@ -410,15 +412,64 @@
 #define BLINKER_MAX_DATA_COUNT          24
 
 #if defined(BLINKER_NBIOT)
-    #define BLINKER_CMD_CGATT                   "AT+CGATT?"
+    // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
+    // https://blog.csdn.net/xinghuanmeiying/article/details/80743757
+    // https://blog.csdn.net/liwei16611/article/details/82733521
+    #define BLINKER_CMD_NB_CGATT                "AT+CGATT?"
+    // Waiting module attachment network
+    #define BLINKER_CMD_NB_CGATT_SUCCESSED      "+CGATT:1"
 
-    #define BLINKER_CMD_MIPLCREATE              "AT+MIPLCREATE"
+    #define BLINKER_CMD_NB_CREATE               "AT+MIPLCREATE"
+    // Create communication kite
+    #define BLINKER_CMD_NB_CREATE_SUCCESSED     "+MIPLCREATE:0"
 
-    // AT+MIPLADDOBJ=0,3303,1,1,1,0
-    // AT+MIPLNOTIFY=0,666,3303,0,5701,1,14,"4E4230382D3031",0,0,0
-    // AT+MIPLOPEN=0,86400,30
+    #define BLINKER_CMD_NB_DELETE               "AT+MIPLDELETE"
+    
+    #define BLINKER_CMD_NB_ADDOBJ               "AT+MIPLADDOBJ"
+    // Add object
+    #define BLINKER_CMD_NB_DELOBJ               "AT+MIPLDELOBJ"
+    
+    #define BLINKER_CMD_NB_OPEN                 "AT+MIPLOPEN"
 
-    #define BLINKER_CMD_CGATT_SUCCESSED         "+CGATT:1"
+    #define BLINKER_CMD_NB_CLOSE                "AT+MIPLCLOSE"
+
+    #define BLINKER_CMD_NB_EVENT_1              "+MIPLEVENT:0,1"
+
+    #define BLINKER_CMD_NB_EVENT_2              "+MIPLEVENT:0,2"
+
+    #define BLINKER_CMD_NB_EVENT_4              "+MIPLEVENT:0,4"
+
+    #define BLINKER_CMD_NB_EVENT_6              "+MIPLEVENT:0,6"
+
+    #define BLINKER_CMD_NB_DISCOVE              "+MIPLOBSERVE"
+    // Resource discovery
+    #define BLINKER_CMD_NB_DISCOVERESP          "AT+MIPLOBSERVERSP"
+
+    #define BLINKER_CMD_NB_OBSERVE              "+MIPLOBSERVE"
+    // Resource observation
+    #define BLINKER_CMD_NB_OBSERVERSP           "AT+MIPLOBSERVERSP"
+
+    #define BLINKER_CMD_NB_NOTIFY               "AT+MIPLNOTIFY"
+    
+    #define BLINKER_CMD_NB_UPDATE               "AT+MIPLUPDATE"
+
+    #define BLINKER_CMD_NB_LEVEL                "AT+MIPLVER"
+
+    #define BLINKER_CMD_NB_WRITE                "+MIPLWRITE"
+
+    #define BLINKER_CMD_NB_WRITERSP             "AT+MIPLWRITERSP"
+
+    #define BLINKER_CMD_NB_READ                 "+MIPLREAD"
+
+    #define BLINKER_CMD_NB_READRSP              "AT+MIPLREADRSP"
+
+    #define BLINKER_CMD_NB_EXECUTE              "+MIPLEXECUTE"
+
+    #define BLINKER_CMD_NB_EXECUTERSP           "AT+MIPLEXECUTERSP"
+
+    #define BLINKER_CMD_NB_PARAMETER            "+MIPLPARAMETER"
+
+    #define BLINKER_CMD_NB_PARAMETERRSP         "AT+MIPLPARAMETERSP"
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
