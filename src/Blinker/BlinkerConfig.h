@@ -415,9 +415,15 @@
     // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
     // https://blog.csdn.net/xinghuanmeiying/article/details/80743757
     // https://blog.csdn.net/liwei16611/article/details/82733521
+    #define BLINKER_CMD_NB_NB73                 "[WH-NB73]"
+
+    #define BLINKER_CMD_NB_RESET                "AT+NRB"
+
     #define BLINKER_CMD_NB_CGATT                "AT+CGATT?"
     // Waiting module attachment network
     #define BLINKER_CMD_NB_CGATT_SUCCESSED      "+CGATT:1"
+
+    #define BLINKER_CMD_NB_CGATT_FAILED         "+CGATT:0"
 
     #define BLINKER_CMD_NB_CREATE               "AT+MIPLCREATE"
     // Create communication kite

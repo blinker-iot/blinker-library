@@ -113,6 +113,19 @@
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
+#elif defined(BLINKER_NBIOT)
+    #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) \
+    ||  defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
+        #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
+    
+    #endif
+
+    #ifndef BLINKER_NB73
+        #define BLINKER_NB73
+    #endif
+    
+    #include <BlinkerSerialNBIOT.h>
+    
 #else
     #error Please setting connect mode ahead! Here provided BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT mode!
 #endif
