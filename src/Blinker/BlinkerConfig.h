@@ -413,10 +413,10 @@
 
 #if defined(BLINKER_NBIOT)
     // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
-    // https://blog.csdn.net/xinghuanmeiying/article/details/80743757
-    // https://blog.csdn.net/liwei16611/article/details/82733521
+    // http://www.mokuai.cn/Down/WH-NB73_at_V2.2.1.pdf
+    // http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
     #define BLINKER_CMD_NB_NB73                 "[WH-NB73]"
-
+    
     #define BLINKER_CMD_NB_RESET                "AT+NRB"
 
     #define BLINKER_CMD_NB_CGATT                "AT+CGATT?"
@@ -427,55 +427,342 @@
 
     #define BLINKER_CMD_NB_CREATE               "AT+MIPLCREATE"
     // Create communication kite
+    #define BLINKER_CMD_NB_CREATEREQ            "+MIPLCREATE"
+
     #define BLINKER_CMD_NB_CREATE_SUCCESSED     "+MIPLCREATE:0"
 
     #define BLINKER_CMD_NB_DELETE               "AT+MIPLDELETE"
     
     #define BLINKER_CMD_NB_ADDOBJ               "AT+MIPLADDOBJ"
     // Add object
+    // AT+MIPLADDOBJ = <ref>,               0
+    //                 <objectid>,          3303
+    //                 <instancecount>,     1
+    //                 <instancebitmap>,    1
+    //                 <attributecount>,    6
+    //                 <actioncount>        1
+    // AT+MIPLADDOBJ=0,3306,1,1,5,0
+    // AT+MIPLADDOBJ=0,3303,1,1,6,1
     #define BLINKER_CMD_NB_DELOBJ               "AT+MIPLDELOBJ"
-    
+    // AT+MIPLDELOBJ=<ref>,<objectid>
+    // AT+MIPLDELOBJ=0,3303
     #define BLINKER_CMD_NB_OPEN                 "AT+MIPLOPEN"
-
+    // AT+MIPLOPEN=<ref>,<lifetime>[,<timeout>]
+    // AT+MIPLOPEN=0,1200
     #define BLINKER_CMD_NB_CLOSE                "AT+MIPLCLOSE"
+    // AT+MIPLCLOSE=<ref>
+    // AT+MIPLCLOSE=0
+    #define BLINKER_CMD_NB_EVENTREQ             "+MIPLEVENT"
+    // +MIPLEVENT:<ref>,<eid>
+    // +MIPLEVENT:0,11
 
+    // 1 BOOTSTRAP_START
+    // 2 BOOTSTRAP_SUCCESS
+    // 3 BOOTSTRAP_FAILED
+    // 4 CONNECT_SUCCESS
+    // 5 CONNECT_FAILED
+    // 6 REG_SUCCESS
+    // 7 REG_FAILED
+    // 8 REG_TIMEOUT
+    // 9 LIFETIME_TIMEOUT
+    // 10 STATUS_HALT
+    // 11 UPDATE_SUCCESS
+    // 12 UPDATE_FAILED
+    // 13 UPDATE_TIMEOUT
+    // 14 UPDATE_NEED
+    // 20 RESPONSE_FAILED
+    // 21 RESPONSE_SUCCESS
+    // 25 NOTIFY_FAILED
+    // 26 NOTIFY_SUCCESS
     #define BLINKER_CMD_NB_EVENT_1              "+MIPLEVENT:0,1"
-
+    
     #define BLINKER_CMD_NB_EVENT_2              "+MIPLEVENT:0,2"
 
     #define BLINKER_CMD_NB_EVENT_4              "+MIPLEVENT:0,4"
 
     #define BLINKER_CMD_NB_EVENT_6              "+MIPLEVENT:0,6"
 
-    #define BLINKER_CMD_NB_DISCOVE              "+MIPLOBSERVE"
+    #define BLINKER_CMD_NB_DISCOVEREQ           "+MIPLDISCOVER"
     // Resource discovery
-    #define BLINKER_CMD_NB_DISCOVERESP          "AT+MIPLOBSERVERSP"
-
-    #define BLINKER_CMD_NB_OBSERVE              "+MIPLOBSERVE"
+    // +MIPLDISCOVER:<ref>,<msgid>,<objectid>
+    // 3
+    // +MIPLREAD:0,888888,3303
+    #define BLINKER_CMD_NB_DISCOVERESP          "AT+MIPLDISCOVERRSP"
+    // AT+MIPLDISCOVERRSP= <ref>,          0
+    //                     <msgid>,        %d
+    //                     <result>,       1
+    //     1 2.05 Content
+    //     11 4.00 Bad Request
+    //     12 4.01 Unauthorized
+    //     13 4.04 Not Found
+    //     14 4.05 Method Not Allowed
+    //     15 4.06 Not Acceptable
+    //                     <length>,       19
+    //                     <valuestring>   "5850;5851;5852;5853"
+    // AT+MIPLDISCOVERRSP=0,%d,1,19,"5850;5851;5852;5853"
+    #define BLINKER_CMD_NB_OBSERVEREQ           "+MIPLOBSERVE"
     // Resource observation
+    // +MIPLOBSERVE:<ref>,<msgid>,<flag>,<objectid>,<instanceid>[,<resourceid>]
+    // 6
+    // +MIPLREAD:0,888888,1,3303,1,5700
     #define BLINKER_CMD_NB_OBSERVERSP           "AT+MIPLOBSERVERSP"
-
+    // AT+MIPLOBSERVERSP=<ref>,<msgid>,<result>
+    // 1 2.05 Content
+    // 11 4.00 Bad Request
+    // 12 4.01 Unauthorized
+    // 13 4.04 Not Found
+    // 14 4.05 Method Not Allowed
+    // 15 4.06 Not Acceptable
+    // AT+MIPLOBSERVERSP=0,88888,1
     #define BLINKER_CMD_NB_NOTIFY               "AT+MIPLNOTIFY"
-    
+    // AT+MIPLNOTIFY = <ref>,           0
+    //                 <msgid>,         %d
+    //                 <objectid>,      3303
+    //                 <instanceid>,    0
+    //                 <resourceid>,    5700
+    //                 <valuetype>,     4  
+    //     1-char 2-hex 3-int 4-float 5-bool
+    //                 <len>,           3
+    //                 <value>,         2.1
+    //                 <index>,         1
+    //                 <flag>[,         0
+    //                 <ackid>]
+    // AT+MIPLNOTIFY=0,%d,3303,0,5700,4,3,2.1,1,0
     #define BLINKER_CMD_NB_UPDATE               "AT+MIPLUPDATE"
-
+    // AT+MIPLUPDATE=<ref>,<lifetime>,<withObjectFlag>
+    // AT+MIPLUPDATE=0,0,0
     #define BLINKER_CMD_NB_LEVEL                "AT+MIPLVER"
 
-    #define BLINKER_CMD_NB_WRITE                "+MIPLWRITE"
-
+    #define BLINKER_CMD_NB_WRITEREQ             "+MIPLWRITE"
+    // +MIPLWRITE: <ref>,
+    //             <msgid>,
+    //             <objectid>,
+    //             <instanceid>,
+    //             <resourceid>,
+    //             <valuetype>,
+    //     1-char 2-hex 3-int 4-float 5-bool
+    //             <len>,
+    //             <value>,
+    //             <flag>,
+    //             <index>
+    // 10
+    // +MIPLWRITE:0,51130,3306,0,0,2,2,01,0,0
     #define BLINKER_CMD_NB_WRITERSP             "AT+MIPLWRITERSP"
-
-    #define BLINKER_CMD_NB_READ                 "+MIPLREAD"
-
+    // AT+MIPLWRITERSP=<ref>,<msgid>,<result>
+    // 2 2.04 Changed
+    // 11 4.00 Bad Request
+    // 12 4.01 Unauthorized
+    // 13 4.04 Not Found
+    // 14 4.05 Method Not Allowed
+    // 16 2.31 Continue
+    // 17 4.08 Request Entity Incomplete
+    // 18 4.13 Request entity too large
+    // 19 4.15 Unsupported content format
+    // 3
+    // AT+MIPLWRITERSP=0,88888,2
+    #define BLINKER_CMD_NB_READREQ              "+MIPLREAD"
+    // +MIPLREAD:<ref>,<msgid>,<objectid>,<instanceid>,<resourceid>
+    // 5
+    // +MIPLREAD:0,888888,3303,1,5700
     #define BLINKER_CMD_NB_READRSP              "AT+MIPLREADRSP"
-
-    #define BLINKER_CMD_NB_EXECUTE              "+MIPLEXECUTE"
-
+    // AT+MIPLREADRSP= <ref>,              0
+    //                 <msgid>,            86635
+    //                 <result>[,          1
+    //         1 2.05 Content
+    //         11 4.00 BadRequest
+    //         12 4.01 Unauthorized
+    //         13 4.04 NotFound
+    //         14 4.05 MethodNotAllowed
+    //         15 4.06 NotAcceptable
+    //                 <objectid>,         3303
+    //                 <instanceid>,       1
+    //                 <resourceid>,       5700
+    //                 <valuetype>,        4
+    //                 <len>,              2
+    //                 <value>,            20
+    //                 <index>,            1
+    //                 <flag>]             0
+    // 11
+    // AT+MIPLREADRSP=0,86635,1,3303,1,5700,4,2,20,1,0
+    #define BLINKER_CMD_NB_EXECUTEREQ           "+MIPLEXECUTE"
+    // +MIPLEXECUTE:<ref>,<msgid>,<objectid>,<instanceid>,<resourceid>,[,<len>,<arguments>]
+    // 7
+    // +MIPLEXECUTE:0,51131,3303,0, 5605,5,reset
     #define BLINKER_CMD_NB_EXECUTERSP           "AT+MIPLEXECUTERSP"
-
-    #define BLINKER_CMD_NB_PARAMETER            "+MIPLPARAMETER"
-
+    // AT+MIPLEXECUTERSP=<ref>,<msgid>,<result>
+    // 2 2.04 Changed
+    // 11 4.00 Bad Request
+    // 12 4.01 Unauthorized
+    // 13 4.04 Not Found
+    // 14 4.05 Method Not Allowed
+    // AT+MIPLEXECUTERSP=0,88888,2
+    #define BLINKER_CMD_NB_PARAMETERREQ         "+MIPLPARAMETER"
+    // +MIPLPARAMETER:<ref>,<msgid>,<objectid>,<instanceid>,<resourceid>,<len>,<parameter>
+    // 7
+    // +MIPLPARAMETER:0,88688,3203,1,5603,39,“pmin=1.8;pmax=5.0;gt=3.6;lt=3.0;stp=0.1”
     #define BLINKER_CMD_NB_PARAMETERRSP         "AT+MIPLPARAMETERSP"
+    // AT+MIPLPARAMETERRSP=<ref>,<msgid>,<result>
+    // 1 2.04 Changed
+    // 11 4.00 Bad Request
+    // 12 4.01 Unauthorized
+    // 13 4.04 Not Found
+    // 14 4.05 Method Not Allowed
+    // AT+MIPLPARAMETERRSP=0,888888,1
+
+
+    // Digital Input	3200
+    // Digital Output	3201
+    // Analogue Input	3202
+    // Analogue Output	3203
+    // Generic Sensor	3300
+    // Illuminance Sensor	3301
+    // Presence sensor	3302
+    // Temperature Sensor	3303
+    // Humidity Sensor	3304
+    // Power Measurement	3305
+    // Actuation	3306
+    // Set Point	3308
+    // Load Control	3310
+    // Light Control	3311
+    // Power Control	3312
+    // Accelerometer	3313
+    // Magnetometer	3314
+    // Barometer	3315
+    // Voltage	3316
+    // Current	3317
+    // Frequency	3318
+    // Depth	3319
+    // Percentage	3320
+    // Altitude	3321
+    // Load	3322
+    // Pressure	3323
+    // Loudness	3324
+    // Concentration	3325
+    // Acidity	3326
+    // Conductivity	3327
+    // Power	3328
+    // Power Factor	3329
+    // Distance	3330
+    // Energy	3331
+    // Direction	3332
+    // Time	3333
+    // Gyrometer	3334
+    // Color	3335
+    // GPS Location	3336
+    // Positioner	3337
+    // Buzzer	3338
+    // Audio Clip	3339
+    // Timer	3340
+    // Addressable Text Display	3341
+    // On/Off Switch	3342
+    // Dimmer	3343
+    // Up/Down Control	3344
+    // Multiple Axis Joystick	3345
+    // Rate	3346
+    // Push Button	3347
+    // Multi-state Selector	3348
+    // Bitmap	3349
+    // Stopwatch	3350
+
+    // Digital Input State 5500 R Boolean
+    // Digital Input Counter 5501 R Integer			
+    // Digital Input Polarity 5502 R,W Boolean			
+    // Digital Input Debounce 5503 R,W Integer			
+    // Digital Input Edge Selection 5504 R,W Integer			
+    // Digital Input Counter Reset 5505 E			
+    // Current Time 5506 R,W Time			
+    // Fractional Time 5507 R,W Float			
+    // Min X Value 5508 R Float			
+    // Max X Value 5509 R Float			
+    // Min Y Value 5510 R Float			
+    // Max Y Value 5511 R Float			
+    // Min Z Value 5512 R Float			
+    // Max Z Value 5513 R Float			
+    // Latitude 5514 R String			
+    // Longitude 5515 R String			
+    // Uncertainty 5516 R String 
+    // Velocity 5517 R Opaque 
+    // Timestamp 5518 R Time 
+    // Min Limit 5519 R Float 
+    // Max Limit 5520 R Float 
+    // Delay Duration 5521 R,W Float 
+    // Clip 5522 R,W Opaque 
+    // Trigger 5523 E 
+    // Duration 5524 R,W Float 
+    // Minimum Off-time 5525 R,W Float 
+    // Mode 5526 R,W Integer 
+    // Text 5527 R,W String 
+    // X Coordinate 5528 R,W Integer 
+    // Y Coordinate 5529 R,W Integer 
+    // Clear Display 5530 E 
+    // Contrast 5531 R,W Float 
+    // Increase Input State 5532 R Boolean 
+    // Decrease Input State 5533 R Boolean 
+    // Counter 5534 R,W Integer 
+    // Current Position 5536 R,W Float 
+    // Transition Time 5537 R,W Float 
+    // Remaining Time 5538 R Float 
+    // Up Counter 5541 R,W Integer 
+    // Down Counter 5542 R,W Integer 
+    // Digital State 5543 R Boolean 
+    // Cumulative Time 5544 R,W Float 
+    // Max X Coordinate 5545 R Integer 
+    // Max Y Coordinate 5546 R Integer 
+    // Multi-state Input 5547 R Integer 
+    // Level 5548 R,W Float 
+    // Digital Output State 5550 R,W Boolean 
+    // Digital Output Polarity 5551 R,W Boolean 
+    // Analog Input State 5600 R Float 
+    // Min Measured Value 5601 R Float 
+    // Max Measured Value 5602 R Float 
+    // Min Range Value 5603 R Float 
+    // Max Range Value 5604 R Float 
+    // Reset Min and Max Measured Values 5605 E 
+    // Analog Output Current Value 5650 R,W Float 
+    // Sensor Value 5700 R Float 
+    // Sensor Units 5701 R String 
+    // X Value 5702 R Float 
+    // Y Value 5703 R Float 
+    // Z Value 5704 R Float 
+    // Compass Direction 5705 R Float 
+    // Colour 5706 R,W String 
+    // Application Type 5750 R,W String 
+    // Sensor Type 5751 R String 
+    // Instantaneous active power 5800 R Float 
+    // Min Measured active power 5801 R Float 
+    // Max Measured active power 5802 R Float 
+    // Min Range active power 5803 R Float 
+    // Max Range active power 5804 R Float 
+    // Cumulative active power 5805 R Float 
+    // Active Power Calibration 5806 W Float 
+    // Instantaneous reactive power 5810 R Float 
+    // Min Measured reactive power 5811 R Float 
+    // Max Measured reactive power 5812 R Float 
+    // Min Range reactive power 5813 R Float 
+    // Max Range reactive power 5814 R Float 
+    // Cumulative reactive power 5815 R Float 
+    // Reactive Power Calibration 5816 W Float 
+    // Power Factor 5820 R Float 
+    // Current Calibration 5821 R,W Float 
+    // Reset Cumulative energy 5822 E 
+    // Event Identifier 5823 R,W String 
+    // Start Time 5824 R,W Float 
+    // Duration In Min 5825 R,W Float 
+    // Criticality Level 5826 R,W Integer 
+    // Avg Load Adj Pct 5827 R,W String 
+    // Duty Cycle 5828 R,W Integer 
+    // On/Off 5850 R,W Boolean 
+    // Dimmer 5851 R,W Integer 
+    // On Time 5852 R,W Integer 
+    // Muti-state Output 5853 R,W String 
+    // Off Time 5854 R,W Integer 
+    // Set Point Value 5900 R,W Float 
+    // Busy to Clear delay 5903 R,W Integer 
+    // Clear to Busy delay 5904 R,W Integer 
+    // Bitmap Input 5910 R Integer 
+    // Bitmap Input Reset 5911 E 
+    // Element Description 5912 R,W String 
+    // UUID 5913 R,W String
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
