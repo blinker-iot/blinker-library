@@ -32,6 +32,34 @@ enum BlinkerNB73Status{
     NB_INIT_SUCCESS
 };
 
+enum BlinkerNB73Observer{
+    NB_OB_REF,
+    NB_OB_MSGID,
+    NB_OB_FLAG,
+    NB_OB_OBJECTID,
+    NB_OB_INSID,
+    NB_OB_RESID
+};
+
+enum BlinkerNB73Discover{
+    NB_DS_REF,
+    NB_DS_MSGID,
+    NB_DS_OBJECTID
+};
+
+enum BlinkerNB73Write{
+    NB_W_REF,
+    NB_W_MSGID,
+    NB_W_OBJECTID,
+    NB_W_INSID,
+    NB_W_RESID,
+    NB_W_VALUETYPE,
+    NB_W_LEN,
+    NB_W_VALUE,
+    NB_W_FLAG,
+    NB_W_INDEX
+};
+
 class NBdata
 {
     public :
@@ -51,6 +79,11 @@ class NBdata
         String reqName() { return _reqName; }
 
         uint8_t paramNum() { return _paramNum; }
+
+        String getParam(uint8_t num) {
+            if (num >= _paramNum) return "";
+            else return _param[num];
+        }
 
     private :
         bool _isReq;
@@ -123,7 +156,7 @@ class NBdata
         }
 };
 
-static class NBdata * _nbDataManager;
+static class NBdata * _nbData;
 
 class BlinkerTransportStream
 {
@@ -147,22 +180,20 @@ class BlinkerTransportStream
                 BLINKER_LOG2(BLINKER_F("handleSerial: "), streamData);
 #endif
 
-                if (!_nbDataManager) {
-                    _nbDataManager = new NBdata();
+                if (!_nbData) {
+                    _nbData = new NBdata();
 
-                    _nbDataManager->update(STRING_format(streamData));
-
-                    BLINKER_LOG2(BLINKER_F("isReq: "), _nbDataManager->isReq());
-                    BLINKER_LOG2(BLINKER_F("reqName: "), _nbDataManager->reqName());
-                    BLINKER_LOG2(BLINKER_F("paramNum: "), _nbDataManager->paramNum());
+                    _nbData->update(STRING_format(streamData));
                 }
                 else {
-                    _nbDataManager->update(STRING_format(streamData));
-                    BLINKER_LOG2(BLINKER_F("isReq: "), _nbDataManager->isReq());
-                    BLINKER_LOG2(BLINKER_F("reqName: "), _nbDataManager->reqName());
-                    BLINKER_LOG2(BLINKER_F("paramNum: "), _nbDataManager->paramNum());
-                }
+                    _nbData->update(STRING_format(streamData));
 
+                }
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2(BLINKER_F("isReq: "), _nbData->isReq());
+                BLINKER_LOG2(BLINKER_F("reqName: "), _nbData->reqName());
+                BLINKER_LOG2(BLINKER_F("paramNum: "), _nbData->paramNum());
+#endif
                 return true;
             }
             else {
@@ -184,6 +215,21 @@ class BlinkerTransportStream
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("handleSerial: "), streamData);
 #endif
+
+                if (!_nbData) {
+                    _nbData = new NBdata();
+
+                    _nbData->update(STRING_format(streamData));
+                }
+                else {
+                    _nbData->update(STRING_format(streamData));
+
+                }
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2(BLINKER_F("isReq: "), _nbData->isReq());
+                BLINKER_LOG2(BLINKER_F("reqName: "), _nbData->reqName());
+                BLINKER_LOG2(BLINKER_F("paramNum: "), _nbData->paramNum());
+#endif
                 return true;
             }
             else {
@@ -199,100 +245,151 @@ class BlinkerTransportStream
 
             connect();
 
-            // BlinkerNB73Status init_status = NB_INIT;
+            BlinkerNB73Status init_status = NB_INIT;
 
-            // while (init_status != NB_INIT_SUCCESS) {
-            //     // available();
+            while (init_status != NB_INIT_SUCCESS) {
+                // available();
 
-            //     switch (init_status) 
-            //     {
-            //         case NB_INIT :
-            //             if (_available()) {
-            //                 // if (lastRead() == BLINKER_CMD_NB_NB73) {
-            //                 if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_NB73)) {
-            //                     init_status = NB_POWER_ON;
-            //                     print(BLINKER_CMD_NB_CGATT);
+                switch (init_status) 
+                {
+                    case NB_INIT :
+                        if (_available()) {
+                            // if (lastRead() == BLINKER_CMD_NB_NB73) {
+                            if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_NB73)) {
+                                init_status = NB_POWER_ON;
+                                print(BLINKER_CMD_NB_CGATT);
 
-            //                     BLINKER_LOG1("NB_POWER_ON");
-            //                 }
-            //             }
-            //             break;
-            //         case NB_POWER_ON :
-            //             if (_available()) {
-            //                 // if (lastRead() == BLINKER_CMD_NB_CGATT_SUCCESSED) {
-            //                 if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_CGATT_SUCCESSED)) {
-            //                     init_status = NB_CGATT_SUCCESS;
-            //                     print(BLINKER_CMD_NB_CREATE);
+                                BLINKER_LOG1("NB_POWER_ON");
+                            }
+                        }
+                        break;
+                    case NB_POWER_ON :
+                        if (_available()) {
+                            // if (lastRead() == BLINKER_CMD_NB_CGATT_SUCCESSED) {
+                            if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_CGATT_SUCCESSED)) {
+                                init_status = NB_CGATT_SUCCESS;
+                                print(BLINKER_CMD_NB_CREATE);
 
-            //                     BLINKER_LOG1("NB_CGATT_SUCCESS");
-            //                 }
-            //                 // else if (lastRead() == BLINKER_CMD_NB_CGATT_FAILED) {
-            //                 else if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_CGATT_FAILED)) {
-            //                     init_status = NB_CGATT_FAIL;
+                                BLINKER_LOG1("NB_CGATT_SUCCESS");
+                            }
+                            // else if (lastRead() == BLINKER_CMD_NB_CGATT_FAILED) {
+                            else if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_CGATT_FAILED)) {
+                                init_status = NB_CGATT_FAIL;
 
-            //                     BLINKER_LOG1("NB_CGATT_FAIL");
-            //                 }
-            //             }
-            //             break;
-            //         case NB_CGATT_SUCCESS :
-            //             if (_available()) {
-            //                 // if (lastRead() == BLINKER_CMD_NB_CREATE_SUCCESSED) {
-            //                 if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_CREATE_SUCCESSED)) {
-            //                     init_status = NB_CREAT_SUCCESS;
-            //                     print(BLINKER_CMD_NB_ADDOBJ);
-                                
-            //                     BLINKER_LOG1("NB_CREAT_SUCCESS");
-            //                 }
-            //             }
-            //             break;
-            //         case NB_CREAT_SUCCESS :
-            //             if (_available()) {
-            //                 // if (lastRead() == BLINKER_CMD_OK) {
-            //                 if (STRING_contains_string(lastRead(), BLINKER_CMD_OK)) {
-            //                     init_status = NB_ADDOBJ_SUCCESS;
-            //                     print(BLINKER_CMD_NB_OPEN);
-                                
-            //                     BLINKER_LOG1("NB_ADDOBJ_SUCCESS");
-            //                 }
-            //             }
-            //             break;
-            //         case NB_ADDOBJ_SUCCESS :
-            //             if (_available()) {
-            //                 // if (lastRead() == BLINKER_CMD_NB_EVENT_6) {
-            //                 if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_EVENT_6)) {
-            //                     init_status = NB_OPEN_SUCCESS;
-            //                     // print(BLINKER_CMD_NB_ADDOBJ);
+                                BLINKER_LOG1("NB_CGATT_FAIL");
+                            }
+                        }
+                        break;
+                    case NB_CGATT_SUCCESS :
+                        if (_available()) {
+                            // if (lastRead() == BLINKER_CMD_NB_CREATE_SUCCESSED) {
+                            if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_CREATE_SUCCESSED)) {
+                                init_status = NB_CREAT_SUCCESS;
+                                String addObjRsp = STRING_format(BLINKER_CMD_NB_ADDOBJ) + \
+                                                    "=0,3341,1,1,1,0";
+                                // print(BLINKER_CMD_NB_ADDOBJ);
+                                print(addObjRsp);
 
-            //                     BLINKER_LOG1("NB_OPEN_SUCCESS");
-            //                 }
-            //             }
-            //             break;
-            //         case NB_OPEN_SUCCESS :
-            //             if (_available()) {
-            //                 // if (lastRead() == BLINKER_CMD_NB_OBSERVE) {
-            //                 if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_OBSERVE)) {
-            //                     init_status = NB_OBSERVE;
-            //                     print(BLINKER_CMD_NB_OBSERVERSP);
+                                // AT+MIPLADDOBJ=0,3306,1,1,5,0
+                                BLINKER_LOG1("NB_CREAT_SUCCESS");
+                            }
+                        }
+                        break;
+                    case NB_CREAT_SUCCESS :
+                        if (_available()) {
+                            // if (lastRead() == BLINKER_CMD_OK) {
+                            if (STRING_contains_string(lastRead(), BLINKER_CMD_OK)) {
+                                init_status = NB_ADDOBJ_SUCCESS;
+                                String openRsp = STRING_format(BLINKER_CMD_NB_OPEN) + \
+                                                "=0," + STRING_format(BLINKER_NB_HEARTBEAT_TIME);
+                                // print(BLINKER_CMD_NB_OPEN);
+                                print(openRsp);
 
-            //                     BLINKER_LOG1("NB_OBSERVERSP");
-            //                 }
-            //             }
-            //             break;
-            //         case NB_OBSERVE :
-            //             if (_available()) {
-            //                 // if (lastRead() == BLINKER_CMD_OK) {
-            //                 if (STRING_contains_string(lastRead(), BLINKER_CMD_OK)) {
-            //                     init_status = NB_INIT_SUCCESS;
-            //                     // print(BLINKER_CMD_NB_OBSERVERSP);
+                                // AT+MIPLOPEN=0,1200
+                                BLINKER_LOG1("NB_ADDOBJ_SUCCESS");
+                            }
+                        }
+                        break;
+                    case NB_ADDOBJ_SUCCESS :
+                        if (_available()) {
+                            // if (lastRead() == BLINKER_CMD_NB_EVENT_6) {
+                            if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_EVENT_6)) {
+                                init_status = NB_OPEN_SUCCESS;
+                                // print(BLINKER_CMD_NB_ADDOBJ);
 
-            //                     BLINKER_LOG1("NB_INIT_SUCCESS");
-            //                 }
-            //             }
-            //             break;
-            //         default :
-            //             break;
-            //     }
-            // }
+                                BLINKER_LOG1("NB_OPEN_SUCCESS");
+                            }
+                            // else if (_nbData->reqName() == BLINKER_CMD_NB_EVENTREQ) {
+                            //     // if (_nbData->)
+                            // }
+                        }
+                        break;
+                    case NB_OPEN_SUCCESS :
+                        if (_available()) {
+                            // if (lastRead() == BLINKER_CMD_NB_OBSERVE) {
+                            if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_OBSERVEREQ)) {
+                            // if (_nbData->reqName() == BLINKER_CMD_NB_OBSERVEREQ) {
+                                init_status = NB_OBSERVE;
+                                String obsRsp = STRING_format(BLINKER_CMD_NB_OBSERVERSP) + \
+                                                "=" + _nbData->getParam(NB_OB_REF) + \
+                                                "," + _nbData->getParam(NB_OB_MSGID) + \
+                                                ",1";
+
+                                // print(BLINKER_CMD_NB_OBSERVERSP);
+                                print(obsRsp);
+
+                                BLINKER_LOG1("NB_OBSERVERSP");
+                            }
+                        }
+                        break;
+                    case NB_OBSERVE :
+                        if (_available()) {
+                            // if (lastRead() == BLINKER_CMD_OK) {
+                            if (STRING_contains_string(lastRead(), BLINKER_CMD_OK)) {
+                                // init_status = NB_INIT_SUCCESS;
+                                // print(BLINKER_CMD_NB_OBSERVERSP);
+
+                                // BLINKER_LOG1("NB_INIT_SUCCESS");
+                                init_status = NB_OBSERVE_SUCCESS;
+
+                                BLINKER_LOG1("NB_OBSERVE_SUCCESS");
+                            }
+                        }
+                        break;
+                    case NB_OBSERVE_SUCCESS :
+                        if (_available()) {
+                            if (STRING_contains_string(lastRead(), BLINKER_CMD_NB_DISCOVEREQ)) {
+                            // if (_nbData->reqName() == BLINKER_CMD_NB_OBSERVEREQ) {
+                                init_status = NB_DISCOVER;
+                                String discRsp = STRING_format(BLINKER_CMD_NB_DISCOVERESP) + \
+                                                "=" + _nbData->getParam(NB_OB_REF) + \
+                                                "," + _nbData->getParam(NB_OB_MSGID) + \
+                                                ",1,4,\"5527\"";
+
+                                // print(BLINKER_CMD_NB_OBSERVERSP);
+                                print(discRsp);
+
+                                BLINKER_LOG1("NB_DISCOVER");
+                            }
+                        }
+                    case NB_DISCOVER :
+                        if (_available()) {
+                            // if (lastRead() == BLINKER_CMD_OK) {
+                            if (STRING_contains_string(lastRead(), BLINKER_CMD_OK)) {
+                                // init_status = NB_INIT_SUCCESS;
+                                // print(BLINKER_CMD_NB_OBSERVERSP);
+
+                                // BLINKER_LOG1("NB_INIT_SUCCESS");
+                                init_status = NB_INIT_SUCCESS;
+
+                                BLINKER_LOG1("NB_INIT_SUCCESS");
+                            }
+                        }
+                        break;
+                    default :
+                        break;
+                }
+            }
         }
 
         String lastRead() { return STRING_format(streamData); }

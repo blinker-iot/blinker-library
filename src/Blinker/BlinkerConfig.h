@@ -415,6 +415,8 @@
     // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
     // http://www.mokuai.cn/Down/WH-NB73_at_V2.2.1.pdf
     // http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
+    #define BLINKER_NB_HEARTBEAT_TIME           1800UL
+
     #define BLINKER_CMD_NB_NB73                 "[WH-NB73]"
     
     #define BLINKER_CMD_NB_RESET                "AT+NRB"
@@ -487,6 +489,9 @@
     // +MIPLDISCOVER:<ref>,<msgid>,<objectid>
     // 3
     // +MIPLREAD:0,888888,3303
+
+    // 3341	Addressable Text Display
+    // This IPSO object is used to send text to a text-only or text mode graphics display.
     #define BLINKER_CMD_NB_DISCOVERESP          "AT+MIPLDISCOVERRSP"
     // AT+MIPLDISCOVERRSP= <ref>,          0
     //                     <msgid>,        %d
@@ -500,6 +505,8 @@
     //                     <length>,       19
     //                     <valuestring>   "5850;5851;5852;5853"
     // AT+MIPLDISCOVERRSP=0,%d,1,19,"5850;5851;5852;5853"
+
+    // 5527 Text RW String
     #define BLINKER_CMD_NB_OBSERVEREQ           "+MIPLOBSERVE"
     // Resource observation
     // +MIPLOBSERVE:<ref>,<msgid>,<flag>,<objectid>,<instanceid>[,<resourceid>]
