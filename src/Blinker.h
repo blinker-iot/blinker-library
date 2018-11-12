@@ -126,6 +126,14 @@
     
     #include <BlinkerSerialNBIOT.h>
     
+#elif defined(BLINKER_AT_MQTT)
+
+    #if defined(ESP8266) || defined(ESP32)
+        #include <BlinkerESPAT_MQTT.h>
+    #else
+        #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
+    #endif
+
 #else
     #error Please setting connect mode ahead! Here provided BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT mode!
 #endif

@@ -59,7 +59,7 @@
     #define BLINKER_PRESSTIME_RESET         10000UL
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else
     #define BLINKER_MAX_WIDGET_SIZE         4
@@ -77,7 +77,7 @@
 
 #ifndef BLINKER_MAX_SEND_SIZE
     #if defined(ESP8266) || defined(ESP32)
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
             #define BLINKER_MAX_SEND_SIZE       1024
         #else
             #define BLINKER_MAX_SEND_SIZE       512
@@ -89,7 +89,7 @@
 
 #ifndef BLINKER_MAX_SEND_BUFFER_SIZE
     #if defined(ESP8266) || defined(ESP32)
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE - 128
         #else
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
@@ -400,7 +400,7 @@
 #define BLINKER_ONE_DAY_TIME            86400UL
 
 #ifndef BLINKER_MAX_BRIDGE_SIZE
-    #if defined(BLINKER_MQTT)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
         #define BLINKER_MAX_BRIDGE_SIZE             4
     #elif defined(BLINKER_PRO)
         #define BLINKER_MAX_BRIDGE_SIZE             16
@@ -410,6 +410,12 @@
 #define BLINKER_MAX_BLINKER_DATA_SIZE   6
 
 #define BLINKER_MAX_DATA_COUNT          24
+
+#if defined(BLINKER_ESP_AT)
+    #define BLINKER_CMD_AT                      "AT"
+
+    #define BLINKER_CMD_AT_RST                  "AT+RST"
+#endif
 
 #if defined(BLINKER_NBIOT)
     // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
@@ -772,7 +778,7 @@
     // UUID 5913 R,W String
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     #define BLINKER_CMD_SMS_NUMBER              1
 
     #define BLINKER_CMD_PUSH_NUMBER             2
@@ -803,7 +809,7 @@
 
 #endif
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
     #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
