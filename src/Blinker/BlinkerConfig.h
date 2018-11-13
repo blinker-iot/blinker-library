@@ -427,6 +427,12 @@
     
 #endif
 
+#define BLINKER_CMD_COMCONFIG_NUM           0
+
+#define BLINKER_CMD_ESPTOUCH_NUM            1
+
+#define BLINKER_CMD_APCONFIG_NUM            2
+
 #if defined(BLINKER_NBIOT)
     // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
     // http://www.mokuai.cn/Down/WH-NB73_at_V2.2.1.pdf

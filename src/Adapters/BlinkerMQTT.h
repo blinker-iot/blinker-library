@@ -107,8 +107,9 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
 
 class BlinkerMQTT {
     public :
-        BlinkerMQTT() :
-            authkey(NULL) {}
+        BlinkerMQTT() {}
+        // :
+        //     _authKey(NULL) {}
         
         bool connect();
 
@@ -187,9 +188,10 @@ class BlinkerMQTT {
 #endif
 
         void begin(const char* auth) {
-            authkey = auth;
+            // _authKey = auth;
+            strcpy(_authKey, auth);
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("authkey: ", auth);
+            BLINKER_LOG2("_authKey: ", auth);
 #endif
             // if (connectServer()) {
             //     mDNSInit();
@@ -456,7 +458,8 @@ class BlinkerMQTT {
         }
 
     protected :
-        const char* authkey;
+        // const char* _authKey;
+        char        _authKey[BLINKER_AUTHKEY_SIZE];
         bool*       isHandle = &isConnect;
         bool        isAlive = false;
         bool        isBavail = false;
@@ -537,7 +540,7 @@ bool BlinkerMQTT::connectServer() {
     // String url;
     String client_msg;
 
-    String url_iot = "/api/v1/user/device/diy/auth?authKey=" + String(authkey);
+    String url_iot = "/api/v1/user/device/diy/auth?authKey=" + String(_authKey);
 
 #if defined(BLINKER_ALIGENIE_LIGHT)
     url_iot += "&aliType=light";
@@ -637,7 +640,7 @@ bool BlinkerMQTT::connectServer() {
 
     HTTPClient http;
 
-    String url_iot = String(host) + "/api/v1/user/device/diy/auth?authKey=" + String(authkey);
+    String url_iot = String(host) + "/api/v1/user/device/diy/auth?authKey=" + String(_authKey);
 
 #if defined(BLINKER_ALIGENIE_LIGHT)
     url_iot += "&aliType=light";
