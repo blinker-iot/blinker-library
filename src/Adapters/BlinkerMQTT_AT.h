@@ -295,7 +295,7 @@ class ATdata
                             _param[_paramNum] = serData.substring(0, addr_end);
 
                             if (_param[_paramNum] == "?" && _paramNum == 0) {
-                                _set = AT_QUERY;
+                                _set = AT_TEST;
                             }
 #ifdef BLINKER_DEBUG_ALL
                             BLINKER_LOG2(BLINKER_F("_param[_paramNum]0: "), _param[_paramNum]);
@@ -308,7 +308,7 @@ class ATdata
                         _param[_paramNum] = serData;
 
                         if (_param[_paramNum] == "?" && _paramNum == 0) {
-                            _set = AT_QUERY;
+                            _set = AT_TEST;
                         }
 #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("_param[_paramNum]1: "), _param[_paramNum]);
