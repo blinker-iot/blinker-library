@@ -1252,7 +1252,7 @@ class BlinkerProtocol
         bool            _isAutoInit = false;
 #endif
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
         char            _authKey[BLINKER_AUTHKEY_SIZE];
         char            _deviceName[BLINKER_MQTT_DEVICEID_SIZE];
         bool            _isInit = false;
@@ -1278,7 +1278,7 @@ class BlinkerProtocol
         uint8_t         _proStatus = PRO_WLAN_CONNECTING;
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
         uint32_t        _reconTime = 0;
 #endif
 
@@ -1584,7 +1584,7 @@ void BlinkerProtocol<Transp>::run()
     BApi::checkTimer();
 #endif
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
     BApi::checkTimer();
 
     if (!_isInit) {
@@ -1646,7 +1646,7 @@ void BlinkerProtocol<Transp>::run()
     }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
     if (WiFi.status() != WL_CONNECTED) {
         if (_reconTime == 0) {
             _reconTime = millis();
@@ -1689,12 +1689,12 @@ void BlinkerProtocol<Transp>::run()
 // #else
                 state = CONNECTED;
 // #endif
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
                 _disconnectCount = 0;
 #endif
             }
             else {
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
                 if (_isInit) {
                     if (_disconnectCount == 0) {
                         _disconnectCount++;
@@ -1734,7 +1734,7 @@ void BlinkerProtocol<Transp>::run()
                 // state = DISCONNECTED;
                 conn.disconnect();
                 state = CONNECTING;
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
                 if (_isInit) {
                     if (_disconnectCount == 0) {
                         _disconnectCount++;
