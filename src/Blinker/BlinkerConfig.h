@@ -418,6 +418,12 @@
     #define BLINKER_CMD_RST                     "RST"
 
     #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
+
+    #define BLINKER_CMD_ESPTOUCH                "ESPTOUCH"
+
+    #define BLINKER_CMD_APCONFIG                "APCONFIG"
+
+    #define BLINKER_CMD_COMCONFIG               "COMCONFIG"
     
 #endif
 

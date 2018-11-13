@@ -1327,6 +1327,13 @@ class BlinkerProtocol
 // #endif
         }
 
+#if defined(BLINKER_AT_MQTT)
+        void atBegin(const char* _auth)
+        {
+            strcpy(_authKey, _auth);
+        }
+#endif
+
 #if defined(BLINKER_MQTT)
         void begin(const char* _auth)
         {
