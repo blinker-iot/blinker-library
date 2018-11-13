@@ -710,9 +710,11 @@ class BlinkerTransportStream
             else if (_atData->cmd() == BLINKER_CMD_BLINKER_MQTT) {
                 // serialPrint(BLINKER_CMD_OK);
 
-                BLINKER_ERR_LOG1(BLINKER_CMD_BLINKER_MQTT);
+                BLINKER_LOG1(BLINKER_CMD_BLINKER_MQTT);
 
                 atState_t at_state = _atData->state();
+
+                BLINKER_LOG1(at_state);
 
                 String reqData;
 
@@ -723,9 +725,9 @@ class BlinkerTransportStream
                         break;
                     case AT_TEST:
                         reqData = STRING_format(BLINKER_CMD_AT) + \
-                                    "+" + STRING_format(BLINKER_CMD_AT) + \
-                                    "=<MQTT_WLAN_MODE>,<MQTT_AUTH_KEY>" + \
-                                    "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>";
+                                "+" + STRING_format(BLINKER_CMD_AT) + \
+                                "=<MQTT_WLAN_MODE>,<MQTT_AUTH_KEY>" + \
+                                "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>";
                         serialPrint(reqData);
                         break;
                     case AT_QUERY:
