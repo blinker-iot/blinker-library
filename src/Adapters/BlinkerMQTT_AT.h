@@ -65,6 +65,9 @@ static IPAddress netMsk(255, 255, 255, 0);
 #endif
 
 
+static bool isATAvaill = false;
+
+
 static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
 {
 
@@ -139,6 +142,14 @@ enum atMQTT_t {
     MQTT_AUTH_KEY,
     MQTT_WIFI_SSID,
     MQTT_WIFI_PSWD
+};
+
+enum atStatus_t {
+    BL_BEGIN,
+    BL_INITED
+    // ,
+    // BL_SUC,
+    // MQTT_WIFI_PSWD
 };
 
 class ATdata
@@ -339,7 +350,7 @@ class BlinkerTransportStream
 {
     public :
         BlinkerTransportStream()
-            : stream(NULL), isSerialConnect(false), authkey(NULL)
+            : stream(NULL), isSerialConnect(false)
         {}
 
         bool serialAvailable()
@@ -362,9 +373,11 @@ class BlinkerTransportStream
 
                 // if (!_atData)
                 // {
-                    _atData = new ATdata();
+                // if (isATAvaill) free(_atData);
 
-                    _atData->update(STRING_format(streamData));
+                _atData = new ATdata();
+
+                _atData->update(STRING_format(streamData));
                 // }
                 // else
                 // {
@@ -380,7 +393,9 @@ class BlinkerTransportStream
                 {
                     parseATdata();
 
-                    free(_atData);
+                    // free(_atData);
+                    // isATAvaill = true;
+
                     return false;
                 }
 
@@ -401,13 +416,22 @@ class BlinkerTransportStream
 
             serialConnect();
 
-            while (1)
+            serialPrint(BLINKER_CMD_BLINKER_MQTT);
+
+            // stream->flush();
+
+            while (_status == BL_BEGIN)
             {
                 serialAvailable();
             }
         }
 
         String serialLastRead() { return STRING_format(streamData); }
+
+        bool serialPrint(String s1, String s2)
+        {
+            return serialPrint(s1 + s2);
+        }
 
         bool serialPrint(String s)
         {
@@ -453,7 +477,7 @@ class BlinkerTransportStream
 
         bool serialConnected() { return isSerialConnect; }
 
-        void serailDisconnect() { isSerialConnect = false; }
+        void serialDisconnect() { isSerialConnect = false; }
 
 
 
@@ -481,6 +505,8 @@ class BlinkerTransportStream
         void ping();
         
         bool available() {
+            serialAvailable();
+
             webSocket.loop();
 
             checkKA();
@@ -534,9 +560,10 @@ class BlinkerTransportStream
 #endif
 
         void begin(const char* auth) {
-            authkey = auth;
+            // _authKey = auth;
+            strcpy(_authKey, auth);
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("authkey: ", auth);
+            BLINKER_LOG2("_authKey: ", _authKey);
 #endif
             // if (connectServer()) {
             //     mDNSInit();
@@ -693,6 +720,8 @@ class BlinkerTransportStream
 
         String deviceName() { return DEVICE_NAME;/*MQTT_ID;*/ }
 
+        String authKey() { return _authKey;/*MQTT_ID;*/ }
+
         bool init() { return isMQTTinit; }
 
         bool reRegister() { return connectServer(); }
@@ -725,15 +754,69 @@ class BlinkerTransportStream
                         break;
                     case AT_TEST:
                         reqData = STRING_format(BLINKER_CMD_AT) + \
-                                "+" + STRING_format(BLINKER_CMD_AT) + \
+                                "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
                                 "=<MQTT_WLAN_MODE>,<MQTT_AUTH_KEY>" + \
-                                "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>";
+                                "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
                         serialPrint(reqData);
                         break;
                     case AT_QUERY:
-                        // serialPrint();
+                        reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+                                "=" + getMode(_wlanMode) + \
+                                "," + STRING_format(_authKey) + \
+                                "," + WiFi.SSID() + \
+                                "," + WiFi.psk();
+                        serialPrint(reqData);
                         break;
                     case AT_SETTING:
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("MQTT_WLAN_MODE: "), _atData->getParam(MQTT_WLAN_MODE));
+                        BLINKER_LOG2(BLINKER_F("MQTT_AUTH_KEY: "),  _atData->getParam(MQTT_AUTH_KEY));
+                        BLINKER_LOG2(BLINKER_F("MQTT_WIFI_SSID: "), _atData->getParam(MQTT_WIFI_SSID));
+                        BLINKER_LOG2(BLINKER_F("MQTT_WIFI_PSWD: "), _atData->getParam(MQTT_WIFI_PSWD));
+#endif
+
+                        if (_atData->getParam(MQTT_WLAN_MODE) == BLINKER_CMD_ESPTOUCH)
+                        {
+                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_ESPTOUCH"));
+
+                            if (!autoInit()) smartconfig();
+
+                            begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
+                            _status = BL_INITED;
+                            _wlanMode = BLINKER_CMD_ESPTOUCH_NUM;
+                        }
+                        else if (_atData->getParam(MQTT_WLAN_MODE) == BLINKER_CMD_APCONFIG)
+                        {
+                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_APCONFIG"));
+
+                            if (!autoInit())
+                            {
+                                softAPinit();
+                                while(WiFi.status() != WL_CONNECTED) {
+                                    serverClient();
+
+                                    ::delay(10);
+                                }
+                            }
+
+                            begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
+                            _status = BL_INITED;
+                            _wlanMode = BLINKER_CMD_APCONFIG_NUM;
+                        }
+                        else if (_atData->getParam(MQTT_WLAN_MODE) == BLINKER_CMD_COMCONFIG)
+                        {
+                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_COMWLAN"));
+
+                            connectWiFi((_atData->getParam(MQTT_WIFI_SSID)).c_str(), 
+                                        (_atData->getParam(MQTT_WIFI_PSWD)).c_str());
+                            
+                            begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
+                            _status = BL_INITED;
+                            _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
+                        }
+                        else {
+                            return;
+                        }
                         serialPrint(BLINKER_CMD_OK);
                         break;
                     case AT_ACTION:
@@ -742,6 +825,21 @@ class BlinkerTransportStream
                     default :
                         break;
                 }
+            }
+        }
+
+        String getMode(uint8_t mode)
+        {
+            switch (mode)
+            {
+                case BLINKER_CMD_COMCONFIG_NUM :
+                    return BLINKER_CMD_COMCONFIG;
+                case BLINKER_CMD_ESPTOUCH_NUM :
+                    return BLINKER_CMD_ESPTOUCH;
+                case BLINKER_CMD_APCONFIG_NUM :
+                    return BLINKER_CMD_APCONFIG;
+                default :
+                    return BLINKER_CMD_COMCONFIG;
             }
         }
 
@@ -1065,7 +1163,10 @@ class BlinkerTransportStream
         }
 
     protected :
-        const char* authkey;
+        atStatus_t  _status = BL_BEGIN;
+        uint8_t     _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
+
+        char        _authKey[BLINKER_AUTHKEY_SIZE];
         bool*       isHandle = &isConnect;
         bool        isAlive = false;
         bool        isBavail = false;
@@ -1173,7 +1274,7 @@ bool BlinkerTransportStream::connectServer() {
     // String url;
     String client_msg;
 
-    String url_iot = "/api/v1/user/device/diy/auth?authKey=" + String(authkey);
+    String url_iot = "/api/v1/user/device/diy/auth?authKey=" + String(_authKey);
 
 #if defined(BLINKER_ALIGENIE_LIGHT)
     url_iot += "&aliType=light";
@@ -1273,7 +1374,7 @@ bool BlinkerTransportStream::connectServer() {
 
     HTTPClient http;
 
-    String url_iot = String(host) + "/api/v1/user/device/diy/auth?authKey=" + String(authkey);
+    String url_iot = String(host) + "/api/v1/user/device/diy/auth?authKey=" + String(_authKey);
 
 #if defined(BLINKER_ALIGENIE_LIGHT)
     url_iot += "&aliType=light";
@@ -1924,7 +2025,8 @@ class BlinkerMQTT_AT
 
                 Serial.begin(ss_baud);
                 this->conn.serialBegin(Serial, true);
-                
+                strcpy(Base::_authKey, this->conn.authKey().c_str());
+                strcpy(Base::_deviceName, this->conn.deviceName().c_str());
                 BLINKER_LOG1(BLINKER_F("BLINKER_MQTT_AT initialized..."));
                 return;
             }
@@ -1933,6 +2035,8 @@ class BlinkerMQTT_AT
             SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
             SSerialBLE->begin(ss_baud);
             this->conn.serialBegin(*SSerialBLE, false);
+            strcpy(Base::_authKey, this->conn.authKey().c_str());
+            strcpy(Base::_deviceName, this->conn.deviceName().c_str());
             BLINKER_LOG1(BLINKER_F("BLINKER_MQTT_AT initialized..."));
         }
 

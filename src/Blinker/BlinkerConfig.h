@@ -418,8 +418,20 @@
     #define BLINKER_CMD_RST                     "RST"
 
     #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
+
+    #define BLINKER_CMD_ESPTOUCH                "ESPTOUCH"
+
+    #define BLINKER_CMD_APCONFIG                "APCONFIG"
+
+    #define BLINKER_CMD_COMCONFIG               "COMCONFIG"
     
 #endif
+
+#define BLINKER_CMD_COMCONFIG_NUM           0
+
+#define BLINKER_CMD_ESPTOUCH_NUM            1
+
+#define BLINKER_CMD_APCONFIG_NUM            2
 
 #if defined(BLINKER_NBIOT)
     // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
