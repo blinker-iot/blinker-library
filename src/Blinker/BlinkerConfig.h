@@ -412,9 +412,13 @@
 #define BLINKER_MAX_DATA_COUNT          24
 
 #if defined(BLINKER_ESP_AT)
+
     #define BLINKER_CMD_AT                      "AT"
 
-    #define BLINKER_CMD_AT_RST                  "AT+RST"
+    #define BLINKER_CMD_RST                     "RST"
+
+    #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
+    
 #endif
 
 #if defined(BLINKER_NBIOT)

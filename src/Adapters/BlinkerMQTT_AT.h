@@ -86,7 +86,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
 #endif
 
                 // send message to client
-                webSocket.sendTXT(num, "{\"state\":\"serailConnected\"}\n");
+                webSocket.sendTXT(num, "{\"state\":\"serialConnected\"}\n");
 
                 ws_num = num;
 
@@ -113,7 +113,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
             // send message to client
             // webSocket.sendTXT(num, "message here");
 
-            // send data to all serailConnected clients
+            // send data to all serialConnected clients
             // webSocket.broadcastTXT("message here");
             break;
         case WStype_BIN:
@@ -126,21 +126,37 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
     }
 }
 
+enum atState_t {
+    AT_NONE,
+    AT_TEST,
+    AT_QUERY,
+    AT_SETTING,
+    AT_ACTION
+};
+
+enum atMQTT_t {
+    MQTT_WLAN_MODE,
+    MQTT_AUTH_KEY,
+    MQTT_WIFI_SSID,
+    MQTT_WIFI_PSWD
+};
+
 class ATdata
 {
     public :
-        ATdata()
-            : _isAT(false)
-        {}
+        ATdata() {}
 
-        bool update(String data) {
+        void update(String data) {
             // _data = data;
             // BLINKER_LOG2(BLINKER_F("update data: "), data);
-            _isAT = serialize(data);
-            return _isAT;
+            // _isAT = serialize(data);
+            serialize(data);
+
+            BLINKER_LOG2(BLINKER_F("serialize _set: "), _set);
+            // return _isAT;
         }
 
-        bool isAT() { return _isAT; }
+        atState_t state() { return _set; }
 
         String cmd() { return _atCmd; }
 
@@ -152,22 +168,30 @@ class ATdata
         }
 
     private :
-        bool _isAT;
+        // bool _isAT;
+        atState_t _set;
         uint8_t _paramNum;
         // String _data;
         String _atCmd;
         String _param[11];
 
-        bool serialize(String _data) {
+        void serialize(String _data) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
 #endif
             _paramNum = 0;
-            _isAT = false;
+            // _isAT = false;
+            _set = AT_NONE;
             int addr_start = 0;//_data.indexOf("+");
             int addr_end = 0;
 
             String startCmd = _data.substring(0, 2);
+            BLINKER_LOG2(BLINKER_F("startCmd: "), startCmd);
+
+            // startCmd = _data.substring(0, 3);
+            // BLINKER_LOG2(BLINKER_F("startCmd: "), startCmd);
+
+            BLINKER_LOG2(BLINKER_F("startCmd len: "), _data.length());
 
             // BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
             // BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
@@ -175,24 +199,81 @@ class ATdata
             // if ((addr_start != -1) && STRING_contains_string(_data, ":"))
             if (startCmd == BLINKER_CMD_AT)
             {
-                _isAT = true;
-                addr_start = 0;
-                addr_end = _data.indexOf("=");
+                // _isAT = true;
 
-                if (addr_end == -1) {
-                    return false;
-                }
-                else {
+                // if (_data.length() == 3) {
+                //     _set = AT_ACTION;
+                //     return true;
+                // }
+
+                addr_start = 3;
+                // int addr_end1 = _data.indexOf("=");
+                // int addr_end2 = _data.indexOf("?");
+                // int addr_end3 = _data.indexOf("\n");
+
+                // check "="
+                addr_end = _data.indexOf("=");
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+#endif
+                if (addr_end != -1)
+                {
+                    _set = AT_SETTING;
+
                     _atCmd = _data.substring(addr_start, addr_end);
 #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
 #endif
                 }
+                else
+                {
+                    addr_end = _data.indexOf("?");
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+#endif
+                    if (addr_end != -1)
+                    {
+                        _set = AT_QUERY;
+
+                        _atCmd = _data.substring(addr_start, addr_end);
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+#endif
+                        return;
+                    }
+                    else
+                    {
+                        addr_end = _data.indexOf("\r");
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+#endif
+                        if (addr_end != -1)
+                        {
+                            _set = AT_ACTION;
+
+                            if (addr_end == (addr_start-1)) {
+                                _atCmd = startCmd;
+#ifdef BLINKER_DEBUG_ALL
+                                BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+#endif
+                                return;
+                            }
+
+                            _atCmd = _data.substring(addr_start, addr_end);
+#ifdef BLINKER_DEBUG_ALL
+                            BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+#endif
+                            return;
+                        }
+                    }
+                }
 
                 // BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
 
                 String serData;
-                uint16_t dataLen = _data.length();
+                uint16_t dataLen = _data.length() - 1;
+
+                addr_start = 0;
 
                 for (_paramNum = 0; _paramNum < 11; _paramNum++) {
                     addr_start += addr_end;
@@ -201,18 +282,40 @@ class ATdata
 
                     addr_end = serData.indexOf(",");
 
-                    // BLINKER_LOG2(BLINKER_F("serialize serData: "), serData);
-                    // BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
-                    // BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+                    BLINKER_LOG2(BLINKER_F("serialize serData: "), serData);
+                    BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
+                    BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
 
                     if (addr_end == -1) {
-                        if (addr_start >= dataLen) return false;
-                        _param[_paramNum] = serData;
+                        if (addr_start >= dataLen) return;
+
+                        addr_end = serData.indexOf(" ");
+
+                        if (addr_end != -1) {
+                            _param[_paramNum] = serData.substring(0, addr_end);
+
+                            if (_param[_paramNum] == "?" && _paramNum == 0) {
+                                _set = AT_QUERY;
+                            }
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
+                            BLINKER_LOG2(BLINKER_F("_param[_paramNum]0: "), _param[_paramNum]);
+                            // BLINKER_LOG2(BLINKER_F("_set: "), _set);
+#endif
+                            _paramNum++;
+                            return;
+                        }
+
+                        _param[_paramNum] = serData;
+
+                        if (_param[_paramNum] == "?" && _paramNum == 0) {
+                            _set = AT_QUERY;
+                        }
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("_param[_paramNum]1: "), _param[_paramNum]);
+                        // BLINKER_LOG2(BLINKER_F("_set: "), _set);
 #endif
                         _paramNum++;
-                        return true;
+                        return;
                     }
                     else {
                         _param[_paramNum] = serData.substring(0, addr_end);
@@ -221,15 +324,16 @@ class ATdata
                     BLINKER_LOG2(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
 #endif
                 }
-                return true;
+                // return;
             }
-            else {
-                return false;
-            }
+            // else {
+            //     // _isAT = false;
+            //     return;
+            // }
         }
 };
 
-static class ATdata * _nbData;
+static class ATdata * _atData;
 
 class BlinkerTransportStream
 {
@@ -240,35 +344,72 @@ class BlinkerTransportStream
 
         bool serialAvailable()
         {
-            if (!isHWS) {
-                if (!SSerialBLE->isListening()) {
+            if (!isHWS)
+            {
+                if (!SSerialBLE->isListening())
+                {
                     SSerialBLE->listen();
                     ::delay(100);
                 }
             }
             
-            if (stream->available()) {
+            if (stream->available())
+            {
                 strcpy(streamData, (stream->readStringUntil('\n')).c_str());
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("handleSerial: "), streamData);
 #endif
+
+                // if (!_atData)
+                // {
+                    _atData = new ATdata();
+
+                    _atData->update(STRING_format(streamData));
+                // }
+                // else
+                // {
+                //     _atData->update(STRING_format(streamData));
+                // }
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2(BLINKER_F("state: "), _atData->state());
+                BLINKER_LOG2(BLINKER_F("cmd: "), _atData->cmd());
+                BLINKER_LOG2(BLINKER_F("paramNum: "), _atData->paramNum());
+#endif
+
+                if (_atData->state())
+                {
+                    parseATdata();
+
+                    free(_atData);
+                    return false;
+                }
+
+                free(_atData);
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
 
-        void serailBegin(Stream& s, bool state)
+        void serialBegin(Stream& s, bool state)
         {
             stream = &s;
             stream->setTimeout(BLINKER_STREAM_TIMEOUT);
             isHWS = state;
+
+            serialConnect();
+
+            while (1)
+            {
+                serialAvailable();
+            }
         }
 
-        String serailLastRead() { return STRING_format(streamData); }
+        String serialLastRead() { return STRING_format(streamData); }
 
-        bool serailPrint(String s)
+        bool serialPrint(String s)
         {
             // bool state = STRING_contains_string(s, BLINKER_CMD_NOTICE);
 
@@ -289,7 +430,7 @@ class BlinkerTransportStream
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("Response: "), s);
 #endif
-            if(serailConnected()) {
+            if(serialConnected()) {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG1(BLINKER_F("Succese..."));
 #endif
@@ -304,13 +445,13 @@ class BlinkerTransportStream
             }
         }
 
-        bool serailConnect()
+        bool serialConnect()
         {
             isSerialConnect = true;
-            return serailConnected();
+            return serialConnected();
         }
 
-        bool serailConnected() { return isSerialConnect; }
+        bool serialConnected() { return isSerialConnect; }
 
         void serailDisconnect() { isSerialConnect = false; }
 
@@ -556,7 +697,51 @@ class BlinkerTransportStream
 
         bool reRegister() { return connectServer(); }
 
-    private :    
+    private :
+
+        void parseATdata()
+        {
+            if (_atData->cmd() == BLINKER_CMD_AT) {
+                serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_RST) {
+                serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_BLINKER_MQTT) {
+                // serialPrint(BLINKER_CMD_OK);
+
+                BLINKER_ERR_LOG1(BLINKER_CMD_BLINKER_MQTT);
+
+                atState_t at_state = _atData->state();
+
+                String reqData;
+
+                switch (at_state)
+                {
+                    case AT_NONE:
+                        // serialPrint();
+                        break;
+                    case AT_TEST:
+                        reqData = STRING_format(BLINKER_CMD_AT) + \
+                                    "+" + STRING_format(BLINKER_CMD_AT) + \
+                                    "=<MQTT_WLAN_MODE>,<MQTT_AUTH_KEY>" + \
+                                    "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>";
+                        serialPrint(reqData);
+                        break;
+                    case AT_QUERY:
+                        // serialPrint();
+                        break;
+                    case AT_SETTING:
+                        serialPrint(BLINKER_CMD_OK);
+                        break;
+                    case AT_ACTION:
+                        // serialPrint();
+                        break;
+                    default :
+                        break;
+                }
+            }
+        }
 
         bool isMQTTinit = false;
 
@@ -1728,13 +1913,15 @@ class BlinkerMQTT_AT
 
         void begin(uint8_t ss_rx_pin = RX,
                     uint8_t ss_tx_pin = TX,
-                    uint32_t ss_baud = 9600)
+                    uint32_t ss_baud = 115200)
         {
             if (ss_rx_pin == RX && ss_tx_pin == TX){
                 Base::begin();
-                
+
+                ::delay(100);
+
                 Serial.begin(ss_baud);
-                this->conn.serailBegin(Serial, true);
+                this->conn.serialBegin(Serial, true);
                 
                 BLINKER_LOG1(BLINKER_F("BLINKER_MQTT_AT initialized..."));
                 return;
@@ -1743,7 +1930,7 @@ class BlinkerMQTT_AT
             Base::begin();
             SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
             SSerialBLE->begin(ss_baud);
-            this->conn.serailBegin(*SSerialBLE, false);
+            this->conn.serialBegin(*SSerialBLE, false);
             BLINKER_LOG1(BLINKER_F("BLINKER_MQTT_AT initialized..."));
         }
 
