@@ -20,6 +20,8 @@
     #include <utility/BlinkerAuto.h>
     #include <utility/BlinkerWlan.h>
     // #include "modules/OneButton/OneButton.h"
+// #elif defined(BLINKER_AT_MQTT)
+//     #include <utility/BlinkerAuto.h>
 #else
     #include <Blinker/BlinkerConfig.h>
     #include <utility/BlinkerUtility.h>
