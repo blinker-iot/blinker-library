@@ -126,6 +126,111 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
     }
 }
 
+class ATdata
+{
+    public :
+        ATdata()
+            : _isAT(false)
+        {}
+
+        bool update(String data) {
+            // _data = data;
+            // BLINKER_LOG2(BLINKER_F("update data: "), data);
+            _isAT = serialize(data);
+            return _isAT;
+        }
+
+        bool isAT() { return _isAT; }
+
+        String cmd() { return _atCmd; }
+
+        uint8_t paramNum() { return _paramNum; }
+
+        String getParam(uint8_t num) {
+            if (num >= _paramNum) return "";
+            else return _param[num];
+        }
+
+    private :
+        bool _isAT;
+        uint8_t _paramNum;
+        // String _data;
+        String _atCmd;
+        String _param[11];
+
+        bool serialize(String _data) {
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
+#endif
+            _paramNum = 0;
+            _isAT = false;
+            int addr_start = 0;//_data.indexOf("+");
+            int addr_end = 0;
+
+            String startCmd = _data.substring(0, 2);
+
+            // BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
+            // BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+
+            // if ((addr_start != -1) && STRING_contains_string(_data, ":"))
+            if (startCmd == BLINKER_CMD_AT)
+            {
+                _isAT = true;
+                addr_start = 0;
+                addr_end = _data.indexOf("=");
+
+                if (addr_end == -1) {
+                    return false;
+                }
+                else {
+                    _atCmd = _data.substring(addr_start, addr_end);
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+#endif
+                }
+
+                // BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
+
+                String serData;
+                uint16_t dataLen = _data.length();
+
+                for (_paramNum = 0; _paramNum < 11; _paramNum++) {
+                    addr_start += addr_end;
+                    addr_start += 1;
+                    serData = _data.substring(addr_start, dataLen);
+
+                    addr_end = serData.indexOf(",");
+
+                    // BLINKER_LOG2(BLINKER_F("serialize serData: "), serData);
+                    // BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
+                    // BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+
+                    if (addr_end == -1) {
+                        if (addr_start >= dataLen) return false;
+                        _param[_paramNum] = serData;
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
+#endif
+                        _paramNum++;
+                        return true;
+                    }
+                    else {
+                        _param[_paramNum] = serData.substring(0, addr_end);
+                    }
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_LOG2(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
+#endif
+                }
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+};
+
+static class ATdata * _nbData;
+
 class BlinkerTransportStream
 {
     public :
@@ -741,7 +846,7 @@ class BlinkerTransportStream
 
             WiFi.mode(WIFI_STA);
             String _hostname = ("DiyArduinoMQTT_") + macDeviceName();
-            
+
 #if defined(ESP8266)
             WiFi.hostname(_hostname.c_str());
 #elif defined(ESP32)

@@ -96,6 +96,8 @@ class NBdata
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
 #endif
+            _reqName = 0;
+            _isReq = false;
             int addr_start = _data.indexOf("+");
             int addr_end = 0;
 
@@ -115,6 +117,8 @@ class NBdata
                     BLINKER_LOG2(BLINKER_F("serialize _reqName: "), _reqName);
 #endif
                 }
+
+                _isReq = true;
 
                 // BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
 

@@ -128,6 +128,8 @@
     
 #elif defined(BLINKER_AT_MQTT)
 
+    #define BLINKER_ESP_AT
+
     #if defined(ESP8266) || defined(ESP32)
         #include <BlinkerESPAT_MQTT.h>
     #else
