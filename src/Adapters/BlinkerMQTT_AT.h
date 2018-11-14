@@ -67,6 +67,72 @@ static IPAddress netMsk(255, 255, 255, 0);
 
 static bool isATAvaill = false;
 
+static uint32_t serialSet = 115200 << 8 | 8 << 4 | 1 << 2 | 0;
+
+static SerialConfig ss_cfg;
+
+
+static SerialConfig serConfig()
+{
+    uint8_t _bitSet = serialSet & 0xFF;
+
+    switch (_bitSet)
+    {
+        case BLINKER_SERIAL_5N1 :
+#ifdef BLINKER_DEBUG_ALL
+            BLINKER_LOG1(("SerialConfig SERIAL_5N1"));
+#endif
+            return SERIAL_5N1;
+        case BLINKER_SERIAL_6N1 :
+            return SERIAL_6N1;
+        case BLINKER_SERIAL_7N1 :
+            return SERIAL_7N1;
+        case BLINKER_SERIAL_8N1 :
+            return SERIAL_8N1;
+        case BLINKER_SERIAL_5N2 :
+            return SERIAL_5N2;
+        case BLINKER_SERIAL_6N2 :
+            return SERIAL_6N2;
+        case BLINKER_SERIAL_7N2 :
+            return SERIAL_7N2;
+        case BLINKER_SERIAL_8N2 :
+            return SERIAL_8N2;
+        case BLINKER_SERIAL_5E1 :
+            return SERIAL_5E1;
+        case BLINKER_SERIAL_6E1 :
+            return SERIAL_6E1;
+        case BLINKER_SERIAL_7E1 :
+            return SERIAL_7E1;
+        case BLINKER_SERIAL_8E1 :
+            return SERIAL_8E1;
+        case BLINKER_SERIAL_5E2 :
+            return SERIAL_5E2;
+        case BLINKER_SERIAL_6E2 :
+            return SERIAL_6E2;
+        case BLINKER_SERIAL_7E2 :
+            return SERIAL_7E2;
+        case BLINKER_SERIAL_8E2 :
+            return SERIAL_8E2;
+        case BLINKER_SERIAL_5O1 :
+            return SERIAL_5O1;
+        case BLINKER_SERIAL_6O1 :
+            return SERIAL_6O1;
+        case BLINKER_SERIAL_7O1 :
+            return SERIAL_7O1;
+        case BLINKER_SERIAL_8O1 :
+            return SERIAL_8O1;
+        case BLINKER_SERIAL_5O2 :
+            return SERIAL_5O2;
+        case BLINKER_SERIAL_6O2 :
+            return SERIAL_6O2;
+        case BLINKER_SERIAL_7O2 :
+            return SERIAL_7O2;
+        case BLINKER_SERIAL_8O2 :
+            return SERIAL_8O2;
+        default :
+            return SERIAL_8N1;
+    }
+}
 
 static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
 {
@@ -137,19 +203,26 @@ enum atState_t {
     AT_ACTION
 };
 
-enum atMQTT_t {
-    MQTT_CONFIG_MODE,
-    MQTT_AUTH_KEY,
-    MQTT_WIFI_SSID,
-    MQTT_WIFI_PSWD
-};
-
 enum atStatus_t {
     BL_BEGIN,
     BL_INITED
     // ,
     // BL_SUC,
     // MQTT_WIFI_PSWD
+};
+
+enum atSerial_t {
+    SER_BAUD,
+    SER_DBIT,
+    SER_SBIT,
+    SER_PRIT
+};
+
+enum atMQTT_t {
+    MQTT_CONFIG_MODE,
+    MQTT_AUTH_KEY,
+    MQTT_WIFI_SSID,
+    MQTT_WIFI_PSWD
 };
 
 class ATdata
@@ -750,6 +823,131 @@ class BlinkerTransportStream
                 serialPrint(BLINKER_VERSION);
                 serialPrint(BLINKER_CMD_OK);
             }
+            else if (_atData->cmd() == BLINKER_CMD_UART_CUR) {
+                atState_t at_state = _atData->state();
+
+                BLINKER_LOG1(at_state);
+
+                switch (at_state)
+                {
+                    case AT_NONE:
+                        // serialPrint();
+                        break;
+                    case AT_TEST:
+                        reqData = STRING_format(BLINKER_CMD_AT) + \
+                                "+" + STRING_format(BLINKER_CMD_UART_CUR) + \
+                                "=<baudrate>,<databits>,<stopbits>,<parity>";
+                        serialPrint(reqData);
+                        serialPrint(BLINKER_CMD_OK);
+                        break;
+                    case AT_QUERY:
+                        reqData = "+" + STRING_format(BLINKER_CMD_UART_CUR) + \
+                                ":" + STRING_format(serialSet >> 8 & 0x00FFFFFF) + \
+                                "," + STRING_format(serialSet >> 4 & 0x0F) + \
+                                "," + STRING_format(serialSet >> 2 & 0x03) + \
+                                "," + STRING_format(serialSet      & 0x03);
+                        serialPrint(reqData);
+                        serialPrint(BLINKER_CMD_OK);
+                        break;
+                    case AT_SETTING:
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
+                        BLINKER_LOG2(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
+                        BLINKER_LOG2(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
+                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
+#endif
+                        if (BLINKER_UART_PARAM_NUM != _atData->paramNum()) return;
+
+                        serialSet = (_atData->getParam(SER_BAUD)).toInt() << 8 |
+                                    (_atData->getParam(SER_DBIT)).toInt() << 4 |
+                                    (_atData->getParam(SER_SBIT)).toInt() << 2 |
+                                    (_atData->getParam(SER_PRIT)).toInt();
+
+                        ss_cfg = serConfig();
+
+                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), serialSet);
+
+                        serialPrint(BLINKER_CMD_OK);
+
+                        // if (isHWS) {
+                            Serial.begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+                        // }
+                        // else {
+                        //     SSerialBLE->begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+                        // }
+                        break;
+                    case AT_ACTION:
+                        // serialPrint();
+                        break;
+                    default :
+                        break;
+                }
+            }
+            else if (_atData->cmd() == BLINKER_CMD_UART_DEF) {
+                atState_t at_state = _atData->state();
+
+                BLINKER_LOG1(at_state);
+
+                switch (at_state)
+                {
+                    case AT_NONE:
+                        // serialPrint();
+                        break;
+                    case AT_TEST:
+                        reqData = STRING_format(BLINKER_CMD_AT) + \
+                                "+" + STRING_format(BLINKER_CMD_UART_DEF) + \
+                                "=<baudrate>,<databits>,<stopbits>,<parity>";
+                        serialPrint(reqData);
+                        serialPrint(BLINKER_CMD_OK);
+                        break;
+                    case AT_QUERY:
+                        reqData = "+" + STRING_format(BLINKER_CMD_UART_DEF) + \
+                                ":" + STRING_format(serialSet >> 8 & 0x00FFFFFF) + \
+                                "," + STRING_format(serialSet >> 4 & 0x0F) + \
+                                "," + STRING_format(serialSet >> 2 & 0x03) + \
+                                "," + STRING_format(serialSet      & 0x03);
+                        serialPrint(reqData);
+                        serialPrint(BLINKER_CMD_OK);
+                        break;
+                    case AT_SETTING:
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
+                        BLINKER_LOG2(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
+                        BLINKER_LOG2(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
+                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
+#endif
+                        if (BLINKER_UART_PARAM_NUM != _atData->paramNum()) return;
+
+                        serialSet = (_atData->getParam(SER_BAUD)).toInt() << 8 |
+                                    (_atData->getParam(SER_DBIT)).toInt() << 4 |
+                                    (_atData->getParam(SER_SBIT)).toInt() << 2 |
+                                    (_atData->getParam(SER_PRIT)).toInt();
+
+                        ss_cfg = serConfig();
+
+                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), serialSet);
+
+                        serialPrint(BLINKER_CMD_OK);
+
+                        // if (isHWS) {
+                            Serial.begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+                        // }
+                        // else {
+                        //     SSerialBLE->begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+                        // }
+
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_SERIALCFG, serialSet);
+                        EEPROM.commit();
+                        EEPROM.end();
+                        break;
+                    case AT_ACTION:
+                        // serialPrint();
+                        break;
+                    default :
+                        break;
+                }
+            }
             else if (_atData->cmd() == BLINKER_CMD_RAM) {
                 reqData = "+" + STRING_format(BLINKER_CMD_RAM) + \
                         ":" + STRING_format(BLINKER_FreeHeap());
@@ -777,6 +975,7 @@ class BlinkerTransportStream
                                 "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + \
                                 "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
                         serialPrint(reqData);
+                        serialPrint(BLINKER_CMD_OK);
                         break;
                     case AT_QUERY:
                         reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
@@ -785,6 +984,7 @@ class BlinkerTransportStream
                                 "," + WiFi.SSID() + \
                                 "," + WiFi.psk();
                         serialPrint(reqData);
+                        serialPrint(BLINKER_CMD_OK);
                         break;
                     case AT_SETTING:
 #ifdef BLINKER_DEBUG_ALL
@@ -798,6 +998,8 @@ class BlinkerTransportStream
                         {
                             BLINKER_LOG1(BLINKER_F("BLINKER_CMD_COMWLAN"));
 
+                            if (BLINKER_COMWLAN_PARAM_NUM != _atData->paramNum()) return;
+
                             connectWiFi((_atData->getParam(MQTT_WIFI_SSID)).c_str(), 
                                         (_atData->getParam(MQTT_WIFI_PSWD)).c_str());
                             
@@ -809,6 +1011,8 @@ class BlinkerTransportStream
                         {
                             BLINKER_LOG1(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
 
+                            if (BLINKER_SMCFG_PARAM_NUM != _atData->paramNum()) return;
+
                             if (!autoInit()) smartconfig();
 
                             begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
@@ -818,6 +1022,8 @@ class BlinkerTransportStream
                         else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_APCONFIG_NUM)
                         {
                             BLINKER_LOG1(BLINKER_F("BLINKER_CMD_APCONFIG"));
+
+                            if (BLINKER_APCFG_PARAM_NUM != _atData->paramNum()) return;
 
                             if (!autoInit())
                             {
@@ -2215,33 +2421,63 @@ class BlinkerMQTT_AT
             : Base(transp)
         {}
 
-        void begin(uint8_t ss_rx_pin = RX,
-                    uint8_t ss_tx_pin = TX,
-                    uint32_t ss_baud = 115200)
+        // void begin(uint8_t ss_rx_pin = RX,
+        //             uint8_t ss_tx_pin = TX,
+        //             uint32_t ss_baud = 115200)
+        void begin()
         {
-            if (ss_rx_pin == RX && ss_tx_pin == TX){
+            // SERIAL_8N1
+            // if (ss_rx_pin == RX && ss_tx_pin == TX){
                 Base::begin();
 
                 ::delay(100);
 
-                Serial.begin(ss_baud);
+                EEPROM.begin(BLINKER_EEP_SIZE);
+                EEPROM.get(BLINKER_EEP_ADDR_SERIALCFG, serialSet);
+                // EEPROM.commit();
+                // EEPROM.end();
+
+                uint32_t ss_baud = serialSet >> 8 & 0x00FFFFFF;
+                ss_cfg = serConfig();
+
+                if (ss_baud != 300    || ss_baud != 1200    || ss_baud != 2400   ||
+                    ss_baud != 4800   || ss_baud != 9600    || ss_baud != 19200  ||
+                    ss_baud != 38400  || ss_baud != 57600   || ss_baud != 74880  ||
+                    ss_baud != 115200 || ss_baud != 230400  || ss_baud != 250000 ||
+                    ss_baud != 500000 || ss_baud != 1000000 || ss_baud != 2000000)
+                {
+                    serialSet = 115200 << 8 | 8 << 4 | 1 << 2 | 0;
+                    ss_baud = 115200;
+                    ss_cfg = SERIAL_8N1;
+
+                    // EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_SERIALCFG, serialSet);
+                    // EEPROM.commit();
+                    // EEPROM.end();
+                }
+
+                EEPROM.commit();
+                EEPROM.end();
+
+                Serial.begin(ss_baud, ss_cfg);
                 this->conn.serialBegin(Serial, true);
                 strcpy(Base::_authKey, this->conn.authKey().c_str());
                 strcpy(Base::_deviceName, this->conn.deviceName().c_str());
                 BLINKER_LOG1(BLINKER_F("BLINKER_MQTT_AT initialized..."));
-                return;
-            }
+            //     return;
+            // }
 
-            Base::begin();
-            SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
-            SSerialBLE->begin(ss_baud);
-            this->conn.serialBegin(*SSerialBLE, false);
-            strcpy(Base::_authKey, this->conn.authKey().c_str());
-            strcpy(Base::_deviceName, this->conn.deviceName().c_str());
-            BLINKER_LOG1(BLINKER_F("BLINKER_MQTT_AT initialized..."));
+            // Base::begin();
+            // SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
+            // SSerialBLE->begin(ss_baud);
+            // this->conn.serialBegin(*SSerialBLE, false);
+            // strcpy(Base::_authKey, this->conn.authKey().c_str());
+            // strcpy(Base::_deviceName, this->conn.deviceName().c_str());
+            // BLINKER_LOG1(BLINKER_F("BLINKER_MQTT_AT initialized..."));
         }
 
     protected :
+        
         // uint8_t at_rx_pin = RX;
         // uint8_t at_tx_pin = TX;
         // uint32_t at_baud = 9600;

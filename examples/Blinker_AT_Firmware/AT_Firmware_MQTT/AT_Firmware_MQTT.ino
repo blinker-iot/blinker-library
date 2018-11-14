@@ -26,7 +26,7 @@
  * *****************************************************************/
 
 // #define BLINKER_PRINT Serial
-#define 
+#define BLINKER_AT_MQTT
 // #define BLINKER_DEBUG_ALL
 
 #include <Blinker.h>
