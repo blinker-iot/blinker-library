@@ -435,6 +435,8 @@
 
     #define BLINKER_CMD_RAM                     "SYSRAM"
 
+    #define BLINKER_CMD_ADC                     "SYSADC"
+
     #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
 
     #define BLINKER_CMD_SMARTCONFIG             "ESPTOUCH"
