@@ -948,9 +948,16 @@ class BlinkerTransportStream
                         break;
                 }
             }
-            else if (_atData->cmd() == BLINKER_CMD_RAM) {
+            else if (_atData->cmd() == BLINKER_CMD_RAM && _atData->state() == AT_QUERY) {
                 reqData = "+" + STRING_format(BLINKER_CMD_RAM) + \
                         ":" + STRING_format(BLINKER_FreeHeap());
+                
+                serialPrint(reqData);
+                serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_ADC && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_ADC) + \
+                        ":" + STRING_format(analogRead(A0));
                 
                 serialPrint(reqData);
                 serialPrint(BLINKER_CMD_OK);
