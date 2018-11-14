@@ -419,7 +419,7 @@
 
     #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
 
-    #define BLINKER_CMD_ESPTOUCH                "ESPTOUCH"
+    #define BLINKER_CMD_SMARTCONFIG                "ESPTOUCH"
 
     #define BLINKER_CMD_APCONFIG                "APCONFIG"
 
@@ -429,7 +429,7 @@
 
 #define BLINKER_CMD_COMCONFIG_NUM           0
 
-#define BLINKER_CMD_ESPTOUCH_NUM            1
+#define BLINKER_CMD_SMARTCONFIG_NUM            1
 
 #define BLINKER_CMD_APCONFIG_NUM            2
 

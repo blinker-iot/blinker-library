@@ -138,7 +138,7 @@ enum atState_t {
 };
 
 enum atMQTT_t {
-    MQTT_WLAN_MODE,
+    MQTT_CONFIG_MODE,
     MQTT_AUTH_KEY,
     MQTT_WIFI_SSID,
     MQTT_WIFI_PSWD
@@ -400,6 +400,7 @@ class BlinkerTransportStream
                 }
 
                 free(_atData);
+
                 return true;
             }
             else
@@ -505,7 +506,7 @@ class BlinkerTransportStream
         void ping();
         
         bool available() {
-            serialAvailable();
+            if (serialAvailable()) mqttPrint(STRING_format(streamData));
 
             webSocket.loop();
 
@@ -520,7 +521,7 @@ class BlinkerTransportStream
 
             if (isAvail) {
                 isAvail = false;
-
+                serialPrint(STRING_format(msgBuf));
                 return true;
             }
             else {
@@ -553,6 +554,7 @@ class BlinkerTransportStream
         void subscribe();
         String lastRead() { return STRING_format(msgBuf); }
         bool print(String data);
+        bool mqttPrint(String data);
         bool bPrint(String name, String data);
 
 #if defined(BLINKER_ALIGENIE)
@@ -755,7 +757,7 @@ class BlinkerTransportStream
                     case AT_TEST:
                         reqData = STRING_format(BLINKER_CMD_AT) + \
                                 "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                                "=<MQTT_WLAN_MODE>,<MQTT_AUTH_KEY>" + \
+                                "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + \
                                 "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
                         serialPrint(reqData);
                         break;
@@ -769,23 +771,34 @@ class BlinkerTransportStream
                         break;
                     case AT_SETTING:
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("MQTT_WLAN_MODE: "), _atData->getParam(MQTT_WLAN_MODE));
+                        BLINKER_LOG2(BLINKER_F("MQTT_CONFIG_MODE: "), _atData->getParam(MQTT_CONFIG_MODE));
                         BLINKER_LOG2(BLINKER_F("MQTT_AUTH_KEY: "),  _atData->getParam(MQTT_AUTH_KEY));
                         BLINKER_LOG2(BLINKER_F("MQTT_WIFI_SSID: "), _atData->getParam(MQTT_WIFI_SSID));
                         BLINKER_LOG2(BLINKER_F("MQTT_WIFI_PSWD: "), _atData->getParam(MQTT_WIFI_PSWD));
 #endif
 
-                        if (_atData->getParam(MQTT_WLAN_MODE) == BLINKER_CMD_ESPTOUCH)
+                        if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_COMCONFIG_NUM)
                         {
-                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_ESPTOUCH"));
+                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_COMWLAN"));
+
+                            connectWiFi((_atData->getParam(MQTT_WIFI_SSID)).c_str(), 
+                                        (_atData->getParam(MQTT_WIFI_PSWD)).c_str());
+                            
+                            begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
+                            _status = BL_INITED;
+                            _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
+                        }
+                        else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_SMARTCONFIG_NUM)
+                        {
+                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
 
                             if (!autoInit()) smartconfig();
 
                             begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
                             _status = BL_INITED;
-                            _wlanMode = BLINKER_CMD_ESPTOUCH_NUM;
+                            _wlanMode = BLINKER_CMD_SMARTCONFIG_NUM;
                         }
-                        else if (_atData->getParam(MQTT_WLAN_MODE) == BLINKER_CMD_APCONFIG)
+                        else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_APCONFIG_NUM)
                         {
                             BLINKER_LOG1(BLINKER_F("BLINKER_CMD_APCONFIG"));
 
@@ -802,17 +815,6 @@ class BlinkerTransportStream
                             begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
                             _status = BL_INITED;
                             _wlanMode = BLINKER_CMD_APCONFIG_NUM;
-                        }
-                        else if (_atData->getParam(MQTT_WLAN_MODE) == BLINKER_CMD_COMCONFIG)
-                        {
-                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_COMWLAN"));
-
-                            connectWiFi((_atData->getParam(MQTT_WIFI_SSID)).c_str(), 
-                                        (_atData->getParam(MQTT_WIFI_PSWD)).c_str());
-                            
-                            begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
-                            _status = BL_INITED;
-                            _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
                         }
                         else {
                             return;
@@ -834,8 +836,8 @@ class BlinkerTransportStream
             {
                 case BLINKER_CMD_COMCONFIG_NUM :
                     return BLINKER_CMD_COMCONFIG;
-                case BLINKER_CMD_ESPTOUCH_NUM :
-                    return BLINKER_CMD_ESPTOUCH;
+                case BLINKER_CMD_SMARTCONFIG_NUM :
+                    return BLINKER_CMD_SMARTCONFIG;
                 case BLINKER_CMD_APCONFIG_NUM :
                     return BLINKER_CMD_APCONFIG;
                 default :
@@ -1701,6 +1703,187 @@ void BlinkerTransportStream::subscribe() {
             this->latestTime = millis();
 
             dataFrom = BLINKER_MSG_FROM_MQTT;
+        }
+    }
+}
+
+bool BlinkerTransportStream::mqttPrint(String data) {
+#ifdef BLINKER_DEBUG_ALL
+    BLINKER_LOG2(BLINKER_F("mqttPrint data: "), data);
+#endif
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& print_data = jsonBuffer.parseObject(data);
+
+    if (!print_data.success()) {
+        return false;
+    }
+
+    if (*isHandle && dataFrom == BLINKER_MSG_FROM_WS) {
+        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
+                    (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
+                     STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_LOOP) && 
+                     STRING_contains_string(data, BLINKER_CMD_TIMES)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_COUNTDOWN) &&
+                     STRING_contains_string(data, BLINKER_CMD_TOTALTIME));
+
+        if (!state) {
+            state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
+                && STRING_contains_string(data, BLINKER_CMD_ONLINE))
+                || (STRING_contains_string(data, BLINKER_CMD_BUILTIN_SWITCH)));
+
+            if (!checkPrintSpan()) {
+                respTime = millis();
+                return false;
+            }
+            respTime = millis();
+        }
+
+        if (!state) {
+            if (!checkPrintSpan()) {
+                respTime = millis();
+                return false;
+            }
+        }
+
+        respTime = millis();
+
+#ifdef BLINKER_DEBUG_ALL
+        BLINKER_LOG1("WS response: ");
+        BLINKER_LOG1(data);
+        BLINKER_LOG1("Succese...");
+        // BLINKER_LOG1(("Succese..."));
+#endif
+        webSocket.sendTXT(ws_num, data + BLINKER_CMD_NEWLINE);
+
+        return true;
+// #ifdef BLINKER_DEBUG_ALL
+//         BLINKER_LOG3("WS response: ", data, "Succese...");
+// #endif
+    }
+    else {
+        String payload;
+        if (STRING_contains_string(data, BLINKER_CMD_NEWLINE)) {
+            // payload = "{\"data\":" + data.substring(0, data.length() - 1) + \
+            //         ",\"fromDevice\":\"" + MQTT_ID + \
+            //         "\",\"toDevice\":\"" + UUID + \
+            //         "\",\"deviceType\":\"OwnApp\"}";
+
+            payload = data.substring(0, data.length() - 1);
+        }
+        else {
+        //     payload = "{\"data\":" + data + \
+        //             ",\"fromDevice\":\"" + MQTT_ID + \
+        //             "\",\"toDevice\":\"" + UUID + \
+        //             "\",\"deviceType\":\"OwnApp\"}";
+
+            payload = data;
+        }
+    
+#ifdef BLINKER_DEBUG_ALL
+        BLINKER_LOG1("MQTT Publish...");
+#endif
+        bool _alive = isAlive;
+        bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
+                    (STRING_contains_string(data, BLINKER_CMD_TIMING) && 
+                     STRING_contains_string(data, BLINKER_CMD_ENABLE)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_LOOP) && 
+                     STRING_contains_string(data, BLINKER_CMD_TIMES)) ||
+                    (STRING_contains_string(data, BLINKER_CMD_COUNTDOWN) &&
+                     STRING_contains_string(data, BLINKER_CMD_TOTALTIME));
+
+        if (!state) {
+            state = ((STRING_contains_string(data, BLINKER_CMD_STATE) 
+                && STRING_contains_string(data, BLINKER_CMD_ONLINE))
+                || (STRING_contains_string(data, BLINKER_CMD_BUILTIN_SWITCH)));
+
+            if (!checkPrintSpan()) {
+                return false;
+            }
+            respTime = millis();
+        }
+
+// #ifdef BLINKER_DEBUG_ALL
+//         BLINKER_LOG2("state: ", state);
+
+//         BLINKER_LOG2("state: ", STRING_contains_string(data, BLINKER_CMD_TIMING));
+
+//         BLINKER_LOG2("state: ", data.indexOf(BLINKER_CMD_TIMING));
+
+//         BLINKER_LOG2("data: ", data);
+// #endif
+
+        if (mqtt->connected()) {
+            if (!state) {
+                if (!checkCanPrint()) {
+                    if (!_alive) {
+                        isAlive = false;
+                    }
+                    return false;
+                }
+            }
+
+            // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
+
+            // if (!iotPub.publish(payload.c_str())) {
+
+            if (! mqtt->publish(BLINKER_PUB_TOPIC, payload.c_str())) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(payload);
+                BLINKER_LOG1("...Failed");
+#endif
+                if (!_alive) {
+                    isAlive = false;
+                }
+                return false;
+            }
+//             else if (mqtt_broker == BLINKER_MQTT_BORKER_ONENET) {
+//                 char buf[BLINKER_MAX_SEND_BUFFER_SIZE];
+//                 buf[0] = 0x01;
+//                 buf[1] = 0x00;
+//                 buf[2] = (uint8_t)payload.length();
+
+//                 memcpy(buf+3, payload.c_str(), payload.length());
+
+//                 if (!iotPub.publish((uint8_t *)buf, payload.length()+3)) {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG1(payload);
+//                     BLINKER_LOG1("...Failed");
+// #endif
+//                     if (!_alive) {
+//                         isAlive = false;
+//                     }
+//                     return false;
+//                 } else {
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG1(payload);
+//                     BLINKER_LOG1("...OK!");
+// #endif
+//                     if (!state) printTime = millis();
+
+//                     if (!_alive) {
+//                         isAlive = false;
+//                     }
+//                     return true;
+//                 }
+//             }
+            else {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG1(payload);
+                BLINKER_LOG1("...OK!");
+#endif
+                if (!state) printTime = millis();
+
+                if (!_alive) {
+                    isAlive = false;
+                }
+                return true;
+            }            
+        }
+        else {
+            BLINKER_ERR_LOG1("MQTT Disconnected");
+            isAlive = false;
+            return false;
         }
     }
 }
