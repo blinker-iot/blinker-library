@@ -25,16 +25,15 @@
  * 
  * *****************************************************************/
 
-#define BLINKER_PRINT Serial
-#define BLINKER_AT_MQTT
+// #define BLINKER_PRINT Serial
+#define 
+// #define BLINKER_DEBUG_ALL
 
 #include <Blinker.h>
 
-void setup() {
-    Serial.begin(115200);
-
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, LOW);
+void setup()
+{
+    // Serial.begin(115200);
 
     Blinker.begin();
 }
@@ -42,13 +41,4 @@ void setup() {
 void loop()
 {
     Blinker.run();
-
-    if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
-
-        uint32_t BlinkerTime = millis();
-
-        Blinker.vibrate();        
-        Blinker.print("millis", BlinkerTime);
-    }
 }

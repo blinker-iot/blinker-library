@@ -1726,7 +1726,7 @@ void BlinkerTransportStream::subscribe() {
 
 bool BlinkerTransportStream::mqttPrint(String data) {
 #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG2(BLINKER_F("mqttPrint data: "), data);
+    BLINKER_LOG2(("mqttPrint data: "), data);
 #endif
     DynamicJsonBuffer jsonBuffer;
     JsonObject& print_data = jsonBuffer.parseObject(data);

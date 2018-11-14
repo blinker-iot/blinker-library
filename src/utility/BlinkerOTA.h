@@ -12,8 +12,10 @@
     #include <WiFi.h>
     #include <Update.h>
 
-    extern WiFiClient client;
+    // extern WiFiClient client_s;
 #endif
+
+extern WiFiClientSecure client_s;
 
 enum bota_status_t{
     BLINKER_UPGRADE_DISABLE,
@@ -41,6 +43,12 @@ class BlinkerOTA {
         void host(String _host) { ota_host = _host; }
         void url(String _url) { ota_url = _url; }
         void setURL(String urlstr);
+        void config(String _host, String _url, String _fingerPrint)
+        {
+            ota_host = _host;
+            ota_url = _url;
+            ota_fingerPrint = _fingerPrint;
+        }
         void update();
         bota_status_t status() {
             return _status;
@@ -59,6 +67,7 @@ class BlinkerOTA {
     protected :
         String ota_host;
         String ota_url;
+        String ota_fingerPrint;
         uint16_t ota_port = 80;
         char *otaUrl;
         bota_status_t _status;
@@ -80,67 +89,75 @@ void BlinkerOTA::setURL(String url) {
 void BlinkerOTA::update() {
     saveOTACheck();
     //Serial.println(F("LOAD OTA URL"));
-#if defined(ESP8266)
-    t_httpUpdate_return ret = ESPhttpUpdate.update(otaUrl);
+// #if defined(ESP8266)
+//     t_httpUpdate_return ret = ESPhttpUpdate.update(otaUrl);
 
-    free(otaUrl);
-    //t_httpUpdate_return  ret = ESPhttpUpdate.update("https://server/file.bin");
-    // pubOTAsteptest();
-    // delay(500);
+//     free(otaUrl);
+//     //t_httpUpdate_return  ret = ESPhttpUpdate.update("https://server/file.bin");
+//     // pubOTAsteptest();
+//     // delay(500);
 
-    switch(ret) {
-        case HTTP_UPDATE_FAILED:
-            //Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s \r\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
-            // pubOTAerrortest();
-            // delay(500);
-            // pubOTAtest();
-            // break;
-            // return UPGRADE_FAIL;
-            _status = BLINKER_UPGRADE_FAIL;
-            return;
+//     switch(ret) {
+//         case HTTP_UPDATE_FAILED:
+//             //Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s \r\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+//             // pubOTAerrortest();
+//             // delay(500);
+//             // pubOTAtest();
+//             // break;
+//             // return UPGRADE_FAIL;
+//             _status = BLINKER_UPGRADE_FAIL;
+//             return;
 
-        case HTTP_UPDATE_NO_UPDATES:
-            //Serial.println(F("HTTP_UPDATE_NO_UPDATES"));
-            // pubOTAerrortest();
-            // delay(500);
-            // pubOTAtest();
-            // break;
-            // return UPGRADE_LOAD_FAIL;
-            _status = BLINKER_UPGRADE_LOAD_FAIL;
-            return;
+//         case HTTP_UPDATE_NO_UPDATES:
+//             //Serial.println(F("HTTP_UPDATE_NO_UPDATES"));
+//             // pubOTAerrortest();
+//             // delay(500);
+//             // pubOTAtest();
+//             // break;
+//             // return UPGRADE_LOAD_FAIL;
+//             _status = BLINKER_UPGRADE_LOAD_FAIL;
+//             return;
 
-        case HTTP_UPDATE_OK:
-            //Serial.println(F("HTTP_UPDATE_OK"));
-            // break;
-            // return UPGRADE_SUCCESS;
-            _status = BLINKER_UPGRADE_SUCCESS;
-            return;
+//         case HTTP_UPDATE_OK:
+//             //Serial.println(F("HTTP_UPDATE_OK"));
+//             // break;
+//             // return UPGRADE_SUCCESS;
+//             _status = BLINKER_UPGRADE_SUCCESS;
+//             return;
 
-        default :
-            _status = BLINKER_UPGRADE_FAIL;
-            return;
-            // return UPGRADE_FAIL;
-            // break;
-    }
-#elif defined(ESP32)
+//         default :
+//             _status = BLINKER_UPGRADE_FAIL;
+//             return;
+//             // return UPGRADE_FAIL;
+//             // break;
+//     }
+// #elif defined(ESP32)
     BLINKER_LOG1("Connecting to: " + String(ota_host));
     
-    if (client.connect(ota_host.c_str(), ota_port)) {
+    if (client_s.connect(ota_host.c_str(), ota_port)) {
         // Connection Succeed.
         // Fecthing the bin
         BLINKER_LOG1("Fetching Bin: " + String(ota_url));
 
+        if (client_s.verify(ota_fingerPrint, ota_host)) {
+            BLINKER_LOG1("Fingerprint verified");
+        }
+        else {
+            BLINKER_LOG1("Fingerprint verification failed!");
+            return;
+        }
+
         // Get the contents of the bin file
-        client.print(String("GET ") + ota_url + " HTTP/1.1\r\n" +
+        client_s.print(String("GET ") + ota_url + " HTTP/1.1\r\n" +
                     "Host: " + ota_host + "\r\n" +
                     "Cache-Control: no-cache\r\n" +
                     "Connection: close\r\n\r\n");
 
         unsigned long timeout = millis();
-        while (client.available() == 0) {
+        while (client_s.available() == 0) {
             if (millis() - timeout > 5000) {
                 BLINKER_LOG1("Client Timeout !");
-                client.stop();
+                client_s.stop();
 
                 _status = BLINKER_UPGRADE_LOAD_FAIL;
                 return;
@@ -149,16 +166,16 @@ void BlinkerOTA::update() {
         // Once the response is available,
         // check stuff
 
-        while (client.available()) {
+        while (client_s.available()) {
             // read line till /n
-            String line = client.readStringUntil('\n');
+            String line = client_s.readStringUntil('\n');
             // remove space, to check if the line is end of headers
             line.trim();
 
             // if the the line is empty,
             // this is end of headers
             // break the while and feed the
-            // remaining `client` to the
+            // remaining `client_s` to the
             // Update.writeStream();
             if (!line.length()) {
                 //headers ended
@@ -208,7 +225,7 @@ void BlinkerOTA::update() {
             BLINKER_LOG1("Begin OTA. This may take 2 - 5 mins to complete. Things might be quite for a while.. Patience!");
             // No activity would appear on the Serial monitor
             // So be patient. This may take 2 - 5mins to complete
-            size_t written = Update.writeStream(client);
+            size_t written = Update.writeStream(client_s);
 
             if (written == contentLength) {
                 BLINKER_LOG1("Written : " + String(written) + " successfully");
@@ -238,16 +255,16 @@ void BlinkerOTA::update() {
             // Understand the partitions and
             // space availability
             BLINKER_LOG1("Not enough space to begin OTA");
-            client.flush();
+            client_s.flush();
             _status = BLINKER_UPGRADE_FAIL;
         }
     }
     else {
         BLINKER_LOG1("There was no content in the response");
-        client.flush();
+        client_s.flush();
         _status = BLINKER_UPGRADE_FAIL;
     }
-#endif
+// #endif
 }
 
 bool BlinkerOTA::loadOTACheck() {
