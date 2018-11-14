@@ -2882,9 +2882,14 @@ class BlinkerApi
             EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, taskCount);
             uint32_t _tmData;
             char     _tmAction_[BLINKER_TIMER_TIMING_ACTION_SIZE];
+
+            if (taskCount > BLINKER_TIMING_TIMER_SIZE) {
+                taskCount = 0;
+            }
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("load timing taskCount: "), taskCount);
     #endif
+
             for(uint8_t task = 0; task < taskCount; task++) {
                 EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE 
                             , _tmData);
@@ -5372,8 +5377,9 @@ class BlinkerApi
                 // BLINKER_LOG2("mday: ", timeinfo.tm_mday);
 
                 // BLINKER_LOG2("mday: ", mday());
-
+    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                 loadTiming();
+    #endif
             }
 
             return true;

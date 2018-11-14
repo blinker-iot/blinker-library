@@ -415,11 +415,23 @@
 
     #define BLINKER_ESP_AT_VERSION              "0.1.0"
 
+    #define BLINKER_UART_PARAM_NUM              4
+
+    #define BLINKER_COMWLAN_PARAM_NUM           4
+
+    #define BLINKER_SMCFG_PARAM_NUM             2
+
+    #define BLINKER_APCFG_PARAM_NUM             2
+
     #define BLINKER_CMD_AT                      "AT"
 
     #define BLINKER_CMD_RST                     "RST"
 
     #define BLINKER_CMD_GMR                     "GMR"
+
+    #define BLINKER_CMD_UART_CUR                "UART_CUR"
+
+    #define BLINKER_CMD_UART_DEF                "UART_DEF"
 
     #define BLINKER_CMD_RAM                     "SYSRAM"
 
@@ -430,6 +442,58 @@
     #define BLINKER_CMD_APCONFIG                "APCONFIG"
 
     #define BLINKER_CMD_COMCONFIG               "COMCONFIG"
+
+    #define BLINKER_SERIAL_5N1                  5 << 4 | 1 << 2 | 0
+
+    #define BLINKER_SERIAL_6N1                  6 << 4 | 1 << 2 | 0
+
+    #define BLINKER_SERIAL_7N1                  7 << 4 | 1 << 2 | 0
+
+    #define BLINKER_SERIAL_8N1                  8 << 4 | 1 << 2 | 0
+
+    #define BLINKER_SERIAL_5N2                  5 << 4 | 2 << 2 | 0
+
+    #define BLINKER_SERIAL_6N2                  6 << 4 | 2 << 2 | 0
+
+    #define BLINKER_SERIAL_7N2                  7 << 4 | 2 << 2 | 0
+
+    #define BLINKER_SERIAL_8N2                  8 << 4 | 2 << 2 | 0
+
+    #define BLINKER_SERIAL_5E1                  5 << 4 | 1 << 2 | 2
+
+    #define BLINKER_SERIAL_6E1                  6 << 4 | 1 << 2 | 2
+
+    #define BLINKER_SERIAL_7E1                  7 << 4 | 1 << 2 | 2
+
+    #define BLINKER_SERIAL_8E1                  8 << 4 | 1 << 2 | 2
+
+    #define BLINKER_SERIAL_5E2                  5 << 4 | 2 << 2 | 2
+
+    #define BLINKER_SERIAL_6E2                  6 << 4 | 2 << 2 | 2
+
+    #define BLINKER_SERIAL_7E2                  7 << 4 | 2 << 2 | 2
+
+    #define BLINKER_SERIAL_8E2                  8 << 4 | 2 << 2 | 2
+
+    #define BLINKER_SERIAL_5O1                  5 << 4 | 1 << 2 | 1
+
+    #define BLINKER_SERIAL_6O1                  6 << 4 | 1 << 2 | 1
+
+    #define BLINKER_SERIAL_7O1                  7 << 4 | 1 << 2 | 1
+
+    #define BLINKER_SERIAL_8O1                  8 << 4 | 1 << 2 | 1
+
+    #define BLINKER_SERIAL_5O2                  5 << 4 | 2 << 2 | 1
+
+    #define BLINKER_SERIAL_6O2                  6 << 4 | 2 << 2 | 1
+
+    #define BLINKER_SERIAL_7O2                  7 << 4 | 2 << 2 | 1
+
+    #define BLINKER_SERIAL_8O2                  8 << 4 | 2 << 2 | 1
+
+    #define BLINKER_EEP_ADDR_SERIALCFG          2432
+
+    #define BLINKER_SERIALCFG_SIZE              4
     
 #endif
 
