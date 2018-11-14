@@ -732,10 +732,29 @@ class BlinkerTransportStream
 
         void parseATdata()
         {
+            String reqData;
+            
             if (_atData->cmd() == BLINKER_CMD_AT) {
                 serialPrint(BLINKER_CMD_OK);
             }
             else if (_atData->cmd() == BLINKER_CMD_RST) {
+                serialPrint(BLINKER_CMD_OK);
+                ::delay(100);
+                ESP.restart();
+            }
+            else if (_atData->cmd() == BLINKER_CMD_GMR) {
+                // reqData = "+" + STRING_format(BLINKER_CMD_GMR) + \
+                //         "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + \
+                //         "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
+                serialPrint(BLINKER_ESP_AT_VERSION);
+                serialPrint(BLINKER_VERSION);
+                serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_RAM) {
+                reqData = "+" + STRING_format(BLINKER_CMD_RAM) + \
+                        ":" + STRING_format(BLINKER_FreeHeap());
+                
+                serialPrint(reqData);
                 serialPrint(BLINKER_CMD_OK);
             }
             else if (_atData->cmd() == BLINKER_CMD_BLINKER_MQTT) {
@@ -746,8 +765,6 @@ class BlinkerTransportStream
                 atState_t at_state = _atData->state();
 
                 BLINKER_LOG1(at_state);
-
-                String reqData;
 
                 switch (at_state)
                 {
@@ -763,7 +780,7 @@ class BlinkerTransportStream
                         break;
                     case AT_QUERY:
                         reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                                "=" + getMode(_wlanMode) + \
+                                ":" + STRING_format(_wlanMode) + \
                                 "," + STRING_format(_authKey) + \
                                 "," + WiFi.SSID() + \
                                 "," + WiFi.psk();
@@ -1715,6 +1732,7 @@ bool BlinkerTransportStream::mqttPrint(String data) {
     JsonObject& print_data = jsonBuffer.parseObject(data);
 
     if (!print_data.success()) {
+        BLINKER_ERR_LOG1(("Print data not a Json data"));
         return false;
     }
 
