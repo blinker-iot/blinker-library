@@ -503,6 +503,11 @@ enum atPin_t {
     PIN_PULLSTATE
 };
 
+enum atIO_t {
+    IO_PIN,
+    IO_LVL
+};
+
 // enum atPinMode_t {
 //     AT_PIN_INPUT,
 //     AT_PIN_OUTPUT
@@ -514,6 +519,28 @@ enum atPin_t {
 //     PULL_DOWN
 // }
 
+uint8_t parseMode(uint8_t _mode, uint8_t _pullState) {
+    uint8_t _modes = _mode << 4 | _pullState;
+
+    switch(_modes)
+    {
+        case 0 << 4 | 0 :
+            return INPUT;
+        case 1 << 4 | 0 :
+            return OUTPUT;
+        case 0 << 4 | 1 :
+            return INPUT_PULLUP;
+        case 0 << 4 | 2 :
+#if defined(ESP8266)
+            return INPUT_PULLDOWN_16;
+#elif defined(ESP32)
+            return INPUT_PULLDOWN;
+#endif
+        default :
+            return INPUT;
+    }
+}
+
 class PinData
 {
     public :
@@ -523,17 +550,29 @@ class PinData
             // pin_mode = _mode;
             // pin_pull = _pullState;
             _pinDatas = _pin << 8 | _mode << 4 | _pullState;
+
+            pinMode(_pin, parseMode(_mode, _pullState));
         }
 
         uint8_t getPin()  { return (_pinDatas >> 8 & 0xFF); }
         uint8_t getMode() { return (_pinDatas >> 4 & 0x0F); }
         uint8_t getPull() { return (_pinDatas      & 0x0F); }
+        
+        String data() {
+            String _data =  STRING_format(_pinDatas >> 8 & 0xFF) + "," + \
+                            STRING_format(_pinDatas >> 4 & 0x0F) + "," + \
+                            STRING_format(_pinDatas      & 0x0F);
+
+            return _data;
+        }
 
         bool checkPin(uint8_t _pin) { return (_pinDatas >> 8 & 0xFF) == _pin; }
 
         void fresh(uint8_t _mode, uint8_t _pullState)
         {
             _pinDatas = (_pinDatas >> 8 & 0xFF) << 8 | _mode << 4 | _pullState;
+
+            pinMode((_pinDatas >> 8 & 0xFF) << 8, parseMode(_mode, _pullState));
         }
 
     private :
@@ -1092,12 +1131,43 @@ class BlinkerTransportStream
             else if (_atData->cmd() == BLINKER_CMD_IOSETCFG && _atData->state() == AT_SETTING) {
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("PIN_SET: "), _atData->getParam(PIN_SET));
-                BLINKER_LOG2(BLINKER_F("PIN_MODE: "),  _atData->getParam(PIN_MODE));
+                BLINKER_LOG2(BLINKER_F("PIN_MODE: "), _atData->getParam(PIN_MODE));
                 BLINKER_LOG2(BLINKER_F("PIN_PULLSTATE: "), _atData->getParam(PIN_PULLSTATE));
 #endif
 
                 if (BLINKER_IOSETCFG_PARAM_NUM != _atData->paramNum()) return;
 
+                uint8_t set_pin = (_atData->getParam(PIN_SET)).toInt();
+                uint8_t set_mode = (_atData->getParam(PIN_MODE)).toInt();
+                uint8_t set_pull = (_atData->getParam(PIN_PULLSTATE)).toInt();
+
+                if (set_pin >= BLINKER_MAX_PIN_NUM || 
+                    set_mode > BLINKER_IO_OUTPUT_NUM ||
+                    set_pull > 2)
+                {
+                    return;
+                }
+
+                if (pinDataNum == 0) {
+                    _pinData[pinDataNum] = new PinData(set_pin, set_mode, set_pull);
+                    pinDataNum++;
+                }
+                else {
+                    bool _isSet = false;
+                    for (uint8_t _num = 0; _num < pinDataNum; _num++)
+                    {
+                        if (_pinData[_num]->checkPin(set_pin))
+                        {
+                            _isSet = true;
+                            _pinData[_num]->fresh(set_mode, set_pull);
+                        }
+                    }
+                    if (!_isSet) {
+                        _pinData[pinDataNum] = new PinData(set_pin, set_mode, set_pull);
+                        pinDataNum++;
+                    }
+                }
+                
                 serialPrint(BLINKER_CMD_OK);
             }
             else if (_atData->cmd() == BLINKER_CMD_IOGETCFG && _atData->state() == AT_SETTING) {
@@ -1107,7 +1177,91 @@ class BlinkerTransportStream
 
                 if (BLINKER_IOGETCFG_PARAM_NUM != _atData->paramNum()) return;
 
+                uint8_t set_pin = (_atData->getParam(PIN_SET)).toInt();
+
+                if (set_pin >= BLINKER_MAX_PIN_NUM) return;
+
+                bool _isGet = false;
+                for (uint8_t _num = 0; _num < pinDataNum; _num++)
+                {
+                    if (_pinData[_num]->checkPin(set_pin))
+                    {
+                        _isGet = true;
+                        reqData = "+" + STRING_format(BLINKER_CMD_IOGETCFG) + \
+                                ":" + _pinData[_num]->data();
+                        serialPrint(reqData);
+                    }
+                }
+                if (!_isGet) {
+                    reqData = "+" + STRING_format(BLINKER_CMD_IOGETCFG) + \
+                            ":" + _atData->getParam(PIN_SET) + \
+                            ",2,0";
+                    serialPrint(reqData);
+                }
+
                 serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_GPIOWRITE && _atData->state() == AT_SETTING) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
+                BLINKER_LOG2(BLINKER_F("IO_LVL: "),  _atData->getParam(IO_LVL));
+#endif
+
+                if (BLINKER_GPIOWRITE_PARAM_NUM != _atData->paramNum()) return;
+
+                uint8_t set_pin = (_atData->getParam(IO_PIN)).toInt();
+                uint8_t set_lvl = (_atData->getParam(IO_LVL)).toInt();
+
+                if (set_pin >= BLINKER_MAX_PIN_NUM) return;
+
+                // bool _isSet = false;
+                for (uint8_t _num = 0; _num < pinDataNum; _num++)
+                {
+                    if (_pinData[_num]->checkPin(set_pin))
+                    {
+                        if (_pinData[_num]->getMode() == BLINKER_IO_OUTPUT_NUM)
+                        {
+                            if (set_lvl <= 1) {
+                                digitalWrite(set_pin, set_lvl ? HIGH : LOW);
+                                serialPrint(BLINKER_CMD_OK);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                serialPrint(BLINKER_CMD_ERROR);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_GPIOWREAD && _atData->state() == AT_SETTING) {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_LOG2(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
+#endif
+
+                if (BLINKER_GPIOREAD_PARAM_NUM != _atData->paramNum()) return;
+
+                uint8_t set_pin = (_atData->getParam(IO_PIN)).toInt();
+
+                if (set_pin >= BLINKER_MAX_PIN_NUM) return;
+
+                // bool _isSet = false;
+                for (uint8_t _num = 0; _num < pinDataNum; _num++)
+                {
+                    if (_pinData[_num]->checkPin(set_pin))
+                    {
+                        // if (_pinData[_num]->getMode() == BLINKER_IO_INPUT_NUM)
+                        // {
+                        //     if (set_lvl <= 1) {
+                                reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
+                                        ":" + STRING_format(digitalRead(set_pin));
+                                
+                                serialPrint(BLINKER_CMD_OK);
+                                return;
+                        //     }
+                        // }
+                    }
+                }
+
+                serialPrint(BLINKER_CMD_ERROR);
             }
             else if (_atData->cmd() == BLINKER_CMD_BLINKER_MQTT) {
                 // serialPrint(BLINKER_CMD_OK);

@@ -269,6 +269,8 @@
 
 #define BLINKER_CMD_OK                  "OK"
 
+#define BLINKER_CMD_ERROR               "ERROR"
+
 #define BLINKER_CMD_MESSAGE             "message"
 
 #define BLINKER_CMD_DEVICENAME          "deviceName"
@@ -427,6 +429,16 @@
 
     #define BLINKER_IOGETCFG_PARAM_NUM          1
 
+    #define BLINKER_GPIOWRITE_PARAM_NUM         2
+
+    #define BLINKER_GPIOREAD_PARAM_NUM          1
+
+    #define BLINKER_IO_INPUT_NUM                0
+
+    #define BLINKER_IO_OUTPUT_NUM               1
+
+    #define BLINKER_IO_DEFAULT_NUM              2
+
     #define BLINKER_ALIGENIE_CFG_NUM            0
 
     #if defined(ESP8266)
@@ -456,6 +468,10 @@
     #define BLINKER_CMD_IOSETCFG                "SYSIOSETCFG"
 
     #define BLINKER_CMD_IOGETCFG                "SYSIOGETCFG"
+
+    #define BLINKER_CMD_GPIOWRITE               "SYSGPIOWRITE"
+
+    #define BLINKER_CMD_GPIOWREAD               "SYSGPIOREAD"
 
     #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
 
