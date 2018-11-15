@@ -656,6 +656,7 @@ class BlinkerTransportStream
 
             serialConnect();
 
+            serialPrint("");
             serialPrint(BLINKER_CMD_BLINKER_MQTT);
 
             // stream->flush();
@@ -2877,6 +2878,7 @@ class BlinkerMQTT_AT
                 this->conn.serialBegin(Serial, true);
                 strcpy(Base::_authKey, this->conn.authKey().c_str());
                 strcpy(Base::_deviceName, this->conn.deviceName().c_str());
+                Base::loadTimer();
                 BLINKER_LOG1(BLINKER_F("BLINKER_MQTT_AT initialized..."));
             //     return;
             // }

@@ -1414,6 +1414,9 @@ class BlinkerApi
             // }
             return blinkServer(BLINKER_CMD_WEATHER_NUMBER, data);
         }
+#endif
+
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
 
         void loadTimer() {
             BLINKER_LOG1(BLINKER_F(
@@ -5401,7 +5404,12 @@ class BlinkerApi
                 BLINKER_LOG2(BLINKER_F("countdown trigged, action is: "), _cdAction);
     #endif
                 // _parse(_cdAction);
+    
+    #if defined(BLINKER_AT_MQTT)
+                static_cast<Proto*>(this)->serialPrint(_cdAction);
+    #else
                 parse(_cdAction, true);
+    #endif
             }
             if (_lpTrigged) {
                 _lpTrigged = false;
@@ -5419,14 +5427,24 @@ class BlinkerApi
                     BLINKER_LOG2(BLINKER_F("loop trigged, action is: "), _lpAction2);
     #endif
                     // _parse(_lpAction2);
+
+    #if defined(BLINKER_AT_MQTT)
+                    static_cast<Proto*>(this)->serialPrint(_lpAction2);
+    #else
                     parse(_lpAction2, true);
+    #endif
                 }
                 else {
     #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("loop trigged, action is: "), _lpAction1);
     #endif
                     // _parse(_lpAction1);
+
+    #if defined(BLINKER_AT_MQTT)
+                    static_cast<Proto*>(this)->serialPrint(_lpAction1);
+    #else
                     parse(_lpAction1, true);
+    #endif
                 }
             }
             if (_tmTrigged) {
@@ -5470,7 +5488,12 @@ class BlinkerApi
     #ifdef BLINKER_DEBUG_ALL
                     BLINKER_LOG2(BLINKER_F("timing trigged, action is: "), _tmAction);
     #endif
+
+    #if defined(BLINKER_AT_MQTT)
+                    static_cast<Proto*>(this)->serialPrint(_tmAction);
+    #else
                     parse(_tmAction, true);
+    #endif
 
                     checkOverlapping(wDay, timingTask[triggedTask]->getTime());
 
