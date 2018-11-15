@@ -423,6 +423,22 @@
 
     #define BLINKER_APCFG_PARAM_NUM             2
 
+    #define BLINKER_IOSETCFG_PARAM_NUM          3
+
+    #define BLINKER_IOGETCFG_PARAM_NUM          1
+
+    #define BLINKER_ALIGENIE_CFG_NUM            0
+
+    #if defined(ESP8266)
+        
+        #define BLINKER_MAX_PIN_NUM                 17
+
+    #elif defined(ESP32)
+
+        #define BLINKER_MAX_PIN_NUM                 40
+
+    #endif
+
     #define BLINKER_CMD_AT                      "AT"
 
     #define BLINKER_CMD_RST                     "RST"
@@ -437,13 +453,21 @@
 
     #define BLINKER_CMD_ADC                     "SYSADC"
 
+    #define BLINKER_CMD_IOSETCFG                "SYSIOSETCFG"
+
+    #define BLINKER_CMD_IOGETCFG                "SYSIOGETCFG"
+
     #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
+
+    #define BLINKER_CMD_BLINKER_ALIGENIE        "BLINKER_ALIGENIE"
 
     #define BLINKER_CMD_SMARTCONFIG             "ESPTOUCH"
 
     #define BLINKER_CMD_APCONFIG                "APCONFIG"
 
     #define BLINKER_CMD_COMCONFIG               "COMCONFIG"
+
+    #define BLINKER_SERIAL_DEFAULT              115200 << 8 | 8 << 4 | 1 << 2 | 0
 
     #define BLINKER_SERIAL_5N1                  5 << 4 | 1 << 2 | 0
 
