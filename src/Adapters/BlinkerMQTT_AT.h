@@ -531,7 +531,11 @@ uint8_t parseMode(uint8_t _mode, uint8_t _pullState) {
         case 0 << 4 | 1 :
             return INPUT_PULLUP;
         case 0 << 4 | 2 :
+#if defined(ESP8266)
+            return INPUT_PULLDOWN_16;
+#elif defined(ESP32)
             return INPUT_PULLDOWN;
+#endif
         default :
             return INPUT;
     }
@@ -568,7 +572,7 @@ class PinData
         {
             _pinDatas = (_pinDatas >> 8 & 0xFF) << 8 | _mode << 4 | _pullState;
 
-            pinMode(_pin, parseMode(_mode, _pullState));
+            pinMode((_pinDatas >> 8 & 0xFF) << 8, parseMode(_mode, _pullState));
         }
 
     private :
