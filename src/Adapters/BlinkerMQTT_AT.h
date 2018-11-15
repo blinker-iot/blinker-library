@@ -1253,7 +1253,7 @@ class BlinkerTransportStream
                         //     if (set_lvl <= 1) {
                                 reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
                                         ":" + STRING_format(digitalRead(set_pin));
-                                
+                                serialPrint(reqData);
                                 serialPrint(BLINKER_CMD_OK);
                                 return;
                         //     }
