@@ -560,8 +560,8 @@ class PinData
         
         String data() {
             String _data =  STRING_format(_pinDatas >> 8 & 0xFF) + "," + \
-                            STRING_format(_pinDatas >> 4 & 0xFF) + "," + \
-                            STRING_format(_pinDatas      & 0xFF);
+                            STRING_format(_pinDatas >> 4 & 0x0F) + "," + \
+                            STRING_format(_pinDatas      & 0x0F);
 
             return _data;
         }
