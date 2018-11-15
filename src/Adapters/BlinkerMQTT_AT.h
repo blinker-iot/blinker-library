@@ -1241,7 +1241,11 @@ class BlinkerTransportStream
 
                 uint8_t set_pin = (_atData->getParam(IO_PIN)).toInt();
 
-                if (set_pin >= BLINKER_MAX_PIN_NUM) return;
+                if (set_pin >= BLINKER_MAX_PIN_NUM)
+                {
+                    serialPrint(BLINKER_CMD_ERROR);
+                    return;
+                }
 
                 // bool _isSet = false;
                 for (uint8_t _num = 0; _num < pinDataNum; _num++)
@@ -1252,7 +1256,9 @@ class BlinkerTransportStream
                         // {
                         //     if (set_lvl <= 1) {
                                 reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
-                                        ":" + STRING_format(digitalRead(set_pin));
+                                        ":" + STRING_format(set_pin) + \
+                                        "," + STRING_format(_pinData[_num]->getMode()) + \
+                                        "," + STRING_format(digitalRead(set_pin));
                                 serialPrint(reqData);
                                 serialPrint(BLINKER_CMD_OK);
                                 return;
@@ -1260,8 +1266,12 @@ class BlinkerTransportStream
                         // }
                     }
                 }
-
-                serialPrint(BLINKER_CMD_ERROR);
+                reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
+                        ":" + STRING_format(set_pin) + \
+                        ",3," + STRING_format(digitalRead(set_pin));
+                serialPrint(reqData);
+                serialPrint(BLINKER_CMD_OK);
+                // serialPrint(BLINKER_CMD_ERROR);
             }
             else if (_atData->cmd() == BLINKER_CMD_BLINKER_MQTT) {
                 // serialPrint(BLINKER_CMD_OK);
@@ -1350,6 +1360,11 @@ class BlinkerTransportStream
                         else {
                             return;
                         }
+
+                        reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+                                ":" + STRING_format(MQTT_ID) + \
+                                "," + STRING_format(UUID);
+                        serialPrint(reqData);
                         serialPrint(BLINKER_CMD_OK);
                         break;
                     case AT_ACTION:
@@ -1990,14 +2005,24 @@ bool BlinkerTransportStream::connectServer() {
 
     String url_iot = String(host) + "/api/v1/user/device/diy/auth?authKey=" + String(_authKey);
 
-#if defined(BLINKER_ALIGENIE_LIGHT)
-    url_iot += "&aliType=light";
-#elif defined(BLINKER_ALIGENIE_OUTLET)
-    url_iot += "&aliType=outlet";
-#elif defined(BLINKER_ALIGENIE_SWITCH)
-#elif defined(BLINKER_ALIGENIE_SENSOR)
-    url_iot += "&aliType=sensor";
-#endif
+    if (_aliType == ALI_LIGHT) {
+        url_iot += "&aliType=light";
+    }
+    else if (_aliType == ALI_OUTLET) {
+        url_iot += "&aliType=outlet";
+    }
+    else if (_aliType == ALI_SENSOR) {
+        url_iot += "&aliType=sensor";
+    }
+
+// #if defined(BLINKER_ALIGENIE_LIGHT)
+//     url_iot += "&aliType=light";
+// #elif defined(BLINKER_ALIGENIE_OUTLET)
+//     url_iot += "&aliType=outlet";
+// #elif defined(BLINKER_ALIGENIE_SWITCH)
+// #elif defined(BLINKER_ALIGENIE_SENSOR)
+//     url_iot += "&aliType=sensor";
+// #endif
 
 #ifdef BLINKER_DEBUG_ALL 
     BLINKER_LOG2("HTTPS begin: ", url_iot);
