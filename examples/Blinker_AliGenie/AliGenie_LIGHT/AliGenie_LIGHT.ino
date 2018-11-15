@@ -106,7 +106,7 @@ String getColor()
     }
 }
 
-void aligeniePowerSate(const String & state)
+void aligeniePowerState(const String & state)
 {
     BLINKER_LOG2("need set power state: ", state);
 
@@ -369,7 +369,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
 
-    BlinkerAliGenie.attachPowerState(aligeniePowerSate);
+    BlinkerAliGenie.attachPowerState(aligeniePowerState);
     BlinkerAliGenie.attachColor(aligenieColor);
     BlinkerAliGenie.attachMode(aligenieMode);
     BlinkerAliGenie.attachCancelMode(aligeniecMode);

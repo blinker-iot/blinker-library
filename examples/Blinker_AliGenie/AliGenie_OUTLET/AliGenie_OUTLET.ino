@@ -37,7 +37,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 bool oState = false;
 
-void aligeniePowerSate(const String & state)
+void aligeniePowerState(const String & state)
 {
     BLINKER_LOG2("need set power state: ", state);
 
@@ -91,7 +91,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
 
-    BlinkerAliGenie.attachPowerState(aligeniePowerSate);
+    BlinkerAliGenie.attachPowerState(aligeniePowerState);
     BlinkerAliGenie.attachQuery(aligenieQuery);
 }
 
