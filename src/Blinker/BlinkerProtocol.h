@@ -1227,6 +1227,13 @@ class BlinkerProtocol
             }
         }
 
+#if defined(BLINKER_AT_MQTT)
+        void serialPrint(String s)
+        {
+            conn.serialPrint(s);
+        }
+#endif
+
     protected :
         Transp&         conn;
         BlinkerState    state;
