@@ -441,6 +441,12 @@
 
     #define BLINKER_ALIGENIE_CFG_NUM            0
 
+    #define BLINKER_ALIGENIE_PARAM_NUM          1
+
+    #define BLINKER_TIMEZONE_CFG_NUM            0
+
+    #define BLINKER_TIMEZONE_PARAM_NUM          1
+
     #if defined(ESP8266)
         
         #define BLINKER_MAX_PIN_NUM                 17
@@ -476,6 +482,34 @@
     #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
 
     #define BLINKER_CMD_BLINKER_ALIGENIE        "BLINKER_ALIGENIE"
+
+    #define BLINKER_CMD_TIMEZONE                "TIMEZONE"
+
+    #define BLINKER_CMD_TIME                    "TIME"
+
+    #define BLINKER_CMD_SECOND                  "SECOND"
+
+    #define BLINKER_CMD_MINUTE                  "MINUTE"
+
+    #define BLINKER_CMD_HOUR                    "HOUR"
+
+    #define BLINKER_CMD_WDAY                    "WDAY"
+
+    #define BLINKER_CMD_MDAY                    "MDAY"
+
+    #define BLINKER_CMD_YDAY                    "YDAY"
+
+    #define BLINKER_CMD_MONTH                   "MONTH"
+
+    #define BLINKER_CMD_YEAR                    "YEAR"
+
+    #define BLINKER_CMD_WEATHER_AT              "WEATHER"
+
+    #define BLINKER_CMD_AQI_AT                  "AQI"
+
+    #define BLINKER_CMD_NOTICE_AT               "NOTIFY"
+
+    #define BLINKER_CMD_SMS_AT                  "SMS"
 
     #define BLINKER_CMD_SMARTCONFIG             "ESPTOUCH"
 

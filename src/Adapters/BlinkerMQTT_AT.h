@@ -2302,7 +2302,8 @@ void BlinkerTransportStream::subscribe() {
             // }
 
             String _uuid = root["fromDevice"];
-            String dataGet = root["data"];
+            // String dataGet = root["data"];
+            String dataGet = String((char *)iotSub->lastread);
 
             // String _uuid = STRING_find_string(dataGet, "fromDevice", "\"", 3);
 
