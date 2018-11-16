@@ -8,4 +8,6 @@
     BlinkerSerialMQTT Blinker(_blinkerTransport);
 #endif
 
+#include <BlinkerWidgets.h>
+
 #endif

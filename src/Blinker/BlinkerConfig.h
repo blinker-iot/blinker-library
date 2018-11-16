@@ -573,6 +573,26 @@
     
 #endif
 
+#if defined(BLINKER_MQTT_AT)
+    
+    #define BLINKER_MQTT_HOST_SIZE          50
+
+    #define BLINKER_MQTT_ID_SIZE            110
+
+    #define BLINKER_MQTT_NAME_SIZE          80
+
+    #define BLINKER_MQTT_KEY_SIZE           50
+
+    #define BLINKER_MQTT_PINFO_SIZE         12
+
+    #define BLINKER_MQTT_UUID_SIZE          40
+
+    #define BLINKER_MQTT_DEVICEID_SIZE      26
+
+    #define BLINKER_MQTT_DEVICENAME_SIZE    14
+
+#endif
+
 #define BLINKER_CMD_COMCONFIG_NUM           0
 
 #define BLINKER_CMD_SMARTCONFIG_NUM            1
