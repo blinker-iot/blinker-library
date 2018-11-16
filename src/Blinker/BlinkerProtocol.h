@@ -1642,7 +1642,7 @@ class BlinkerProtocol
         String dataParse()
         {
             if (canParse) {
-                return conn.lastRead();
+                // return conn.lastRead();
 #if defined(BLINKER_AT_MQTT) 
                 DynamicJsonBuffer jsonBuffer;
                 JsonObject& root = jsonBuffer.parseObject(conn.lastRead());

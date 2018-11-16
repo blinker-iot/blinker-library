@@ -15,6 +15,10 @@
     BLINKERALIGENIE BlinkerAliGenie;
 #endif
 
-BlinkerSwitch BUILTIN_SWITCH;
+#if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \
+    defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+    defined(BLINKER_NBIOT)
+    BlinkerSwitch BUILTIN_SWITCH;
+#endif
 
 #endif
