@@ -9,12 +9,14 @@
 
     #include <utility/BlinkerTimingTimer.h>
 #endif
+
 #if defined(ESP8266)
     #include <ESP8266HTTPClient.h>
 #elif defined(ESP32)
     #include <HTTPClient.h>
 #endif
-#if defined(BLINKER_MQTT)
+
+#if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
     #include <utility/BlinkerAuto.h>
 #elif defined(BLINKER_PRO)
     #include <utility/BlinkerAuto.h>
@@ -71,12 +73,13 @@ static class BlinkerTimingTimer *       timingTask[BLINKER_TIMING_TIMER_SIZE];
 #endif
 
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)  || defined(BLINKER_AT_MQTT)
 static class BlinkerAUTO *              _AUTO[2];
-static class BlinkerBridge *            _Bridge[BLINKER_MAX_BRIDGE_SIZE];
-// #endif
-// #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerData *              _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
+// #endif
+
+// #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+static class BlinkerBridge *            _Bridge[BLINKER_MAX_BRIDGE_SIZE];
 #endif
 
 #if defined(BLINKER_WIFI)
@@ -202,9 +205,9 @@ class BlinkerBridge
         String _name;
         String bridgeName;
 };
-// #endif
+#endif
 
-// #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
 class BlinkerData
 {
     public :
@@ -1018,7 +1021,7 @@ class BlinkerApi
             return _isNTPInit ? timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec : -1;
         }
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         void autoInit() {
             // BLINKER_LOG1(BLINKER_F("======================================================="));
             // BLINKER_LOG1(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
@@ -1121,7 +1124,7 @@ class BlinkerApi
 //     #pragma message("This code is intended to run with BLINKER_MQTT! Please check your connect type.")
 #endif
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         template<typename T>
         bool configUpdate(const T& msg) {
             String _msg = STRING_format(msg);
@@ -1288,11 +1291,11 @@ class BlinkerApi
         }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         template<typename T>
         bool sms(const T& msg) {
             String _msg = STRING_format(msg);
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             String   data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + "\"" + \
                             ",\"key\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + "\"" + \
                             ",\"msg\":\"" + _msg + "\"}";
@@ -1310,7 +1313,7 @@ class BlinkerApi
         template<typename T>
         bool sms(const T& msg, const char* cel) {
             String _msg = STRING_format(msg);
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             String   data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + "\"" + \
                             ",\"key\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + "\"" + \
                             ",\"cel\":\"" + cel + "\"" + \
@@ -1330,7 +1333,7 @@ class BlinkerApi
         template<typename T>
         bool push(const T& msg) {
             String _msg = STRING_format(msg);
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             String   data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + "\"" + \
                             ",\"key\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + "\"" + \
                             ",\"msg\":\"" + _msg + "\"}";
@@ -1348,7 +1351,7 @@ class BlinkerApi
         template<typename T>
         bool wechat(const T& msg) {
             String _msg = STRING_format(msg);
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             String   data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + "\"" + \
                             ",\"key\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + "\"" + \
                             ",\"msg\":\"" + _msg + "\"}";
@@ -1366,7 +1369,7 @@ class BlinkerApi
         String weather(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
             String data = "/weather/now?";
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             // String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
             //                 "\",\"city\":\"" + _city + "\"}";
 
@@ -1392,7 +1395,7 @@ class BlinkerApi
         String aqi(String _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
             String data = "/weather/aqi?";
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             // String data = "{\"authKey\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
             //                 "\",\"city\":\"" + _city + "\"}";
 
@@ -1728,11 +1731,15 @@ class BlinkerApi
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         uint8_t     _bridgeCount = 0;
+
+#endif
+
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         uint8_t     data_dataCount = 0;
         uint8_t     _aCount = 0;
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         uint32_t    _smsTime = 0;
 
         uint32_t    _pushTime = 0;
@@ -1764,7 +1771,7 @@ class BlinkerApi
 // #else
         // void freshNTP() {}
         void freshNTP() {
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             if (_isNTPInit) {
                 // configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");
                 // BLINKER_LOG2("mday1: ", timeinfo.tm_mday);
@@ -2019,7 +2026,7 @@ class BlinkerApi
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     String _timer = taskCount ? "1":"0";
                     _timer += _cdState ? "1":"0";
                     _timer += _lpState ? "1":"0";
@@ -2070,6 +2077,10 @@ class BlinkerApi
 //                         static_cast<Proto*>(this)->endFormat();
 //                     }
                     _fresh = true;
+
+    #if defined(BLINKER_AT_MQTT)
+                    static_cast<Proto*>(this)->atHeartbeat();
+    #endif
                 }
             }
         }
@@ -2247,6 +2258,10 @@ class BlinkerApi
 //                         static_cast<Proto*>(this)->endFormat();
 //                     }
                     _fresh = true;
+
+    #if defined(BLINKER_AT_MQTT)
+                    static_cast<Proto*>(this)->atHeartbeat();
+    #endif
                 }
             }
         }
@@ -2324,7 +2339,7 @@ class BlinkerApi
             }
         }
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         bool autoManager(const JsonObject& data) {
             // String set;
             bool isSet = false;
@@ -3661,7 +3676,7 @@ class BlinkerApi
         }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         // bool _smsSend(String msg, bool state = false) {
         String blinkServer(uint8_t _type, String msg, bool state = false) {
             switch (_type) {
@@ -3752,7 +3767,7 @@ class BlinkerApi
             const char* host = "192.168.1.121";
         #endif
             const char* fingerprint = "84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a";
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             #ifndef BLINKER_LAN_DEBUG
                 extern WiFiClientSecure client_s;
                 // WiFiClientSecure client_s;
@@ -5136,7 +5151,7 @@ class BlinkerApi
                     checkRegister(root);
     #endif
 
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     // if (autoManager(root)) {
                     //     static_cast<Proto*>(this)->isParsed();
                     //     return;
@@ -5277,7 +5292,7 @@ class BlinkerApi
             checkRegister(data);
     #endif
 
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             // if (autoManager(root)) {
             //     static_cast<Proto*>(this)->isParsed();
             //     return;
@@ -5380,7 +5395,7 @@ class BlinkerApi
                 // BLINKER_LOG2("mday: ", timeinfo.tm_mday);
 
                 // BLINKER_LOG2("mday: ", mday());
-    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                 loadTiming();
     #endif
             }

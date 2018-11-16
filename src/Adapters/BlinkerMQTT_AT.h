@@ -54,7 +54,7 @@ static uint8_t dataFrom = BLINKER_MSG_FROM_MQTT;
 // #include <Blinker/BlinkerProtocol.h>
 #include <EEPROM.h>
 
-SoftwareSerial *SSerialBLE;
+// SoftwareSerial *SSerialBLE;
 // HardwareSerial *HSerialBLE;
 
 
@@ -594,14 +594,14 @@ class BlinkerTransportStream
 
         bool serialAvailable()
         {
-            if (!isHWS)
-            {
-                if (!SSerialBLE->isListening())
-                {
-                    SSerialBLE->listen();
-                    ::delay(100);
-                }
-            }
+            // if (!isHWS)
+            // {
+            //     if (!SSerialBLE->isListening())
+            //     {
+            //         SSerialBLE->listen();
+            //         ::delay(100);
+            //     }
+            // }
             
             if (stream->available())
             {
@@ -2302,7 +2302,8 @@ void BlinkerTransportStream::subscribe() {
             // }
 
             String _uuid = root["fromDevice"];
-            String dataGet = root["data"];
+            // String dataGet = root["data"];
+            String dataGet = String((char *)iotSub->lastread);
 
             // String _uuid = STRING_find_string(dataGet, "fromDevice", "\"", 3);
 

@@ -1109,7 +1109,7 @@ class BlinkerProtocol
         template <typename T1>
         void println(T1 n1, double n)            { print(n1, n); }
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
 
         void beginAuto() {
             BLINKER_LOG1(BLINKER_F("======================================================="));
@@ -1125,7 +1125,9 @@ class BlinkerProtocol
             // autoStart();
             BApi::conn.autoInit();
         }
+#endif
 
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         // template <typename T>
         // void bridgePrint(const String & bKey, T n) {
         //     if (!isBformat) {
@@ -1624,11 +1626,11 @@ class BlinkerProtocol
                 availState = true;
             }
 
-#if defined(BLINKER_AT_MQTT)
-            if (isAvail) conn.serialPrint(conn.lastRead());
+// #if defined(BLINKER_AT_MQTT)
+//             if (isAvail) conn.serialPrint(conn.lastRead());
 
-            if (serialAvailable()) conn.mqttPrint(conn.serialLastRead());
-#endif
+//             if (serialAvailable()) conn.mqttPrint(conn.serialLastRead());
+// #endif
             return isAvail;
         }
 
@@ -1640,7 +1642,24 @@ class BlinkerProtocol
         String dataParse()
         {
             if (canParse) {
+                // return conn.lastRead();
+#if defined(BLINKER_AT_MQTT) 
+                DynamicJsonBuffer jsonBuffer;
+                JsonObject& root = jsonBuffer.parseObject(conn.lastRead());
+                // JsonObject& root = jsonBuffer.parseObject((char *)iotSub->lastread);
+
+                if (!root.success()) {
+                    // BLINKER_LOG1("json test error");
+                    return conn.lastRead();
+                }
+
+                // String _uuid = root["fromDevice"];
+                String dataGet = root["data"];
+
+                return dataGet;
+#else
                 return conn.lastRead();
+#endif
             }
             else {
                 return "";
@@ -1717,6 +1736,11 @@ class BlinkerProtocol
         {
             conn.serialPrint(s);
         }
+
+        void atHeartbeat()
+        {
+            conn.serialPrint(conn.lastRead());
+        }
 #endif
 
     protected :
@@ -1746,7 +1770,9 @@ class BlinkerProtocol
         char            _bSendBuf[BLINKER_MAX_SEND_BUFFER_SIZE];
         String          _bridgeKey;
         String          _bKey_forwhile;
+#endif
 
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         bool            _isAuto = false;
         bool            _isAutoInit = false;
 #endif
@@ -2405,7 +2431,7 @@ class BlinkerProtocol
                         conn.serialPrint(BLINKER_CMD_OK);
                         break;
                     case AT_QUERY:
-                        reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+                        reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_ALIGENIE) + \
                                 ":" + STRING_format(_aliType);
                         conn.serialPrint(reqData);
                         conn.serialPrint(BLINKER_CMD_OK);
@@ -2414,6 +2440,8 @@ class BlinkerProtocol
 #ifdef BLINKER_DEBUG_ALL
                         BLINKER_LOG2(BLINKER_F("BLINKER_ALIGENIE_CFG_NUM: "), _atData->getParam(BLINKER_ALIGENIE_CFG_NUM));
 #endif
+
+                        if (BLINKER_ALIGENIE_PARAM_NUM != _atData->paramNum()) return;
 
                         if ((_atData->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_LIGHT)
                         {
@@ -2443,6 +2471,156 @@ class BlinkerProtocol
                     default :
                         break;
                 }
+            }
+            else if (_atData->cmd() == BLINKER_CMD_TIMEZONE) {
+
+                BLINKER_LOG1(BLINKER_CMD_TIMEZONE);
+
+                atState_t at_state = _atData->state();
+
+                BLINKER_LOG1(at_state);
+
+                switch (at_state)
+                {
+                    case AT_NONE:
+                        // conn.serialPrint();
+                        break;
+                    case AT_TEST:
+                        reqData = STRING_format(BLINKER_CMD_AT) + \
+                                "+" + STRING_format(BLINKER_CMD_TIMEZONE) + \
+                                "=<TIMEZONE>";
+                        conn.serialPrint(reqData);
+                        conn.serialPrint(BLINKER_CMD_OK);
+                        break;
+                    case AT_QUERY:
+                        reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+                                ":" + STRING_format(BApi::getTimezone());
+                        conn.serialPrint(reqData);
+                        conn.serialPrint(BLINKER_CMD_OK);
+                        break;
+                    case AT_SETTING:
+#ifdef BLINKER_DEBUG_ALL
+                        BLINKER_LOG2(BLINKER_F("BLINKER_TIMEZONE_CFG_NUM: "), _atData->getParam(BLINKER_TIMEZONE_CFG_NUM));
+#endif
+
+                        if (BLINKER_TIMEZONE_PARAM_NUM != _atData->paramNum()) return;
+
+                        BApi::setTimezone((_atData->getParam(BLINKER_TIMEZONE_CFG_NUM)).toFloat());
+
+                        conn.serialPrint(BLINKER_CMD_OK);
+                        break;
+                    case AT_ACTION:
+                        // conn.serialPrint();
+                        break;
+                    default :
+                        break;
+                }
+            }
+            else if (_atData->cmd() == BLINKER_CMD_TIME && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_TIME) + \
+                        ":" + STRING_format(BApi::time());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_SECOND && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_SECOND) + \
+                        ":" + STRING_format(BApi::second());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_SECOND && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_SECOND) + \
+                        ":" + STRING_format(BApi::second());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_MINUTE && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_MINUTE) + \
+                        ":" + STRING_format(BApi::minute());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_HOUR && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_HOUR) + \
+                        ":" + STRING_format(BApi::hour());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_WDAY && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_WDAY) + \
+                        ":" + STRING_format(BApi::wday());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_MDAY && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_MDAY) + \
+                        ":" + STRING_format(BApi::mday());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_YDAY && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_YDAY) + \
+                        ":" + STRING_format(BApi::yday());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_MONTH && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_MONTH) + \
+                        ":" + STRING_format(BApi::month());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_YEAR && _atData->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_YEAR) + \
+                        ":" + STRING_format(BApi::year());
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_WEATHER_AT && _atData->state() == AT_SETTING) {
+                if (1 != _atData->paramNum()) return;
+                
+                reqData = "+" + STRING_format(BLINKER_CMD_WEATHER_AT) + \
+                        ":" + STRING_format(BApi::weather(_atData->getParam(0)));
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_AQI_AT && _atData->state() == AT_SETTING) {
+                if (1 != _atData->paramNum()) return;
+                
+                reqData = "+" + STRING_format(BLINKER_CMD_AQI_AT) + \
+                        ":" + STRING_format(BApi::aqi(_atData->getParam(0)));
+                
+                conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_NOTICE_AT && _atData->state() == AT_SETTING) {
+                if (1 != _atData->paramNum()) return;
+                
+                // reqData = "+" + STRING_format(BLINKER_CMD_NOTICE_AT) + \
+                //         ":" + STRING_format(BApi::aqi(_atData->getParam(0)));
+                notify(_atData->getParam(0));
+                // conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
+            }
+            else if (_atData->cmd() == BLINKER_CMD_SMS_AT && _atData->state() == AT_SETTING) {
+                if (1 != _atData->paramNum()) return;
+                
+                // reqData = "+" + STRING_format(BLINKER_CMD_NOTICE_AT) + \
+                //         ":" + STRING_format(BApi::aqi(_atData->getParam(0)));
+                BApi::sms(_atData->getParam(0));
+                // conn.serialPrint(reqData);
+                conn.serialPrint(BLINKER_CMD_OK);
             }
         }
 
@@ -2725,6 +2903,12 @@ void BlinkerProtocol<Transp>::run()
                 if (isAvail) {
                     BApi::parse(dataParse());
                 }
+#if defined(BLINKER_AT_MQTT)
+                if (isAvail) conn.serialPrint(conn.lastRead());
+
+                if (serialAvailable()) conn.mqttPrint(conn.serialLastRead());
+#endif
+
 #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
                 if (checkAliAvail()) {
                     BApi::aliParse(conn.lastRead());
@@ -2765,7 +2949,7 @@ void BlinkerProtocol<Transp>::run()
             break;
     }
     
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit) {
         if (BApi::autoPull()) _isAutoInit = true;
     }
