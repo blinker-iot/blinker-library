@@ -68,144 +68,144 @@ static IPAddress netMsk(255, 255, 255, 0);
 
 static bool isATAvaill = false;
 
-static uint32_t serialSet = BLINKER_SERIAL_DEFAULT;
+// static uint32_t serialSet = BLINKER_SERIAL_DEFAULT;
 
-static SerialConfig ss_cfg;
+// static SerialConfig ss_cfg;
 
 
-static SerialConfig serConfig()
-{
-    uint8_t _bitSet = serialSet & 0xFF;
+// static SerialConfig serConfig()
+// {
+//     uint8_t _bitSet = serialSet & 0xFF;
 
-    switch (_bitSet)
-    {
-        case BLINKER_SERIAL_5N1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5N1"));
-#endif
-            return SERIAL_5N1;
-        case BLINKER_SERIAL_6N1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6N1"));
-#endif
-            return SERIAL_6N1;
-        case BLINKER_SERIAL_7N1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7N1"));
-#endif
-            return SERIAL_7N1;
-        case BLINKER_SERIAL_8N1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8N1"));
-#endif
-            return SERIAL_8N1;
-        case BLINKER_SERIAL_5N2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5N2"));
-#endif
-            return SERIAL_5N2;
-        case BLINKER_SERIAL_6N2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6N2"));
-#endif
-            return SERIAL_6N2;
-        case BLINKER_SERIAL_7N2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7N2"));
-#endif
-            return SERIAL_7N2;
-        case BLINKER_SERIAL_8N2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8N2"));
-#endif
-            return SERIAL_8N2;
-        case BLINKER_SERIAL_5E1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5E1"));
-#endif
-            return SERIAL_5E1;
-        case BLINKER_SERIAL_6E1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6E1"));
-#endif
-            return SERIAL_6E1;
-        case BLINKER_SERIAL_7E1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7E1"));
-#endif
-            return SERIAL_7E1;
-        case BLINKER_SERIAL_8E1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8E1"));
-#endif
-            return SERIAL_8E1;
-        case BLINKER_SERIAL_5E2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5E2"));
-#endif
-            return SERIAL_5E2;
-        case BLINKER_SERIAL_6E2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6E2"));
-#endif
-            return SERIAL_6E2;
-        case BLINKER_SERIAL_7E2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7E2"));
-#endif
-            return SERIAL_7E2;
-        case BLINKER_SERIAL_8E2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8E2"));
-#endif
-            return SERIAL_8E2;
-        case BLINKER_SERIAL_5O1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5O1"));
-#endif
-            return SERIAL_5O1;
-        case BLINKER_SERIAL_6O1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6O1"));
-#endif
-            return SERIAL_6O1;
-        case BLINKER_SERIAL_7O1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7O1"));
-#endif
-            return SERIAL_7O1;
-        case BLINKER_SERIAL_8O1 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8O1"));
-#endif
-            return SERIAL_8O1;
-        case BLINKER_SERIAL_5O2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5O2"));
-#endif
-            return SERIAL_5O2;
-        case BLINKER_SERIAL_6O2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6O2"));
-#endif
-            return SERIAL_6O2;
-        case BLINKER_SERIAL_7O2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7O2"));
-#endif
-            return SERIAL_7O2;
-        case BLINKER_SERIAL_8O2 :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8O2"));
-#endif
-            return SERIAL_8O2;
-        default :
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8N1"));
-#endif
-            return SERIAL_8N1;
-    }
-}
+//     switch (_bitSet)
+//     {
+//         case BLINKER_SERIAL_5N1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_5N1"));
+// #endif
+//             return SERIAL_5N1;
+//         case BLINKER_SERIAL_6N1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_6N1"));
+// #endif
+//             return SERIAL_6N1;
+//         case BLINKER_SERIAL_7N1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_7N1"));
+// #endif
+//             return SERIAL_7N1;
+//         case BLINKER_SERIAL_8N1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_8N1"));
+// #endif
+//             return SERIAL_8N1;
+//         case BLINKER_SERIAL_5N2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_5N2"));
+// #endif
+//             return SERIAL_5N2;
+//         case BLINKER_SERIAL_6N2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_6N2"));
+// #endif
+//             return SERIAL_6N2;
+//         case BLINKER_SERIAL_7N2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_7N2"));
+// #endif
+//             return SERIAL_7N2;
+//         case BLINKER_SERIAL_8N2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_8N2"));
+// #endif
+//             return SERIAL_8N2;
+//         case BLINKER_SERIAL_5E1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_5E1"));
+// #endif
+//             return SERIAL_5E1;
+//         case BLINKER_SERIAL_6E1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_6E1"));
+// #endif
+//             return SERIAL_6E1;
+//         case BLINKER_SERIAL_7E1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_7E1"));
+// #endif
+//             return SERIAL_7E1;
+//         case BLINKER_SERIAL_8E1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_8E1"));
+// #endif
+//             return SERIAL_8E1;
+//         case BLINKER_SERIAL_5E2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_5E2"));
+// #endif
+//             return SERIAL_5E2;
+//         case BLINKER_SERIAL_6E2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_6E2"));
+// #endif
+//             return SERIAL_6E2;
+//         case BLINKER_SERIAL_7E2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_7E2"));
+// #endif
+//             return SERIAL_7E2;
+//         case BLINKER_SERIAL_8E2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_8E2"));
+// #endif
+//             return SERIAL_8E2;
+//         case BLINKER_SERIAL_5O1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_5O1"));
+// #endif
+//             return SERIAL_5O1;
+//         case BLINKER_SERIAL_6O1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_6O1"));
+// #endif
+//             return SERIAL_6O1;
+//         case BLINKER_SERIAL_7O1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_7O1"));
+// #endif
+//             return SERIAL_7O1;
+//         case BLINKER_SERIAL_8O1 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_8O1"));
+// #endif
+//             return SERIAL_8O1;
+//         case BLINKER_SERIAL_5O2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_5O2"));
+// #endif
+//             return SERIAL_5O2;
+//         case BLINKER_SERIAL_6O2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_6O2"));
+// #endif
+//             return SERIAL_6O2;
+//         case BLINKER_SERIAL_7O2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_7O2"));
+// #endif
+//             return SERIAL_7O2;
+//         case BLINKER_SERIAL_8O2 :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_8O2"));
+// #endif
+//             return SERIAL_8O2;
+//         default :
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG1(("SerialConfig SERIAL_8N1"));
+// #endif
+//             return SERIAL_8N1;
+//     }
+// }
 
 static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
 {
@@ -268,245 +268,245 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
     }
 }
 
-enum atState_t {
-    AT_NONE,
-    AT_TEST,
-    AT_QUERY,
-    AT_SETTING,
-    AT_ACTION
-};
+// enum atState_t {
+//     AT_NONE,
+//     AT_TEST,
+//     AT_QUERY,
+//     AT_SETTING,
+//     AT_ACTION
+// };
 
-enum atStatus_t {
-    BL_BEGIN,
-    BL_INITED
-    // ,
-    // BL_SUC,
-    // MQTT_WIFI_PSWD
-};
+// enum atStatus_t {
+//     BL_BEGIN,
+//     BL_INITED
+//     // ,
+//     // BL_SUC,
+//     // MQTT_WIFI_PSWD
+// };
 
-enum atSerial_t {
-    SER_BAUD,
-    SER_DBIT,
-    SER_SBIT,
-    SER_PRIT
-};
+// enum atSerial_t {
+//     SER_BAUD,
+//     SER_DBIT,
+//     SER_SBIT,
+//     SER_PRIT
+// };
 
-enum atMQTT_t {
-    MQTT_CONFIG_MODE,
-    MQTT_AUTH_KEY,
-    MQTT_WIFI_SSID,
-    MQTT_WIFI_PSWD
-};
+// enum atMQTT_t {
+//     MQTT_CONFIG_MODE,
+//     MQTT_AUTH_KEY,
+//     MQTT_WIFI_SSID,
+//     MQTT_WIFI_PSWD
+// };
 
-enum atAligenie_t {
-    ALI_NONE,
-    ALI_LIGHT,
-    ALI_OUTLET,
-    ALI_SENSOR
-};
+// enum atAligenie_t {
+//     ALI_NONE,
+//     ALI_LIGHT,
+//     ALI_OUTLET,
+//     ALI_SENSOR
+// };
 
-class ATdata
-{
-    public :
-        ATdata() {}
+// class ATdata
+// {
+//     public :
+//         ATdata() {}
 
-        void update(String data) {
-            // _data = data;
-            // BLINKER_LOG2(BLINKER_F("update data: "), data);
-            // _isAT = serialize(data);
-            serialize(data);
+//         void update(String data) {
+//             // _data = data;
+//             // BLINKER_LOG2(BLINKER_F("update data: "), data);
+//             // _isAT = serialize(data);
+//             serialize(data);
 
-            BLINKER_LOG2(BLINKER_F("serialize _set: "), _set);
-            // return _isAT;
-        }
+//             BLINKER_LOG2(BLINKER_F("serialize _set: "), _set);
+//             // return _isAT;
+//         }
 
-        atState_t state() { return _set; }
+//         atState_t state() { return _set; }
 
-        String cmd() { return _atCmd; }
+//         String cmd() { return _atCmd; }
 
-        uint8_t paramNum() { return _paramNum; }
+//         uint8_t paramNum() { return _paramNum; }
 
-        String getParam(uint8_t num) {
-            if (num >= _paramNum) return "";
-            else return _param[num];
-        }
+//         String getParam(uint8_t num) {
+//             if (num >= _paramNum) return "";
+//             else return _param[num];
+//         }
 
-    private :
-        // bool _isAT;
-        atState_t _set;
-        uint8_t _paramNum;
-        // String _data;
-        String _atCmd;
-        String _param[11];
+//     private :
+//         // bool _isAT;
+//         atState_t _set;
+//         uint8_t _paramNum;
+//         // String _data;
+//         String _atCmd;
+//         String _param[11];
 
-        void serialize(String _data) {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
-#endif
-            _paramNum = 0;
-            // _isAT = false;
-            _set = AT_NONE;
-            int addr_start = 0;//_data.indexOf("+");
-            int addr_end = 0;
+//         void serialize(String _data) {
+// #ifdef BLINKER_DEBUG_ALL
+//             BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
+// #endif
+//             _paramNum = 0;
+//             // _isAT = false;
+//             _set = AT_NONE;
+//             int addr_start = 0;//_data.indexOf("+");
+//             int addr_end = 0;
 
-            String startCmd = _data.substring(0, 2);
-            BLINKER_LOG2(BLINKER_F("startCmd: "), startCmd);
+//             String startCmd = _data.substring(0, 2);
+//             BLINKER_LOG2(BLINKER_F("startCmd: "), startCmd);
 
-            // startCmd = _data.substring(0, 3);
-            // BLINKER_LOG2(BLINKER_F("startCmd: "), startCmd);
+//             // startCmd = _data.substring(0, 3);
+//             // BLINKER_LOG2(BLINKER_F("startCmd: "), startCmd);
 
-            BLINKER_LOG2(BLINKER_F("startCmd len: "), _data.length());
+//             BLINKER_LOG2(BLINKER_F("startCmd len: "), _data.length());
 
-            // BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
-            // BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+//             // BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
+//             // BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
 
-            // if ((addr_start != -1) && STRING_contains_string(_data, ":"))
-            if (startCmd == BLINKER_CMD_AT)
-            {
-                // _isAT = true;
+//             // if ((addr_start != -1) && STRING_contains_string(_data, ":"))
+//             if (startCmd == BLINKER_CMD_AT)
+//             {
+//                 // _isAT = true;
 
-                // if (_data.length() == 3) {
-                //     _set = AT_ACTION;
-                //     return true;
-                // }
+//                 // if (_data.length() == 3) {
+//                 //     _set = AT_ACTION;
+//                 //     return true;
+//                 // }
 
-                addr_start = 3;
-                // int addr_end1 = _data.indexOf("=");
-                // int addr_end2 = _data.indexOf("?");
-                // int addr_end3 = _data.indexOf("\n");
+//                 addr_start = 3;
+//                 // int addr_end1 = _data.indexOf("=");
+//                 // int addr_end2 = _data.indexOf("?");
+//                 // int addr_end3 = _data.indexOf("\n");
 
-                // check "="
-                addr_end = _data.indexOf("=");
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
-#endif
-                if (addr_end != -1)
-                {
-                    _set = AT_SETTING;
+//                 // check "="
+//                 addr_end = _data.indexOf("=");
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+// #endif
+//                 if (addr_end != -1)
+//                 {
+//                     _set = AT_SETTING;
 
-                    _atCmd = _data.substring(addr_start, addr_end);
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
-#endif
-                }
-                else
-                {
-                    addr_end = _data.indexOf("?");
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
-#endif
-                    if (addr_end != -1)
-                    {
-                        _set = AT_QUERY;
+//                     _atCmd = _data.substring(addr_start, addr_end);
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+// #endif
+//                 }
+//                 else
+//                 {
+//                     addr_end = _data.indexOf("?");
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+// #endif
+//                     if (addr_end != -1)
+//                     {
+//                         _set = AT_QUERY;
 
-                        _atCmd = _data.substring(addr_start, addr_end);
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
-#endif
-                        return;
-                    }
-                    else
-                    {
-                        addr_end = _data.indexOf("\r");
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
-#endif
-                        if (addr_end != -1)
-                        {
-                            _set = AT_ACTION;
+//                         _atCmd = _data.substring(addr_start, addr_end);
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+// #endif
+//                         return;
+//                     }
+//                     else
+//                     {
+//                         addr_end = _data.indexOf("\r");
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+// #endif
+//                         if (addr_end != -1)
+//                         {
+//                             _set = AT_ACTION;
 
-                            if (addr_end == (addr_start-1)) {
-                                _atCmd = startCmd;
-#ifdef BLINKER_DEBUG_ALL
-                                BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
-#endif
-                                return;
-                            }
+//                             if (addr_end == (addr_start-1)) {
+//                                 _atCmd = startCmd;
+// #ifdef BLINKER_DEBUG_ALL
+//                                 BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+// #endif
+//                                 return;
+//                             }
 
-                            _atCmd = _data.substring(addr_start, addr_end);
-#ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
-#endif
-                            return;
-                        }
-                    }
-                }
+//                             _atCmd = _data.substring(addr_start, addr_end);
+// #ifdef BLINKER_DEBUG_ALL
+//                             BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+// #endif
+//                             return;
+//                         }
+//                     }
+//                 }
 
-                // BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
+//                 // BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
 
-                String serData;
-                uint16_t dataLen = _data.length() - 1;
+//                 String serData;
+//                 uint16_t dataLen = _data.length() - 1;
 
-                addr_start = 0;
+//                 addr_start = 0;
 
-                for (_paramNum = 0; _paramNum < 11; _paramNum++) {
-                    addr_start += addr_end;
-                    addr_start += 1;
-                    serData = _data.substring(addr_start, dataLen);
+//                 for (_paramNum = 0; _paramNum < 11; _paramNum++) {
+//                     addr_start += addr_end;
+//                     addr_start += 1;
+//                     serData = _data.substring(addr_start, dataLen);
 
-                    addr_end = serData.indexOf(",");
+//                     addr_end = serData.indexOf(",");
 
-                    BLINKER_LOG2(BLINKER_F("serialize serData: "), serData);
-                    BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
-                    BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+//                     BLINKER_LOG2(BLINKER_F("serialize serData: "), serData);
+//                     BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
+//                     BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
 
-                    if (addr_end == -1) {
-                        if (addr_start >= dataLen) return;
+//                     if (addr_end == -1) {
+//                         if (addr_start >= dataLen) return;
 
-                        addr_end = serData.indexOf(" ");
+//                         addr_end = serData.indexOf(" ");
 
-                        if (addr_end != -1) {
-                            _param[_paramNum] = serData.substring(0, addr_end);
+//                         if (addr_end != -1) {
+//                             _param[_paramNum] = serData.substring(0, addr_end);
 
-                            if (_param[_paramNum] == "?" && _paramNum == 0) {
-                                _set = AT_TEST;
-                            }
-#ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2(BLINKER_F("_param[_paramNum]0: "), _param[_paramNum]);
-                            // BLINKER_LOG2(BLINKER_F("_set: "), _set);
-#endif
-                            _paramNum++;
-                            return;
-                        }
+//                             if (_param[_paramNum] == "?" && _paramNum == 0) {
+//                                 _set = AT_TEST;
+//                             }
+// #ifdef BLINKER_DEBUG_ALL
+//                             BLINKER_LOG2(BLINKER_F("_param[_paramNum]0: "), _param[_paramNum]);
+//                             // BLINKER_LOG2(BLINKER_F("_set: "), _set);
+// #endif
+//                             _paramNum++;
+//                             return;
+//                         }
 
-                        _param[_paramNum] = serData;
+//                         _param[_paramNum] = serData;
 
-                        if (_param[_paramNum] == "?" && _paramNum == 0) {
-                            _set = AT_TEST;
-                        }
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_param[_paramNum]1: "), _param[_paramNum]);
-                        // BLINKER_LOG2(BLINKER_F("_set: "), _set);
-#endif
-                        _paramNum++;
-                        return;
-                    }
-                    else {
-                        _param[_paramNum] = serData.substring(0, addr_end);
-                    }
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
-#endif
-                }
-                // return;
-            }
-            // else {
-            //     // _isAT = false;
-            //     return;
-            // }
-        }
-};
+//                         if (_param[_paramNum] == "?" && _paramNum == 0) {
+//                             _set = AT_TEST;
+//                         }
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("_param[_paramNum]1: "), _param[_paramNum]);
+//                         // BLINKER_LOG2(BLINKER_F("_set: "), _set);
+// #endif
+//                         _paramNum++;
+//                         return;
+//                     }
+//                     else {
+//                         _param[_paramNum] = serData.substring(0, addr_end);
+//                     }
+// #ifdef BLINKER_DEBUG_ALL
+//                     BLINKER_LOG2(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
+// #endif
+//                 }
+//                 // return;
+//             }
+//             // else {
+//             //     // _isAT = false;
+//             //     return;
+//             // }
+//         }
+// };
 
-enum atPin_t {
-    PIN_SET,
-    PIN_MODE,
-    PIN_PULLSTATE
-};
+// enum atPin_t {
+//     PIN_SET,
+//     PIN_MODE,
+//     PIN_PULLSTATE
+// };
 
-enum atIO_t {
-    IO_PIN,
-    IO_LVL
-};
+// enum atIO_t {
+//     IO_PIN,
+//     IO_LVL
+// };
 
 // enum atPinMode_t {
 //     AT_PIN_INPUT,
@@ -519,71 +519,71 @@ enum atIO_t {
 //     PULL_DOWN
 // }
 
-uint8_t parseMode(uint8_t _mode, uint8_t _pullState) {
-    uint8_t _modes = _mode << 4 | _pullState;
+// uint8_t parseMode(uint8_t _mode, uint8_t _pullState) {
+//     uint8_t _modes = _mode << 4 | _pullState;
 
-    switch(_modes)
-    {
-        case 0 << 4 | 0 :
-            return INPUT;
-        case 1 << 4 | 0 :
-            return OUTPUT;
-        case 0 << 4 | 1 :
-            return INPUT_PULLUP;
-        case 0 << 4 | 2 :
-#if defined(ESP8266)
-            return INPUT_PULLDOWN_16;
-#elif defined(ESP32)
-            return INPUT_PULLDOWN;
-#endif
-        default :
-            return INPUT;
-    }
-}
+//     switch(_modes)
+//     {
+//         case 0 << 4 | 0 :
+//             return INPUT;
+//         case 1 << 4 | 0 :
+//             return OUTPUT;
+//         case 0 << 4 | 1 :
+//             return INPUT_PULLUP;
+//         case 0 << 4 | 2 :
+// #if defined(ESP8266)
+//             return INPUT_PULLDOWN_16;
+// #elif defined(ESP32)
+//             return INPUT_PULLDOWN;
+// #endif
+//         default :
+//             return INPUT;
+//     }
+// }
 
-class PinData
-{
-    public :
-        PinData(uint8_t _pin, uint8_t _mode, uint8_t _pullState)
-        {
-            // pin_num = _pin;
-            // pin_mode = _mode;
-            // pin_pull = _pullState;
-            _pinDatas = _pin << 8 | _mode << 4 | _pullState;
+// class PinData
+// {
+//     public :
+//         PinData(uint8_t _pin, uint8_t _mode, uint8_t _pullState)
+//         {
+//             // pin_num = _pin;
+//             // pin_mode = _mode;
+//             // pin_pull = _pullState;
+//             _pinDatas = _pin << 8 | _mode << 4 | _pullState;
 
-            pinMode(_pin, parseMode(_mode, _pullState));
-        }
+//             pinMode(_pin, parseMode(_mode, _pullState));
+//         }
 
-        uint8_t getPin()  { return (_pinDatas >> 8 & 0xFF); }
-        uint8_t getMode() { return (_pinDatas >> 4 & 0x0F); }
-        uint8_t getPull() { return (_pinDatas      & 0x0F); }
+//         uint8_t getPin()  { return (_pinDatas >> 8 & 0xFF); }
+//         uint8_t getMode() { return (_pinDatas >> 4 & 0x0F); }
+//         uint8_t getPull() { return (_pinDatas      & 0x0F); }
         
-        String data() {
-            String _data =  STRING_format(_pinDatas >> 8 & 0xFF) + "," + \
-                            STRING_format(_pinDatas >> 4 & 0x0F) + "," + \
-                            STRING_format(_pinDatas      & 0x0F);
+//         String data() {
+//             String _data =  STRING_format(_pinDatas >> 8 & 0xFF) + "," + \
+//                             STRING_format(_pinDatas >> 4 & 0x0F) + "," + \
+//                             STRING_format(_pinDatas      & 0x0F);
 
-            return _data;
-        }
+//             return _data;
+//         }
 
-        bool checkPin(uint8_t _pin) { return (_pinDatas >> 8 & 0xFF) == _pin; }
+//         bool checkPin(uint8_t _pin) { return (_pinDatas >> 8 & 0xFF) == _pin; }
 
-        void fresh(uint8_t _mode, uint8_t _pullState)
-        {
-            _pinDatas = (_pinDatas >> 8 & 0xFF) << 8 | _mode << 4 | _pullState;
+//         void fresh(uint8_t _mode, uint8_t _pullState)
+//         {
+//             _pinDatas = (_pinDatas >> 8 & 0xFF) << 8 | _mode << 4 | _pullState;
 
-            pinMode((_pinDatas >> 8 & 0xFF) << 8, parseMode(_mode, _pullState));
-        }
+//             pinMode((_pinDatas >> 8 & 0xFF) << 8, parseMode(_mode, _pullState));
+//         }
 
-    private :
-        uint16_t _pinDatas;
-        // uint8_t     pin_num;
-        // atPinMode_t pin_mode;
-        // atPull_t    pin_pull;
-};
+//     private :
+//         uint16_t _pinDatas;
+//         // uint8_t     pin_num;
+//         // atPinMode_t pin_mode;
+//         // atPull_t    pin_pull;
+// };
 
-static class ATdata * _atData;
-static class PinData * _pinData[BLINKER_MAX_PIN_NUM];
+// static class ATdata * _atData;
+// static class PinData * _pinData[BLINKER_MAX_PIN_NUM];
 
 class BlinkerTransportStream
 {
@@ -614,31 +614,31 @@ class BlinkerTransportStream
                 // {
                 // if (isATAvaill) free(_atData);
 
-                _atData = new ATdata();
+//                 _atData = new ATdata();
 
-                _atData->update(STRING_format(streamData));
-                // }
-                // else
-                // {
-                //     _atData->update(STRING_format(streamData));
-                // }
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("state: "), _atData->state());
-                BLINKER_LOG2(BLINKER_F("cmd: "), _atData->cmd());
-                BLINKER_LOG2(BLINKER_F("paramNum: "), _atData->paramNum());
-#endif
+//                 _atData->update(STRING_format(streamData));
+//                 // }
+//                 // else
+//                 // {
+//                 //     _atData->update(STRING_format(streamData));
+//                 // }
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("state: "), _atData->state());
+//                 BLINKER_LOG2(BLINKER_F("cmd: "), _atData->cmd());
+//                 BLINKER_LOG2(BLINKER_F("paramNum: "), _atData->paramNum());
+// #endif
 
-                if (_atData->state())
-                {
-                    parseATdata();
+//                 if (_atData->state())
+//                 {
+//                     parseATdata();
 
-                    // free(_atData);
-                    // isATAvaill = true;
+//                     // free(_atData);
+//                     // isATAvaill = true;
 
-                    return false;
-                }
+//                     return false;
+//                 }
 
-                free(_atData);
+//                 free(_atData);
 
                 return true;
             }
@@ -661,10 +661,10 @@ class BlinkerTransportStream
 
             // stream->flush();
 
-            while (_status == BL_BEGIN)
-            {
-                serialAvailable();
-            }
+            // while (_status == BL_BEGIN)
+            // {
+            //     serialAvailable();
+            // }
         }
 
         String serialLastRead() { return STRING_format(streamData); }
@@ -746,7 +746,7 @@ class BlinkerTransportStream
         void ping();
         
         bool available() {
-            if (serialAvailable()) mqttPrint(STRING_format(streamData));
+            // if (serialAvailable()) mqttPrint(STRING_format(streamData));
 
             webSocket.loop();
 
@@ -761,7 +761,7 @@ class BlinkerTransportStream
 
             if (isAvail) {
                 isAvail = false;
-                serialPrint(STRING_format(msgBuf));
+                // serialPrint(STRING_format(msgBuf));
                 return true;
             }
             else {
@@ -964,596 +964,13 @@ class BlinkerTransportStream
 
         String authKey() { return _authKey;/*MQTT_ID;*/ }
 
+        String deviceId() { return MQTT_ID; }
+
+        String uuid() { return UUID; }
+
         bool init() { return isMQTTinit; }
 
         bool reRegister() { return connectServer(); }
-
-    private :
-
-        void parseATdata()
-        {
-            String reqData;
-            
-            if (_atData->cmd() == BLINKER_CMD_AT) {
-                serialPrint(BLINKER_CMD_OK);
-            }
-            else if (_atData->cmd() == BLINKER_CMD_RST) {
-                serialPrint(BLINKER_CMD_OK);
-                ::delay(100);
-                ESP.restart();
-            }
-            else if (_atData->cmd() == BLINKER_CMD_GMR) {
-                // reqData = "+" + STRING_format(BLINKER_CMD_GMR) + \
-                //         "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + \
-                //         "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
-                serialPrint(BLINKER_ESP_AT_VERSION);
-                serialPrint(BLINKER_VERSION);
-                serialPrint(BLINKER_CMD_OK);
-            }
-            else if (_atData->cmd() == BLINKER_CMD_UART_CUR) {
-                atState_t at_state = _atData->state();
-
-                BLINKER_LOG1(at_state);
-
-                switch (at_state)
-                {
-                    case AT_NONE:
-                        // serialPrint();
-                        break;
-                    case AT_TEST:
-                        reqData = STRING_format(BLINKER_CMD_AT) + \
-                                "+" + STRING_format(BLINKER_CMD_UART_CUR) + \
-                                "=<baudrate>,<databits>,<stopbits>,<parity>";
-                        serialPrint(reqData);
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_QUERY:
-                        reqData = "+" + STRING_format(BLINKER_CMD_UART_CUR) + \
-                                ":" + STRING_format(serialSet >> 8 & 0x00FFFFFF) + \
-                                "," + STRING_format(serialSet >> 4 & 0x0F) + \
-                                "," + STRING_format(serialSet >> 2 & 0x03) + \
-                                "," + STRING_format(serialSet      & 0x03);
-                        serialPrint(reqData);
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_SETTING:
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
-                        BLINKER_LOG2(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
-                        BLINKER_LOG2(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
-                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
-#endif
-                        if (BLINKER_UART_PARAM_NUM != _atData->paramNum()) return;
-
-                        serialSet = (_atData->getParam(SER_BAUD)).toInt() << 8 |
-                                    (_atData->getParam(SER_DBIT)).toInt() << 4 |
-                                    (_atData->getParam(SER_SBIT)).toInt() << 2 |
-                                    (_atData->getParam(SER_PRIT)).toInt();
-
-                        ss_cfg = serConfig();
-
-                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), serialSet);
-
-                        serialPrint(BLINKER_CMD_OK);
-
-                        // if (isHWS) {
-                            Serial.begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
-                        // }
-                        // else {
-                        //     SSerialBLE->begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
-                        // }
-                        break;
-                    case AT_ACTION:
-                        // serialPrint();
-                        break;
-                    default :
-                        break;
-                }
-            }
-            else if (_atData->cmd() == BLINKER_CMD_UART_DEF) {
-                atState_t at_state = _atData->state();
-
-                BLINKER_LOG1(at_state);
-
-                switch (at_state)
-                {
-                    case AT_NONE:
-                        // serialPrint();
-                        break;
-                    case AT_TEST:
-                        reqData = STRING_format(BLINKER_CMD_AT) + \
-                                "+" + STRING_format(BLINKER_CMD_UART_DEF) + \
-                                "=<baudrate>,<databits>,<stopbits>,<parity>";
-                        serialPrint(reqData);
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_QUERY:
-                        reqData = "+" + STRING_format(BLINKER_CMD_UART_DEF) + \
-                                ":" + STRING_format(serialSet >> 8 & 0x00FFFFFF) + \
-                                "," + STRING_format(serialSet >> 4 & 0x0F) + \
-                                "," + STRING_format(serialSet >> 2 & 0x03) + \
-                                "," + STRING_format(serialSet      & 0x03);
-                        serialPrint(reqData);
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_SETTING:
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
-                        BLINKER_LOG2(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
-                        BLINKER_LOG2(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
-                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
-#endif
-                        if (BLINKER_UART_PARAM_NUM != _atData->paramNum()) return;
-
-                        serialSet = (_atData->getParam(SER_BAUD)).toInt() << 8 |
-                                    (_atData->getParam(SER_DBIT)).toInt() << 4 |
-                                    (_atData->getParam(SER_SBIT)).toInt() << 2 |
-                                    (_atData->getParam(SER_PRIT)).toInt();
-
-                        ss_cfg = serConfig();
-
-                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), serialSet);
-
-                        serialPrint(BLINKER_CMD_OK);
-
-                        // if (isHWS) {
-                            Serial.begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
-                        // }
-                        // else {
-                        //     SSerialBLE->begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
-                        // }
-
-                        EEPROM.begin(BLINKER_EEP_SIZE);
-                        EEPROM.put(BLINKER_EEP_ADDR_SERIALCFG, serialSet);
-                        EEPROM.commit();
-                        EEPROM.end();
-                        break;
-                    case AT_ACTION:
-                        // serialPrint();
-                        break;
-                    default :
-                        break;
-                }
-            }
-            else if (_atData->cmd() == BLINKER_CMD_RAM && _atData->state() == AT_QUERY) {
-                reqData = "+" + STRING_format(BLINKER_CMD_RAM) + \
-                        ":" + STRING_format(BLINKER_FreeHeap());
-                
-                serialPrint(reqData);
-                serialPrint(BLINKER_CMD_OK);
-            }
-            else if (_atData->cmd() == BLINKER_CMD_ADC && _atData->state() == AT_QUERY) {
-                reqData = "+" + STRING_format(BLINKER_CMD_ADC) + \
-                        ":" + STRING_format(analogRead(A0));
-                
-                serialPrint(reqData);
-                serialPrint(BLINKER_CMD_OK);
-            }
-            else if (_atData->cmd() == BLINKER_CMD_IOSETCFG && _atData->state() == AT_SETTING) {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("PIN_SET: "), _atData->getParam(PIN_SET));
-                BLINKER_LOG2(BLINKER_F("PIN_MODE: "), _atData->getParam(PIN_MODE));
-                BLINKER_LOG2(BLINKER_F("PIN_PULLSTATE: "), _atData->getParam(PIN_PULLSTATE));
-#endif
-
-                if (BLINKER_IOSETCFG_PARAM_NUM != _atData->paramNum()) return;
-
-                uint8_t set_pin = (_atData->getParam(PIN_SET)).toInt();
-                uint8_t set_mode = (_atData->getParam(PIN_MODE)).toInt();
-                uint8_t set_pull = (_atData->getParam(PIN_PULLSTATE)).toInt();
-
-                if (set_pin >= BLINKER_MAX_PIN_NUM || 
-                    set_mode > BLINKER_IO_OUTPUT_NUM ||
-                    set_pull > 2)
-                {
-                    return;
-                }
-
-                if (pinDataNum == 0) {
-                    _pinData[pinDataNum] = new PinData(set_pin, set_mode, set_pull);
-                    pinDataNum++;
-                }
-                else {
-                    bool _isSet = false;
-                    for (uint8_t _num = 0; _num < pinDataNum; _num++)
-                    {
-                        if (_pinData[_num]->checkPin(set_pin))
-                        {
-                            _isSet = true;
-                            _pinData[_num]->fresh(set_mode, set_pull);
-                        }
-                    }
-                    if (!_isSet) {
-                        _pinData[pinDataNum] = new PinData(set_pin, set_mode, set_pull);
-                        pinDataNum++;
-                    }
-                }
-                
-                serialPrint(BLINKER_CMD_OK);
-            }
-            else if (_atData->cmd() == BLINKER_CMD_IOGETCFG && _atData->state() == AT_SETTING) {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("PIN_SET: "), _atData->getParam(PIN_SET));
-#endif
-
-                if (BLINKER_IOGETCFG_PARAM_NUM != _atData->paramNum()) return;
-
-                uint8_t set_pin = (_atData->getParam(PIN_SET)).toInt();
-
-                if (set_pin >= BLINKER_MAX_PIN_NUM) return;
-
-                bool _isGet = false;
-                for (uint8_t _num = 0; _num < pinDataNum; _num++)
-                {
-                    if (_pinData[_num]->checkPin(set_pin))
-                    {
-                        _isGet = true;
-                        reqData = "+" + STRING_format(BLINKER_CMD_IOGETCFG) + \
-                                ":" + _pinData[_num]->data();
-                        serialPrint(reqData);
-                    }
-                }
-                if (!_isGet) {
-                    reqData = "+" + STRING_format(BLINKER_CMD_IOGETCFG) + \
-                            ":" + _atData->getParam(PIN_SET) + \
-                            ",2,0";
-                    serialPrint(reqData);
-                }
-
-                serialPrint(BLINKER_CMD_OK);
-            }
-            else if (_atData->cmd() == BLINKER_CMD_GPIOWRITE && _atData->state() == AT_SETTING) {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
-                BLINKER_LOG2(BLINKER_F("IO_LVL: "),  _atData->getParam(IO_LVL));
-#endif
-
-                if (BLINKER_GPIOWRITE_PARAM_NUM != _atData->paramNum()) return;
-
-                uint8_t set_pin = (_atData->getParam(IO_PIN)).toInt();
-                uint8_t set_lvl = (_atData->getParam(IO_LVL)).toInt();
-
-                if (set_pin >= BLINKER_MAX_PIN_NUM) return;
-
-                // bool _isSet = false;
-                for (uint8_t _num = 0; _num < pinDataNum; _num++)
-                {
-                    if (_pinData[_num]->checkPin(set_pin))
-                    {
-                        if (_pinData[_num]->getMode() == BLINKER_IO_OUTPUT_NUM)
-                        {
-                            if (set_lvl <= 1) {
-                                digitalWrite(set_pin, set_lvl ? HIGH : LOW);
-                                serialPrint(BLINKER_CMD_OK);
-                                return;
-                            }
-                        }
-                    }
-                }
-
-                serialPrint(BLINKER_CMD_ERROR);
-            }
-            else if (_atData->cmd() == BLINKER_CMD_GPIOWREAD && _atData->state() == AT_SETTING) {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
-#endif
-
-                if (BLINKER_GPIOREAD_PARAM_NUM != _atData->paramNum()) return;
-
-                uint8_t set_pin = (_atData->getParam(IO_PIN)).toInt();
-
-                if (set_pin >= BLINKER_MAX_PIN_NUM)
-                {
-                    serialPrint(BLINKER_CMD_ERROR);
-                    return;
-                }
-
-                // bool _isSet = false;
-                for (uint8_t _num = 0; _num < pinDataNum; _num++)
-                {
-                    if (_pinData[_num]->checkPin(set_pin))
-                    {
-                        // if (_pinData[_num]->getMode() == BLINKER_IO_INPUT_NUM)
-                        // {
-                        //     if (set_lvl <= 1) {
-                                reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
-                                        ":" + STRING_format(set_pin) + \
-                                        "," + STRING_format(_pinData[_num]->getMode()) + \
-                                        "," + STRING_format(digitalRead(set_pin));
-                                serialPrint(reqData);
-                                serialPrint(BLINKER_CMD_OK);
-                                return;
-                        //     }
-                        // }
-                    }
-                }
-                reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
-                        ":" + STRING_format(set_pin) + \
-                        ",3," + STRING_format(digitalRead(set_pin));
-                serialPrint(reqData);
-                serialPrint(BLINKER_CMD_OK);
-                // serialPrint(BLINKER_CMD_ERROR);
-            }
-            else if (_atData->cmd() == BLINKER_CMD_BLINKER_MQTT) {
-                // serialPrint(BLINKER_CMD_OK);
-
-                BLINKER_LOG1(BLINKER_CMD_BLINKER_MQTT);
-
-                atState_t at_state = _atData->state();
-
-                BLINKER_LOG1(at_state);
-
-                switch (at_state)
-                {
-                    case AT_NONE:
-                        // serialPrint();
-                        break;
-                    case AT_TEST:
-                        reqData = STRING_format(BLINKER_CMD_AT) + \
-                                "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                                "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + \
-                                "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
-                        serialPrint(reqData);
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_QUERY:
-                        reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                                ":" + STRING_format(_wlanMode) + \
-                                "," + STRING_format(_authKey) + \
-                                "," + WiFi.SSID() + \
-                                "," + WiFi.psk();
-                        serialPrint(reqData);
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_SETTING:
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("MQTT_CONFIG_MODE: "), _atData->getParam(MQTT_CONFIG_MODE));
-                        BLINKER_LOG2(BLINKER_F("MQTT_AUTH_KEY: "),  _atData->getParam(MQTT_AUTH_KEY));
-                        BLINKER_LOG2(BLINKER_F("MQTT_WIFI_SSID: "), _atData->getParam(MQTT_WIFI_SSID));
-                        BLINKER_LOG2(BLINKER_F("MQTT_WIFI_PSWD: "), _atData->getParam(MQTT_WIFI_PSWD));
-#endif
-
-                        if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_COMCONFIG_NUM)
-                        {
-                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_COMWLAN"));
-
-                            if (BLINKER_COMWLAN_PARAM_NUM != _atData->paramNum()) return;
-
-                            connectWiFi((_atData->getParam(MQTT_WIFI_SSID)).c_str(), 
-                                        (_atData->getParam(MQTT_WIFI_PSWD)).c_str());
-                            
-                            begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
-                            _status = BL_INITED;
-                            _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
-                        }
-                        else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_SMARTCONFIG_NUM)
-                        {
-                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
-
-                            if (BLINKER_SMCFG_PARAM_NUM != _atData->paramNum()) return;
-
-                            if (!autoInit()) smartconfig();
-
-                            begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
-                            _status = BL_INITED;
-                            _wlanMode = BLINKER_CMD_SMARTCONFIG_NUM;
-                        }
-                        else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_APCONFIG_NUM)
-                        {
-                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_APCONFIG"));
-
-                            if (BLINKER_APCFG_PARAM_NUM != _atData->paramNum()) return;
-
-                            if (!autoInit())
-                            {
-                                softAPinit();
-                                while(WiFi.status() != WL_CONNECTED) {
-                                    serverClient();
-
-                                    ::delay(10);
-                                }
-                            }
-
-                            begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
-                            _status = BL_INITED;
-                            _wlanMode = BLINKER_CMD_APCONFIG_NUM;
-                        }
-                        else {
-                            return;
-                        }
-
-                        reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                                ":" + STRING_format(MQTT_ID) + \
-                                "," + STRING_format(UUID);
-                        serialPrint(reqData);
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_ACTION:
-                        // serialPrint();
-                        break;
-                    default :
-                        break;
-                }
-            }
-            else if (_atData->cmd() == BLINKER_CMD_BLINKER_ALIGENIE) {
-                // serialPrint(BLINKER_CMD_OK);
-
-                BLINKER_LOG1(BLINKER_CMD_BLINKER_ALIGENIE);
-
-                atState_t at_state = _atData->state();
-
-                BLINKER_LOG1(at_state);
-
-                switch (at_state)
-                {
-                    case AT_NONE:
-                        // serialPrint();
-                        break;
-                    case AT_TEST:
-                        reqData = STRING_format(BLINKER_CMD_AT) + \
-                                "+" + STRING_format(BLINKER_CMD_BLINKER_ALIGENIE) + \
-                                "=<type>";
-                        serialPrint(reqData);
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_QUERY:
-                        reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                                ":" + STRING_format(_aliType);
-                        serialPrint(reqData);
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_SETTING:
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("BLINKER_ALIGENIE_CFG_NUM: "), _atData->getParam(BLINKER_ALIGENIE_CFG_NUM));
-#endif
-
-                        if ((_atData->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_LIGHT)
-                        {
-                            BLINKER_LOG1(BLINKER_F("ALI_LIGHT"));
-                            _aliType = ALI_LIGHT;
-                        }
-                        else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == ALI_OUTLET)
-                        {
-                            BLINKER_LOG1(BLINKER_F("ALI_OUTLET"));
-                            _aliType = ALI_OUTLET;
-                        }
-                        else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == ALI_SENSOR)
-                        {
-                            BLINKER_LOG1(BLINKER_F("ALI_SENSOR"));
-                            _aliType = ALI_SENSOR;
-                        }
-                        else {
-                            BLINKER_LOG1(BLINKER_F("ALI_NONE"));
-                            _aliType = ALI_NONE;
-                        }
-                        serialPrint(BLINKER_CMD_OK);
-                        break;
-                    case AT_ACTION:
-                        // serialPrint();
-                        break;
-                    default :
-                        break;
-                }
-            }
-        }
-
-        String getMode(uint8_t mode)
-        {
-            switch (mode)
-            {
-                case BLINKER_CMD_COMCONFIG_NUM :
-                    return BLINKER_CMD_COMCONFIG;
-                case BLINKER_CMD_SMARTCONFIG_NUM :
-                    return BLINKER_CMD_SMARTCONFIG;
-                case BLINKER_CMD_APCONFIG_NUM :
-                    return BLINKER_CMD_APCONFIG;
-                default :
-                    return BLINKER_CMD_COMCONFIG;
-            }
-        }
-
-        bool isMQTTinit = false;
-
-        bool connectServer();
-
-        void mDNSInit()
-        {
-#if defined(ESP8266)
-            if (!MDNS.begin(DEVICE_NAME, WiFi.localIP())) {
-#elif defined(ESP32)
-            if (!MDNS.begin(DEVICE_NAME)) {
-#endif
-                while(1) {
-                    ::delay(100);
-                }
-            }
-
-            BLINKER_LOG1(("mDNS responder started"));
-            
-            MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
-            MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", String(DEVICE_NAME));
-
-            webSocket.begin();
-            webSocket.onEvent(webSocketEvent);
-            BLINKER_LOG1(("webSocket server started"));
-            BLINKER_LOG4("ws://", DEVICE_NAME, ".local:", WS_SERVERPORT);
-        }
-
-        void checkKA() {
-            if (millis() - kaTime >= BLINKER_MQTT_KEEPALIVE)
-                isAlive = false;
-        }
-
-        bool checkAliKA() {
-            if (millis() - aliKaTime >= 10000)
-                return false;
-            else
-                return true;
-        }
-
-        bool checkCanPrint() {
-            if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
-                return true;
-            }
-            else {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
-#endif
-                checkKA();
-
-                return false;
-            }
-        }
-
-        bool checkCanBprint() {
-            if ((millis() - bPrintTime >= BLINKER_BRIDGE_MSG_LIMIT) || bPrintTime == 0) {
-                return true;
-            }
-            else {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
-#endif
-                return false;
-            }
-        }
-
-        bool checkPrintSpan() {
-            if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
-                if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
-#endif
-                    return false;
-                }
-                else {
-                    respTimes++;
-                    return true;
-                }
-            }
-            else {
-                respTimes = 0;
-                return true;
-            }
-        }
-
-        bool checkAliPrintSpan() {
-            if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2) {
-                if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG1("ALIGENIE NOT ALIVE OR MSG LIMIT");
-#endif
-                    return false;
-                }
-                else {
-                    respAliTimes++;
-                    return true;
-                }
-            }
-            else {
-                respAliTimes = 0;
-                return true;
-            }
-        }
 
 // #if defined(BLINKER_APCONFIG)
         void softAPinit()
@@ -1771,11 +1188,603 @@ class BlinkerTransportStream
             // mDNSInit();
         }
 
+        void aligenieType(atAligenie_t _type)
+        {
+            _aliType = _type;
+        }
+
+    private :
+
+//         void parseATdata()
+//         {
+//             String reqData;
+            
+//             if (_atData->cmd() == BLINKER_CMD_AT) {
+//                 serialPrint(BLINKER_CMD_OK);
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_RST) {
+//                 serialPrint(BLINKER_CMD_OK);
+//                 ::delay(100);
+//                 ESP.restart();
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_GMR) {
+//                 // reqData = "+" + STRING_format(BLINKER_CMD_GMR) + \
+//                 //         "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + \
+//                 //         "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
+//                 serialPrint(BLINKER_ESP_AT_VERSION);
+//                 serialPrint(BLINKER_VERSION);
+//                 serialPrint(BLINKER_CMD_OK);
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_UART_CUR) {
+//                 atState_t at_state = _atData->state();
+
+//                 BLINKER_LOG1(at_state);
+
+//                 switch (at_state)
+//                 {
+//                     case AT_NONE:
+//                         // serialPrint();
+//                         break;
+//                     case AT_TEST:
+//                         reqData = STRING_format(BLINKER_CMD_AT) + \
+//                                 "+" + STRING_format(BLINKER_CMD_UART_CUR) + \
+//                                 "=<baudrate>,<databits>,<stopbits>,<parity>";
+//                         serialPrint(reqData);
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_QUERY:
+//                         reqData = "+" + STRING_format(BLINKER_CMD_UART_CUR) + \
+//                                 ":" + STRING_format(serialSet >> 8 & 0x00FFFFFF) + \
+//                                 "," + STRING_format(serialSet >> 4 & 0x0F) + \
+//                                 "," + STRING_format(serialSet >> 2 & 0x03) + \
+//                                 "," + STRING_format(serialSet      & 0x03);
+//                         serialPrint(reqData);
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_SETTING:
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
+//                         BLINKER_LOG2(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
+//                         BLINKER_LOG2(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
+//                         BLINKER_LOG2(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
+// #endif
+//                         if (BLINKER_UART_PARAM_NUM != _atData->paramNum()) return;
+
+//                         serialSet = (_atData->getParam(SER_BAUD)).toInt() << 8 |
+//                                     (_atData->getParam(SER_DBIT)).toInt() << 4 |
+//                                     (_atData->getParam(SER_SBIT)).toInt() << 2 |
+//                                     (_atData->getParam(SER_PRIT)).toInt();
+
+//                         ss_cfg = serConfig();
+
+//                         BLINKER_LOG2(BLINKER_F("SER_PRIT: "), serialSet);
+
+//                         serialPrint(BLINKER_CMD_OK);
+
+//                         // if (isHWS) {
+//                             Serial.begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+//                         // }
+//                         // else {
+//                         //     SSerialBLE->begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+//                         // }
+//                         break;
+//                     case AT_ACTION:
+//                         // serialPrint();
+//                         break;
+//                     default :
+//                         break;
+//                 }
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_UART_DEF) {
+//                 atState_t at_state = _atData->state();
+
+//                 BLINKER_LOG1(at_state);
+
+//                 switch (at_state)
+//                 {
+//                     case AT_NONE:
+//                         // serialPrint();
+//                         break;
+//                     case AT_TEST:
+//                         reqData = STRING_format(BLINKER_CMD_AT) + \
+//                                 "+" + STRING_format(BLINKER_CMD_UART_DEF) + \
+//                                 "=<baudrate>,<databits>,<stopbits>,<parity>";
+//                         serialPrint(reqData);
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_QUERY:
+//                         reqData = "+" + STRING_format(BLINKER_CMD_UART_DEF) + \
+//                                 ":" + STRING_format(serialSet >> 8 & 0x00FFFFFF) + \
+//                                 "," + STRING_format(serialSet >> 4 & 0x0F) + \
+//                                 "," + STRING_format(serialSet >> 2 & 0x03) + \
+//                                 "," + STRING_format(serialSet      & 0x03);
+//                         serialPrint(reqData);
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_SETTING:
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
+//                         BLINKER_LOG2(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
+//                         BLINKER_LOG2(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
+//                         BLINKER_LOG2(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
+// #endif
+//                         if (BLINKER_UART_PARAM_NUM != _atData->paramNum()) return;
+
+//                         serialSet = (_atData->getParam(SER_BAUD)).toInt() << 8 |
+//                                     (_atData->getParam(SER_DBIT)).toInt() << 4 |
+//                                     (_atData->getParam(SER_SBIT)).toInt() << 2 |
+//                                     (_atData->getParam(SER_PRIT)).toInt();
+
+//                         ss_cfg = serConfig();
+
+//                         BLINKER_LOG2(BLINKER_F("SER_PRIT: "), serialSet);
+
+//                         serialPrint(BLINKER_CMD_OK);
+
+//                         // if (isHWS) {
+//                             Serial.begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+//                         // }
+//                         // else {
+//                         //     SSerialBLE->begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+//                         // }
+
+//                         EEPROM.begin(BLINKER_EEP_SIZE);
+//                         EEPROM.put(BLINKER_EEP_ADDR_SERIALCFG, serialSet);
+//                         EEPROM.commit();
+//                         EEPROM.end();
+//                         break;
+//                     case AT_ACTION:
+//                         // serialPrint();
+//                         break;
+//                     default :
+//                         break;
+//                 }
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_RAM && _atData->state() == AT_QUERY) {
+//                 reqData = "+" + STRING_format(BLINKER_CMD_RAM) + \
+//                         ":" + STRING_format(BLINKER_FreeHeap());
+                
+//                 serialPrint(reqData);
+//                 serialPrint(BLINKER_CMD_OK);
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_ADC && _atData->state() == AT_QUERY) {
+//                 reqData = "+" + STRING_format(BLINKER_CMD_ADC) + \
+//                         ":" + STRING_format(analogRead(A0));
+                
+//                 serialPrint(reqData);
+//                 serialPrint(BLINKER_CMD_OK);
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_IOSETCFG && _atData->state() == AT_SETTING) {
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("PIN_SET: "), _atData->getParam(PIN_SET));
+//                 BLINKER_LOG2(BLINKER_F("PIN_MODE: "), _atData->getParam(PIN_MODE));
+//                 BLINKER_LOG2(BLINKER_F("PIN_PULLSTATE: "), _atData->getParam(PIN_PULLSTATE));
+// #endif
+
+//                 if (BLINKER_IOSETCFG_PARAM_NUM != _atData->paramNum()) return;
+
+//                 uint8_t set_pin = (_atData->getParam(PIN_SET)).toInt();
+//                 uint8_t set_mode = (_atData->getParam(PIN_MODE)).toInt();
+//                 uint8_t set_pull = (_atData->getParam(PIN_PULLSTATE)).toInt();
+
+//                 if (set_pin >= BLINKER_MAX_PIN_NUM || 
+//                     set_mode > BLINKER_IO_OUTPUT_NUM ||
+//                     set_pull > 2)
+//                 {
+//                     return;
+//                 }
+
+//                 if (pinDataNum == 0) {
+//                     _pinData[pinDataNum] = new PinData(set_pin, set_mode, set_pull);
+//                     pinDataNum++;
+//                 }
+//                 else {
+//                     bool _isSet = false;
+//                     for (uint8_t _num = 0; _num < pinDataNum; _num++)
+//                     {
+//                         if (_pinData[_num]->checkPin(set_pin))
+//                         {
+//                             _isSet = true;
+//                             _pinData[_num]->fresh(set_mode, set_pull);
+//                         }
+//                     }
+//                     if (!_isSet) {
+//                         _pinData[pinDataNum] = new PinData(set_pin, set_mode, set_pull);
+//                         pinDataNum++;
+//                     }
+//                 }
+                
+//                 serialPrint(BLINKER_CMD_OK);
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_IOGETCFG && _atData->state() == AT_SETTING) {
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("PIN_SET: "), _atData->getParam(PIN_SET));
+// #endif
+
+//                 if (BLINKER_IOGETCFG_PARAM_NUM != _atData->paramNum()) return;
+
+//                 uint8_t set_pin = (_atData->getParam(PIN_SET)).toInt();
+
+//                 if (set_pin >= BLINKER_MAX_PIN_NUM) return;
+
+//                 bool _isGet = false;
+//                 for (uint8_t _num = 0; _num < pinDataNum; _num++)
+//                 {
+//                     if (_pinData[_num]->checkPin(set_pin))
+//                     {
+//                         _isGet = true;
+//                         reqData = "+" + STRING_format(BLINKER_CMD_IOGETCFG) + \
+//                                 ":" + _pinData[_num]->data();
+//                         serialPrint(reqData);
+//                     }
+//                 }
+//                 if (!_isGet) {
+//                     reqData = "+" + STRING_format(BLINKER_CMD_IOGETCFG) + \
+//                             ":" + _atData->getParam(PIN_SET) + \
+//                             ",2,0";
+//                     serialPrint(reqData);
+//                 }
+
+//                 serialPrint(BLINKER_CMD_OK);
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_GPIOWRITE && _atData->state() == AT_SETTING) {
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
+//                 BLINKER_LOG2(BLINKER_F("IO_LVL: "),  _atData->getParam(IO_LVL));
+// #endif
+
+//                 if (BLINKER_GPIOWRITE_PARAM_NUM != _atData->paramNum()) return;
+
+//                 uint8_t set_pin = (_atData->getParam(IO_PIN)).toInt();
+//                 uint8_t set_lvl = (_atData->getParam(IO_LVL)).toInt();
+
+//                 if (set_pin >= BLINKER_MAX_PIN_NUM) return;
+
+//                 // bool _isSet = false;
+//                 for (uint8_t _num = 0; _num < pinDataNum; _num++)
+//                 {
+//                     if (_pinData[_num]->checkPin(set_pin))
+//                     {
+//                         if (_pinData[_num]->getMode() == BLINKER_IO_OUTPUT_NUM)
+//                         {
+//                             if (set_lvl <= 1) {
+//                                 digitalWrite(set_pin, set_lvl ? HIGH : LOW);
+//                                 serialPrint(BLINKER_CMD_OK);
+//                                 return;
+//                             }
+//                         }
+//                     }
+//                 }
+
+//                 serialPrint(BLINKER_CMD_ERROR);
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_GPIOWREAD && _atData->state() == AT_SETTING) {
+// #ifdef BLINKER_DEBUG_ALL
+//                 BLINKER_LOG2(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
+// #endif
+
+//                 if (BLINKER_GPIOREAD_PARAM_NUM != _atData->paramNum()) return;
+
+//                 uint8_t set_pin = (_atData->getParam(IO_PIN)).toInt();
+
+//                 if (set_pin >= BLINKER_MAX_PIN_NUM)
+//                 {
+//                     serialPrint(BLINKER_CMD_ERROR);
+//                     return;
+//                 }
+
+//                 // bool _isSet = false;
+//                 for (uint8_t _num = 0; _num < pinDataNum; _num++)
+//                 {
+//                     if (_pinData[_num]->checkPin(set_pin))
+//                     {
+//                         // if (_pinData[_num]->getMode() == BLINKER_IO_INPUT_NUM)
+//                         // {
+//                         //     if (set_lvl <= 1) {
+//                                 reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
+//                                         ":" + STRING_format(set_pin) + \
+//                                         "," + STRING_format(_pinData[_num]->getMode()) + \
+//                                         "," + STRING_format(digitalRead(set_pin));
+//                                 serialPrint(reqData);
+//                                 serialPrint(BLINKER_CMD_OK);
+//                                 return;
+//                         //     }
+//                         // }
+//                     }
+//                 }
+//                 reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
+//                         ":" + STRING_format(set_pin) + \
+//                         ",3," + STRING_format(digitalRead(set_pin));
+//                 serialPrint(reqData);
+//                 serialPrint(BLINKER_CMD_OK);
+//                 // serialPrint(BLINKER_CMD_ERROR);
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_BLINKER_MQTT) {
+//                 // serialPrint(BLINKER_CMD_OK);
+
+//                 BLINKER_LOG1(BLINKER_CMD_BLINKER_MQTT);
+
+//                 atState_t at_state = _atData->state();
+
+//                 BLINKER_LOG1(at_state);
+
+//                 switch (at_state)
+//                 {
+//                     case AT_NONE:
+//                         // serialPrint();
+//                         break;
+//                     case AT_TEST:
+//                         reqData = STRING_format(BLINKER_CMD_AT) + \
+//                                 "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+//                                 "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + \
+//                                 "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
+//                         serialPrint(reqData);
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_QUERY:
+//                         reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+//                                 ":" + STRING_format(_wlanMode) + \
+//                                 "," + STRING_format(_authKey) + \
+//                                 "," + WiFi.SSID() + \
+//                                 "," + WiFi.psk();
+//                         serialPrint(reqData);
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_SETTING:
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("MQTT_CONFIG_MODE: "), _atData->getParam(MQTT_CONFIG_MODE));
+//                         BLINKER_LOG2(BLINKER_F("MQTT_AUTH_KEY: "),  _atData->getParam(MQTT_AUTH_KEY));
+//                         BLINKER_LOG2(BLINKER_F("MQTT_WIFI_SSID: "), _atData->getParam(MQTT_WIFI_SSID));
+//                         BLINKER_LOG2(BLINKER_F("MQTT_WIFI_PSWD: "), _atData->getParam(MQTT_WIFI_PSWD));
+// #endif
+
+//                         if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_COMCONFIG_NUM)
+//                         {
+//                             BLINKER_LOG1(BLINKER_F("BLINKER_CMD_COMWLAN"));
+
+//                             if (BLINKER_COMWLAN_PARAM_NUM != _atData->paramNum()) return;
+
+//                             connectWiFi((_atData->getParam(MQTT_WIFI_SSID)).c_str(), 
+//                                         (_atData->getParam(MQTT_WIFI_PSWD)).c_str());
+                            
+//                             begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
+//                             _status = BL_INITED;
+//                             _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
+//                         }
+//                         else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_SMARTCONFIG_NUM)
+//                         {
+//                             BLINKER_LOG1(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
+
+//                             if (BLINKER_SMCFG_PARAM_NUM != _atData->paramNum()) return;
+
+//                             if (!autoInit()) smartconfig();
+
+//                             begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
+//                             _status = BL_INITED;
+//                             _wlanMode = BLINKER_CMD_SMARTCONFIG_NUM;
+//                         }
+//                         else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_APCONFIG_NUM)
+//                         {
+//                             BLINKER_LOG1(BLINKER_F("BLINKER_CMD_APCONFIG"));
+
+//                             if (BLINKER_APCFG_PARAM_NUM != _atData->paramNum()) return;
+
+//                             if (!autoInit())
+//                             {
+//                                 softAPinit();
+//                                 while(WiFi.status() != WL_CONNECTED) {
+//                                     serverClient();
+
+//                                     ::delay(10);
+//                                 }
+//                             }
+
+//                             begin((_atData->getParam(MQTT_AUTH_KEY)).c_str());
+//                             _status = BL_INITED;
+//                             _wlanMode = BLINKER_CMD_APCONFIG_NUM;
+//                         }
+//                         else {
+//                             return;
+//                         }
+
+//                         reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+//                                 ":" + STRING_format(MQTT_ID) + \
+//                                 "," + STRING_format(UUID);
+//                         serialPrint(reqData);
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_ACTION:
+//                         // serialPrint();
+//                         break;
+//                     default :
+//                         break;
+//                 }
+//             }
+//             else if (_atData->cmd() == BLINKER_CMD_BLINKER_ALIGENIE) {
+//                 // serialPrint(BLINKER_CMD_OK);
+
+//                 BLINKER_LOG1(BLINKER_CMD_BLINKER_ALIGENIE);
+
+//                 atState_t at_state = _atData->state();
+
+//                 BLINKER_LOG1(at_state);
+
+//                 switch (at_state)
+//                 {
+//                     case AT_NONE:
+//                         // serialPrint();
+//                         break;
+//                     case AT_TEST:
+//                         reqData = STRING_format(BLINKER_CMD_AT) + \
+//                                 "+" + STRING_format(BLINKER_CMD_BLINKER_ALIGENIE) + \
+//                                 "=<type>";
+//                         serialPrint(reqData);
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_QUERY:
+//                         reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+//                                 ":" + STRING_format(_aliType);
+//                         serialPrint(reqData);
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_SETTING:
+// #ifdef BLINKER_DEBUG_ALL
+//                         BLINKER_LOG2(BLINKER_F("BLINKER_ALIGENIE_CFG_NUM: "), _atData->getParam(BLINKER_ALIGENIE_CFG_NUM));
+// #endif
+
+//                         if ((_atData->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_LIGHT)
+//                         {
+//                             BLINKER_LOG1(BLINKER_F("ALI_LIGHT"));
+//                             _aliType = ALI_LIGHT;
+//                         }
+//                         else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == ALI_OUTLET)
+//                         {
+//                             BLINKER_LOG1(BLINKER_F("ALI_OUTLET"));
+//                             _aliType = ALI_OUTLET;
+//                         }
+//                         else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == ALI_SENSOR)
+//                         {
+//                             BLINKER_LOG1(BLINKER_F("ALI_SENSOR"));
+//                             _aliType = ALI_SENSOR;
+//                         }
+//                         else {
+//                             BLINKER_LOG1(BLINKER_F("ALI_NONE"));
+//                             _aliType = ALI_NONE;
+//                         }
+//                         serialPrint(BLINKER_CMD_OK);
+//                         break;
+//                     case AT_ACTION:
+//                         // serialPrint();
+//                         break;
+//                     default :
+//                         break;
+//                 }
+//             }
+//         }
+
+//         String getMode(uint8_t mode)
+//         {
+//             switch (mode)
+//             {
+//                 case BLINKER_CMD_COMCONFIG_NUM :
+//                     return BLINKER_CMD_COMCONFIG;
+//                 case BLINKER_CMD_SMARTCONFIG_NUM :
+//                     return BLINKER_CMD_SMARTCONFIG;
+//                 case BLINKER_CMD_APCONFIG_NUM :
+//                     return BLINKER_CMD_APCONFIG;
+//                 default :
+//                     return BLINKER_CMD_COMCONFIG;
+//             }
+//         }
+
+        bool isMQTTinit = false;
+
+        bool connectServer();
+
+        void mDNSInit()
+        {
+#if defined(ESP8266)
+            if (!MDNS.begin(DEVICE_NAME, WiFi.localIP())) {
+#elif defined(ESP32)
+            if (!MDNS.begin(DEVICE_NAME)) {
+#endif
+                while(1) {
+                    ::delay(100);
+                }
+            }
+
+            BLINKER_LOG1(("mDNS responder started"));
+            
+            MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
+            MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", String(DEVICE_NAME));
+
+            webSocket.begin();
+            webSocket.onEvent(webSocketEvent);
+            BLINKER_LOG1(("webSocket server started"));
+            BLINKER_LOG4("ws://", DEVICE_NAME, ".local:", WS_SERVERPORT);
+        }
+
+        void checkKA() {
+            if (millis() - kaTime >= BLINKER_MQTT_KEEPALIVE)
+                isAlive = false;
+        }
+
+        bool checkAliKA() {
+            if (millis() - aliKaTime >= 10000)
+                return false;
+            else
+                return true;
+        }
+
+        bool checkCanPrint() {
+            if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
+                return true;
+            }
+            else {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
+#endif
+                checkKA();
+
+                return false;
+            }
+        }
+
+        bool checkCanBprint() {
+            if ((millis() - bPrintTime >= BLINKER_BRIDGE_MSG_LIMIT) || bPrintTime == 0) {
+                return true;
+            }
+            else {
+#ifdef BLINKER_DEBUG_ALL
+                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
+#endif
+                return false;
+            }
+        }
+
+        bool checkPrintSpan() {
+            if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
+                if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
+#endif
+                    return false;
+                }
+                else {
+                    respTimes++;
+                    return true;
+                }
+            }
+            else {
+                respTimes = 0;
+                return true;
+            }
+        }
+
+        bool checkAliPrintSpan() {
+            if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2) {
+                if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2) {
+#ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG1("ALIGENIE NOT ALIVE OR MSG LIMIT");
+#endif
+                    return false;
+                }
+                else {
+                    respAliTimes++;
+                    return true;
+                }
+            }
+            else {
+                respAliTimes = 0;
+                return true;
+            }
+        }
+
     protected :
-        atStatus_t  _status = BL_BEGIN;
-        uint8_t     _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
+        // atStatus_t  _status = BL_BEGIN;
+        // uint8_t     _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
         atAligenie_t _aliType = ALI_NONE;
-        uint8_t     pinDataNum = 0;
+        // uint8_t     pinDataNum = 0;
 
         // io 
         // - - - -  - - - - | - - - -  - - - -
@@ -2876,6 +2885,7 @@ class BlinkerMQTT_AT
 
                 Serial.begin(ss_baud, ss_cfg);
                 this->conn.serialBegin(Serial, true);
+                Base::atBegin();
                 strcpy(Base::_authKey, this->conn.authKey().c_str());
                 strcpy(Base::_deviceName, this->conn.deviceName().c_str());
                 Base::loadTimer();
