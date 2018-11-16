@@ -87,7 +87,14 @@
     #elif defined(ESP32)
         #include <BlinkerESP32_MQTT.h>
     #else
-        #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
+        #define BLINKER_ESP_AT
+
+        #define BLINKER_MQTT_AT
+
+        #undef BLINKER_MQTT
+
+        #include <BlinkerSerialESP.h>
+        // #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
 #elif defined(BLINKER_PRO)
@@ -136,7 +143,13 @@
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
-#else
+// #elif defined(BLINKER_MQTT_AT)
+
+//     #define BLINKER_ESP_AT
+
+//     #include <BlinkerSerialESP.h>
+
+// #else
     #error Please setting connect mode ahead! Here provided BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT mode!
 #endif
 

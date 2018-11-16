@@ -54,7 +54,7 @@ static uint8_t dataFrom = BLINKER_MSG_FROM_MQTT;
 // #include <Blinker/BlinkerProtocol.h>
 #include <EEPROM.h>
 
-SoftwareSerial *SSerialBLE;
+// SoftwareSerial *SSerialBLE;
 // HardwareSerial *HSerialBLE;
 
 
@@ -594,14 +594,14 @@ class BlinkerTransportStream
 
         bool serialAvailable()
         {
-            if (!isHWS)
-            {
-                if (!SSerialBLE->isListening())
-                {
-                    SSerialBLE->listen();
-                    ::delay(100);
-                }
-            }
+            // if (!isHWS)
+            // {
+            //     if (!SSerialBLE->isListening())
+            //     {
+            //         SSerialBLE->listen();
+            //         ::delay(100);
+            //     }
+            // }
             
             if (stream->available())
             {

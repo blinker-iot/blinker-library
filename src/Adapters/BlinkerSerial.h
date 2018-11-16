@@ -5,8 +5,11 @@
 #include "HardwareSerial.h"
 #include <Blinker/BlinkerProtocol.h>
 
-SoftwareSerial *SSerialBLE;
-// HardwareSerial *HSerialBLE;
+#if defined(ESP32)
+    HardwareSerial *HSerialBLE;
+#else
+    SoftwareSerial *SSerialBLE;
+#endif
 
 class BlinkerTransportStream
 {
@@ -176,6 +179,27 @@ class BlinkerSerial
                 this->conn.begin(*SSerialBLE, false);
                 BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
             }
+#elif defined(ESP8266)
+            if (ss_rx_pin == RX && ss_tx_pin == TX) {
+                Base::begin();
+                Serial.begin(ss_baud);
+                this->conn.begin(Serial, true);
+                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+                return;
+            }
+            else {
+                Base::begin();
+                SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
+                SSerialBLE->begin(ss_baud);
+                this->conn.begin(*SSerialBLE, false);
+                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+            }
+#elif defined(ESP32)
+            Base::begin();
+            HSerialBLE = new HardwareSerial(1);
+            HSerialBLE->begin(ss_baud, SERIAL_8N1, ss_rx_pin, ss_tx_pin);
+            this->conn.begin(*HSerialBLE, true);
+            BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
 #else
             Base::begin();
             SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
