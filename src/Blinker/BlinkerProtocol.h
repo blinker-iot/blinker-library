@@ -1666,6 +1666,8 @@ class BlinkerProtocol
             }
         }
 
+        String lastRead() { return conn.lastRead(); }
+
         void isParsed() { isFresh = false; canParse = false; availState = false; }// BLINKER_LOG1("isParsed");
 
         bool parseState() { return canParse; }
@@ -1744,6 +1746,11 @@ class BlinkerProtocol
 #endif
 
     protected :
+#if defined(BLINKER_MQTT_AT)
+        char            _authKey[BLINKER_AUTHKEY_SIZE];
+        char            _deviceName[BLINKER_MQTT_DEVICEID_SIZE];
+#endif
+
 #if defined(BLINKER_AT_MQTT)
         atStatus_t  _status = BL_BEGIN;
         uint8_t     _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
@@ -1899,6 +1906,28 @@ class BlinkerProtocol
             {
                 serialAvailable();
             }
+        }
+#endif
+
+#if defined(BLINKER_MQTT_AT)
+        void atInit(const char* _auth)
+        {
+            strcpy(_authKey, _auth);
+
+            BApi::initCheck(STRING_format(_auth));
+        }
+
+        void atInit(const char* _auth,
+                    const char* _ssid,
+                    const char* _pswd)
+        {
+            strcpy(_authKey, _auth);
+
+            String init_data =  STRING_format(_auth) + \
+                                STRING_format(_ssid) + \
+                                STRING_format(_pswd);
+
+            BApi::initCheck(init_data);
         }
 #endif
 

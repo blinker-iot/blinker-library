@@ -32,6 +32,9 @@ class BlinkerTransportStream
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("handleSerial: "), streamData);
 #endif
+                if (streamData[strlen(streamData) - 1] == '\r')
+                    streamData[strlen(streamData) - 1] = '\0';
+                    
                 return true;
             }
             else {

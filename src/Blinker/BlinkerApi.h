@@ -1705,6 +1705,45 @@ class BlinkerApi
         }
 #endif
 
+#if defined(BLINKER_MQTT_AT)
+        void initCheck(String _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10)
+        {
+            static_cast<Proto*>(this)->connect();
+            
+            bool _isAlive = false;
+            uint32_t _now_time = millis();
+            while (!_isAlive) {
+                static_cast<Proto*>(this)->_print(BLINKER_CMD_AT);
+                // _now_time = millis();
+
+                while((millis() - _now_time) < timeout)
+                {
+                    static_cast<Proto*>(this)->run();
+
+                    if (static_cast<Proto*>(this)->available())
+                    {
+                        if (static_cast<Proto*>(this)->lastRead() == BLINKER_CMD_OK)
+                        {
+                            _isAlive = true;
+                        }
+
+                        BLINKER_LOG2(BLINKER_F("lastRead: "), static_cast<Proto*>(this)->lastRead());
+                    }
+                    // ::delay(10);
+                }
+
+                _now_time += timeout;
+            }
+
+            static_cast<Proto*>(this)->_print(_data);
+
+            // bool _isInit = false;
+            // while (!_isInit) {
+
+            // }
+        }
+#endif
+
     private :
         // bool        _switchFresh = false;
         uint8_t     _wCount_str = 0;
