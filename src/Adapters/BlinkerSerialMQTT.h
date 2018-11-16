@@ -132,11 +132,33 @@ class BlinkerSerial
             : Base(transp)
         {}
 
-        void begin(uint8_t ss_rx_pin = 2,
+        // void 
+#if defined(BLINKER_ESP_SMARTCONFIG)
+        void begin( const char* _auth,
+                    uint8_t ss_rx_pin = 2,
                     uint8_t ss_tx_pin = 3,
                     uint32_t ss_baud = 9600)
+        {}
+#elif defined(BLINKER_APCONFIG)
+        void begin( const char* _auth,
+                    uint8_t ss_rx_pin = 2,
+                    uint8_t ss_tx_pin = 3,
+                    uint32_t ss_baud = 9600)
+        {}
+#endif
+
+        void begin( const char* _auth,
+                    const char* _ssid,
+                    const char* _pswd,
+                    uint8_t ss_rx_pin = 2,
+                    uint8_t ss_tx_pin = 3,
+                    uint32_t ss_baud = 9600)
+        {}
+
+    private :
+        void serialBegin()
         {
-#if defined (__AVR__)
+    #if defined (__AVR__)
             if (ss_rx_pin == 0 && ss_tx_pin == 1){
                 Base::begin();
     #if defined (__AVR_ATmega32U4__)
