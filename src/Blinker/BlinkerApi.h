@@ -665,8 +665,8 @@ class BlinkerApi
             ahrsValue[Yaw] = 0;
             ahrsValue[Roll] = 0;
             ahrsValue[Pitch] = 0;
-            gpsValue[LONG] = "0.000000";
-            gpsValue[LAT] = "0.000000";
+            gpsValue[LONG] = 0.0;//"0.000000";
+            gpsValue[LAT] = 0.0;//"0.000000";
         }
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -932,7 +932,7 @@ class BlinkerApi
             ahrsValue[Pitch] = 0;
         }
 
-        String gps(b_gps_t axis, bool newData = false) {
+        float gps(b_gps_t axis, bool newData = false) {
             if (!newData && ((millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT || gps_get_time == 0)) {
                 static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
                 static_cast<Proto*>(this)->printNow();
@@ -944,8 +944,8 @@ class BlinkerApi
             String axisValue = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, axis);
 
             if (axisValue != "") {
-                gpsValue[LONG] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LONG);
-                gpsValue[LAT] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LAT);
+                gpsValue[LONG] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LONG).toFloat();
+                gpsValue[LAT] = STRING_find_array_string_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_GPS, LAT).toFloat();
 
                 _fresh = true;
 
@@ -954,10 +954,10 @@ class BlinkerApi
                     gps_get_time = millis();
                 }
 
-                return gpsValue[axis];
+                return gpsValue[axis]*1000000;
             }
             else {
-                return gpsValue[axis];
+                return gpsValue[axis]*1000000;
             }
         }
 
@@ -989,6 +989,7 @@ class BlinkerApi
             }
         }
 
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         void setTimezone(float tz) {
             _timezone = tz;
             _isNTPInit = false;
@@ -1020,6 +1021,27 @@ class BlinkerApi
             freshNTP();
             return _isNTPInit ? timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec : -1;
         }
+#elif defined(BLINKER_BLE)
+        int8_t second() { return -1; }
+        /**< seconds after the minute - [ 0 to 59 ] */
+        int8_t minute() { return -1; }
+        /**< minutes after the hour - [ 0 to 59 ] */
+        int8_t hour()   { return -1; }
+        /**< hours since midnight - [ 0 to 23 ] */
+        int8_t mday()   { return -1; }
+        /**< day of the month - [ 1 to 31 ] */
+        int8_t wday()   { return -1; }
+        /**< days since Sunday - [ 0 to 6 ] */
+        int8_t month()  { return -1; }
+        /**< months since January - [ 1 to 12 ] */
+        int16_t year()  { return -1; }
+        /**< years since 1900 */
+        int16_t yday()  { return -1; }
+        /**< days since January 1 - [ 1 to 366 ] */
+        time_t  time()  { return millis(); }
+
+        int32_t dtime() { return millis(); }
+#endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         void autoInit() {
@@ -1737,10 +1759,10 @@ class BlinkerApi
 
             static_cast<Proto*>(this)->_print(_data);
 
-            // bool _isInit = false;
-            // while (!_isInit) {
+            bool _isInit = false;
+            while (!_isInit) {
 
-            // }
+            }
         }
 #endif
 
@@ -1759,14 +1781,16 @@ class BlinkerApi
         // uint8_t     joyValue[2];
         int16_t     ahrsValue[3];
         uint32_t    gps_get_time;
-        String      gpsValue[2];
+        // String      gpsValue[2];
+        float       gpsValue[2];
         // uint8_t rgbValue[3];
         bool        _fresh = false;
-        bool        _isNTPInit = false;
-        float       _timezone = 8.0;
-        uint32_t    _ntpStart;
-        time_t      now_ntp;
-        struct tm   timeinfo;
+
+        // bool        _isNTPInit = false;
+        // float       _timezone = 8.0;
+        // uint32_t    _ntpStart;
+        // time_t      now_ntp;
+        // struct tm   timeinfo;
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         uint8_t     _bridgeCount = 0;
@@ -1779,6 +1803,12 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        bool        _isNTPInit = false;
+        float       _timezone = 8.0;
+        uint32_t    _ntpStart;
+        time_t      now_ntp;
+        struct tm   timeinfo;
+
         uint32_t    _smsTime = 0;
 
         uint32_t    _pushTime = 0;
@@ -1798,7 +1828,7 @@ class BlinkerApi
         uint32_t    _autoPullTime = 0;
 #endif
 
-#if defined(ESP8266) || defined(ESP32)
+#if defined(ESP8266) || defined(ESP32)        
         String      _cdAction;
         String      _lpAction1;
         String      _lpAction2;
@@ -2023,7 +2053,7 @@ class BlinkerApi
             }
         }
 
-        String gps(b_gps_t axis, bool newData, const JsonObject& data) {
+        float gps(b_gps_t axis, bool newData, const JsonObject& data) {
             if (!newData && ((millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT || gps_get_time == 0)) {
                 static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
                 static_cast<Proto*>(this)->printNow();
@@ -2035,8 +2065,8 @@ class BlinkerApi
             if (data.containsKey(BLINKER_CMD_GPS)) {
                 String gpsValue_LONG = data[BLINKER_CMD_GPS][LONG];
                 String gpsValue_LAT = data[BLINKER_CMD_GPS][LAT];
-                gpsValue[LONG] = gpsValue_LONG;
-                gpsValue[LAT] = gpsValue_LAT;
+                gpsValue[LONG] = gpsValue_LONG.toFloat();
+                gpsValue[LAT] = gpsValue_LAT.toFloat();
 
                 _fresh = true;
 
@@ -2045,10 +2075,10 @@ class BlinkerApi
                     gps_get_time = millis();
                 }
 
-                return gpsValue[axis];
+                return gpsValue[axis]*1000000;
             }
             else {
-                return gpsValue[axis];
+                return gpsValue[axis]*1000000;
             }
         }
 

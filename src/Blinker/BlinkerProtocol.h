@@ -739,11 +739,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -767,11 +763,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -820,11 +812,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 
                 // autoFormatData("\"" + STRING_format(n1) + "\":" + s2);
@@ -850,11 +838,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -906,11 +890,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -934,11 +914,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -962,11 +938,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -990,11 +962,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1018,11 +986,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1046,11 +1010,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1074,11 +1034,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1102,11 +1058,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1130,11 +1082,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1449,11 +1397,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(BLINKER_CMD_NOTICE), _msg);
@@ -1482,11 +1426,7 @@ class BlinkerProtocol
 
                 if (!autoFormat) {
                     autoFormat = true;
-// #if defined(BLINKER_MQTT_AT)
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-// #else
-//                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
-// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(tName, _msg);
@@ -1733,9 +1673,7 @@ class BlinkerProtocol
 
         void isParsed() {
             isFresh = false; canParse = false; availState = false;
-// #if defined(BLINKER_MQTT_AT)
             conn.flush();
-// #endif
         }// BLINKER_LOG1("isParsed");
 
         bool parseState() { return canParse; }
@@ -1743,14 +1681,12 @@ class BlinkerProtocol
         void printNow() {
             if (strlen(_sendBuf) && autoFormat) {
 #if defined(ESP8266) || defined(ESP32)
-                        _print(STRING_format(_sendBuf));
+                _print(STRING_format(_sendBuf));
 #else
-                        _print("{" + STRING_format(_sendBuf) + "}");
+                _print("{" + STRING_format(_sendBuf) + "}");
 #endif
 
-// #if defined(BLINKER_MQTT_AT)
                 free(_sendBuf);
-// #endif
                 autoFormat = false;
             }
         }
@@ -1766,9 +1702,7 @@ class BlinkerProtocol
                         _print("{" + STRING_format(_sendBuf) + "}");
 #endif
                     }
-// #if defined(BLINKER_MQTT_AT)
                     free(_sendBuf);
-// #endif
                     autoFormat = false;
                 }
             }
