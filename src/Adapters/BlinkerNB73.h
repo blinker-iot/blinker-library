@@ -396,7 +396,7 @@ class BlinkerTransportStream
             }
         }
 
-        String lastRead() { return STRING_format(streamData); }
+        char * lastRead() { return streamData; }
 
         bool print(String s)
         {

@@ -91,7 +91,7 @@ const T& BlinkerMax(const T& a, const T& b)
     return (b < a) ? a : b;
 }
 
-String STRING_find_string(String src, String targetStart, String targetEnd, uint8_t skipNum) {
+String STRING_find_string(const String & src, const String & targetStart, const String & targetEnd, uint8_t skipNum) {
     int addr_start = src.indexOf(targetStart);
     int addr_end;
     if (targetEnd.length()) {
@@ -117,7 +117,7 @@ bool STRING_contains_string(const String & src, const String & key)
     return key == src.substring(addr_start, addr_start + keyLen);
 }
 
-bool STRING_find_string_value(const String & src,String & dst, const String & key)
+bool STRING_find_string_value(const String & src, String dst, const String & key)
 {
     int addr_start = src.indexOf(key);
     uint8_t keyLen = key.length();

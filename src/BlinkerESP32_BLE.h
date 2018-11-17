@@ -81,11 +81,13 @@ class BlinkerBLE
             }
         }
 
-        String lastRead() { return _isFresh ? STRING_format(BLEBuf) : STRING_format(""); }//
+        char * lastRead() { return _isFresh ? BLEBuf : ""; }//
 
         void flush() {
-            free(BLEBuf); isFresh = false; 
-            isAvail = false; _isFresh = false;
+            if (isFresh) {
+                free(BLEBuf); isFresh = false; 
+                isAvail = false; _isFresh = false;
+            }
         }
         
         bool print(String s) {

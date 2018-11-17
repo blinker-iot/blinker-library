@@ -53,9 +53,13 @@ class BlinkerTransportStream
             isHWS = state;
         }
 
-        String lastRead() { return isFresh ? STRING_format(streamData) : STRING_format(""); }
+        char * lastRead() { return isFresh ? streamData : NULL; }
 
-        void flush() { free(streamData); isFresh = false; }
+        void flush() {
+            if (isFresh) {
+                free(streamData); isFresh = false;
+            }
+        }
 
         bool print(String s)
         {

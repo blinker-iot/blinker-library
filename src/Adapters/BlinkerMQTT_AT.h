@@ -795,8 +795,14 @@ class BlinkerTransportStream
         }
 
         void subscribe();
-        String lastRead() { return isFresh ? STRING_format(msgBuf) : STRING_format(""); }
-        void flush() { free(msgBuf); isFresh = false; isAvail = false; }
+        char * lastRead() { return isFresh ? msgBuf : NULL; }
+        
+        void flush() {
+            if (isFresh) {
+                free(msgBuf); isFresh = false; isAvail = false;
+            }
+        }
+
         bool print(String data);
         bool mqttPrint(String data);
         bool bPrint(String name, String data);
