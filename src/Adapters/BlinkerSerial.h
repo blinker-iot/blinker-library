@@ -117,7 +117,7 @@ class BlinkerTransportStream
             if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
                 if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG1("DEVICE NOT CONNECT OR MSG LIMIT");
+                    BLINKER_ERR_LOG1(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
 #endif
                     return false;
                 }
