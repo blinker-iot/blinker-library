@@ -81,8 +81,13 @@ class BlinkerBLE
             }
         }
 
-        String lastRead() { return STRING_format(BLEBuf); }//
+        String lastRead() { return _isFresh ? STRING_format(BLEBuf) : STRING_format(""); }//
 
+        void flush() {
+            free(BLEBuf); isFresh = false; 
+            isAvail = false; _isFresh = false;
+        }
+        
         bool print(String s) {
             bool state = STRING_contains_string(s, BLINKER_CMD_NOTICE);
 
@@ -140,7 +145,8 @@ class BlinkerBLE
 
     private :
         bool                    deviceConnected;
-        char                    BLEBuf[BLINKER_MAX_READ_SIZE];
+        char*                   BLEBuf;//[BLINKER_MAX_READ_SIZE];
+        bool                    _isFresh = false;
         bool                    isAvail;
         bool                    isFresh;
         uint32_t                _bufLen;
@@ -175,7 +181,8 @@ class BlinkerBLE
                 freshTime = millis();
 
                 if (_bufLen == 0) {
-                    memset(BLEBuf, '\0', BLINKER_MAX_READ_SIZE);
+                    // memset(BLEBuf, '\0', BLINKER_MAX_READ_SIZE);
+                    if (!_isFresh) BLEBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
                 }
 
                 for (uint8_t _num = 0; _num < vlen; _num++) {
@@ -184,6 +191,7 @@ class BlinkerBLE
                 }
 
                 isFresh = true;
+                _isFresh = true;
 
                 if (value[vlen-1] == '\n') {
                     isAvail = true;

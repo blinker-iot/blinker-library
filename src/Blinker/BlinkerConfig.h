@@ -595,7 +595,7 @@
 
 #define BLINKER_CMD_COMCONFIG_NUM           0
 
-#define BLINKER_CMD_SMARTCONFIG_NUM            1
+#define BLINKER_CMD_SMARTCONFIG_NUM         1
 
 #define BLINKER_CMD_APCONFIG_NUM            2
 

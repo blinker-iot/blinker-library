@@ -28,12 +28,16 @@ class BlinkerTransportStream
             }
             
             if (stream->available()) {
+                if (!isFresh) streamData = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
+
                 strcpy(streamData, (stream->readStringUntil('\n')).c_str());
 #ifdef BLINKER_DEBUG_ALL
                 BLINKER_LOG2(BLINKER_F("handleSerial: "), streamData);
 #endif
                 if (streamData[strlen(streamData) - 1] == '\r')
                     streamData[strlen(streamData) - 1] = '\0';
+
+                isFresh = true;
                     
                 return true;
             }
@@ -49,7 +53,9 @@ class BlinkerTransportStream
             isHWS = state;
         }
 
-        String lastRead() { return STRING_format(streamData); }
+        String lastRead() { return isFresh ? STRING_format(streamData) : STRING_format(""); }
+
+        void flush() { free(streamData); isFresh = false; }
 
         bool print(String s)
         {
@@ -99,7 +105,9 @@ class BlinkerTransportStream
 
     protected :
         Stream* stream;
-        char    streamData[BLINKER_MAX_READ_SIZE];
+        char*   streamData;
+        // char    streamData[BLINKER_MAX_READ_SIZE];
+        bool    isFresh;
         bool    isConnect;
         bool    isHWS = false;
         uint8_t respTimes = 0;
