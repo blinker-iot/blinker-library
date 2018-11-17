@@ -321,6 +321,8 @@
 
 #define BLINKER_CMD_UNIT                "uni"
 
+#define BLINKER_CMD_SUMMARY             "sum"
+
 #define BLINKER_CMD_POWERSTATE          "pState"
 
 #define BLINKER_CMD_BRIGHTNESS          "bright"
@@ -346,8 +348,6 @@
 #define BLINKER_CMD_MIN                 "min"
 
 #define BLINKER_CMD_ALIGENIE            "AliGenie"
-
-#define BLINKER_CMD_SUMMARY             "sum"
 
 #define BLINKER_CMD_MODE                "mode"
 

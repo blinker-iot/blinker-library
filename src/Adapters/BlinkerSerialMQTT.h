@@ -56,7 +56,7 @@ class BlinkerTransportStream
 
         String lastRead() { return isFresh ? STRING_format(streamData) : STRING_format(""); }
 
-        void flush() { free(streamData); isFresh = false; isAvail = false; }
+        void flush() { free(streamData); isFresh = false; }
 
         bool print(String s)
         {
