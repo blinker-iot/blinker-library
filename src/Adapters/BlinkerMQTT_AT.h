@@ -41,7 +41,9 @@ Adafruit_MQTT_Subscribe *iotSub;
 #define WS_SERVERPORT                       81
 WebSocketsServer webSocket = WebSocketsServer(WS_SERVERPORT);
 
-static char msgBuf[BLINKER_MAX_READ_SIZE];
+// static char msgBuf[BLINKER_MAX_READ_SIZE];
+static char* msgBuf;//[BLINKER_MAX_READ_SIZE];
+static bool isFresh = false;
 static bool isConnect = false;
 static bool isAvail = false;
 static uint8_t ws_num = 0;
@@ -241,11 +243,12 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
             BLINKER_LOG6("num: ", num, ", get Text: ", (char *)payload, ", length: ", length);
 #endif
             if (length < BLINKER_MAX_READ_SIZE) {
-                // msgBuf = (char*)malloc((length+1)*sizeof(char));
+                if (!isFresh) msgBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
                 // memcpy (msgBuf, (char*)payload, length);
                 // buflen = length;
                 strcpy(msgBuf, (char*)payload);
                 isAvail = true;
+                isFresh = true;
             }
 
             dataFrom = BLINKER_MSG_FROM_WS;
@@ -792,7 +795,8 @@ class BlinkerTransportStream
         }
 
         void subscribe();
-        String lastRead() { return STRING_format(msgBuf); }
+        String lastRead() { return isFresh ? STRING_format(msgBuf) : STRING_format(""); }
+        void flush() { free(msgBuf); isFresh = false; isAvail = false; }
         bool print(String data);
         bool mqttPrint(String data);
         bool bPrint(String name, String data);
@@ -2345,8 +2349,12 @@ void BlinkerTransportStream::subscribe() {
                 isBavail = true;
             }
 
-            memset(msgBuf, 0, BLINKER_MAX_READ_SIZE);
-            memcpy(msgBuf, dataGet.c_str(), dataGet.length());
+            // memset(msgBuf, 0, BLINKER_MAX_READ_SIZE);
+            // memcpy(msgBuf, dataGet.c_str(), dataGet.length());
+
+            if (!isFresh) msgBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
+            strcpy(msgBuf, dataGet.c_str());
+            isFresh = true;
             
             this->latestTime = millis();
 
