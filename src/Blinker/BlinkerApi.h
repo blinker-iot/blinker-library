@@ -101,7 +101,7 @@ class BlinkerWidgets_string
         String getName() { return (wName); }
         void setFunc(callback_with_string_arg_t _func) { wfunc = _func; }
         callback_with_string_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) {
+        bool checkName(const String & name) {
             String cmp_name = STRING_format(wName);
             
             return ((cmp_name == name) ? true : false); 
@@ -126,7 +126,7 @@ class BlinkerWidgets_int32
         String getName() { return wName; }
         void setFunc(callback_with_int32_arg_t _func) { wfunc = _func; }
         callback_with_int32_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) {
+        bool checkName(const String & name) {
             String cmp_name = STRING_format(wName);
             
             return ((cmp_name == name) ? true : false); 
@@ -151,7 +151,7 @@ class BlinkerWidgets_rgb
         String getName() { return wName; }
         void setFunc(callback_with_rgb_arg_t _func) { wfunc = _func; }
         callback_with_rgb_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) {
+        bool checkName(const String & name) {
             String cmp_name = STRING_format(wName);
             
             return ((cmp_name == name) ? true : false); 
@@ -176,7 +176,7 @@ class BlinkerWidgets_joy
         String getName() { return wName; }
         void setFunc(callback_with_joy_arg_t _func) { wfunc = _func; }
         callback_with_joy_arg_t getFunc() { return wfunc; }
-        bool checkName(String name) { 
+        bool checkName(const String & name) { 
             String cmp_name = STRING_format(wName);
             
             return ((cmp_name == name) ? true : false); 
@@ -195,11 +195,11 @@ class BlinkerBridge
             : _name(NULL)
         {}
 
-        void name(String name) { _name = name; }
+        void name(const String & name) { _name = name; }
         String getName() { return _name; }
-        void freshBridge(String name) { bridgeName = name; }
+        void freshBridge(const String & name) { bridgeName = name; }
         String getBridge() { return bridgeName; }
-        bool checkName(String name) { return ((_name == name) ? true : false); }
+        bool checkName(const String & name) { return ((_name == name) ? true : false); }
 
     private :
         String _name;
@@ -217,7 +217,7 @@ class BlinkerData
             memcpy(data,"\0",256);
         }
 
-        void name(String name) { _dname = name; }
+        void name(const String & name) { _dname = name; }
 
         String getName() { return _dname; }
 
@@ -244,7 +244,7 @@ class BlinkerData
         //     dataCount++;
         // }
 
-        void saveData(String _data) {
+        void saveData(const String & _data) {
             // if (data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2 ||
             //     _data.length() >= BLINKER_MAX_SEND_BUFFER_SIZE / 2){
             //     BLINKER_ERR_LOG1("MAX THAN DATA STORAGE SIZE");
@@ -341,7 +341,7 @@ class BlinkerData
             return _data_decode;
         }
 
-        bool checkName(String name) { return ((_dname == name) ? true : false); }
+        bool checkName(const String & name) { return ((_dname == name) ? true : false); }
 
     private :
         uint8_t dataCount = 0;
@@ -351,7 +351,7 @@ class BlinkerData
 #endif
 
 template <class T>
-int8_t checkNum(String name, T * c, uint8_t count)
+int8_t checkNum(const String & name, T * c, uint8_t count)
 {
     for (uint8_t cNum = 0; cNum < count; cNum++) {
         if (c[cNum]->checkName(name))
@@ -1058,7 +1058,7 @@ class BlinkerApi
         }
 
         // void autoRun(String key, String state) {
-        void autoInput(String key, String state) {
+        void autoInput(const String & key, const String & state) {
             if (!_isNTPInit) {
                 return;
             }
@@ -1071,7 +1071,7 @@ class BlinkerApi
         }
 
         // void autoRun(String key, float data) {
-        void autoInput(String key, float data) {
+        void autoInput(const String & key, float data) {
             if (!_isNTPInit) {
                 return;
             }
@@ -1388,7 +1388,7 @@ class BlinkerApi
             return (blinkServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
         }
 
-        String weather(String _city = BLINKER_CMD_DEFAULT) {
+        String weather(const String & _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
             String data = "/weather/now?";
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
@@ -1414,7 +1414,7 @@ class BlinkerApi
             return blinkServer(BLINKER_CMD_WEATHER_NUMBER, data);
         }
 
-        String aqi(String _city = BLINKER_CMD_DEFAULT) {
+        String aqi(const String & _city = BLINKER_CMD_DEFAULT) {
             // String _msg = STRING_format(msg);
             String data = "/weather/aqi?";
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
@@ -1728,7 +1728,7 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_MQTT_AT)
-        void initCheck(String _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10)
+        void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10)
         {
             static_cast<Proto*>(this)->connect();
             
@@ -1744,12 +1744,13 @@ class BlinkerApi
 
                     if (static_cast<Proto*>(this)->available())
                     {
-                        if (static_cast<Proto*>(this)->lastRead() == BLINKER_CMD_OK)
+                        if (STRING_format(static_cast<Proto*>(this)->lastRead()) == BLINKER_CMD_OK)
                         {
                             _isAlive = true;
                         }
 
                         BLINKER_LOG2(BLINKER_F("lastRead: "), static_cast<Proto*>(this)->lastRead());
+                        static_cast<Proto*>(this)->flush();
                     }
                     // ::delay(10);
                 }
@@ -1760,9 +1761,9 @@ class BlinkerApi
             static_cast<Proto*>(this)->_print(_data);
 
             bool _isInit = false;
-            while (!_isInit) {
+            // while (!_isInit) {
 
-            }
+            // }
         }
 #endif
 
@@ -2192,7 +2193,7 @@ class BlinkerApi
         }
 #else
 
-        void strWidgetsParse(const String & _wName, String _data)
+        void strWidgetsParse(const String & _wName, const String & _data)
         {
             int8_t num = checkNum(_wName, _Widgets_str, _wCount_str);
 
@@ -2212,7 +2213,7 @@ class BlinkerApi
             }
         }
 
-        void intWidgetsParse(const String & _wName, String _data)
+        void intWidgetsParse(const String & _wName, const String & _data)
         {
             int8_t num = checkNum(_wName, _Widgets_int, _wCount_int);
 
@@ -2232,7 +2233,7 @@ class BlinkerApi
             }
         }
 
-        void rgbWidgetsParse(const String & _wName, String _data)
+        void rgbWidgetsParse(const String & _wName, const String & _data)
         {
             int8_t num = checkNum(_wName, _Widgets_rgb, _wCount_rgb);
 
@@ -2257,7 +2258,7 @@ class BlinkerApi
             }
         }
 
-        void joyWidgetsParse(const String & _wName, String _data)
+        void joyWidgetsParse(const String & _wName, const String & _data)
         {
             int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
 
@@ -2774,7 +2775,7 @@ class BlinkerApi
         }
 
         // void addTimingTask(uint8_t taskSet, uint32_t timerData, String action, String text) {
-        void addTimingTask(uint8_t taskSet, uint32_t timerData, String action) {
+        void addTimingTask(uint8_t taskSet, uint32_t timerData, const String & action) {
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("addTimingTask taskSet: "), taskSet);
             BLINKER_LOG2(BLINKER_F("addTimingTask timerData: "), timerData);
@@ -3747,7 +3748,7 @@ class BlinkerApi
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         // bool _smsSend(String msg, bool state = false) {
-        String blinkServer(uint8_t _type, String msg, bool state = false) {
+        String blinkServer(uint8_t _type, const String & msg, bool state = false) {
             switch (_type) {
                 case BLINKER_CMD_SMS_NUMBER :
                     if (!checkSMS()) {
@@ -5092,7 +5093,7 @@ class BlinkerApi
 #endif
 
 #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
-        void aliParse(String _data)
+        void aliParse(const String & _data)
         {
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("AliGenie parse data: "), _data);
@@ -5199,7 +5200,7 @@ class BlinkerApi
         }
 #endif
 
-        void parse(String _data, bool ex_data = false)
+        void parse(const String & _data, bool ex_data = false)
         {
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("parse data: "), _data);

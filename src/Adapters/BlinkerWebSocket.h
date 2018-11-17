@@ -103,9 +103,13 @@ class BlinkerWebSocket
             }
         }
 
-        String lastRead() { return isFresh ? STRING_format(msgBuf) : STRING_format(""); }
+        char * lastRead() { return isFresh ? msgBuf : NULL; }
         
-        void flush() { free(msgBuf); isFresh = false; isAvail = false; }
+        void flush() { 
+            if (isFresh) {
+                free(msgBuf); isFresh = false; isAvail = false;
+            }
+        }
 
         void print(String s_data)
         {

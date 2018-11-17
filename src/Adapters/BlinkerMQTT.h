@@ -183,10 +183,12 @@ class BlinkerMQTT {
         }
 
         void subscribe();
-        String lastRead() { return isFresh ? STRING_format(msgBuf) : STRING_format(""); }
+        char * lastRead() { return isFresh ? msgBuf : NULL; }
         void flush() {
-            free(msgBuf); isFresh = false; isAvail = false;
-            isAliAvail = false; isBavail = false;
+            if (isFresh) {
+                free(msgBuf); isFresh = false; isAvail = false;
+                isAliAvail = false; isBavail = false;
+            }
         }
         bool print(String data);
         bool bPrint(String name, String data);

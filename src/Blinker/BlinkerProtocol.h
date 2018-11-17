@@ -208,7 +208,7 @@ class ATdata
     public :
         ATdata() {}
 
-        void update(String data) {
+        void update(const String & data) {
             // _data = data;
             // BLINKER_LOG2(BLINKER_F("update data: "), data);
             // _isAT = serialize(data);
@@ -237,7 +237,7 @@ class ATdata
         String _atCmd;
         String _param[11];
 
-        void serialize(String _data) {
+        void serialize(const String & _data) {
 #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
 #endif
@@ -629,10 +629,7 @@ class BlinkerProtocol
         {
             if (isFresh) {
                 isFresh = false;
-                String _read = conn.lastRead();
-                conn.flush();
-
-                return _read;
+                return conn.lastRead();
             }
             else {
                 return "";
@@ -740,6 +737,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -764,6 +762,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -813,6 +812,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 
                 // autoFormatData("\"" + STRING_format(n1) + "\":" + s2);
@@ -839,6 +839,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -891,6 +892,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -915,6 +917,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -939,6 +942,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -963,6 +967,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -987,6 +992,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1011,6 +1017,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1035,6 +1042,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1059,6 +1067,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1083,6 +1092,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1126,7 +1136,7 @@ class BlinkerProtocol
             _isAuto = true;
             // deserialization();
             // autoStart();
-            BApi::conn.autoInit();
+            BApi::autoInit();
         }
 #endif
 
@@ -1398,6 +1408,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(BLINKER_CMD_NOTICE), _msg);
@@ -1427,6 +1438,7 @@ class BlinkerProtocol
                 if (!autoFormat) {
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+                    memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(tName, _msg);
@@ -1438,6 +1450,7 @@ class BlinkerProtocol
         }
         
         void flush() {
+            conn.flush();
             isFresh = false;
             availState = false;
         }
@@ -1470,7 +1483,7 @@ class BlinkerProtocol
 //         }
 
 #if defined(ESP8266) || defined(ESP32)
-        void autoFormatData(String key, String jsonValue) {
+        void autoFormatData(const String & key, const String & jsonValue) {
             // String _value = STRING_format(value);
             // if ((strlen(_sendBuf) + key.length() + _value.length()) >= BLINKER_MAX_SEND_SIZE) {
             //     BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
@@ -1567,7 +1580,7 @@ class BlinkerProtocol
             }
         }
 
-        void autoBridgeFormatData(String key, String jsonValue) {
+        void autoBridgeFormatData(const String & key, const String & jsonValue) {
     #ifdef BLINKER_DEBUG_ALL
             BLINKER_LOG4(BLINKER_F("autoBridgeFormatData key: "), key, BLINKER_F(", jsonValue: "), jsonValue);
     #endif
@@ -1622,6 +1635,8 @@ class BlinkerProtocol
 
         bool checkAvail()
         {
+            flush();
+
             isAvail = conn.available();
             if (isAvail) {
                 isFresh = true;
@@ -1669,7 +1684,7 @@ class BlinkerProtocol
             }
         }
 
-        String lastRead() { return conn.lastRead(); }
+        char * lastRead() { return conn.lastRead(); }
 
         void isParsed() {
             isFresh = false; canParse = false; availState = false;
@@ -1742,7 +1757,7 @@ class BlinkerProtocol
             }
         }
 
-        void serialPrint(String s)
+        void serialPrint(const String & s)
         {
             conn.serialPrint(s);
         }
