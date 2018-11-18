@@ -7,7 +7,7 @@
 class BlinkerButton
 {
     public :
-        BlinkerButton(const String & _name, callback_with_string_arg_t _func = NULL)
+        BlinkerButton(char _name[], callback_with_string_arg_t _func = NULL)
             // : buttonName(_name)
         {
             wNum = Blinker.attachWidget(_name, _func);

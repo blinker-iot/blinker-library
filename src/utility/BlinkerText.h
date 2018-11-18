@@ -7,11 +7,11 @@
 class BlinkerText
 {
     public :
-        BlinkerText(const String & _name)
+        BlinkerText(char _name[])
             // : textName(_name)
         {
-            textName = (char*)malloc((_name.length()+1)*sizeof(char));
-            strcpy(textName, _name.c_str());
+            textName = (char*)malloc((strlen(_name)+1)*sizeof(char));
+            strcpy(textName, _name);
         }
         
         // template <typename T>

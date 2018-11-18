@@ -40,127 +40,127 @@ static SerialConfig serConfig()
     {
         case BLINKER_SERIAL_5N1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5N1"));
+            BLINKER_LOG(("SerialConfig SERIAL_5N1"));
 #endif
             return SERIAL_5N1;
         case BLINKER_SERIAL_6N1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6N1"));
+            BLINKER_LOG(("SerialConfig SERIAL_6N1"));
 #endif
             return SERIAL_6N1;
         case BLINKER_SERIAL_7N1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7N1"));
+            BLINKER_LOG(("SerialConfig SERIAL_7N1"));
 #endif
             return SERIAL_7N1;
         case BLINKER_SERIAL_8N1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8N1"));
+            BLINKER_LOG(("SerialConfig SERIAL_8N1"));
 #endif
             return SERIAL_8N1;
         case BLINKER_SERIAL_5N2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5N2"));
+            BLINKER_LOG(("SerialConfig SERIAL_5N2"));
 #endif
             return SERIAL_5N2;
         case BLINKER_SERIAL_6N2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6N2"));
+            BLINKER_LOG(("SerialConfig SERIAL_6N2"));
 #endif
             return SERIAL_6N2;
         case BLINKER_SERIAL_7N2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7N2"));
+            BLINKER_LOG(("SerialConfig SERIAL_7N2"));
 #endif
             return SERIAL_7N2;
         case BLINKER_SERIAL_8N2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8N2"));
+            BLINKER_LOG(("SerialConfig SERIAL_8N2"));
 #endif
             return SERIAL_8N2;
         case BLINKER_SERIAL_5E1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5E1"));
+            BLINKER_LOG(("SerialConfig SERIAL_5E1"));
 #endif
             return SERIAL_5E1;
         case BLINKER_SERIAL_6E1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6E1"));
+            BLINKER_LOG(("SerialConfig SERIAL_6E1"));
 #endif
             return SERIAL_6E1;
         case BLINKER_SERIAL_7E1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7E1"));
+            BLINKER_LOG(("SerialConfig SERIAL_7E1"));
 #endif
             return SERIAL_7E1;
         case BLINKER_SERIAL_8E1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8E1"));
+            BLINKER_LOG(("SerialConfig SERIAL_8E1"));
 #endif
             return SERIAL_8E1;
         case BLINKER_SERIAL_5E2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5E2"));
+            BLINKER_LOG(("SerialConfig SERIAL_5E2"));
 #endif
             return SERIAL_5E2;
         case BLINKER_SERIAL_6E2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6E2"));
+            BLINKER_LOG(("SerialConfig SERIAL_6E2"));
 #endif
             return SERIAL_6E2;
         case BLINKER_SERIAL_7E2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7E2"));
+            BLINKER_LOG(("SerialConfig SERIAL_7E2"));
 #endif
             return SERIAL_7E2;
         case BLINKER_SERIAL_8E2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8E2"));
+            BLINKER_LOG(("SerialConfig SERIAL_8E2"));
 #endif
             return SERIAL_8E2;
         case BLINKER_SERIAL_5O1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5O1"));
+            BLINKER_LOG(("SerialConfig SERIAL_5O1"));
 #endif
             return SERIAL_5O1;
         case BLINKER_SERIAL_6O1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6O1"));
+            BLINKER_LOG(("SerialConfig SERIAL_6O1"));
 #endif
             return SERIAL_6O1;
         case BLINKER_SERIAL_7O1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7O1"));
+            BLINKER_LOG(("SerialConfig SERIAL_7O1"));
 #endif
             return SERIAL_7O1;
         case BLINKER_SERIAL_8O1 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8O1"));
+            BLINKER_LOG(("SerialConfig SERIAL_8O1"));
 #endif
             return SERIAL_8O1;
         case BLINKER_SERIAL_5O2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_5O2"));
+            BLINKER_LOG(("SerialConfig SERIAL_5O2"));
 #endif
             return SERIAL_5O2;
         case BLINKER_SERIAL_6O2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_6O2"));
+            BLINKER_LOG(("SerialConfig SERIAL_6O2"));
 #endif
             return SERIAL_6O2;
         case BLINKER_SERIAL_7O2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_7O2"));
+            BLINKER_LOG(("SerialConfig SERIAL_7O2"));
 #endif
             return SERIAL_7O2;
         case BLINKER_SERIAL_8O2 :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8O2"));
+            BLINKER_LOG(("SerialConfig SERIAL_8O2"));
 #endif
             return SERIAL_8O2;
         default :
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("SerialConfig SERIAL_8N1"));
+            BLINKER_LOG(("SerialConfig SERIAL_8N1"));
 #endif
             return SERIAL_8N1;
     }
@@ -210,11 +210,11 @@ class ATdata
 
         void update(const String & data) {
             // _data = data;
-            // BLINKER_LOG2(BLINKER_F("update data: "), data);
+            // BLINKER_LOG(BLINKER_F("update data: "), data);
             // _isAT = serialize(data);
             serialize(data);
 
-            BLINKER_LOG2(BLINKER_F("serialize _set: "), _set);
+            BLINKER_LOG(BLINKER_F("serialize _set: "), _set);
             // return _isAT;
         }
 
@@ -239,7 +239,7 @@ class ATdata
 
         void serialize(const String & _data) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
+            BLINKER_LOG(BLINKER_F("serialize _data: "), _data);
 #endif
             _paramNum = 0;
             // _isAT = false;
@@ -248,15 +248,15 @@ class ATdata
             int addr_end = 0;
 
             String startCmd = _data.substring(0, 2);
-            BLINKER_LOG2(BLINKER_F("startCmd: "), startCmd);
+            BLINKER_LOG(BLINKER_F("startCmd: "), startCmd);
 
             // startCmd = _data.substring(0, 3);
-            // BLINKER_LOG2(BLINKER_F("startCmd: "), startCmd);
+            // BLINKER_LOG(BLINKER_F("startCmd: "), startCmd);
 
-            BLINKER_LOG2(BLINKER_F("startCmd len: "), _data.length());
+            BLINKER_LOG(BLINKER_F("startCmd len: "), _data.length());
 
-            // BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
-            // BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+            // BLINKER_LOG(BLINKER_F("serialize addr_start: "), addr_start);
+            // BLINKER_LOG(BLINKER_F("serialize addr_end: "), addr_end);
 
             // if ((addr_start != -1) && STRING_contains_string(_data, ":"))
             if (startCmd == BLINKER_CMD_AT)
@@ -276,7 +276,7 @@ class ATdata
                 // check "="
                 addr_end = _data.indexOf("=");
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+                BLINKER_LOG(BLINKER_F("serialize addr_end: "), addr_end);
 #endif
                 if (addr_end != -1)
                 {
@@ -284,14 +284,14 @@ class ATdata
 
                     _atCmd = _data.substring(addr_start, addr_end);
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+                    BLINKER_LOG(BLINKER_F("serialize _atCmd: "), _atCmd);
 #endif
                 }
                 else
                 {
                     addr_end = _data.indexOf("?");
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+                    BLINKER_LOG(BLINKER_F("serialize addr_end: "), addr_end);
 #endif
                     if (addr_end != -1)
                     {
@@ -299,7 +299,7 @@ class ATdata
 
                         _atCmd = _data.substring(addr_start, addr_end);
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+                        BLINKER_LOG(BLINKER_F("serialize _atCmd: "), _atCmd);
 #endif
                         return;
                     }
@@ -307,7 +307,7 @@ class ATdata
                     {
                         addr_end = _data.indexOf("\r");
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+                        BLINKER_LOG(BLINKER_F("serialize addr_end: "), addr_end);
 #endif
                         if (addr_end != -1)
                         {
@@ -316,21 +316,21 @@ class ATdata
                             if (addr_end == (addr_start-1)) {
                                 _atCmd = startCmd;
 #ifdef BLINKER_DEBUG_ALL
-                                BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+                                BLINKER_LOG(BLINKER_F("serialize _atCmd: "), _atCmd);
 #endif
                                 return;
                             }
 
                             _atCmd = _data.substring(addr_start, addr_end);
 #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2(BLINKER_F("serialize _atCmd: "), _atCmd);
+                            BLINKER_LOG(BLINKER_F("serialize _atCmd: "), _atCmd);
 #endif
                             return;
                         }
                     }
                 }
 
-                // BLINKER_LOG2(BLINKER_F("serialize _data: "), _data);
+                // BLINKER_LOG(BLINKER_F("serialize _data: "), _data);
 
                 String serData;
                 uint16_t dataLen = _data.length() - 1;
@@ -344,9 +344,9 @@ class ATdata
 
                     addr_end = serData.indexOf(",");
 
-                    BLINKER_LOG2(BLINKER_F("serialize serData: "), serData);
-                    BLINKER_LOG2(BLINKER_F("serialize addr_start: "), addr_start);
-                    BLINKER_LOG2(BLINKER_F("serialize addr_end: "), addr_end);
+                    BLINKER_LOG(BLINKER_F("serialize serData: "), serData);
+                    BLINKER_LOG(BLINKER_F("serialize addr_start: "), addr_start);
+                    BLINKER_LOG(BLINKER_F("serialize addr_end: "), addr_end);
 
                     if (addr_end == -1) {
                         if (addr_start >= dataLen) return;
@@ -360,8 +360,8 @@ class ATdata
                                 _set = AT_TEST;
                             }
 #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2(BLINKER_F("_param[_paramNum]0: "), _param[_paramNum]);
-                            // BLINKER_LOG2(BLINKER_F("_set: "), _set);
+                            BLINKER_LOG(BLINKER_F("_param[_paramNum]0: "), _param[_paramNum]);
+                            // BLINKER_LOG(BLINKER_F("_set: "), _set);
 #endif
                             _paramNum++;
                             return;
@@ -373,8 +373,8 @@ class ATdata
                             _set = AT_TEST;
                         }
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("_param[_paramNum]1: "), _param[_paramNum]);
-                        // BLINKER_LOG2(BLINKER_F("_set: "), _set);
+                        BLINKER_LOG(BLINKER_F("_param[_paramNum]1: "), _param[_paramNum]);
+                        // BLINKER_LOG(BLINKER_F("_set: "), _set);
 #endif
                         _paramNum++;
                         return;
@@ -383,7 +383,7 @@ class ATdata
                         _param[_paramNum] = serData.substring(0, addr_end);
                     }
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
+                    BLINKER_LOG(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
 #endif
                 }
                 // return;
@@ -532,20 +532,20 @@ class BlinkerProtocol
             if (checkExtraAvail()) {
                 String b_name = BApi::bridgeFind(bKey);
 
-                // BLINKER_LOG2("bridgeAvailable b_name: ", b_name);
+                // BLINKER_LOG("bridgeAvailable b_name: ", b_name);
 
                 if (b_name.length() > 0) {
                     // _bKey_forwhile = b_name;
                     String b_data = conn.lastRead();
 
-                    // BLINKER_LOG2("bridgeAvailable b_data: ", b_data);
+                    // BLINKER_LOG("bridgeAvailable b_data: ", b_data);
 
                     DynamicJsonBuffer jsonBuffer;
                     JsonObject& extra_data = jsonBuffer.parseObject(b_data);
 
                     String _from = extra_data["fromDevice"];
 
-                    // BLINKER_LOG2("bridgeAvailable _from: ", _from);
+                    // BLINKER_LOG("bridgeAvailable _from: ", _from);
 
                     if (b_name == _from) {
                         _bKey_forwhile = b_name;
@@ -625,7 +625,7 @@ class BlinkerProtocol
         }
 #endif
 
-        String readString()
+        char * readString()
         {
             if (isFresh) {
                 isFresh = false;
@@ -644,7 +644,7 @@ class BlinkerProtocol
 //                 conn.print(data, state);
 //             }
 //             else {
-//                 BLINKER_ERR_LOG1("SEND DATA BYTES MAX THAN LIMIT!");
+//                 BLINKER_ERR_LOG("SEND DATA BYTES MAX THAN LIMIT!");
 //             }
 //         }
 // #else
@@ -654,7 +654,7 @@ class BlinkerProtocol
 //                 conn.print(data);
 //             }
 //             else {
-//                 BLINKER_ERR_LOG1("SEND DATA BYTES MAX THAN LIMIT!");
+//                 BLINKER_ERR_LOG("SEND DATA BYTES MAX THAN LIMIT!");
 //             }
 //             _print(n);
 //         }
@@ -800,7 +800,7 @@ class BlinkerProtocol
         void printArray(T1 n1, const String &s2) {
             // String _msg = "\"" + STRING_format(n1) + "\":" + s2;
 // #ifdef BLINKER_DEBUG_ALL
-//             BLINKER_LOG2(BLINKER_F("printArray _msg: "), "\"" + STRING_format(n1) + "\":" + s2);
+//             BLINKER_LOG(BLINKER_F("printArray _msg: "), "\"" + STRING_format(n1) + "\":" + s2);
 // #endif
             // if (isFormat) {
             //     formatData("\"" + STRING_format(n1) + "\":" + s2);
@@ -856,7 +856,7 @@ class BlinkerProtocol
 //             JsonObject& json_data = jsonBuffer.parseObject("{" + s + "}");
 
 //             if (!json_data.success()) {
-//                 BLINKER_ERR_LOG1("data is not a JSON!");
+//                 BLINKER_ERR_LOG("data is not a JSON!");
 //                 return;
 //             }
             
@@ -1125,13 +1125,13 @@ class BlinkerProtocol
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
 
         void beginAuto() {
-            BLINKER_LOG1(BLINKER_F("======================================================="));
-            BLINKER_LOG1(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
-            BLINKER_LOG1(BLINKER_F("Warning!EEPROM address 0-1279 is used for Auto Control!"));
-            BLINKER_LOG1(BLINKER_F("=========== DON'T USE THESE EEPROM ADDRESS! ==========="));
-            BLINKER_LOG1(BLINKER_F("======================================================="));
+            BLINKER_LOG(BLINKER_F("======================================================="));
+            BLINKER_LOG(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
+            BLINKER_LOG(BLINKER_F("Warning!EEPROM address 0-1279 is used for Auto Control!"));
+            BLINKER_LOG(BLINKER_F("=========== DON'T USE THESE EEPROM ADDRESS! ==========="));
+            BLINKER_LOG(BLINKER_F("======================================================="));
 
-            BLINKER_LOG2(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+            BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
             _isAuto = true;
             // deserialization();
@@ -1387,7 +1387,7 @@ class BlinkerProtocol
 
         void aligeniePrint(const String & _msg) {
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("response to AliGenie: "), _msg);
+            BLINKER_LOG(BLINKER_F("response to AliGenie: "), _msg);
     #endif        
 
             conn.aliPrint(_msg);
@@ -1466,10 +1466,10 @@ class BlinkerProtocol
     private :
 //         void formatData(String data) {
 // #ifdef BLINKER_DEBUG_ALL
-//             BLINKER_LOG2(BLINKER_F("formatData data: "), data);
+//             BLINKER_LOG(BLINKER_F("formatData data: "), data);
 // #endif
 //             if ((strlen(_sendBuf) + data.length()) >= BLINKER_MAX_SEND_SIZE) {
-//                 BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+//                 BLINKER_ERR_LOG("FORMAT DATA SIZE IS MAX THAN LIMIT");
 //                 return;
 //             }
 
@@ -1486,12 +1486,12 @@ class BlinkerProtocol
         void autoFormatData(const String & key, const String & jsonValue) {
             // String _value = STRING_format(value);
             // if ((strlen(_sendBuf) + key.length() + _value.length()) >= BLINKER_MAX_SEND_SIZE) {
-            //     BLINKER_ERR_LOG1("FORMAT DATA SIZE IS MAX THAN LIMIT");
+            //     BLINKER_ERR_LOG("FORMAT DATA SIZE IS MAX THAN LIMIT");
             //     return;
             // }
 
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG4(BLINKER_F("autoFormatData key: "), key, BLINKER_F(", json: "), jsonValue);
+            BLINKER_LOG(BLINKER_F("autoFormatData key: "), key, BLINKER_F(", json: "), jsonValue);
     #endif
 
             String _data;
@@ -1502,7 +1502,7 @@ class BlinkerProtocol
 
                 if (strlen(_sendBuf)) {
     #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG1(BLINKER_F("add"));
+                    BLINKER_LOG(BLINKER_F("add"));
     #endif
                     JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
 
@@ -1517,7 +1517,7 @@ class BlinkerProtocol
                 }
                 else {
     #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG1(BLINKER_F("new"));
+                    BLINKER_LOG(BLINKER_F("new"));
     #endif
                     _data = "{" + jsonValue + "}";
                 }
@@ -1527,7 +1527,7 @@ class BlinkerProtocol
 
                 if (_data.length()) {
     #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG1(BLINKER_F("add."));
+                    BLINKER_LOG(BLINKER_F("add."));
     #endif                    
 
                     _data = _data.substring(0, _data.length() - 1);
@@ -1536,14 +1536,14 @@ class BlinkerProtocol
                 }
                 else {
     #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG1(BLINKER_F("new."));
+                    BLINKER_LOG(BLINKER_F("new."));
     #endif
                     _data = "{" + jsonValue + "}";
                 }
             }
 
             if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE) {
-                BLINKER_ERR_LOG1(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
+                BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
                 return;
             }
 
@@ -1553,10 +1553,12 @@ class BlinkerProtocol
 
         void autoFormatData(String data) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("autoFormatData data: "), data);
+            BLINKER_LOG(BLINKER_F("autoFormatData data: "), data);
+            BLINKER_LOG(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
+            BLINKER_LOG(BLINKER_F("data.length(): "), data.length());
 #endif
             if ((strlen(_sendBuf) + data.length()) >= BLINKER_MAX_SEND_SIZE) {
-                BLINKER_ERR_LOG1(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
+                BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
                 return;
             }
 
@@ -1582,7 +1584,7 @@ class BlinkerProtocol
 
         void autoBridgeFormatData(const String & key, const String & jsonValue) {
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG4(BLINKER_F("autoBridgeFormatData key: "), key, BLINKER_F(", jsonValue: "), jsonValue);
+            BLINKER_LOG(BLINKER_F("autoBridgeFormatData key: "), key, BLINKER_F(", jsonValue: "), jsonValue);
     #endif
 
             DynamicJsonBuffer jsonSendBuffer;
@@ -1591,7 +1593,7 @@ class BlinkerProtocol
 
             if (strlen(_bSendBuf)) {
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("autoBridgeFormatData add"));
+                BLINKER_LOG(BLINKER_F("autoBridgeFormatData add"));
     #endif
                 JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_bSendBuf));
 
@@ -1606,13 +1608,13 @@ class BlinkerProtocol
             }
             else {
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("autoBridgeFormatData new"));
+                BLINKER_LOG(BLINKER_F("autoBridgeFormatData new"));
     #endif
                 _data = "{" + jsonValue + "}";
             }
 
             if (strlen(_bSendBuf) > BLINKER_MAX_SEND_SIZE) {
-                BLINKER_ERR_LOG1(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
+                BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
                 return;
             }
 
@@ -1627,7 +1629,7 @@ class BlinkerProtocol
 
             if (isExtraAvail) {
                 isBridgeFresh = true;
-                // BLINKER_LOG1("isExtraAvail true");
+                // BLINKER_LOG("isExtraAvail true");
             }
             return isExtraAvail;
         }
@@ -1657,7 +1659,7 @@ class BlinkerProtocol
             return conn.aligenieAvail();
         }
 
-        String dataParse()
+        char * dataParse()
         {
             if (canParse) {
                 // return conn.lastRead();
@@ -1667,7 +1669,7 @@ class BlinkerProtocol
                 // JsonObject& root = jsonBuffer.parseObject((char *)iotSub->lastread);
 
                 if (!root.success()) {
-                    // BLINKER_LOG1("json test error");
+                    // BLINKER_LOG("json test error");
                     return conn.lastRead();
                 }
 
@@ -1689,7 +1691,7 @@ class BlinkerProtocol
         void isParsed() {
             isFresh = false; canParse = false; availState = false;
             conn.flush();
-        }// BLINKER_LOG1("isParsed");
+        }// BLINKER_LOG("isParsed");
 
         bool parseState() { return canParse; }
 
@@ -1733,9 +1735,9 @@ class BlinkerProtocol
                 _atData->update(conn.serialLastRead());
                 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("state: "), _atData->state());
-                BLINKER_LOG2(BLINKER_F("cmd: "), _atData->cmd());
-                BLINKER_LOG2(BLINKER_F("paramNum: "), _atData->paramNum());
+                BLINKER_LOG(BLINKER_F("state: "), _atData->state());
+                BLINKER_LOG(BLINKER_F("cmd: "), _atData->cmd());
+                BLINKER_LOG(BLINKER_F("paramNum: "), _atData->paramNum());
 #endif
 
                 if (_atData->state())
@@ -1851,13 +1853,13 @@ class BlinkerProtocol
 
         void begin()
         {
-            BLINKER_LOG1(BLINKER_F(""));
+            BLINKER_LOG(BLINKER_F(""));
         #if defined(BLINKER_NO_LOGO)
-            BLINKER_LOG1(BLINKER_F("Blinker v"BLINKER_VERSION"\n"
+            BLINKER_LOG(BLINKER_F("Blinker v"BLINKER_VERSION"\n"
                         "    Give Blinker a Github star, thanks!\n"
                         "    => https://github.com/blinker-iot/blinker-library\n"));
         #elif defined(BLINKER_LOGO_3D)
-            BLINKER_LOG1(BLINKER_F("\n"
+            BLINKER_LOG(BLINKER_F("\n"
                 " ____    ___                __                       \n"
                 "/\\  _`\\ /\\_ \\    __        /\\ \\               v"BLINKER_VERSION"\n"
                 "\\ \\ \\L\\ \\//\\ \\  /\\_\\    ___\\ \\ \\/'\\      __   _ __   \n"
@@ -1868,10 +1870,10 @@ class BlinkerProtocol
                 "   Give Blinker a Github star, thanks!\n"
                 "   => https://github.com/blinker-iot/blinker-library\n"));
 
-            // BLINKER_LOG1(("Give Blinker a github star, thanks!"));
-            // BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
+            // BLINKER_LOG(("Give Blinker a github star, thanks!"));
+            // BLINKER_LOG(("=> https://github.com/blinker-iot/blinker-library"));
         #else
-            BLINKER_LOG1(BLINKER_F("\n"
+            BLINKER_LOG(BLINKER_F("\n"
                 "   ___  ___      __    v"BLINKER_VERSION"\n"
                 "  / _ )/ (_)__  / /_____ ____\n"
                 " / _  / / / _ \\/  '_/ -_) __/\n"
@@ -1879,8 +1881,8 @@ class BlinkerProtocol
                 "Give Blinker a github star, thanks!\n"
                 "=> https://github.com/blinker-iot/blinker-library\n"));
 
-            // BLINKER_LOG1(("Give Blinker a github star, thanks!"));
-            // BLINKER_LOG1(("=> https://github.com/blinker-iot/blinker-library"));
+            // BLINKER_LOG(("Give Blinker a github star, thanks!"));
+            // BLINKER_LOG(("=> https://github.com/blinker-iot/blinker-library"));
         #endif
 
 // #if defined(ESP8266) || defined(ESP32)
@@ -1908,14 +1910,14 @@ class BlinkerProtocol
         {
             begin();
 
-            BLINKER_LOG1(BLINKER_F(
+            BLINKER_LOG(BLINKER_F(
                         "\n==========================================================="
                         "\n================= Blinker PRO mode init ! ================="
                         "\nWarning! EEPROM address 1280-1535 is used for Auto Control!"
                         "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
                         "\n===========================================================\n"));
 
-            BLINKER_LOG2(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+            BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
     #if defined(BLINKER_BUTTON)
         #if defined(BLINKER_BUTTON_PULLDOWN)
@@ -1964,8 +1966,8 @@ class BlinkerProtocol
         // void _print(T n, bool needParse = true, bool needCheckLength = true) {
         //     String data = STRING_format(n) + BLINKER_CMD_NEWLINE;
 
-        //     BLINKER_LOG2(BLINKER_F("data: "), data);
-        //     BLINKER_LOG2(BLINKER_F("n: "), n);
+        //     BLINKER_LOG(BLINKER_F("data: "), data);
+        //     BLINKER_LOG(BLINKER_F("n: "), n);
 
         //     if (data.length() <= BLINKER_MAX_SEND_SIZE || !needCheckLength) {
         //         conn.print(data);
@@ -1974,14 +1976,14 @@ class BlinkerProtocol
         //         // }
         //     }
         //     else {
-        //         BLINKER_ERR_LOG1(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        //         BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
         //     }
         // }
 
         void _print(const String & n, bool needParse = true, bool needCheckLength = true) {
             // String data = n + BLINKER_CMD_NEWLINE;
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("print: "), n);
+            BLINKER_LOG(BLINKER_F("print: "), n);
 #endif
             if (n.length() <= BLINKER_MAX_SEND_SIZE || !needCheckLength) {
                 conn.print(n);
@@ -1990,7 +1992,7 @@ class BlinkerProtocol
                 // }
             }
             else {
-                BLINKER_ERR_LOG1(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+                BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
             }
         }
 
@@ -2007,24 +2009,24 @@ class BlinkerProtocol
                     // }
                 }
                 else {
-                    BLINKER_ERR_LOG1(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+                    BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
                 }
             }
             else {
-                BLINKER_ERR_LOG1(BLINKER_F("MAKE SURE THE BRIDGE DEVICE IS REGISTERED!"));
+                BLINKER_ERR_LOG(BLINKER_F("MAKE SURE THE BRIDGE DEVICE IS REGISTERED!"));
             }
         }
 
         bool autoTrigged(uint32_t _id) {
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("autoTrigged"));
+            BLINKER_LOG(BLINKER_F("autoTrigged"));
     #endif
             return conn.autoPrint(_id);
         }
 
         bool autoTrigged(char *name, char *type, char *data) {
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("autoTrigged"));
+            BLINKER_LOG(BLINKER_F("autoTrigged"));
     #endif
             if (conn.deviceName() == name) {
                 BApi::parse(data, true);
@@ -2036,7 +2038,7 @@ class BlinkerProtocol
         bool autoTrigged(char *name1, char *type1, char *data1
             , char *name2, char *type2, char *data2) {
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("autoTrigged"));
+            BLINKER_LOG(BLINKER_F("autoTrigged"));
     #endif
             bool _link1 = false;
             bool _link2 = false;
@@ -2085,7 +2087,7 @@ class BlinkerProtocol
             else if (_atData->cmd() == BLINKER_CMD_UART_CUR) {
                 atState_t at_state = _atData->state();
 
-                BLINKER_LOG1(at_state);
+                BLINKER_LOG(at_state);
 
                 switch (at_state)
                 {
@@ -2110,10 +2112,10 @@ class BlinkerProtocol
                         break;
                     case AT_SETTING:
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
-                        BLINKER_LOG2(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
-                        BLINKER_LOG2(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
-                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
+                        BLINKER_LOG(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
+                        BLINKER_LOG(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
+                        BLINKER_LOG(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
+                        BLINKER_LOG(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
 #endif
                         if (BLINKER_UART_PARAM_NUM != _atData->paramNum()) return;
 
@@ -2124,7 +2126,7 @@ class BlinkerProtocol
 
                         ss_cfg = serConfig();
 
-                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), serialSet);
+                        BLINKER_LOG(BLINKER_F("SER_PRIT: "), serialSet);
 
                         conn.serialPrint(BLINKER_CMD_OK);
 
@@ -2145,7 +2147,7 @@ class BlinkerProtocol
             else if (_atData->cmd() == BLINKER_CMD_UART_DEF) {
                 atState_t at_state = _atData->state();
 
-                BLINKER_LOG1(at_state);
+                BLINKER_LOG(at_state);
 
                 switch (at_state)
                 {
@@ -2170,10 +2172,10 @@ class BlinkerProtocol
                         break;
                     case AT_SETTING:
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
-                        BLINKER_LOG2(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
-                        BLINKER_LOG2(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
-                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
+                        BLINKER_LOG(BLINKER_F("SER_BAUD: "), _atData->getParam(SER_BAUD));
+                        BLINKER_LOG(BLINKER_F("SER_DBIT: "), _atData->getParam(SER_DBIT));
+                        BLINKER_LOG(BLINKER_F("SER_SBIT: "), _atData->getParam(SER_SBIT));
+                        BLINKER_LOG(BLINKER_F("SER_PRIT: "), _atData->getParam(SER_PRIT));
 #endif
                         if (BLINKER_UART_PARAM_NUM != _atData->paramNum()) return;
 
@@ -2184,7 +2186,7 @@ class BlinkerProtocol
 
                         ss_cfg = serConfig();
 
-                        BLINKER_LOG2(BLINKER_F("SER_PRIT: "), serialSet);
+                        BLINKER_LOG(BLINKER_F("SER_PRIT: "), serialSet);
 
                         conn.serialPrint(BLINKER_CMD_OK);
 
@@ -2223,9 +2225,9 @@ class BlinkerProtocol
             }
             else if (_atData->cmd() == BLINKER_CMD_IOSETCFG && _atData->state() == AT_SETTING) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("PIN_SET: "), _atData->getParam(PIN_SET));
-                BLINKER_LOG2(BLINKER_F("PIN_MODE: "), _atData->getParam(PIN_MODE));
-                BLINKER_LOG2(BLINKER_F("PIN_PULLSTATE: "), _atData->getParam(PIN_PULLSTATE));
+                BLINKER_LOG(BLINKER_F("PIN_SET: "), _atData->getParam(PIN_SET));
+                BLINKER_LOG(BLINKER_F("PIN_MODE: "), _atData->getParam(PIN_MODE));
+                BLINKER_LOG(BLINKER_F("PIN_PULLSTATE: "), _atData->getParam(PIN_PULLSTATE));
 #endif
 
                 if (BLINKER_IOSETCFG_PARAM_NUM != _atData->paramNum()) return;
@@ -2265,7 +2267,7 @@ class BlinkerProtocol
             }
             else if (_atData->cmd() == BLINKER_CMD_IOGETCFG && _atData->state() == AT_SETTING) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("PIN_SET: "), _atData->getParam(PIN_SET));
+                BLINKER_LOG(BLINKER_F("PIN_SET: "), _atData->getParam(PIN_SET));
 #endif
 
                 if (BLINKER_IOGETCFG_PARAM_NUM != _atData->paramNum()) return;
@@ -2296,8 +2298,8 @@ class BlinkerProtocol
             }
             else if (_atData->cmd() == BLINKER_CMD_GPIOWRITE && _atData->state() == AT_SETTING) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
-                BLINKER_LOG2(BLINKER_F("IO_LVL: "),  _atData->getParam(IO_LVL));
+                BLINKER_LOG(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
+                BLINKER_LOG(BLINKER_F("IO_LVL: "),  _atData->getParam(IO_LVL));
 #endif
 
                 if (BLINKER_GPIOWRITE_PARAM_NUM != _atData->paramNum()) return;
@@ -2327,7 +2329,7 @@ class BlinkerProtocol
             }
             else if (_atData->cmd() == BLINKER_CMD_GPIOWREAD && _atData->state() == AT_SETTING) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
+                BLINKER_LOG(BLINKER_F("IO_PIN: "), _atData->getParam(IO_PIN));
 #endif
 
                 if (BLINKER_GPIOREAD_PARAM_NUM != _atData->paramNum()) return;
@@ -2369,11 +2371,11 @@ class BlinkerProtocol
             else if (_atData->cmd() == BLINKER_CMD_BLINKER_MQTT) {
                 // conn.serialPrint(BLINKER_CMD_OK);
 
-                BLINKER_LOG1(BLINKER_CMD_BLINKER_MQTT);
+                BLINKER_LOG(BLINKER_CMD_BLINKER_MQTT);
 
                 atState_t at_state = _atData->state();
 
-                BLINKER_LOG1(at_state);
+                BLINKER_LOG(at_state);
 
                 switch (at_state)
                 {
@@ -2399,15 +2401,15 @@ class BlinkerProtocol
                         break;
                     case AT_SETTING:
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("MQTT_CONFIG_MODE: "), _atData->getParam(MQTT_CONFIG_MODE));
-                        BLINKER_LOG2(BLINKER_F("MQTT_AUTH_KEY: "),  _atData->getParam(MQTT_AUTH_KEY));
-                        BLINKER_LOG2(BLINKER_F("MQTT_WIFI_SSID: "), _atData->getParam(MQTT_WIFI_SSID));
-                        BLINKER_LOG2(BLINKER_F("MQTT_WIFI_PSWD: "), _atData->getParam(MQTT_WIFI_PSWD));
+                        BLINKER_LOG(BLINKER_F("MQTT_CONFIG_MODE: "), _atData->getParam(MQTT_CONFIG_MODE));
+                        BLINKER_LOG(BLINKER_F("MQTT_AUTH_KEY: "),  _atData->getParam(MQTT_AUTH_KEY));
+                        BLINKER_LOG(BLINKER_F("MQTT_WIFI_SSID: "), _atData->getParam(MQTT_WIFI_SSID));
+                        BLINKER_LOG(BLINKER_F("MQTT_WIFI_PSWD: "), _atData->getParam(MQTT_WIFI_PSWD));
 #endif
 
                         if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_COMCONFIG_NUM)
                         {
-                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_COMWLAN"));
+                            BLINKER_LOG(BLINKER_F("BLINKER_CMD_COMWLAN"));
 
                             if (BLINKER_COMWLAN_PARAM_NUM != _atData->paramNum()) return;
 
@@ -2420,7 +2422,7 @@ class BlinkerProtocol
                         }
                         else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_SMARTCONFIG_NUM)
                         {
-                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
+                            BLINKER_LOG(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
 
                             if (BLINKER_SMCFG_PARAM_NUM != _atData->paramNum()) return;
 
@@ -2432,7 +2434,7 @@ class BlinkerProtocol
                         }
                         else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_APCONFIG_NUM)
                         {
-                            BLINKER_LOG1(BLINKER_F("BLINKER_CMD_APCONFIG"));
+                            BLINKER_LOG(BLINKER_F("BLINKER_CMD_APCONFIG"));
 
                             if (BLINKER_APCFG_PARAM_NUM != _atData->paramNum()) return;
 
@@ -2470,11 +2472,11 @@ class BlinkerProtocol
             else if (_atData->cmd() == BLINKER_CMD_BLINKER_ALIGENIE) {
                 // conn.serialPrint(BLINKER_CMD_OK);
 
-                BLINKER_LOG1(BLINKER_CMD_BLINKER_ALIGENIE);
+                BLINKER_LOG(BLINKER_CMD_BLINKER_ALIGENIE);
 
                 atState_t at_state = _atData->state();
 
-                BLINKER_LOG1(at_state);
+                BLINKER_LOG(at_state);
 
                 switch (at_state)
                 {
@@ -2496,28 +2498,28 @@ class BlinkerProtocol
                         break;
                     case AT_SETTING:
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("BLINKER_ALIGENIE_CFG_NUM: "), _atData->getParam(BLINKER_ALIGENIE_CFG_NUM));
+                        BLINKER_LOG(BLINKER_F("BLINKER_ALIGENIE_CFG_NUM: "), _atData->getParam(BLINKER_ALIGENIE_CFG_NUM));
 #endif
 
                         if (BLINKER_ALIGENIE_PARAM_NUM != _atData->paramNum()) return;
 
                         if ((_atData->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_LIGHT)
                         {
-                            BLINKER_LOG1(BLINKER_F("ALI_LIGHT"));
+                            BLINKER_LOG(BLINKER_F("ALI_LIGHT"));
                             _aliType = ALI_LIGHT;
                         }
                         else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == ALI_OUTLET)
                         {
-                            BLINKER_LOG1(BLINKER_F("ALI_OUTLET"));
+                            BLINKER_LOG(BLINKER_F("ALI_OUTLET"));
                             _aliType = ALI_OUTLET;
                         }
                         else if ((_atData->getParam(MQTT_CONFIG_MODE)).toInt() == ALI_SENSOR)
                         {
-                            BLINKER_LOG1(BLINKER_F("ALI_SENSOR"));
+                            BLINKER_LOG(BLINKER_F("ALI_SENSOR"));
                             _aliType = ALI_SENSOR;
                         }
                         else {
-                            BLINKER_LOG1(BLINKER_F("ALI_NONE"));
+                            BLINKER_LOG(BLINKER_F("ALI_NONE"));
                             _aliType = ALI_NONE;
                         }
                         conn.aligenieType(_aliType);
@@ -2532,11 +2534,11 @@ class BlinkerProtocol
             }
             else if (_atData->cmd() == BLINKER_CMD_TIMEZONE) {
 
-                BLINKER_LOG1(BLINKER_CMD_TIMEZONE);
+                BLINKER_LOG(BLINKER_CMD_TIMEZONE);
 
                 atState_t at_state = _atData->state();
 
-                BLINKER_LOG1(at_state);
+                BLINKER_LOG(at_state);
 
                 switch (at_state)
                 {
@@ -2558,7 +2560,7 @@ class BlinkerProtocol
                         break;
                     case AT_SETTING:
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG2(BLINKER_F("BLINKER_TIMEZONE_CFG_NUM: "), _atData->getParam(BLINKER_TIMEZONE_CFG_NUM));
+                        BLINKER_LOG(BLINKER_F("BLINKER_TIMEZONE_CFG_NUM: "), _atData->getParam(BLINKER_TIMEZONE_CFG_NUM));
 #endif
 
                         if (BLINKER_TIMEZONE_PARAM_NUM != _atData->paramNum()) return;
@@ -2726,12 +2728,12 @@ void BlinkerProtocol<Transp>::run()
             _isConnBegin = true;
             _initTime = millis();
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+            BLINKER_LOG(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
     #endif
             if (conn.authCheck()) {
                 _proStatus = PRO_DEV_AUTHCHECK_SUCCESS;
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("is auth, conn deviceRegister"));
+                BLINKER_LOG(BLINKER_F("is auth, conn deviceRegister"));
     #endif
                 _isRegistered = conn.deviceRegister();
                 _getRegister = true;
@@ -2748,7 +2750,7 @@ void BlinkerProtocol<Transp>::run()
             else {
                 _proStatus = PRO_DEV_AUTHCHECK_FAIL;
     #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("not auth, conn deviceRegister"));
+                BLINKER_LOG(BLINKER_F("not auth, conn deviceRegister"));
     #endif
             }
         }
@@ -2756,7 +2758,7 @@ void BlinkerProtocol<Transp>::run()
 
     // if (_getRegister) {
     // #ifdef BLINKER_DEBUG_ALL
-    //     BLINKER_LOG1(BLINKER_F("conn deviceRegister"));
+    //     BLINKER_LOG(BLINKER_F("conn deviceRegister"));
     // #endif
     //     _isRegistered = conn.deviceRegister();
 
@@ -2767,7 +2769,7 @@ void BlinkerProtocol<Transp>::run()
     if (_getRegister) {
         if (!_isRegistered && ((millis() - _register_fresh) > 5000 || _register_fresh == 0)) {
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("conn deviceRegister"));
+            BLINKER_LOG(BLINKER_F("conn deviceRegister"));
     #endif
             _isRegistered = conn.deviceRegister();
 
@@ -2813,7 +2815,7 @@ void BlinkerProtocol<Transp>::run()
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_PRO)
 // #ifdef BLINKER_DEBUG_ALL
-//     BLINKER_LOG1(BLINKER_F("check ntp init"));
+//     BLINKER_LOG(BLINKER_F("check ntp init"));
 // #endif
     BApi::ntpInit();
 // #endif
@@ -2829,7 +2831,7 @@ void BlinkerProtocol<Transp>::run()
             _isInit =true;
             _disconnectTime = millis();
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("MQTT conn init success"));
+            BLINKER_LOG(BLINKER_F("MQTT conn init success"));
     #endif
         }
     }
@@ -2838,7 +2840,7 @@ void BlinkerProtocol<Transp>::run()
             || _disconnectCount >= 12) {
         // if (_disconnectCount >= 12) {
     #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(BLINKER_F("device reRegister"));
+            BLINKER_LOG(BLINKER_F("device reRegister"));
             BLINKER_LOG_FreeHeap();
     #endif
             if (BLINKER_FreeHeap() < 15000) {
@@ -2866,7 +2868,7 @@ void BlinkerProtocol<Transp>::run()
         conn.disconnect();
 
     #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG1(BLINKER_F("device reRegister"));
+        BLINKER_LOG(BLINKER_F("device reRegister"));
         BLINKER_LOG_FreeHeap();
     #endif
 
@@ -2888,7 +2890,7 @@ void BlinkerProtocol<Transp>::run()
         if (_reconTime == 0) {
             _reconTime = millis();
 
-            BLINKER_LOG1(BLINKER_F("WiFi disconnected! reconnecting!"));
+            BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
 
             WiFi.reconnect();
         }
@@ -2897,7 +2899,7 @@ void BlinkerProtocol<Transp>::run()
         if ((millis() - _reconTime) >= 10000) {
             _reconTime = millis();
 
-            BLINKER_LOG1(BLINKER_F("WiFi disconnected! reconnecting!"));
+            BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
 
             WiFi.reconnect();
         }
@@ -2946,8 +2948,8 @@ void BlinkerProtocol<Transp>::run()
 
                             if (_disconnectCount > 12) _disconnectCount = 12;
     #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2(BLINKER_F("_disFreshTime: "), _disFreshTime);
-                            BLINKER_LOG2(BLINKER_F("_disconnectCount: "), _disconnectCount);
+                            BLINKER_LOG(BLINKER_F("_disFreshTime: "), _disFreshTime);
+                            BLINKER_LOG(BLINKER_F("_disconnectCount: "), _disconnectCount);
     #endif
                         }
                     }
@@ -2992,8 +2994,8 @@ void BlinkerProtocol<Transp>::run()
 
                             if (_disconnectCount > 12) _disconnectCount = 12;
     #ifdef BLINKER_DEBUG_ALL
-                            BLINKER_LOG2(BLINKER_F("_disFreshTime: "), _disFreshTime);
-                            BLINKER_LOG2(BLINKER_F("_disconnectCount: "), _disconnectCount);
+                            BLINKER_LOG(BLINKER_F("_disFreshTime: "), _disFreshTime);
+                            BLINKER_LOG(BLINKER_F("_disconnectCount: "), _disconnectCount);
     #endif
                         }
                     }

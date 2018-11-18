@@ -7,7 +7,7 @@
 class BlinkerJoystick
 {
     public :
-        BlinkerJoystick(const String & _name, callback_with_joy_arg_t _func = NULL)
+        BlinkerJoystick(char _name[], callback_with_joy_arg_t _func = NULL)
             // : jName(_name)
         {
             wNum = Blinker.attachWidget(_name, _func);

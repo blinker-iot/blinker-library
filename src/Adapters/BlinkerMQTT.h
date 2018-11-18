@@ -53,7 +53,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
     {
         case WStype_DISCONNECTED:
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("Disconnected! ", num);
+            BLINKER_LOG("Disconnected! ", num);
 #endif
 
             isConnect = false;
@@ -63,7 +63,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
                 IPAddress ip = webSocket.remoteIP(num);
 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG6("num: ", num, ", Connected from: ", ip, ", url: ", (char *)payload);
+                BLINKER_LOG("num: ", num, ", Connected from: ", ip, ", url: ", (char *)payload);
 #endif
 
                 // send message to client
@@ -77,7 +77,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
         case WStype_TEXT:
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG6("num: ", num, ", get Text: ", (char *)payload, ", length: ", length);
+            BLINKER_LOG("num: ", num, ", get Text: ", (char *)payload, ", length: ", length);
 #endif
             if (length < BLINKER_MAX_READ_SIZE) {
                 if (!isFresh) msgBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
@@ -100,7 +100,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
             // webSocket.broadcastTXT("message here");
             break;
         case WStype_BIN:
-            // BLINKER_LOG4("num: ", num, " get binary length: ", length);
+            // BLINKER_LOG("num: ", num, " get binary length: ", length);
             // hexdump(payload, length);
 
             // send message to client
@@ -201,7 +201,7 @@ class BlinkerMQTT {
             // _authKey = auth;
             strcpy(_authKey, auth);
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("_authKey: ", auth);
+            BLINKER_LOG("_authKey: ", auth);
 #endif
             // if (connectServer()) {
             //     mDNSInit();
@@ -213,9 +213,9 @@ class BlinkerMQTT {
                 while(1) {
                     re_time = millis();
                     // ::delay(10000);
-                    // BLINKER_ERR_LOG1("Maybe you have put in the wrong AuthKey!");
-                    // BLINKER_ERR_LOG1("Or maybe your request is too frequently!");
-                    // BLINKER_ERR_LOG1("Or maybe your network is disconnected!");
+                    // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
+                    // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
+                    // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
                     if (connectServer()) {
                         mDNSInit();
                         isMQTTinit = true;
@@ -247,7 +247,7 @@ class BlinkerMQTT {
                 // "\",\"deviceType\":\"" + "type" + "\"}";
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1("autoPrint...");
+            BLINKER_LOG("autoPrint...");
 #endif
             if (mqtt->connected()) {
                 if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || linkTime == 0) {
@@ -259,15 +259,15 @@ class BlinkerMQTT {
 
                     if (! mqtt->publish(BLINKER_PUB_TOPIC, payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG1(payload);
-                        BLINKER_LOG1("...Failed");
+                        BLINKER_LOG(payload);
+                        BLINKER_LOG("...Failed");
 #endif
                         return false;
                     }
                     else {
 #ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG1(payload);
-                        BLINKER_LOG1("...OK!");
+                        BLINKER_LOG(payload);
+                        BLINKER_LOG("...OK!");
 #endif
                         linkTime = millis();
                         return true;
@@ -275,13 +275,13 @@ class BlinkerMQTT {
                 }
                 else {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG2("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
+                    BLINKER_ERR_LOG("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
 #endif
                     return false;
                 }
             }
             else {
-                BLINKER_ERR_LOG1("MQTT Disconnected");
+                BLINKER_ERR_LOG("MQTT Disconnected");
                 return false;
             }
         }
@@ -293,25 +293,25 @@ class BlinkerMQTT {
                 + "\"deviceType\":\"" + type + "\"}";
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1("autoPrint...");
+            BLINKER_LOG("autoPrint...");
 #endif
             if (mqtt->connected()) {
                 if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || linkTime == 0) {
                     linkTime = millis();
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(payload, ("...OK!"));
+                    BLINKER_LOG(payload, ("...OK!"));
 #endif
                     return true;
                 }
                 else {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG2("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
+                    BLINKER_ERR_LOG("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
 #endif
                     return false;
                 }
             }
             else {
-                BLINKER_ERR_LOG1("MQTT Disconnected");
+                BLINKER_ERR_LOG("MQTT Disconnected");
                 return false;
             }
         }
@@ -325,13 +325,13 @@ class BlinkerMQTT {
                 + "\"deviceType\":\"" + type1 + "\"}";
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1("autoPrint...");
+            BLINKER_LOG("autoPrint...");
 #endif
             if (mqtt->connected()) {
                 if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || linkTime == 0) {
                     linkTime = millis();
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(payload, ("...OK!"));
+                    BLINKER_LOG(payload, ("...OK!"));
 #endif
                     payload = "{\"data\":{" + STRING_format(data2) + "}," + \ 
                         + "\"fromDevice\":\"" + STRING_format(MQTT_ID) + "\"," + \
@@ -339,19 +339,19 @@ class BlinkerMQTT {
                         + "\"deviceType\":\"" + type2 + "\"}";
 
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG2(payload, ("...OK!"));
+                    BLINKER_LOG(payload, ("...OK!"));
 #endif                    
                     return true;
                 }
                 else {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG2("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
+                    BLINKER_ERR_LOG("MQTT NOT ALIVE OR MSG LIMIT ", linkTime);
 #endif
                     return false;
                 }
             }
             else {
-                BLINKER_ERR_LOG1("MQTT Disconnected");
+                BLINKER_ERR_LOG("MQTT Disconnected");
                 return false;
             }
         }
@@ -380,15 +380,15 @@ class BlinkerMQTT {
                 }
             }
 
-            BLINKER_LOG1(("mDNS responder started"));
+            BLINKER_LOG(("mDNS responder started"));
             
             MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
             MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", String(DEVICE_NAME));
 
             webSocket.begin();
             webSocket.onEvent(webSocketEvent);
-            BLINKER_LOG1(("webSocket server started"));
-            BLINKER_LOG4("ws://", DEVICE_NAME, ".local:", WS_SERVERPORT);
+            BLINKER_LOG(("webSocket server started"));
+            BLINKER_LOG("ws://", DEVICE_NAME, ".local:", WS_SERVERPORT);
         }
 
         void checkKA() {
@@ -409,7 +409,7 @@ class BlinkerMQTT {
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
+                BLINKER_ERR_LOG("MQTT NOT ALIVE OR MSG LIMIT");
 #endif
                 checkKA();
 
@@ -423,7 +423,7 @@ class BlinkerMQTT {
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG1("MQTT NOT ALIVE OR MSG LIMIT");
+                BLINKER_ERR_LOG("MQTT NOT ALIVE OR MSG LIMIT");
 #endif
                 return false;
             }
@@ -433,7 +433,7 @@ class BlinkerMQTT {
             if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
                 if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
+                    BLINKER_ERR_LOG("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
 #endif
                     return false;
                 }
@@ -452,7 +452,7 @@ class BlinkerMQTT {
             if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2) {
                 if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2) {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG1("ALIGENIE NOT ALIVE OR MSG LIMIT");
+                    BLINKER_ERR_LOG("ALIGENIE NOT ALIVE OR MSG LIMIT");
 #endif
                     return false;
                 }
@@ -498,7 +498,7 @@ bool BlinkerMQTT::connectServer() {
     // WiFiClientSecure client_s;
 
 #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG2(("connecting to "), host);
+    BLINKER_LOG(("connecting to "), host);
 #endif
 
     
@@ -510,7 +510,7 @@ bool BlinkerMQTT::connectServer() {
         bool cl_connected = false;
         if (!client_s.connect(host, httpsPort)) {
     // #ifdef BLINKER_DEBUG_ALL
-            BLINKER_ERR_LOG1(("server connection failed"));
+            BLINKER_ERR_LOG(("server connection failed"));
     // #endif
             // return BLINKER_CMD_FALSE;
 
@@ -518,7 +518,7 @@ bool BlinkerMQTT::connectServer() {
         }
         else {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("connection succeed"));
+            BLINKER_LOG(("connection succeed"));
 #endif
             // return true;
             cl_connected = true;
@@ -533,7 +533,7 @@ bool BlinkerMQTT::connectServer() {
     if (client_s.verify(fingerprint, host)) {
     #ifdef BLINKER_DEBUG_ALL
         // _status = DH_VERIFIED;
-        BLINKER_LOG1(("Fingerprint verified"));
+        BLINKER_LOG(("Fingerprint verified"));
         // return true;
     #endif
     }
@@ -541,7 +541,7 @@ bool BlinkerMQTT::connectServer() {
     #ifdef BLINKER_DEBUG_ALL
         // _status = DH_VERIFY_FAILED;
         // _status = DH_VERIFIED;
-        BLINKER_LOG1(("Fingerprint verification failed!"));
+        BLINKER_LOG(("Fingerprint verification failed!"));
         // return false;
     #endif
     }
@@ -562,7 +562,7 @@ bool BlinkerMQTT::connectServer() {
 #endif
 
 #ifdef BLINKER_DEBUG_ALL 
-    BLINKER_LOG3("HTTPS begin: ", host, url_iot);
+    BLINKER_LOG("HTTPS begin: ", host, url_iot);
 #endif
 
     client_msg = STRING_format("GET " + url_iot + " HTTP/1.1\r\n" +
@@ -571,13 +571,13 @@ bool BlinkerMQTT::connectServer() {
 
     client_s.print(client_msg);
 #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG2(("client_msg: "), client_msg);
+    BLINKER_LOG(("client_msg: "), client_msg);
 #endif
 
     unsigned long timeout = millis();
     while (client_s.available() == 0) {
         if (millis() - timeout > 5000) {
-            BLINKER_LOG1((">>> Client Timeout !"));
+            BLINKER_LOG((">>> Client Timeout !"));
             client_s.stop();
             return BLINKER_CMD_FALSE;
         }
@@ -598,7 +598,7 @@ bool BlinkerMQTT::connectServer() {
 
         if (_dataGet == "\r") {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(("headers received"));
+            BLINKER_LOG(("headers received"));
 #endif
             break;
         }
@@ -611,7 +611,7 @@ bool BlinkerMQTT::connectServer() {
     _dataGet = lastGet;
 
 #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG2(("_dataGet: "), _dataGet);
+    BLINKER_LOG(("_dataGet: "), _dataGet);
 #endif
 
     String payload = _dataGet;
@@ -662,7 +662,7 @@ bool BlinkerMQTT::connectServer() {
 #endif
 
 #ifdef BLINKER_DEBUG_ALL 
-    BLINKER_LOG2("HTTPS begin: ", url_iot);
+    BLINKER_LOG("HTTPS begin: ", url_iot);
 #endif
 
 // #if defined(ESP8266)
@@ -678,20 +678,20 @@ bool BlinkerMQTT::connectServer() {
     if (httpCode > 0) {
       // HTTP header has been send and Server response header has been handled
 #ifdef BLINKER_DEBUG_ALL 
-        BLINKER_LOG2("[HTTP] GET... code: ", httpCode);
+        BLINKER_LOG("[HTTP] GET... code: ", httpCode);
 #endif
 
         // file found at server
         if (httpCode == HTTP_CODE_OK) {
             payload = http.getString();
-            // BLINKER_LOG1(payload);
+            // BLINKER_LOG(payload);
         }
     }
     else {
 #ifdef BLINKER_DEBUG_ALL 
-        BLINKER_LOG2("[HTTP] GET... failed, error: ", http.errorToString(httpCode).c_str());
+        BLINKER_LOG("[HTTP] GET... failed, error: ", http.errorToString(httpCode).c_str());
         payload = http.getString();
-        BLINKER_LOG1(payload);
+        BLINKER_LOG(payload);
 #endif
     }
 
@@ -699,10 +699,10 @@ bool BlinkerMQTT::connectServer() {
 #endif
 
 #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1("reply was:");
-    BLINKER_LOG1("==============================");
-    BLINKER_LOG1(payload);
-    BLINKER_LOG1("==============================");
+    BLINKER_LOG("reply was:");
+    BLINKER_LOG("==============================");
+    BLINKER_LOG(payload);
+    BLINKER_LOG("==============================");
 #endif
 
     DynamicJsonBuffer jsonBuffer;
@@ -711,9 +711,9 @@ bool BlinkerMQTT::connectServer() {
     if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
         !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
         // while(1) {
-            BLINKER_ERR_LOG1("Maybe you have put in the wrong AuthKey!");
-            BLINKER_ERR_LOG1("Or maybe your request is too frequently!");
-            BLINKER_ERR_LOG1("Or maybe your network is disconnected!");
+            BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
+            BLINKER_ERR_LOG("Or maybe your request is too frequently!");
+            BLINKER_ERR_LOG("Or maybe your network is disconnected!");
             // ::delay(60000);
 
             return false;
@@ -769,17 +769,17 @@ bool BlinkerMQTT::connectServer() {
     strcpy(UUID, _uuid.c_str());
 
 #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1("====================");
-    BLINKER_LOG2("DEVICE_NAME: ", DEVICE_NAME);
-    BLINKER_LOG2("MQTT_PRODUCTINFO: ", MQTT_PRODUCTINFO);
-    BLINKER_LOG2("MQTT_ID: ", MQTT_ID);
-    BLINKER_LOG2("MQTT_NAME: ", MQTT_NAME);
-    BLINKER_LOG2("MQTT_KEY: ", MQTT_KEY);
-    BLINKER_LOG2("MQTT_BROKER: ", _broker);
-    BLINKER_LOG2("HOST: ", MQTT_HOST);
-    BLINKER_LOG2("PORT: ", MQTT_PORT);
-    BLINKER_LOG2("UUID: ", UUID);
-    BLINKER_LOG1("====================");
+    BLINKER_LOG("====================");
+    BLINKER_LOG("DEVICE_NAME: ", DEVICE_NAME);
+    BLINKER_LOG("MQTT_PRODUCTINFO: ", MQTT_PRODUCTINFO);
+    BLINKER_LOG("MQTT_ID: ", MQTT_ID);
+    BLINKER_LOG("MQTT_NAME: ", MQTT_NAME);
+    BLINKER_LOG("MQTT_KEY: ", MQTT_KEY);
+    BLINKER_LOG("MQTT_BROKER: ", _broker);
+    BLINKER_LOG("HOST: ", MQTT_HOST);
+    BLINKER_LOG("PORT: ", MQTT_PORT);
+    BLINKER_LOG("UUID: ", UUID);
+    BLINKER_LOG("====================");
 #endif
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
@@ -789,14 +789,14 @@ bool BlinkerMQTT::connectServer() {
         BLINKER_PUB_TOPIC = (char*)malloc(str_len*sizeof(char));
         memcpy(BLINKER_PUB_TOPIC, PUB_TOPIC_STR.c_str(), str_len);
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG2("BLINKER_PUB_TOPIC: ", BLINKER_PUB_TOPIC);
+        BLINKER_LOG("BLINKER_PUB_TOPIC: ", BLINKER_PUB_TOPIC);
 #endif
         String SUB_TOPIC_STR = "/" + String(MQTT_PRODUCTINFO) + "/" + String(MQTT_ID) + "/r";
         str_len = SUB_TOPIC_STR.length() + 1;
         BLINKER_SUB_TOPIC = (char*)malloc(str_len*sizeof(char));
         memcpy(BLINKER_SUB_TOPIC, SUB_TOPIC_STR.c_str(), str_len);
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG2("BLINKER_SUB_TOPIC: ", BLINKER_SUB_TOPIC);
+        BLINKER_LOG("BLINKER_SUB_TOPIC: ", BLINKER_SUB_TOPIC);
 #endif
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
@@ -806,14 +806,14 @@ bool BlinkerMQTT::connectServer() {
         BLINKER_PUB_TOPIC = (char*)malloc(str_len*sizeof(char));
         memcpy(BLINKER_PUB_TOPIC, PUB_TOPIC_STR.c_str(), str_len);
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG2("BLINKER_PUB_TOPIC: ", BLINKER_PUB_TOPIC);
+        BLINKER_LOG("BLINKER_PUB_TOPIC: ", BLINKER_PUB_TOPIC);
 #endif
         String SUB_TOPIC_STR = String(MQTT_PRODUCTINFO) + "/" + String(_userID) + "/r";
         str_len = SUB_TOPIC_STR.length() + 1;
         BLINKER_SUB_TOPIC = (char*)malloc(str_len*sizeof(char));
         memcpy(BLINKER_SUB_TOPIC, SUB_TOPIC_STR.c_str(), str_len);
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG2("BLINKER_SUB_TOPIC: ", BLINKER_SUB_TOPIC);
+        BLINKER_LOG("BLINKER_SUB_TOPIC: ", BLINKER_SUB_TOPIC);
 #endif
     }
     else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
@@ -823,14 +823,14 @@ bool BlinkerMQTT::connectServer() {
         BLINKER_PUB_TOPIC = (char*)malloc(str_len*sizeof(char));
         memcpy(BLINKER_PUB_TOPIC, PUB_TOPIC_STR.c_str(), str_len);
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG2("BLINKER_PUB_TOPIC: ", BLINKER_PUB_TOPIC);
+        BLINKER_LOG("BLINKER_PUB_TOPIC: ", BLINKER_PUB_TOPIC);
 #endif
         String SUB_TOPIC_STR = String(MQTT_PRODUCTINFO) + "/" + String(_userID) + "/r";
         str_len = SUB_TOPIC_STR.length() + 1;
         BLINKER_SUB_TOPIC = (char*)malloc(str_len*sizeof(char));
         memcpy(BLINKER_SUB_TOPIC, SUB_TOPIC_STR.c_str(), str_len);
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG2("BLINKER_SUB_TOPIC: ", BLINKER_SUB_TOPIC);
+        BLINKER_LOG("BLINKER_SUB_TOPIC: ", BLINKER_SUB_TOPIC);
 #endif
     }
 
@@ -873,18 +873,18 @@ bool BlinkerMQTT::connect() {
     }
 
 // #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1("Connecting to MQTT... ");
+    BLINKER_LOG("Connecting to MQTT... ");
 // #endif
 
     if ((ret = mqtt->connect()) != 0) {
-        BLINKER_LOG1(mqtt->connectErrorString(ret));
-        BLINKER_LOG1("Retrying MQTT connection in 5 seconds...");
+        BLINKER_LOG(mqtt->connectErrorString(ret));
+        BLINKER_LOG("Retrying MQTT connection in 5 seconds...");
 
         this->latestTime = millis();
         return false;
     }
 // #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1("MQTT Connected!");
+    BLINKER_LOG("MQTT Connected!");
 // #endif
 
     this->latestTime = millis();
@@ -894,7 +894,7 @@ bool BlinkerMQTT::connect() {
 
 void BlinkerMQTT::ping() {
 #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1("MQTT Ping!");
+    BLINKER_LOG("MQTT Ping!");
 #endif
     if (!mqtt->ping()) {
         disconnect();
@@ -912,7 +912,7 @@ void BlinkerMQTT::subscribe() {
     while ((subscription = mqtt->readSubscription(10))) {
         if (subscription == iotSub) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(("Got: "), (char *)iotSub->lastread);
+            BLINKER_LOG(("Got: "), (char *)iotSub->lastread);
 #endif
             // String dataGet = String((char *)iotSub->lastread);
 
@@ -924,7 +924,7 @@ void BlinkerMQTT::subscribe() {
 	        // JsonObject& root = jsonBuffer.parseObject((char *)iotSub->lastread);
 
             // if (!root.success()) {
-            //     BLINKER_LOG1("json test error");
+            //     BLINKER_LOG("json test error");
             //     return;
             // }
 
@@ -939,14 +939,14 @@ void BlinkerMQTT::subscribe() {
             //     dataGet = STRING_find_string(dataGet, "\"", "\"", 0);
             // }
 
-            // BLINKER_LOG2("data: ", dataGet);
+            // BLINKER_LOG("data: ", dataGet);
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2("data: ", dataGet);
-            BLINKER_LOG2("fromDevice: ", _uuid);
+            BLINKER_LOG("data: ", dataGet);
+            BLINKER_LOG("fromDevice: ", _uuid);
 #endif
             if (strcmp(_uuid.c_str(), UUID) == 0) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1("Authority uuid");
+                BLINKER_LOG("Authority uuid");
 #endif
                 kaTime = millis();
                 isAvail = true;
@@ -954,7 +954,7 @@ void BlinkerMQTT::subscribe() {
             }
             else if (_uuid == BLINKER_CMD_ALIGENIE) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1("form AliGenie");
+                BLINKER_LOG("form AliGenie");
 #endif
                 aliKaTime = millis();
                 isAliAlive = true;
@@ -964,7 +964,7 @@ void BlinkerMQTT::subscribe() {
                 dataGet = String((char *)iotSub->lastread);
 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_ERR_LOG2("No authority uuid, check is from bridge/share device, data: ", dataGet);
+                BLINKER_ERR_LOG("No authority uuid, check is from bridge/share device, data: ", dataGet);
 #endif
                 // return;
 
@@ -1017,16 +1017,16 @@ bool BlinkerMQTT::print(String data) {
         respTime = millis();
 
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG1("WS response: ");
-        BLINKER_LOG1(data);
-        BLINKER_LOG1("Succese...");
-        // BLINKER_LOG1(("Succese..."));
+        BLINKER_LOG("WS response: ");
+        BLINKER_LOG(data);
+        BLINKER_LOG("Succese...");
+        // BLINKER_LOG(("Succese..."));
 #endif
         webSocket.sendTXT(ws_num, data + BLINKER_CMD_NEWLINE);
 
         return true;
 // #ifdef BLINKER_DEBUG_ALL
-//         BLINKER_LOG3("WS response: ", data, "Succese...");
+//         BLINKER_LOG("WS response: ", data, "Succese...");
 // #endif
     }
     else {
@@ -1045,7 +1045,7 @@ bool BlinkerMQTT::print(String data) {
         }
     
 #ifdef BLINKER_DEBUG_ALL
-        BLINKER_LOG1("MQTT Publish...");
+        BLINKER_LOG("MQTT Publish...");
 #endif
         bool _alive = isAlive;
         bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
@@ -1068,13 +1068,13 @@ bool BlinkerMQTT::print(String data) {
         }
 
 // #ifdef BLINKER_DEBUG_ALL
-//         BLINKER_LOG2("state: ", state);
+//         BLINKER_LOG("state: ", state);
 
-//         BLINKER_LOG2("state: ", STRING_contains_string(data, BLINKER_CMD_TIMING));
+//         BLINKER_LOG("state: ", STRING_contains_string(data, BLINKER_CMD_TIMING));
 
-//         BLINKER_LOG2("state: ", data.indexOf(BLINKER_CMD_TIMING));
+//         BLINKER_LOG("state: ", data.indexOf(BLINKER_CMD_TIMING));
 
-//         BLINKER_LOG2("data: ", data);
+//         BLINKER_LOG("data: ", data);
 // #endif
 
         if (mqtt->connected()) {
@@ -1093,8 +1093,8 @@ bool BlinkerMQTT::print(String data) {
 
             if (! mqtt->publish(BLINKER_PUB_TOPIC, payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(payload);
-                BLINKER_LOG1("...Failed");
+                BLINKER_LOG(payload);
+                BLINKER_LOG("...Failed");
 #endif
                 if (!_alive) {
                     isAlive = false;
@@ -1111,8 +1111,8 @@ bool BlinkerMQTT::print(String data) {
 
 //                 if (!iotPub.publish((uint8_t *)buf, payload.length()+3)) {
 // #ifdef BLINKER_DEBUG_ALL
-//                     BLINKER_LOG1(payload);
-//                     BLINKER_LOG1("...Failed");
+//                     BLINKER_LOG(payload);
+//                     BLINKER_LOG("...Failed");
 // #endif
 //                     if (!_alive) {
 //                         isAlive = false;
@@ -1120,8 +1120,8 @@ bool BlinkerMQTT::print(String data) {
 //                     return false;
 //                 } else {
 // #ifdef BLINKER_DEBUG_ALL
-//                     BLINKER_LOG1(payload);
-//                     BLINKER_LOG1("...OK!");
+//                     BLINKER_LOG(payload);
+//                     BLINKER_LOG("...OK!");
 // #endif
 //                     if (!state) printTime = millis();
 
@@ -1133,8 +1133,8 @@ bool BlinkerMQTT::print(String data) {
 //             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(payload);
-                BLINKER_LOG1("...OK!");
+                BLINKER_LOG(payload);
+                BLINKER_LOG("...OK!");
 #endif
                 if (!state) printTime = millis();
 
@@ -1145,7 +1145,7 @@ bool BlinkerMQTT::print(String data) {
             }            
         }
         else {
-            BLINKER_ERR_LOG1("MQTT Disconnected");
+            BLINKER_ERR_LOG("MQTT Disconnected");
             isAlive = false;
             return false;
         }
@@ -1168,7 +1168,7 @@ bool BlinkerMQTT::bPrint(String name, String data) {
     }
 
 #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1("MQTT Publish...");
+    BLINKER_LOG("MQTT Publish...");
 #endif
     // bool _alive = isAlive;
     // bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
@@ -1203,8 +1203,8 @@ bool BlinkerMQTT::bPrint(String name, String data) {
 
         if (! mqtt->publish(bPubTopic.c_str(), payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(payload);
-            BLINKER_LOG1("...Failed");
+            BLINKER_LOG(payload);
+            BLINKER_LOG("...Failed");
 #endif
             // if (!_alive) {
             //     isAlive = false;
@@ -1213,8 +1213,8 @@ bool BlinkerMQTT::bPrint(String name, String data) {
         }
         else {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(payload);
-            BLINKER_LOG1("...OK!");
+            BLINKER_LOG(payload);
+            BLINKER_LOG("...OK!");
 #endif
             bPrintTime = millis();
 
@@ -1225,7 +1225,7 @@ bool BlinkerMQTT::bPrint(String name, String data) {
         }            
     }
     else {
-        BLINKER_ERR_LOG1("MQTT Disconnected");
+        BLINKER_ERR_LOG("MQTT Disconnected");
         // isAlive = false;
         return false;
     }
@@ -1242,7 +1242,7 @@ bool BlinkerMQTT::aliPrint(String data)
             "\",\"toDevice\":\"AliGenie_r\",\"deviceType\":\"vAssistant\"}";
     
 #ifdef BLINKER_DEBUG_ALL
-    BLINKER_LOG1("MQTT AliGenie Publish...");
+    BLINKER_LOG("MQTT AliGenie Publish...");
 #endif
 
     if (mqtt->connected()) {
@@ -1262,23 +1262,23 @@ bool BlinkerMQTT::aliPrint(String data)
 
         if (! mqtt->publish(BLINKER_PUB_TOPIC, payload.c_str())) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(payload);
-            BLINKER_LOG1("...Failed");
+            BLINKER_LOG(payload);
+            BLINKER_LOG("...Failed");
 #endif
             isAliAlive = false;
             return false;
         }
         else {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1(payload);
-            BLINKER_LOG1("...OK!");
+            BLINKER_LOG(payload);
+            BLINKER_LOG("...OK!");
 #endif
             isAliAlive = false;
             return true;
         }      
     }
     else {
-        BLINKER_ERR_LOG1("MQTT Disconnected");
+        BLINKER_ERR_LOG("MQTT Disconnected");
         return false;
     }
 }

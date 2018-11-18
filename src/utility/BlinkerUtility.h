@@ -58,7 +58,7 @@ String macDeviceName()
     sprintf(macStr, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     String macStr_l = STRING_format(macStr);
     //macStr_l.toLowerCase();
-    //BLINKER_LOG2("MACADDR: ", macStr_l);
+    //BLINKER_LOG("MACADDR: ", macStr_l);
     return macStr_l;
 }
 #elif defined(ESP32)
@@ -74,7 +74,7 @@ String macDeviceName()
     sprintf(macStr, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     String macStr_l = STRING_format(macStr);
     //macStr_l.toLowerCase();
-    //BLINKER_LOG2("MACADDR: ", macStr_l);
+    //BLINKER_LOG("MACADDR: ", macStr_l);
     return macStr_l;
 }
 #endif
@@ -117,18 +117,21 @@ bool STRING_contains_string(const String & src, const String & key)
     return key == src.substring(addr_start, addr_start + keyLen);
 }
 
-bool STRING_find_string_value(const String & src, String dst, const String & key)
+bool STRING_find_string_value(const String & src, String & dst, const String & key)
 {
     int addr_start = src.indexOf(key);
     uint8_t keyLen = key.length();
+    BLINKER_LOG("addr_start: ", addr_start);
+    BLINKER_LOG("keyLen: ", keyLen);
 
     int addr_end = src.indexOf(STRING_VALUE_END, addr_start + keyLen + STRING_VALUE_SKIP);
-    
+    BLINKER_LOG("addr_end: ", addr_end);
     if (addr_start == -1 || addr_end == -1) {
         return false;
     }
     else {
         dst = src.substring(addr_start + keyLen + STRING_VALUE_SKIP, addr_end);
+        BLINKER_LOG("dst: ", dst);
         return true;
     }
 }

@@ -23,7 +23,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
     {
         case WStype_DISCONNECTED:
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(("Disconnected! "), num);
+            BLINKER_LOG(("Disconnected! "), num);
 #endif
 
             isConnect = false;
@@ -33,7 +33,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
                 IPAddress ip = webSocket.remoteIP(num);
 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG6(("num: "), num, (", Connected from: "), ip, (", url: "), (char *)payload);
+                BLINKER_LOG(("num: "), num, (", Connected from: "), ip, (", url: "), (char *)payload);
 #endif
 
                 // send message to client
@@ -47,7 +47,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
         case WStype_TEXT:
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG6(("num: "), num, (", get Text: "), (char *)payload, (", length: "), length);
+            BLINKER_LOG(("num: "), num, (", get Text: "), (char *)payload, (", length: "), length);
 #endif
             if (length < BLINKER_MAX_READ_SIZE) {
                 if (!isFresh) msgBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
@@ -68,7 +68,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
             // webSocket.broadcastTXT("message here");
             break;
         case WStype_BIN:
-            // BLINKER_LOG4("num: ", num, " get binary length: ", length);
+            // BLINKER_LOG("num: ", num, " get binary length: ", length);
             // hexdump(payload, length);
 
             // send message to client
@@ -86,8 +86,8 @@ class BlinkerWebSocket
         {
             webSocket.begin();
             webSocket.onEvent(webSocketEvent);
-            BLINKER_LOG1(BLINKER_F("webSocket server started"));
-            BLINKER_LOG4(BLINKER_F("ws://"), deviceName, BLINKER_F(".local:"), WS_SERVERPORT);
+            BLINKER_LOG(BLINKER_F("webSocket server started"));
+            BLINKER_LOG(BLINKER_F("ws://"), deviceName, BLINKER_F(".local:"), WS_SERVERPORT);
         }
 
         bool available()
@@ -114,7 +114,7 @@ class BlinkerWebSocket
         void print(String s_data)
         {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("Response: "), s_data);
+            BLINKER_LOG(BLINKER_F("Response: "), s_data);
 #endif
             if(connected()) {
                 bool state = STRING_contains_string(s_data, BLINKER_CMD_NOTICE) ||
@@ -140,14 +140,14 @@ class BlinkerWebSocket
                 respTime = millis();
 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("Succese..."));
+                BLINKER_LOG(BLINKER_F("Succese..."));
 #endif
 
                 webSocket.sendTXT(ws_num, s_data + BLINKER_CMD_NEWLINE);
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("Faile... Disconnected"));
+                BLINKER_LOG(BLINKER_F("Faile... Disconnected"));
 #endif
             }
 #ifdef BLINKER_DEBUG_ALL
@@ -170,7 +170,7 @@ class BlinkerWebSocket
             if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
                 if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG1(BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
+                    BLINKER_ERR_LOG(BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
 #endif
                     return false;
                 }
@@ -191,7 +191,7 @@ class BlinkerWebSocket
 //             }
 //             else {
 // #ifdef BLINKER_DEBUG_ALL
-//                 BLINKER_ERR_LOG1("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
+//                 BLINKER_ERR_LOG("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT");
 // #endif
 //                 return false;
 //             }

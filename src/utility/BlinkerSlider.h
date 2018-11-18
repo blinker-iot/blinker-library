@@ -7,7 +7,7 @@
 class BlinkerSlider
 {
     public :
-        BlinkerSlider(const String & _name, callback_with_int32_arg_t _func = NULL)
+        BlinkerSlider(char _name[], callback_with_int32_arg_t _func = NULL)
             // : sliderName(_name)
         {
             wNum = Blinker.attachWidget(_name, _func);

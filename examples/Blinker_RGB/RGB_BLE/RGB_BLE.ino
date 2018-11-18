@@ -37,10 +37,10 @@ BlinkerRGB RGB1(RGB_1);
 void rgb1_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
 {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    BLINKER_LOG2("R value: ", r_value);
-    BLINKER_LOG2("G value: ", g_value);
-    BLINKER_LOG2("B value: ", b_value);
-    BLINKER_LOG2("Rrightness value: ", bright_value);
+    BLINKER_LOG("R value: ", r_value);
+    BLINKER_LOG("G value: ", g_value);
+    BLINKER_LOG("B value: ", b_value);
+    BLINKER_LOG("Rrightness value: ", bright_value);
 }
 
 void setup()
@@ -60,7 +60,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
 
         Blinker.vibrate();
         

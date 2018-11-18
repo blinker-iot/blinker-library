@@ -60,7 +60,7 @@ class BlinkerWlan {
             _deviceType = _type;
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(("API deviceType: "), _type);
+            BLINKER_LOG(("API deviceType: "), _type);
 #endif
         }
 
@@ -93,14 +93,14 @@ bool BlinkerWlan::checkConfig() {
 
     if (String(ok) != String("OK")) {
         
-        BLINKER_LOG1(("wlan config check,fail"));
+        BLINKER_LOG(("wlan config check,fail"));
 
         _status = BWL_CONFIG_FAIL;
         return false;
     }
     else {
 
-        BLINKER_LOG1(("wlan config check,success"));
+        BLINKER_LOG(("wlan config check,success"));
 
         _status = BWL_CONFIG_SUCCESS;
         return true;
@@ -122,7 +122,7 @@ void BlinkerWlan::loadConfig(char *_ssid, char *_pswd) {
     strcpy(_ssid, loadssid);
     strcpy(_pswd, loadpswd);
 
-    BLINKER_LOG4(("SSID: "), _ssid, (" PASWD: "), _pswd);
+    BLINKER_LOG(("SSID: "), _ssid, (" PASWD: "), _pswd);
 }
 
 void BlinkerWlan::saveConfig(char *_ssid, char *_pswd) {
@@ -140,7 +140,7 @@ void BlinkerWlan::saveConfig(char *_ssid, char *_pswd) {
     EEPROM.commit();
     EEPROM.end();
 
-    BLINKER_LOG1(("Save wlan config"));
+    BLINKER_LOG(("Save wlan config"));
 }
 
 void BlinkerWlan::deleteConfig() {
@@ -152,7 +152,7 @@ void BlinkerWlan::deleteConfig() {
     EEPROM.commit();
     EEPROM.end();
 
-    BLINKER_LOG1(("Erase wlan config"));
+    BLINKER_LOG(("Erase wlan config"));
 }
 
 void BlinkerWlan::smartconfigBegin(uint16_t _time) {
@@ -171,7 +171,7 @@ void BlinkerWlan::smartconfigBegin(uint16_t _time) {
     timeout = _time;
     _status = BWL_SMARTCONFIG_BEGIN;
 
-    BLINKER_LOG1(("Wait for Smartconfig"));
+    BLINKER_LOG(("Wait for Smartconfig"));
 }
 
 bool BlinkerWlan::smartconfigDone() {
@@ -183,9 +183,9 @@ bool BlinkerWlan::smartconfigDone() {
 
         _status = BWL_SMARTCONFIG_DONE;
 
-        BLINKER_LOG1(("SmartConfig Success"));
+        BLINKER_LOG(("SmartConfig Success"));
 #if defined(ESP8266)
-        BLINKER_LOG4(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
+        BLINKER_LOG(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
         // WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
         connectWiFi(WiFi.SSID().c_str(), WiFi.psk().c_str());
 #endif
@@ -216,7 +216,7 @@ void BlinkerWlan::connect() {
             break;
         case BWL_DISCONNECTED :
             if (millis() - connectTime > 30000 && WiFi.status() != WL_CONNECTED) {
-                BLINKER_LOG2("status: ", WiFi.status());
+                BLINKER_LOG("status: ", WiFi.status());
 
                 disconnect();
                 // SSID = (char*)malloc(BLINKER_SSID_SIZE*sizeof(char));
@@ -235,9 +235,9 @@ void BlinkerWlan::connect() {
                 // free(SSID);
                 // free(PSWD);
                 connectTime = millis();
-                BLINKER_LOG1(("connecting BWL_DISCONNECTED"));
+                BLINKER_LOG(("connecting BWL_DISCONNECTED"));
                 
-                BLINKER_LOG4(("_ssid_: "), _ssid_, (" _pswd_: "), _pswd_);
+                BLINKER_LOG(("_ssid_: "), _ssid_, (" _pswd_: "), _pswd_);
             }
             else if(WiFi.status() == WL_CONNECTED) {
                 _status = BWL_CONNECTED;
@@ -252,7 +252,7 @@ bool BlinkerWlan::connected() {
             if (WiFi.status() != WL_CONNECTED) {
                 if (millis() - connectTime > 15000)
                 {
-                    BLINKER_LOG1(("smartConfig time out"));
+                    BLINKER_LOG(("smartConfig time out"));
                     
                     WiFi.stopSmartConfig();
                     _status = BWL_SMARTCONFIG_TIMEOUT;
@@ -261,10 +261,10 @@ bool BlinkerWlan::connected() {
             }
             else if (WiFi.status() == WL_CONNECTED) {
                 IPAddress deviceIP = WiFi.localIP();
-                BLINKER_LOG1(("WiFi connected"));
-                BLINKER_LOG1(("IP address: "));
-                BLINKER_LOG1(deviceIP);
-                BLINKER_LOG4(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
+                BLINKER_LOG(("WiFi connected"));
+                BLINKER_LOG(("IP address: "));
+                BLINKER_LOG(deviceIP);
+                BLINKER_LOG(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
                 
                 SSID = (char*)malloc(BLINKER_SSID_SIZE*sizeof(char));
                 PSWD = (char*)malloc(BLINKER_PSWD_SIZE*sizeof(char));
@@ -287,7 +287,7 @@ bool BlinkerWlan::connected() {
             if (WiFi.status() != WL_CONNECTED) {
                 if (millis() - connectTime > 15000)
                 {
-                    BLINKER_LOG1(("APConfig time out"));
+                    BLINKER_LOG(("APConfig time out"));
                     
                     // WiFi.stopSmartConfig();
                     _status = BWL_APCONFIG_TIMEOUT;
@@ -296,10 +296,10 @@ bool BlinkerWlan::connected() {
             }
             else if (WiFi.status() == WL_CONNECTED) {
                 IPAddress deviceIP = WiFi.localIP();
-                BLINKER_LOG1(("WiFi connected"));
-                BLINKER_LOG1(("IP address: "));
-                BLINKER_LOG1(deviceIP);
-                BLINKER_LOG4(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
+                BLINKER_LOG(("WiFi connected"));
+                BLINKER_LOG(("IP address: "));
+                BLINKER_LOG(deviceIP);
+                BLINKER_LOG(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
                 
                 // SSID = (char*)malloc(BLINKER_SSID_SIZE*sizeof(char));
                 // PSWD = (char*)malloc(BLINKER_PSWD_SIZE*sizeof(char));
@@ -324,10 +324,10 @@ bool BlinkerWlan::connected() {
             }
             else if (WiFi.status() == WL_CONNECTED) {
                 IPAddress deviceIP = WiFi.localIP();
-                BLINKER_LOG1(("WiFi connected"));
-                BLINKER_LOG1(("IP address: "));
-                BLINKER_LOG1(deviceIP);
-                BLINKER_LOG4(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
+                BLINKER_LOG(("WiFi connected"));
+                BLINKER_LOG(("IP address: "));
+                BLINKER_LOG(deviceIP);
+                BLINKER_LOG(("SSID: "), WiFi.SSID(), (" PSWD: "), WiFi.psk());
                 
                 _status = BWL_CONNECTED_CHECK;
                 return true;
@@ -348,7 +348,7 @@ void BlinkerWlan::disconnect() {
     WiFi.disconnect();
     delay(100);
     _status = BWL_DISCONNECTED;
-    BLINKER_LOG1(("WiFi disconnected"));
+    BLINKER_LOG(("WiFi disconnected"));
 }
 
 void BlinkerWlan::reset() {
@@ -378,13 +378,13 @@ void BlinkerWlan::softAPinit() {
     delay(100);
 
     _server->begin();
-    BLINKER_LOG2(("AP IP address: "), WiFi.softAPIP());
-    BLINKER_LOG1("HTTP _server started");
-    BLINKER_LOG1(String("URL: http://" + WiFi.softAPIP()));
+    BLINKER_LOG(("AP IP address: "), WiFi.softAPIP());
+    BLINKER_LOG("HTTP _server started");
+    BLINKER_LOG(String("URL: http://" + WiFi.softAPIP()));
 
     _status = BWL_APCONFIG_BEGIN;
 
-    BLINKER_LOG1(("Wait for APConfig"));
+    BLINKER_LOG(("Wait for APConfig"));
 }
 
 void BlinkerWlan::serverClient()
@@ -403,7 +403,7 @@ void BlinkerWlan::serverClient()
         {
 #endif
             _client.stop();
-            BLINKER_LOG1(("Connection closed on _client"));
+            BLINKER_LOG(("Connection closed on _client"));
         }
         else
         {
@@ -414,7 +414,7 @@ void BlinkerWlan::serverClient()
                 // data = data.substring(4, data.length() - 9);
                 _client.flush();
 
-                // BLINKER_LOG2("clientData: ", data);
+                // BLINKER_LOG("clientData: ", data);
 
                 if (STRING_contains_string(data, "ssid") && STRING_contains_string(data, "pswd")) {
 
@@ -438,7 +438,7 @@ void BlinkerWlan::serverClient()
 
 void BlinkerWlan::parseUrl(String data)
 {
-    BLINKER_LOG2("APCONFIG data: ", data);
+    BLINKER_LOG("APCONFIG data: ", data);
     DynamicJsonBuffer jsonBuffer;
     JsonObject& wifi_data = jsonBuffer.parseObject(data);
 
@@ -449,8 +449,8 @@ void BlinkerWlan::parseUrl(String data)
     String _ssid = wifi_data["ssid"];
     String _pswd = wifi_data["pswd"];
 
-    BLINKER_LOG2("ssid: ", _ssid);
-    BLINKER_LOG2("pswd: ", _pswd);
+    BLINKER_LOG("ssid: ", _ssid);
+    BLINKER_LOG("pswd: ", _pswd);
 
     free(_server);
 
@@ -463,7 +463,7 @@ void BlinkerWlan::parseUrl(String data)
     connectTime = millis();
     _status = BWL_APCONFIG_DONE;
 
-    BLINKER_LOG1(("APConfig Success"));
+    BLINKER_LOG(("APConfig Success"));
 }
 
 void BlinkerWlan::connectWiFi(String _ssid, String _pswd)
@@ -475,7 +475,7 @@ void BlinkerWlan::connectWiFi(const char* _ssid, const char* _pswd)
 {
     uint32_t connectTime = millis();
 
-    BLINKER_LOG2(("Connecting to "), _ssid);
+    BLINKER_LOG(("Connecting to "), _ssid);
 
     WiFi.mode(WIFI_STA);
     String _hostname = STRING_format(_deviceType) + "_" + macDeviceName();
@@ -498,14 +498,14 @@ void BlinkerWlan::connectWiFi(const char* _ssid, const char* _pswd)
 
     //     if (millis() - connectTime > BLINKER_CONNECT_TIMEOUT_MS && WiFi.status() != WL_CONNECTED) {
     //         connectTime = millis();
-    //         BLINKER_LOG1(("WiFi connect timeout, please check ssid and pswd!"));
-    //         BLINKER_LOG1(("Retring WiFi connect again!"));
+    //         BLINKER_LOG(("WiFi connect timeout, please check ssid and pswd!"));
+    //         BLINKER_LOG(("Retring WiFi connect again!"));
     //     }
     // }
-    // BLINKER_LOG1(("Connected"));
+    // BLINKER_LOG(("Connected"));
 
     // IPAddress myip = WiFi.localIP();
-    // BLINKER_LOG2(("Your IP is: "), myip);
+    // BLINKER_LOG(("Your IP is: "), myip);
 
     // mDNSInit();
 }
@@ -515,7 +515,7 @@ bool BlinkerWlan::run() {
     if (millis() - debugStatusTime > 10000) {
         debugStatusTime = millis();
 
-        BLINKER_LOG2("WLAN status: ", _status);
+        BLINKER_LOG("WLAN status: ", _status);
     }
 #endif
 

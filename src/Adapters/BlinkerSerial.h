@@ -32,7 +32,7 @@ class BlinkerTransportStream
 
                 strcpy(streamData, (stream->readStringUntil('\n')).c_str());
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("handleSerial: "), streamData);
+                BLINKER_LOG(BLINKER_F("handleSerial: "), streamData);
 #endif
                 if (streamData[strlen(streamData) - 1] == '\r')
                     streamData[strlen(streamData) - 1] = '\0';
@@ -80,18 +80,18 @@ class BlinkerTransportStream
             respTime = millis();
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("Response: "), s);
+            BLINKER_LOG(BLINKER_F("Response: "), s);
 #endif
             if(connected()) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("Succese..."));
+                BLINKER_LOG(BLINKER_F("Succese..."));
 #endif
                 stream->println(s);
                 return true;
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("Faile... Disconnected"));
+                BLINKER_LOG(BLINKER_F("Faile... Disconnected"));
 #endif
                 return false;
             }
@@ -121,7 +121,7 @@ class BlinkerTransportStream
             if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
                 if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG1(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
+                    BLINKER_ERR_LOG(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
 #endif
                     return false;
                 }
@@ -151,9 +151,11 @@ class BlinkerSerial
                     uint8_t ss_tx_pin = 3,
                     uint32_t ss_baud = 9600)
         {
+            Base::begin();
+            ::delay(100);
 #if defined (__AVR__)
             if (ss_rx_pin == 0 && ss_tx_pin == 1){
-                Base::begin();
+                // Base::begin();
     #if defined (__AVR_ATmega32U4__)
                 Serial1.begin(ss_baud);
                 this->conn.begin(Serial1, true);
@@ -161,66 +163,66 @@ class BlinkerSerial
                 Serial.begin(ss_baud);
                 this->conn.begin(Serial, true);
     #endif
-                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+                BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 return;
             }
     #if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__SAM3X8E__)
             else if (ss_rx_pin == 19 && ss_tx_pin == 18){
-                Base::begin();
+                // Base::begin();
                 Serial1.begin(ss_baud);
                 this->conn.begin(Serial1, true);
-                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+                BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 return;
             }
             else if (ss_rx_pin == 17 && ss_tx_pin == 16){
-                Base::begin();
+                // Base::begin();
                 Serial2.begin(ss_baud);
                 this->conn.begin(Serial2, true);
-                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+                BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 return;
             }
             else if (ss_rx_pin == 15 && ss_tx_pin == 14){
-                Base::begin();
+                // Base::begin();
                 Serial3.begin(ss_baud);
                 this->conn.begin(Serial3, true);
-                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+                BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 return;
             }
     #endif  
             else {
-                Base::begin();
+                // Base::begin();
                 SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
                 SSerialBLE->begin(ss_baud);
                 this->conn.begin(*SSerialBLE, false);
-                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+                BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
             }
 #elif defined(ESP8266)
             if (ss_rx_pin == RX && ss_tx_pin == TX) {
-                Base::begin();
+                // Base::begin();
                 Serial.begin(ss_baud);
                 this->conn.begin(Serial, true);
-                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+                BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 return;
             }
             else {
-                Base::begin();
+                // Base::begin();
                 SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
                 SSerialBLE->begin(ss_baud);
                 this->conn.begin(*SSerialBLE, false);
-                BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+                BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
             }
 #elif defined(ESP32)
-            Base::begin();
+            // Base::begin();
             HSerialBLE = new HardwareSerial(1);
             HSerialBLE->begin(ss_baud, SERIAL_8N1, ss_rx_pin, ss_tx_pin);
             this->conn.begin(*HSerialBLE, true);
-            BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+            BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
 #else
-            Base::begin();
+            // Base::begin();
             SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
             SSerialBLE->begin(ss_baud);
             this->conn.begin(*SSerialBLE, false);
-            BLINKER_LOG1(BLINKER_F("SerialBLE initialized..."));
+            BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
 #endif
         }
 };

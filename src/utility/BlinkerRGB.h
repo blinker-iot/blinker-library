@@ -7,7 +7,7 @@
 class BlinkerRGB
 {
     public :
-        BlinkerRGB(const String & _name, callback_with_rgb_arg_t _func = NULL)
+        BlinkerRGB(char _name[], callback_with_rgb_arg_t _func = NULL)
             // : rgbName(_name)
         {
             wNum = Blinker.attachWidget(_name, _func);

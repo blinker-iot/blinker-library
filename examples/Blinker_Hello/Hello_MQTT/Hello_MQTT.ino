@@ -42,7 +42,7 @@ int counter = 0;
 
 // 按下按键即会执行该函数
 void button1_callback(const String & state) {
-    BLINKER_LOG2("get button state: ", state);
+    BLINKER_LOG("get button state: ", state);
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
@@ -61,7 +61,7 @@ void loop() {
     Blinker.run();
     // 如果未绑定的组件被触发，则会执行其中内容
     if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
         counter++;
         Number1.print(counter);
     }
