@@ -1,5 +1,5 @@
-#ifndef BlinkerESP32_BLE_H
-#define BlinkerESP32_BLE_H
+#ifndef Blinker_BLE_H
+#define Blinker_BLE_H
 
 #include "Blinker/BlinkerProtocol.h"
 
@@ -49,3 +49,5 @@ class BlinkerBLE:public BLEServerCallbacks,public BLECharacteristicCallbacks
         bool checkPrintSpan();
 
 };
+
+#endif

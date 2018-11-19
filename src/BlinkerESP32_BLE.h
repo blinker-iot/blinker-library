@@ -1,3 +1,6 @@
+#ifndef BlinkerESP32_BLE_H
+#define BlinkerESP32_BLE_H
+
 #include "BlinkerBLE.h"
 
 class BlinkerESP32_BLE:public BlinkerProtocol<BlinkerBLE>
