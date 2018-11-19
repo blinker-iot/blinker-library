@@ -3,7 +3,7 @@
 
 #if defined(BLINKER_PRO)
 
-#include <Blinker/BlinkerConfig.h>
+#include "Blinker/BlinkerConfig.h"
 #include <EEPROM.h>
 #if defined(ESP8266)
     #include <ESP8266HTTPClient.h>

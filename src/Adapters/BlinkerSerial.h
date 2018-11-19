@@ -2,8 +2,8 @@
 #define BlinkerSerial_H
 
 #include <SoftwareSerial.h>
-#include "HardwareSerial.h"
-#include <Blinker/BlinkerProtocol.h>
+#include <HardwareSerial.h>
+#include "Blinker/BlinkerProtocol.h"
 
 #if defined(ESP32)
     HardwareSerial *HSerialBLE;
@@ -31,9 +31,9 @@ class BlinkerTransportStream
                 if (!isFresh) streamData = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
 
                 strcpy(streamData, (stream->readStringUntil('\n')).c_str());
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("handleSerial: "), streamData);
-#endif
+                
+                BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
+                
                 if (streamData[strlen(streamData) - 1] == '\r')
                     streamData[strlen(streamData) - 1] = '\0';
 
@@ -78,21 +78,18 @@ class BlinkerTransportStream
             }
 
             respTime = millis();
+            
+            BLINKER_LOG_ALL(BLINKER_F("Response: "), s);
 
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG(BLINKER_F("Response: "), s);
-#endif
             if(connected()) {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("Succese..."));
-#endif
+                BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+                
                 stream->println(s);
                 return true;
             }
             else {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("Faile... Disconnected"));
-#endif
+                BLINKER_LOG_ALL(BLINKER_F("Faile... Disconnected"));
+                
                 return false;
             }
         }
@@ -120,9 +117,8 @@ class BlinkerTransportStream
         bool checkPrintSpan() {
             if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
                 if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
-#endif
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
+                    
                     return false;
                 }
                 else {

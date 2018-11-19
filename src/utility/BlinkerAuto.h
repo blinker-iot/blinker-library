@@ -3,8 +3,8 @@
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
 #include "modules/ArduinoJson/ArduinoJson.h"
-#include <Blinker/BlinkerConfig.h>
-#include <utility/BlinkerUtility.h>
+#include "Blinker/BlinkerConfig.h"
+#include "utility/BlinkerUtility.h"
 
 class BlinkerAUTO
 {

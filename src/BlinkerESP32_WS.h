@@ -1,7 +1,7 @@
 #ifndef BlinkerESP32_WS_H
 #define BlinkerESP32_WS_H
 
-#include <Adapters/BlinkerWebSocket.h>
+#include "Adapters/BlinkerWebSocket.h"
 #include <ESPmDNS.h>
 #include <WiFi.h>
 

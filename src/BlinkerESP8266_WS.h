@@ -1,7 +1,7 @@
 #ifndef BlinkerESP8266_WS_H
 #define BlinkerESP8266_WS_H
 
-#include <Adapters/BlinkerWebSocket.h>
+#include "Adapters/BlinkerWebSocket.h"
 #include <ESP8266mDNS.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>

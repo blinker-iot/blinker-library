@@ -131,6 +131,25 @@ void BLINKER_ERR_LOG(Ts... args)
     return;
 }
 
+template <typename... Ts>
+void BLINKER_LOG_ALL(Ts... args)
+{
+#if defined(BLINKER_DEBUG_ALL)
+    BLINKER_LOG_TIME();
+    BLINKER_LOG_T(args...);
+#endif
+    return;
+}
+
+template <typename... Ts>
+void BLINKER_ERR_LOG_ALL(Ts... args)
+{
+#if defined(BLINKER_DEBUG_ALL)
+    BLINKER_ERR_LOG(args...);
+#endif
+    return;
+}
+
 /* 待废止内容 */
 // #if defined(BLINKER_PRINT)
 //     // #define BLINKER_LOG_FreeHeap()                  { BLINKER_LOG_TIME(); BLINKER_PRINT.print(BLINKER_DEBUG_F("Freeheap: ")); BLINKER_PRINT.println(BLINKER_FreeHeap());}

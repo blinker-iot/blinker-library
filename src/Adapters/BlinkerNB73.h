@@ -2,8 +2,8 @@
 #define BlinkerNB73_H
 
 #include <SoftwareSerial.h>
-#include "HardwareSerial.h"
-#include <Blinker/BlinkerProtocol.h>
+#include <HardwareSerial.h>
+#include "Blinker/BlinkerProtocol.h"
 
 SoftwareSerial *SSerialBLE;
 // HardwareSerial *HSerialBLE;
@@ -93,9 +93,8 @@ class NBdata
         String _param[11];
 
         bool serialize(String _data) {
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG(BLINKER_F("serialize _data: "), _data);
-#endif
+            BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
+            
             _reqName = 0;
             _isReq = false;
             int addr_start = _data.indexOf("+");
@@ -113,9 +112,8 @@ class NBdata
                 }
                 else {
                     _reqName = _data.substring(addr_start, addr_end);
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG(BLINKER_F("serialize _reqName: "), _reqName);
-#endif
+                    
+                    BLINKER_LOG_ALL(BLINKER_F("serialize _reqName: "), _reqName);
                 }
 
                 _isReq = true;
@@ -139,18 +137,17 @@ class NBdata
                     if (addr_end == -1) {
                         if (addr_start >= dataLen) return false;
                         _param[_paramNum] = serData;
-#ifdef BLINKER_DEBUG_ALL
-                        BLINKER_LOG(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
-#endif
+                        
+                        BLINKER_LOG_ALL(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
+                        
                         _paramNum++;
                         return true;
                     }
                     else {
                         _param[_paramNum] = serData.substring(0, addr_end);
                     }
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
-#endif
+                    
+                    BLINKER_LOG_ALL(BLINKER_F("_param[_paramNum]: "), _param[_paramNum]);
                 }
                 return true;
             }
@@ -180,10 +177,9 @@ class BlinkerTransportStream
             
             if (stream->available()) {
                 strcpy(streamData, (stream->readStringUntil('\n')).c_str());
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("handleSerial: "), streamData);
-#endif
-
+                
+                BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
+                
                 if (!_nbData) {
                     _nbData = new NBdata();
 
@@ -193,11 +189,11 @@ class BlinkerTransportStream
                     _nbData->update(STRING_format(streamData));
 
                 }
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("isReq: "), _nbData->isReq());
-                BLINKER_LOG(BLINKER_F("reqName: "), _nbData->reqName());
-                BLINKER_LOG(BLINKER_F("paramNum: "), _nbData->paramNum());
-#endif
+                
+                BLINKER_LOG_ALL(BLINKER_F("isReq: "), _nbData->isReq());
+                BLINKER_LOG_ALL(BLINKER_F("reqName: "), _nbData->reqName());
+                BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _nbData->paramNum());
+                
                 return true;
             }
             else {
@@ -216,10 +212,9 @@ class BlinkerTransportStream
             
             if (stream->available()) {
                 strcpy(streamData, (stream->readStringUntil('\n')).c_str());
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("handleSerial: "), streamData);
-#endif
 
+                BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
+                
                 if (!_nbData) {
                     _nbData = new NBdata();
 
@@ -229,11 +224,10 @@ class BlinkerTransportStream
                     _nbData->update(STRING_format(streamData));
 
                 }
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("isReq: "), _nbData->isReq());
-                BLINKER_LOG(BLINKER_F("reqName: "), _nbData->reqName());
-                BLINKER_LOG(BLINKER_F("paramNum: "), _nbData->paramNum());
-#endif
+                BLINKER_LOG_ALL(BLINKER_F("isReq: "), _nbData->isReq());
+                BLINKER_LOG_ALL(BLINKER_F("reqName: "), _nbData->reqName());
+                BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _nbData->paramNum());
+                
                 return true;
             }
             else {
@@ -415,21 +409,18 @@ class BlinkerTransportStream
             }
 
             respTime = millis();
-
-#ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG(BLINKER_F("Response: "), s);
-#endif
+            
+            BLINKER_LOG_ALL(BLINKER_F("Response: "), s);
+            
             if(connected()) {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("Succese..."));
-#endif
+                BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+                
                 stream->println(s);
                 return true;
             }
             else {
-#ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("Faile... Disconnected"));
-#endif
+                BLINKER_LOG_ALL(BLINKER_F("Faile... Disconnected"));
+                
                 return false;
             }
         }
@@ -455,9 +446,8 @@ class BlinkerTransportStream
         bool checkPrintSpan() {
             if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
                 if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
-#ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG("DEVICE NOT CONNECT OR MSG LIMIT");
-#endif
+                    BLINKER_ERR_LOG_ALL("DEVICE NOT CONNECT OR MSG LIMIT");
+                    
                     return false;
                 }
                 else {

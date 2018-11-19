@@ -1,7 +1,7 @@
 #ifndef BlinkerESP32_BLE_H
 #define BlinkerESP32_BLE_H
 
-#include <Blinker/BlinkerProtocol.h>
+#include "Blinker/BlinkerProtocol.h"
 
 #include <BLEDevice.h>
 #include <BLEUtils.h>

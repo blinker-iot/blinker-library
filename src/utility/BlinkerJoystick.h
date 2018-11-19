@@ -1,8 +1,8 @@
 #ifndef BlinkerJoystick_H
 #define BlinkerJoystick_H
 
-#include <Blinker/BlinkerConfig.h>
-#include <utility/BlinkerUtility.h>
+#include "Blinker/BlinkerConfig.h"
+#include "utility/BlinkerUtility.h"
 
 class BlinkerJoystick
 {

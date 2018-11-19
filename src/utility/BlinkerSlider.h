@@ -1,8 +1,8 @@
 #ifndef BlinkerSlider_H
 #define BlinkerSlider_H
 
-#include <Blinker/BlinkerConfig.h>
-#include <utility/BlinkerUtility.h>
+#include "Blinker/BlinkerConfig.h"
+#include "utility/BlinkerUtility.h"
 
 class BlinkerSlider
 {

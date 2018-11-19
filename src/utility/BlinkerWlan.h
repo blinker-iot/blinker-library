@@ -3,7 +3,7 @@
 
 #if defined(BLINKER_PRO)
 
-#include <Blinker/BlinkerConfig.h>
+#include "Blinker/BlinkerConfig.h"
 #include "modules/ArduinoJson/ArduinoJson.h"
 #if defined(ESP8266)
     #include <ESP8266WiFi.h>
