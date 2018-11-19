@@ -54,7 +54,7 @@ bool dataParse(const JsonObject & data)
 
     data.printTo(getData);
     
-    BLINKER_LOG2("Get user command: ", getData);
+    BLINKER_LOG("Get user command: ", getData);
     return true;
 }
 
@@ -70,7 +70,7 @@ void heartbeat()
 {
     Blinker.print("hello", "blinker");
 
-    BLINKER_LOG1("heartbeat!");
+    BLINKER_LOG("heartbeat!");
 }
 
 #if defined(BLINKER_BUTTON)
@@ -93,7 +93,7 @@ void buttonTick()
  */
 void singalClick()
 {
-    BLINKER_LOG1("Button clicked!");
+    BLINKER_LOG("Button clicked!");
 }
 
 /* 
@@ -103,7 +103,7 @@ void singalClick()
  */
 void doubleClick()
 {
-    BLINKER_LOG1("Button double clicked!");
+    BLINKER_LOG("Button double clicked!");
 }
 #endif
 
@@ -131,7 +131,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
 
         uint32_t BlinkerTime = millis();
 

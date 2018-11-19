@@ -25,12 +25,16 @@
  * 
  * *****************************************************************/
 
+// #define BLINKER_PRINT Serial
 #define BLINKER_AT_MQTT
+// #define BLINKER_DEBUG_ALL
 
 #include <Blinker.h>
 
 void setup()
 {
+    // Serial.begin(115200);
+
     Blinker.begin();
 }
 

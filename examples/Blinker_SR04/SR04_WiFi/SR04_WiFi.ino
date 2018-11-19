@@ -52,7 +52,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
 
         Blinker.vibrate();
         
@@ -61,7 +61,7 @@ void loop()
         Blinker.print("millis", BlinkerTime);
     }
 
-    BLINKER_LOG3("SR04: ", SR04.cm(), " cm");
+    BLINKER_LOG("SR04: ", SR04.cm(), " cm");
 
     Blinker.print("SR04", SR04.cm());
 

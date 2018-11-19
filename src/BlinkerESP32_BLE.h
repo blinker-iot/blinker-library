@@ -1,7 +1,7 @@
 #ifndef BlinkerESP32_BLE_H
 #define BlinkerESP32_BLE_H
 
-#include <Blinker/BlinkerProtocol.h>
+#include "Blinker/BlinkerProtocol.h"
 
 #include <BLEDevice.h>
 #include <BLEUtils.h>
@@ -69,7 +69,7 @@ class BlinkerBLE
             checkTimeOut();
             if (isAvail) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG2(BLINKER_F("handleBLE: "), BLEBuf);//
+                BLINKER_LOG(BLINKER_F("handleBLE: "), BLEBuf);//
 #endif
                 isAvail = false;
                 isFresh = false;
@@ -108,11 +108,11 @@ class BlinkerBLE
             respTime = millis();
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG2(BLINKER_F("Response: "), s);
+            BLINKER_LOG(BLINKER_F("Response: "), s);
 #endif
             if (connected()) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("Succese..."));
+                BLINKER_LOG(BLINKER_F("Succese..."));
 #endif
 
                 s += BLINKER_CMD_NEWLINE;
@@ -133,7 +133,7 @@ class BlinkerBLE
             }
             else {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG1(BLINKER_F("Faile... Disconnected"));
+                BLINKER_LOG(BLINKER_F("Faile... Disconnected"));
 #endif                
                 return false;
             }
@@ -164,14 +164,14 @@ class BlinkerBLE
         void onConnect(BLEServer* pServer) {
             deviceConnected = true;
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1("BLE connect");
+            BLINKER_LOG("BLE connect");
 #endif
         };
 
         void onDisconnect(BLEServer* pServer) {
             deviceConnected = false;
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG1("BLE disconnect");
+            BLINKER_LOG("BLE disconnect");
 #endif
         }
 
@@ -213,7 +213,7 @@ class BlinkerBLE
             if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
                 if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_ERR_LOG1("DEVICE NOT CONNECT OR MSG LIMIT");
+                    BLINKER_ERR_LOG("DEVICE NOT CONNECT OR MSG LIMIT");
 #endif
                     return false;
                 }
@@ -243,7 +243,7 @@ class BlinkerESP32_BLE
         {
             Base::begin();
             this->conn.begin();
-            BLINKER_LOG1("ESP32_BLE initialized...");
+            BLINKER_LOG("ESP32_BLE initialized...");
         }
 };
 
