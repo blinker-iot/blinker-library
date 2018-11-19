@@ -37,7 +37,7 @@ BlinkerSlider Slider1(Slider_1);
 void slider1_callback(int32_t value)
 {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    BLINKER_LOG2("get slider value: ", value);
+    BLINKER_LOG("get slider value: ", value);
 }
 
 void setup()
@@ -57,7 +57,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
 
         Blinker.vibrate();
         

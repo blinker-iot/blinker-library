@@ -49,7 +49,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
 
         Blinker.vibrate();
         
@@ -59,14 +59,14 @@ void loop()
 
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 
-        BLINKER_LOG2("Now second: ", Blinker.second());
-        BLINKER_LOG2("Now minute: ", Blinker.minute());
-        BLINKER_LOG2("Now hour: ", Blinker.hour());
-        BLINKER_LOG2("Now wday: ", Blinker.wday());
-        BLINKER_LOG2("Now month: ", Blinker.month());
-        BLINKER_LOG2("Now mday: ", Blinker.mday());
-        BLINKER_LOG2("Now year: ", Blinker.year());
-        BLINKER_LOG2("Now yday: ", Blinker.yday());
-        BLINKER_LOG2("Now ntp time: ", Blinker.time());
+        BLINKER_LOG("Now second: ", Blinker.second());
+        BLINKER_LOG("Now minute: ", Blinker.minute());
+        BLINKER_LOG("Now hour: ", Blinker.hour());
+        BLINKER_LOG("Now wday: ", Blinker.wday());
+        BLINKER_LOG("Now month: ", Blinker.month());
+        BLINKER_LOG("Now mday: ", Blinker.mday());
+        BLINKER_LOG("Now year: ", Blinker.year());
+        BLINKER_LOG("Now yday: ", Blinker.yday());
+        BLINKER_LOG("Now ntp time: ", Blinker.time());
     }
 }

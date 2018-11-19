@@ -1,17 +1,17 @@
 #ifndef BlinkerText_H
 #define BlinkerText_H
 
-#include <Blinker/BlinkerConfig.h>
-#include <utility/BlinkerUtility.h>
+#include "Blinker/BlinkerConfig.h"
+#include "utility/BlinkerUtility.h"
 
 class BlinkerText
 {
     public :
-        BlinkerText(const String & _name)
+        BlinkerText(char _name[])
             // : textName(_name)
         {
-            textName = (char*)malloc((_name.length()+1)*sizeof(char));
-            strcpy(textName, _name.c_str());
+            textName = (char*)malloc((strlen(_name)+1)*sizeof(char));
+            strcpy(textName, _name);
         }
         
         // template <typename T>

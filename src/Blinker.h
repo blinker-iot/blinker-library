@@ -10,9 +10,9 @@
     #endif
 
     #if defined(ESP32)
-        #include <BlinkerESP32_BLE.h>
+        #include "BlinkerESP32_BLE.h"
     #else
-        #include <BlinkerSerialBLE.h>
+        #include "BlinkerSerialBLE.h"
     #endif
 
 #elif defined(BLINKER_WIFI)
@@ -23,9 +23,9 @@
     #endif
 
     #if defined(ESP8266)
-        #include <BlinkerESP8266_WS.h>
+        #include "BlinkerESP8266_WS.h"
     #elif defined(ESP32)
-        #include <BlinkerESP32_WS.h>
+        #include "BlinkerESP32_WS.h"
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
@@ -83,9 +83,9 @@
     #endif
 
     #if defined(ESP8266)
-        #include <BlinkerESP8266_MQTT.h>
+        #include "BlinkerESP8266_MQTT.h"
     #elif defined(ESP32)
-        #include <BlinkerESP32_MQTT.h>
+        #include "BlinkerESP32_MQTT.h"
     #else
         #define BLINKER_ESP_AT
 
@@ -93,7 +93,7 @@
 
         #undef BLINKER_MQTT
 
-        #include <BlinkerSerialESP.h>
+        #include "BlinkerSerialESP.h"
         // #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
@@ -113,9 +113,9 @@
     #endif
 
     #if defined(ESP8266)
-        #include <BlinkerESP8266_PRO.h>
+        #include "BlinkerESP8266_PRO.h"
     #elif defined(ESP32)
-        #include <BlinkerESP32_PRO.h>
+        #include "BlinkerESP32_PRO.h"
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
@@ -131,14 +131,14 @@
         #define BLINKER_NB73
     #endif
     
-    #include <BlinkerSerialNBIOT.h>
+    #include "BlinkerSerialNBIOT.h"
     
 #elif defined(BLINKER_AT_MQTT)
 
     #define BLINKER_ESP_AT
 
     #if defined(ESP8266) || defined(ESP32)
-        #include <BlinkerESPAT_MQTT.h>
+        #include "BlinkerESPAT_MQTT.h"
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif

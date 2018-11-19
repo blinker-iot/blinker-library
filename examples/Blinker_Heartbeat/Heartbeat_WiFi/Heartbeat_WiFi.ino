@@ -37,7 +37,7 @@ bool switch_state = false;
 
 void switch_callback(const String & state)
 {
-    BLINKER_LOG2("get switch state: ", state);
+    BLINKER_LOG("get switch state: ", state);
 
     if (state == BLINKER_CMD_ON) {
         switch_state = true;
@@ -78,7 +78,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
 
         Blinker.vibrate();
         

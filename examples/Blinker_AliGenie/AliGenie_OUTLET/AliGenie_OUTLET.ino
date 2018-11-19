@@ -39,7 +39,7 @@ bool oState = false;
 
 void aligeniePowerState(const String & state)
 {
-    BLINKER_LOG2("need set power state: ", state);
+    BLINKER_LOG("need set power state: ", state);
 
     if (state == BLINKER_CMD_ON) {
         digitalWrite(LED_BUILTIN, HIGH);
@@ -61,17 +61,17 @@ void aligeniePowerState(const String & state)
 
 void aligenieQuery(int32_t queryCode)
 {
-    BLINKER_LOG2("AliGenie Query codes: ", queryCode);
+    BLINKER_LOG("AliGenie Query codes: ", queryCode);
 
     switch (queryCode)
     {
         case BLINKER_CMD_QUERY_ALL_NUMBER :
-            BLINKER_LOG1("AliGenie Query All");
+            BLINKER_LOG("AliGenie Query All");
             BlinkerAliGenie.powerState(oState ? "on" : "off");
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :
-            BLINKER_LOG1("AliGenie Query Power State");
+            BLINKER_LOG("AliGenie Query Power State");
             BlinkerAliGenie.powerState(oState ? "on" : "off");
             BlinkerAliGenie.print();
             break;
@@ -100,7 +100,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
 
         uint32_t BlinkerTime = millis();
 

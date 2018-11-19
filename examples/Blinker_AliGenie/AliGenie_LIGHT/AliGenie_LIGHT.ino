@@ -64,10 +64,10 @@ void pixelShow()
 void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
 {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    BLINKER_LOG2("R value: ", r_value);
-    BLINKER_LOG2("G value: ", g_value);
-    BLINKER_LOG2("B value: ", b_value);
-    BLINKER_LOG2("Rrightness value: ", bright_value);
+    BLINKER_LOG("R value: ", r_value);
+    BLINKER_LOG("G value: ", g_value);
+    BLINKER_LOG("B value: ", b_value);
+    BLINKER_LOG("Rrightness value: ", bright_value);
 
     colorR = r_value;
     colorG = g_value;
@@ -108,7 +108,7 @@ String getColor()
 
 void aligeniePowerState(const String & state)
 {
-    BLINKER_LOG2("need set power state: ", state);
+    BLINKER_LOG("need set power state: ", state);
 
     if (state == BLINKER_CMD_ON) {
         digitalWrite(LED_BUILTIN, HIGH);
@@ -134,7 +134,7 @@ void aligeniePowerState(const String & state)
 
 void aligenieColor(const String & color)
 {
-    BLINKER_LOG2("need set color: ", color);
+    BLINKER_LOG("need set color: ", color);
 
     if (color == "Red") {
         colorR = 255;
@@ -199,7 +199,7 @@ void aligenieColor(const String & color)
 
 void aligenieMode(const String & mode)
 {
-    BLINKER_LOG2("need set mode: ", mode);
+    BLINKER_LOG("need set mode: ", mode);
 
     if (mode == BLINKER_CMD_READING) {
         // Your mode function
@@ -228,7 +228,7 @@ void aligenieMode(const String & mode)
 
 void aligeniecMode(const String & cmode)
 {
-    BLINKER_LOG2("need cancel mode: ", cmode);
+    BLINKER_LOG("need cancel mode: ", cmode);
 
     if (cmode == BLINKER_CMD_READING) {
         // Your mode function
@@ -257,7 +257,7 @@ void aligeniecMode(const String & cmode)
 
 void aligenieBright(const String & bright)
 {
-    BLINKER_LOG2("need set brightness: ", bright);
+    BLINKER_LOG("need set brightness: ", bright);
 
     if (bright == BLINKER_CMD_MAX) {
         colorW = 255;
@@ -269,7 +269,7 @@ void aligenieBright(const String & bright)
         colorW = bright.toInt();
     }
 
-    BLINKER_LOG2("now set brightness: ", colorW);
+    BLINKER_LOG("now set brightness: ", colorW);
 
     pixelShow();
 
@@ -279,13 +279,13 @@ void aligenieBright(const String & bright)
 
 void aligenieRelativeBright(int32_t bright)
 {
-    BLINKER_LOG2("need set relative brightness: ", bright);
+    BLINKER_LOG("need set relative brightness: ", bright);
 
     if (colorW + bright < 255 && colorW + bright >= 0) {
         colorW += bright;
     }
 
-    BLINKER_LOG2("now set brightness: ", colorW);
+    BLINKER_LOG("now set brightness: ", colorW);
 
     pixelShow();
 
@@ -295,7 +295,7 @@ void aligenieRelativeBright(int32_t bright)
 
 void aligenieColoTemp(int32_t colorTemp)
 {
-    BLINKER_LOG2("need set colorTemperature: ", colorTemp);
+    BLINKER_LOG("need set colorTemperature: ", colorTemp);
 
     BlinkerAliGenie.colorTemp(colorTemp);
     BlinkerAliGenie.print();
@@ -303,7 +303,7 @@ void aligenieColoTemp(int32_t colorTemp)
 
 void aligenieRelativeColoTemp(int32_t colorTemp)
 {
-    BLINKER_LOG2("need set relative colorTemperature: ", colorTemp);
+    BLINKER_LOG("need set relative colorTemperature: ", colorTemp);
 
     BlinkerAliGenie.colorTemp(colorTemp);
     BlinkerAliGenie.print();
@@ -311,12 +311,12 @@ void aligenieRelativeColoTemp(int32_t colorTemp)
 
 void aligenieQuery(int32_t queryCode)
 {
-    BLINKER_LOG2("AliGenie Query codes: ", queryCode);
+    BLINKER_LOG("AliGenie Query codes: ", queryCode);
 
     switch (queryCode)
     {
         case BLINKER_CMD_QUERY_ALL_NUMBER :
-            BLINKER_LOG1("AliGenie Query All");
+            BLINKER_LOG("AliGenie Query All");
             BlinkerAliGenie.powerState(wsState ? "on" : "off");
             BlinkerAliGenie.color(getColor());
             BlinkerAliGenie.mode(wsMode);
@@ -325,27 +325,27 @@ void aligenieQuery(int32_t queryCode)
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :
-            BLINKER_LOG1("AliGenie Query Power State");
+            BLINKER_LOG("AliGenie Query Power State");
             BlinkerAliGenie.powerState(wsState ? "on" : "off");
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_QUERY_COLOR_NUMBER :
-            BLINKER_LOG1("AliGenie Query Color");
+            BLINKER_LOG("AliGenie Query Color");
             BlinkerAliGenie.color(getColor());
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_QUERY_MODE_NUMBER :
-            BLINKER_LOG1("AliGenie Query Mode");
+            BLINKER_LOG("AliGenie Query Mode");
             BlinkerAliGenie.mode(wsMode);
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_QUERY_COLORTEMP_NUMBER :
-            BLINKER_LOG1("AliGenie Query ColorTemperature");
+            BLINKER_LOG("AliGenie Query ColorTemperature");
             BlinkerAliGenie.colorTemp(50);
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER :
-            BLINKER_LOG1("AliGenie Query Brightness");
+            BLINKER_LOG("AliGenie Query Brightness");
             BlinkerAliGenie.brightness(colorW);
             BlinkerAliGenie.print();
             break;
@@ -401,7 +401,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
 
         uint32_t BlinkerTime = millis();
 
