@@ -49,7 +49,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
 
         uint32_t BlinkerTime = millis();
 
@@ -59,19 +59,19 @@ void loop()
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
         String get_weather = Blinker.weather();
 
-        BLINKER_LOG("weather: ", get_weather);
+        BLINKER_LOG2("weather: ", get_weather);
 
         DynamicJsonBuffer jsonBuffer;
         JsonObject& weather = jsonBuffer.parseObject(get_weather);
 
         if (!weather.success()) {
-            BLINKER_LOG(get_weather, " , not a Json buffer!");
+            BLINKER_LOG2(get_weather, " , not a Json buffer!");
         }
 
         String weather_text = weather["cond_txt"];
         int8_t weather_temp = weather["tmp"];
 
-        BLINKER_LOG("Local weather is: ", weather_text, " ,temperature is: ", weather_temp, "℃");
+        BLINKER_LOG5("Local weather is: ", weather_text, " ,temperature is: ", weather_temp, "℃");
 
         Blinker.delay(60000);
     }

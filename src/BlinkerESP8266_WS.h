@@ -1,7 +1,7 @@
 #ifndef BlinkerESP8266_WS_H
 #define BlinkerESP8266_WS_H
 
-#include "Adapters/BlinkerWebSocket.h"
+#include <Adapters/BlinkerWebSocket.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
@@ -29,7 +29,7 @@ class BlinkerESP8266_WS
             if (!autoInit())
                 smartconfig();
             Base::loadTimer();
-            BLINKER_LOG(BLINKER_F("ESP8266_WiFi initialized..."));
+            BLINKER_LOG1(BLINKER_F("ESP8266_WiFi initialized..."));
         }
 // #endif
 #elif defined(BLINKER_APCONFIG)
@@ -44,7 +44,7 @@ class BlinkerESP8266_WS
                 }
             }
             Base::loadTimer();
-            BLINKER_LOG(BLINKER_F("ESP8266_WiFi initialized..."));
+            BLINKER_LOG1(BLINKER_F("ESP8266_WiFi initialized..."));
         }
 #else
         void begin(const char* _ssid,
@@ -53,7 +53,7 @@ class BlinkerESP8266_WS
             Base::begin();
             connectWiFi(_ssid, _pswd);
             Base::loadTimer();
-            BLINKER_LOG(BLINKER_F("ESP8266_WiFi initialized..."));
+            BLINKER_LOG1(BLINKER_F("ESP8266_WiFi initialized..."));
         }
 #endif
     
@@ -71,9 +71,9 @@ class BlinkerESP8266_WS
             delay(100);
 
             _server->begin();
-            BLINKER_LOG(BLINKER_F("AP IP address: "), WiFi.softAPIP());
-            BLINKER_LOG(BLINKER_F("HTTP _server started"));
-            BLINKER_LOG(BLINKER_F("URL: http://"), WiFi.softAPIP());
+            BLINKER_LOG2(BLINKER_F("AP IP address: "), WiFi.softAPIP());
+            BLINKER_LOG1(BLINKER_F("HTTP _server started"));
+            BLINKER_LOG2(BLINKER_F("URL: http://"), WiFi.softAPIP());
         }
 
         void serverClient()
@@ -87,7 +87,7 @@ class BlinkerESP8266_WS
                 if (_client.status() == CLOSED)
                 {
                     _client.stop();
-                    BLINKER_LOG(BLINKER_F("Connection closed on _client"));
+                    BLINKER_LOG1(BLINKER_F("Connection closed on _client"));
                 }
                 else
                 {
@@ -98,7 +98,7 @@ class BlinkerESP8266_WS
                         // data = data.substring(4, data.length() - 9);
                         _client.flush();
 
-                        // BLINKER_LOG("clientData: ", data);
+                        // BLINKER_LOG2("clientData: ", data);
 
                         if (STRING_contains_string(data, "ssid") && STRING_contains_string(data, "pswd")) {
 
@@ -122,7 +122,7 @@ class BlinkerESP8266_WS
 
         bool parseUrl(String data)
         {
-            BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
+            BLINKER_LOG2(BLINKER_F("APCONFIG data: "), data);
             DynamicJsonBuffer jsonBuffer;
             JsonObject& wifi_data = jsonBuffer.parseObject(data);
 
@@ -133,8 +133,8 @@ class BlinkerESP8266_WS
             String _ssid = wifi_data["ssid"];
             String _pswd = wifi_data["pswd"];
 
-            BLINKER_LOG(BLINKER_F("ssid: "), _ssid);
-            BLINKER_LOG(BLINKER_F("pswd: "), _pswd);
+            BLINKER_LOG2(BLINKER_F("ssid: "), _ssid);
+            BLINKER_LOG2(BLINKER_F("pswd: "), _pswd);
 
             free(_server);
             connectWiFi(_ssid, _pswd);
@@ -149,7 +149,7 @@ class BlinkerESP8266_WS
 
             WiFi.begin();
             ::delay(500);
-            BLINKER_LOG(BLINKER_F("Waiting for WiFi "),BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
+            BLINKER_LOG3(BLINKER_F("Waiting for WiFi "),BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
                 BLINKER_F("s, will enter SMARTCONFIG or APCONFIG while WiFi not connect!"));
             uint8_t _times = 0;
             while (WiFi.status() != WL_CONNECTED) {
@@ -160,10 +160,10 @@ class BlinkerESP8266_WS
 
             if (WiFi.status() != WL_CONNECTED) return false;
             else {
-                BLINKER_LOG(BLINKER_F("WiFi Connected."));
+                BLINKER_LOG1(BLINKER_F("WiFi Connected."));
 
-                BLINKER_LOG(BLINKER_F("IP Address: "));
-                BLINKER_LOG(WiFi.localIP());
+                BLINKER_LOG1(BLINKER_F("IP Address: "));
+                BLINKER_LOG1(WiFi.localIP());
 
                 mDNSInit();
                 return true;
@@ -177,22 +177,22 @@ class BlinkerESP8266_WS
             WiFi.hostname(_hostname.c_str());
             WiFi.beginSmartConfig();
             
-            BLINKER_LOG(BLINKER_F("Waiting for SmartConfig."));
+            BLINKER_LOG1(BLINKER_F("Waiting for SmartConfig."));
             while (!WiFi.smartConfigDone()) {
                 ::delay(500);
             }
 
-            BLINKER_LOG(BLINKER_F("SmartConfig received."));
+            BLINKER_LOG1(BLINKER_F("SmartConfig received."));
             
-            BLINKER_LOG(BLINKER_F("Waiting for WiFi"));
+            BLINKER_LOG1(BLINKER_F("Waiting for WiFi"));
             while (WiFi.status() != WL_CONNECTED) {
                 ::delay(500);
             }
 
-            BLINKER_LOG(BLINKER_F("WiFi Connected."));
+            BLINKER_LOG1(BLINKER_F("WiFi Connected."));
 
-            BLINKER_LOG(BLINKER_F("IP Address: "));
-            BLINKER_LOG(WiFi.localIP());
+            BLINKER_LOG1(BLINKER_F("IP Address: "));
+            BLINKER_LOG1(WiFi.localIP());
 
             mDNSInit();
         }
@@ -206,7 +206,7 @@ class BlinkerESP8266_WS
                 }
             }
 
-            BLINKER_LOG(BLINKER_F("mDNS responder started"));
+            BLINKER_LOG1(BLINKER_F("mDNS responder started"));
             
             MDNS.addService("DiyArduino", "tcp", WS_SERVERPORT);
             MDNS.addServiceTxt("DiyArduino", "tcp", "deviceName", macDeviceName());
@@ -223,7 +223,7 @@ class BlinkerESP8266_WS
         {
             uint32_t connectTime = millis();
 
-            BLINKER_LOG(BLINKER_F("Connecting to "), _ssid);
+            BLINKER_LOG2(BLINKER_F("Connecting to "), _ssid);
 
             WiFi.mode(WIFI_STA);
             String _hostname = "DiyArduino_" + macDeviceName();
@@ -241,14 +241,14 @@ class BlinkerESP8266_WS
 
                 if (millis() - connectTime > BLINKER_CONNECT_TIMEOUT_MS && WiFi.status() != WL_CONNECTED) {
                     connectTime = millis();
-                    BLINKER_LOG(BLINKER_F("WiFi connect timeout, please check ssid and pswd!"));
-                    BLINKER_LOG(BLINKER_F("Retring WiFi connect again!"));
+                    BLINKER_LOG1(BLINKER_F("WiFi connect timeout, please check ssid and pswd!"));
+                    BLINKER_LOG1(BLINKER_F("Retring WiFi connect again!"));
                 }
             }
-            BLINKER_LOG(BLINKER_F("Connected"));
+            BLINKER_LOG1(BLINKER_F("Connected"));
 
             IPAddress myip = WiFi.localIP();
-            BLINKER_LOG(BLINKER_F("Your IP is: "), myip);
+            BLINKER_LOG2(BLINKER_F("Your IP is: "), myip);
 
             mDNSInit();
         }

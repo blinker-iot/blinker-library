@@ -49,7 +49,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
 
         Blinker.vibrate();
         
@@ -58,9 +58,9 @@ void loop()
         Blinker.print("millis", BlinkerTime);
     }
 
-    BLINKER_LOG("AHRS Yaw: ", Blinker.ahrs(Yaw));
-    BLINKER_LOG("AHRS Roll: ", Blinker.ahrs(Roll));
-    BLINKER_LOG("AHRS Pitch: ", Blinker.ahrs(Pitch));
+    BLINKER_LOG2("AHRS Yaw: ", Blinker.ahrs(Yaw));
+    BLINKER_LOG2("AHRS Roll: ", Blinker.ahrs(Roll));
+    BLINKER_LOG2("AHRS Pitch: ", Blinker.ahrs(Pitch));
 
     Blinker.delay(2000);
 }

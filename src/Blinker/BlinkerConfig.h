@@ -1,7 +1,7 @@
 #ifndef BlinkerConfig_H
 #define BlinkerConfig_H
 
-#include "utility/BlinkerDebug.h"
+#include <utility/BlinkerDebug.h>
 
 #define BLINKER_VERSION                 "0.2.3"
 

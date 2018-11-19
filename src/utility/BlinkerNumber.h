@@ -1,17 +1,17 @@
 #ifndef BlinkerNUM_H
 #define BlinkerNUM_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "utility/BlinkerUtility.h"
+#include <Blinker/BlinkerConfig.h>
+#include <utility/BlinkerUtility.h>
 
 class BlinkerNumber
 {
     public :
-        BlinkerNumber(char _name[])
+        BlinkerNumber(const String & _name)
             // : numName(_name)
         {
-            numName = (char*)malloc((strlen(_name)+1)*sizeof(char));
-            strcpy(numName, _name);
+            numName = (char*)malloc((_name.length()+1)*sizeof(char));
+            strcpy(numName, _name.c_str());
         }
         
         void icon(const String & _icon) {

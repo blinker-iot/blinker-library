@@ -16,7 +16,7 @@ class BlinkerESP32_PRO
         void begin(const char* _type = BLINKER_AIR_DETECTOR) {
             Base::begin(_type);
             Base::loadTimer();
-            BLINKER_LOG("ESP8266_PRO initialized...");
+            BLINKER_LOG1("ESP8266_PRO initialized...");
         }
 };
 

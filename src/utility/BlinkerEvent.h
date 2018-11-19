@@ -17,7 +17,7 @@ class BlinkerEVENT
 
         void run(String key, float data, int32_t nowTime) {
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG(BLINKER_F("BlinkerAUTO run key: "), key, 
+            BLINKER_LOG6(BLINKER_F("BlinkerAUTO run key: "), key, 
                         BLINKER_F(" data: "), data, 
                         BLINKER_F(" nowTime: "), nowTime);
 #endif
@@ -40,8 +40,8 @@ class BlinkerEVENT
                             [BLINKER_CMD_RUN];
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG(BLINKER_F("==============================================="));
-            BLINKER_LOG(BLINKER_F("event state: "), _eventState);
+            BLINKER_LOG1(BLINKER_F("==============================================="));
+            BLINKER_LOG2(BLINKER_F("event state: "), _eventState);
 #endif
 
             String eventType = root[BLINKER_CMD_SET][BLINKER_CMD_EVENT]
@@ -66,12 +66,12 @@ class BlinkerEVENT
             }
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG(BLINKER_F("eventType: "), eventType);
+            BLINKER_LOG2(BLINKER_F("eventType: "), eventType);
 #endif
 
             if (eventType == BLINKER_CMD_STATE) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("state!"));
+                BLINKER_LOG1(BLINKER_F("state!"));
 #endif
                 _dataNum = 1;
                 _haveEvent = 1;
@@ -99,16 +99,16 @@ class BlinkerEVENT
                 else if (targetValue == BLINKERCMD_OFF) _targetValue[0] = 0;
 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("_dataType[0]: "), _dataType[0]);
-                BLINKER_LOG(BLINKER_F("_targetKey[0]: "), _targetKey[0]);
-                BLINKER_LOG(BLINKER_F("_targetValue[0]: "), _targetValue[0]);
-                BLINKER_LOG(BLINKER_F("_targetType[0]: "), _targetType[0]);
-                // BLINKER_LOG(BLINKER_F("_duration: "), _duration[0]);
+                BLINKER_LOG2(BLINKER_F("_dataType[0]: "), _dataType[0]);
+                BLINKER_LOG2(BLINKER_F("_targetKey[0]: "), _targetKey[0]);
+                BLINKER_LOG2(BLINKER_F("_targetValue[0]: "), _targetValue[0]);
+                BLINKER_LOG2(BLINKER_F("_targetType[0]: "), _targetType[0]);
+                // BLINKER_LOG2(BLINKER_F("_duration: "), _duration[0]);
 #endif
             }
             else if (eventType == BLINKER_CMD_NUMBERIC) {
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("numberic!"));
+                BLINKER_LOG1(BLINKER_F("numberic!"));
 #endif        
                 _dataNum = 1;
                 _haveEvent = 1;
@@ -134,23 +134,23 @@ class BlinkerEVENT
                 else if (targetType == BLINKER_CMD_GREATER) _targetType[0] = BLINKER_COMPARE_GREATER;
 
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("_dataType[0]: "), _dataType[0]);
-                BLINKER_LOG(BLINKER_F("_targetKey[0]: "), _targetKey[0]);
-                BLINKER_LOG(BLINKER_F("_targetValue[0]: "), _targetValue[0]);
-                BLINKER_LOG(BLINKER_F("_targetType[0]: "), _targetType[0]);
-                // BLINKER_LOG(BLINKER_F("_duration: "), _duration[0]);
+                BLINKER_LOG2(BLINKER_F("_dataType[0]: "), _dataType[0]);
+                BLINKER_LOG2(BLINKER_F("_targetKey[0]: "), _targetKey[0]);
+                BLINKER_LOG2(BLINKER_F("_targetValue[0]: "), _targetValue[0]);
+                BLINKER_LOG2(BLINKER_F("_targetType[0]: "), _targetType[0]);
+                // BLINKER_LOG2(BLINKER_F("_duration: "), _duration[0]);
 #endif
             }
             else if (eventType == BLINKER_CMD_OR || eventType == BLINKER_CMD_AND) {
                 if (eventType == BLINKER_CMD_OR) {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG(BLINKER_F("or!"));
+                    BLINKER_LOG1(BLINKER_F("or!"));
 #endif
                     _eventType = BLINKER_TYPE_OR;
                 }
                 else if (eventType == BLINKER_CMD_AND) {
 #ifdef BLINKER_DEBUG_ALL
-                    BLINKER_LOG(BLINKER_F("and!"));
+                    BLINKER_LOG1(BLINKER_F("and!"));
 #endif
                     _eventType = BLINKER_TYPE_AND;
                 }
@@ -205,16 +205,16 @@ class BlinkerEVENT
                     }
                 }
 #ifdef BLINKER_DEBUG_ALL
-                BLINKER_LOG(BLINKER_F("_dataType[0]: "),    _dataType[0]);
-                BLINKER_LOG(BLINKER_F("_targetKey[0]: "),   _targetKey[0]);
-                BLINKER_LOG(BLINKER_F("_targetValue[0]: "), _targetValue[0]);
-                BLINKER_LOG(BLINKER_F("_targetType[0]: "),  _targetType[0]);
+                BLINKER_LOG2(BLINKER_F("_dataType[0]: "),    _dataType[0]);
+                BLINKER_LOG2(BLINKER_F("_targetKey[0]: "),   _targetKey[0]);
+                BLINKER_LOG2(BLINKER_F("_targetValue[0]: "), _targetValue[0]);
+                BLINKER_LOG2(BLINKER_F("_targetType[0]: "),  _targetType[0]);
 
-                BLINKER_LOG(BLINKER_F("_dataType[1]: "),    _dataType[1]);
-                BLINKER_LOG(BLINKER_F("_targetKey[1]: "),   _targetKey[1]);
-                BLINKER_LOG(BLINKER_F("_targetValue[1]: "), _targetValue[1]);
-                BLINKER_LOG(BLINKER_F("_targetType[1]: "),  _targetType[1]);
-                // BLINKER_LOG(BLINKER_F("_duration: "), _duration[0]);
+                BLINKER_LOG2(BLINKER_F("_dataType[1]: "),    _dataType[1]);
+                BLINKER_LOG2(BLINKER_F("_targetKey[1]: "),   _targetKey[1]);
+                BLINKER_LOG2(BLINKER_F("_targetValue[1]: "), _targetValue[1]);
+                BLINKER_LOG2(BLINKER_F("_targetType[1]: "),  _targetType[1]);
+                // BLINKER_LOG2(BLINKER_F("_duration: "), _duration[0]);
 #endif
             }
 
@@ -240,7 +240,7 @@ class BlinkerEVENT
 
             serialization();
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG(BLINKER_F("_msg: "), _msg);
+            BLINKER_LOG2(BLINKER_F("_msg: "), _msg);
 #endif
         }
 
@@ -321,38 +321,38 @@ class BlinkerEVENT
             EEPROM.end();
 
 #ifdef BLINKER_DEBUG_ALL
-            BLINKER_LOG(BLINKER_F("==============================================="));
+            BLINKER_LOG1(BLINKER_F("==============================================="));
             switch (_eventType) {
                 case BLINKER_TYPE_STATE :
-                    BLINKER_LOG(BLINKER_F("_eventType: state"));
+                    BLINKER_LOG1(BLINKER_F("_eventType: state"));
                     break;
                 case BLINKER_TYPE_NUMERIC :
-                    BLINKER_LOG(BLINKER_F("_eventType: numberic"));
+                    BLINKER_LOG1(BLINKER_F("_eventType: numberic"));
                     break;
                 case BLINKER_TYPE_OR :
-                    BLINKER_LOG(BLINKER_F("_eventType: or"));
+                    BLINKER_LOG1(BLINKER_F("_eventType: or"));
                     break;
                 case BLINKER_TYPE_AND :
-                    BLINKER_LOG(BLINKER_F("_eventType: and"));
+                    BLINKER_LOG1(BLINKER_F("_eventType: and"));
                     break;
                 default :
                     break;
             }
 
-            BLINKER_LOG(BLINKER_F("_dataType[0]: "),    _dataType[0]);
-            BLINKER_LOG(BLINKER_F("_targetKey[0]: "),   _targetKey[0]);
-            BLINKER_LOG(BLINKER_F("_targetValue[0]: "), _targetValue[0]);
-            BLINKER_LOG(BLINKER_F("_targetType[0]: "),  _targetType[0]);
+            BLINKER_LOG2(BLINKER_F("_dataType[0]: "),    _dataType[0]);
+            BLINKER_LOG2(BLINKER_F("_targetKey[0]: "),   _targetKey[0]);
+            BLINKER_LOG2(BLINKER_F("_targetValue[0]: "), _targetValue[0]);
+            BLINKER_LOG2(BLINKER_F("_targetType[0]: "),  _targetType[0]);
 
-            BLINKER_LOG(BLINKER_F("_dataType[1]: "),    _dataType[1]);
-            BLINKER_LOG(BLINKER_F("_targetKey[1]: "),   _targetKey[1]);
-            BLINKER_LOG(BLINKER_F("_targetValue[1]: "), _targetValue[1]);
-            BLINKER_LOG(BLINKER_F("_targetType[1]: "),  _targetType[1]);
+            BLINKER_LOG2(BLINKER_F("_dataType[1]: "),    _dataType[1]);
+            BLINKER_LOG2(BLINKER_F("_targetKey[1]: "),   _targetKey[1]);
+            BLINKER_LOG2(BLINKER_F("_targetValue[1]: "), _targetValue[1]);
+            BLINKER_LOG2(BLINKER_F("_targetType[1]: "),  _targetType[1]);
 
-            BLINKER_LOG(BLINKER_F("_msgType: "), _msgType);
-            BLINKER_LOG(BLINKER_F("_msg: "),     _msg);
+            BLINKER_LOG2(BLINKER_F("_msgType: "), _msgType);
+            BLINKER_LOG2(BLINKER_F("_msg: "),     _msg);
 
-            BLINKER_LOG(BLINKER_F("==============================================="));
+            BLINKER_LOG1(BLINKER_F("==============================================="));
 #endif
         }
 

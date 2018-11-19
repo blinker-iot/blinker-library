@@ -36,8 +36,8 @@ BlinkerJoystick JOY1(JOY_1);
 
 void joystick1_callback(uint8_t xAxis, uint8_t yAxis)
 {
-    BLINKER_LOG("Joystick1 X axis: ", xAxis);
-    BLINKER_LOG("Joystick1 Y axis: ", yAxis);
+    BLINKER_LOG2("Joystick1 X axis: ", xAxis);
+    BLINKER_LOG2("Joystick1 Y axis: ", yAxis);
 }
 
 void setup()
@@ -57,7 +57,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
 
         Blinker.vibrate();
         

@@ -37,12 +37,12 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 void aligenieQuery(int32_t queryCode)
 {
-    BLINKER_LOG("AliGenie Query codes: ", queryCode);
+    BLINKER_LOG2("AliGenie Query codes: ", queryCode);
 
     switch (queryCode)
     {
         case BLINKER_CMD_QUERY_ALL_NUMBER :
-            BLINKER_LOG("AliGenie Query All");
+            BLINKER_LOG1("AliGenie Query All");
             BlinkerAliGenie.temp(20);
             BlinkerAliGenie.humi(20);
             BlinkerAliGenie.pm25(20);
@@ -74,7 +74,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
 
         uint32_t BlinkerTime = millis();
 

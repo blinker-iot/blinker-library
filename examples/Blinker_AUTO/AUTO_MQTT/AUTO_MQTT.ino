@@ -58,7 +58,7 @@
 //     Blinker.run();
 
 //     if (Blinker.available()) {
-//         BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
+//         BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
 
 //         uint32_t BlinkerTime = millis();
 

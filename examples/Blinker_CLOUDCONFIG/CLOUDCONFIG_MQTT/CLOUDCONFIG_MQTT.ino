@@ -49,7 +49,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG2("Blinker.readString(): ", Blinker.readString());
 
         uint32_t BlinkerTime = millis();
 
@@ -60,7 +60,7 @@ void loop()
         if (Blinker.configUpdate("Hello blinker!")) {
             String config_data = Blinker.configGet();
 
-            BLINKER_LOG("Blinker.configGet(): ", config_data);
+            BLINKER_LOG2("Blinker.configGet(): ", config_data);
         }
 
         Blinker.delay(60000);

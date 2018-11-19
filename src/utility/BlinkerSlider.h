@@ -1,13 +1,13 @@
 #ifndef BlinkerSlider_H
 #define BlinkerSlider_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "utility/BlinkerUtility.h"
+#include <Blinker/BlinkerConfig.h>
+#include <utility/BlinkerUtility.h>
 
 class BlinkerSlider
 {
     public :
-        BlinkerSlider(char _name[], callback_with_int32_arg_t _func = NULL)
+        BlinkerSlider(const String & _name, callback_with_int32_arg_t _func = NULL)
             // : sliderName(_name)
         {
             wNum = Blinker.attachWidget(_name, _func);

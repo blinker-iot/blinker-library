@@ -1,13 +1,13 @@
 #ifndef BlinkerJoystick_H
 #define BlinkerJoystick_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "utility/BlinkerUtility.h"
+#include <Blinker/BlinkerConfig.h>
+#include <utility/BlinkerUtility.h>
 
 class BlinkerJoystick
 {
     public :
-        BlinkerJoystick(char _name[], callback_with_joy_arg_t _func = NULL)
+        BlinkerJoystick(const String & _name, callback_with_joy_arg_t _func = NULL)
             // : jName(_name)
         {
             wNum = Blinker.attachWidget(_name, _func);
