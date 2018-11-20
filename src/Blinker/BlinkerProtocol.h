@@ -116,7 +116,7 @@ static SerialConfig serConfig()
     }
 }
 
-enum atState_t {
+enum blinker_at_state_t {
     AT_NONE,
     AT_TEST,
     AT_QUERY,
@@ -124,7 +124,7 @@ enum atState_t {
     AT_ACTION
 };
 
-enum atStatus_t {
+enum blinker_at_status_t {
     BL_BEGIN,
     BL_INITED
     // ,
@@ -132,21 +132,21 @@ enum atStatus_t {
     // MQTT_WIFI_PSWD
 };
 
-enum atSerial_t {
+enum blinker_at_serial_t {
     SER_BAUD,
     SER_DBIT,
     SER_SBIT,
     SER_PRIT
 };
 
-enum atMQTT_t {
+enum blinker_at_mqtt_t {
     MQTT_CONFIG_MODE,
     MQTT_AUTH_KEY,
     MQTT_WIFI_SSID,
     MQTT_WIFI_PSWD
 };
 
-enum atAligenie_t {
+enum blinker_at_aligenie_t {
     ALI_NONE,
     ALI_LIGHT,
     ALI_OUTLET,
@@ -168,7 +168,7 @@ class BlinkerSlaverAT
             // return _isAT;
         }
 
-        atState_t state() { return _set; }
+        blinker_at_state_t state() { return _set; }
 
         String cmd() { return _atCmd; }
 
@@ -181,7 +181,7 @@ class BlinkerSlaverAT
 
     private :
         // bool _isAT;
-        atState_t _set;
+        blinker_at_state_t _set;
         uint8_t _paramNum;
         // String _data;
         String _atCmd;
@@ -1695,9 +1695,9 @@ class BlinkerProtocol
 #endif
 
 #if defined(BLINKER_AT_MQTT)
-        atStatus_t  _status = BL_BEGIN;
+        blinker_at_status_t  _status = BL_BEGIN;
         uint8_t     _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
-        atAligenie_t _aliType = ALI_NONE;
+        blinker_at_aligenie_t _aliType = ALI_NONE;
         uint8_t     pinDataNum = 0;
 #endif
 
@@ -1999,7 +1999,7 @@ class BlinkerProtocol
                 conn.serialPrint(BLINKER_CMD_OK);
             }
             else if (_slaverAT->cmd() == BLINKER_CMD_UART_CUR) {
-                atState_t at_state = _slaverAT->state();
+                blinker_at_state_t at_state = _slaverAT->state();
 
                 BLINKER_LOG(at_state);
 
@@ -2057,7 +2057,7 @@ class BlinkerProtocol
                 }
             }
             else if (_slaverAT->cmd() == BLINKER_CMD_UART_DEF) {
-                atState_t at_state = _slaverAT->state();
+                blinker_at_state_t at_state = _slaverAT->state();
 
                 BLINKER_LOG(at_state);
 
@@ -2276,7 +2276,7 @@ class BlinkerProtocol
 
                 BLINKER_LOG(BLINKER_CMD_BLINKER_MQTT);
 
-                atState_t at_state = _slaverAT->state();
+                blinker_at_state_t at_state = _slaverAT->state();
 
                 BLINKER_LOG(at_state);
 
@@ -2375,7 +2375,7 @@ class BlinkerProtocol
 
                 BLINKER_LOG(BLINKER_CMD_BLINKER_ALIGENIE);
 
-                atState_t at_state = _slaverAT->state();
+                blinker_at_state_t at_state = _slaverAT->state();
 
                 BLINKER_LOG_ALL(at_state);
 
@@ -2435,7 +2435,7 @@ class BlinkerProtocol
 
                 BLINKER_LOG(BLINKER_CMD_TIMEZONE);
 
-                atState_t at_state = _slaverAT->state();
+                blinker_at_state_t at_state = _slaverAT->state();
 
                 BLINKER_LOG(at_state);
 

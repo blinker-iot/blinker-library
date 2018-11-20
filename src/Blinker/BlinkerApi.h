@@ -10,6 +10,10 @@
     #include "utility/BlinkerTimingTimer.h"
 #endif
 
+#if defined(BLINKER_MQTT_AT)
+    #include "modules/ArduinoJson/ArduinoJson.h"
+#endif
+
 #if defined(ESP8266)
     #include <ESP8266HTTPClient.h>
 #elif defined(ESP32)
@@ -657,21 +661,28 @@ static void timingHandle(uint8_t cbackData) {
 #endif
 
 #if defined(BLINKER_MQTT_AT)
+enum blinker_at_m_state_t {
+    AT_M_NONE,
+    AT_M_RESP,
+    AT_M_OK,
+    AT_M_ERR
+};
+
 class BlinkerMasterAT
 {
     public :
-        BlinkerMasterAT()
-            : _isReq(false)
-        {}
+        BlinkerMasterAT() {}
+        //     : _isReq(false)
+        // {}
 
         void update(const String & data) {
             // _data = data;
             // BLINKER_LOG(BLINKER_F("update data: "), data);
-            _isReq = serialize(data);
+            serialize(data);
             // return _isReq;
         }
 
-        bool isReq() { return _isReq; }
+        blinker_at_m_state_t getState() { return _isReq; }
 
         String reqName() { return _reqName; }
 
@@ -683,7 +694,7 @@ class BlinkerMasterAT
         }
 
     private :
-        bool _isReq;
+        blinker_at_m_state_t _isReq;
         uint8_t _paramNum;
         // String _data;
         String _reqName;
@@ -693,7 +704,7 @@ class BlinkerMasterAT
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
             
             _reqName = "";
-            _isReq = false;
+            _isReq = AT_M_NONE;
             int addr_start = _data.indexOf("+");
             int addr_end = 0;
 
@@ -705,7 +716,8 @@ class BlinkerMasterAT
                 addr_end = _data.indexOf(":");
 
                 if (addr_end == -1) {
-                    return false;
+                    _isReq = AT_M_NONE;
+                    return;
                 }
                 else {
                     _reqName = _data.substring(addr_start + 1, addr_end);
@@ -713,7 +725,7 @@ class BlinkerMasterAT
                     BLINKER_LOG_ALL(BLINKER_F("serialize _reqName: "), _reqName);
                 }
 
-                _isReq = true;
+                // _isReq = true;
 
                 // BLINKER_LOG(BLINKER_F("serialize _data: "), _data);
 
@@ -734,14 +746,17 @@ class BlinkerMasterAT
                     // BLINKER_LOG(BLINKER_F("serialize addr_end: "), addr_end);
 
                     if (addr_end == -1) {
-                        if (addr_start >= dataLen) return false;
+                        if (addr_start >= dataLen) {
+                            _isReq = AT_M_NONE;
+                            return;
+                        }
 
                         addr_end = serData.indexOf(" ");
 
                         if (addr_end != -1) {
                             _param[_paramNum] = serData.substring(0, addr_end);
                             _paramNum++;
-                            return true;
+                            _isReq = AT_M_RESP;
                         }
 
                         _param[_paramNum] = serData;
@@ -750,7 +765,8 @@ class BlinkerMasterAT
                                         BLINKER_F("]: "), _param[_paramNum]);
                         
                         _paramNum++;
-                        return true;
+                        _isReq = AT_M_RESP;
+                        return;
                     }
                     else {
                         _param[_paramNum] = serData.substring(0, addr_end);
@@ -758,10 +774,20 @@ class BlinkerMasterAT
                     BLINKER_LOG_ALL(BLINKER_F("_param["), _paramNum, \
                                     BLINKER_F("]: "), _param[_paramNum]);
                 }
-                return true;
+                _isReq = AT_M_RESP;
+                return;
+            }
+            else if (_data == BLINKER_CMD_OK) {
+                _isReq = AT_M_OK;
+                return;
+            }
+            else if (_data == BLINKER_CMD_ERROR) {
+                _isReq = AT_M_ERR;
+                return;
             }
             else {
-                return false;
+                _isReq = AT_M_NONE;
+                return;
             }
         }
 };
@@ -1888,16 +1914,16 @@ class BlinkerApi
 
                 if (static_cast<Proto*>(this)->available())
                 {
-                    if (!_masterAT) {
-                        _masterAT = new BlinkerMasterAT();
+                    // if (!_masterAT) {
+                    _masterAT = new BlinkerMasterAT();
 
-                        _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
-                    }
-                    else {
-                        _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
-                    }
+                    _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
+                    // }
+                    // else {
+                    //     _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
+                    // }
 
-                    BLINKER_LOG_ALL(BLINKER_F("isReq: "), _masterAT->isReq());
+                    BLINKER_LOG_ALL(BLINKER_F("getState: "), _masterAT->getState());
                     BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
                     BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
 
@@ -1909,6 +1935,8 @@ class BlinkerApi
                         _isInit = true;
                         BLINKER_LOG_ALL("ESP AT init");
                     }
+
+                    free(_masterAT);
                 }
             }
         }
@@ -2095,7 +2123,7 @@ class BlinkerApi
             }
         }
 
-#if defined(ESP8266) || defined(ESP32)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
 
         void strWidgetsParse(char _wName[], const JsonObject& data)
         {
@@ -2562,6 +2590,55 @@ class BlinkerApi
                 }
             }
         }
+
+        // void parseAT() {
+        //     _masterAT = new BlinkerMasterAT();
+
+        //     _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
+            
+        //     BLINKER_LOG_ALL(BLINKER_F("getState: "), _masterAT->getState());
+        //     BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
+        //     BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
+
+        //     if () {
+        //         _fresh = true;
+        //     }
+
+        //     free(_masterAT);
+        // }
+
+
+#if defined(BLINKER_MQTT_AT)
+        float analogRead()
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            BLINKER_CMD_ADC + "?");
+
+            while (!static_cast<Proto*>(this)->available())
+            {
+                static_cast<Proto*>(this)->run();
+            }
+
+            _masterAT = new BlinkerMasterAT();
+            _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
+
+            BLINKER_LOG_ALL(BLINKER_F("getState: "), _masterAT->getState());
+            BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
+            BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
+
+            static_cast<Proto*>(this)->flush();
+
+            float a_read = _masterAT->getParam(0).toFloat();            
+
+            return a_read;
+        }
+
+        void pinMode(uint8_t pin, uint8_t mode)
+        {
+            
+        }
+#endif
+
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         bool autoManager(const JsonObject& data) {
@@ -5264,7 +5341,7 @@ class BlinkerApi
                 if (static_cast<Proto*>(this)->parseState() ) {
                     _fresh = false;
 
-#if defined(ESP8266) || defined(ESP32)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
                     DynamicJsonBuffer jsonBuffer;
                     JsonObject& root = jsonBuffer.parseObject(STRING_format(_data));
 
@@ -5282,12 +5359,12 @@ class BlinkerApi
                     //     return;
                     // }
                     autoManager(root);
+                    timerManager(root);
     #endif
                     // if (timerManager(root)) {
                     //     static_cast<Proto*>(this)->isParsed();
                     //     return;
                     // }
-                    timerManager(root);
                     heartBeat(root);
                     setSwitch(root);
                     getVersion(root);
@@ -5348,7 +5425,7 @@ class BlinkerApi
                 }
             }
             else {
-#if defined(ESP8266) || defined(ESP32)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
                 String data1 = "{\"data\":" + STRING_format(_data) + "}";
                 DynamicJsonBuffer jsonBuffer;
                 JsonObject& root = jsonBuffer.parseObject(data1);
@@ -5373,7 +5450,9 @@ class BlinkerApi
                             JsonObject& _array = _jsonBuffer.parseObject(array_data);
 
                             json_parse(_array);
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                             timerManager(_array, true);
+    #endif
                         }
                         else {
                             return;
@@ -5410,6 +5489,29 @@ class BlinkerApi
             }
         }
 
+        
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+        void json_parse(const JsonObject& data) {
+            setSwitch(data);
+
+            for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
+                strWidgetsParse(_Widgets_str[wNum]->getName(), data);
+            }
+            for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
+                intWidgetsParse(_Widgets_int[wNum_int]->getName(), data);
+            }
+            for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
+                rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), data);
+            }
+            for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
+                joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), data);
+            }
+
+            // joystick(data);
+        }
+#endif
+
+
 #if defined(ESP8266) || defined(ESP32)
         void json_parse_all(const JsonObject& data) {
     #if defined(BLINKER_PRO)
@@ -5444,25 +5546,6 @@ class BlinkerApi
             // joystick(data);
             ahrs(Yaw, data);
             gps(LONG, true, data);
-        }
-
-        void json_parse(const JsonObject& data) {
-            setSwitch(data);
-
-            for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
-                strWidgetsParse(_Widgets_str[wNum]->getName(), data);
-            }
-            for (uint8_t wNum_int = 0; wNum_int < _wCount_int; wNum_int++) {
-                intWidgetsParse(_Widgets_int[wNum_int]->getName(), data);
-            }
-            for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
-                rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), data);
-            }
-            for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
-                joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), data);
-            }
-
-            // joystick(data);
         }
 
         bool ntpInit() {
