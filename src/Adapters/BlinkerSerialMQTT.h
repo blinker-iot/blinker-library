@@ -28,23 +28,71 @@ class BlinkerTransportStream
             }
             
             if (stream->available()) {
-                if (!isFresh) streamData = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
+                // if (!isFresh) {
+                //     streamData = (char*)malloc(1*sizeof(char));
+                // }
+                // int16_t dNum = 0;
+                // int c_d = timedRead();
+                // while (dNum < BLINKER_MAX_READ_SIZE && 
+                //     c_d >=0 && c_d != '\n') {
+                //     if (c_d != '\r') {
+                //         streamData[dNum] = (char)c_d;
+                //         dNum++;
+                //         streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                //     }
+
+                //     c_d = timedRead();
+                // }
+                // dNum++;
+                // streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                // streamData[dNum-1] = '\0';
+
+                // BLINKER_LOG_ALL(BLINKER_F("c_d: "), c_d);
+
+                // BLINKER_LOG_ALL(BLINKER_F("dNum: "), dNum);
+
+                // BLINKER_LOG_ALL(BLINKER_F("strlen: "), strlen(streamData));
                 
+                // for (uint8_t nnum=0; nnum < strlen(streamData); nnum++)
+                // {
+                //     BLINKER_LOG_ALL(BLINKER_F("streamData: "), (int)streamData[nnum]);
+                // }
+                // BLINKER_LOG_ALL(BLINKER_F("streamData: "), c_d);
+
+                if (!isFresh) streamData = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
+
                 strcpy(streamData, (stream->readStringUntil('\n')).c_str());
+                stream->flush();
                 
                 BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
-                BLINKER_LOG_ALL(BLINKER_F("strlen: "), strlen(streamData));
-                
-                if (streamData[strlen(streamData) - 1] == '\r')
-                    streamData[strlen(streamData) - 1] = '\0';
-                
-                isFresh = true;
+                BLINKER_LOG_FreeHeap();
 
-                return true;
+                // if (dNum < BLINKER_MAX_READ_SIZE) {
+                if (strlen(streamData) < BLINKER_MAX_READ_SIZE) {
+                    if (streamData[strlen(streamData) - 1] == '\r')
+                        streamData[strlen(streamData) - 1] = '\0';
+                    isFresh = true;
+                    return true;
+                }
+                else {
+                    free(streamData);
+                    return false;
+                }
             }
             else {
                 return false;
             }
+        }
+
+        int timedRead()
+        {
+            int c;
+            uint32_t _startMillis = millis();
+            do {
+                c = stream->read();
+                if (c >= 0) return c;
+            } while(millis() - _startMillis < 1000);
+            return -1; 
         }
 
         void begin(Stream& s, bool state)
@@ -107,7 +155,8 @@ class BlinkerTransportStream
 
     protected :
         Stream* stream;
-        char*   streamData;//[BLINKER_MAX_READ_SIZE];
+        char*   streamData;
+        // char    streamData[BLINKER_MAX_READ_SIZE];
         bool    isFresh = false;
         bool    isConnect;
         bool    isHWS = false;
@@ -143,7 +192,7 @@ class BlinkerSerialMQTT
             : Base(transp)
         {}
 
-        // void 
+         
 #if defined(BLINKER_ESP_SMARTCONFIG)
         void begin( const char* _auth,
                     uint8_t _rx_pin = 2,
@@ -154,6 +203,7 @@ class BlinkerSerialMQTT
             ::delay(100);
             serialBegin(_rx_pin, _tx_pin, _baud);
             Base::atInit(_auth);
+            BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
         }
 #elif defined(BLINKER_APCONFIG)
         void begin( const char* _auth,
@@ -165,6 +215,7 @@ class BlinkerSerialMQTT
             ::delay(100);
             serialBegin(_rx_pin, _tx_pin, _baud);
             Base::atInit(_auth);
+            BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
         }
 #endif
 
@@ -179,12 +230,13 @@ class BlinkerSerialMQTT
             ::delay(100);
             serialBegin(_rx_pin, _tx_pin, _baud);
             Base::atInit(_auth, _ssid, _pswd);
+            BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
         }
 
     private :
-        void serialBegin(uint8_t ss_rx_pin = 2,
-                        uint8_t ss_tx_pin = 3,
-                        uint32_t ss_baud = 9600)
+        void serialBegin(uint8_t ss_rx_pin,
+                        uint8_t ss_tx_pin,
+                        uint32_t ss_baud)
         {
     #if defined (__AVR__)
             if (ss_rx_pin == 0 && ss_tx_pin == 1){
