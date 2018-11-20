@@ -656,6 +656,119 @@ static void timingHandle(uint8_t cbackData) {
 // }
 #endif
 
+#if defined(BLINKER_MQTT_AT)
+class BlinkerMasterAT
+{
+    public :
+        BlinkerMasterAT()
+            : _isReq(false)
+        {}
+
+        void update(const String & data) {
+            // _data = data;
+            // BLINKER_LOG(BLINKER_F("update data: "), data);
+            _isReq = serialize(data);
+            // return _isReq;
+        }
+
+        bool isReq() { return _isReq; }
+
+        String reqName() { return _reqName; }
+
+        uint8_t paramNum() { return _paramNum; }
+
+        String getParam(uint8_t num) {
+            if (num >= _paramNum) return "";
+            else return _param[num];
+        }
+
+    private :
+        bool _isReq;
+        uint8_t _paramNum;
+        // String _data;
+        String _reqName;
+        String _param[11];
+
+        bool serialize(String _data) {
+            BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
+            
+            _reqName = "";
+            _isReq = false;
+            int addr_start = _data.indexOf("+");
+            int addr_end = 0;
+
+            // BLINKER_LOG(BLINKER_F("serialize addr_start: "), addr_start);
+            // BLINKER_LOG(BLINKER_F("serialize addr_end: "), addr_end);
+
+            if ((addr_start != -1) && STRING_contains_string(_data, ":")) {
+                addr_start = 0;
+                addr_end = _data.indexOf(":");
+
+                if (addr_end == -1) {
+                    return false;
+                }
+                else {
+                    _reqName = _data.substring(addr_start + 1, addr_end);
+                    
+                    BLINKER_LOG_ALL(BLINKER_F("serialize _reqName: "), _reqName);
+                }
+
+                _isReq = true;
+
+                // BLINKER_LOG(BLINKER_F("serialize _data: "), _data);
+
+                String serData;
+                uint16_t dataLen = _data.length();
+
+                addr_start = 0;
+
+                for (_paramNum = 0; _paramNum < 11; _paramNum++) {
+                    addr_start += addr_end;
+                    addr_start += 1;
+                    serData = _data.substring(addr_start, dataLen);
+
+                    addr_end = serData.indexOf(",");
+
+                    // BLINKER_LOG(BLINKER_F("serialize serData: "), serData);
+                    // BLINKER_LOG(BLINKER_F("serialize addr_start: "), addr_start);
+                    // BLINKER_LOG(BLINKER_F("serialize addr_end: "), addr_end);
+
+                    if (addr_end == -1) {
+                        if (addr_start >= dataLen) return false;
+
+                        addr_end = serData.indexOf(" ");
+
+                        if (addr_end != -1) {
+                            _param[_paramNum] = serData.substring(0, addr_end);
+                            _paramNum++;
+                            return true;
+                        }
+
+                        _param[_paramNum] = serData;
+                        
+                        BLINKER_LOG_ALL(BLINKER_F("_param["), _paramNum, \
+                                        BLINKER_F("]: "), _param[_paramNum]);
+                        
+                        _paramNum++;
+                        return true;
+                    }
+                    else {
+                        _param[_paramNum] = serData.substring(0, addr_end);
+                    }
+                    BLINKER_LOG_ALL(BLINKER_F("_param["), _paramNum, \
+                                    BLINKER_F("]: "), _param[_paramNum]);
+                }
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+};
+
+static class BlinkerMasterAT * _masterAT;
+#endif
+
 
 
 template <class Proto>
@@ -1738,12 +1851,14 @@ class BlinkerApi
 
                     if (static_cast<Proto*>(this)->available())
                     {
-                        if (STRING_format(static_cast<Proto*>(this)->lastRead()) == BLINKER_CMD_OK)
+                        if (strcmp((static_cast<Proto*>(this)->dataParse()), BLINKER_CMD_OK) == 0)
                         {
                             _isAlive = true;
                         }
 
-                        BLINKER_LOG(BLINKER_F("lastRead: "), static_cast<Proto*>(this)->lastRead());
+                        BLINKER_LOG(BLINKER_F("dataParse: "), static_cast<Proto*>(this)->dataParse());
+                        BLINKER_LOG(BLINKER_F("strlen: "), strlen(static_cast<Proto*>(this)->dataParse()));
+                        BLINKER_LOG(BLINKER_F("strlen: "), strlen(BLINKER_CMD_OK));
                         static_cast<Proto*>(this)->flush();
                     }
                     // ::delay(10);
@@ -1752,12 +1867,50 @@ class BlinkerApi
                 _now_time += timeout;
             }
 
-            static_cast<Proto*>(this)->_print(_data);
+            String cmd_start = BLINKER_CMD_AT + STRING_format("+") + \
+                            BLINKER_CMD_BLINKER_MQTT + STRING_format("=");
+
+    #if defined(BLINKER_ESP_SMARTCONFIG)
+            cmd_start += "1,";
+    #elif defined(BLINKER_APCONFIG)
+            cmd_start += "2,";
+    #else
+            cmd_start += "0,";
+    #endif
+
+            ::delay(100);
+
+            static_cast<Proto*>(this)->_print(cmd_start + _data);
 
             bool _isInit = false;
-            // while (!_isInit) {
+            while (!_isInit) {
+                static_cast<Proto*>(this)->run();
 
-            // }
+                if (static_cast<Proto*>(this)->available())
+                {
+                    if (!_masterAT) {
+                        _masterAT = new BlinkerMasterAT();
+
+                        _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
+                    }
+                    else {
+                        _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
+                    }
+
+                    BLINKER_LOG_ALL(BLINKER_F("isReq: "), _masterAT->isReq());
+                    BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
+                    BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
+
+                    BLINKER_LOG_FreeHeap();
+
+                    if (_masterAT->reqName() == BLINKER_CMD_BLINKER_MQTT && 
+                        _masterAT->paramNum() == 2)
+                    {
+                        _isInit = true;
+                        BLINKER_LOG_ALL("ESP AT init");
+                    }
+                }
+            }
         }
 #endif
 

@@ -121,17 +121,17 @@ bool STRING_find_string_value(const String & src, String & dst, const String & k
 {
     int addr_start = src.indexOf(key);
     uint8_t keyLen = key.length();
-    BLINKER_LOG("addr_start: ", addr_start);
-    BLINKER_LOG("keyLen: ", keyLen);
+    // BLINKER_LOG("addr_start: ", addr_start);
+    // BLINKER_LOG("keyLen: ", keyLen);
 
     int addr_end = src.indexOf(STRING_VALUE_END, addr_start + keyLen + STRING_VALUE_SKIP);
-    BLINKER_LOG("addr_end: ", addr_end);
+    // BLINKER_LOG("addr_end: ", addr_end);
     if (addr_start == -1 || addr_end == -1) {
         return false;
     }
     else {
         dst = src.substring(addr_start + keyLen + STRING_VALUE_SKIP, addr_end);
-        BLINKER_LOG("dst: ", dst);
+        // BLINKER_LOG("dst: ", dst);
         return true;
     }
 }

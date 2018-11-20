@@ -150,7 +150,7 @@
 //     #include <BlinkerSerialESP.h>
 
 // #else
-    #error Please setting connect mode ahead! Here provided BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT mode!
+//     #error Please setting connect mode ahead! Here provided BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT mode!
 #endif
 
 #endif
