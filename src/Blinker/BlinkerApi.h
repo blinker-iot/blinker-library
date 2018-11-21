@@ -698,7 +698,7 @@ class BlinkerMasterAT
         uint8_t _paramNum;
         // String _data;
         String _reqName;
-        String _param[11];
+        String _param[4];
 
         bool serialize(String _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
@@ -757,12 +757,20 @@ class BlinkerMasterAT
                             _param[_paramNum] = serData.substring(0, addr_end);
                             _paramNum++;
                             _isReq = AT_M_RESP;
+                            BLINKER_LOG_ALL(BLINKER_F("_param0["), _paramNum, \
+                                        BLINKER_F("]: "), _param[_paramNum]);
+                            return;
                         }
 
                         _param[_paramNum] = serData;
                         
-                        BLINKER_LOG_ALL(BLINKER_F("_param["), _paramNum, \
-                                        BLINKER_F("]: "), _param[_paramNum]);
+                        // BLINKER_LOG(BLINKER_F("serialize serData: "), serData);
+                        
+                        BLINKER_LOG_ALL(BLINKER_F("_param1["), _paramNum, \
+                                        BLINKER_F("]: "), _param[_paramNum], \
+                                        " ", serData);
+
+                        // BLINKER_LOG(BLINKER_F("serialize serData: "), serData);
                         
                         _paramNum++;
                         _isReq = AT_M_RESP;
@@ -2123,7 +2131,7 @@ class BlinkerApi
             }
         }
 
-#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_JSON)
 
         void strWidgetsParse(char _wName[], const JsonObject& data)
         {
@@ -2609,14 +2617,23 @@ class BlinkerApi
 
 
 #if defined(BLINKER_MQTT_AT)
-        float analogRead()
+        void atResp()
         {
-            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
-                                            BLINKER_CMD_ADC + "?");
+            if (strcmp(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_OK) == 0 ||
+                strcmp(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ERROR) == 0)
+            {
+                _fresh = true;
+                // static_cast<Proto*>(this)->flushAll();
+            }
+        }
 
+        void parseATdata()
+        {
+            uint32_t at_start = millis();
             while (!static_cast<Proto*>(this)->available())
             {
                 static_cast<Proto*>(this)->run();
+                if (millis() - at_start > BLINKER_AT_MSG_TIMEOUT) break;
             }
 
             _masterAT = new BlinkerMasterAT();
@@ -2627,15 +2644,212 @@ class BlinkerApi
             BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
 
             static_cast<Proto*>(this)->flush();
+        }
 
-            float a_read = _masterAT->getParam(0).toFloat();            
+        int analogRead()
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            BLINKER_CMD_ADC + "?");
 
-            return a_read;
+            parseATdata();
+
+            if (_masterAT->getState() != AT_M_NONE && 
+                _masterAT->reqName() == BLINKER_CMD_ADC) {              
+
+                int a_read = _masterAT->getParam(0).toInt();
+                free(_masterAT);
+
+                return a_read;
+            }
+            else {
+                free(_masterAT);
+
+                return 0;
+            }
         }
 
         void pinMode(uint8_t pin, uint8_t mode)
         {
-            
+            String pin_data = BLINKER_CMD_AT + STRING_format("+") + \
+                                BLINKER_CMD_IOSETCFG + "=" + \
+                                STRING_format(pin) + ",";
+            switch (mode)
+            {
+                case INPUT :
+                    pin_data += "0,0";
+                    break;
+                case OUTPUT :
+                    pin_data += "1,0";
+                break;
+                case INPUT_PULLUP :
+                    pin_data += "0,1";
+                    break;
+    #if defined(ESP8266)
+                case INPUT_PULLDOWN_16 :
+                    pin_data += "0,2";
+                    break;
+    #elif defined(ESP32)
+                case INPUT_PULLDOWN :
+                    pin_data += "0,2";
+                    break;
+    #endif
+                default :
+                    pin_data += "0,0";
+                    break;
+            }
+
+            // parseATdata();
+            // free(_masterAT);
+        }
+
+        void digitalWrite(uint8_t pin, uint8_t val)
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                                BLINKER_CMD_GPIOWRITE + "=" + \
+                                                STRING_format(pin) + "," + \
+                                                STRING_format(val ? 0 : 1));
+
+            // parseATdata();
+        }
+
+        int digitalRead(uint8_t pin)
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                                BLINKER_CMD_GPIOWREAD + "=" + \
+                                                STRING_format(pin));
+
+            parseATdata();
+            // free(_masterAT);
+
+            if (_masterAT->getState() != AT_M_NONE && 
+                _masterAT->reqName() == BLINKER_CMD_GPIOWREAD) {              
+
+                int d_read = _masterAT->getParam(2).toInt();
+                free(_masterAT);
+
+                return d_read;
+            }
+            else {
+                free(_masterAT);
+
+                return 0;
+            }
+        }
+
+        void setTimezone(float tz)
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                                BLINKER_CMD_TIMEZONE + "=" + \
+                                                STRING_format(tz));
+        }
+
+        float getTimezone()
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            BLINKER_CMD_TIMEZONE + "?");
+
+            parseATdata();
+
+            if (_masterAT->getState() != AT_M_NONE && 
+                _masterAT->reqName() == BLINKER_CMD_TIMEZONE) {
+                
+                float tz_read = _masterAT->getParam(0).toFloat();
+                free(_masterAT);
+
+                return tz_read;
+            }
+            else {
+                free(_masterAT);
+
+                return 8.0;
+            }
+        }
+
+        int32_t atGetInt(const String & cmd)
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            cmd + "?");
+
+            parseATdata();
+
+            if (_masterAT->getState() != AT_M_NONE && 
+                _masterAT->reqName() == cmd) {
+                
+                int32_t at_read = _masterAT->getParam(0).toInt();
+                free(_masterAT);
+
+                return at_read;
+            }
+            else {
+                free(_masterAT);
+
+                return 0;
+            }
+        }
+
+        template<typename T>
+        String atGetString(const String & cmd, const T& msg)
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            cmd + "=" + STRING_format(msg));
+
+            parseATdata();
+
+            if (_masterAT->getState() != AT_M_NONE && 
+                _masterAT->reqName() == cmd) {
+                
+                String at_read = _masterAT->getParam(0);
+                free(_masterAT);
+
+                return at_read;
+            }
+            else {
+                free(_masterAT);
+
+                return 0;
+            }
+        }
+
+        time_t time()   { return atGetInt(BLINKER_CMD_TIME_AT); }
+
+        // time_t dtime()   { return atGetInt(BLINKER_CMD_D); }
+
+        int8_t second() { return atGetInt(BLINKER_CMD_SECOND); }
+
+        int8_t minute() { return atGetInt(BLINKER_CMD_MINUTE); }
+
+        int8_t hour()   { return atGetInt(BLINKER_CMD_HOUR); }
+
+        int8_t mday()   { return atGetInt(BLINKER_CMD_MDAY); }
+
+        int8_t wday()   { return atGetInt(BLINKER_CMD_WDAY); }
+
+        int8_t month()  { return atGetInt(BLINKER_CMD_MONTH); }
+
+        int16_t year()  { return atGetInt(BLINKER_CMD_YEAR); }
+
+        int16_t yday()  { return atGetInt(BLINKER_CMD_YDAY); }
+
+        String weather(const String & _city = BLINKER_CMD_DEFAULT)
+        {
+            return atGetString(BLINKER_CMD_WEATHER_AT, _city);
+        }
+
+        String aqi(const String & _city = BLINKER_CMD_DEFAULT)
+        {
+            return atGetString(BLINKER_CMD_AQI_AT, _city);
+        }
+
+        template<typename T>
+        bool sms(const T& msg)
+        {
+            return atGetString(BLINKER_CMD_SMS_AT, msg);
+        }
+
+        void reset()
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            BLINKER_CMD_RST);
         }
 #endif
 
@@ -5341,11 +5555,14 @@ class BlinkerApi
                 if (static_cast<Proto*>(this)->parseState() ) {
                     _fresh = false;
 
-#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_JSON)
                     DynamicJsonBuffer jsonBuffer;
                     JsonObject& root = jsonBuffer.parseObject(STRING_format(_data));
 
                     if (!root.success()) {
+    #if defined(BLINKER_MQTT_AT)
+                        atResp();
+    #endif
                         return;
                     }
 // (const JsonObject& data)
@@ -5407,6 +5624,7 @@ class BlinkerApi
                     ahrs(Yaw);
                     gps(LONG, true);
 #endif
+                    // BLINKER_LOG_ALL("_fresh: ", _fresh ? "true" : "false");
                     if (_fresh) {
                         static_cast<Proto*>(this)->isParsed();
                     }
@@ -5425,7 +5643,7 @@ class BlinkerApi
                 }
             }
             else {
-#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_JSON)
                 String data1 = "{\"data\":" + STRING_format(_data) + "}";
                 DynamicJsonBuffer jsonBuffer;
                 JsonObject& root = jsonBuffer.parseObject(data1);
@@ -5490,7 +5708,7 @@ class BlinkerApi
         }
 
         
-#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_JSON)
         void json_parse(const JsonObject& data) {
             setSwitch(data);
 

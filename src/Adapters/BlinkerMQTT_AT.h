@@ -295,7 +295,7 @@ static void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t
 //     MQTT_WIFI_PSWD
 // };
 
-// enum atAligenie_t {
+// enum blinker_at_aligenie_t {
 //     ALI_NONE,
 //     ALI_LIGHT,
 //     ALI_OUTLET,
@@ -688,7 +688,7 @@ class BlinkerTransportStream
 
             // respTime = millis();
             
-            BLINKER_LOG_ALL(BLINKER_F("Response: "), s);
+            BLINKER_LOG_ALL(BLINKER_F("Serial Response: "), s);
             
             if(serialConnected()) {
                 BLINKER_LOG_ALL(BLINKER_F("Succese..."));
@@ -786,15 +786,20 @@ class BlinkerTransportStream
 
         void subscribe();
         char * lastRead() { return isFresh ? msgBuf : NULL; }
+
+        char * dataParse() { return _isFreshBuf ? parseBuf : NULL;}
         
         void flush() {
             if (isFresh) {
                 free(msgBuf); isFresh = false; isAvail = false;
+                free(parseBuf); _isFreshBuf = false;
             }
         }
 
+        bool dataCheck(const String & data, const String & type, bool cmp_state=true);
+
         bool print(String data);
-        bool mqttPrint(String data);
+        bool mqttPrint(const String & data);
         bool bPrint(String name, String data);
 
 #if defined(BLINKER_ALIGENIE)
@@ -1179,12 +1184,14 @@ class BlinkerTransportStream
             // mDNSInit();
         }
 
-        void aligenieType(atAligenie_t _type)
+        void aligenieType(blinker_at_aligenie_t _type)
         {
             _aliType = _type;
         }
 
     private :
+        bool _isFreshBuf = false;
+        char* parseBuf;//[BLINKER_MAX_READ_SIZE];
 
 //         void parseATdata()
 //         {
@@ -1770,7 +1777,7 @@ class BlinkerTransportStream
     protected :
         // atStatus_t  _status = BL_BEGIN;
         // uint8_t     _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
-        atAligenie_t _aliType = ALI_NONE;
+        blinker_at_aligenie_t _aliType = ALI_NONE;
         // uint8_t     pinDataNum = 0;
 
         // io 
@@ -2258,7 +2265,7 @@ void BlinkerTransportStream::subscribe() {
             // }
 
             String _uuid = root["fromDevice"];
-            // String dataGet = root["data"];
+            String _dataGet = root["data"];
             String dataGet = String((char *)iotSub->lastread);
 
             // String _uuid = STRING_find_string(dataGet, "fromDevice", "\"", 3);
@@ -2280,6 +2287,9 @@ void BlinkerTransportStream::subscribe() {
                 kaTime = millis();
                 isAvail = true;
                 isAlive = true;
+                if (!_isFreshBuf) parseBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
+                _isFreshBuf = true;
+                strcpy(parseBuf, _dataGet.c_str());
             }
             else if (_uuid == BLINKER_CMD_ALIGENIE) {
                 BLINKER_LOG_ALL("form AliGenie");
@@ -2311,9 +2321,8 @@ void BlinkerTransportStream::subscribe() {
     }
 }
 
-bool BlinkerTransportStream::mqttPrint(String data) {
-    BLINKER_LOG_ALL(("mqttPrint data: "), data);
-
+bool BlinkerTransportStream::dataCheck(const String & data, const String & type, bool cmp_state)
+{
     DynamicJsonBuffer jsonBuffer;
     JsonObject& print_data = jsonBuffer.parseObject(data);
 
@@ -2321,6 +2330,28 @@ bool BlinkerTransportStream::mqttPrint(String data) {
         BLINKER_ERR_LOG(("Print data not a Json data"));
         return false;
     }
+
+    String _dType = print_data["deviceType"];
+    if (_dType == type) return cmp_state;
+
+    return true;
+}
+
+bool BlinkerTransportStream::mqttPrint(const String & data) {
+    BLINKER_LOG_ALL(("mqttPrint data: "), data);
+
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& print_data = jsonBuffer.parseObject(data);
+
+    // if (!print_data.success()) {
+    //     BLINKER_ERR_LOG(("Print data not a Json data"));
+    //     return false;
+    // }
+
+    // String _dType = print_data["deviceType"];
+    // if (_dType == "OwnApp") return false;
+
+    if (!dataCheck(data, "OwnApp", false)) return false;
 
     if (*isHandle && dataFrom == BLINKER_MSG_FROM_WS) {
         bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE) ||
@@ -2366,20 +2397,20 @@ bool BlinkerTransportStream::mqttPrint(String data) {
     else {
         String payload;
         if (STRING_contains_string(data, BLINKER_CMD_NEWLINE)) {
-            // payload = "{\"data\":" + data.substring(0, data.length() - 1) + \
-            //         ",\"fromDevice\":\"" + MQTT_ID + \
-            //         "\",\"toDevice\":\"" + UUID + \
-            //         "\",\"deviceType\":\"OwnApp\"}";
+            payload = "{\"data\":" + data.substring(0, data.length() - 1) + \
+                    ",\"fromDevice\":\"" + MQTT_ID + \
+                    "\",\"toDevice\":\"" + UUID + \
+                    "\",\"deviceType\":\"OwnApp\"}";
 
-            payload = data.substring(0, data.length() - 1);
+            // payload = data.substring(0, data.length() - 1);
         }
         else {
-        //     payload = "{\"data\":" + data + \
-        //             ",\"fromDevice\":\"" + MQTT_ID + \
-        //             "\",\"toDevice\":\"" + UUID + \
-        //             "\",\"deviceType\":\"OwnApp\"}";
+            payload = "{\"data\":" + data + \
+                    ",\"fromDevice\":\"" + MQTT_ID + \
+                    "\",\"toDevice\":\"" + UUID + \
+                    "\",\"deviceType\":\"OwnApp\"}";
 
-            payload = data;
+            // payload = data;
         }
         
         BLINKER_LOG_ALL("MQTT Publish...");
@@ -2477,7 +2508,7 @@ bool BlinkerTransportStream::mqttPrint(String data) {
                     isAlive = false;
                 }
                 return true;
-            }            
+            }
         }
         else {
             BLINKER_ERR_LOG("MQTT Disconnected");
@@ -2810,7 +2841,7 @@ class BlinkerMQTT_AT
                     ss_baud != 500000 || ss_baud != 1000000 || ss_baud != 2000000)
                 {
                     serialSet = BLINKER_SERIAL_DEFAULT;
-                    ss_baud = 115200;
+                    ss_baud = 9600;
                     ss_cfg = SERIAL_8N1;
 
                     // EEPROM.begin(BLINKER_EEP_SIZE);
