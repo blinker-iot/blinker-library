@@ -799,7 +799,7 @@ class BlinkerTransportStream
         bool dataCheck(const String & data, const String & type, bool cmp_state=true);
 
         bool print(String data);
-        bool mqttPrint(String data);
+        bool mqttPrint(const String & data);
         bool bPrint(String name, String data);
 
 #if defined(BLINKER_ALIGENIE)
@@ -2337,7 +2337,7 @@ bool BlinkerTransportStream::dataCheck(const String & data, const String & type,
     return true;
 }
 
-bool BlinkerTransportStream::mqttPrint(String data) {
+bool BlinkerTransportStream::mqttPrint(const String & data) {
     BLINKER_LOG_ALL(("mqttPrint data: "), data);
 
     // DynamicJsonBuffer jsonBuffer;
@@ -2402,7 +2402,7 @@ bool BlinkerTransportStream::mqttPrint(String data) {
                     "\",\"toDevice\":\"" + UUID + \
                     "\",\"deviceType\":\"OwnApp\"}";
 
-            payload = data.substring(0, data.length() - 1);
+            // payload = data.substring(0, data.length() - 1);
         }
         else {
             payload = "{\"data\":" + data + \
@@ -2410,7 +2410,7 @@ bool BlinkerTransportStream::mqttPrint(String data) {
                     "\",\"toDevice\":\"" + UUID + \
                     "\",\"deviceType\":\"OwnApp\"}";
 
-            payload = data;
+            // payload = data;
         }
         
         BLINKER_LOG_ALL("MQTT Publish...");
