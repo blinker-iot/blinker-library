@@ -698,7 +698,7 @@ class BlinkerMasterAT
         uint8_t _paramNum;
         // String _data;
         String _reqName;
-        String _param[11];
+        String _param[4];
 
         bool serialize(String _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
@@ -757,12 +757,20 @@ class BlinkerMasterAT
                             _param[_paramNum] = serData.substring(0, addr_end);
                             _paramNum++;
                             _isReq = AT_M_RESP;
+                            BLINKER_LOG_ALL(BLINKER_F("_param0["), _paramNum, \
+                                        BLINKER_F("]: "), _param[_paramNum]);
+                            return;
                         }
 
                         _param[_paramNum] = serData;
                         
-                        BLINKER_LOG_ALL(BLINKER_F("_param["), _paramNum, \
-                                        BLINKER_F("]: "), _param[_paramNum]);
+                        // BLINKER_LOG(BLINKER_F("serialize serData: "), serData);
+                        
+                        BLINKER_LOG_ALL(BLINKER_F("_param1["), _paramNum, \
+                                        BLINKER_F("]: "), _param[_paramNum], \
+                                        " ", serData);
+
+                        // BLINKER_LOG(BLINKER_F("serialize serData: "), serData);
                         
                         _paramNum++;
                         _isReq = AT_M_RESP;
@@ -2123,7 +2131,7 @@ class BlinkerApi
             }
         }
 
-#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_JSON)
 
         void strWidgetsParse(char _wName[], const JsonObject& data)
         {
@@ -2609,6 +2617,16 @@ class BlinkerApi
 
 
 #if defined(BLINKER_MQTT_AT)
+        void atResp()
+        {
+            if (strcmp(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_OK) == 0 ||
+                strcmp(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ERROR) == 0)
+            {
+                _fresh = true;
+                // static_cast<Proto*>(this)->flushAll();
+            }
+        }
+
         void parseATdata()
         {
             uint32_t at_start = millis();
@@ -2826,6 +2844,12 @@ class BlinkerApi
         bool sms(const T& msg)
         {
             return atGetString(BLINKER_CMD_SMS_AT, msg);
+        }
+
+        void reset()
+        {
+            static_cast<Proto*>(this)->_print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            BLINKER_CMD_RST);
         }
 #endif
 
@@ -5531,11 +5555,14 @@ class BlinkerApi
                 if (static_cast<Proto*>(this)->parseState() ) {
                     _fresh = false;
 
-#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_JSON)
                     DynamicJsonBuffer jsonBuffer;
                     JsonObject& root = jsonBuffer.parseObject(STRING_format(_data));
 
                     if (!root.success()) {
+    #if defined(BLINKER_MQTT_AT)
+                        atResp();
+    #endif
                         return;
                     }
 // (const JsonObject& data)
@@ -5597,6 +5624,7 @@ class BlinkerApi
                     ahrs(Yaw);
                     gps(LONG, true);
 #endif
+                    // BLINKER_LOG_ALL("_fresh: ", _fresh ? "true" : "false");
                     if (_fresh) {
                         static_cast<Proto*>(this)->isParsed();
                     }
@@ -5615,7 +5643,7 @@ class BlinkerApi
                 }
             }
             else {
-#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_JSON)
                 String data1 = "{\"data\":" + STRING_format(_data) + "}";
                 DynamicJsonBuffer jsonBuffer;
                 JsonObject& root = jsonBuffer.parseObject(data1);
@@ -5680,7 +5708,7 @@ class BlinkerApi
         }
 
         
-#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_JSON)
         void json_parse(const JsonObject& data) {
             setSwitch(data);
 

@@ -185,7 +185,7 @@ class BlinkerSlaverAT
         uint8_t _paramNum;
         // String _data;
         String _atCmd;
-        String _param[11];
+        String _param[6];
 
         void serialize(const String & _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
@@ -1385,6 +1385,16 @@ class BlinkerProtocol
             conn.flush();
             isFresh = false;
             availState = false;
+            canParse = false;
+            isAvail = false;
+        }
+
+        void flushAll() {
+            conn.flush();
+            isAvail = false;
+            isFresh = false;
+            availState = false;
+            canParse = false;
         }
 
 #if defined(BLINKER_PRO)
@@ -1414,7 +1424,7 @@ class BlinkerProtocol
 //             }
 //         }
 
-#if defined(ESP8266) || defined(ESP32)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
         void autoFormatData(const String & key, const String & jsonValue) {
             // String _value = STRING_format(value);
             // if ((strlen(_sendBuf) + key.length() + _value.length()) >= BLINKER_MAX_SEND_SIZE) {
@@ -1590,13 +1600,22 @@ class BlinkerProtocol
 
                 // if (!root.success()) {
                 //     // BLINKER_LOG("json test error");
-                    return conn.lastRead();
+                return conn.dataParse();
                 // }
 
                 // String _uuid = root["fromDevice"];
-                // char dataGet[] = root["data"];
 
-                // return dataGet;
+                // if (_uuid == conn.uuid())
+                // {
+                //     String dataGet = root["data"];
+                //     char dataP[512-128];
+                //     strcpy(dataP, dataGet.c_str());
+
+                //     return dataP;
+                // }
+                // else {
+                //     return "";
+                // }
 #else
                 return conn.lastRead();
 #endif
@@ -1609,7 +1628,11 @@ class BlinkerProtocol
         char * lastRead() { return conn.lastRead(); }
 
         void isParsed() {
-            isFresh = false; canParse = false; availState = false;
+            // BLINKER_LOG("isParsed");
+            isFresh = false; 
+            canParse = false; 
+            availState = false;
+            isAvail = false;
             conn.flush();
         }// BLINKER_LOG("isParsed");
 
@@ -2854,7 +2877,10 @@ void BlinkerProtocol<Transp>::run()
                     BApi::parse(dataParse());
                 }
 #if defined(BLINKER_AT_MQTT)
-                if (isAvail) conn.serialPrint(conn.lastRead());
+                if (isAvail) {
+                    // BLINKER_LOG_ALL("isAvail");
+                    conn.serialPrint(conn.lastRead());
+                }
 
                 if (serialAvailable()) conn.mqttPrint(conn.serialLastRead());
 #endif
