@@ -2473,8 +2473,8 @@ class BlinkerProtocol
                         break;
                 }
             }
-            else if (_slaverAT->cmd() == BLINKER_CMD_TIME && _slaverAT->state() == AT_QUERY) {
-                reqData = "+" + STRING_format(BLINKER_CMD_TIME) + \
+            else if (_slaverAT->cmd() == BLINKER_CMD_TIME_AT && _slaverAT->state() == AT_QUERY) {
+                reqData = "+" + STRING_format(BLINKER_CMD_TIME_AT) + \
                         ":" + STRING_format(BApi::time());
                 
                 conn.serialPrint(reqData);

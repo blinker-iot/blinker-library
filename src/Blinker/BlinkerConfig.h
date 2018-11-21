@@ -39,6 +39,8 @@
 
 #define BLINKER_WIFI_AUTO_INIT_TIMEOUT  20000UL
 
+#define BLINKER_AT_MSG_TIMEOUT          1000UL
+
 #define BLINKER_MDNS_SERVICE_BLINKER    "blinker"
 
 #define BLINKER_MSG_FROM_MQTT           0
@@ -489,7 +491,7 @@
 
     #define BLINKER_CMD_TIMEZONE                "TIMEZONE"
 
-    #define BLINKER_CMD_TIME                    "TIME"
+    #define BLINKER_CMD_TIME_AT                 "TIME"
 
     #define BLINKER_CMD_SECOND                  "SECOND"
 
