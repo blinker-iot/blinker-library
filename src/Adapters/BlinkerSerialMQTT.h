@@ -61,7 +61,23 @@ class BlinkerTransportStream
 
                 if (!isFresh) streamData = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
 
-                strcpy(streamData, (stream->readStringUntil('\n')).c_str());
+                // strcpy(streamData, (stream->readStringUntil('\n')).c_str());
+
+                int16_t dNum = 0;
+                int c_d = timedRead();
+                while (dNum < BLINKER_MAX_READ_SIZE && 
+                    c_d >=0 && c_d != '\n') {
+                    if (c_d != '\r') {
+                        streamData[dNum] = (char)c_d;
+                        dNum++;
+                        // streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                    }
+
+                    c_d = timedRead();
+                }
+                dNum++;
+                // streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                streamData[dNum-1] = '\0';
                 stream->flush();
                 
                 BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
