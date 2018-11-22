@@ -1718,10 +1718,11 @@ class BlinkerProtocol
 #endif
 
 #if defined(BLINKER_AT_MQTT)
-        blinker_at_status_t  _status = BL_BEGIN;
-        uint8_t     _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
-        blinker_at_aligenie_t _aliType = ALI_NONE;
-        uint8_t     pinDataNum = 0;
+        blinker_at_status_t     _status = BL_BEGIN;
+        blinker_at_aligenie_t   _aliType = ALI_NONE;
+        uint8_t                 _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
+        uint8_t                 pinDataNum = 0;
+        // bool                    _isAtRegister = false;
 #endif
 
         Transp&         conn;
@@ -2335,7 +2336,8 @@ class BlinkerProtocol
                         {
                             BLINKER_LOG_ALL(BLINKER_F("BLINKER_CMD_COMWLAN"));
 
-                            if (BLINKER_COMWLAN_PARAM_NUM != _slaverAT->paramNum()) return;
+                            if (BLINKER_COMWLAN_PARAM_NUM != _slaverAT->paramNum() ||
+                                _status == BL_INITED) return;
 
                             conn.connectWiFi((_slaverAT->getParam(MQTT_WIFI_SSID)).c_str(), 
                                         (_slaverAT->getParam(MQTT_WIFI_PSWD)).c_str());
@@ -2348,7 +2350,8 @@ class BlinkerProtocol
                         {
                             BLINKER_LOG_ALL(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
 
-                            if (BLINKER_SMCFG_PARAM_NUM != _slaverAT->paramNum()) return;
+                            if (BLINKER_SMCFG_PARAM_NUM != _slaverAT->paramNum() ||
+                                _status == BL_INITED) return;
 
                             if (!conn.autoInit()) conn.smartconfig();
 
@@ -2360,7 +2363,8 @@ class BlinkerProtocol
                         {
                             BLINKER_LOG(BLINKER_F("BLINKER_CMD_APCONFIG"));
 
-                            if (BLINKER_APCFG_PARAM_NUM != _slaverAT->paramNum()) return;
+                            if (BLINKER_APCFG_PARAM_NUM != _slaverAT->paramNum() ||
+                                _status == BL_INITED) return;
 
                             if (!conn.autoInit())
                             {
