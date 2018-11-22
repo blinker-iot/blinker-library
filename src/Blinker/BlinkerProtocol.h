@@ -672,6 +672,13 @@ class BlinkerProtocol
                     autoFormat = true;
                     _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
                     memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+// #if defined(BLINKER_MQTT_AT)
+//     #if defined(BLINKER_MQTT_AT_JSON)
+//                     autoFormatData("deviceTy", "OwnApp");
+//     #else
+//                     autoFormatData("\"deviceTy\":\"OwnApp\"");
+//     #endif
+// #endif
                 }
 #if defined(ESP8266) || defined(ESP32)
                 autoFormatData(STRING_format(n1), _msg);
@@ -1255,7 +1262,8 @@ class BlinkerProtocol
         }
 #endif
 
-#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
+#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) \
+    || defined(BLINKER_MQTT_AT)) && defined(BLINKER_ALIGENIE)
         // template <typename T1>
         // void aligeniePrint(T1 n1, const String &s2) {
         //     String _msg = "\"" + STRING_format(n1) + "\":\"" + s2 + "\"";
@@ -1424,7 +1432,7 @@ class BlinkerProtocol
 //             }
 //         }
 
-#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT)
+#if defined(ESP8266) || defined(ESP32) || defined(BLINKER_MQTT_AT_JSON)
         void autoFormatData(const String & key, const String & jsonValue) {
             // String _value = STRING_format(value);
             // if ((strlen(_sendBuf) + key.length() + _value.length()) >= BLINKER_MAX_SEND_SIZE) {
@@ -1486,7 +1494,7 @@ class BlinkerProtocol
         }
 #endif
 
-        void autoFormatData(String data) {
+        void autoFormatData(String & data) {
             BLINKER_LOG_ALL(BLINKER_F("autoFormatData data: "), data);
             BLINKER_LOG_ALL(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
             BLINKER_LOG_ALL(BLINKER_F("data.length(): "), data.length());
@@ -1593,14 +1601,14 @@ class BlinkerProtocol
         {
             if (canParse) {
                 // return conn.lastRead();
-#if defined(BLINKER_AT_MQTT) 
+// #if defined(BLINKER_AT_MQTT) 
                 // DynamicJsonBuffer jsonBuffer;
                 // JsonObject& root = jsonBuffer.parseObject(conn.lastRead());
                 // // JsonObject& root = jsonBuffer.parseObject((char *)iotSub->lastread);
 
                 // if (!root.success()) {
                 //     // BLINKER_LOG("json test error");
-                return conn.dataParse();
+                // return conn.dataParse();
                 // }
 
                 // String _uuid = root["fromDevice"];
@@ -1616,9 +1624,9 @@ class BlinkerProtocol
                 // else {
                 //     return "";
                 // }
-#else
+// #else
                 return conn.lastRead();
-#endif
+// #endif
             }
             else {
                 return "";
@@ -1712,10 +1720,10 @@ class BlinkerProtocol
 #endif
 
     protected :
-#if defined(BLINKER_MQTT_AT)
-        char            _authKey[BLINKER_AUTHKEY_SIZE];
-        char            _deviceName[BLINKER_MQTT_DEVICEID_SIZE];
-#endif
+// #if defined(BLINKER_MQTT_AT)
+//         char            _authKey[BLINKER_AUTHKEY_SIZE];
+//         char            _deviceName[BLINKER_MQTT_DEVICEID_SIZE];
+// #endif
 
 #if defined(BLINKER_AT_MQTT)
         blinker_at_status_t     _status = BL_BEGIN;
@@ -1885,7 +1893,7 @@ class BlinkerProtocol
 #if defined(BLINKER_MQTT_AT)
         void atInit(const char* _auth)
         {
-            strcpy(_authKey, _auth);
+            // strcpy(_authKey, _auth);
 
             BApi::initCheck(STRING_format(_auth));
         }
@@ -1894,7 +1902,7 @@ class BlinkerProtocol
                     const char* _ssid,
                     const char* _pswd)
         {
-            strcpy(_authKey, _auth);
+            // strcpy(_authKey, _auth);
 
             String init_data =  STRING_format(_auth) + "," + \
                                 STRING_format(_ssid) + "," + \
@@ -2336,8 +2344,17 @@ class BlinkerProtocol
                         {
                             BLINKER_LOG_ALL(BLINKER_F("BLINKER_CMD_COMWLAN"));
 
-                            if (BLINKER_COMWLAN_PARAM_NUM != _slaverAT->paramNum() ||
-                                _status == BL_INITED) return;
+                            if (BLINKER_COMWLAN_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                            if (_status == BL_INITED)
+                            {
+                                reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+                                        ":" + conn.deviceId() + \
+                                        "," + conn.uuid();
+                                conn.serialPrint(reqData);
+                                conn.serialPrint(BLINKER_CMD_OK);
+                                return;
+                            }
 
                             conn.connectWiFi((_slaverAT->getParam(MQTT_WIFI_SSID)).c_str(), 
                                         (_slaverAT->getParam(MQTT_WIFI_PSWD)).c_str());
@@ -2350,8 +2367,17 @@ class BlinkerProtocol
                         {
                             BLINKER_LOG_ALL(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
 
-                            if (BLINKER_SMCFG_PARAM_NUM != _slaverAT->paramNum() ||
-                                _status == BL_INITED) return;
+                            if (BLINKER_COMWLAN_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                            if (_status == BL_INITED)
+                            {
+                                reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+                                        ":" + conn.deviceId() + \
+                                        "," + conn.uuid();
+                                conn.serialPrint(reqData);
+                                conn.serialPrint(BLINKER_CMD_OK);
+                                return;
+                            }
 
                             if (!conn.autoInit()) conn.smartconfig();
 
@@ -2363,8 +2389,17 @@ class BlinkerProtocol
                         {
                             BLINKER_LOG(BLINKER_F("BLINKER_CMD_APCONFIG"));
 
-                            if (BLINKER_APCFG_PARAM_NUM != _slaverAT->paramNum() ||
-                                _status == BL_INITED) return;
+                            if (BLINKER_COMWLAN_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                            if (_status == BL_INITED)
+                            {
+                                reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
+                                        ":" + conn.deviceId() + \
+                                        "," + conn.uuid();
+                                conn.serialPrint(reqData);
+                                conn.serialPrint(BLINKER_CMD_OK);
+                                return;
+                            }
 
                             if (!conn.autoInit())
                             {
@@ -2875,40 +2910,62 @@ void BlinkerProtocol<Transp>::run()
             }
             break;
         case CONNECTED :
-            if (conState) {
+            if (conState)
+            {
                 checkAvail();
-                if (isAvail) {
+                if (isAvail)
+                {
                     BApi::parse(dataParse());
                 }
+    #if defined(BLINKER_MQTT_AT)
+                if (isAvail)
+                {
+                    BApi::aliParse(conn.lastRead());
+
+                    if (STRING_contains_string(conn.lastRead(), "vAssistant"))
+                    {
+                        flush();
+                    }
+                }
+    #endif
 #if defined(BLINKER_AT_MQTT)
-                if (isAvail) {
+                if (isAvail)
+                {
                     // BLINKER_LOG_ALL("isAvail");
                     conn.serialPrint(conn.lastRead());
                 }
 
-                if (serialAvailable()) conn.mqttPrint(conn.serialLastRead());
+                if (serialAvailable())
+                {
+                    conn.mqttPrint(conn.serialLastRead());
+                }
 #endif
 
 #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
-                if (checkAliAvail()) {
+                if (checkAliAvail())
+                {
                     BApi::aliParse(conn.lastRead());
                 }
 #endif
             }
-            else {
+            else
+            {
                 // state = DISCONNECTED;
                 conn.disconnect();
                 state = CONNECTING;
 #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
                 if (_isInit) {
-                    if (_disconnectCount == 0) {
+                    if (_disconnectCount == 0)
+                    {
                         _disconnectCount++;
                         _disconnectTime = millis();
                         _disFreshTime = millis();
                     }
-                    else {
+                    else
+                    {
                         // if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
-                        if ((millis() - _disFreshTime) >= 5000) {
+                        if ((millis() - _disFreshTime) >= 5000)
+                        {
                             _disFreshTime = millis();
                             _disconnectCount++;
 

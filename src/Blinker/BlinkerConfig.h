@@ -73,11 +73,11 @@
     #if defined(ESP8266) || defined(ESP32)
         #define BLINKER_MAX_READ_SIZE       512
     #else
-        #if defined(BLINKER_MQTT_AT)
-            #define BLINKER_MAX_READ_SIZE       256
-        #else
+        // #if defined(BLINKER_MQTT_AT)
+        //     #define BLINKER_MAX_READ_SIZE       256
+        // #else
             #define BLINKER_MAX_READ_SIZE       128
-        #endif
+        // #endif
     #endif
 #endif
 
@@ -89,7 +89,7 @@
             #define BLINKER_MAX_SEND_SIZE       512
         #endif
     #else
-        #define BLINKER_MAX_SEND_SIZE       256
+        #define BLINKER_MAX_SEND_SIZE       128
     #endif
 #endif
 
