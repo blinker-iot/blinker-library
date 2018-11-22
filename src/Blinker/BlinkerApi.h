@@ -1815,7 +1815,8 @@ class BlinkerApi
         }
 #endif
 
-#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
+#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) \
+    || defined(BLINKER_MQTT_AT)) && defined(BLINKER_ALIGENIE)
         // callback_with_string_arg_t  _powerStateFunc = NULL;
         // callback_with_int32_arg_t   _setBrightnessFunc = NULL;
         // callback_with_string_arg_t  _setColorFunc = NULL;
@@ -1869,14 +1870,12 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_MQTT_AT)
-        void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10)
+        void atRespOK(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10)
         {
-            static_cast<Proto*>(this)->connect();
-            
             bool _isAlive = false;
             uint32_t _now_time = millis();
             while (!_isAlive) {
-                static_cast<Proto*>(this)->_print(BLINKER_CMD_AT);
+                static_cast<Proto*>(this)->_print(_data);
                 // _now_time = millis();
 
                 while((millis() - _now_time) < timeout)
@@ -1900,6 +1899,52 @@ class BlinkerApi
 
                 _now_time += timeout;
             }
+        }
+
+        void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10)
+        {
+            static_cast<Proto*>(this)->connect();
+            
+            // bool _isAlive = false;
+            // uint32_t _now_time = millis();
+            // while (!_isAlive) {
+            //     static_cast<Proto*>(this)->_print(BLINKER_CMD_AT);
+            //     // _now_time = millis();
+
+            //     while((millis() - _now_time) < timeout)
+            //     {
+            //         static_cast<Proto*>(this)->run();
+
+            //         if (static_cast<Proto*>(this)->available())
+            //         {
+            //             if (strcmp((static_cast<Proto*>(this)->dataParse()), BLINKER_CMD_OK) == 0)
+            //             {
+            //                 _isAlive = true;
+            //             }
+
+            //             BLINKER_LOG(BLINKER_F("dataParse: "), static_cast<Proto*>(this)->dataParse());
+            //             BLINKER_LOG(BLINKER_F("strlen: "), strlen(static_cast<Proto*>(this)->dataParse()));
+            //             BLINKER_LOG(BLINKER_F("strlen: "), strlen(BLINKER_CMD_OK));
+            //             static_cast<Proto*>(this)->flush();
+            //         }
+            //         // ::delay(10);
+            //     }
+
+            //     _now_time += timeout;
+            // }
+
+            atRespOK(BLINKER_CMD_AT);
+
+    #if defined(BLINKER_ALIGENIE_LIGHT)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=1"));
+    #elif defined(BLINKER_ALIGENIE_OUTLET)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=2"));
+    #elif defined(BLINKER_ALIGENIE_SENSOR)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=3"));
+    #endif
 
             String cmd_start = BLINKER_CMD_AT + STRING_format("+") + \
                             BLINKER_CMD_BLINKER_MQTT + STRING_format("=");
@@ -5261,7 +5306,8 @@ class BlinkerApi
 #endif
 
     protected :
-#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
+#if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) \
+    || defined(BLINKER_MQTT_AT)) && defined(BLINKER_ALIGENIE)
         callback_with_string_arg_t  _powerStateFunc = NULL;
         callback_with_string_arg_t  _setColorFunc = NULL;
         callback_with_string_arg_t  _setModeFunc = NULL;
@@ -5490,8 +5536,11 @@ class BlinkerApi
                 JsonObject& rootSet = jsonBufferSet.parseObject(value);
 
                 if (!rootSet.success()) {
+                    // BLINKER_ERR_LOG_ALL("Json error");
                     return;
                 }
+
+                // BLINKER_LOG_ALL("Json parse success");
 
                 if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                     String setValue = rootSet[BLINKER_CMD_POWERSTATE];
@@ -5542,6 +5591,89 @@ class BlinkerApi
                     String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
 
                     if (_setcModeFunc) _setcModeFunc(setcMode);
+                }
+            }
+        }
+#elif defined(BLINKER_MQTT_AT) && defined(BLINKER_ALIGENIE)
+        void aliParse(const String & _data)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("AliGenie parse data: "), _data);
+
+            if (STRING_contains_string(_data, "vAssistant"))
+            {
+                String value = "";
+                if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
+                {
+                    if (value == BLINKER_CMD_STATE) {
+                        if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                    }
+                    else if (value == BLINKER_CMD_POWERSTATE) {
+                        if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                    }
+                    else if (value == BLINKER_CMD_COLOR) {
+                        if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
+                    }
+                    else if (value == BLINKER_CMD_COLORTEMP) {
+                        if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLORTEMP_NUMBER);
+                    }
+                    else if (value == BLINKER_CMD_BRIGHTNESS) {
+                        if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
+                    }
+                    else if (value == BLINKER_CMD_TEMP) {
+                        if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
+                    }
+                    else if (value == BLINKER_CMD_HUMI) {
+                        if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
+                    }
+                    else if (value == BLINKER_CMD_PM25) {
+                        if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
+                    }
+                    else if (value == BLINKER_CMD_MODE) {
+                        if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
+                    }
+                }
+                else if (STRING_contains_string(_data, BLINKER_CMD_SET))
+                {
+                    if (STRING_find_string_value(_data, value, BLINKER_CMD_POWERSTATE))
+                    {
+                        if (_powerStateFunc) _powerStateFunc(value);
+                    }
+                    else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLOR))
+                    {
+                        if (_setColorFunc) _setColorFunc(value);
+                    }
+                    else if (STRING_find_string_value(_data, value, BLINKER_CMD_BRIGHTNESS))
+                    {
+                        if (_setBrightnessFunc) _setBrightnessFunc(value);
+                    }
+                    else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPBRIGHTNESS))
+                    {
+                        if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(value.toInt());
+                    }
+                    else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNBRIGHTNESS))
+                    {
+                        if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(- value.toInt());
+                    }
+                    else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLORTEMP))
+                    {
+                        if (_setColorTemperature) _setColorTemperature(value.toInt());
+                    }
+                    else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPCOLORTEMP))
+                    {
+                        if (_setRelativeColorTemperature) _setRelativeColorTemperature(value.toInt());
+                    }
+                    else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNCOLORTEMP))
+                    {
+                        if (_setRelativeColorTemperature) _setRelativeColorTemperature(- value.toInt());
+                    }
+                    else if (STRING_find_string_value(_data, value, BLINKER_CMD_MODE))
+                    {
+                        if (_setModeFunc) _setModeFunc(value);
+                    }
+                    else if (STRING_find_string_value(_data, value, BLINKER_CMD_CANCELMODE))
+                    {
+                        if (_setcModeFunc) _setcModeFunc(value);
+                    }
                 }
             }
         }

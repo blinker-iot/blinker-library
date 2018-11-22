@@ -148,7 +148,7 @@ class BlinkerTransportStream
             }
         }
 
-        bool print(String s)
+        bool print(const String & s)
         {
             bool state = STRING_contains_string(s, BLINKER_CMD_NOTICE);
 

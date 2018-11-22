@@ -126,7 +126,34 @@ class BlinkerTransportStream
             }
         }
 
-        bool print(String s)
+        bool aliPrint(String s)
+        {
+            if (!checkPrintSpan()) {
+                respTime = millis();
+                return false;
+            }
+
+            s = s.substring(0, s.length() - 1) + \
+                    ",\"deviceType\":\"vAssistant\"}";
+
+            respTime = millis();
+            
+            BLINKER_LOG_ALL(BLINKER_F("AliGenie Response: "), s);
+            
+            if(connected()) {
+                BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+                
+                stream->println(s);
+                return true;
+            }
+            else {
+                BLINKER_LOG_ALL(BLINKER_F("Faile... Disconnected"));
+                
+                return false;
+            }
+        }
+
+        bool print(const String & s)
         {
             bool state = STRING_contains_string(s, BLINKER_CMD_NOTICE);
 
@@ -141,6 +168,9 @@ class BlinkerTransportStream
                     return false;
                 }
             }
+
+            // s = s.substring(0, s.length() - 1) + \
+            //         ",\"deviceType\":\"OwnApp\"}";
 
             respTime = millis();
             
