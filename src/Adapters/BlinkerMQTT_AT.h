@@ -2827,17 +2827,17 @@ bool BlinkerTransportStream::aliPrint(const String & data)
     BLINKER_LOG_ALL("MQTT AliGenie Publish...");
 
     if (mqtt->connected()) {
-        if (!checkAliKA()) {
-            BLINKER_LOG_ALL("checkAliKA failed...");
-            return false;
-        }
+        // if (!checkAliKA()) {
+        //     BLINKER_LOG_ALL("checkAliKA failed...");
+        //     return false;
+        // }
 
-        if (!checkAliPrintSpan()) {
-            respAliTime = millis();
-            BLINKER_LOG_ALL("checkAliPrintSpan failed...");
-            return false;
-        }
-        respAliTime = millis();
+        // if (!checkAliPrintSpan()) {
+        //     respAliTime = millis();
+        //     BLINKER_LOG_ALL("checkAliPrintSpan failed...");
+        //     return false;
+        // }
+        // respAliTime = millis();
 
         // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
 
