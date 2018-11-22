@@ -2367,7 +2367,7 @@ class BlinkerProtocol
                         {
                             BLINKER_LOG_ALL(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
 
-                            if (BLINKER_COMWLAN_PARAM_NUM != _slaverAT->paramNum()) return;
+                            if (BLINKER_SMCFG_PARAM_NUM != _slaverAT->paramNum()) return;
 
                             if (_status == BL_INITED)
                             {
@@ -2389,7 +2389,7 @@ class BlinkerProtocol
                         {
                             BLINKER_LOG(BLINKER_F("BLINKER_CMD_APCONFIG"));
 
-                            if (BLINKER_COMWLAN_PARAM_NUM != _slaverAT->paramNum()) return;
+                            if (BLINKER_APCFG_PARAM_NUM != _slaverAT->paramNum()) return;
 
                             if (_status == BL_INITED)
                             {
@@ -2917,7 +2917,7 @@ void BlinkerProtocol<Transp>::run()
                 {
                     BApi::parse(dataParse());
                 }
-    #if defined(BLINKER_MQTT_AT)
+    #if defined(BLINKER_MQTT_AT) && defined(BLINKER_ALIGENIE)
                 if (isAvail)
                 {
                     BApi::aliParse(conn.lastRead());

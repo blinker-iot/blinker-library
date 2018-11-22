@@ -2386,10 +2386,11 @@ bool BlinkerTransportStream::mqttPrint(const String & data) {
     String _dType = print_data["deviceType"];
     if (_dType == "vAssistant")
     {
-        print_data.remove("deviceType");
-        print_data.printTo(_dType);
+        // print_data.remove("deviceType");
+        // print_data.remove("vAssistant");
+        // print_data.printTo(_dType);
 
-        return aliPrint(_dType);
+        return aliPrint(data);
     }
     else {
         return print(data);
@@ -2827,17 +2828,17 @@ bool BlinkerTransportStream::aliPrint(const String & data)
     BLINKER_LOG_ALL("MQTT AliGenie Publish...");
 
     if (mqtt->connected()) {
-        // if (!checkAliKA()) {
-        //     BLINKER_LOG_ALL("checkAliKA failed...");
-        //     return false;
-        // }
+        if (!checkAliKA()) {
+            BLINKER_LOG_ALL("checkAliKA failed...");
+            return false;
+        }
 
-        // if (!checkAliPrintSpan()) {
-        //     respAliTime = millis();
-        //     BLINKER_LOG_ALL("checkAliPrintSpan failed...");
-        //     return false;
-        // }
-        // respAliTime = millis();
+        if (!checkAliPrintSpan()) {
+            respAliTime = millis();
+            BLINKER_LOG_ALL("checkAliPrintSpan failed...");
+            return false;
+        }
+        respAliTime = millis();
 
         // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt, BLINKER_PUB_TOPIC);
 
