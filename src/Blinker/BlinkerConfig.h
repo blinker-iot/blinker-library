@@ -573,9 +573,9 @@
 
     #define BLINKER_SERIAL_8O2                  8 << 4 | 2 << 2 | 1
 
-    #define BLINKER_EEP_ADDR_SERIALCFG          2432
+    // #define BLINKER_EEP_ADDR_SERIALCFG          2432
 
-    #define BLINKER_SERIALCFG_SIZE              4
+    // #define BLINKER_SERIALCFG_SIZE              4
     
 #endif
 
@@ -993,6 +993,8 @@
 
     #define BLINKER_CMD_AUTO_PULL_NUMBER        13
 
+    #define BLINKER_CMD_OTA_NUMBER              14
+
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 
 #endif
@@ -1152,11 +1154,11 @@
         #define BLINKER_PRO_VERSION             "1.0.0"
     #endif
 
-    #define BLINKER_PRO_VERSION_CODE        B00000001
+    #define BLINKER_OTA_VERSION_CODE        B00000001
 
-    #define BLINKER_PRO_OTA_START           B01010011
+    #define BLINKER_OTA_START               B01010011
 
-    #define BLINKER_PRO_OTA_CLEAR           B00000001
+    #define BLINKER_OTA_CLEAR               B00000001
 
     #define BLINKER_CHECK_AUTH_TIME         120000UL
 
@@ -1187,6 +1189,27 @@
     #define BLINKER_EEP_ADDR_OTA_INFO       (BLINKER_EEP_ADDR_AUTH_CHECK + BLINKER_AUTH_CHECK_SIZE)
 
     #define BLINKER_OTA_INFO_SIZE           4
+
+    #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
+
+    #define BLINKER_OTA_CHECK_SIZE          1
+
+#elif (defined(BLINKER_WIFI) || defined(BLINKER_MQTT) \
+    || defined(BLINKER_AT_MQTT))
+
+    #ifndef BLINKER_OTA_VERSION_CODE
+
+        #define BLINKER_OTA_VERSION_CODE        "0.1.0"
+
+    #endif
+
+    #define BLINKER_OTA_START               B01010011
+
+    #define BLINKER_OTA_CLEAR               B00000001
+
+    #define BLINKER_EEP_ADDR_OTA_INFO       2436
+
+    #define BLINKER_OTA_INFO_SIZE           11
 
     #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
 
@@ -1292,6 +1315,10 @@
     #define BLINKER_EEP_ADDR_EVENT_END              (BLINKER_EEP_ADDR_EVENT_ERASE + BLINKER_EVENT_ERASE_SIZE)
 
     // 56
+
+    #define BLINKER_EEP_ADDR_SERIALCFG          2432
+
+    #define BLINKER_SERIALCFG_SIZE              4
 
 #endif
 

@@ -33,6 +33,10 @@
     #include "utility/BlinkerUtility.h"
 #endif
 
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+    #include "utility/BlinkerOTA.h"
+#endif
+
 
 // enum b_widgettype_t {
 //     W_BUTTON,
@@ -77,13 +81,15 @@ static class BlinkerTimingTimer *       timingTask[BLINKER_TIMING_TIMER_SIZE];
 #endif
 
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)  || defined(BLINKER_AT_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
 static class BlinkerAUTO *              _AUTO[2];
 static class BlinkerData *              _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
 // #endif
 
 // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 static class BlinkerBridge *            _Bridge[BLINKER_MAX_BRIDGE_SIZE];
+
+BlinkerOTA                              _OTA;
 #endif
 
 #if defined(BLINKER_WIFI)
@@ -1292,21 +1298,68 @@ class BlinkerApi
 #endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        void loadOTA()
+        {
+            if (_OTA.loadOTACheck())
+            {
+                if (!_OTA.loadVersion())
+                {
+                    _OTA.saveVersion();
+                }
+            }
+        }
+
+        void ota()
+        {
+            String otaData = checkOTA();
+
+            if (otaData != BLINKER_CMD_FALSE)
+            {
+                DynamicJsonBuffer jsonBuffer;
+                JsonObject& otaJson = jsonBuffer.parseObject(otaData);
+
+                if (!otaJson.success())
+                {
+                    BLINKER_ERR_LOG_ALL("check ota data error");
+                    return;
+                }
+
+                String otaHost = otaJson["host"];
+                String otaUrl = otaJson["url"];
+                String otaFp = otaJson["fingerprint"];
+
+                _OTA.config(otaHost, otaUrl, otaFp);
+
+                _OTA.update();
+            }
+        }
+
+        String checkOTA()
+        {
+            String data = "/ota/upgrade?deviceName=" + \
+                STRING_format(static_cast<Proto*>(this)->_deviceName);
+
+            return blinkServer(BLINKER_CMD_OTA_NUMBER, data);
+        }
+        
         template<typename T>
-        bool configUpdate(const T& msg) {
+        bool configUpdate(const T& msg)
+        {
             String _msg = STRING_format(msg);
 
             String   data = "{\"deviceName\":\"" + STRING_format(static_cast<Proto*>(this)->_deviceName) + "\"" + \
                             ",\"key\":\"" + STRING_format(static_cast<Proto*>(this)->_authKey) + "\"" + \
                             ",\"config\":\"" + _msg + "\"}";
 
-            if (_msg.length() > 256) {
+            if (_msg.length() > 256)
+            {
                 return false;
             }
             return (blinkServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
         }
 
-        String configGet() {
+        String configGet()
+        {
             String   data = "/pull_userconfig?deviceName=" + STRING_format(static_cast<Proto*>(this)->_deviceName) + \
                             "&key=" + STRING_format(static_cast<Proto*>(this)->_authKey);
 
@@ -2412,7 +2465,7 @@ class BlinkerApi
             if (state.length()) {
                 // _fresh = true;
                 if (state == BLINKER_CMD_VERSION) {
-                    static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, BLINKER_VERSION);
+                    static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
                     _fresh = true;
                 }
             }
@@ -2900,7 +2953,8 @@ class BlinkerApi
 
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-        bool autoManager(const JsonObject& data) {
+        bool autoManager(const JsonObject& data)
+        {
             // String set;
             bool isSet = false;
             bool isAuto = false;
@@ -4255,6 +4309,8 @@ class BlinkerApi
                         return BLINKER_CMD_FALSE;
                     }
                     break;
+                case BLINKER_CMD_OTA_NUMBER :
+                    break;
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -4474,6 +4530,17 @@ class BlinkerApi
                     BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
                     break;
                 case BLINKER_CMD_AUTO_PULL_NUMBER :
+                    url = "/api/v1/user/device" + msg;
+
+                    client_msg = STRING_format("GET " + url + " HTTP/1.1\r\n" +
+                        "Host: " + host + ":" + STRING_format(httpsPort) + "\r\n" +
+                        "Connection: close\r\n\r\n");
+
+                    client_s.print(client_msg);
+                    
+                    BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
+                    break;
+                case BLINKER_CMD_OTA_NUMBER :
                     url = "/api/v1/user/device" + msg;
 
                     client_msg = STRING_format("GET " + url + " HTTP/1.1\r\n" +
@@ -4761,6 +4828,22 @@ class BlinkerApi
                     BLINKER_LOG_ALL(BLINKER_F("_dataGet: "), _dataGet);
                     
                     break;
+                case BLINKER_CMD_OTA_NUMBER :
+                    if (data_rp.success()) {
+                        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000) {
+                            String _detail = data_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG(_detail);
+                        }
+                        else {
+                            String _dataGet_ = data_rp[BLINKER_CMD_DETAIL];
+                            _dataGet = _dataGet_;
+                        }
+                    }
+                    
+                    BLINKER_LOG_ALL(BLINKER_F("_dataGet: "), _dataGet);
+                    
+                    break;
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -4888,6 +4971,12 @@ class BlinkerApi
                     httpCode = http.GET();
                     break;
                 case BLINKER_CMD_AUTO_PULL_NUMBER :
+                    url_iot = String(host) + "/api/v1/user/device" + msg;
+
+                    http.begin(url_iot);
+                    httpCode = http.GET();
+                    break;
+                case BLINKER_CMD_OTA_NUMBER :
                     url_iot = String(host) + "/api/v1/user/device" + msg;
 
                     http.begin(url_iot);
@@ -5145,6 +5234,22 @@ class BlinkerApi
                                 }
                             }
                             _autoPullTime = millis();
+                            
+                            BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
+                            
+                            break;
+                        case BLINKER_CMD_OTA_NUMBER :
+                            if (data_rp.success()) {
+                                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                                if (msg_code != 1000) {
+                                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                                    BLINKER_ERR_LOG(_detail);
+                                }
+                                else {
+                                    String _payload = data_rp[BLINKER_CMD_DETAIL];
+                                    payload = _payload;
+                                }
+                            }
                             
                             BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
                             

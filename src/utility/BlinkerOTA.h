@@ -1,7 +1,7 @@
 #ifndef BLINKER_OTA_H
 #define BLINKER_OTA_H
 
-#if defined(BLINKER_PRO)
+// #if defined(BLINKER_PRO)
 
 #include "Blinker/BlinkerConfig.h"
 #include <EEPROM.h>
@@ -37,8 +37,10 @@ enum bota_status_t{
 // 	}
 // }
 
-class BlinkerOTA {
+class BlinkerOTA
+{
     public :
+        BlinkerOTA() {}
         // void parseData(char *OTAdata);
         void host(String _host) { ota_host = _host; }
         void url(String _url) { ota_url = _url; }
@@ -68,7 +70,7 @@ class BlinkerOTA {
         String ota_host;
         String ota_url;
         String ota_fingerPrint;
-        uint16_t ota_port = 80;
+        uint16_t ota_port = 443;
         char *otaUrl;
         bota_status_t _status;
         int contentLength = 0;
@@ -79,7 +81,7 @@ void BlinkerOTA::setURL(String url) {
     otaUrl = (char*)malloc(url.length()*sizeof(char));
     strcpy(otaUrl,url.c_str());
 
-    BLINKER_LOG(F("ota url: "), otaUrl);
+    BLINKER_LOG_ALL(("ota url: "), otaUrl);
         
     _status = BLINKER_UPGRADE_START;
 
@@ -132,21 +134,21 @@ void BlinkerOTA::update() {
 //             // break;
 //     }
 // #elif defined(ESP32)
-    BLINKER_LOG("Connecting to: " + String(ota_host));
+    BLINKER_LOG_ALL("Connecting to: " + String(ota_host));
     
     if (client_s.connect(ota_host.c_str(), ota_port)) {
         // Connection Succeed.
         // Fecthing the bin
-        BLINKER_LOG("Fetching Bin: " + String(ota_url));
-
-        if (client_s.verify(ota_fingerPrint, ota_host)) {
-            BLINKER_LOG("Fingerprint verified");
+        BLINKER_LOG_ALL("Fetching Bin: " + String(ota_url));
+// #if defined(ESP32)
+        if (client_s.verify(ota_fingerPrint.c_str(), ota_host.c_str())) {
+            BLINKER_LOG_ALL("Fingerprint verified");
         }
         else {
-            BLINKER_LOG("Fingerprint verification failed!");
+            BLINKER_LOG_ALL("Fingerprint verification failed!");
             return;
         }
-
+// #endif
         // Get the contents of the bin file
         client_s.print(String("GET ") + ota_url + " HTTP/1.1\r\n" +
                     "Host: " + ota_host + "\r\n" +
@@ -156,7 +158,7 @@ void BlinkerOTA::update() {
         unsigned long timeout = millis();
         while (client_s.available() == 0) {
             if (millis() - timeout > 5000) {
-                BLINKER_LOG("Client Timeout !");
+                BLINKER_LOG_ALL("Client Timeout !");
                 client_s.stop();
 
                 _status = BLINKER_UPGRADE_LOAD_FAIL;
@@ -186,7 +188,7 @@ void BlinkerOTA::update() {
             // else break and Exit Update
             if (line.startsWith("HTTP/1.1")) {
                 if (line.indexOf("200") < 0) {
-                    BLINKER_LOG("Got a non 200 status code from server. Exiting OTA Update.");
+                    BLINKER_LOG_ALL("Got a non 200 status code from server. Exiting OTA Update.");
                     break;
                 }
             }
@@ -195,13 +197,13 @@ void BlinkerOTA::update() {
             // Start with content length
             if (line.startsWith("Content-Length: ")) {
                 contentLength = atoi((getHeaderValue(line, "Content-Length: ")).c_str());
-                BLINKER_LOG("Got " + String(contentLength) + " bytes from server");
+                BLINKER_LOG_ALL("Got " + String(contentLength) + " bytes from server");
             }
 
             // Next, the content type
             if (line.startsWith("Content-Type: ")) {
                 String contentType = getHeaderValue(line, "Content-Type: ");
-                BLINKER_LOG("Got " + contentType + " payload.");
+                BLINKER_LOG_ALL("Got " + contentType + " payload.");
                 if (contentType == "application/octet-stream") {
                     isValidContentType = true;
                 }
@@ -209,11 +211,11 @@ void BlinkerOTA::update() {
         }
     }
     else {
-        BLINKER_LOG("Connection to " + String(ota_host) + " failed. Please check your setup");
+        BLINKER_LOG_ALL("Connection to " + String(ota_host) + " failed. Please check your setup");
     }
 
     // Check what is the contentLength and if content type is `application/octet-stream`
-    BLINKER_LOG("contentLength : " + String(contentLength) + ", isValidContentType : " + String(isValidContentType));
+    BLINKER_LOG_ALL("contentLength : " + String(contentLength) + ", isValidContentType : " + String(isValidContentType));
 
     // check contentLength and content type
     if (contentLength && isValidContentType) {
@@ -222,31 +224,31 @@ void BlinkerOTA::update() {
 
         // If yes, begin
         if (canBegin) {
-            BLINKER_LOG("Begin OTA. This may take 2 - 5 mins to complete. Things might be quite for a while.. Patience!");
+            BLINKER_LOG_ALL("Begin OTA. This may take 2 - 5 mins to complete. Things might be quite for a while.. Patience!");
             // No activity would appear on the Serial monitor
             // So be patient. This may take 2 - 5mins to complete
             size_t written = Update.writeStream(client_s);
 
             if (written == contentLength) {
-                BLINKER_LOG("Written : " + String(written) + " successfully");
+                BLINKER_LOG_ALL("Written : " + String(written) + " successfully");
             }
             else {
-                BLINKER_LOG("Written only : " + String(written) + "/" + String(contentLength) + ". Retry?" );
+                BLINKER_LOG_ALL("Written only : " + String(written) + "/" + String(contentLength) + ". Retry?" );
             }
 
             if (Update.end()) {
-                BLINKER_LOG("OTA done!");
+                BLINKER_LOG_ALL("OTA done!");
                 if (Update.isFinished()) {
-                    BLINKER_LOG("Update successfully completed. Rebooting.");
+                    BLINKER_LOG_ALL("Update successfully completed. Rebooting.");
                     _status = BLINKER_UPGRADE_SUCCESS;
                     ESP.restart();
                 } else {
-                    BLINKER_LOG("Update not finished? Something went wrong!");
+                    BLINKER_LOG_ALL("Update not finished? Something went wrong!");
                     _status = BLINKER_UPGRADE_FAIL;
                 }
             }
             else {
-                BLINKER_LOG("Error Occurred. Error #: " + String(Update.getError()));
+                BLINKER_LOG_ALL("Error Occurred. Error #: " + String(Update.getError()));
                 _status = BLINKER_UPGRADE_FAIL;
             }
         }
@@ -254,13 +256,13 @@ void BlinkerOTA::update() {
             // not enough space to begin OTA
             // Understand the partitions and
             // space availability
-            BLINKER_LOG("Not enough space to begin OTA");
+            BLINKER_LOG_ALL("Not enough space to begin OTA");
             client_s.flush();
             _status = BLINKER_UPGRADE_FAIL;
         }
     }
     else {
-        BLINKER_LOG("There was no content in the response");
+        BLINKER_LOG_ALL("There was no content in the response");
         client_s.flush();
         _status = BLINKER_UPGRADE_FAIL;
     }
@@ -269,68 +271,88 @@ void BlinkerOTA::update() {
 
 bool BlinkerOTA::loadOTACheck() {
     char OTACheck;
-    EEPROM.begin(EEP_SIZE);
+    EEPROM.begin(BLINKER_EEP_SIZE);
     EEPROM.get(BLINKER_EEP_ADDR_OTA_CHECK, OTACheck);
     EEPROM.commit();
     EEPROM.end();
 
-    if (OTACheck != BLINKER_PRO_OTA_START) {
-        BLINKER_LOG(F("OTA NOT START"));
+    if (OTACheck != BLINKER_OTA_START) {
+        BLINKER_LOG_ALL(("OTA NOT START"));
         return false;
     }
     else {
-        BLINKER_LOG(F("OTA START"));
+        BLINKER_LOG_ALL(("OTA START"));
         return true;
     }
 }
 
 void BlinkerOTA::saveOTACheck() {
-    EEPROM.begin(EEP_SIZE);
-    EEPROM.put(BLINKER_EEP_ADDR_OTA_CHECK, BLINKER_PRO_OTA_START);
+    EEPROM.begin(BLINKER_EEP_SIZE);
+    EEPROM.put(BLINKER_EEP_ADDR_OTA_CHECK, BLINKER_OTA_START);
     EEPROM.commit();
     EEPROM.end();
 
-    BLINKER_LOG(F("OTA START-saveOTACheck()"));
+    BLINKER_LOG_ALL(("OTA START-saveOTACheck()"));
 }
 
 void BlinkerOTA::clearOTACheck() {
-    EEPROM.begin(EEP_SIZE);
-    EEPROM.put(BLINKER_EEP_ADDR_OTA_CHECK, BLINKER_PRO_OTA_CLEAR);
+    EEPROM.begin(BLINKER_EEP_SIZE);
+    EEPROM.put(BLINKER_EEP_ADDR_OTA_CHECK, BLINKER_OTA_CLEAR);
     EEPROM.commit();
     EEPROM.end();
 
-    BLINKER_LOG(F("OTACLEAR()"));
+    BLINKER_LOG_ALL(("OTACLEAR()"));
     _status = BLINKER_UPGRADE_DISABLE;
 }
 
 bool BlinkerOTA::loadVersion() {
+#if defined(BLINKER_PRO)
     uint32_t versionCheck;
-    EEPROM.begin(EEP_SIZE);
+    EEPROM.begin(BLINKER_EEP_SIZE);
     EEPROM.get(BLINKER_EEP_ADDR_OTA_INFO, versionCheck);//+BUNDLINGSIZE+isBundling
     EEPROM.commit();
     EEPROM.end();
 
-    if (versionCheck != BLINKER_PRO_VERSION_CODE) {
-        BLINKER_LOG(F("OTA SUCCESS BLINKER_PRO_VERSION_CODE NOT UPGRADE"));
+    if (versionCheck != BLINKER_OTA_VERSION_CODE) {
+        BLINKER_LOG_ALL(("OTA SUCCESS BLINKER_OTA_VERSION_CODE NOT UPGRADE"));
         _status = BLINKER_UPGRADE_SUCCESS;
         return false;
     }
     else {
-        BLINKER_LOG(F("OTA FAIL"));
+        BLINKER_LOG_ALL(("OTA FAIL"));
         _status = BLINKER_UPGRADE_FAIL;
         return true;
     }
-}
-
-void BlinkerOTA::saveVersion() {
-    EEPROM.begin(EEP_SIZE);
-    EEPROM.put(BLINKER_EEP_ADDR_OTA_INFO, BLINKER_PRO_VERSION_CODE);//+BUNDLINGSIZE+isBundling
+#else
+    char versionCheck[11];
+    
+    EEPROM.begin(BLINKER_EEP_SIZE);
+    EEPROM.get(BLINKER_EEP_ADDR_OTA_INFO, versionCheck);//+BUNDLINGSIZE+isBundling
     EEPROM.commit();
     EEPROM.end();
 
-    BLINKER_LOG(F("SAVE BLINKER_PRO_VERSION_CODE"));
+    if (String(versionCheck) != String(BLINKER_OTA_VERSION_CODE)) {
+        BLINKER_LOG_ALL(("OTA SUCCESS BLINKER_OTA_VERSION_CODE NOT UPGRADE"));
+        _status = BLINKER_UPGRADE_SUCCESS;
+        return false;
+    }
+    else {
+        BLINKER_LOG_ALL(("OTA FAIL"));
+        _status = BLINKER_UPGRADE_FAIL;
+        return true;
+    }
+#endif
 }
 
-#endif
+void BlinkerOTA::saveVersion() {
+    EEPROM.begin(BLINKER_EEP_SIZE);
+    EEPROM.put(BLINKER_EEP_ADDR_OTA_INFO, BLINKER_OTA_VERSION_CODE);//+BUNDLINGSIZE+isBundling
+    EEPROM.commit();
+    EEPROM.end();
+
+    BLINKER_LOG_ALL(("SAVE BLINKER_OTA_VERSION_CODE"));
+}
+
+// #endif
 
 #endif
