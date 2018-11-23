@@ -2753,6 +2753,8 @@ void BlinkerProtocol<Transp>::run()
                 strcpy(_authKey, conn.key().c_str());
                 strcpy(_deviceName, conn.deviceName().c_str());
                 _proStatus = PRO_DEV_INIT_SUCCESS;
+
+                BApi::loadOTA();
             }
         }
         else {
@@ -2787,6 +2789,8 @@ void BlinkerProtocol<Transp>::run()
         if (conn.init() && BApi::ntpInit()) {
             _isInit =true;
             _disconnectTime = millis();
+
+            BApi::loadOTA();
             
             BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
         }
