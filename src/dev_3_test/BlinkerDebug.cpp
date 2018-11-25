@@ -20,8 +20,6 @@
     #endif
 #endif
 
-#define BLINKER_DEBUG_F(s)  F(s)
-
 BlinkerDebug Debug;
 
 void BlinkerDebug::stream(Stream& s, blinker_debug_level_t level)
@@ -52,71 +50,6 @@ void BlinkerDebug::freeheap()
     return;
 }
 
-void BlinkerDebug::BLINKER_LOG_T()
-{
-    if (debug_level != _debug_none)
-    {
-        debugger->println();
-    }
-    return;
-}
-
-/* BLINKER_LOG_T递归模板 */
-template <typename T,typename... Ts>
-void BlinkerDebug::BLINKER_LOG_T(T arg,Ts... args)
-{
-    if (debug_level != _debug_none)
-    {
-        debugger->print(arg);
-        BLINKER_LOG_T(args...);
-    }
-    return;
-}
-/* BLINKER_LOG可变参数模板 */
-template <typename... Ts>
-void BlinkerDebug::log(Ts... args)
-{
-    if (debug_level != _debug_none)
-    {
-        time();
-        BLINKER_LOG_T(args...);
-    }
-    return;
-}
-/* BLINKER_ERR_LOG可变参数模板 */
-template <typename... Ts>
-void BlinkerDebug::error(Ts... args)
-{
-    if (debug_level != _debug_none)
-    {
-        time();
-        debugger->print(BLINKER_DEBUG_F("ERROR: "));
-        BLINKER_LOG_T(args...);
-    }
-    return;
-}
-
-template <typename... Ts>
-void BlinkerDebug::logAll(Ts... args)
-{
-    if (debug_level == _debug_all)
-    {
-        time();
-        BLINKER_LOG_T(args...);
-    }
-    return;
-}
-
-template <typename... Ts>
-void BlinkerDebug::errorAll(Ts... args)
-{
-    if (debug_level == _debug_all)
-    {
-       error(args...);
-    }
-    return;
-}
-
 uint32_t BlinkerDebug::BLINKER_FreeHeap()
 {
 #if defined(ARDUINO) 
@@ -134,4 +67,32 @@ uint32_t BlinkerDebug::BLINKER_FreeHeap()
 #else
     return 0;
 #endif
+}
+
+void BLINKER_LOG_TIME()
+{
+    if (Debug.isDebug())
+    {
+        Debug.print(BLINKER_DEBUG_F("["));
+        Debug.print(millis());
+        Debug.print(BLINKER_DEBUG_F("] "));
+    }
+    return;
+}
+
+void BLINKER_LOG_FreeHeap()
+{
+    if (Debug.isDebug())
+    {
+        BLINKER_LOG_TIME();
+        Debug.print(BLINKER_DEBUG_F("Freeheap: "));
+        Debug.freeheap();
+    }
+    return;
+}
+
+void BLINKER_LOG_T()
+{
+    if (Debug.isDebug()) Debug.println();
+    return;
 }

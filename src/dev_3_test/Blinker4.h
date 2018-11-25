@@ -7,5 +7,10 @@
 // // #endif
 // #if defined(BLINKER_MQTT)
 // #endif
+// #if defined(BLINKER_PRINT)
+// BlinkerDebug Debug(BLINKER_PRINT);
+// #endif
+
+#include "BlinkerESPMQTT.h"
 
 #endif
