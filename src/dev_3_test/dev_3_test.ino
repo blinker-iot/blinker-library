@@ -7,9 +7,9 @@ void setup()
     Serial.begin(115200);
 
     #if defined(BLINKER_PRINT)
-    Debug.stream(BLINKER_PRINT);
+    BLINKER_DEBUG.stream(BLINKER_PRINT);
     #endif
-    Debug.freeheap();
+    BLINKER_DEBUG.freeheap();
 
     Blinker.begin();
 

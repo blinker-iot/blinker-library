@@ -20,7 +20,7 @@
     #endif
 #endif
 
-BlinkerDebug Debug;
+BlinkerDebug BLINKER_DEBUG;
 
 void BlinkerDebug::stream(Stream& s, blinker_debug_level_t level)
 {
@@ -71,28 +71,28 @@ uint32_t BlinkerDebug::BLINKER_FreeHeap()
 
 void BLINKER_LOG_TIME()
 {
-    if (Debug.isDebug())
+    if (BLINKER_DEBUG.isDebug())
     {
-        Debug.print(BLINKER_DEBUG_F("["));
-        Debug.print(millis());
-        Debug.print(BLINKER_DEBUG_F("] "));
+        BLINKER_DEBUG.print(BLINKER_DEBUG_F("["));
+        BLINKER_DEBUG.print(millis());
+        BLINKER_DEBUG.print(BLINKER_DEBUG_F("] "));
     }
     return;
 }
 
 void BLINKER_LOG_FreeHeap()
 {
-    if (Debug.isDebug())
+    if (BLINKER_DEBUG.isDebug())
     {
         BLINKER_LOG_TIME();
-        Debug.print(BLINKER_DEBUG_F("Freeheap: "));
-        Debug.freeheap();
+        BLINKER_DEBUG.print(BLINKER_DEBUG_F("Freeheap: "));
+        BLINKER_DEBUG.freeheap();
     }
     return;
 }
 
 void BLINKER_LOG_T()
 {
-    if (Debug.isDebug()) Debug.println();
+    if (BLINKER_DEBUG.isDebug()) BLINKER_DEBUG.println();
     return;
 }

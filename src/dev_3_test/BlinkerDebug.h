@@ -52,7 +52,7 @@ class BlinkerDebug
         uint32_t BLINKER_FreeHeap();
 };
 
-extern BlinkerDebug Debug;
+extern BlinkerDebug BLINKER_DEBUG;
 
 extern void BLINKER_LOG_TIME();
 extern void BLINKER_LOG_FreeHeap();
@@ -62,9 +62,9 @@ extern void BLINKER_LOG_T();
 template <typename T,typename... Ts>
 void BLINKER_LOG_T(T arg,Ts... args)
 {
-    if (Debug.isDebug())
+    if (BLINKER_DEBUG.isDebug())
     {
-        Debug.print(arg);
+        BLINKER_DEBUG.print(arg);
         BLINKER_LOG_T(args...);
     }
     return;
@@ -81,10 +81,10 @@ void BLINKER_LOG(Ts... args)
 template <typename... Ts>
 void BLINKER_ERR_LOG(Ts... args)
 {
-    if (Debug.isDebug())
+    if (BLINKER_DEBUG.isDebug())
     {
         BLINKER_LOG_TIME();
-        Debug.print(BLINKER_DEBUG_F("ERROR: "));
+        BLINKER_DEBUG.print(BLINKER_DEBUG_F("ERROR: "));
         BLINKER_LOG_T(args...);
     }
     return;
@@ -93,7 +93,7 @@ void BLINKER_ERR_LOG(Ts... args)
 template <typename... Ts>
 void BLINKER_LOG_ALL(Ts... args)
 {
-    if (Debug.isDebugAll())
+    if (BLINKER_DEBUG.isDebugAll())
     {
         BLINKER_LOG_TIME();
         BLINKER_LOG_T(args...);
@@ -104,7 +104,7 @@ void BLINKER_LOG_ALL(Ts... args)
 template <typename... Ts>
 void BLINKER_ERR_LOG_ALL(Ts... args)
 {
-    if (Debug.isDebugAll()) { BLINKER_ERR_LOG(args...); }
+    if (BLINKER_DEBUG.isDebugAll()) { BLINKER_ERR_LOG(args...); }
     return;
 }
 
