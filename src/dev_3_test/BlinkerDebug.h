@@ -11,26 +11,27 @@
 
 #define BLINKER_DEBUG_F(s)  F(s)
 
-enum blinker_debug_level_t
-{
-    _debug_none,
-    _debug_default,
-    _debug_all
-};
-
 class BlinkerDebug
 {
+    enum blinker_debug_level_t
+    {
+        _debug_none,
+        _debug_default,
+        _debug_all
+    };
+
     public :
         BlinkerDebug()
             : debug_level(_debug_none)
         {}
 
-        BlinkerDebug(Stream& s, blinker_debug_level_t level = _debug_default)
-            : debugger(&s)
-            , debug_level(level)
-        {}
+        // BlinkerDebug(Stream& s, blinker_debug_level_t level = _debug_default)
+        //     : debugger(&s)
+        //     , debug_level(level)
+        // {}
 
         void stream(Stream& s, blinker_debug_level_t level = _debug_default);
+        void debugAll()     { debug_level = _debug_all; }
 
         void time();
         void freeheap();
