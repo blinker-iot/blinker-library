@@ -1,0 +1,1326 @@
+#ifndef BlinkerConfig_H
+#define BlinkerConfig_H
+
+#include "utility/BlinkerDebug.h"
+
+#define BLINKER_VERSION                 "0.2.3"
+
+#define BLINKER_CONNECT_TIMEOUT_MS      10000UL
+
+#define BLINKER_STREAM_TIMEOUT          100
+
+#define BLINKER_NTP_TIMEOUT             1000UL
+
+#define BLINKER_GPS_MSG_LIMIT           30000UL
+
+#define BLINKER_PRINT_MSG_LIMIT         20
+
+#define BLINKER_MQTT_MSG_LIMIT          1000UL
+
+#define BLINKER_BRIDGE_MSG_LIMIT        60000UL
+
+#define BLINKER_LINK_MSG_LIMIT          60000UL
+
+#define BLINKER_MQTT_KEEPALIVE          120000UL
+
+#define BLINKER_SMS_MSG_LIMIT           60000UL
+
+#define BLINKER_PUSH_MSG_LIMIT          60000UL
+
+#define BLINKER_WECHAT_MSG_LIMIT        60000UL
+
+#define BLINKER_WEATHER_MSG_LIMIT       60000UL
+
+#define BLINKER_AQI_MSG_LIMIT           60000UL
+
+#define BLINKER_CONFIG_UPDATE_LIMIT     60000UL
+
+#define BLINKER_CONFIG_GET_LIMIT        60000UL
+
+#define BLINKER_WIFI_AUTO_INIT_TIMEOUT  20000UL
+
+#define BLINKER_AT_MSG_TIMEOUT          1000UL
+
+#define BLINKER_MDNS_SERVICE_BLINKER    "blinker"
+
+#define BLINKER_MSG_FROM_MQTT           0
+
+#define BLINKER_MSG_FROM_WS             1
+
+// #if defined(BLINKER_MQTT)
+//     #define BLINKER_MSG_AUTOFORMAT_TIMEOUT  1000
+// #else
+    #define BLINKER_MSG_AUTOFORMAT_TIMEOUT  100
+// #endif
+
+#define BLINKER_SMS_MAX_SEND_SIZE       128
+
+#if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+    #define BLINKER_PRESSTIME_POWERDOWN     2000UL
+    
+    #define BLINKER_PRESSTIME_RESET         10000UL
+#endif
+
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
+    #define BLINKER_MAX_WIDGET_SIZE         16
+#else
+    #define BLINKER_MAX_WIDGET_SIZE         4
+#endif
+
+#define BLINKER_OBJECT_NOT_AVAIL        -1
+
+#ifndef BLINKER_MAX_READ_SIZE
+    #if defined(ESP8266) || defined(ESP32)
+        #define BLINKER_MAX_READ_SIZE       512
+    #else
+        // #if defined(BLINKER_MQTT_AT)
+        //     #define BLINKER_MAX_READ_SIZE       256
+        // #else
+            #define BLINKER_MAX_READ_SIZE       128
+        // #endif
+    #endif
+#endif
+
+#ifndef BLINKER_MAX_SEND_SIZE
+    #if defined(ESP8266) || defined(ESP32)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
+            #define BLINKER_MAX_SEND_SIZE       256
+        #else
+            #define BLINKER_MAX_SEND_SIZE       512
+        #endif
+    #else
+        #define BLINKER_MAX_SEND_SIZE       128
+    #endif
+#endif
+
+#ifndef BLINKER_MAX_SEND_BUFFER_SIZE
+    #if defined(ESP8266) || defined(ESP32)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
+            #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE - 128
+        #else
+            #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
+        #endif
+    #else
+        #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
+    #endif
+#endif
+
+#define BLINKER_AUTHKEY_SIZE            14
+
+#if defined(ESP8266) || defined(ESP32)
+    #define BLINKER_LOGO_3D    
+#else
+    #define BLINKER_NO_LOGO
+#endif
+
+#define BLINKER_MAX_SUMMARY_DATA_SIZE   20
+
+// #define	BLINKER_DEBUG
+
+#define BLINKER_CMD_ON                  "on"
+
+#define BLINKER_CMD_OFF                 "off"
+
+#define BLINKER_CMD_TRUE                "true"
+
+#define BLINKER_CMD_FALSE               "false"
+
+#define BLINKER_CMD_JOYSTICK            "joy"
+
+#define BLINKER_CMD_GYRO                "gyro"
+
+#define BLINKER_CMD_AHRS                "ahrs"
+
+#define BLINKER_CMD_GPS                 "gps"
+
+#define BLINKER_CMD_RGB                 "rgb"
+
+#define BLINKER_CMD_VIBRATE             "vibrate"
+
+#define BLINKER_CMD_BUTTON_TAP          "tap"
+
+#define BLINKER_CMD_BUTTON_PRESSED      "press"
+
+#define BLINKER_CMD_BUTTON_RELEASED     "pressup"
+
+#define BLINKER_CMD_NEWLINE             "\n"
+
+#define BLINKER_CMD_INTERSPACE          " "
+
+#define BLINKER_CMD_DATA                "data"
+
+#define BLINKER_CMD_GET                 "get"
+
+#define BLINKER_CMD_SET                 "set"
+
+#define BLINKER_CMD_STATE               "state"
+
+#define BLINKER_CMD_ONLINE              "online"
+
+#define BLINKER_CMD_CONNECTED           "connected"
+
+#define BLINKER_CMD_VERSION             "version"
+
+#define BLINKER_CMD_NOTICE              "notice"
+
+#define BLINKER_CMD_BUILTIN_SWITCH      "switch"
+
+#define BLINKER_CMD_NOTFOUND            "device not found"
+
+#define BLINKER_CMD_COMMAND             "cmd"
+
+#define BLINKER_CMD_EVENT               "event"
+
+#define BLINKER_CMD_AUTO                "auto"
+
+#define BLINKER_CMD_AUTOID              "autoId"
+
+#define BLINKER_CMD_ID                  "id"
+
+#define BLINKER_CMD_AUTODATA            "autoData"
+
+#define BLINKER_CMD_DELETID             "deletId"
+
+#define BLINKER_CMD_LOGIC               "logic"
+
+#define BLINKER_CMD_LOGICDATA           "logicData"
+
+#define BLINKER_CMD_LOGICTYPE           "logicType"
+
+#define BLINKER_CMD_LESS                "<"//"less"
+
+#define BLINKER_CMD_EQUAL               "="//"equal"
+
+#define BLINKER_CMD_GREATER             ">"//"greater"
+
+#define BLINKER_CMD_NUMBERIC            "numberic"
+
+#define BLINKER_CMD_OR                  "or"
+
+#define BLINKER_CMD_AND                 "and"
+
+#define BLINKER_CMD_COMPARETYPE         "compareType"
+
+#define BLINKER_CMD_TRIGGER             "trigger"
+
+#define BLINKER_CMD_DURATION            "duration"
+
+#define BLINKER_CMD_TARGETKEY           "targetKey"
+
+#define BLINKER_CMD_TARGETSTATE         "targetState"
+
+#define BLINKER_CMD_TARGETDATA          "targetData"
+
+#define BLINKER_CMD_TIMESLOT            "timeSlot"
+
+#define BLINKER_CMD_RANGE               "range"
+
+#define BLINKER_CMD_LINKDEVICE          "linkDevice"
+
+#define BLINKER_CMD_LINKTYPE            "linkType"
+
+#define BLINKER_CMD_LINKDATA            "linkData"
+
+#define BLINKER_CMD_TRIGGEDDATA         "triggedData"
+
+#define BLINKER_CMD_TYPE                "type"
+
+#define BLINKER_CMD_TIMER               "timer"
+
+#define BLINKER_CMD_RUN                 "run"
+
+#define BLINKER_CMD_ENABLE              "ena"
+
+#define BLINKER_CMD_COUNTDOWN           "countdown"
+
+#define BLINKER_CMD_COUNTDOWNDATA       "countdownData"
+
+#define BLINKER_CMD_TOTALTIME           "ttim"
+
+#define BLINKER_CMD_RUNTIME             "rtim"
+
+#define BLINKER_CMD_ACTION              "act"
+
+#define BLINKER_CMD_ACTION1             "act1"
+
+#define BLINKER_CMD_ACTION2             "act2"
+
+#define BLINKER_CMD_LOOP                "loop"
+
+#define BLINKER_CMD_LOOPDATA            "loopData"
+
+#define BLINKER_CMD_TIME                "tim"
+
+#define BLINKER_CMD_TIMES               "tis"
+
+#define BLINKER_CMD_TRIGGED             "tri"
+
+#define BLINKER_CMD_TIME1               "dur1"
+
+#define BLINKER_CMD_TIME2               "dur2"
+
+#define BLINKER_CMD_TIMING              "timing"
+
+#define BLINKER_CMD_TIMINGDATA          "timingData"
+
+#define BLINKER_CMD_DAY                 "day"
+
+#define BLINKER_CMD_TASK                "task"
+
+#define BLINKER_CMD_DELETETASK          "dlt"
+
+#define BLINKER_CMD_DELETE              "dlt"
+
+#define BLINKER_CMD_DETAIL              "detail"
+
+#define BLINKER_CMD_OK                  "OK"
+
+#define BLINKER_CMD_ERROR               "ERROR"
+
+#define BLINKER_CMD_MESSAGE             "message"
+
+#define BLINKER_CMD_DEVICENAME          "deviceName"
+
+#define BLINKER_CMD_IOTID               "iotId"
+
+#define BLINKER_CMD_IOTTOKEN            "iotToken"
+
+#define BLINKER_CMD_PRODUCTKEY          "productKey"
+
+#define BLINKER_CMD_BROKER              "broker"
+
+#define BLINKER_CMD_UUID                "uuid"
+
+#define BLINKER_CMD_KEY                 "key"
+
+#define BLINKER_CMD_SMS                 "sms"
+
+#define BLINKER_CMD_PUSH                "push"
+
+#define BLINKER_CMD_WECHAT              "wechat"
+
+#define BLINKER_CMD_WEATHER             "weather"
+
+#define BLINKER_CMD_AQI                 "aqi"
+
+#define BLINKER_CMD_CONFIG              "config"
+
+#define BLINKER_CMD_DEFAULT             "default"
+
+#define BLINKER_CMD_SWITCH              "swi"
+
+#define BLINKER_CMD_VALUE               "val"
+
+#define BLINKER_CMD_ICON                "ico"
+
+#define BLINKER_CMD_COLOR               "col"
+
+#define BLINKER_CMD_TITLE               "tit"
+
+#define BLINKER_CMD_CONTENT             "con"
+
+#define BLINKER_CMD_TEXT                "tex"
+
+#define BLINKER_CMD_TEXT1               "tex1"
+
+#define BLINKER_CMD_TEXTCOLOR           "tco"
+
+#define BLINKER_CMD_UNIT                "uni"
+
+#define BLINKER_CMD_SUMMARY             "sum"
+
+#define BLINKER_CMD_POWERSTATE          "pState"
+
+#define BLINKER_CMD_BRIGHTNESS          "bright"
+
+#define BLINKER_CMD_UPBRIGHTNESS        "upBright"
+
+#define BLINKER_CMD_DOWNBRIGHTNESS      "downBright"
+
+#define BLINKER_CMD_COLORTEMP           "colTemp"
+
+#define BLINKER_CMD_UPCOLORTEMP         "upColTemp"
+
+#define BLINKER_CMD_DOWNCOLORTEMP       "downColTemp"
+
+#define BLINKER_CMD_TEMP                "temp"
+
+#define BLINKER_CMD_HUMI                "humi"
+
+#define BLINKER_CMD_PM25                "pm25"
+
+#define BLINKER_CMD_MAX                 "max"
+
+#define BLINKER_CMD_MIN                 "min"
+
+#define BLINKER_CMD_ALIGENIE            "AliGenie"
+
+#define BLINKER_CMD_MODE                "mode"
+
+#define BLINKER_CMD_CANCELMODE          "cMode"
+
+#define BLINKER_CMD_READING             "reading"
+
+#define BLINKER_CMD_MOVIE               "movie"
+
+#define BLINKER_CMD_SLEEP               "sleep"
+
+#define BLINKER_CMD_HOLIDAY             "holiday"
+
+#define BLINKER_CMD_MUSIC               "music"
+
+#define BLINKER_CMD_COMMON              "common"
+
+#define BLINKER_CMD_MODE_READING_NUMBER         0
+
+#define BLINKER_CMD_MODE_MOVIE_NUMBER           1
+
+#define BLINKER_CMD_SLEEP_NUMBER                2
+
+#define BLINKER_CMD_HOLIDAY_NUMBER              3
+
+#define BLINKER_CMD_MUSIC_NUMBER                4
+
+#define BLINKER_CMD_COMMON_NUMBER               5
+
+#define BLINKER_CMD_QUERY_ALL_NUMBER            0
+
+#define BLINKER_CMD_QUERY_POWERSTATE_NUMBER     1
+
+#define BLINKER_CMD_QUERY_COLOR_NUMBER          2
+
+#define BLINKER_CMD_QUERY_MODE_NUMBER           3
+
+#define BLINKER_CMD_QUERY_COLORTEMP_NUMBER      4
+
+#define BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER     5
+
+#define BLINKER_CMD_QUERY_TEMP_NUMBER           6
+
+#define BLINKER_CMD_QUERY_HUMI_NUMBER           7
+
+#define BLINKER_CMD_QUERY_PM25_NUMBER           8
+
+#define BLINKER_JOYSTICK_VALUE_DEFAULT  128
+
+#define BLINKER_ONE_HOUR_TIME           3600UL
+
+#define BLINKER_ONE_DAY_TIME            86400UL
+
+#ifndef BLINKER_MAX_BRIDGE_SIZE
+    #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
+        #define BLINKER_MAX_BRIDGE_SIZE             4
+    #elif defined(BLINKER_PRO)
+        #define BLINKER_MAX_BRIDGE_SIZE             16
+    #endif
+#endif
+
+#define BLINKER_MAX_BLINKER_DATA_SIZE   6
+
+#define BLINKER_MAX_DATA_COUNT          24
+
+#if defined(BLINKER_ESP_AT)
+
+    #define BLINKER_ESP_AT_VERSION              "0.1.0"
+
+    #define BLINKER_UART_PARAM_NUM              4
+
+    #define BLINKER_COMWLAN_PARAM_NUM           4
+
+    #define BLINKER_SMCFG_PARAM_NUM             2
+
+    #define BLINKER_APCFG_PARAM_NUM             2
+
+    #define BLINKER_IOSETCFG_PARAM_NUM          3
+
+    #define BLINKER_IOGETCFG_PARAM_NUM          1
+
+    #define BLINKER_GPIOWRITE_PARAM_NUM         2
+
+    #define BLINKER_GPIOREAD_PARAM_NUM          1
+
+    #define BLINKER_IO_INPUT_NUM                0
+
+    #define BLINKER_IO_OUTPUT_NUM               1
+
+    #define BLINKER_IO_DEFAULT_NUM              2
+
+    #define BLINKER_ALIGENIE_CFG_NUM            0
+
+    #define BLINKER_ALIGENIE_PARAM_NUM          1
+
+    #define BLINKER_TIMEZONE_CFG_NUM            0
+
+    #define BLINKER_TIMEZONE_PARAM_NUM          1
+
+    #if defined(ESP8266)
+        
+        #define BLINKER_MAX_PIN_NUM                 17
+
+    #elif defined(ESP32)
+
+        #define BLINKER_MAX_PIN_NUM                 40
+
+    #endif
+
+    #define BLINKER_CMD_AT                      "AT"
+
+    #define BLINKER_CMD_RST                     "RST"
+
+    #define BLINKER_CMD_GMR                     "GMR"
+
+    #define BLINKER_CMD_UART_CUR                "UART_CUR"
+
+    #define BLINKER_CMD_UART_DEF                "UART_DEF"
+
+    #define BLINKER_CMD_RAM                     "SYSRAM"
+
+    #define BLINKER_CMD_ADC                     "SYSADC"
+
+    #define BLINKER_CMD_IOSETCFG                "SYSIOSETCFG"
+
+    #define BLINKER_CMD_IOGETCFG                "SYSIOGETCFG"
+
+    #define BLINKER_CMD_GPIOWRITE               "SYSGPIOWRITE"
+
+    #define BLINKER_CMD_GPIOWREAD               "SYSGPIOREAD"
+
+    #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
+
+    #define BLINKER_CMD_BLINKER_ALIGENIE        "BLINKER_ALIGENIE"
+
+    #define BLINKER_CMD_TIMEZONE                "TIMEZONE"
+
+    #define BLINKER_CMD_TIME_AT                 "TIME"
+
+    #define BLINKER_CMD_SECOND                  "SECOND"
+
+    #define BLINKER_CMD_MINUTE                  "MINUTE"
+
+    #define BLINKER_CMD_HOUR                    "HOUR"
+
+    #define BLINKER_CMD_WDAY                    "WDAY"
+
+    #define BLINKER_CMD_MDAY                    "MDAY"
+
+    #define BLINKER_CMD_YDAY                    "YDAY"
+
+    #define BLINKER_CMD_MONTH                   "MONTH"
+
+    #define BLINKER_CMD_YEAR                    "YEAR"
+
+    #define BLINKER_CMD_WEATHER_AT              "WEATHER"
+
+    #define BLINKER_CMD_AQI_AT                  "AQI"
+
+    #define BLINKER_CMD_NOTICE_AT               "NOTIFY"
+
+    #define BLINKER_CMD_SMS_AT                  "SMS"
+
+    #define BLINKER_CMD_SMARTCONFIG             "ESPTOUCH"
+
+    #define BLINKER_CMD_APCONFIG                "APCONFIG"
+
+    #define BLINKER_CMD_COMCONFIG               "COMCONFIG"
+
+    #define BLINKER_SERIAL_DEFAULT              115200 << 8 | 8 << 4 | 1 << 2 | 0
+
+    #define BLINKER_SERIAL_5N1                  5 << 4 | 1 << 2 | 0
+
+    #define BLINKER_SERIAL_6N1                  6 << 4 | 1 << 2 | 0
+
+    #define BLINKER_SERIAL_7N1                  7 << 4 | 1 << 2 | 0
+
+    #define BLINKER_SERIAL_8N1                  8 << 4 | 1 << 2 | 0
+
+    #define BLINKER_SERIAL_5N2                  5 << 4 | 2 << 2 | 0
+
+    #define BLINKER_SERIAL_6N2                  6 << 4 | 2 << 2 | 0
+
+    #define BLINKER_SERIAL_7N2                  7 << 4 | 2 << 2 | 0
+
+    #define BLINKER_SERIAL_8N2                  8 << 4 | 2 << 2 | 0
+
+    #define BLINKER_SERIAL_5E1                  5 << 4 | 1 << 2 | 2
+
+    #define BLINKER_SERIAL_6E1                  6 << 4 | 1 << 2 | 2
+
+    #define BLINKER_SERIAL_7E1                  7 << 4 | 1 << 2 | 2
+
+    #define BLINKER_SERIAL_8E1                  8 << 4 | 1 << 2 | 2
+
+    #define BLINKER_SERIAL_5E2                  5 << 4 | 2 << 2 | 2
+
+    #define BLINKER_SERIAL_6E2                  6 << 4 | 2 << 2 | 2
+
+    #define BLINKER_SERIAL_7E2                  7 << 4 | 2 << 2 | 2
+
+    #define BLINKER_SERIAL_8E2                  8 << 4 | 2 << 2 | 2
+
+    #define BLINKER_SERIAL_5O1                  5 << 4 | 1 << 2 | 1
+
+    #define BLINKER_SERIAL_6O1                  6 << 4 | 1 << 2 | 1
+
+    #define BLINKER_SERIAL_7O1                  7 << 4 | 1 << 2 | 1
+
+    #define BLINKER_SERIAL_8O1                  8 << 4 | 1 << 2 | 1
+
+    #define BLINKER_SERIAL_5O2                  5 << 4 | 2 << 2 | 1
+
+    #define BLINKER_SERIAL_6O2                  6 << 4 | 2 << 2 | 1
+
+    #define BLINKER_SERIAL_7O2                  7 << 4 | 2 << 2 | 1
+
+    #define BLINKER_SERIAL_8O2                  8 << 4 | 2 << 2 | 1
+
+    // #define BLINKER_EEP_ADDR_SERIALCFG          2432
+
+    // #define BLINKER_SERIALCFG_SIZE              4
+    
+#endif
+
+#if defined(BLINKER_MQTT_AT)
+    
+    #define BLINKER_MQTT_HOST_SIZE          50
+
+    #define BLINKER_MQTT_ID_SIZE            110
+
+    #define BLINKER_MQTT_NAME_SIZE          80
+
+    #define BLINKER_MQTT_KEY_SIZE           50
+
+    #define BLINKER_MQTT_PINFO_SIZE         12
+
+    #define BLINKER_MQTT_UUID_SIZE          40
+
+    #define BLINKER_MQTT_DEVICEID_SIZE      26
+
+    #define BLINKER_MQTT_DEVICENAME_SIZE    14
+
+#endif
+
+#define BLINKER_CMD_COMCONFIG_NUM           0
+
+#define BLINKER_CMD_SMARTCONFIG_NUM         1
+
+#define BLINKER_CMD_APCONFIG_NUM            2
+
+#if defined(BLINKER_NBIOT)
+    // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
+    // http://www.mokuai.cn/Down/WH-NB73_at_V2.2.1.pdf
+    // http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
+    #define BLINKER_NB_HEARTBEAT_TIME           1800UL
+
+    #define BLINKER_CMD_NB_NB73                 "[WH-NB73]"
+    
+    #define BLINKER_CMD_NB_RESET                "AT+NRB"
+
+    #define BLINKER_CMD_NB_CGATT                "AT+CGATT?"
+    // Waiting module attachment network
+    #define BLINKER_CMD_NB_CGATT_SUCCESSED      "+CGATT:1"
+
+    #define BLINKER_CMD_NB_CGATT_FAILED         "+CGATT:0"
+
+    #define BLINKER_CMD_NB_CREATE               "AT+MIPLCREATE"
+    // Create communication kite
+    #define BLINKER_CMD_NB_CREATEREQ            "+MIPLCREATE"
+
+    #define BLINKER_CMD_NB_CREATE_SUCCESSED     "+MIPLCREATE:0"
+
+    #define BLINKER_CMD_NB_DELETE               "AT+MIPLDELETE"
+    
+    #define BLINKER_CMD_NB_ADDOBJ               "AT+MIPLADDOBJ"
+    // Add object
+    // AT+MIPLADDOBJ = <ref>,               0
+    //                 <objectid>,          3303
+    //                 <instancecount>,     1
+    //                 <instancebitmap>,    1
+    //                 <attributecount>,    6
+    //                 <actioncount>        1
+    // AT+MIPLADDOBJ=0,3306,1,1,5,0
+    // AT+MIPLADDOBJ=0,3303,1,1,6,1
+    #define BLINKER_CMD_NB_DELOBJ               "AT+MIPLDELOBJ"
+    // AT+MIPLDELOBJ=<ref>,<objectid>
+    // AT+MIPLDELOBJ=0,3303
+    #define BLINKER_CMD_NB_OPEN                 "AT+MIPLOPEN"
+    // AT+MIPLOPEN=<ref>,<lifetime>[,<timeout>]
+    // AT+MIPLOPEN=0,1200
+    #define BLINKER_CMD_NB_CLOSE                "AT+MIPLCLOSE"
+    // AT+MIPLCLOSE=<ref>
+    // AT+MIPLCLOSE=0
+    #define BLINKER_CMD_NB_EVENTREQ             "+MIPLEVENT"
+    // +MIPLEVENT:<ref>,<eid>
+    // +MIPLEVENT:0,11
+
+    // 1 BOOTSTRAP_START
+    // 2 BOOTSTRAP_SUCCESS
+    // 3 BOOTSTRAP_FAILED
+    // 4 CONNECT_SUCCESS
+    // 5 CONNECT_FAILED
+    // 6 REG_SUCCESS
+    // 7 REG_FAILED
+    // 8 REG_TIMEOUT
+    // 9 LIFETIME_TIMEOUT
+    // 10 STATUS_HALT
+    // 11 UPDATE_SUCCESS
+    // 12 UPDATE_FAILED
+    // 13 UPDATE_TIMEOUT
+    // 14 UPDATE_NEED
+    // 20 RESPONSE_FAILED
+    // 21 RESPONSE_SUCCESS
+    // 25 NOTIFY_FAILED
+    // 26 NOTIFY_SUCCESS
+    #define BLINKER_CMD_NB_EVENT_1              "+MIPLEVENT:0,1"
+    
+    #define BLINKER_CMD_NB_EVENT_2              "+MIPLEVENT:0,2"
+
+    #define BLINKER_CMD_NB_EVENT_4              "+MIPLEVENT:0,4"
+
+    #define BLINKER_CMD_NB_EVENT_6              "+MIPLEVENT:0,6"
+
+    #define BLINKER_CMD_NB_DISCOVEREQ           "+MIPLDISCOVER"
+    // Resource discovery
+    // +MIPLDISCOVER:<ref>,<msgid>,<objectid>
+    // 3
+    // +MIPLREAD:0,888888,3303
+
+    // 3341	Addressable Text Display
+    // This IPSO object is used to send text to a text-only or text mode graphics display.
+    #define BLINKER_CMD_NB_DISCOVERESP          "AT+MIPLDISCOVERRSP"
+    // AT+MIPLDISCOVERRSP= <ref>,          0
+    //                     <msgid>,        %d
+    //                     <result>,       1
+    //     1 2.05 Content
+    //     11 4.00 Bad Request
+    //     12 4.01 Unauthorized
+    //     13 4.04 Not Found
+    //     14 4.05 Method Not Allowed
+    //     15 4.06 Not Acceptable
+    //                     <length>,       19
+    //                     <valuestring>   "5850;5851;5852;5853"
+    // AT+MIPLDISCOVERRSP=0,%d,1,19,"5850;5851;5852;5853"
+
+    // 5527 Text RW String
+    #define BLINKER_CMD_NB_OBSERVEREQ           "+MIPLOBSERVE"
+    // Resource observation
+    // +MIPLOBSERVE:<ref>,<msgid>,<flag>,<objectid>,<instanceid>[,<resourceid>]
+    // 6
+    // +MIPLREAD:0,888888,1,3303,1,5700
+    #define BLINKER_CMD_NB_OBSERVERSP           "AT+MIPLOBSERVERSP"
+    // AT+MIPLOBSERVERSP=<ref>,<msgid>,<result>
+    // 1 2.05 Content
+    // 11 4.00 Bad Request
+    // 12 4.01 Unauthorized
+    // 13 4.04 Not Found
+    // 14 4.05 Method Not Allowed
+    // 15 4.06 Not Acceptable
+    // AT+MIPLOBSERVERSP=0,88888,1
+    #define BLINKER_CMD_NB_NOTIFY               "AT+MIPLNOTIFY"
+    // AT+MIPLNOTIFY = <ref>,           0
+    //                 <msgid>,         %d
+    //                 <objectid>,      3303
+    //                 <instanceid>,    0
+    //                 <resourceid>,    5700
+    //                 <valuetype>,     4  
+    //     1-char 2-hex 3-int 4-float 5-bool
+    //                 <len>,           3
+    //                 <value>,         2.1
+    //                 <index>,         1
+    //                 <flag>[,         0
+    //                 <ackid>]
+    // AT+MIPLNOTIFY=0,%d,3303,0,5700,4,3,2.1,1,0
+    #define BLINKER_CMD_NB_UPDATE               "AT+MIPLUPDATE"
+    // AT+MIPLUPDATE=<ref>,<lifetime>,<withObjectFlag>
+    // AT+MIPLUPDATE=0,0,0
+    #define BLINKER_CMD_NB_LEVEL                "AT+MIPLVER"
+
+    #define BLINKER_CMD_NB_WRITEREQ             "+MIPLWRITE"
+    // +MIPLWRITE: <ref>,
+    //             <msgid>,
+    //             <objectid>,
+    //             <instanceid>,
+    //             <resourceid>,
+    //             <valuetype>,
+    //     1-char 2-hex 3-int 4-float 5-bool
+    //             <len>,
+    //             <value>,
+    //             <flag>,
+    //             <index>
+    // 10
+    // +MIPLWRITE:0,51130,3306,0,0,2,2,01,0,0
+    #define BLINKER_CMD_NB_WRITERSP             "AT+MIPLWRITERSP"
+    // AT+MIPLWRITERSP=<ref>,<msgid>,<result>
+    // 2 2.04 Changed
+    // 11 4.00 Bad Request
+    // 12 4.01 Unauthorized
+    // 13 4.04 Not Found
+    // 14 4.05 Method Not Allowed
+    // 16 2.31 Continue
+    // 17 4.08 Request Entity Incomplete
+    // 18 4.13 Request entity too large
+    // 19 4.15 Unsupported content format
+    // 3
+    // AT+MIPLWRITERSP=0,88888,2
+    #define BLINKER_CMD_NB_READREQ              "+MIPLREAD"
+    // +MIPLREAD:<ref>,<msgid>,<objectid>,<instanceid>,<resourceid>
+    // 5
+    // +MIPLREAD:0,888888,3303,1,5700
+    #define BLINKER_CMD_NB_READRSP              "AT+MIPLREADRSP"
+    // AT+MIPLREADRSP= <ref>,              0
+    //                 <msgid>,            86635
+    //                 <result>[,          1
+    //         1 2.05 Content
+    //         11 4.00 BadRequest
+    //         12 4.01 Unauthorized
+    //         13 4.04 NotFound
+    //         14 4.05 MethodNotAllowed
+    //         15 4.06 NotAcceptable
+    //                 <objectid>,         3303
+    //                 <instanceid>,       1
+    //                 <resourceid>,       5700
+    //                 <valuetype>,        4
+    //                 <len>,              2
+    //                 <value>,            20
+    //                 <index>,            1
+    //                 <flag>]             0
+    // 11
+    // AT+MIPLREADRSP=0,86635,1,3303,1,5700,4,2,20,1,0
+    #define BLINKER_CMD_NB_EXECUTEREQ           "+MIPLEXECUTE"
+    // +MIPLEXECUTE:<ref>,<msgid>,<objectid>,<instanceid>,<resourceid>,[,<len>,<arguments>]
+    // 7
+    // +MIPLEXECUTE:0,51131,3303,0, 5605,5,reset
+    #define BLINKER_CMD_NB_EXECUTERSP           "AT+MIPLEXECUTERSP"
+    // AT+MIPLEXECUTERSP=<ref>,<msgid>,<result>
+    // 2 2.04 Changed
+    // 11 4.00 Bad Request
+    // 12 4.01 Unauthorized
+    // 13 4.04 Not Found
+    // 14 4.05 Method Not Allowed
+    // AT+MIPLEXECUTERSP=0,88888,2
+    #define BLINKER_CMD_NB_PARAMETERREQ         "+MIPLPARAMETER"
+    // +MIPLPARAMETER:<ref>,<msgid>,<objectid>,<instanceid>,<resourceid>,<len>,<parameter>
+    // 7
+    // +MIPLPARAMETER:0,88688,3203,1,5603,39,“pmin=1.8;pmax=5.0;gt=3.6;lt=3.0;stp=0.1”
+    #define BLINKER_CMD_NB_PARAMETERRSP         "AT+MIPLPARAMETERSP"
+    // AT+MIPLPARAMETERRSP=<ref>,<msgid>,<result>
+    // 1 2.04 Changed
+    // 11 4.00 Bad Request
+    // 12 4.01 Unauthorized
+    // 13 4.04 Not Found
+    // 14 4.05 Method Not Allowed
+    // AT+MIPLPARAMETERRSP=0,888888,1
+
+
+    // Digital Input	3200
+    // Digital Output	3201
+    // Analogue Input	3202
+    // Analogue Output	3203
+    // Generic Sensor	3300
+    // Illuminance Sensor	3301
+    // Presence sensor	3302
+    // Temperature Sensor	3303
+    // Humidity Sensor	3304
+    // Power Measurement	3305
+    // Actuation	3306
+    // Set Point	3308
+    // Load Control	3310
+    // Light Control	3311
+    // Power Control	3312
+    // Accelerometer	3313
+    // Magnetometer	3314
+    // Barometer	3315
+    // Voltage	3316
+    // Current	3317
+    // Frequency	3318
+    // Depth	3319
+    // Percentage	3320
+    // Altitude	3321
+    // Load	3322
+    // Pressure	3323
+    // Loudness	3324
+    // Concentration	3325
+    // Acidity	3326
+    // Conductivity	3327
+    // Power	3328
+    // Power Factor	3329
+    // Distance	3330
+    // Energy	3331
+    // Direction	3332
+    // Time	3333
+    // Gyrometer	3334
+    // Color	3335
+    // GPS Location	3336
+    // Positioner	3337
+    // Buzzer	3338
+    // Audio Clip	3339
+    // Timer	3340
+    // Addressable Text Display	3341
+    // On/Off Switch	3342
+    // Dimmer	3343
+    // Up/Down Control	3344
+    // Multiple Axis Joystick	3345
+    // Rate	3346
+    // Push Button	3347
+    // Multi-state Selector	3348
+    // Bitmap	3349
+    // Stopwatch	3350
+
+    // Digital Input State 5500 R Boolean
+    // Digital Input Counter 5501 R Integer			
+    // Digital Input Polarity 5502 R,W Boolean			
+    // Digital Input Debounce 5503 R,W Integer			
+    // Digital Input Edge Selection 5504 R,W Integer			
+    // Digital Input Counter Reset 5505 E			
+    // Current Time 5506 R,W Time			
+    // Fractional Time 5507 R,W Float			
+    // Min X Value 5508 R Float			
+    // Max X Value 5509 R Float			
+    // Min Y Value 5510 R Float			
+    // Max Y Value 5511 R Float			
+    // Min Z Value 5512 R Float			
+    // Max Z Value 5513 R Float			
+    // Latitude 5514 R String			
+    // Longitude 5515 R String			
+    // Uncertainty 5516 R String 
+    // Velocity 5517 R Opaque 
+    // Timestamp 5518 R Time 
+    // Min Limit 5519 R Float 
+    // Max Limit 5520 R Float 
+    // Delay Duration 5521 R,W Float 
+    // Clip 5522 R,W Opaque 
+    // Trigger 5523 E 
+    // Duration 5524 R,W Float 
+    // Minimum Off-time 5525 R,W Float 
+    // Mode 5526 R,W Integer 
+    // Text 5527 R,W String 
+    // X Coordinate 5528 R,W Integer 
+    // Y Coordinate 5529 R,W Integer 
+    // Clear Display 5530 E 
+    // Contrast 5531 R,W Float 
+    // Increase Input State 5532 R Boolean 
+    // Decrease Input State 5533 R Boolean 
+    // Counter 5534 R,W Integer 
+    // Current Position 5536 R,W Float 
+    // Transition Time 5537 R,W Float 
+    // Remaining Time 5538 R Float 
+    // Up Counter 5541 R,W Integer 
+    // Down Counter 5542 R,W Integer 
+    // Digital State 5543 R Boolean 
+    // Cumulative Time 5544 R,W Float 
+    // Max X Coordinate 5545 R Integer 
+    // Max Y Coordinate 5546 R Integer 
+    // Multi-state Input 5547 R Integer 
+    // Level 5548 R,W Float 
+    // Digital Output State 5550 R,W Boolean 
+    // Digital Output Polarity 5551 R,W Boolean 
+    // Analog Input State 5600 R Float 
+    // Min Measured Value 5601 R Float 
+    // Max Measured Value 5602 R Float 
+    // Min Range Value 5603 R Float 
+    // Max Range Value 5604 R Float 
+    // Reset Min and Max Measured Values 5605 E 
+    // Analog Output Current Value 5650 R,W Float 
+    // Sensor Value 5700 R Float 
+    // Sensor Units 5701 R String 
+    // X Value 5702 R Float 
+    // Y Value 5703 R Float 
+    // Z Value 5704 R Float 
+    // Compass Direction 5705 R Float 
+    // Colour 5706 R,W String 
+    // Application Type 5750 R,W String 
+    // Sensor Type 5751 R String 
+    // Instantaneous active power 5800 R Float 
+    // Min Measured active power 5801 R Float 
+    // Max Measured active power 5802 R Float 
+    // Min Range active power 5803 R Float 
+    // Max Range active power 5804 R Float 
+    // Cumulative active power 5805 R Float 
+    // Active Power Calibration 5806 W Float 
+    // Instantaneous reactive power 5810 R Float 
+    // Min Measured reactive power 5811 R Float 
+    // Max Measured reactive power 5812 R Float 
+    // Min Range reactive power 5813 R Float 
+    // Max Range reactive power 5814 R Float 
+    // Cumulative reactive power 5815 R Float 
+    // Reactive Power Calibration 5816 W Float 
+    // Power Factor 5820 R Float 
+    // Current Calibration 5821 R,W Float 
+    // Reset Cumulative energy 5822 E 
+    // Event Identifier 5823 R,W String 
+    // Start Time 5824 R,W Float 
+    // Duration In Min 5825 R,W Float 
+    // Criticality Level 5826 R,W Integer 
+    // Avg Load Adj Pct 5827 R,W String 
+    // Duty Cycle 5828 R,W Integer 
+    // On/Off 5850 R,W Boolean 
+    // Dimmer 5851 R,W Integer 
+    // On Time 5852 R,W Integer 
+    // Muti-state Output 5853 R,W String 
+    // Off Time 5854 R,W Integer 
+    // Set Point Value 5900 R,W Float 
+    // Busy to Clear delay 5903 R,W Integer 
+    // Clear to Busy delay 5904 R,W Integer 
+    // Bitmap Input 5910 R Integer 
+    // Bitmap Input Reset 5911 E 
+    // Element Description 5912 R,W String 
+    // UUID 5913 R,W String
+#endif
+
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+    #define BLINKER_CMD_SMS_NUMBER              1
+
+    #define BLINKER_CMD_PUSH_NUMBER             2
+
+    #define BLINKER_CMD_WECHAT_NUMBER           3
+
+    #define BLINKER_CMD_WEATHER_NUMBER          4
+
+    #define BLINKER_CMD_AQI_NUMBER              5
+
+    #define BLINKER_CMD_BRIDGE_NUMBER           6
+
+    #define BLINKER_CMD_CONFIG_UPDATE_NUMBER    7
+
+    #define BLINKER_CMD_CONFIG_GET_NUMBER       8
+
+    #define BLINKER_CMD_CONFIG_DELETE_NUMBER    9
+
+    #define BLINKER_CMD_DATA_STORAGE_NUMBER     10
+
+    #define BLINKER_CMD_DATA_GET_NUMBER         11
+
+    #define BLINKER_CMD_DATA_DELETE_NUMBER      12
+
+    #define BLINKER_CMD_AUTO_PULL_NUMBER        13
+
+    #define BLINKER_CMD_OTA_NUMBER              14
+
+    #define BLINKER_CMD_DEFAULT_NUMBER          0
+
+#endif
+
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) \
+    || defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_BSSL)
+    #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
+
+    #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
+
+    #define BLINKER_MQTT_ALIYUN_PORT        1883
+
+    #define BLINKER_MQTT_BORKER_QCLOUD      "qcloud"
+
+    #define BLINKER_MQTT_QCLOUD_HOST        "iotcloud-mqtt.gz.tencentdevices.com"
+
+    #define BLINKER_MQTT_QCLOUD_PORT        8883
+
+    #define BLINKER_MQTT_BORKER_ONENET      "onenet"
+
+    #define BLINKER_MQTT_ONENET_HOST        "mqtt.heclouds.com"
+
+    #define BLINKER_MQTT_ONENET_PORT        6002
+
+    #define BLINKER_MQTT_PING_TIMEOUT       30000UL
+
+    #define BLINKER_MQTT_HOST_SIZE          50
+
+    #define BLINKER_MQTT_ID_SIZE            110
+
+    #define BLINKER_MQTT_NAME_SIZE          80
+
+    #define BLINKER_MQTT_KEY_SIZE           50
+
+    #define BLINKER_MQTT_PINFO_SIZE         12
+
+    #define BLINKER_MQTT_UUID_SIZE          40
+
+    #define BLINKER_MQTT_DEVICEID_SIZE      26
+
+    #define BLINKER_MQTT_DEVICENAME_SIZE    14
+
+#endif
+
+#if defined(ESP8266) || defined(ESP32)
+
+    #define BLINKER_TIMING_TIMER_SIZE       10
+
+    #define BLINKER_TYPE_STATE              0
+
+    #define BLINKER_TYPE_NUMERIC            1
+
+    #define BLINKER_TYPE_OR                 2
+
+    #define BLINKER_TYPE_AND                3
+
+    #define BLINKER_COMPARE_LESS            0
+
+    #define BLINKER_COMPARE_EQUAL           1
+
+    #define BLINKER_COMPARE_GREATER         2
+
+    #define BLINKER_CHECK_DATA              170
+
+    #define BLINKER_EEP_SIZE                4096
+
+    #define BLINKER_EEP_ADDR_CHECK          0
+
+    #define BLINKER_CHECK_SIZE              1
+
+    #define BLINKER_EEP_ADDR_AUTONUM        (BLINKER_EEP_ADDR_CHECK + BLINKER_CHECK_SIZE)
+
+    #define BLINKER_AUTONUM_SIZE            1
+
+    #define BLINKER_EEP_ADDR_AUTO_START     (BLINKER_EEP_ADDR_AUTONUM + BLINKER_AUTONUM_SIZE)
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    #define BLINKER_EEP_ADDR_AUTOID         0
+
+    #define BLINKER_AUTOID_SIZE             4
+
+    #define BLINKER_EEP_ADDR_TYPESTATE      (BLINKER_EEP_ADDR_AUTOID + BLINKER_AUTOID_SIZE)
+
+    #define BLINKER_TYPESTATE_SIZE          1
+
+    #define BLINKER_EEP_ADDR_AUTO1          (BLINKER_EEP_ADDR_TYPESTATE + BLINKER_TYPESTATE_SIZE)
+
+    #define BLINKER_AUTODATA_SIZE           4
+
+    #define BLINKER_EEP_ADDR_TARGETKEY1     (BLINKER_EEP_ADDR_AUTO1 + BLINKER_AUTODATA_SIZE)
+
+    #define BLINKER_TARGETKEY_SIZE          12
+
+    #define BLINKER_EEP_ADDR_TARGETDATA1    (BLINKER_EEP_ADDR_TARGETKEY1 + BLINKER_TARGETKEY_SIZE)
+
+    #define BLINKER_TARGETDATA_SIZE         4
+
+    #define BLINKER_EEP_ADDR_AUTO2          (BLINKER_EEP_ADDR_TARGETDATA1 + BLINKER_TARGETDATA_SIZE)
+
+    #define BLINKER_AUTODATA_SIZE           4
+
+    #define BLINKER_EEP_ADDR_TARGETKEY2     (BLINKER_EEP_ADDR_AUTO2 + BLINKER_AUTODATA_SIZE)
+
+    #define BLINKER_TARGETKEY_SIZE          12
+
+    #define BLINKER_EEP_ADDR_TARGETDATA2    (BLINKER_EEP_ADDR_TARGETKEY2 + BLINKER_TARGETKEY_SIZE)
+
+    #define BLINKER_TARGETDATA_SIZE         4
+
+    // // #define BLINKER_TARGET_DATA_SIZE        (BLINKER_AUTOID_SIZE + BLINKER_AUTODATA_SIZE + BLINKER_TARGETKEY_SIZE + BLINKER_TARGETDATA_SIZE)
+
+    // #define BLINKER_EEP_ADDR_LINKDEVICE1    (BLINKER_EEP_ADDR_TARGETDATA2 + BLINKER_TARGETDATA_SIZE)
+
+    // #define BLINKER_LINKDEVICE_SIZE         26
+
+    // #define BLINKER_EEP_ADDR_LINKTYPE1      (BLINKER_EEP_ADDR_LINKDEVICE1 + BLINKER_LINKDEVICE_SIZE)
+
+    // #define BLINKER_LINKTYPE_SIZE           18
+
+    // #define BLINKER_EEP_ADDR_LINKDATA1      (BLINKER_EEP_ADDR_LINKTYPE1 + BLINKER_LINKTYPE_SIZE)
+
+    // #define BLINKER_LINKDATA_SIZE           212
+
+    // #define BLINKER_EEP_ADDR_LINKDEVICE2    (BLINKER_EEP_ADDR_LINKDATA1 + BLINKER_LINKDATA_SIZE)
+
+    // #define BLINKER_LINKDEVICE_SIZE         26
+
+    // #define BLINKER_EEP_ADDR_LINKTYPE2      (BLINKER_EEP_ADDR_LINKDEVICE2 + BLINKER_LINKDEVICE_SIZE)
+
+    // #define BLINKER_LINKTYPE_SIZE           18
+
+    // #define BLINKER_EEP_ADDR_LINKDATA2      (BLINKER_EEP_ADDR_LINKTYPE2 + BLINKER_LINKTYPE_SIZE)
+
+    // #define BLINKER_LINKDATA_SIZE           212
+
+    #define BLINKER_ONE_AUTO_DATA_SIZE      (BLINKER_AUTOID_SIZE + BLINKER_TYPESTATE_SIZE + \
+                                            (BLINKER_AUTODATA_SIZE + BLINKER_TARGETKEY_SIZE + \
+                                            BLINKER_TARGETDATA_SIZE) * 2)// + BLINKER_LINKDEVICE_SIZE + BLINKER_LINKTYPE_SIZE + BLINKER_LINKDATA_SIZE) * 2)
+
+#endif
+
+#if defined(BLINKER_PRO)
+
+    #ifndef BLINKER_BUTTON_PIN
+        #define BLINKER_BUTTON_PIN              2
+    #endif
+
+    #define BLINKER_CMD_REGISTER            "register"
+
+    #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
+
+    #define BLINKER_SMART_PLUGIN            "OwnPlug"
+
+    #define BLINKER_SMART_LAMP              "OwnLamp"
+
+    #ifndef BLINKER_PRO_VERSION
+        #define BLINKER_PRO_VERSION             "1.0.0"
+    #endif
+
+    #define BLINKER_OTA_VERSION_CODE        B00000001
+
+    #define BLINKER_OTA_START               B01010011
+
+    #define BLINKER_OTA_CLEAR               B00000001
+
+    #define BLINKER_CHECK_AUTH_TIME         120000UL
+
+    #define BLINKER_AUTH_CHECK_DATA         0x55
+
+    #define BLINKER_EEP_ADDR_SSID           1280
+
+    #define BLINKER_SSID_SIZE               32
+
+    #define BLINKER_EEP_ADDR_PSWD           (BLINKER_EEP_ADDR_SSID + BLINKER_SSID_SIZE)
+
+    #define BLINKER_PSWD_SIZE               32
+
+    #define BLINKER_EEP_ADDR_WLAN_CHECK     (BLINKER_EEP_ADDR_PSWD + BLINKER_PSWD_SIZE)
+
+    #define BLINKER_WLAN_CHECK_SIZE         3
+
+    #define BLINKER_EEP_ADDR_AUUID          (BLINKER_EEP_ADDR_WLAN_CHECK + BLINKER_WLAN_CHECK_SIZE)
+
+    #define BLINKER_AUUID_SIZE              34
+
+    #define BLINKER_EEP_ADDR_AUTH_CHECK     (BLINKER_EEP_ADDR_AUUID + BLINKER_AUUID_SIZE)
+
+    #define BLINKER_AUTH_CHECK_SIZE         1
+
+    #define BLINKER_PRO_DATA_SIZE           (BLINKER_SSID_SIZE + BLINKER_PSWD_SIZE + BLINKER_WLAN_CHECK_SIZE + BLINKER_AUUID_SIZE + BLINKER_AUTH_CHECK_SIZE)
+
+    #define BLINKER_EEP_ADDR_OTA_INFO       (BLINKER_EEP_ADDR_AUTH_CHECK + BLINKER_AUTH_CHECK_SIZE)
+
+    #define BLINKER_OTA_INFO_SIZE           4
+
+    #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
+
+    #define BLINKER_OTA_CHECK_SIZE          1
+
+#elif (defined(BLINKER_WIFI) || defined(BLINKER_MQTT) \
+    || defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_BSSL))
+
+    #ifndef BLINKER_OTA_VERSION_CODE
+
+        #define BLINKER_OTA_VERSION_CODE        "0.1.0"
+
+    #endif
+
+    #define BLINKER_OTA_START               B01010011
+
+    #define BLINKER_OTA_CLEAR               B00000001
+
+    #define BLINKER_EEP_ADDR_OTA_INFO       2436
+
+    #define BLINKER_OTA_INFO_SIZE           11
+
+    #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
+
+    #define BLINKER_OTA_CHECK_SIZE          1
+
+#endif
+
+#if defined(ESP8266) || defined(ESP32)
+
+    #define BLINKER_ACTION_SIZE                     30
+
+    #define BLINKER_ACTION_NUM                      2
+
+    #define BLINKER_EEP_ADDR_TIMER                  1536
+
+    #define BLINKER_EEP_ADDR_TIMER_COUNTDOWN        BLINKER_EEP_ADDR_TIMER
+
+    #define BLINKER_TIMER_COUNTDOWN_SIZE            4
+
+    #define BLINKER_EEP_ADDR_TIMER_COUNTDOWN_ACTION (BLINKER_EEP_ADDR_TIMER + BLINKER_TIMER_COUNTDOWN_SIZE)
+
+    #define BLINKER_TIMER_COUNTDOWN_ACTION_SIZE     (BLINKER_ACTION_SIZE * BLINKER_ACTION_NUM)
+
+    #define BLINKER_EEP_ADDR_TIMER_LOOP             (BLINKER_EEP_ADDR_TIMER_COUNTDOWN_ACTION + BLINKER_TIMER_COUNTDOWN_ACTION_SIZE)
+
+    #define BLINKER_TIMER_LOOP_SIZE                 4
+
+    #define BLINKER_EEP_ADDR_TIMER_LOOP_TRI         (BLINKER_EEP_ADDR_TIMER_LOOP + BLINKER_TIMER_LOOP_SIZE)
+
+    #define BLINKER_TIMER_LOOP_TRI_SIZE             1
+
+    #define BLINKER_EEP_ADDR_TIMER_LOOP_ACTION1     (BLINKER_EEP_ADDR_TIMER_LOOP_TRI + BLINKER_TIMER_LOOP_TRI_SIZE)
+
+    #define BLINKER_TIMER_LOOP_ACTION1_SIZE         (BLINKER_ACTION_SIZE * BLINKER_ACTION_NUM)
+
+    #define BLINKER_EEP_ADDR_TIMER_LOOP_ACTION2     (BLINKER_EEP_ADDR_TIMER_LOOP_ACTION1 + BLINKER_TIMER_LOOP_ACTION1_SIZE)
+
+    #define BLINKER_TIMER_LOOP_ACTION2_SIZE         (BLINKER_ACTION_SIZE * BLINKER_ACTION_NUM)
+
+    #define BLINKER_EEP_ADDR_TIMER_TIMING_COUNT     (BLINKER_EEP_ADDR_TIMER_LOOP_ACTION2 + BLINKER_TIMER_LOOP_ACTION2_SIZE)
+
+    #define BLINKER_TIMER_TIMING_COUNT_SIZE         1
+
+    #define BLINKER_EEP_ADDR_TIMER_TIMING           (BLINKER_EEP_ADDR_TIMER_TIMING_COUNT + BLINKER_TIMER_TIMING_COUNT_SIZE)
+
+    #define BLINKER_TIMER_TIMING_SIZE               4
+
+    #define BLINKER_TIMER_TIMING_ACTION_SIZE        (BLINKER_ACTION_SIZE * BLINKER_ACTION_NUM)
+
+    #define BLINKER_ONE_TIMER_TIMING_SIZE           (BLINKER_TIMER_TIMING_SIZE + BLINKER_TIMER_TIMING_ACTION_SIZE)
+
+    #define BLINKER_EEP_ADDR_TIMER_ERASE            2430
+
+    #define BLINKER_TIMER_ERASE_SIZE                1
+
+    #define BLINKER_EEP_ADDR_TIMER_END              (BLINKER_EEP_ADDR_TIMER_ERASE + BLINKER_TIMER_ERASE_SIZE)
+
+    // 2 60 | 4 120 | 1 4 60 x 10 + 2 + 1
+    // 793 896
+
+
+
+    #define BLINKER_EVENT_MSG_SMS                   0
+
+    #define BLINKER_EVENT_MSG_PUSH                  1
+
+    #define BLINKER_EVENT_KEY_SIZE                  15
+
+    #define BLINKER_EVENT_NUM_SIZE                  2
+
+    #define BLINKER_EEP_ADDR_EVENT                  (BLINKER_EEP_ADDR_TIMER_END + BLINKER_TIMER_ERASE_SIZE)
+
+    #define BLINKER_EEP_ADDR_EVENTDATA              BLINKER_EEP_ADDR_EVENT
+
+    #define BLINKER_EVENTDATA_SIZE                  1
+
+    // #define BLINKER_EEP_ADDR_EVENT_DATA1            (BLINKER_EEP_ADDR_EVENTDATA + BLINKER_EVENTDATA_SIZE)
+
+    // #define BLINKER_EVENT_DATA1_SIZE                2
+
+    #define BLINKER_EEP_ADDR_EVENT_DATA             (BLINKER_EEP_ADDR_EVENTDATA + BLINKER_EVENTDATA_SIZE)
+
+    #define BLINKER_EVENT_DATA_SIZE                 4
+
+    #define BLINKER_EEP_ADDR_EVENT_KEY1             (BLINKER_EEP_ADDR_EVENT_DATA + BLINKER_EVENT_DATA_SIZE)
+
+    #define BLINKER_EVENT_KEY1_SIZE                 BLINKER_EVENT_KEY_SIZE
+
+    // #define BLINKER_EEP_ADDR_EVENT_DATA2            (BLINKER_EEP_ADDR_EVENT_KEY1 + BLINKER_EVENT_KEY1_SIZE)
+
+    #define BLINKER_EEP_ADDR_EVENT_KEY2             (BLINKER_EEP_ADDR_EVENT_KEY1 + BLINKER_EVENT_KEY1_SIZE)
+
+    #define BLINKER_EVENT_KEY2_SIZE                 BLINKER_EVENT_KEY_SIZE
+
+    #define BLINKER_EEP_ADDR_EVENT_MSG              (BLINKER_EEP_ADDR_EVENT_KEY2 + BLINKER_EVENT_KEY2_SIZE)
+
+    #define BLINKER_EVENT_MSG_SIZE                  20
+
+    #define BLINKER_EEP_ADDR_EVENT_ERASE            (BLINKER_EEP_ADDR_EVENT_MSG + BLINKER_EVENT_MSG_SIZE)
+
+    #define BLINKER_EVENT_ERASE_SIZE                1
+
+    #define BLINKER_EEP_ADDR_EVENT_END              (BLINKER_EEP_ADDR_EVENT_ERASE + BLINKER_EVENT_ERASE_SIZE)
+
+    // 56
+
+    #define BLINKER_EEP_ADDR_SERIALCFG          2432
+
+    #define BLINKER_SERIALCFG_SIZE              4
+
+#endif
+
+#endif
