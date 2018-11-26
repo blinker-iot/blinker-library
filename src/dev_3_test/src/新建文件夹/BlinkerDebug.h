@@ -10,6 +10,7 @@
 #endif
 
 #define BLINKER_DEBUG_F(s)  F(s)
+#define BLINKER_F(s)        F(s)
 
 class BlinkerDebug
 {
