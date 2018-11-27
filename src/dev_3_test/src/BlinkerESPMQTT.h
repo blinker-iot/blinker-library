@@ -18,8 +18,6 @@ class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
         BlinkerESPMQTT(BlinkerMQTT &transp)
             : Base(transp)
         {}
-
-        // void begin();
         
         void begin(const char* _auth)
         {

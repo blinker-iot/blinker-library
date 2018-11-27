@@ -1,10 +1,12 @@
-#define BLINKER_ESP_SMARTCONFIG
+// #define BLINKER_ESP_SMARTCONFIG
 // #define BLINKER_ALIGENIE_OUTLET
 #include "Blinker4.h"
 
 #define BLINKER_PRINT Serial
 
 char auth[] = "bc5a991c7ec4";
+char ssid[] = "mostfun";
+char pswd[] = "18038083873";
 
 // char* test;//[100] = "12345678";
 
@@ -103,7 +105,7 @@ void setup()
     BLINKER_DEBUG.debugAll();
     BLINKER_DEBUG.freeheap();
 
-    Blinker.begin(auth);
+    Blinker.begin(auth, ssid, pswd);
 
     Button1.attach(button1_callback);
 
@@ -124,9 +126,11 @@ void loop()
     {
         BLINKER_LOG_FreeHeap();
         BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
+
+        BLINKER_LOG("Blinker.wday(): ", Blinker.wday());
         BLINKER_LOG_FreeHeap();
         // Blinker.print("state", "online");
         // Blinker.checkState(false);
-        BLINKER_LOG_FreeHeap();
+        // BLINKER_LOG_FreeHeap();
     }
 }

@@ -19,11 +19,6 @@ IPAddress apIP(192, 168, 4, 1);
     IPAddress netMsk(255, 255, 255, 0);
 #endif
 
-// void BlinkerESPMQTT::begin()
-// {
-//     BLINKER_LOG(BLINKER_F("BlinkerESPMQTT begin"));
-// }
-
 void BlinkerESPMQTT::commonBegin(const char* _auth,
                                 const char* _ssid,
                                 const char* _pswd,
@@ -180,7 +175,8 @@ void BlinkerESPMQTT::serverClient()
     }
     else
     {
-        if (_client.status() == CLOSED)
+        // if (_client.status() == CLOSED)
+        if (!_client.connected())
         {
             _client.stop();
             BLINKER_LOG(BLINKER_F("Connection closed on _client"));
