@@ -110,8 +110,9 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
     private :
         #if defined(BLINKER_ARDUINOJSON)
             void autoFormatData(const String & key, const String & jsonValue);
+        #else
+            void autoFormatData(String & data);
         #endif
-        void autoFormatData(String & data);
         void checkFormat();
         bool checkAvail();
         bool checkAliAvail() { return conn.aligenieAvail(); }
@@ -507,30 +508,30 @@ void BlinkerProtocol<Transp>::flush()
 
         strcpy(_sendBuf, _data.c_str());
     }
-#endif
-
-template <class Transp>
-void BlinkerProtocol<Transp>::autoFormatData(String & data)
-{
-    BLINKER_LOG_ALL(BLINKER_F("autoFormatData data: "), data);
-    BLINKER_LOG_ALL(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
-    BLINKER_LOG_ALL(BLINKER_F("data.length(): "), data.length());
-
-    if ((strlen(_sendBuf) + data.length()) >= BLINKER_MAX_SEND_SIZE)
+#else
+    template <class Transp>
+    void BlinkerProtocol<Transp>::autoFormatData(String & data)
     {
-        BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
-        return;
-    }
+        BLINKER_LOG_ALL(BLINKER_F("autoFormatData data: "), data);
+        BLINKER_LOG_ALL(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
+        BLINKER_LOG_ALL(BLINKER_F("data.length(): "), data.length());
 
-    if (strlen(_sendBuf) > 0) {
-        data = "," + data;
-        strcat(_sendBuf, data.c_str());
+        if ((strlen(_sendBuf) + data.length()) >= BLINKER_MAX_SEND_SIZE)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
+            return;
+        }
+
+        if (strlen(_sendBuf) > 0) {
+            data = "," + data;
+            strcat(_sendBuf, data.c_str());
+        }
+        else {
+            data = "{" + data;
+            strcpy(_sendBuf, data.c_str());
+        }
     }
-    else {
-        data = "{" + data;
-        strcpy(_sendBuf, data.c_str());
-    }
-}
+#endif
 
 template <class Transp>
 void BlinkerProtocol<Transp>::checkFormat()
@@ -754,7 +755,7 @@ void BlinkerProtocol<Transp>::run()
                 checkAvail();
                 if (isAvail)
                 {
-                    // BApi::parse(dataParse());
+                    BApi::parse(dataParse());
                 }
                 if (isAvail)
                 {

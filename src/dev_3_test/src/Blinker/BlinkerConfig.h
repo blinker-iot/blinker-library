@@ -1161,7 +1161,7 @@
         #define BLINKER_PRO_VERSION             "1.0.0"
     #endif
 
-    #define BLINKER_OTA_VERSION_CODE        B00000001
+    // #define BLINKER_OTA_VERSION_CODE        B00000001
 
     #define BLINKER_OTA_START               B01010011
 

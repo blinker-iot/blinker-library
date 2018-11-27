@@ -1,5 +1,5 @@
 #define BLINKER_ESP_SMARTCONFIG
-
+// #define BLINKER_ALIGENIE_OUTLET
 #include "Blinker4.h"
 
 #define BLINKER_PRINT Serial
@@ -26,6 +26,69 @@ char auth[] = "bc5a991c7ec4";
 //     BLINKER_LOG("char _data: ", _data, " , num: ", num);
 // }
 
+#define BUTTON_1 "ButtonKey"
+
+BlinkerButton Button1(BUTTON_1);
+
+void button1_callback(const String & state)
+{
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    BLINKER_LOG("get button state: ", state);
+
+    if (state == BLINKER_CMD_BUTTON_TAP) {
+        BLINKER_LOG("Button tap!");
+
+        Button1.icon("icon_1");
+        Button1.color("#FFFFFF");
+        Button1.text("Your button name or describe");
+        Button1.print();
+    }
+    else if (state == BLINKER_CMD_BUTTON_PRESSED) {
+        BLINKER_LOG("Button pressed!");
+
+        Button1.icon("icon_1");
+        Button1.color("#FFFFFF");
+        Button1.text("Your button name or describe");
+        Button1.print();
+    }
+    else if (state == BLINKER_CMD_BUTTON_RELEASED) {
+        BLINKER_LOG("Button released!");
+
+        Button1.icon("icon_1");
+        Button1.color("#FFFFFF");
+        Button1.text("Your button name or describe");
+        // Button1.text("Your button name", "describe");
+        Button1.print();
+    }
+    else if (state == BLINKER_CMD_ON) {
+        BLINKER_LOG("Toggle on!");
+
+        Button1.icon("icon_1");
+        Button1.color("#FFFFFF");
+        Button1.text("Your button name or describe");
+        // Button1.text("Your button name", "describe");
+        Button1.print("on");
+    }
+    else if (state == BLINKER_CMD_OFF) {
+        BLINKER_LOG("Toggle off!");
+
+        Button1.icon("icon_1");
+        Button1.color("#FFFFFF");
+        Button1.text("Your button name or describe");
+        // Button1.text("Your button name", "describe");
+        Button1.print("off");
+    }
+    else {
+        BLINKER_LOG("Get user setting: ", state);
+
+        Button1.icon("icon_1");
+        Button1.color("#FFFFFF");
+        Button1.text("Your button name or describe");
+        // Button1.text("Your button name", "describe");
+        Button1.print();
+    }
+}
+
 void setup()
 {
     // test = (char*)malloc(100*sizeof(char));
@@ -41,6 +104,8 @@ void setup()
     BLINKER_DEBUG.freeheap();
 
     Blinker.begin(auth);
+
+    Button1.attach(button1_callback);
 
     // strcpy(test, data.c_str());
     // charTest(test);
@@ -60,8 +125,8 @@ void loop()
         BLINKER_LOG_FreeHeap();
         BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
         BLINKER_LOG_FreeHeap();
-        Blinker.print("state", "online");
-        Blinker.checkState(false);
+        // Blinker.print("state", "online");
+        // Blinker.checkState(false);
         BLINKER_LOG_FreeHeap();
     }
 }

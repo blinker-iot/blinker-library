@@ -27,8 +27,9 @@ class BlinkerMQTT
         char * lastRead();
         void flush();
         bool print(char * data, bool needCheck = true);
-        bool bPrint(const String & name, const String & data);
-        bool aliPrint(const String & data);
+        bool bPrint(char * name, char * data);
+        bool aliPrint(char * data);
+        void aliType(String & type);
         void begin(const char* auth);
         bool autoPrint(uint32_t id);
         bool autoPrint(char *name, char *type, char *data);
@@ -53,6 +54,7 @@ class BlinkerMQTT
     protected :
         // const char* _authKey;
         char*       _authKey;
+        char*       _aliType;
         // char        _authKey[BLINKER_AUTHKEY_SIZE];
         bool*       isHandle;// = &isConnect;
         bool        isAlive = false;

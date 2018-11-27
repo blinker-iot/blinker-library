@@ -58,8 +58,9 @@ class BlinkerDebug
 
 extern BlinkerDebug BLINKER_DEBUG;
 
-extern void BLINKER_LOG_TIME();
-extern void BLINKER_LOG_FreeHeap();
+void BLINKER_LOG_TIME();
+void BLINKER_LOG_FreeHeap();
+void BLINKER_LOG_FreeHeap_ALL();
 extern void BLINKER_LOG_T();
 
 /* BLINKER_LOG_T递归模板 */

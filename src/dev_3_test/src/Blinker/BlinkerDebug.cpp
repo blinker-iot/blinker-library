@@ -110,6 +110,17 @@ void BLINKER_LOG_FreeHeap()
     return;
 }
 
+void BLINKER_LOG_FreeHeap_ALL()
+{
+    if (BLINKER_DEBUG.isDebugAll())
+    {
+        BLINKER_LOG_TIME();
+        BLINKER_DEBUG.print(BLINKER_DEBUG_F("Freeheap: "));
+        BLINKER_DEBUG.freeheap();
+    }
+    return;
+}
+
 void BLINKER_LOG_T()
 {
     if (BLINKER_DEBUG.isDebug()) BLINKER_DEBUG.println();

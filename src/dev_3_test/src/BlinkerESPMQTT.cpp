@@ -19,17 +19,19 @@ IPAddress apIP(192, 168, 4, 1);
     IPAddress netMsk(255, 255, 255, 0);
 #endif
 
-void BlinkerESPMQTT::begin()
-{
-    BLINKER_LOG(BLINKER_F("BlinkerESPMQTT begin"));
-}
+// void BlinkerESPMQTT::begin()
+// {
+//     BLINKER_LOG(BLINKER_F("BlinkerESPMQTT begin"));
+// }
 
-void BlinkerESPMQTT::begin( const char* _auth,
-                            const char* _ssid,
-                            const char* _pswd )
+void BlinkerESPMQTT::commonBegin(const char* _auth,
+                                const char* _ssid,
+                                const char* _pswd,
+                                String & _type)
 {
     Base::begin();
     connectWiFi(_ssid, _pswd);
+    this->conn.aliType(_type);
     this->conn.begin(_auth);
     // Base::loadTimer();
     #if defined(ESP8266)
@@ -39,10 +41,11 @@ void BlinkerESPMQTT::begin( const char* _auth,
     #endif
 }
 
-void BlinkerESPMQTT::smartconfigBegin(const char* _auth)
+void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _type)
 {
     Base::begin();
     if (!autoInit()) smartconfig();
+    this->conn.aliType(_type);
     this->conn.begin(_auth);
 
     #if defined(ESP8266)
@@ -52,7 +55,7 @@ void BlinkerESPMQTT::smartconfigBegin(const char* _auth)
     #endif
 }
 
-void BlinkerESPMQTT::apconfigBegin(const char* _auth)
+void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _type)
 {
     Base::begin();
     if (!autoInit())
@@ -65,6 +68,7 @@ void BlinkerESPMQTT::apconfigBegin(const char* _auth)
         }
     }
 
+    // this->conn.aliType(_type);
     this->conn.begin(_auth);
 
     #if defined(ESP8266)

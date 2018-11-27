@@ -7,4 +7,6 @@
 static BlinkerMQTT  _blinkerTransport;
 BlinkerESPMQTT      Blinker(_blinkerTransport);
 
+#include "BlinkerWidgets.h"
+
 #endif
