@@ -3,12 +3,14 @@
 
 #define BLINKER_MQTT
 
-#if defined(ARDUINO)
-    #if ARDUINO >= 100
-        #include <Arduino.h>
-    #else
-        #include <WProgram.h>
-    #endif
+#if defined(ESP8266)
+    #include <ESP8266mDNS.h>
+    #include <ESP8266WiFi.h>
+    #include <ESP8266HTTPClient.h>
+#elif defined(ESP32)
+    #include <ESPmDNS.h>
+    #include <WiFi.h>
+    #include <HTTPClient.h>
 #endif
 
 class BlinkerMQTT
@@ -35,7 +37,8 @@ class BlinkerMQTT
         bool autoPrint(char *name, char *type, char *data);
         bool autoPrint(char *name1, char *type1, char *data1
                     , char *name2, char *type2, char *data2);
-        String deviceName();
+        char * deviceName();
+        char * authKey() { return _authKey; }
         bool init() { return isMQTTinit; }
         bool reRegister() { return connectServer(); }
 
@@ -74,5 +77,14 @@ class BlinkerMQTT
         bool        isAliAvail = false;
         char*       mqtt_broker;
 };
+
+#if defined(ESP8266)
+    extern BearSSL::WiFiClientSecure   client_s;
+    // WiFiClientSecure            client_mqtt;
+#elif defined(ESP32)
+    extern WiFiClientSecure            client_s;
+#endif
+
+extern WiFiClient              client;
 
 #endif

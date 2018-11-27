@@ -28,7 +28,8 @@ void BlinkerESPMQTT::commonBegin(const char* _auth,
     connectWiFi(_ssid, _pswd);
     this->conn.aliType(_type);
     this->conn.begin(_auth);
-    // Base::loadTimer();
+    Base::loadTimer();
+
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
     #elif defined(ESP32)
@@ -42,6 +43,7 @@ void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _type)
     if (!autoInit()) smartconfig();
     this->conn.aliType(_type);
     this->conn.begin(_auth);
+    Base::loadTimer();
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
@@ -63,8 +65,9 @@ void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _type)
         }
     }
 
-    // this->conn.aliType(_type);
+    this->conn.aliType(_type);
     this->conn.begin(_auth);
+    Base::loadTimer();
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));

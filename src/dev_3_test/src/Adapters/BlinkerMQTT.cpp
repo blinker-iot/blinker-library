@@ -1,21 +1,11 @@
-#if defined(ESP8266)
-    #include <ESP8266mDNS.h>
-    #include <ESP8266WiFi.h>
-    #include <ESP8266HTTPClient.h>
-#elif defined(ESP32)
-    #include <ESPmDNS.h>
-    #include <WiFi.h>
-    #include <HTTPClient.h>
-#endif
-
 #include "modules/WebSockets/WebSocketsServer.h"
 #include "modules/mqtt/Adafruit_MQTT.h"
 #include "modules/mqtt/Adafruit_MQTT_Client.h"
 #include "modules/ArduinoJson/ArduinoJson.h"
 
 #include "Adapters/BlinkerMQTT.h"
-#include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerConfig.h"
+#include "Blinker/BlinkerDebug.h"
 #include "utility/BlinkerUtility.h"
 
 char*       MQTT_HOST;
@@ -846,7 +836,7 @@ bool BlinkerMQTT::autoPrint(char *name1, char *type1, char *data1
     }
 }
 
-String BlinkerMQTT::deviceName() { return DEVICE_NAME;/*MQTT_ID;*/ }
+char * BlinkerMQTT::deviceName() { return DEVICE_NAME;/*MQTT_ID;*/ }
 
 bool BlinkerMQTT::connectServer() {
     const int httpsPort = 443;

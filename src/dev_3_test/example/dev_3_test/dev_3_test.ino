@@ -5,8 +5,8 @@
 #define BLINKER_PRINT Serial
 
 char auth[] = "bc5a991c7ec4";
-char ssid[] = "mostfun";
-char pswd[] = "18038083873";
+char ssid[] = "有没有wifi";
+char pswd[] = "i8888888";
 
 // char* test;//[100] = "12345678";
 
@@ -128,6 +128,8 @@ void loop()
         BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
 
         BLINKER_LOG("Blinker.wday(): ", Blinker.wday());
+
+        BLINKER_LOG("Blinker.aqi(): ", Blinker.aqi());
         BLINKER_LOG_FreeHeap();
         // Blinker.print("state", "online");
         // Blinker.checkState(false);
