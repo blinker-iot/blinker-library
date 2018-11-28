@@ -9,16 +9,20 @@
 #include "utility/BlinkerSwitch.h"
 #include "utility/BlinkerText.h"
 
-// #if defined(BLINKER_ALIGENIE)
-//     #include "utility/BlinkerAliGenie.h"
+#if defined(BLINKER_ALIGENIE)
 
-//     BLINKERALIGENIE BlinkerAliGenie;
-// #endif
+    #include "utility/BlinkerAliGenie.h"
 
-// #if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \
-//     defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-//     defined(BLINKER_NBIOT)
-//     BlinkerSwitch BUILTIN_SWITCH;
-// #endif
+    BLINKERALIGENIE BlinkerAliGenie;
+    
+#endif
+
+#if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \
+    defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+    defined(BLINKER_NBIOT)
+
+    BlinkerSwitch BUILTIN_SWITCH;
+
+#endif
 
 #endif

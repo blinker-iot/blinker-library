@@ -133,4 +133,114 @@ class BlinkerBridge
         char *bridgeName;
 };
 
+class BlinkerData
+{
+    public :
+        BlinkerData()
+            : _dname(NULL)
+        {
+            memcpy(data,"\0",256);
+        }
+
+        void name(const String & name) { _dname = name; }
+
+        String getName() { return _dname; }
+
+        void saveData(const String & _data) {
+            String _data_;
+
+            if (strlen(data)) _data_ = STRING_format(data);
+
+            if (dataCount == 6) {
+                _data_ += BLINKER_F(",[");
+                _data_ += STRING_format(millis());
+                _data_ += BLINKER_F(",");
+                _data_ += _data;
+                _data_ += BLINKER_F("]");
+
+                _data_ = "{\"data\":[" + STRING_format(_data_);
+                _data_ += BLINKER_F("]}");
+
+                DynamicJsonBuffer jsonDataBuffer;
+                JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
+
+                for (uint8_t num = 0; num < dataCount; num++) {
+                    dataArray["data"][num][0] = dataArray["data"][num+1][0];
+                    dataArray["data"][num][1] = dataArray["data"][num+1][1];
+                }
+                
+                _data_ = BLINKER_F("");
+                for (uint8_t num = 0; num < dataCount; num++)
+                {
+                    String data_get = dataArray["data"][num];
+
+                    _data_ += data_get;
+
+                    if (num != dataCount - 1) _data_ += BLINKER_F(",");
+                }
+
+                if (_data_.length() < 256)
+                {
+                    strcpy(data, _data_.c_str());
+                }
+            }
+            else
+            {
+                if (_data_.length())
+                {
+                    _data_ += BLINKER_F(",");
+                }
+
+                _data_ += BLINKER_F("[");
+                _data_ += STRING_format(millis());
+                _data_ += BLINKER_F(",");
+                _data_ += _data;
+                _data_ += BLINKER_F("]");
+
+                if (_data_.length() < 256) {
+                    strcpy(data, _data_.c_str());
+                    dataCount++;
+                }
+            }
+            BLINKER_LOG_ALL(BLINKER_F("saveData: "), data);
+            BLINKER_LOG_ALL(BLINKER_F("saveData dataCount: "), dataCount);
+        }
+
+        String getData(time_t now_time) {
+            BLINKER_LOG_ALL(BLINKER_F("getData data: "), data);
+            
+            String _data_ = BLINKER_F("{\"data\":[");
+            _data_ += STRING_format(data);
+            _data_ += BLINKER_F("]}");
+
+            DynamicJsonBuffer jsonDataBuffer;
+            JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
+
+            uint32_t now_millis = millis();
+
+            for (uint8_t num = dataCount; num > 0; num--) {
+                uint32_t data_time = dataArray["data"][num-1][0];
+                uint32_t real_time = now_time - (now_millis - data_time)/1000;
+                dataArray["data"][num-1][0] = real_time;
+                
+                BLINKER_LOG_ALL(BLINKER_F("data_time: "), data_time, \
+                                BLINKER_F(" now_time: "), now_time, \
+                                BLINKER_F(" real_time: "), real_time);
+            }
+
+            String _data_decode = dataArray["data"];
+
+            BLINKER_LOG_ALL(BLINKER_F("getData _data_: "), _data_decode);
+
+            return _data_decode;
+        }
+
+        bool checkName(const String & name) { return ((_dname == name) ? true : false); }
+
+    private :
+        uint8_t dataCount = 0;
+        String _dname;
+        char data[256];
+};
+
 #endif

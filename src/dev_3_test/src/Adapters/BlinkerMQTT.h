@@ -30,7 +30,7 @@ class BlinkerMQTT
         void flush();
         bool print(char * data, bool needCheck = true);
         bool bPrint(char * name, char * data);
-        bool aliPrint(char * data);
+        bool aliPrint(String & data);
         void aliType(String & type);
         void begin(const char* auth);
         bool autoPrint(uint32_t id);

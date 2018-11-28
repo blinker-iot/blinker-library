@@ -1,93 +1,59 @@
 // #define BLINKER_ESP_SMARTCONFIG
 // #define BLINKER_ALIGENIE_OUTLET
+#define BLINKER_MQTT
+#define BLINKER_ALIGENIE_OUTLET
+
 #include "Blinker4.h"
 
 #define BLINKER_PRINT Serial
 
 char auth[] = "bc5a991c7ec4";
-char ssid[] = "有没有wifi";
-char pswd[] = "i8888888";
+char ssid[] = "mostfun";
+char pswd[] = "18038083873";
+bool oState = false;
 
-// char* test;//[100] = "12345678";
-
-// void charTest(char * _data)
-// {
-//     uint8_t num = strlen(_data);
-//     for(uint8_t c_num = num; c_num > 0; c_num--)
-//     {
-//         _data[c_num+7] = _data[c_num-1];
-//     }
-
-//     BLINKER_LOG("char _data: ", _data, " , num: ", num);
-
-//     for(uint8_t c_num = 0; c_num < 8; c_num++)
-//     {
-//         _data[c_num] = '1';
-//     }
-
-//     BLINKER_LOG("char _data: ", _data, " , num: ", num);
-// }
-
-#define BUTTON_1 "ButtonKey"
-
-BlinkerButton Button1(BUTTON_1);
-
-void button1_callback(const String & state)
+void aligeniePowerState(const String & state)
 {
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    BLINKER_LOG("get button state: ", state);
+    BLINKER_LOG("need set power state: ", state);
 
-    if (state == BLINKER_CMD_BUTTON_TAP) {
-        BLINKER_LOG("Button tap!");
+    if (state == BLINKER_CMD_ON) {
+        digitalWrite(LED_BUILTIN, HIGH);
 
-        Button1.icon("icon_1");
-        Button1.color("#FFFFFF");
-        Button1.text("Your button name or describe");
-        Button1.print();
-    }
-    else if (state == BLINKER_CMD_BUTTON_PRESSED) {
-        BLINKER_LOG("Button pressed!");
+        BlinkerAliGenie.powerState("on");
+        BlinkerAliGenie.print();
 
-        Button1.icon("icon_1");
-        Button1.color("#FFFFFF");
-        Button1.text("Your button name or describe");
-        Button1.print();
-    }
-    else if (state == BLINKER_CMD_BUTTON_RELEASED) {
-        BLINKER_LOG("Button released!");
-
-        Button1.icon("icon_1");
-        Button1.color("#FFFFFF");
-        Button1.text("Your button name or describe");
-        // Button1.text("Your button name", "describe");
-        Button1.print();
-    }
-    else if (state == BLINKER_CMD_ON) {
-        BLINKER_LOG("Toggle on!");
-
-        Button1.icon("icon_1");
-        Button1.color("#FFFFFF");
-        Button1.text("Your button name or describe");
-        // Button1.text("Your button name", "describe");
-        Button1.print("on");
+        oState = true;
     }
     else if (state == BLINKER_CMD_OFF) {
-        BLINKER_LOG("Toggle off!");
+        digitalWrite(LED_BUILTIN, LOW);
 
-        Button1.icon("icon_1");
-        Button1.color("#FFFFFF");
-        Button1.text("Your button name or describe");
-        // Button1.text("Your button name", "describe");
-        Button1.print("off");
+        BlinkerAliGenie.powerState("off");
+        BlinkerAliGenie.print();
+
+        oState = false;
     }
-    else {
-        BLINKER_LOG("Get user setting: ", state);
+}
 
-        Button1.icon("icon_1");
-        Button1.color("#FFFFFF");
-        Button1.text("Your button name or describe");
-        // Button1.text("Your button name", "describe");
-        Button1.print();
+void aligenieQuery(int32_t queryCode)
+{
+    BLINKER_LOG("AliGenie Query codes: ", queryCode);
+
+    switch (queryCode)
+    {
+        case BLINKER_CMD_QUERY_ALL_NUMBER :
+            BLINKER_LOG("AliGenie Query All");
+            BlinkerAliGenie.powerState(oState ? "on" : "off");
+            BlinkerAliGenie.print();
+            break;
+        case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :
+            BLINKER_LOG("AliGenie Query Power State");
+            BlinkerAliGenie.powerState(oState ? "on" : "off");
+            BlinkerAliGenie.print();
+            break;
+        default :
+            BlinkerAliGenie.powerState(oState ? "on" : "off");
+            BlinkerAliGenie.print();
+            break;
     }
 }
 
@@ -107,8 +73,6 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
 
-    Button1.attach(button1_callback);
-
     // strcpy(test, data.c_str());
     // charTest(test);
     // BLINKER_LOG("char test: ", test);
@@ -116,6 +80,11 @@ void setup()
     // Blinker.hello();
 
     // BLINKER_LOG("hello", F("world"), 123, 456.78, -1);
+
+    BLINKER_LOG_FreeHeap();
+
+    BlinkerAliGenie.attachPowerState(aligeniePowerState);
+    BlinkerAliGenie.attachQuery(aligenieQuery);
 }
 
 void loop()
@@ -129,7 +98,7 @@ void loop()
 
         BLINKER_LOG("Blinker.wday(): ", Blinker.wday());
 
-        BLINKER_LOG("Blinker.aqi(): ", Blinker.aqi());
+        // BLINKER_LOG("Blinker.aqi(): ", Blinker.aqi());
         BLINKER_LOG_FreeHeap();
         // Blinker.print("state", "online");
         // Blinker.checkState(false);

@@ -387,7 +387,7 @@ bool BlinkerMQTT::print(char * data, bool needCheck)
         
         BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
 
-        // BLINKER_LOG_FreeHeap();
+        BLINKER_LOG_FreeHeap_ALL();
         
         bool _alive = isAlive;
         
@@ -419,6 +419,8 @@ bool BlinkerMQTT::print(char * data, bool needCheck)
             {
                 BLINKER_LOG_ALL(data);
                 BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+
+                BLINKER_LOG_FreeHeap_ALL();
                 
                 if (!_alive)
                 {
@@ -564,7 +566,7 @@ bool BlinkerMQTT::bPrint(char * name, char * data)
     // }
 }
 
-bool BlinkerMQTT::aliPrint(char * data)
+bool BlinkerMQTT::aliPrint(String & data)
 {
     // String payload;
 
@@ -575,25 +577,31 @@ bool BlinkerMQTT::aliPrint(char * data)
     // payload += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
     // payload += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
-    uint8_t num = strlen(data);
-    for(uint8_t c_num = num; c_num > 0; c_num--)
-    {
-        data[c_num+7] = data[c_num-1];
-    }
+    // uint8_t num = strlen(data);
+    // for(uint8_t c_num = num; c_num > 0; c_num--)
+    // {
+    //     data[c_num+7] = data[c_num-1];
+    // }
 
     String data_add = BLINKER_F("{\"data\":");
-    for(uint8_t c_num = 0; c_num < 8; c_num++)
-    {
-        data[c_num] = data_add[c_num];
-    }
+    // for(uint8_t c_num = 0; c_num < 8; c_num++)
+    // {
+    //     data[c_num] = data_add[c_num];
+    // }
 
-    data_add = BLINKER_F(",\"fromDevice\":\"");
-    strcat(data, data_add.c_str());
-    strcat(data, MQTT_ID);
-    data_add = BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
-    strcat(data, data_add.c_str());
-    data_add = BLINKER_F(",\"deviceType\":\"vAssistant\"}");
-    strcat(data, data_add.c_str());
+    // data_add = BLINKER_F(",\"fromDevice\":\"");
+    // strcat(data, data_add.c_str());
+    // strcat(data, MQTT_ID);
+    // data_add = BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+    // strcat(data, data_add.c_str());
+    // data_add = BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+    // strcat(data, data_add.c_str());
+
+    data = data_add + data;
+    data += BLINKER_F(",\"fromDevice\":\"");
+    data += MQTT_ID;
+    data += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+    data += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
             
     BLINKER_LOG_ALL(BLINKER_F("MQTT AliGenie Publish..."));
 
@@ -615,7 +623,7 @@ bool BlinkerMQTT::aliPrint(char * data)
 
         // if (! iotPub.publish(payload.c_str())) {
 
-        if (! mqtt->publish(BLINKER_PUB_TOPIC, data))
+        if (! mqtt->publish(BLINKER_PUB_TOPIC, data.c_str()))
         {
             BLINKER_LOG_ALL(data);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));

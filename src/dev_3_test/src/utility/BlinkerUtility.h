@@ -21,7 +21,7 @@
 
 #define FIND_KEY_VALUE_FAILED               -1000
 
-#if defined(BLINKER_ARDUINOJSON)
+#if defined(BLINKER_ARDUINOJSON) || defined(BLINKER_PRO)
     #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 

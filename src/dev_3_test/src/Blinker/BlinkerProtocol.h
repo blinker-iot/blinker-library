@@ -41,8 +41,8 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         String readString();
 
         template <typename T>
-        void print(T n)     { _print("\""  + STRING_format(n)+ "\""); }
-        void print()        { _print("\"\""); }
+        void print(T n);
+        void print();
         
         template <typename T>
         void println(T n)   { print(n); }
@@ -107,6 +107,8 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         void run();
 
+        void aligeniePrint(String & _msg);
+
     private :
         #if defined(BLINKER_ARDUINOJSON)
             void autoFormatData(const String & key, const String & jsonValue);
@@ -135,13 +137,16 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         uint32_t            autoFormatFreshTime;
         char*               _sendBuf;
 
-        bool            _isInit = false;
-        uint8_t         _disconnectCount = 0;
-        uint32_t        _disFreshTime = 0;
-        uint32_t        _disconnectTime = 0;
-        uint32_t        _refreshTime = 0;
-        uint32_t        _reconTime = 0;
-
+        bool                _isInit = false;
+        bool                _isAuto = false;
+        bool                _isAutoInit = false;
+        uint8_t             _disconnectCount = 0;
+        uint32_t            _disFreshTime = 0;
+        uint32_t            _disconnectTime = 0;
+        uint32_t            _refreshTime = 0;
+        uint32_t            _reconTime = 0;
+        
+        void _timerPrint(const String & n);
         void _print(char * n, bool needParse = true, bool needCheckLength = true);
         void begin();
         
@@ -177,6 +182,32 @@ String BlinkerProtocol<Transp>::readString()
     else {
         return "";
     }
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::print()
+{
+    String _msg = BLINKER_F("");
+
+    checkFormat();
+    strcpy(_sendBuf, _msg.c_str());
+    _print(_sendBuf);
+    free(_sendBuf);
+    autoFormat = false;
+}
+
+template <class Transp> template <typename T>
+void BlinkerProtocol<Transp>::print(T n)
+{
+    String _msg = BLINKER_F("\"");
+    _msg += STRING_format(n);
+    _msg += BLINKER_F("\"");
+
+    checkFormat();
+    strcpy(_sendBuf, _msg.c_str());
+    _print(_sendBuf);
+    free(_sendBuf);
+    autoFormat = false;
 }
 
 template <class Transp> template <typename T1, typename T2, typename T3>
@@ -440,6 +471,27 @@ void BlinkerProtocol<Transp>::flush()
     canParse = false; isAvail = false;
 }
 
+template <class Transp>
+void BlinkerProtocol<Transp>::aligeniePrint(String & _msg)
+{
+    BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
+
+    // conn.aliPrint(_msg);
+
+    if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+    {
+        // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
+        // memcpy(aliData, '\0', _msg.length()+128);
+        // strcpy(aliData, _msg.c_str());
+        conn.aliPrint(_msg);
+        // free(aliData);
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+    }
+}
+
 #if defined(BLINKER_ARDUINOJSON)
     template <class Transp>
     void BlinkerProtocol<Transp>::autoFormatData(const String & key, const String & jsonValue)
@@ -599,6 +651,23 @@ void BlinkerProtocol<Transp>::checkAutoFormat()
 }
 
 template <class Transp>
+void BlinkerProtocol<Transp>::_timerPrint(const String & n)
+{
+    BLINKER_LOG_ALL(BLINKER_F("print: "), n);
+    
+    if (n.length() <= BLINKER_MAX_SEND_SIZE)
+    {
+        checkFormat();
+        checkState(false);
+        strcpy(_sendBuf, n.c_str());
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+    }
+}
+
+template <class Transp>
 void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLength)
 {
     BLINKER_LOG_ALL(BLINKER_F("print: "), n);
@@ -608,6 +677,7 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
     {
         BLINKER_LOG_FreeHeap();
         conn.print(n, isCheck);
+        if (!isCheck) isCheck = true;
     }
     else {
         BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
@@ -647,25 +717,55 @@ void BlinkerProtocol<Transp>::begin()
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
-    if (!_isInit)
-    {
-        if (conn.init() && BApi::ntpInit())
-        {
-            _isInit =true;
-            _disconnectTime = millis();
+    #if defined(BLINKER_MQTT)
+        BApi::checkTimer();
 
-            // BApi::loadOTA();
-            
-            BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
-        }
-    }
-    else {
-        if (((millis() - _disconnectTime) > 60000 && \
-            _disconnectCount) || _disconnectCount >= 12)
+        if (!_isInit)
         {
+            if (conn.init() && BApi::ntpInit())
+            {
+                _isInit =true;
+                _disconnectTime = millis();
+
+                // BApi::loadOTA();
+                
+                BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
+            }
+        }
+        else {
+            if (((millis() - _disconnectTime) > 60000 && \
+                _disconnectCount) || _disconnectCount >= 12)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("device reRegister"));
+                BLINKER_LOG_FreeHeap();
+                
+                if (BLINKER_FreeHeap() < 15000) {
+                    conn.disconnect();
+                    return;
+                }
+
+                BLINKER_LOG_FreeHeap();
+
+                if (conn.reRegister()) {
+                    _disconnectCount = 0;
+                    _disconnectTime = millis();
+                }
+                else {
+                    _disconnectCount = 0;
+                    _disconnectTime = millis() - 10000;
+                }
+            }
+
+            BApi::ntpInit();
+        }
+
+        if ((millis() - _refreshTime) >= BLINKER_ONE_DAY_TIME * 2 * 1000)
+        {
+            conn.disconnect();
+
             BLINKER_LOG_ALL(BLINKER_F("device reRegister"));
             BLINKER_LOG_FreeHeap();
-            
+
             if (BLINKER_FreeHeap() < 15000) {
                 conn.disconnect();
                 return;
@@ -674,79 +774,66 @@ void BlinkerProtocol<Transp>::run()
             BLINKER_LOG_FreeHeap();
 
             if (conn.reRegister()) {
-                _disconnectCount = 0;
-                _disconnectTime = millis();
-            }
-            else {
-                _disconnectCount = 0;
-                _disconnectTime = millis() - 10000;
+                _refreshTime = millis();
             }
         }
+    #endif
 
-        BApi::ntpInit();
-    }
+    #if defined(BLINKER_MQTT)
+        if (WiFi.status() != WL_CONNECTED)
+        {        
+            if ((millis() - _reconTime) >= 10000 || \
+                _reconTime == 0 )
+            {
+                _reconTime = millis();
+                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                WiFi.reconnect();
+            }
 
-    if ((millis() - _refreshTime) >= BLINKER_ONE_DAY_TIME * 2 * 1000)
-    {
-        conn.disconnect();
-
-        BLINKER_LOG_ALL(BLINKER_F("device reRegister"));
-        BLINKER_LOG_FreeHeap();
-
-        if (BLINKER_FreeHeap() < 15000) {
-            conn.disconnect();
             return;
         }
-
-        BLINKER_LOG_FreeHeap();
-
-        if (conn.reRegister()) {
-            _refreshTime = millis();
-        }
-    }
-
-    if (WiFi.status() != WL_CONNECTED)
-    {        
-        if ((millis() - _reconTime) >= 10000 || \
-            _reconTime == 0 )
-        {
-            _reconTime = millis();
-            BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
-            WiFi.reconnect();
-        }
-
-        return;
-    }
+    #endif
 
     bool conState = conn.connected();
 
     switch (state)
     {
         case CONNECTING :
-            if (conn.connect()) {
+            if (conn.connect())
+            {
                 state = CONNECTED;
-                _disconnectCount = 0;
+
+                #if defined(BLINKER_MQTT)
+                    _disconnectCount = 0;
+                #endif
             }
-            else {
-                if (_isInit) {
-                    if (_disconnectCount == 0) {
-                        _disconnectCount++;
-                        _disconnectTime = millis();
-                        _disFreshTime = millis();
-                    }
-                    else {
-                        // if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
-                        if ((millis() - _disFreshTime) >= 5000) {
-                            _disFreshTime = millis();
+            else
+            {
+                #if defined(BLINKER_MQTT)
+                    if (_isInit)
+                    {
+                        if (_disconnectCount == 0)
+                        {
                             _disconnectCount++;
+                            _disconnectTime = millis();
+                            _disFreshTime = millis();
+                        }
+                        else
+                        {
+                            // if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
+                            if ((millis() - _disFreshTime) >= 5000)
+                            {
+                                _disFreshTime = millis();
+                                _disconnectCount++;
 
-                            if (_disconnectCount > 12) _disconnectCount = 12;
+                                if (_disconnectCount > 12) _disconnectCount = 12;
 
-                            BLINKER_LOG_ALL(BLINKER_F("_disFreshTime: "), _disFreshTime);
-                            BLINKER_LOG_ALL(BLINKER_F("_disconnectCount: "), _disconnectCount);
+                                BLINKER_LOG_ALL(BLINKER_F("_disFreshTime: "), _disFreshTime);
+                                BLINKER_LOG_ALL(BLINKER_F("_disconnectCount: "), _disconnectCount);
+                            }
                         }
                     }
-                }
+                #endif
             }
             break;
         case CONNECTED :
@@ -757,19 +844,13 @@ void BlinkerProtocol<Transp>::run()
                 {
                     BApi::parse(dataParse());
                 }
-                if (isAvail)
-                {
-                    // BApi::aliParse(conn.lastRead());
-                    String vaName = BLINKER_F("vAssistant");
-                    if (STRING_contains_string(conn.lastRead(), vaName))
+
+                #if defined(BLINKER_MQTT) && defined(BLINKER_ALIGENIE)
+                    if (checkAliAvail())
                     {
-                        flush();
+                        BApi::aliParse(conn.lastRead());
                     }
-                }
-                if (checkAliAvail())
-                {
-                    // BApi::aliParse(conn.lastRead());
-                }
+                #endif
             }
             else
             {
@@ -803,6 +884,11 @@ void BlinkerProtocol<Transp>::run()
             conn.disconnect();
             state = CONNECTING;
             break;
+    }
+
+    if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
+    {
+        if (BApi::autoPull()) _isAutoInit = true;
     }
 
     checkAutoFormat();
