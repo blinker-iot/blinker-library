@@ -8,8 +8,8 @@
 #define BLINKER_PRINT Serial
 
 char auth[] = "bc5a991c7ec4";
-char ssid[] = "mostfun";
-char pswd[] = "18038083873";
+char ssid[] = "有没有wifi";
+char pswd[] = "i8888888";
 bool oState = false;
 
 void aligeniePowerState(const String & state)
@@ -57,12 +57,14 @@ void aligenieQuery(int32_t queryCode)
     }
 }
 
+void tests(const String & data)
+{
+    BLINKER_LOG("get data: ", data);
+    BLINKER_LOG_FreeHeap();
+}
+
 void setup()
 {
-    // test = (char*)malloc(100*sizeof(char));
-    // String data = "12345678";
-    
-
     Serial.begin(115200);
 
     #if defined(BLINKER_PRINT)
@@ -72,14 +74,7 @@ void setup()
     BLINKER_DEBUG.freeheap();
 
     Blinker.begin(auth, ssid, pswd);
-
-    // strcpy(test, data.c_str());
-    // charTest(test);
-    // BLINKER_LOG("char test: ", test);
-
-    // Blinker.hello();
-
-    // BLINKER_LOG("hello", F("world"), 123, 456.78, -1);
+    Blinker.attachData(tests);
 
     BLINKER_LOG_FreeHeap();
 
@@ -90,18 +85,40 @@ void setup()
 void loop()
 {
     Blinker.run();
-
-    if (Blinker.available())
-    {
-        BLINKER_LOG_FreeHeap();
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
-
-        BLINKER_LOG("Blinker.wday(): ", Blinker.wday());
-
-        // BLINKER_LOG("Blinker.aqi(): ", Blinker.aqi());
-        BLINKER_LOG_FreeHeap();
-        // Blinker.print("state", "online");
-        // Blinker.checkState(false);
-        // BLINKER_LOG_FreeHeap();
-    }
 }
+
+
+
+
+    // test = (char*)malloc(100*sizeof(char));
+    // String data = "12345678";
+    
+
+    // strcpy(test, data.c_str());
+    // charTest(test);
+    // BLINKER_LOG("char test: ", test);
+
+    // Blinker.hello();
+
+    // BLINKER_LOG("hello", F("world"), 123, 456.78, -1);
+
+    // if (Blinker.available())
+    // {
+    //     BLINKER_LOG_FreeHeap();
+    //     // BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
+    //     String getdata = Blinker.readString();
+    //     char data[256];
+    //     strcpy(data, getdata.c_str());
+
+    //     BLINKER_LOG_FreeHeap();
+
+    //     TEST_CHAR(data);
+
+    //     BLINKER_LOG("Blinker.wday(): ", Blinker.wday());
+
+    //     // BLINKER_LOG("Blinker.aqi(): ", Blinker.aqi());
+    //     BLINKER_LOG_FreeHeap();
+    //     // Blinker.print("state", "online");
+    //     // Blinker.checkState(false);
+    //     // BLINKER_LOG_FreeHeap();
+    // }

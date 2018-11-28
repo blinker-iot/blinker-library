@@ -30,6 +30,7 @@ extern "C" {
 
     typedef void (*blinker_callback_t)(void);
     typedef void (*blinker_callback_with_arg_t)(void*);
+    // typedef void (*blinker_callback_with_char_arg_t)(char*);
     typedef void (*blinker_callback_with_string_arg_t)(const String & data);
     typedef void (*blinker_callback_with_int32_arg_t)(int32_t data);
     typedef void (*blinker_callback_with_rgb_arg_t)(uint8_t r_data, uint8_t g_data, uint8_t b_data, uint8_t bright_data);

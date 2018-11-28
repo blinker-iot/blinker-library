@@ -37,8 +37,10 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         bool connect(uint32_t timeout = BLINKER_STREAM_TIMEOUT);
         bool connected()    { return state == CONNECTED; }
         void disconnect()   { conn.disconnect(); state = DISCONNECTED; }
-        bool available()    { if (availState) {availState = false; return true;} else return false; }
-        String readString();
+        // bool available()    { if (availState) {availState = false; return true;} else return false; }
+        // String readString();
+        void attachData(blinker_callback_with_string_arg_t newFunction)
+        { _availableFunc = newFunction; }
 
         template <typename T>
         void print(T n);
@@ -107,7 +109,39 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         void run();
 
-        void aligeniePrint(String & _msg);
+        #if defined(BLINKER_MQTT)
+            void beginAuto();
+        #endif
+
+        // template <typename T1, typename T2, typename T3>
+        // void bridgePrint(const String & bKey, T1 n1, T2 n2, T3 n3);
+        // template <typename T1>
+        // void bridgePrint(const String & bKey, T1 n1, const String &s2);
+        // template <typename T1>
+        // void bridgePrint(const String & bKey, T1 n1, const char str2[]);
+        // template <typename T1>
+        // void bridgePrint(const String & bKey, T1 n1, char c);
+        // template <typename T1>
+        // void bridgePrint(const String & bKey, T1 n1, unsigned char b);
+        // template <typename T1>
+        // void bridgePrint(const String & bKey, T1 n1, int n);
+        // template <typename T1>
+        // void bridgePrint(const String & bKey, T1 n1, unsigned int n);
+        // template <typename T1>
+        // void bridgePrint(const String & bKey, T1 n1, long n);
+        // template <typename T1>
+        // void bridgePrint(const String & bKey, T1 n1, unsigned long n);
+        // template <typename T1>
+        // void bridgePrint(const String & bKey, T1 n1, double n);
+        // void bridgeBeginFormat();
+        // bool bridgeEndFormat();
+        // bool bridgeAvailable(const String & bKey);
+        // String bridgeRead();
+        // String bridgeRead(const String & bKey);
+
+        #if defined(BLINKER_MQTT)
+            void aligeniePrint(String & _msg);
+        #endif
 
     private :
         #if defined(BLINKER_ARDUINOJSON)
@@ -136,15 +170,27 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         bool                isCheck = true;
         uint32_t            autoFormatFreshTime;
         char*               _sendBuf;
+        blinker_callback_with_string_arg_t  _availableFunc = NULL;
+        
+        #if defined(BLINKER_MQTT)
+            bool                _isInit = false;
+            bool                _isAuto = false;
+            bool                _isAutoInit = false;
+            uint8_t             _disconnectCount = 0;
+            uint32_t            _disFreshTime = 0;
+            uint32_t            _disconnectTime = 0;
+            uint32_t            _refreshTime = 0;
+            uint32_t            _reconTime = 0;
+        #endif
 
-        bool                _isInit = false;
-        bool                _isAuto = false;
-        bool                _isAutoInit = false;
-        uint8_t             _disconnectCount = 0;
-        uint32_t            _disFreshTime = 0;
-        uint32_t            _disconnectTime = 0;
-        uint32_t            _refreshTime = 0;
-        uint32_t            _reconTime = 0;
+        // bool                isBridgeFresh = false;
+        // bool                isExtraAvail = false;
+        // bool                isBridgeAvail = false;
+        // bool                isBformat = false;
+        // bool                autoBFormat = false;
+        // char                _bSendBuf[BLINKER_MAX_SEND_BUFFER_SIZE];
+        // String              _bridgeKey;
+        // String              _bKey_forwhile;
         
         void _timerPrint(const String & n);
         void _print(char * n, bool needParse = true, bool needCheckLength = true);
@@ -165,24 +211,24 @@ bool BlinkerProtocol<Transp>::connect(uint32_t timeout)
     return state == CONNECTED;
 }
 
-template <class Transp>
-String BlinkerProtocol<Transp>::readString()
-{
-    if (isFresh)
-    {
-        isFresh = false;
-        // char* r_data = (char*)malloc(strlen(conn.lastRead())*sizeof(char));
-        // strcpy(r_data, conn.lastRead());
+// template <class Transp>
+// String BlinkerProtocol<Transp>::readString()
+// {
+//     if (isFresh)
+//     {
+//         isFresh = false;
+//         // char* r_data = (char*)malloc(strlen(conn.lastRead())*sizeof(char));
+//         // strcpy(r_data, conn.lastRead());
 
-        String r_data = conn.lastRead();
+//         String r_data = conn.lastRead();
 
-        flush();
-        return r_data;
-    }
-    else {
-        return "";
-    }
-}
+//         flush();
+//         return r_data;
+//     }
+//     else {
+//         return "";
+//     }
+// }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::print()
@@ -471,26 +517,383 @@ void BlinkerProtocol<Transp>::flush()
     canParse = false; isAvail = false;
 }
 
-template <class Transp>
-void BlinkerProtocol<Transp>::aligeniePrint(String & _msg)
-{
-    BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
-
-    // conn.aliPrint(_msg);
-
-    if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+#if defined(BLINKER_MQTT)
+    template <class Transp>
+    void BlinkerProtocol<Transp>::beginAuto()
     {
-        // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
-        // memcpy(aliData, '\0', _msg.length()+128);
-        // strcpy(aliData, _msg.c_str());
-        conn.aliPrint(_msg);
-        // free(aliData);
+        BLINKER_LOG(BLINKER_F("======================================================="));
+        BLINKER_LOG(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
+        BLINKER_LOG(BLINKER_F("Warning!EEPROM address 0-1279 is used for Auto Control!"));
+        BLINKER_LOG(BLINKER_F("=========== DON'T USE THESE EEPROM ADDRESS! ==========="));
+        BLINKER_LOG(BLINKER_F("======================================================="));
+
+        BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+
+        _isAuto = true;
+        // deserialization();
+        // autoStart();
+        BApi::autoInit();
     }
-    else
+#endif
+
+// template <class Transp> template <typename T1, typename T2, typename T3>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, T2 n2, T3 n3)
+// {
+//     String _msg = "\"";
+//     _msg += STRING_format(n1);
+//     _msg += "\":\"";
+//     _msg += STRING_format(n2);
+//     _msg += BLINKER_CMD_INTERSPACE;
+//     _msg += STRING_format(n3);
+//     _msg += "\"";
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp> template <typename T1>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, const String &s2)
+// {
+//     String _msg = "\"";
+//     _msg += STRING_format(n1);
+//     _msg += "\":\"";
+//     _msg += s2;
+//     _msg += "\"";
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp> template <typename T1>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, const char str2[])
+// {
+//     String _msg = "\"";
+//     _msg += STRING_format(n1);
+//     _msg += "\":\"";
+//     _msg += STRING_format(str2);
+//     _msg += "\"";
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp> template <typename T1>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, char c)
+// {
+//     String _msg = "\"";
+//     _msg += STRING_format(n1);
+//     _msg += "\":";
+//     _msg += STRING_format(c);
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp> template <typename T1>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, unsigned char b)
+// {
+//     String _msg = "\"";
+//     _msg += STRING_format(n1);
+//     _msg += "\":";
+//     _msg += STRING_format(b);
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp> template <typename T1>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, int n)
+// {
+//     String _msg = "\"" + STRING_format(n1) + "\":" + STRING_format(n);
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp> template <typename T1>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, unsigned int n)
+// {
+//     String _msg = "\"";
+//     _msg += STRING_format(n1);
+//     _msg += "\":";
+//     _msg += STRING_format(n);
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp> template <typename T1>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, long n)
+// {
+//     String _msg = "\"";
+//     _msg += STRING_format(n1);
+//     _msg += "\":";
+//     _msg += STRING_format(n);
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp> template <typename T1>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, double n)
+// {
+//     String _msg = "\"";
+//     _msg += STRING_format(n1);
+//     _msg += "\":";
+//     _msg += STRING_format(n);
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp> template <typename T1>
+// void BlinkerProtocol<Transp>::bridgePrint(const String & bKey, T1 n1, unsigned long n)
+// {
+//     String _msg = "\"";
+//     _msg += STRING_format(n1);
+//     _msg += "\":";
+//     _msg += STRING_format(n);
+
+//     if (isBformat)
+//     {
+//         _bridgeKey = bKey;
+//         bridgeFormatData(_msg);
+//     }
+//     else
+//     {
+//         _bPrint(bKey, "{" + _msg + "}");
+//     }
+// }
+
+// template <class Transp>
+// void BlinkerProtocol<Transp>::bridgeBeginFormat()
+// {
+//     isBformat = true;
+//     _bridgeKey = "";
+//     memset(_bSendBuf, '\0', BLINKER_MAX_SEND_BUFFER_SIZE);
+// }
+
+// template <class Transp>
+// bool BlinkerProtocol<Transp>::bridgeEndFormat()
+// {
+//     isBformat = false;
+//     if (strlen(_bSendBuf))
+//     {
+//         _bPrint(_bridgeKey, "{" + STRING_format(_bSendBuf) + "}");
+//     }
+
+//     if (strlen(_bSendBuf) > BLINKER_MAX_SEND_SIZE - 3)
+//     {
+//         return false;
+//     }
+//     else
+//     {
+//         return true;
+//     }
+// }
+
+// template <class Transp>
+// bool BlinkerProtocol<Transp>::bridgeAvailable(const String & bKey)
+// {
+//     if (checkExtraAvail())
+//     {
+//         String b_name = BApi::bridgeFind(bKey);
+
+//         // BLINKER_LOG("bridgeAvailable b_name: ", b_name);
+
+//         if (b_name.length() > 0)
+//         {
+//             // _bKey_forwhile = b_name;
+//             String b_data = conn.lastRead();
+
+//             // BLINKER_LOG("bridgeAvailable b_data: ", b_data);
+
+//             DynamicJsonBuffer jsonBuffer;
+//             JsonObject& extra_data = jsonBuffer.parseObject(b_data);
+
+//             String _from = extra_data["fromDevice"];
+
+//             // BLINKER_LOG("bridgeAvailable _from: ", _from);
+
+//             if (b_name == _from)
+//             {
+//                 _bKey_forwhile = b_name;
+//                 isExtraAvail = false;
+//                 return true;
+//             }
+//             else
+//             {
+//                 return false;
+//             }
+//         }
+//         else
+//         {
+//             _bKey_forwhile = "";
+//             return false;
+//         }
+//     }
+//     else
+//     {
+//         return false;
+//     }
+// }
+
+// template <class Transp>
+// String BlinkerProtocol<Transp>::bridgeRead()
+// {
+//     String b_data = conn.lastRead();
+
+//     if (_bKey_forwhile.length() > 0)
+//     {
+//         DynamicJsonBuffer jsonBuffer;
+//         JsonObject& extra_data = jsonBuffer.parseObject(b_data);
+
+//         if (!extra_data.success())
+//         {
+//             return "";
+//         }
+//         else
+//         {
+//             String _from = extra_data["fromDevice"];
+//             if (_from == _bKey_forwhile) {
+//                 String _data = extra_data["data"];
+
+//                 _bKey_forwhile = "";
+//                 return _data;
+//             }
+//             else
+//             {
+//                 return "";
+//             }
+//         }
+//     }
+//     else
+//     {
+//         return "";
+//     }
+// }
+
+// template <class Transp>
+// String BlinkerProtocol<Transp>::bridgeRead(const String & bKey)
+// {
+//     String b_name = BApi::bridgeFind(bKey);
+//     String b_data = conn.lastRead();
+
+//     if (b_name.length() > 0 && isBridgeFresh)
+//     {
+//         DynamicJsonBuffer jsonBuffer;
+//         JsonObject& extra_data = jsonBuffer.parseObject(b_data);
+
+//         if (!extra_data.success())
+//         {
+//             return "";
+//         }
+//         else
+//         {
+//             String _from = extra_data["fromDevice"];
+//             if (_from == b_name)
+//             {
+//                 String _data = extra_data["data"];
+//                 isBridgeFresh = false;
+//                 return _data;
+//             }
+//             else
+//             {
+//                 return "";
+//             }
+//         }
+//     }
+//     else
+//     {
+//         return "";
+//     }
+// }
+
+#if defined(BLINKER_MQTT)
+    template <class Transp>
+    void BlinkerProtocol<Transp>::aligeniePrint(String & _msg)
     {
-        BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
+
+        // conn.aliPrint(_msg);
+
+        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+        {
+            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
+            // memcpy(aliData, '\0', _msg.length()+128);
+            // strcpy(aliData, _msg.c_str());
+            conn.aliPrint(_msg);
+            // free(aliData);
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        }
     }
-}
+#endif
 
 #if defined(BLINKER_ARDUINOJSON)
     template <class Transp>
@@ -851,33 +1254,46 @@ void BlinkerProtocol<Transp>::run()
                         BApi::aliParse(conn.lastRead());
                     }
                 #endif
+
+                if (availState)
+                {
+                    availState = false;
+
+                    if (_availableFunc)
+                    {
+                        _availableFunc(conn.lastRead());
+                        flush();
+                    }
+                }
             }
             else
             {
                 conn.disconnect();
                 state = CONNECTING;
-                if (_isInit)
-                {
-                    if (_disconnectCount == 0)
+                #if defined(BLINKER_MQTT)
+                    if (_isInit)
                     {
-                        _disconnectCount++;
-                        _disconnectTime = millis();
-                        _disFreshTime = millis();
-                    }
-                    else
-                    {
-                        if ((millis() - _disFreshTime) >= 5000)
+                        if (_disconnectCount == 0)
                         {
-                            _disFreshTime = millis();
                             _disconnectCount++;
+                            _disconnectTime = millis();
+                            _disFreshTime = millis();
+                        }
+                        else
+                        {
+                            if ((millis() - _disFreshTime) >= 5000)
+                            {
+                                _disFreshTime = millis();
+                                _disconnectCount++;
 
-                            if (_disconnectCount > 12) _disconnectCount = 12;
-                            
-                            BLINKER_LOG_ALL(BLINKER_F("_disFreshTime: "), _disFreshTime);
-                            BLINKER_LOG_ALL(BLINKER_F("_disconnectCount: "), _disconnectCount);
+                                if (_disconnectCount > 12) _disconnectCount = 12;
+                                
+                                BLINKER_LOG_ALL(BLINKER_F("_disFreshTime: "), _disFreshTime);
+                                BLINKER_LOG_ALL(BLINKER_F("_disconnectCount: "), _disconnectCount);
+                            }
                         }
                     }
-                }
+                #endif
             }
             break;
         case DISCONNECTED :
@@ -886,10 +1302,12 @@ void BlinkerProtocol<Transp>::run()
             break;
     }
 
-    if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
-    {
-        if (BApi::autoPull()) _isAutoInit = true;
-    }
+    #if defined(BLINKER_MQTT)
+        if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
+        {
+            if (BApi::autoPull()) _isAutoInit = true;
+        }
+    #endif
 
     checkAutoFormat();
 }
