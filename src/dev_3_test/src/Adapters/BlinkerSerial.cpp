@@ -25,7 +25,7 @@ bool BlinkerSerial::available()
 
     if (stream->available())
     {
-        if (!isFresh) streamData = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
+        if (!isFresh) streamData = (char*)malloc(1*sizeof(char));
         
         int16_t dNum = 0;
         int c_d = timedRead();
@@ -36,11 +36,13 @@ bool BlinkerSerial::available()
             {
                 streamData[dNum] = (char)c_d;
                 dNum++;
+                streamData = (char*)realloc(streamData, dNum*sizeof(char));
             }
 
             c_d = timedRead();
         }
         dNum++;
+        streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
         streamData[dNum-1] = '\0';
         stream->flush();
