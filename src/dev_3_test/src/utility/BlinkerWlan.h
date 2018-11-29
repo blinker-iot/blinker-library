@@ -1,6 +1,8 @@
 #ifndef BLINKER_WLAN_H
 #define BLINKER_WLAN_H
 
+#if defined(ESP8266) || defined(ESP32)
+
 // #if defined(BLINKER_PRO)
 
 // #include "Blinker/BlinkerConfig.h"
@@ -93,5 +95,6 @@ class BlinkerWlan
 };
 
 // #endif
+#endif
 
 #endif

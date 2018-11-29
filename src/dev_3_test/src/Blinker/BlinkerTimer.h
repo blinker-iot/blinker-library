@@ -1,6 +1,8 @@
 #ifndef BLINKER_TIMER_H
 #define BLINKER_TIMER_H
 
+#if defined(ESP8266) || defined(ESP32)
+
 #include <Ticker.h>
 #include <EEPROM.h>
 
@@ -49,5 +51,7 @@ void disableTimer();
 void _cd_callback();
 void _lp_callback();
 void timingHandle(uint8_t cbackData);
+
+#endif
 
 #endif

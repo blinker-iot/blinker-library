@@ -1,6 +1,9 @@
 #ifndef BLINKER_BRIDGE_H
 #define BLINKER_BRIDGE_H
 
+#include "Blinker/BlinkerConfig.h"
+#include "utility/BlinkerUtility.h"
+
 class BlinkerBridge
 {
     public :
@@ -11,9 +14,33 @@ class BlinkerBridge
 
         void attach(blinker_callback_with_string_arg_t _func)
         {
-            if (wNum == 0) return;
+            if (bNum == 0) return;
 
             Blinker.freshAttachBridge(Blinker.bridgeKey(bNum), _func);
+        }
+
+        template <typename T1>
+        void print(T1 n1)
+        {
+            if (strcpy(Blinker.bridgeName(bNum), BLINKER_CMD_FALSE) != 0)
+            {
+                Blinker.bridgePrint(Blinker.bridgeName(bNum), STRING_format(n1));
+            }
+        }
+
+        template <typename T1, typename T2>
+        void print(T1 n1, T2 n2)
+        {
+            if (strcpy(Blinker.bridgeName(bNum), BLINKER_CMD_FALSE) != 0)
+            {
+                String msg = BLINKER_F("{\"");
+                msg += STRING_format(n1);
+                msg += BLINKER_F("\":\"");
+                msg += STRING_format(n2);
+                msg += BLINKER_F("\"}");
+
+                Blinker.bridgePrint(Blinker.bridgeName(bNum), msg);
+            }
         }
 
         // void name(char name[])
@@ -32,9 +59,6 @@ class BlinkerBridge
 
     private :
         uint8_t bNum;
-
-        // char *_bKey;
-        // char *bridgeName;
 };
 
 #endif

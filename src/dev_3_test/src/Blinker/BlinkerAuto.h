@@ -1,6 +1,8 @@
 #ifndef BLINKER_AUTO_H
 #define BLINKER_AUTO_H
 
+#if defined(ESP8266) || defined(ESP32)
+
 #if ARDUINO >= 100
     #include <Arduino.h>
 #else
@@ -87,5 +89,7 @@ class BlinkerAUTO
 
         void triggerCheck(const String & state, uint8_t num);
 };
+
+#endif
 
 #endif

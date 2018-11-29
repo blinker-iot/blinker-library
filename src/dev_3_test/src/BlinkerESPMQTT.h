@@ -1,7 +1,7 @@
 #ifndef BLINKER_ESP_MQTT_H
 #define BLINKER_ESP_MQTT_H
 
-#define BLINKER_MQTT
+#if defined(ESP8266) || defined(ESP32)
 
 #ifndef BLINKER_ARDUINOJSON
     #define BLINKER_ARDUINOJSON
@@ -66,11 +66,13 @@ class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
         bool autoInit();
         void smartconfig();
         void softAPinit();
-        void serverClient();
+        // void serverClient();
         bool parseUrl(String data);
         
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
 };
+
+#endif
 
 #endif

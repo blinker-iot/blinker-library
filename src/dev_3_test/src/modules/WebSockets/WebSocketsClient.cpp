@@ -22,6 +22,8 @@
  *
  */
 
+#if defined(ESP8266) || defined(ESP32)
+
 #include "WebSockets.h"
 #include "WebSocketsClient.h"
 
@@ -760,4 +762,5 @@ void WebSocketsClient::asyncConnect() {
 
 }
 
+#endif
 #endif

@@ -1,3 +1,5 @@
+#if defined(ESP8266) || defined(ESP32)
+
 #include <EEPROM.h>
 
 #include "Blinker/BlinkerAuto.h"
@@ -693,3 +695,5 @@ void BlinkerAUTO::triggerCheck(const String & state, uint8_t num)
         }
     }
 }
+
+#endif

@@ -3,6 +3,21 @@
 
 #include <time.h>
 
+#if defined(ESP8266) || defined(ESP32)
+    #include <Ticker.h>
+    #include <EEPROM.h>
+
+    #if defined(BLINKER_MQTT)
+        #include "Blinker/BlinkerAuto.h"
+    #endif
+
+    #if defined(BLINKER_WIFI)
+        #include <WiFiClientSecure.h>
+
+        static BearSSL::WiFiClientSecure client_s;
+    #endif
+#endif
+
 #if defined(ESP8266)
     #include <ESP8266HTTPClient.h>
 #elif defined(ESP32)
@@ -11,8 +26,7 @@
 
 #include "Blinker/BlinkerApiBase.h"
 
-#if defined(BLINKER_MQTT)
-    #include "Blinker/BlinkerAuto.h"
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     #include "Blinker/BlinkerTimer.h"
     #include "utility/BlinkerTimingTimer.h"
 #endif
@@ -52,7 +66,7 @@ class BlinkerApi
         int16_t ahrs(b_ahrsattitude_t attitude) { return ahrsValue[attitude]; }
         float gps(b_gps_t axis);
 
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
             void setTimezone(float tz);
             float getTimezone() { return _timezone; }
             int8_t second();
@@ -77,6 +91,17 @@ class BlinkerApi
             String weather(const String & _city = BLINKER_CMD_DEFAULT);
             String aqi(const String & _city = BLINKER_CMD_DEFAULT);
             
+            void loadTimer();
+            void deleteTimer();
+            void deleteCountdown();
+            void deleteLoop();
+            void deleteTiming();
+            bool countdownState()   { return _cdState; }
+            bool loopState()        { return _lpState; }
+            bool timingState()      { return taskCount ? true : false; }
+        #endif
+
+        #if defined(BLINKER_MQTT)
             template<typename T>
             bool configUpdate(const T& msg);
             String configGet();
@@ -90,15 +115,6 @@ class BlinkerApi
             bool dataDelete();
             bool dataDelete(const String & _type);
             
-            void loadTimer();
-            void deleteTimer();
-            void deleteCountdown();
-            void deleteLoop();
-            void deleteTiming();
-            bool countdownState()   { return _cdState; }
-            bool loopState()        { return _lpState; }
-            bool timingState()      { return taskCount ? true : false; }
-
             // bool bridge(char _name[]);
             bool autoPull();
             void autoInit()         { autoStart(); }
@@ -170,36 +186,41 @@ class BlinkerApi
         class BlinkerWidgets_int32 *        _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
         class BlinkerWidgets_string *       _BUILTIN_SWITCH;
 
-        #if defined(BLINKER_MQTT)
-            bool                                _isNTPInit = false;
-            float                               _timezone = 8.0;
-            uint32_t                            _ntpStart;
-            uint8_t                             data_dataCount = 0;
-            uint8_t                             _aCount = 0;
-            uint8_t                             _bridgeCount = 0;
-            
-            // class BlinkerWidgets_string *       _Bridge_str[BLINKER_MAX_BRIDGE_SIZE];
-            class BlinkerBridge_key *           _Bridge[BLINKER_MAX_BRIDGE_SIZE];
-            class BlinkerData *                 _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
-            class BlinkerAUTO *                 _AUTO[2];
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+            bool        _isNTPInit = false;
+            float       _timezone = 8.0;
+            uint32_t    _ntpStart;
 
             uint32_t    _smsTime = 0;
             uint32_t    _pushTime = 0;
             uint32_t    _wechatTime = 0;
             uint32_t    _weatherTime = 0;
-            uint32_t    _aqiTime = 0;
-            uint32_t    _cUpdateTime = 0;
-            uint32_t    _dUpdateTime = 0;
-            uint32_t    _cGetTime = 0;
-            uint32_t    _cDelTime = 0;
-            uint32_t    _dGetTime = 0;
-            uint32_t    _dDelTime = 0;
-            uint32_t    _autoPullTime = 0;
+            uint32_t    _aqiTime = 0;            
 
             char                            _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
             char                            _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
             char                            _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
             class BlinkerTimingTimer *      timingTask[BLINKER_TIMING_TIMER_SIZE];
+        #endif
+
+        #if defined(BLINKER_MQTT)
+            uint8_t                         data_dataCount = 0;
+            uint8_t                         _aCount = 0;
+            uint8_t                         _bridgeCount = 0;
+            
+            // class BlinkerWidgets_string *    _Bridge_str[BLINKER_MAX_BRIDGE_SIZE];
+            class BlinkerBridge_key *       _Bridge[BLINKER_MAX_BRIDGE_SIZE];
+            class BlinkerData *             _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
+            class BlinkerAUTO *             _AUTO[2];
+
+            
+            uint32_t                        _cUpdateTime = 0;
+            uint32_t                        _dUpdateTime = 0;
+            uint32_t                        _cGetTime = 0;
+            uint32_t                        _cDelTime = 0;
+            uint32_t                        _dGetTime = 0;
+            uint32_t                        _dDelTime = 0;
+            uint32_t                        _autoPullTime = 0;
         #endif
         // time_t      now_ntp;
         // struct tm   timeinfo;
@@ -254,13 +275,10 @@ class BlinkerApi
             void json_parse(char _data[]);
         #endif
 
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
             void freshNTP();
             bool ntpInit();
             void ntpConfig();
-
-            void autoStart();
-            bool autoManager(const JsonObject& data);
 
             void saveCountDown(uint32_t _data, char _action[]);
             void saveLoop(uint32_t _data, char _action1[], char _action2[]);
@@ -279,12 +297,17 @@ class BlinkerApi
             String getTimingCfg(uint8_t task);
             bool timerManager(const JsonObject& data, bool _noSet = false);
             bool checkTimer();
-
             bool checkSMS();
             bool checkPUSH();
             bool checkWECHAT();
             bool checkWEATHER();
             bool checkAQI();
+        #endif
+
+        #if defined(BLINKER_MQTT)
+            void autoStart();
+            bool autoManager(const JsonObject& data);
+            
             bool checkCUPDATE();
             bool checkCGET();
             bool checkCDEL();
@@ -293,6 +316,9 @@ class BlinkerApi
             bool checkDataDel();
             bool checkAutoPull();
             String bridgeQuery(char key[]);
+        #endif
+
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
             String postServer(const String & url, const String & host, int port, const String & msg);
             String getServer(const String & url, const String & host, int port);
             String blinkerServer(uint8_t _type, const String & msg, bool state = false);
@@ -621,7 +647,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     return gpsValue[axis]*1000000;
 }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     template <class Proto>
     void BlinkerApi<Proto>::setTimezone(float tz)
     {
@@ -963,6 +989,69 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         return blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
     }
 
+    template <class Proto>
+    void BlinkerApi<Proto>::loadTimer()
+    {
+        BLINKER_LOG(BLINKER_F(
+            "\n==========================================================="
+            "\n================== Blinker Timer loaded! =================="
+            "\nWarning!EEPROM address 1536-2431 is used for Blinker Timer!"
+            "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
+            "\n===========================================================\n"));
+
+        checkTimerErase();
+        loadCountdown();
+        loadLoop();
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::deleteTimer()
+    {
+        EEPROM.begin(BLINKER_EEP_SIZE);
+
+        EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN, 0);
+        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP, 0);
+        EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, 0);
+
+        EEPROM.commit();
+        EEPROM.end();
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::deleteCountdown()
+    {
+        EEPROM.begin(BLINKER_EEP_SIZE);
+
+        EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN, 0);
+
+        EEPROM.commit();
+        EEPROM.end();
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::deleteLoop()
+    {
+        EEPROM.begin(BLINKER_EEP_SIZE);
+
+        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP, 0);
+
+        EEPROM.commit();
+        EEPROM.end();
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::deleteTiming()
+    {
+        EEPROM.begin(BLINKER_EEP_SIZE);
+
+        EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, 0);
+
+        EEPROM.commit();
+        EEPROM.end();
+    }
+#endif
+
+#if defined(BLINKER_MQTT)
     template <class Proto> template<typename T>
     bool BlinkerApi<Proto>::configUpdate(const T& msg)
     {
@@ -1154,67 +1243,6 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         data += _type;
 
         return (blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
-    }
-
-    template <class Proto>
-    void BlinkerApi<Proto>::loadTimer()
-    {
-        BLINKER_LOG(BLINKER_F(
-            "\n==========================================================="
-            "\n================== Blinker Timer loaded! =================="
-            "\nWarning!EEPROM address 1536-2431 is used for Blinker Timer!"
-            "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
-            "\n===========================================================\n"));
-
-        checkTimerErase();
-        loadCountdown();
-        loadLoop();
-    }
-
-    template <class Proto>
-    void BlinkerApi<Proto>::deleteTimer()
-    {
-        EEPROM.begin(BLINKER_EEP_SIZE);
-
-        EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN, 0);
-        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP, 0);
-        EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, 0);
-
-        EEPROM.commit();
-        EEPROM.end();
-    }
-
-    template <class Proto>
-    void BlinkerApi<Proto>::deleteCountdown()
-    {
-        EEPROM.begin(BLINKER_EEP_SIZE);
-
-        EEPROM.put(BLINKER_EEP_ADDR_TIMER_COUNTDOWN, 0);
-
-        EEPROM.commit();
-        EEPROM.end();
-    }
-
-    template <class Proto>
-    void BlinkerApi<Proto>::deleteLoop()
-    {
-        EEPROM.begin(BLINKER_EEP_SIZE);
-
-        EEPROM.put(BLINKER_EEP_ADDR_TIMER_LOOP, 0);
-
-        EEPROM.commit();
-        EEPROM.end();
-    }
-
-    template <class Proto>
-    void BlinkerApi<Proto>::deleteTiming()
-    {
-        EEPROM.begin(BLINKER_EEP_SIZE);
-
-        EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, 0);
-
-        EEPROM.commit();
-        EEPROM.end();
     }
 
     template <class Proto>
@@ -2055,7 +2083,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     template <class Proto>
     void BlinkerApi<Proto>:: freshNTP()
     {
@@ -2127,7 +2155,9 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             
             _isNTPInit = true;
 
-            // loadTiming();
+            #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+                loadTiming();
+            #endif
         }
 
         return true;
@@ -2145,260 +2175,6 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
         configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", \
                     "210.72.145.44", "time.pool.aliyun.com");
-    }
-
-    template <class Proto>
-    void BlinkerApi<Proto>::autoStart()
-    {
-        uint8_t checkData;
-
-        EEPROM.begin(BLINKER_EEP_SIZE);
-        EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
-        if (checkData != BLINKER_CHECK_DATA)
-        {
-            for (uint16_t _addr = BLINKER_EEP_ADDR_AUTO_START;
-                _addr < BLINKER_EEP_ADDR_AUTO_START + 
-                BLINKER_ONE_AUTO_DATA_SIZE * 2; _addr++)
-            {
-                EEPROM.put(_addr, "\0");
-            }
-            EEPROM.put(BLINKER_EEP_ADDR_CHECK, BLINKER_CHECK_DATA);
-            EEPROM.commit();
-            EEPROM.end();
-            return;
-        }
-        EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-        if (_aCount > 2)
-        {
-            _aCount = 0;
-            EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-        }
-        EEPROM.commit();
-        EEPROM.end();
-        
-        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
-
-        if (_aCount)
-        {
-            for (uint8_t _num = 0; _num < _aCount; _num++)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("new BlinkerAUTO() _num: "), _num);
-                
-                _AUTO[_num] = new BlinkerAUTO();
-                _AUTO[_num]->setNum(_num);
-                _AUTO[_num]->deserialization();
-            }
-        }
-    }
-
-    template <class Proto>
-    bool BlinkerApi<Proto>::autoManager(const JsonObject& data)
-    {
-        // String set;
-        bool isSet = false;
-        bool isAuto = false;
-
-        // isSet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
-        // isAuto = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTO);
-        isSet = data.containsKey(BLINKER_CMD_SET);
-        String aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
-        String aDataArray = data[BLINKER_CMD_AUTO][0];
-
-        if (aData.length()) isAuto = true;
-
-        if (aDataArray.length() && !isAuto)
-        {
-            for (uint8_t num = 0; num < 2; num++)
-            {
-                uint32_t _autoId = data[BLINKER_CMD_AUTO][num][BLINKER_CMD_AUTOID];
-                String arrayData = data[BLINKER_CMD_AUTO][num];
-
-                if (_aCount)
-                {
-                    for (uint8_t _num = 0; _num < _aCount; _num++)
-                    {
-                        if (_AUTO[_num]->id() == _autoId) {
-                            _AUTO[_num]->manager(arrayData);
-                            return true;
-                        }
-                    }
-                    if (_aCount == 1)
-                    {
-                        _AUTO[_aCount] = new BlinkerAUTO();
-                        _AUTO[_aCount]->setNum(_aCount);
-                        _AUTO[_aCount]->manager(arrayData);
-
-                        // _aCount = 1;
-                        _aCount++;
-                        EEPROM.begin(BLINKER_EEP_SIZE);
-                        EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-                        EEPROM.commit();
-                        EEPROM.end();
-
-                        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
-                        // static_cast<Proto*>(this)->_print(autoData(), false);
-                        // return true;
-                    }
-                    else
-                    {
-                        _AUTO[_aCount - 1]->manager(arrayData);
-                        // return true;
-                    }
-                }
-                else
-                {
-                    _AUTO[_aCount] = new BlinkerAUTO();
-                    _AUTO[_aCount]->setNum(_aCount);
-                    _AUTO[_aCount]->manager(arrayData);
-
-                    _aCount = 1;
-                    // _aCount++;
-                    EEPROM.begin(BLINKER_EEP_SIZE);
-                    EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-                    EEPROM.commit();
-                    EEPROM.end();
-                    
-                    BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
-                    // static_cast<Proto*>(this)->_print(autoData(), false);
-                    // return true;
-                }
-            }
-            return true;
-        }
-        else if (isSet && isAuto)
-        {
-            _fresh = true;
-            
-            BLINKER_LOG_ALL(BLINKER_F("get auto setting"));
-            
-            bool isDelet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
-            String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                        [BLINKER_CMD_ACTION][0];
-
-            if (isDelet)
-            {
-                // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
-                uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE];
-
-                if (_aCount)
-                {
-                    for (uint8_t _num = 0; _num < _aCount; _num++)
-                    {
-                        if (_AUTO[_num]->id() == _autoId)
-                        {
-                            // _AUTO[_num]->manager(static_cast<Proto*>(this)->dataParse());
-                            for (_num; _num < _aCount; _num++)
-                            {
-                                if (_num < _aCount - 1)
-                                {
-                                    _AUTO[_num]->setNum(_num + 1);
-                                    _AUTO[_num]->deserialization();
-                                    _AUTO[_num]->setNum(_num);
-                                    _AUTO[_num]->serialization();
-                                }
-                            }
-                            _aCount--;
-
-                            EEPROM.begin(BLINKER_EEP_SIZE);
-                            EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-                            EEPROM.commit();
-                            EEPROM.end();
-                            
-                            BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
-                            
-                            return true;
-                        }
-                    }
-                }
-            }
-            else if(isTriggedArray.length())
-            {
-                for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
-                {
-                    String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                                [BLINKER_CMD_ACTION][a_num];
-
-                    if(_autoData_array.length())
-                    {
-                        DynamicJsonBuffer _jsonBuffer;
-                        JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
-
-                        json_parse(_array);
-                        timerManager(_array, true);
-                    }
-                    else
-                    {
-                        // a_num = BLINKER_MAX_WIDGET_SIZE;
-                        return true;
-                    }
-                }
-            }
-            else
-            {
-                // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
-                uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_AUTOID];
-
-                // _aCount = 0;
-
-                if (_aCount)
-                {
-                    for (uint8_t _num = 0; _num < _aCount; _num++)
-                    {
-                        if (_AUTO[_num]->id() == _autoId)
-                        {
-                            _AUTO[_num]->manager(static_cast<Proto*>(this)->dataParse());
-                            return true;
-                        }
-                    }
-                    if (_aCount == 1)
-                    {
-                        _AUTO[_aCount] = new BlinkerAUTO();
-                        _AUTO[_aCount]->setNum(_aCount);
-                        _AUTO[_aCount]->manager(static_cast<Proto*>(this)->dataParse());
-
-                        // _aCount = 1;
-                        _aCount++;
-                        EEPROM.begin(BLINKER_EEP_SIZE);
-                        EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-                        EEPROM.commit();
-                        EEPROM.end();
-                        
-                        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
-                        
-                        // static_cast<Proto*>(this)->_print(autoData(), false);
-                        // return true;
-                    }
-                    else
-                    {
-                        _AUTO[_aCount - 1]->manager(static_cast<Proto*>(this)->dataParse());
-                        // return true;
-                    }
-                }
-                else
-                {
-                    _AUTO[_aCount] = new BlinkerAUTO();
-                    _AUTO[_aCount]->setNum(_aCount);
-                    _AUTO[_aCount]->manager(static_cast<Proto*>(this)->dataParse());
-
-                    _aCount = 1;
-                    // _aCount++;
-                    EEPROM.begin(BLINKER_EEP_SIZE);
-                    EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-                    EEPROM.commit();
-                    EEPROM.end();
-                    
-                    BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
-                    
-                    // static_cast<Proto*>(this)->_print(autoData(), false);
-                    // return true;
-                }
-            }
-            return true;
-        }
-        else
-        {
-            return false;
-        }
     }
 
     template <class Proto>
@@ -2676,27 +2452,6 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 
     template <class Proto>
-    void BlinkerApi<Proto>::checkTimerErase()
-    {
-        uint8_t isErase;
-
-        EEPROM.begin(BLINKER_EEP_SIZE);
-        EEPROM.get(BLINKER_EEP_ADDR_TIMER_ERASE, isErase);
-
-        if (isErase)
-        {
-            for (uint16_t _addr = BLINKER_EEP_ADDR_TIMER;
-                _addr < BLINKER_EEP_ADDR_TIMER_END; _addr++)
-            {
-                EEPROM.put(_addr, "\0");
-            }
-        }
-
-        EEPROM.commit();
-        EEPROM.end();
-    }
-
-    template <class Proto>
     void BlinkerApi<Proto>::addTimingTask(uint8_t taskSet, uint32_t timerData, const String & action)
     {
         BLINKER_LOG_ALL(BLINKER_F("addTimingTask taskSet: "), taskSet);
@@ -2739,6 +2494,27 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         else {
             BLINKER_ERR_LOG(BLINKER_F("timing timer task is full"));
         }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::checkTimerErase()
+    {
+        uint8_t isErase;
+
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        EEPROM.get(BLINKER_EEP_ADDR_TIMER_ERASE, isErase);
+
+        if (isErase)
+        {
+            for (uint16_t _addr = BLINKER_EEP_ADDR_TIMER;
+                _addr < BLINKER_EEP_ADDR_TIMER_END; _addr++)
+            {
+                EEPROM.put(_addr, "\0");
+            }
+        }
+
+        EEPROM.commit();
+        EEPROM.end();
     }
 
     template <class Proto>
@@ -3741,6 +3517,262 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             _aqiTime == 0) return true;
         else return false;
     }
+#endif
+
+#if defined(BLINKER_MQTT)
+    template <class Proto>
+    void BlinkerApi<Proto>::autoStart()
+    {
+        uint8_t checkData;
+
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
+        if (checkData != BLINKER_CHECK_DATA)
+        {
+            for (uint16_t _addr = BLINKER_EEP_ADDR_AUTO_START;
+                _addr < BLINKER_EEP_ADDR_AUTO_START + 
+                BLINKER_ONE_AUTO_DATA_SIZE * 2; _addr++)
+            {
+                EEPROM.put(_addr, "\0");
+            }
+            EEPROM.put(BLINKER_EEP_ADDR_CHECK, BLINKER_CHECK_DATA);
+            EEPROM.commit();
+            EEPROM.end();
+            return;
+        }
+        EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+        if (_aCount > 2)
+        {
+            _aCount = 0;
+            EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+        }
+        EEPROM.commit();
+        EEPROM.end();
+        
+        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+
+        if (_aCount)
+        {
+            for (uint8_t _num = 0; _num < _aCount; _num++)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("new BlinkerAUTO() _num: "), _num);
+                
+                _AUTO[_num] = new BlinkerAUTO();
+                _AUTO[_num]->setNum(_num);
+                _AUTO[_num]->deserialization();
+            }
+        }
+    }
+
+    template <class Proto>
+    bool BlinkerApi<Proto>::autoManager(const JsonObject& data)
+    {
+        // String set;
+        bool isSet = false;
+        bool isAuto = false;
+
+        // isSet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
+        // isAuto = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTO);
+        isSet = data.containsKey(BLINKER_CMD_SET);
+        String aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
+        String aDataArray = data[BLINKER_CMD_AUTO][0];
+
+        if (aData.length()) isAuto = true;
+
+        if (aDataArray.length() && !isAuto)
+        {
+            for (uint8_t num = 0; num < 2; num++)
+            {
+                uint32_t _autoId = data[BLINKER_CMD_AUTO][num][BLINKER_CMD_AUTOID];
+                String arrayData = data[BLINKER_CMD_AUTO][num];
+
+                if (_aCount)
+                {
+                    for (uint8_t _num = 0; _num < _aCount; _num++)
+                    {
+                        if (_AUTO[_num]->id() == _autoId) {
+                            _AUTO[_num]->manager(arrayData);
+                            return true;
+                        }
+                    }
+                    if (_aCount == 1)
+                    {
+                        _AUTO[_aCount] = new BlinkerAUTO();
+                        _AUTO[_aCount]->setNum(_aCount);
+                        _AUTO[_aCount]->manager(arrayData);
+
+                        // _aCount = 1;
+                        _aCount++;
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                        EEPROM.commit();
+                        EEPROM.end();
+
+                        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                        // static_cast<Proto*>(this)->_print(autoData(), false);
+                        // return true;
+                    }
+                    else
+                    {
+                        _AUTO[_aCount - 1]->manager(arrayData);
+                        // return true;
+                    }
+                }
+                else
+                {
+                    _AUTO[_aCount] = new BlinkerAUTO();
+                    _AUTO[_aCount]->setNum(_aCount);
+                    _AUTO[_aCount]->manager(arrayData);
+
+                    _aCount = 1;
+                    // _aCount++;
+                    EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                    EEPROM.commit();
+                    EEPROM.end();
+                    
+                    BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                    // static_cast<Proto*>(this)->_print(autoData(), false);
+                    // return true;
+                }
+            }
+            return true;
+        }
+        else if (isSet && isAuto)
+        {
+            _fresh = true;
+            
+            BLINKER_LOG_ALL(BLINKER_F("get auto setting"));
+            
+            bool isDelet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
+            String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                                        [BLINKER_CMD_ACTION][0];
+
+            if (isDelet)
+            {
+                // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
+                uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE];
+
+                if (_aCount)
+                {
+                    for (uint8_t _num = 0; _num < _aCount; _num++)
+                    {
+                        if (_AUTO[_num]->id() == _autoId)
+                        {
+                            // _AUTO[_num]->manager(static_cast<Proto*>(this)->dataParse());
+                            for (_num; _num < _aCount; _num++)
+                            {
+                                if (_num < _aCount - 1)
+                                {
+                                    _AUTO[_num]->setNum(_num + 1);
+                                    _AUTO[_num]->deserialization();
+                                    _AUTO[_num]->setNum(_num);
+                                    _AUTO[_num]->serialization();
+                                }
+                            }
+                            _aCount--;
+
+                            EEPROM.begin(BLINKER_EEP_SIZE);
+                            EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                            EEPROM.commit();
+                            EEPROM.end();
+                            
+                            BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                            
+                            return true;
+                        }
+                    }
+                }
+            }
+            else if(isTriggedArray.length())
+            {
+                for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
+                {
+                    String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                                                [BLINKER_CMD_ACTION][a_num];
+
+                    if(_autoData_array.length())
+                    {
+                        DynamicJsonBuffer _jsonBuffer;
+                        JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
+
+                        json_parse(_array);
+                        timerManager(_array, true);
+                    }
+                    else
+                    {
+                        // a_num = BLINKER_MAX_WIDGET_SIZE;
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
+                uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_AUTOID];
+
+                // _aCount = 0;
+
+                if (_aCount)
+                {
+                    for (uint8_t _num = 0; _num < _aCount; _num++)
+                    {
+                        if (_AUTO[_num]->id() == _autoId)
+                        {
+                            _AUTO[_num]->manager(static_cast<Proto*>(this)->dataParse());
+                            return true;
+                        }
+                    }
+                    if (_aCount == 1)
+                    {
+                        _AUTO[_aCount] = new BlinkerAUTO();
+                        _AUTO[_aCount]->setNum(_aCount);
+                        _AUTO[_aCount]->manager(static_cast<Proto*>(this)->dataParse());
+
+                        // _aCount = 1;
+                        _aCount++;
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                        EEPROM.commit();
+                        EEPROM.end();
+                        
+                        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                        
+                        // static_cast<Proto*>(this)->_print(autoData(), false);
+                        // return true;
+                    }
+                    else
+                    {
+                        _AUTO[_aCount - 1]->manager(static_cast<Proto*>(this)->dataParse());
+                        // return true;
+                    }
+                }
+                else
+                {
+                    _AUTO[_aCount] = new BlinkerAUTO();
+                    _AUTO[_aCount]->setNum(_aCount);
+                    _AUTO[_aCount]->manager(static_cast<Proto*>(this)->dataParse());
+
+                    _aCount = 1;
+                    // _aCount++;
+                    EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                    EEPROM.commit();
+                    EEPROM.end();
+                    
+                    BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                    
+                    // static_cast<Proto*>(this)->_print(autoData(), false);
+                    // return true;
+                }
+            }
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     template <class Proto>
     bool BlinkerApi<Proto>::checkCUPDATE()
@@ -3810,7 +3842,9 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         return blinkerServer(BLINKER_CMD_BRIDGE_NUMBER, data);
         // return "";
     }
+#endif
 
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
     template <class Proto>
     String BlinkerApi<Proto>::postServer(const String & url, const String & host, int port, const String & msg)
     {
@@ -3893,43 +3927,45 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 break;
             case BLINKER_CMD_BRIDGE_NUMBER :
                 break;
-            case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
-                if (!checkCUPDATE()) {
-                    return BLINKER_CMD_FALSE;
-                }
-                break;
-            case BLINKER_CMD_CONFIG_GET_NUMBER :
-                if (!checkCGET()) {
-                    return BLINKER_CMD_FALSE;
-                }
-                break;
-            case BLINKER_CMD_CONFIG_DELETE_NUMBER :
-                if (!checkCDEL()) {
-                    return BLINKER_CMD_FALSE;
-                }
-                break;
-            case BLINKER_CMD_DATA_STORAGE_NUMBER :
-                // if (!checkDataUpdata()) {
-                //     return BLINKER_CMD_FALSE;
-                // }
-                break;
-            case BLINKER_CMD_DATA_GET_NUMBER :
-                if (!checkDataGet()) {
-                    return BLINKER_CMD_FALSE;
-                }
-                break;
-            case BLINKER_CMD_DATA_DELETE_NUMBER :
-                if (!checkDataDel()) {
-                    return BLINKER_CMD_FALSE;
-                }
-                break;
-            case BLINKER_CMD_AUTO_PULL_NUMBER :
-                if (!checkAutoPull()) {
-                    return BLINKER_CMD_FALSE;
-                }
-                break;
-            case BLINKER_CMD_OTA_NUMBER :
-                break;
+            #if defined(BLINKER_MQTT)
+                case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                    if (!checkCUPDATE()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_CONFIG_GET_NUMBER :
+                    if (!checkCGET()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                    if (!checkCDEL()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                    // if (!checkDataUpdata()) {
+                    //     return BLINKER_CMD_FALSE;
+                    // }
+                    break;
+                case BLINKER_CMD_DATA_GET_NUMBER :
+                    if (!checkDataGet()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_DATA_DELETE_NUMBER :
+                    if (!checkDataDel()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_AUTO_PULL_NUMBER :
+                    if (!checkAutoPull()) {
+                        return BLINKER_CMD_FALSE;
+                    }
+                    break;
+                case BLINKER_CMD_OTA_NUMBER :
+                    break;
+            #endif
             default :
                 return BLINKER_CMD_FALSE;
         }
@@ -3959,10 +3995,18 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 #endif
             #endif
 
+            // #if defined(BLINKER_WIF)
+                // BearSSL::WiFiClientSecure client_s;
+            // #endif
+
             BLINKER_LOG_ALL(BLINKER_F("connecting to "), host);
             
             uint8_t connet_times = 0;
-            client_mqtt.stop();
+
+            #if defined(BLINKER_MQTT)
+                client_mqtt.stop();
+            #endif
+
             ::delay(100);
 
             bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
@@ -4023,44 +4067,46 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     url += msg;
                     client_s.print(getServer(url, host, httpsPort));
                     break;
-                case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
-                    url = BLINKER_F("/api/v1/user/device/userconfig");
-                    client_s.print(postServer(url, host, httpsPort, msg));
-                    break;
-                case BLINKER_CMD_CONFIG_GET_NUMBER :
-                    url = BLINKER_F("/api/v1/user/device");
-                    url += msg;
-                    client_s.print(getServer(url, host, httpsPort));
-                    break;
-                case BLINKER_CMD_CONFIG_DELETE_NUMBER :
-                    url = BLINKER_F("/api/v1/user/device");
-                    url += msg;
-                    client_s.print(getServer(url, host, httpsPort));
-                    break;
-                case BLINKER_CMD_DATA_STORAGE_NUMBER :
-                    url = BLINKER_F("/api/v1/user/device/cloudStorage");
-                    client_s.print(postServer(url, host, httpsPort, msg));
-                    break;
-                case BLINKER_CMD_DATA_GET_NUMBER :
-                    url = BLINKER_F("/api/v1/user/device");
-                    url += msg;
-                    client_s.print(getServer(url, host, httpsPort));
-                    break;
-                case BLINKER_CMD_DATA_DELETE_NUMBER :
-                    url = BLINKER_F("/api/v1/user/device");
-                    url += msg;
-                    client_s.print(getServer(url, host, httpsPort));
-                    break;
-                case BLINKER_CMD_AUTO_PULL_NUMBER :
-                    url = BLINKER_F("/api/v1/user/device");
-                    url += msg;
-                    client_s.print(getServer(url, host, httpsPort));
-                    break;
-                case BLINKER_CMD_OTA_NUMBER :
-                    url = BLINKER_F("/api/v1/user/device");
-                    url += msg;
-                    client_s.print(getServer(url, host, httpsPort));
-                    break;
+                #if defined(BLINKER_MQTT)
+                    case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device/userconfig");
+                        client_s.print(postServer(url, host, httpsPort, msg));
+                        break;
+                    case BLINKER_CMD_CONFIG_GET_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device/cloudStorage");
+                        client_s.print(postServer(url, host, httpsPort, msg));
+                        break;
+                    case BLINKER_CMD_DATA_GET_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_DATA_DELETE_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_AUTO_PULL_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_OTA_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                #endif
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -4151,29 +4197,31 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     break;
                 case BLINKER_CMD_BRIDGE_NUMBER :
                     break;
-                case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
-                    _cUpdateTime = millis();
-                    break;
-                case BLINKER_CMD_CONFIG_GET_NUMBER :
-                    _cGetTime = millis();
-                    break;
-                case BLINKER_CMD_CONFIG_DELETE_NUMBER :
-                    _cDelTime = millis();
-                    break;
-                case BLINKER_CMD_DATA_STORAGE_NUMBER :
-                    _dUpdateTime = millis();
-                    break;
-                case BLINKER_CMD_DATA_GET_NUMBER :
-                    _dGetTime = millis();
-                    break;
-                case BLINKER_CMD_DATA_DELETE_NUMBER :
-                    _dDelTime = millis();
-                    break;
-                case BLINKER_CMD_AUTO_PULL_NUMBER :
-                    _autoPullTime = millis();
-                    break;
-                case BLINKER_CMD_OTA_NUMBER :
-                    break;
+                #if defined(BLINKER_MQTT)
+                    case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                        _cUpdateTime = millis();
+                        break;
+                    case BLINKER_CMD_CONFIG_GET_NUMBER :
+                        _cGetTime = millis();
+                        break;
+                    case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                        _cDelTime = millis();
+                        break;
+                    case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                        _dUpdateTime = millis();
+                        break;
+                    case BLINKER_CMD_DATA_GET_NUMBER :
+                        _dGetTime = millis();
+                        break;
+                    case BLINKER_CMD_DATA_DELETE_NUMBER :
+                        _dDelTime = millis();
+                        break;
+                    case BLINKER_CMD_AUTO_PULL_NUMBER :
+                        _autoPullTime = millis();
+                        break;
+                    case BLINKER_CMD_OTA_NUMBER :
+                        break;
+                #endif
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -4271,70 +4319,72 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     http.begin(url_iot);
                     httpCode = http.GET();
                     break;
-                case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
-                    url_iot = host;
-                    url_iot += BLINKER_F("/api/v1/user/device/userconfig");
+                #if defined(BLINKER_MQTT)
+                    case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device/userconfig");
 
-                    http.begin(url_iot);
-                    http.addHeader(conType, application);
-                    httpCode = http.POST(msg);
-                    break;
-                case BLINKER_CMD_CONFIG_GET_NUMBER :
-                    url_iot = host;
-                    url_iot += BLINKER_F("/api/v1/user/device");
-                    url_iot += msg;
+                        http.begin(url_iot);
+                        http.addHeader(conType, application);
+                        httpCode = http.POST(msg);
+                        break;
+                    case BLINKER_CMD_CONFIG_GET_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
 
-                    http.begin(url_iot);
-                    httpCode = http.GET();
-                    break;
-                case BLINKER_CMD_CONFIG_DELETE_NUMBER :
-                    url_iot = host;
-                    url_iot += BLINKER_F("/api/v1/user/device");
-                    url_iot += msg;
+                        http.begin(url_iot);
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
 
-                    http.begin(url_iot);
-                    httpCode = http.GET();
-                    break;
-                case BLINKER_CMD_DATA_STORAGE_NUMBER :
-                    url_iot = host;
-                    url_iot += BLINKER_F("/api/v1/user/device/cloudStorage");
+                        http.begin(url_iot);
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device/cloudStorage");
 
-                    http.begin(url_iot);
-                    http.addHeader(conType, application);
-                    httpCode = http.POST(msg);
-                    break;
-                case BLINKER_CMD_DATA_GET_NUMBER :
-                    url_iot = host;
-                    url_iot += BLINKER_F("/api/v1/user/device");
-                    url_iot += msg;
+                        http.begin(url_iot);
+                        http.addHeader(conType, application);
+                        httpCode = http.POST(msg);
+                        break;
+                    case BLINKER_CMD_DATA_GET_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
 
-                    http.begin(url_iot);
-                    httpCode = http.GET();
-                    break;
-                case BLINKER_CMD_DATA_DELETE_NUMBER :
-                    url_iot = host;
-                    url_iot += BLINKER_F("/api/v1/user/device");
-                    url_iot += msg;
+                        http.begin(url_iot);
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_DATA_DELETE_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
 
-                    http.begin(url_iot);
-                    httpCode = http.GET();
-                    break;
-                case BLINKER_CMD_AUTO_PULL_NUMBER :
-                    url_iot = host;
-                    url_iot += BLINKER_F("/api/v1/user/device");
-                    url_iot += msg;
+                        http.begin(url_iot);
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_AUTO_PULL_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
 
-                    http.begin(url_iot);
-                    httpCode = http.GET();
-                    break;
-                case BLINKER_CMD_OTA_NUMBER :
-                    url_iot = host;
-                    url_iot += BLINKER_F("/api/v1/user/device");
-                    url_iot += msg;
+                        http.begin(url_iot);
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_OTA_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
 
-                    http.begin(url_iot);
-                    httpCode = http.GET();
-                    break;
+                        http.begin(url_iot);
+                        httpCode = http.GET();
+                        break;
+                #endif
                 default :
                     return BLINKER_CMD_FALSE;
             }
@@ -4396,29 +4446,31 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
-                        case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
-                            _cUpdateTime = millis();
-                            break;
-                        case BLINKER_CMD_CONFIG_GET_NUMBER :
-                            _cGetTime = millis();
-                            break;
-                        case BLINKER_CMD_CONFIG_DELETE_NUMBER :
-                            _cDelTime = millis();
-                            break;
-                        case BLINKER_CMD_DATA_STORAGE_NUMBER :
-                            _dUpdateTime = millis();
-                            break;
-                        case BLINKER_CMD_DATA_GET_NUMBER :
-                            _dGetTime = millis();
-                            break;
-                        case BLINKER_CMD_DATA_DELETE_NUMBER :
-                            _dDelTime = millis();
-                            break;
-                        case BLINKER_CMD_AUTO_PULL_NUMBER :
-                            _autoPullTime = millis();
-                            break;
-                        case BLINKER_CMD_OTA_NUMBER :
-                            break;
+                        #if defined(BLINKER_MQTT)
+                            case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                                _cUpdateTime = millis();
+                                break;
+                            case BLINKER_CMD_CONFIG_GET_NUMBER :
+                                _cGetTime = millis();
+                                break;
+                            case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                                _cDelTime = millis();
+                                break;
+                            case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                                _dUpdateTime = millis();
+                                break;
+                            case BLINKER_CMD_DATA_GET_NUMBER :
+                                _dGetTime = millis();
+                                break;
+                            case BLINKER_CMD_DATA_DELETE_NUMBER :
+                                _dDelTime = millis();
+                                break;
+                            case BLINKER_CMD_AUTO_PULL_NUMBER :
+                                _autoPullTime = millis();
+                                break;
+                            case BLINKER_CMD_OTA_NUMBER :
+                                break;
+                        #endif
                         default :
                             return BLINKER_CMD_FALSE;
                     }

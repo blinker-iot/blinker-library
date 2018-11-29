@@ -1,6 +1,10 @@
 #ifndef BLINKER_WIDGETS_H
 #define BLINKER_WIDGETS_H
 
+#if defined(BLINKER_MQTT)
+    #include "utility/BlinkerBridge.h"
+#endif
+
 #include "utility/BlinkerButton.h"
 #include "utility/BlinkerJoystick.h"
 #include "utility/BlinkerNumber.h"
@@ -10,11 +14,9 @@
 #include "utility/BlinkerText.h"
 
 #if defined(BLINKER_ALIGENIE)
-
     #include "utility/BlinkerAliGenie.h"
 
-    BLINKERALIGENIE BlinkerAliGenie;
-    
+    BLINKERALIGENIE BlinkerAliGenie;    
 #endif
 
 #if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \

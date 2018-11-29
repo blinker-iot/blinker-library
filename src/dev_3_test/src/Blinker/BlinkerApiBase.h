@@ -125,7 +125,11 @@ class BlinkerWidgets_joy
             void setFunc(blinker_callback_with_string_arg_t _func) { wfunc = _func; }
             blinker_callback_with_string_arg_t getFunc() { return wfunc; }
             bool checkName(char _key[]) { return strcmp(_key, bKey) == 0; }
-            String getName() { return _register ? bName : ""; }
+            char * getName()
+            {
+                if (_register) return bName;
+                else return BLINKER_CMD_FALSE;
+            }
             void name(const String & name)
             {
                 _register = true;

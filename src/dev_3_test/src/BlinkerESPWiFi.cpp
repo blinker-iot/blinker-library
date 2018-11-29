@@ -1,8 +1,8 @@
 #if defined(ESP8266) || defined(ESP32)
 
-#define BLINKER_MQTT
+#define BLINKER_WIFI
 
-#include "BlinkerESPMQTT.h"
+#include "BlinkerESPWiFi.h"
 #include "Blinker/BlinkerDebug.h"
 #include "modules/ArduinoJson/ArduinoJson.h"
 
@@ -23,40 +23,37 @@
 //     IPAddress netMsk(255, 255, 255, 0);
 // #endif
 
-void BlinkerESPMQTT::commonBegin(const char* _auth,
-                                const char* _ssid,
-                                const char* _pswd,
-                                String & _type)
+#define WS_SERVERPORT       81
+
+void BlinkerESPWiFi::commonBegin(const char* _ssid,
+                                const char* _pswd)
 {
     Base::begin();
     connectWiFi(_ssid, _pswd);
-    this->conn.aliType(_type);
-    this->conn.begin(_auth);
     Base::loadTimer();
 
     #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
+        BLINKER_LOG(BLINKER_F("ESP8266_WIFI initialized..."));
     #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
+        BLINKER_LOG(BLINKER_F("ESP32_WIFI initialized..."));
     #endif
 }
 
-void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _type)
+
+void BlinkerESPWiFi::smartconfigBegin()
 {
     Base::begin();
     if (!autoInit()) smartconfig();
-    this->conn.aliType(_type);
-    this->conn.begin(_auth);
     Base::loadTimer();
 
     #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
+        BLINKER_LOG(BLINKER_F("ESP8266_WIFI initialized..."));
     #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
+        BLINKER_LOG(BLINKER_F("ESP32_WIFI initialized..."));
     #endif
 }
 
-void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _type)
+void BlinkerESPWiFi::apconfigBegin()
 {
     Base::begin();
     if (!autoInit())
@@ -67,20 +64,17 @@ void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _type)
         //     serverClient();
         //     ::delay(10);
         // }
-    }
-
-    this->conn.aliType(_type);
-    this->conn.begin(_auth);
+    }    
     Base::loadTimer();
 
     #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
+        BLINKER_LOG(BLINKER_F("ESP8266_WIFI initialized..."));
     #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
+        BLINKER_LOG(BLINKER_F("ESP32_WIFI initialized..."));
     #endif
 }
 
-bool BlinkerESPMQTT::autoInit()
+bool BlinkerESPWiFi::autoInit()
 {
     WiFi.mode(WIFI_STA);
     String _hostname = BLINKER_F("DiyArduino_");
@@ -112,12 +106,12 @@ bool BlinkerESPMQTT::autoInit()
         BLINKER_LOG(BLINKER_F("WiFi Connected."));
         BLINKER_LOG(BLINKER_F("IP Address: "));
         BLINKER_LOG(WiFi.localIP());
-
+        mDNSInit();
         return true;
     }
 }
 
-void BlinkerESPMQTT::smartconfig()
+void BlinkerESPWiFi::smartconfig()
 {
     WiFi.mode(WIFI_STA);
     String _hostname = BLINKER_F("DiyArduino_");
@@ -147,9 +141,10 @@ void BlinkerESPMQTT::smartconfig()
 
     BLINKER_LOG(BLINKER_F("IP Address: "));
     BLINKER_LOG(WiFi.localIP());
+    mDNSInit();
 }
 
-void BlinkerESPMQTT::softAPinit()
+void BlinkerESPWiFi::softAPinit()
 {
     WiFiServer _server(80);
     WiFiClient _client;
@@ -227,7 +222,7 @@ void BlinkerESPMQTT::softAPinit()
     }
 }
 
-// void BlinkerESPMQTT::serverClient()
+// void BlinkerESPWiFi::serverClient()
 // {
 //     if (!_client)
 //     {
@@ -277,7 +272,7 @@ void BlinkerESPMQTT::softAPinit()
 //     }
 // }
 
-bool BlinkerESPMQTT::parseUrl(String data)
+bool BlinkerESPWiFi::parseUrl(String data)
 {
     BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
     DynamicJsonBuffer jsonBuffer;
@@ -298,19 +293,19 @@ bool BlinkerESPMQTT::parseUrl(String data)
     return true;
 }
 
-void BlinkerESPMQTT::connectWiFi(String _ssid, String _pswd)
+void BlinkerESPWiFi::connectWiFi(String _ssid, String _pswd)
 {
     connectWiFi(_ssid.c_str(), _pswd.c_str());
 }
 
-void BlinkerESPMQTT::connectWiFi(const char* _ssid, const char* _pswd)
+void BlinkerESPWiFi::connectWiFi(const char* _ssid, const char* _pswd)
 {
     uint32_t connectTime = millis();
 
     BLINKER_LOG(BLINKER_F("Connecting to "), _ssid);
 
     WiFi.mode(WIFI_STA);
-    String _hostname = BLINKER_F("DiyArduinoMQTT_");
+    String _hostname = BLINKER_F("DiyArduinoWIFI_");
     _hostname += macDeviceName();
     
     #if defined(ESP8266)
@@ -339,6 +334,24 @@ void BlinkerESPMQTT::connectWiFi(const char* _ssid, const char* _pswd)
 
     IPAddress myip = WiFi.localIP();
     BLINKER_LOG(BLINKER_F("Your IP is: "), myip);
+
+    mDNSInit();
+}
+
+void BlinkerESPWiFi::mDNSInit()
+{
+    if (!MDNS.begin(macDeviceName().c_str(), WiFi.localIP())) {
+        while(1) {
+            ::delay(100);
+        }
+    }
+
+    BLINKER_LOG(BLINKER_F("mDNS responder started"));
+    
+    MDNS.addService("DiyArduino", "tcp", WS_SERVERPORT);
+    MDNS.addServiceTxt("DiyArduino", "tcp", "deviceName", macDeviceName());
+
+    this->conn.begin(macDeviceName());
 }
 
 #endif

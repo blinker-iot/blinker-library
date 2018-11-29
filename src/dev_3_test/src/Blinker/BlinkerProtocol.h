@@ -111,6 +111,10 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         #if defined(BLINKER_MQTT)
             void beginAuto();
+            bool autoTrigged(uint32_t _id);
+            // bool autoTrigged(char *name, char *type, char *data);
+            // bool autoTrigged(char *name1, char *type1, char *data1, \
+            //                 char *name2, char *type2, char *data2);
         #endif
 
         // template <typename T1, typename T2, typename T3>
@@ -140,6 +144,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         // String bridgeRead(const String & bKey);
 
         #if defined(BLINKER_MQTT)
+            void bridgePrint(char * bName, const String & data);
             void aligeniePrint(String & _msg);
         #endif
 
@@ -180,6 +185,9 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
             uint32_t            _disFreshTime = 0;
             uint32_t            _disconnectTime = 0;
             uint32_t            _refreshTime = 0;
+        #endif
+
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
             uint32_t            _reconTime = 0;
         #endif
 
@@ -534,6 +542,60 @@ void BlinkerProtocol<Transp>::flush()
         // autoStart();
         BApi::autoInit();
     }
+
+    template <class Transp>
+    bool BlinkerProtocol<Transp>::autoTrigged(uint32_t _id)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("autoTrigged id: "), _id);
+        
+        return conn.autoPrint(_id);
+    }
+
+    // template <class Transp>
+    // bool BlinkerProtocol<Transp>::autoTrigged(char *name, char *type, char *data)
+    // {
+    //     BLINKER_LOG_ALL(BLINKER_F("autoTrigged"));
+        
+    //     if (strcpy(conn.deviceName(), name) == 0)
+    //     {
+    //         BApi::parse(data, true);
+    //         return true;
+    //     }
+    //     return conn.autoPrint(name, type, data);
+    // }
+
+    // template <class Transp>
+    // bool BlinkerProtocol<Transp>::autoTrigged(char *name1, char *type1, char *data1, \
+    //     char *name2, char *type2, char *data2)
+    // {
+    //     BLINKER_LOG_ALL(BLINKER_F("autoTrigged"));
+        
+    //     bool _link1 = false;
+    //     bool _link2 = false;
+
+    //     if (conn.deviceName() == name1)
+    //     {
+    //         BApi::parse(data1, true);
+    //         _link1 = true;
+    //     }
+    //     if (conn.deviceName() == name2)
+    //     {
+    //         BApi::parse(data2, true);
+    //         _link2 = true;
+    //     }
+    //     if (_link1 && _link2)
+    //     {
+    //         return conn.autoPrint(name1, type1, data1, name2, type2, data2);
+    //     }
+    //     else if (_link1)
+    //     {
+    //         return conn.autoPrint(name2, type2, data2);
+    //     }
+    //     else if (_link2)
+    //     {
+    //         return conn.autoPrint(name1, type1, data1);
+    //     }
+    // }
 #endif
 
 // template <class Transp> template <typename T1, typename T2, typename T3>
@@ -874,6 +936,12 @@ void BlinkerProtocol<Transp>::flush()
 
 #if defined(BLINKER_MQTT)
     template <class Transp>
+    void BlinkerProtocol<Transp>::bridgePrint(char * bName, const String & data)
+    {
+        conn.bPrint(bName, data);
+    }
+    
+    template <class Transp>
     void BlinkerProtocol<Transp>::aligeniePrint(String & _msg)
     {
         BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
@@ -1120,6 +1188,11 @@ void BlinkerProtocol<Transp>::begin()
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
+    #if defined(BLINKER_WIFI)
+        BApi::ntpInit();
+        BApi::checkTimer();
+    #endif
+
     #if defined(BLINKER_MQTT)
         BApi::checkTimer();
 
@@ -1182,7 +1255,7 @@ void BlinkerProtocol<Transp>::run()
         }
     #endif
 
-    #if defined(BLINKER_MQTT)
+    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
         if (WiFi.status() != WL_CONNECTED)
         {        
             if ((millis() - _reconTime) >= 10000 || \

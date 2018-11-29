@@ -1,7 +1,7 @@
 #ifndef BLINKER_MQTT_H
 #define BLINKER_MQTT_H
 
-#define BLINKER_MQTT
+#if defined(ESP8266) || defined(ESP32)
 
 #if defined(ESP8266)
     #include <ESP8266mDNS.h>
@@ -29,14 +29,14 @@ class BlinkerMQTT
         char * lastRead();
         void flush();
         bool print(char * data, bool needCheck = true);
-        bool bPrint(char * name, char * data);
-        bool aliPrint(String & data);
-        void aliType(String & type);
+        bool bPrint(char * name, const String & data);
+        bool aliPrint(const String & data);
+        void aliType(const String & type);
         void begin(const char* auth);
         bool autoPrint(uint32_t id);
-        bool autoPrint(char *name, char *type, char *data);
-        bool autoPrint(char *name1, char *type1, char *data1
-                    , char *name2, char *type2, char *data2);
+        // bool autoPrint(char *name, char *type, char *data);
+        // bool autoPrint(char *name1, char *type1, char *data1, \
+        //             char *name2, char *type2, char *data2);
         char * deviceName();
         char * authKey() { return _authKey; }
         bool init() { return isMQTTinit; }
@@ -76,6 +76,8 @@ class BlinkerMQTT
         bool        isAliAlive = false;
         bool        isAliAvail = false;
         char*       mqtt_broker;
+
+        bool isJson(const String & data);
 };
 
 #if defined(ESP8266)
@@ -86,5 +88,7 @@ class BlinkerMQTT
 #endif
 
 extern WiFiClient              client;
+
+#endif
 
 #endif

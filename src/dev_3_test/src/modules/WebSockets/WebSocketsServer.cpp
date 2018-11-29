@@ -22,6 +22,8 @@
  *
  */
 
+#if defined(ESP8266) || defined(ESP32)
+
 #include "WebSockets.h"
 #include "WebSocketsServer.h"
 
@@ -870,4 +872,4 @@ void WebSocketsServer::handleHeader(WSclient_t * client, String * headerLine) {
 }
 
 
-
+#endif

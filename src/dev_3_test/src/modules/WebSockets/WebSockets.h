@@ -25,6 +25,8 @@
 #ifndef WEBSOCKETS_H_
 #define WEBSOCKETS_H_
 
+#if defined(ESP8266) || defined(ESP32)
+
 #ifdef STM32_DEVICE
 #include <application.h>
 #define bit(b) (1UL << (b)) // Taken directly from Arduino.h
@@ -308,5 +310,7 @@ class WebSockets {
 
 #ifndef UNUSED
 #define UNUSED(var) (void)(var)
+#endif
+
 #endif
 #endif /* WEBSOCKETS_H_ */
