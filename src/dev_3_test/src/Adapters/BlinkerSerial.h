@@ -7,8 +7,11 @@
     #include <WProgram.h>
 #endif
 
-#include <SoftwareSerial.h>
-// #include <HardwareSerial.h>
+#if defined(ESP32)
+    #include <HardwareSerial.h>
+#else
+    #include <SoftwareSerial.h>
+#endif
 
 class BlinkerSerial
 {
@@ -39,10 +42,10 @@ class BlinkerSerial
         bool checkPrintSpan();
 };
 
-// #if defined(ESP32)
-//     extern HardwareSerial *HSerialBLE;
-// #else
+#if defined(ESP32)
+    extern HardwareSerial *HSerialBLE;
+#else
     extern SoftwareSerial *SSerialBLE;
-// #endif
+#endif
 
 #endif

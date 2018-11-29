@@ -1,5 +1,5 @@
-#ifndef BLINKER_MQTT_H
-#define BLINKER_MQTT_H
+#ifndef BLINKER_PRO_H
+#define BLINKER_PRO_H
 
 #if defined(ESP8266) || defined(ESP32)
 
@@ -13,13 +13,13 @@
     #include <HTTPClient.h>
 #endif
 
-class BlinkerMQTT
-{
+class BlinkerPRO {
     public :
-        BlinkerMQTT();
+        BlinkerPRO();
 
         bool connect();
         bool connected();
+        bool mConnected();// { if (!isMQTTinit) return false; else return mqtt->connected(); }
         void disconnect();
         void ping();
         bool available();
@@ -31,8 +31,8 @@ class BlinkerMQTT
         bool print(char * data, bool needCheck = true);
         bool bPrint(char * name, const String & data);
         bool aliPrint(const String & data);
-        void aliType(const String & type);
-        void begin(const char* auth);
+        // void aliType(const String & type);
+        void begin(const char* _deviceType);
         bool autoPrint(uint32_t id);
         // bool autoPrint(char *name, char *type, char *data);
         // bool autoPrint(char *name1, char *type1, char *data1, \
@@ -41,6 +41,8 @@ class BlinkerMQTT
         char * authKey() { return _authKey; }
         bool init() { return isMQTTinit; }
         bool reRegister() { return connectServer(); }
+        bool deviceRegister() { return connectServer(); }
+        bool authCheck();
 
     private :
         bool isMQTTinit = false;
@@ -53,12 +55,12 @@ class BlinkerMQTT
         bool checkCanBprint();
         bool checkPrintSpan();
         bool checkAliPrintSpan();
+        bool pubHello();
 
     protected :
-        // const char* _authKey;
+        const char* _deviceType;
         char*       _authKey;
-        char*       _aliType;
-        // char        _authKey[BLINKER_AUTHKEY_SIZE];
+        // char*       _aliType;
         bool*       isHandle;// = &isConnect;
         bool        isAlive = false;
         bool        isBavail = false;
@@ -75,13 +77,15 @@ class BlinkerMQTT
         uint32_t    aliKaTime = 0;
         bool        isAliAlive = false;
         bool        isAliAvail = false;
-        char*       mqtt_broker;
+
+        bool        isNew = false;
+        bool        isAuth = false;
 
         bool isJson(const String & data);
 };
 
 #if defined(ESP8266)
-    extern BearSSL::WiFiClientSecure   client_mqtt;
+    extern BearSSL::WiFiClientSecure   client_pro;
     // WiFiClientSecure            client_mqtt;
 // #elif defined(ESP32)
 //     extern WiFiClientSecure            client_s;

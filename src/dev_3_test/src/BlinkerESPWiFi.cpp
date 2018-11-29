@@ -340,7 +340,11 @@ void BlinkerESPWiFi::connectWiFi(const char* _ssid, const char* _pswd)
 
 void BlinkerESPWiFi::mDNSInit()
 {
+#if defined(ESP8266)
     if (!MDNS.begin(macDeviceName().c_str(), WiFi.localIP())) {
+#elif defined(ESP32)
+    if (!MDNS.begin(macDeviceName().c_str())) {
+#endif    
         while(1) {
             ::delay(100);
         }

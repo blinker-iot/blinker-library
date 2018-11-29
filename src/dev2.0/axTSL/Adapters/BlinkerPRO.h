@@ -135,7 +135,7 @@ class BlinkerPRO {
 
         void ping();
         
-        bool available () {
+        bool available() {
             webSocket.loop();
 
             if (isMQTTinit) {

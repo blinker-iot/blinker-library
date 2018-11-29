@@ -1,5 +1,8 @@
-#include <SoftwareSerial.h>
-// #include <HardwareSerial.h>
+#if defined(ESP32)
+    #include <HardwareSerial.h>
+#else
+    #include <SoftwareSerial.h>
+#endif
 #include "BlinkerSerialBLE.h"
 
 void BlinkerSerialBLE::begin(uint8_t ss_rx_pin, uint8_t ss_tx_pin, uint32_t ss_baud)
@@ -64,12 +67,12 @@ void BlinkerSerialBLE::begin(uint8_t ss_rx_pin, uint8_t ss_tx_pin, uint32_t ss_b
         this->conn.begin(*SSerialBLE, false);
         BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
     }
-// #elif defined(ESP32)
-//             // Base::begin();
-//             HSerialBLE = new HardwareSerial(1);
-//             HSerialBLE->begin(ss_baud, SERIAL_8N1, ss_rx_pin, ss_tx_pin);
-//             this->conn.begin(*HSerialBLE, true);
-//             BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
+#elif defined(ESP32)
+            // Base::begin();
+            HSerialBLE = new HardwareSerial(1);
+            HSerialBLE->begin(ss_baud, SERIAL_8N1, ss_rx_pin, ss_tx_pin);
+            this->conn.begin(*HSerialBLE, true);
+            BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
 #else
     // Base::begin();
     SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);

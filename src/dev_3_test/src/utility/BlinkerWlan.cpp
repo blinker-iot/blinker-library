@@ -335,7 +335,7 @@ void BlinkerWlan::serverClient()
     }
     else
     {
-        if (_client.status() == CLOSED)
+        // if (_client.status() == CLOSED)
         if (!_client.connected())
         {
             _client.stop();

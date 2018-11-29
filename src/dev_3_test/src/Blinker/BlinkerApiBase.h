@@ -109,7 +109,7 @@ class BlinkerWidgets_joy
         blinker_callback_with_joy_arg_t wfunc;
 };
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     class BlinkerBridge_key
     {
         public :

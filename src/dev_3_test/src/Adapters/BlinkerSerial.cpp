@@ -5,27 +5,30 @@
 #include "Blinker/BlinkerDebug.h"
 #include "utility/BlinkerUtility.h"
 
-// #if defined(ESP32)
-//     HardwareSerial *HSerialBLE;
-// #else
+#if defined(ESP32)
+    HardwareSerial *HSerialBLE;
+#else
     SoftwareSerial *SSerialBLE;
-// #endif
+#endif
 
 bool BlinkerSerial::available()
 {
     if (!isHWS)
     {
-        if (!SSerialBLE->isListening())
-        {
-            SSerialBLE->listen();
-            ::delay(100);
-        }
+        #if defined(__AVR__) || defined(ESP8266)
+            if (!SSerialBLE->isListening())
+            {
+                SSerialBLE->listen();
+                ::delay(100);
+            }
+        #endif
     }
 
 
     if (stream->available())
     {
-        if (!isFresh) streamData = (char*)malloc(1*sizeof(char));
+        if (isFresh) free(streamData);
+        streamData = (char*)malloc(1*sizeof(char));
         
         int16_t dNum = 0;
         int c_d = timedRead();
@@ -36,7 +39,7 @@ bool BlinkerSerial::available()
             {
                 streamData[dNum] = (char)c_d;
                 dNum++;
-                streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
             }
 
             c_d = timedRead();

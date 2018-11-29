@@ -7,26 +7,31 @@
     #include <Ticker.h>
     #include <EEPROM.h>
 
-    #if defined(BLINKER_MQTT)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         #include "Blinker/BlinkerAuto.h"
     #endif
+
+    #if defined(BLINKER_PRO)
+        #include "utility/BlinkerWlan.h"
+    #endif
+#endif
+
+#if defined(ESP8266)
+    #include <ESP8266HTTPClient.h>
 
     #if defined(BLINKER_WIFI)
         #include <WiFiClientSecure.h>
 
         static BearSSL::WiFiClientSecure client_s;
     #endif
-#endif
-
-#if defined(ESP8266)
-    #include <ESP8266HTTPClient.h>
+    
 #elif defined(ESP32)
     #include <HTTPClient.h>
 #endif
 
 #include "Blinker/BlinkerApiBase.h"
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     #include "Blinker/BlinkerTimer.h"
     #include "utility/BlinkerTimingTimer.h"
 #endif
@@ -66,7 +71,7 @@ class BlinkerApi
         int16_t ahrs(b_ahrsattitude_t attitude) { return ahrsValue[attitude]; }
         float gps(b_gps_t axis);
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             void setTimezone(float tz);
             float getTimezone() { return _timezone; }
             int8_t second();
@@ -101,7 +106,7 @@ class BlinkerApi
             bool timingState()      { return taskCount ? true : false; }
         #endif
 
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             template<typename T>
             bool configUpdate(const T& msg);
             String configGet();
@@ -149,6 +154,34 @@ class BlinkerApi
                 { _queryFunc = newFunction; }
             #endif
         #endif
+
+        #if defined(BLINKER_PRO)
+            void attachParse(blinker_callback_with_json_arg_t newFunction)
+            { _parseFunc = newFunction; }
+            void attachClick(blinker_callback_t newFunction)
+            { _clickFunc = newFunction; }
+            void attachDoubleClick(blinker_callback_t newFunction)
+            { _doubleClickFunc = newFunction; }
+            void attachLongPressStart(blinker_callback_t newFunction)
+            { _longPressStartFunc = newFunction; }
+            void attachLongPressStop(blinker_callback_t newFunction)
+            { _longPressStopFunc = newFunction; }
+            void attachDuringLongPress(blinker_callback_t newFunction)
+            { _duringLongPressFunc = newFunction; }
+            #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+                void attachLongPressPowerdown(blinker_callback_t newFunction)
+                { _powerdownFunc = newFunction; }
+                void attachLongPressReset(blinker_callback_t newFunction)
+                { _resetFunc = newFunction; }
+
+                uint16_t pressedTime();
+            #endif
+
+            void setType(const char* _type);
+            const char* type() { return _deviceType; }
+            void reset();
+            void tick();
+        #endif
         
         void attachHeartbeat(blinker_callback_t newFunction)
         { _heartbeatFunc = newFunction; }
@@ -186,7 +219,7 @@ class BlinkerApi
         class BlinkerWidgets_int32 *        _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
         class BlinkerWidgets_string *       _BUILTIN_SWITCH;
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             bool        _isNTPInit = false;
             float       _timezone = 8.0;
             uint32_t    _ntpStart;
@@ -203,7 +236,7 @@ class BlinkerApi
             class BlinkerTimingTimer *      timingTask[BLINKER_TIMING_TIMER_SIZE];
         #endif
 
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             uint8_t                         data_dataCount = 0;
             uint8_t                         _aCount = 0;
             uint8_t                         _bridgeCount = 0;
@@ -224,12 +257,16 @@ class BlinkerApi
         #endif
         // time_t      now_ntp;
         // struct tm   timeinfo;
+
+        #if defined(BLINKER_PRO)
+            void checkRegister(const JsonObject& data);
+        #endif
         
     protected :
         blinker_callback_t                  _heartbeatFunc = NULL;
         blinker_callback_return_string_t    _summaryFunc = NULL;
 
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             blinker_callback_with_string_arg_t  _powerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _setColorFunc = NULL;
             blinker_callback_with_string_arg_t  _setModeFunc = NULL;
@@ -275,7 +312,7 @@ class BlinkerApi
             void json_parse(char _data[]);
         #endif
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             void freshNTP();
             bool ntpInit();
             void ntpConfig();
@@ -304,7 +341,7 @@ class BlinkerApi
             bool checkAQI();
         #endif
 
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             void autoStart();
             bool autoManager(const JsonObject& data);
             
@@ -318,10 +355,158 @@ class BlinkerApi
             String bridgeQuery(char key[]);
         #endif
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             String postServer(const String & url, const String & host, int port, const String & msg);
             String getServer(const String & url, const String & host, int port);
             String blinkerServer(uint8_t _type, const String & msg, bool state = false);
+        #endif
+
+        #if defined(BLINKER_PRO)
+            const char* _deviceType;
+            BlinkerWlan Bwlan;
+
+            blinker_callback_with_json_arg_t    _parseFunc = NULL;
+
+            #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+                blinker_callback_t _powerdownFunc = NULL;
+                blinker_callback_t _resetFunc = NULL;
+            #endif
+            // OneButton   button1;
+
+            int _pin;        // hardware pin number.
+            int _debounceTicks; // number of ticks for debounce times.
+            int _clickTicks; // number of ticks that have to pass by before a click is detected
+            int _pressTicks; // number of ticks that have to pass by before a long button press is detected
+
+            int _buttonReleased;
+            int _buttonPressed;
+
+            bool _isLongPressed;
+
+            // These variables will hold functions acting as event source.
+            blinker_callback_t _clickFunc;
+            blinker_callback_t _doubleClickFunc;
+            blinker_callback_t _pressFunc;
+            blinker_callback_t _longPressStartFunc;
+            blinker_callback_t _longPressStopFunc;
+            blinker_callback_t _duringLongPressFunc;
+
+            // These variables that hold information across the upcoming tick calls.
+            // They are initialized once on program start and are updated every time the tick function is called.
+            int _state;
+            unsigned long _startTime; // will be set in state 1
+            unsigned long _stopTime; // will be set in state 2
+
+            bool wlanRun()
+            {
+                #if defined(BLINKER_BUTTON)
+                    tick();
+                #endif
+                return Bwlan.run();
+            }
+
+            uint8_t wlanStatus() { return Bwlan.status(); }
+
+            bool isPressed = false;
+
+            void _click() { BLINKER_LOG_ALL(BLINKER_F("Button click.")); } // click
+
+            void _doubleClick() { BLINKER_LOG_ALL(BLINKER_F("Button doubleclick.")); } // doubleclick1
+
+            void _longPressStart()
+            {
+                BLINKER_LOG_ALL(BLINKER_F("Button longPress start"));
+                // _longPressStartFunc();
+                isPressed = true;
+            } // longPressStart
+
+            void _longPress()
+            {
+                if (isPressed)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("Button longPress..."));                    
+                    isPressed = false;
+                }// _duringLongPressFunc();
+            } // longPress
+
+            void _longPressStop()
+            {
+                BLINKER_LOG_ALL(BLINKER_F("Button longPress stop"));
+                // _longPressStopFunc();
+                // Bwlan.deleteConfig();
+                // Bwlan.reset();
+                // ESP.restart();
+                // reset();
+
+                uint32_t _pressedTime = millis() - _startTime;
+                
+                BLINKER_LOG_ALL(BLINKER_F("_stopTime: "), millis(), BLINKER_F(" ,_startTime: "), _startTime);
+                BLINKER_LOG_ALL(BLINKER_F("long pressed time: "), _pressedTime);
+
+                #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+                    if (_pressedTime >= BLINKER_PRESSTIME_RESET) {
+                        if (_resetFunc) {
+                            _resetFunc();
+                        }
+
+                        reset();
+                    }
+                    else {
+                        BLINKER_LOG(BLINKER_F("BLINKER_PRESSTIME_POWERDOWN"));
+
+                        if (_powerdownFunc) {
+                            _powerdownFunc();
+                        }
+                    }
+                #else
+                    // if (_resetFunc) {
+                    //     _resetFunc();
+                    // }
+
+                    reset();
+                #endif
+            } // longPressStop
+
+            void buttonInit(int activeLow = true)
+            {
+                _pin = BLINKER_BUTTON_PIN;
+
+                _debounceTicks = 50;      // number of millisec that have to pass by before a click is assumed as safe.
+                _clickTicks = 600;        // number of millisec that have to pass by before a click is detected.
+                _pressTicks = 1000;       // number of millisec that have to pass by before a long button press is detected.
+
+                _state = 0; // starting with state 0: waiting for button to be pressed
+                _isLongPressed = false;  // Keep track of long press state
+
+                if (activeLow) {
+                    // the button connects the input pin to GND when pressed.
+                    _buttonReleased = HIGH; // notPressed
+                    _buttonPressed = LOW;
+
+                    // use the given pin as input and activate internal PULLUP resistor.
+                    pinMode( _pin, INPUT_PULLUP );
+
+                } else {
+                    // the button connects the input pin to VCC when pressed.
+                    _buttonReleased = LOW;
+                    _buttonPressed = HIGH;
+
+                    // use the given pin as input
+                    pinMode(_pin, INPUT);
+                } // if
+
+                _clickFunc = NULL;
+                _doubleClickFunc = NULL;
+                _pressFunc = NULL;
+                _longPressStartFunc = NULL;
+                _longPressStopFunc = NULL;
+                _duringLongPressFunc = NULL;
+
+                // attachInterrupt(BLINKER_BUTTON_PIN, checkButton, CHANGE);
+
+                BLINKER_LOG_ALL(BLINKER_F("Button initialled"));
+            }
+
         #endif
 };
 
@@ -344,7 +529,11 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
 
                 if (!root.success()) return;
 
-                #if defined(BLINKER_MQTT)
+                #if defined(BLINKER_PRO)
+                    checkRegister(root);
+                #endif
+
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     autoManager(root);
                     timerManager(root);
                 #endif
@@ -372,19 +561,19 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
             {
                 static_cast<Proto*>(this)->isParsed();
             }
-            // else
-            // {
-            //     #if defined(BLINKER_PRO)
-            //         if (_parseFunc) {
-            //             if(_parseFunc(root)) {
-            //                 _fresh = true;
-            //                 static_cast<Proto*>(this)->isParsed();
-            //             }
+            else
+            {
+                #if defined(BLINKER_PRO)
+                    if (_parseFunc) {
+                        if(_parseFunc(root)) {
+                            _fresh = true;
+                            static_cast<Proto*>(this)->isParsed();
+                        }
                         
-            //             BLINKER_LOG_ALL(BLINKER_F("run parse callback function"));
-            //         }
-            //     #endif
-            // }
+                        BLINKER_LOG_ALL(BLINKER_F("run parse callback function"));
+                    }
+                #endif
+            }
         }
         else
         {
@@ -410,6 +599,9 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                             JsonObject& _array = _jsonBuffer.parseObject(arrayData);
 
                             json_parse(_array);
+                            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                                timerManager(_array, true);
+                            #endif
                         }
                         else {
                             return;
@@ -430,7 +622,7 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
     }
 }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     template <class Proto>
     void BlinkerApi<Proto>::aliParse(const String & _data)
     {
@@ -647,7 +839,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     return gpsValue[axis]*1000000;
 }
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     template <class Proto>
     void BlinkerApi<Proto>::setTimezone(float tz)
     {
@@ -1051,7 +1243,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     }
 #endif
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     template <class Proto> template<typename T>
     bool BlinkerApi<Proto>::configUpdate(const T& msg)
     {
@@ -1423,6 +1615,155 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     // }
 #endif
 
+#if defined(BLINKER_PRO)
+    #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+        template <class Proto>
+        uint16_t BlinkerApi<Proto>::pressedTime()
+        {
+            uint32_t _pressedTime = millis() - _startTime;
+
+            if (_isLongPressed)
+            {
+                if (_pressedTime >= BLINKER_PRESSTIME_RESET) return BLINKER_PRESSTIME_RESET;
+                else return _pressedTime;
+            }
+            else {
+                return 0;
+            }
+        }
+    #endif
+
+    template <class Proto>
+    void BlinkerApi<Proto>::checkRegister(const JsonObject& data)
+    {
+        String _type = data[BLINKER_CMD_REGISTER];
+
+        if (_type.length() > 0)
+        {
+            if (_type == STRING_format(_deviceType))
+            {
+                static_cast<Proto*>(this)->_getRegister = true;
+                
+                BLINKER_LOG_ALL(BLINKER_F("getRegister!"));
+                
+                static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "success");
+            }
+            else
+            {
+                BLINKER_LOG_ALL(BLINKER_F("not getRegister!"));
+                
+                static_cast<Proto*>(this)->print(BLINKER_CMD_MESSAGE, "deviceType check fail");
+            }
+            static_cast<Proto*>(this)->printNow();
+        }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::setType(const char* _type)
+    {
+        _deviceType = _type;
+
+        Bwlan.setType(_type);
+        
+        BLINKER_LOG_ALL(BLINKER_F("API deviceType: "), _type);
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::reset()
+    {
+        BLINKER_LOG(BLINKER_F("Blinker reset..."));
+        char _authCheck = 0x00;
+        char _uuid[BLINKER_AUUID_SIZE] = {0};
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+        EEPROM.put(BLINKER_EEP_ADDR_AUUID, _uuid);
+        EEPROM.commit();
+        EEPROM.end();
+        Bwlan.deleteConfig();
+        Bwlan.reset();
+        ESP.restart();
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::tick()
+    {
+        // Detect the input information
+        int buttonLevel = digitalRead(_pin); // current button signal.
+        unsigned long now = millis(); // current (relative) time in msecs.
+
+        // Implementation of the state machine
+        if (_state == 0) { // waiting for menu pin being pressed.
+            if (buttonLevel == _buttonPressed) {
+                _state = 1; // step to state 1
+                _startTime = now; // remember starting time
+            } // if
+
+        } else if (_state == 1) { // waiting for menu pin being released.
+
+            if ((buttonLevel == _buttonReleased) && ((unsigned long)(now - _startTime) < _debounceTicks)) {
+                // button was released to quickly so I assume some debouncing.
+                // go back to state 0 without calling a function.
+                _state = 0;
+
+            } else if (buttonLevel == _buttonReleased) {
+                _state = 2; // step to state 2
+                _stopTime = now; // remember stopping time
+
+            } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _startTime) > _pressTicks)) {
+                _isLongPressed = true;  // Keep track of long press state
+                if (_pressFunc) _pressFunc();
+                _longPressStart();
+                if (_longPressStartFunc) _longPressStartFunc();
+                _longPress();
+                if (_duringLongPressFunc) _duringLongPressFunc();
+                _state = 6; // step to state 6
+
+            } else {
+            // wait. Stay in this state.
+            } // if
+
+        } else if (_state == 2) { // waiting for menu pin being pressed the second time or timeout.
+            // if (_doubleClickFunc == NULL || (unsigned long)(now - _startTime) > _clickTicks) {
+            if ((unsigned long)(now - _startTime) > _clickTicks) {
+                // this was only a single short click
+                _click();
+                if (_clickFunc) _clickFunc();
+                _state = 0; // restart.
+
+            } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _stopTime) > _debounceTicks)) {
+                _state = 3; // step to state 3
+                _startTime = now; // remember starting time
+            } // if
+
+        } else if (_state == 3) { // waiting for menu pin being released finally.
+            // Stay here for at least _debounceTicks because else we might end up in state 1 if the
+            // button bounces for too long.
+            if (buttonLevel == _buttonReleased && ((unsigned long)(now - _startTime) > _debounceTicks)) {
+                // this was a 2 click sequence.
+                _doubleClick();
+                if (_doubleClickFunc) _doubleClickFunc();
+                _state = 0; // restart.
+            } // if
+
+        } else if (_state == 6) { // waiting for menu pin being release after long press.
+            if (buttonLevel == _buttonReleased) {
+                _isLongPressed = false;  // Keep track of long press state
+                _longPressStop();
+                if(_longPressStopFunc) _longPressStopFunc();
+                _state = 0; // restart.
+            } else {
+                // button is being long pressed
+                _isLongPressed = true; // Keep track of long press state
+                _longPress();
+                if (_duringLongPressFunc) _duringLongPressFunc();
+            } // if
+
+        } // if
+
+        // BLINKER_LOG("_state: ", _state);
+    }
+#endif
+
 template <class Proto>
 void BlinkerApi<Proto>::freshAttachWidget(char _name[], blinker_callback_with_string_arg_t _func)
 {
@@ -1736,7 +2077,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         {
             if (state == BLINKER_CMD_VERSION)
             {
-                static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
+                static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, "0.1.0");
                 _fresh = true;
             }
         }
@@ -3519,7 +3860,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     template <class Proto>
     void BlinkerApi<Proto>::autoStart()
     {
@@ -3844,7 +4185,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     template <class Proto>
     String BlinkerApi<Proto>::postServer(const String & url, const String & host, int port, const String & msg)
     {
@@ -3927,7 +4268,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 break;
             case BLINKER_CMD_BRIDGE_NUMBER :
                 break;
-            #if defined(BLINKER_MQTT)
+            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                 case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                     if (!checkCUPDATE()) {
                         return BLINKER_CMD_FALSE;
@@ -3987,7 +4328,11 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
             #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                 #ifndef BLINKER_LAN_DEBUG
-                    extern BearSSL::WiFiClientSecure client_mqtt;
+                    #if defined(BLINKER_MQTT)
+                        extern BearSSL::WiFiClientSecure client_mqtt;
+                    #elif defined(BLINKER_PRO)
+                        extern BearSSL::WiFiClientSecure client_pro;
+                    #endif
                     BearSSL::WiFiClientSecure client_s;
                     // extern WiFiClientSecure client_mqtt;
                 #elif defined(BLINKER_LAN_DEBUG)
@@ -4005,6 +4350,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
             #if defined(BLINKER_MQTT)
                 client_mqtt.stop();
+            #elif defined(BLINKER_PRO)
+                client_pro.stop();
             #endif
 
             ::delay(100);
@@ -4067,7 +4414,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     url += msg;
                     client_s.print(getServer(url, host, httpsPort));
                     break;
-                #if defined(BLINKER_MQTT)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         url = BLINKER_F("/api/v1/user/device/userconfig");
                         client_s.print(postServer(url, host, httpsPort, msg));
@@ -4197,7 +4544,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     break;
                 case BLINKER_CMD_BRIDGE_NUMBER :
                     break;
-                #if defined(BLINKER_MQTT)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         _cUpdateTime = millis();
                         break;
@@ -4319,7 +4666,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     http.begin(url_iot);
                     httpCode = http.GET();
                     break;
-                #if defined(BLINKER_MQTT)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         url_iot = host;
                         url_iot += BLINKER_F("/api/v1/user/device/userconfig");
@@ -4446,7 +4793,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
-                        #if defined(BLINKER_MQTT)
+                        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
                             case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                                 _cUpdateTime = millis();
                                 break;

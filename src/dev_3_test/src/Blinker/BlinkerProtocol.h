@@ -9,6 +9,25 @@
     #include <WiFi.h>
 #endif
 
+#if defined(BLINKER_PRO)
+    enum BlinkerStatus
+    {
+        PRO_WLAN_CONNECTING,
+        PRO_WLAN_CONNECTED,
+        // PRO_WLAN_DISCONNECTED,
+        PRO_WLAN_SMARTCONFIG_BEGIN,
+        PRO_WLAN_SMARTCONFIG_DONE,
+        PRO_DEV_AUTHCHECK_FAIL,
+        PRO_DEV_AUTHCHECK_SUCCESS,
+        PRO_DEV_REGISTER_FAIL,
+        PRO_DEV_REGISTER_SUCCESS,
+        PRO_DEV_INIT_SUCCESS,
+        PRO_DEV_CONNECTING,
+        PRO_DEV_CONNECTED,
+        PRO_DEV_DISCONNECTED
+    };
+#endif
+
 template <class Transp>
 class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 {
@@ -109,7 +128,13 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         void run();
 
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_PRO)
+            bool init()                         { return _isInit; }
+            bool registered()                   { return conn.authCheck(); }
+            uint8_t status()                    { return _proStatus; }
+        #endif
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             void beginAuto();
             bool autoTrigged(uint32_t _id);
             // bool autoTrigged(char *name, char *type, char *data);
@@ -143,7 +168,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         // String bridgeRead();
         // String bridgeRead(const String & bKey);
 
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             void bridgePrint(char * bName, const String & data);
             void aligeniePrint(String & _msg);
         #endif
@@ -177,7 +202,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         char*               _sendBuf;
         blinker_callback_with_string_arg_t  _availableFunc = NULL;
         
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             bool                _isInit = false;
             bool                _isAuto = false;
             bool                _isAutoInit = false;
@@ -187,8 +212,18 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
             uint32_t            _refreshTime = 0;
         #endif
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             uint32_t            _reconTime = 0;
+        #endif
+
+        #if defined(BLINKER_PRO)
+            bool            _isConnBegin = false;
+            bool            _getRegister = false;
+            // bool            _isInit = false;
+            bool            _isRegistered = false;
+            uint32_t        _register_fresh = 0;
+            uint32_t        _initTime;
+            uint8_t         _proStatus = PRO_WLAN_CONNECTING;
         #endif
 
         // bool                isBridgeFresh = false;
@@ -199,10 +234,15 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         // char                _bSendBuf[BLINKER_MAX_SEND_BUFFER_SIZE];
         // String              _bridgeKey;
         // String              _bKey_forwhile;
-        
+                
         void _timerPrint(const String & n);
         void _print(char * n, bool needParse = true, bool needCheckLength = true);
         void begin();
+
+        #if defined(BLINKER_PRO)
+            bool beginPro() { return BApi::wlanRun(); }
+            void begin(const char* _type);
+        #endif
         
 };
 
@@ -525,7 +565,7 @@ void BlinkerProtocol<Transp>::flush()
     canParse = false; isAvail = false;
 }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     template <class Transp>
     void BlinkerProtocol<Transp>::beginAuto()
     {
@@ -934,7 +974,7 @@ void BlinkerProtocol<Transp>::flush()
 //     }
 // }
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
     template <class Transp>
     void BlinkerProtocol<Transp>::bridgePrint(char * bName, const String & data)
     {
@@ -1185,10 +1225,155 @@ void BlinkerProtocol<Transp>::begin()
     #endif
 }
 
+#if defined(BLINKER_PRO)
+    template <class Transp>
+    void BlinkerProtocol<Transp>::begin(const char* _type)
+    {
+        begin();
+
+        BLINKER_LOG(BLINKER_F(
+                    "\n==========================================================="
+                    "\n================= Blinker PRO mode init ! ================="
+                    "\nWarning! EEPROM address 1280-1535 is used for Auto Control!"
+                    "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
+                    "\n===========================================================\n"));
+
+        BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+
+        #if defined(BLINKER_BUTTON)
+            #if defined(BLINKER_BUTTON_PULLDOWN)
+                BApi::buttonInit(false);
+            #else
+                BApi::buttonInit();
+            #endif
+        #endif
+
+        BApi::setType(_type);
+    }
+#endif
+
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
-    #if defined(BLINKER_WIFI)
+    #if defined(BLINKER_PRO)
+
+        if (!BApi::wlanRun())
+        {
+            uint8_t wl_status = BApi::wlanStatus();
+            
+            if (wl_status == BWL_SMARTCONFIG_BEGIN) {
+                _proStatus = PRO_WLAN_SMARTCONFIG_BEGIN;
+            }
+            else if (wl_status == BWL_SMARTCONFIG_DONE) {
+                _proStatus = PRO_WLAN_SMARTCONFIG_DONE;
+            }
+            else {
+                _proStatus = PRO_WLAN_CONNECTING;
+            }
+            return;
+        }
+        else
+        {
+            if (!_isConnBegin)
+            {
+                _proStatus = PRO_WLAN_CONNECTED;
+
+                conn.begin(BApi::type());
+                _isConnBegin = true;
+                _initTime = millis();
+                
+                BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+
+                if (conn.authCheck())
+                {
+                    _proStatus = PRO_DEV_AUTHCHECK_SUCCESS;
+
+                    BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
+
+                    _isRegistered = conn.deviceRegister();
+                    _getRegister = true;
+
+                    if (!_isRegistered)
+                    {
+                        _register_fresh = millis();
+
+                        _proStatus = PRO_DEV_REGISTER_FAIL;
+                    }
+                    else
+                    {
+                        _proStatus = PRO_DEV_REGISTER_SUCCESS;
+                    }
+                }
+                else
+                {
+                    _proStatus = PRO_DEV_AUTHCHECK_FAIL;
+
+                    BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
+                }
+            }
+        }
+
+        if (_getRegister)
+        {
+            if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
+                _register_fresh == 0))
+            {
+                BLINKER_LOG_ALL(BLINKER_F("conn deviceRegister"));
+                
+                _isRegistered = conn.deviceRegister();
+
+                if (!_isRegistered)
+                {
+                    _register_fresh = millis();
+                    _proStatus = PRO_DEV_REGISTER_FAIL;
+                }
+                else
+                {
+                    _isRegistered = true;
+                    _proStatus = PRO_DEV_REGISTER_SUCCESS;
+                }
+            }
+        }
+        
+        if (!conn.init())
+        {
+            if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
+                !_getRegister)
+            {
+                BApi::reset();
+            }
+        }
+        else
+        {
+            if (!_isInit)
+            {
+                if (BApi::ntpInit())
+                {
+                    _isInit = true;
+                    // strcpy(_authKey, conn.authKey());
+                    // strcpy(_deviceName, conn.deviceName());
+                    _proStatus = PRO_DEV_INIT_SUCCESS;
+
+                    // BApi::loadOTA();
+                }
+            }
+            else
+            {
+                if (state == CONNECTING && _proStatus != PRO_DEV_CONNECTING) {
+                    _proStatus = PRO_DEV_CONNECTING;
+                }
+                else if (state == CONNECTED && _proStatus != PRO_DEV_CONNECTED) {
+                    if (conn.mConnected()) _proStatus = PRO_DEV_CONNECTED;
+                }
+                else if (state == DISCONNECTED && _proStatus != PRO_DEV_DISCONNECTED) {
+                    _proStatus = PRO_DEV_DISCONNECTED;
+                }
+            }
+        }
+
+    #endif
+
+    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO)
         BApi::ntpInit();
         BApi::checkTimer();
     #endif
@@ -1321,7 +1506,7 @@ void BlinkerProtocol<Transp>::run()
                     BApi::parse(dataParse());
                 }
 
-                #if defined(BLINKER_MQTT) && defined(BLINKER_ALIGENIE)
+                #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
                     if (checkAliAvail())
                     {
                         BApi::aliParse(conn.lastRead());
@@ -1375,7 +1560,7 @@ void BlinkerProtocol<Transp>::run()
             break;
     }
 
-    #if defined(BLINKER_MQTT)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
         if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
         {
             if (BApi::autoPull()) _isAutoInit = true;

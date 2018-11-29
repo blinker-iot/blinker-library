@@ -52,7 +52,8 @@ static void webSocketEvent(uint8_t num, WStype_t type, \
                             BLINKER_F(", length: "), length);
             
             if (length < BLINKER_MAX_READ_SIZE) {
-                if (!isFresh) msgBuf = (char*)malloc((length+1)*sizeof(char));
+                if (isFresh) free(msgBuf);
+                msgBuf = (char*)malloc((length+1)*sizeof(char));
                 strcpy(msgBuf, (char*)payload);
                 isAvail = true;
                 isFresh = true;
