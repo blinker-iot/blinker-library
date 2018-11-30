@@ -172,7 +172,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         // String bridgeRead();
         // String bridgeRead(const String & bKey);
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
             void bridgePrint(char * bName, const String & data);
             void aligeniePrint(String & _msg);
         #endif
@@ -267,6 +267,11 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         #if defined(BLINKER_PRO)
             bool beginPro() { return BApi::wlanRun(); }
             void begin(const char* _type);
+        #endif
+
+        #if defined(BLINKER_MQTT_AT)
+            void atInit(const char* _auth);
+            void atInit(const char* _auth, const char* _ssid, const char* _pswd);
         #endif
         
 };
@@ -1982,6 +1987,30 @@ void BlinkerProtocol<Transp>::begin()
     }
 #endif
 
+#if defined(BLINKER_MQTT_AT)
+    template <class Transp>
+    void BlinkerProtocol<Transp>::atInit(const char* _auth)
+    {
+        // strcpy(_authKey, _auth);
+
+        BApi::initCheck(STRING_format(_auth));
+    }
+
+    template <class Transp>
+    void BlinkerProtocol<Transp>::atInit(const char* _auth,
+                const char* _ssid,
+                const char* _pswd)
+    {
+        // strcpy(_authKey, _auth);
+
+        String init_data =  STRING_format(_auth) + "," + \
+                            STRING_format(_ssid) + "," + \
+                            STRING_format(_pswd);
+
+        BApi::initCheck(init_data);
+    }
+#endif
+
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
@@ -2084,7 +2113,7 @@ void BlinkerProtocol<Transp>::run()
                     // strcpy(_deviceName, conn.deviceName());
                     _proStatus = PRO_DEV_INIT_SUCCESS;
 
-                    // BApi::loadOTA();
+                    BApi::loadOTA();
                 }
             }
             else
@@ -2118,7 +2147,7 @@ void BlinkerProtocol<Transp>::run()
                 _isInit =true;
                 _disconnectTime = millis();
 
-                // BApi::loadOTA();
+                BApi::loadOTA();
                 
                 BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
             }

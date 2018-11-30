@@ -1,5 +1,5 @@
-#ifndef BLINKER_SERIAL_H
-#define BLINKER_SERIAL_H
+#ifndef BLINKER_SERIAL_MQTT_H
+#define BLINKER_SERIAL_MQTT_H
 
 #if ARDUINO >= 100
     #include <Arduino.h>
@@ -7,7 +7,7 @@
     #include <WProgram.h>
 #endif
 
-// #include "Adapters/BlinkerSerial.h"
+// #include "Adapters/BlinkerSerialMQTT.h"
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
 #include "utility/BlinkerUtility.h"
@@ -15,25 +15,26 @@
 #if defined(ESP32)
     #include <HardwareSerial.h>
 
-    HardwareSerial *HSerialBLE;
+    HardwareSerial *HSerialMQTT;
 #else
     #include <SoftwareSerial.h>
 
-    SoftwareSerial *SSerialBLE;
+    SoftwareSerial *SSerialMQTT;
 #endif
 
-class BlinkerSerial
+class BlinkerSerialMQTT
 {
     public :
-        BlinkerSerial()
+        BlinkerSerialMQTT()
             : stream(NULL), isConnect(false)
         {}
 
         bool available();
-        void begin(Stream& s, bool state);
         int timedRead();
+        void begin(Stream& s, bool state);
         char * lastRead() { return isFresh ? streamData : NULL; }
         void flush();
+        bool aliPrint(String s);
         bool print(const String & s, bool needCheck = true);
         bool connect()      { isConnect = true; return connected(); }
         bool connected()    { return isConnect; }
@@ -42,7 +43,7 @@ class BlinkerSerial
     protected :
         Stream* stream;
         char*   streamData;
-        bool    isFresh;
+        bool    isFresh = false;
         bool    isConnect;
         bool    isHWS = false;
         uint8_t respTimes = 0;
@@ -51,14 +52,14 @@ class BlinkerSerial
         bool checkPrintSpan();
 };
 
-bool BlinkerSerial::available()
+bool BlinkerSerialMQTT::available()
 {
     if (!isHWS)
     {
         #if defined(__AVR__) || defined(ESP8266)
-            if (!SSerialBLE->isListening())
+            if (!SSerialMQTT->isListening())
             {
-                SSerialBLE->listen();
+                SSerialMQTT->listen();
                 ::delay(100);
             }
         #endif
@@ -113,14 +114,14 @@ bool BlinkerSerial::available()
     }
 }
 
-void BlinkerSerial::begin(Stream& s, bool state)
+void BlinkerSerialMQTT::begin(Stream& s, bool state)
 {
     stream = &s;
     stream->setTimeout(BLINKER_STREAM_TIMEOUT);
     isHWS = state;
 }
 
-int BlinkerSerial::timedRead()
+int BlinkerSerialMQTT::timedRead()
 {
     int c;
     uint32_t _startMillis = millis();
@@ -131,7 +132,7 @@ int BlinkerSerial::timedRead()
     return -1; 
 }
 
-void BlinkerSerial::flush()
+void BlinkerSerialMQTT::flush()
 {
     if (isFresh)
     {
@@ -139,7 +140,34 @@ void BlinkerSerial::flush()
     }
 }
 
-bool BlinkerSerial::print(const String & s, bool needCheck)
+bool BlinkerSerialMQTT::aliPrint(String s)
+{
+    if (!checkPrintSpan()) {
+        respTime = millis();
+        return false;
+    }
+
+    s = s.substring(0, s.length() - 1) + \
+            ",\"deviceType\":\"vAssistant\"}";
+
+    respTime = millis();
+    
+    BLINKER_LOG_ALL(BLINKER_F("AliGenie Response: "), s);
+    
+    if(connected()) {
+        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        
+        stream->println(s);
+        return true;
+    }
+    else {
+        BLINKER_LOG_ALL(BLINKER_F("Faile... Disconnected"));
+        
+        return false;
+    }
+}
+
+bool BlinkerSerialMQTT::print(const String & s, bool needCheck)
 {
     if (needCheck)
     {
@@ -169,7 +197,7 @@ bool BlinkerSerial::print(const String & s, bool needCheck)
     }
 }
 
-bool BlinkerSerial::checkPrintSpan()
+bool BlinkerSerialMQTT::checkPrintSpan()
 {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT)
     {
@@ -191,11 +219,5 @@ bool BlinkerSerial::checkPrintSpan()
         return true;
     }
 }
-
-// #if defined(ESP32)
-//     extern HardwareSerial *HSerialBLE;
-// #else
-//     extern SoftwareSerial *SSerialBLE;
-// #endif
 
 #endif

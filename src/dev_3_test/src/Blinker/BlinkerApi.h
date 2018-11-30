@@ -34,6 +34,12 @@
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     #include "Blinker/BlinkerTimer.h"
     #include "utility/BlinkerTimingTimer.h"
+    #include "utility/BlinkerOTA.h"
+#endif
+
+#if defined(BLINKER_MQTT_AT)
+    #include "Blinker/BlinkerATMASTER.h"
+    #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 
 enum b_joystickaxis_t {
@@ -133,27 +139,33 @@ class BlinkerApi
             char * bridgeName(uint8_t num);
             void bridgeInit();
 
-            #if defined(BLINKER_ALIGENIE)
-                void attachSetPowerState(blinker_callback_with_string_arg_t newFunction)
-                { _powerStateFunc = newFunction; }
-                void attachSetColor(blinker_callback_with_string_arg_t newFunction)
-                { _setColorFunc = newFunction; }
-                void attachSetMode(blinker_callback_with_string_arg_t newFunction)
-                { _setModeFunc = newFunction; }
-                void attachSetcMode(blinker_callback_with_string_arg_t newFunction)
-                { _setcModeFunc = newFunction; }
-                void attachSetBrightness(blinker_callback_with_string_arg_t newFunction)
-                { _setBrightnessFunc = newFunction; }
-                void attachRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
-                { _setRelativeBrightnessFunc = newFunction; }
-                void attachSetColorTemperature(blinker_callback_with_int32_arg_t newFunction)
-                { _setColorTemperature = newFunction; }
-                void attachRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
-                { _setRelativeColorTemperature = newFunction; }
-                void attachQuery(blinker_callback_with_int32_arg_t newFunction)
-                { _queryFunc = newFunction; }
-            #endif
+            void loadOTA();
+            void ota();
+            String checkOTA();
         #endif
+
+        #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT)) && defined(BLINKER_ALIGENIE)
+            void attachSetPowerState(blinker_callback_with_string_arg_t newFunction)
+            { _powerStateFunc = newFunction; }
+            void attachSetColor(blinker_callback_with_string_arg_t newFunction)
+            { _setColorFunc = newFunction; }
+            void attachSetMode(blinker_callback_with_string_arg_t newFunction)
+            { _setModeFunc = newFunction; }
+            void attachSetcMode(blinker_callback_with_string_arg_t newFunction)
+            { _setcModeFunc = newFunction; }
+            void attachSetBrightness(blinker_callback_with_string_arg_t newFunction)
+            { _setBrightnessFunc = newFunction; }
+            void attachRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
+            { _setRelativeBrightnessFunc = newFunction; }
+            void attachSetColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+            { _setColorTemperature = newFunction; }
+            void attachRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+            { _setRelativeColorTemperature = newFunction; }
+            void attachQuery(blinker_callback_with_int32_arg_t newFunction)
+            { _queryFunc = newFunction; }
+        #endif
+        // #endif
 
         #if defined(BLINKER_PRO)
             void attachParse(blinker_callback_with_json_arg_t newFunction)
@@ -181,6 +193,12 @@ class BlinkerApi
             const char* type() { return _deviceType; }
             void reset();
             void tick();
+        #endif
+
+        #if defined(BLINKER_MQTT_AT)
+            // class BlinkerMasterAT *         _masterAT;
+            // void atRespOK(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
+            void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
         #endif
         
         void attachHeartbeat(blinker_callback_t newFunction)
@@ -254,9 +272,17 @@ class BlinkerApi
             uint32_t                        _dGetTime = 0;
             uint32_t                        _dDelTime = 0;
             uint32_t                        _autoPullTime = 0;
+
+            BlinkerOTA                      _OTA;
         #endif
         // time_t      now_ntp;
         // struct tm   timeinfo;
+
+        #if defined(BLINKER_MQTT_AT)
+            class BlinkerMasterAT *         _masterAT;
+            void atRespOK(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
+            // void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
+        #endif
 
         #if defined(BLINKER_PRO)
             void checkRegister(const JsonObject& data);
@@ -266,7 +292,7 @@ class BlinkerApi
         blinker_callback_t                  _heartbeatFunc = NULL;
         blinker_callback_return_string_t    _summaryFunc = NULL;
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
             blinker_callback_with_string_arg_t  _powerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _setColorFunc = NULL;
             blinker_callback_with_string_arg_t  _setModeFunc = NULL;
@@ -527,7 +553,13 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                 DynamicJsonBuffer jsonBuffer;
                 JsonObject& root = jsonBuffer.parseObject(STRING_format(_data));
 
-                if (!root.success()) return;
+                if (!root.success()) 
+                {
+                    #if defined(BLINKER_MQTT_AT)
+                        atResp();
+                    #endif
+                    return;
+                }
 
                 #if defined(BLINKER_PRO)
                     checkRegister(root);
@@ -622,7 +654,7 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
     }
 }
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)// || defined(BLINKER_MQTT_AT)
     template <class Proto>
     void BlinkerApi<Proto>::aliParse(const String & _data)
     {
@@ -727,6 +759,92 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                 String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
 
                 if (_setcModeFunc) _setcModeFunc(setcMode);
+            }
+        }
+    }
+#endif
+
+#if defined(BLINKER_MQTT_AT)
+    template <class Proto>
+    void BlinkerApi<Proto>:: aliParse(const String & _data)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("AliGenie parse data: "), _data);
+
+        if (STRING_contains_string(_data, "vAssistant"))
+        {
+            String value = "";
+            if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
+            {
+                if (value == BLINKER_CMD_STATE) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                }
+                else if (value == BLINKER_CMD_POWERSTATE) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                }
+                else if (value == BLINKER_CMD_COLOR) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
+                }
+                else if (value == BLINKER_CMD_COLORTEMP) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLORTEMP_NUMBER);
+                }
+                else if (value == BLINKER_CMD_BRIGHTNESS) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
+                }
+                else if (value == BLINKER_CMD_TEMP) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
+                }
+                else if (value == BLINKER_CMD_HUMI) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
+                }
+                else if (value == BLINKER_CMD_PM25) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
+                }
+                else if (value == BLINKER_CMD_MODE) {
+                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
+                }
+            }
+            else if (STRING_contains_string(_data, BLINKER_CMD_SET))
+            {
+                if (STRING_find_string_value(_data, value, BLINKER_CMD_POWERSTATE))
+                {
+                    if (_powerStateFunc) _powerStateFunc(value);
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLOR))
+                {
+                    if (_setColorFunc) _setColorFunc(value);
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_BRIGHTNESS))
+                {
+                    if (_setBrightnessFunc) _setBrightnessFunc(value);
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPBRIGHTNESS))
+                {
+                    if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNBRIGHTNESS))
+                {
+                    if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(- value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLORTEMP))
+                {
+                    if (_setColorTemperature) _setColorTemperature(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPCOLORTEMP))
+                {
+                    if (_setRelativeColorTemperature) _setRelativeColorTemperature(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNCOLORTEMP))
+                {
+                    if (_setRelativeColorTemperature) _setRelativeColorTemperature(- value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_MODE))
+                {
+                    if (_setModeFunc) _setModeFunc(value);
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_CANCELMODE))
+                {
+                    if (_setcModeFunc) _setcModeFunc(value);
+                }
             }
         }
     }
@@ -1575,6 +1693,53 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         }
     }
 
+    template <class Proto>
+    void BlinkerApi<Proto>::loadOTA()
+    {
+        if (_OTA.loadOTACheck())
+        {
+            if (!_OTA.loadVersion())
+            {
+                _OTA.saveVersion();
+            }
+        }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::ota()
+    {
+        String otaData = checkOTA();
+
+        if (otaData != BLINKER_CMD_FALSE)
+        {
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& otaJson = jsonBuffer.parseObject(otaData);
+
+            if (!otaJson.success())
+            {
+                BLINKER_ERR_LOG_ALL("check ota data error");
+                return;
+            }
+
+            String otaHost = otaJson["host"];
+            String otaUrl = otaJson["url"];
+            String otaFp = otaJson["fingerprint"];
+
+            _OTA.config(otaHost, otaUrl, otaFp);
+
+            _OTA.update();
+        }
+    }
+
+    template <class Proto>
+    String BlinkerApi<Proto>::checkOTA()
+    {
+        String data = "/ota/upgrade?deviceName=" + \
+            STRING_format(static_cast<Proto*>(this)->conn.deviceName());
+
+        return blinkerServer(BLINKER_CMD_OTA_NUMBER, data);
+    }
+
     // template <class Proto>
     // bool BlinkerApi<Proto>::bridge(char _name[])
     // {
@@ -1613,6 +1778,106 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     //         return false;
     //     }
     // }
+#endif
+
+#if defined(BLINKER_MQTT_AT)
+    template <class Proto>
+    void BlinkerApi<Proto>::atRespOK(const String & _data, uint32_t timeout)
+    {
+        bool _isAlive = false;
+        uint32_t _now_time = millis();
+        while (!_isAlive) {
+            static_cast<Proto*>(this)->_print(_data);
+            // _now_time = millis();
+
+            while((millis() - _now_time) < timeout)
+            {
+                static_cast<Proto*>(this)->run();
+
+                if (static_cast<Proto*>(this)->available())
+                {
+                    if (strcmp((static_cast<Proto*>(this)->dataParse()), BLINKER_CMD_OK) == 0)
+                    {
+                        _isAlive = true;
+                    }
+
+                    BLINKER_LOG(BLINKER_F("dataParse: "), static_cast<Proto*>(this)->dataParse());
+                    BLINKER_LOG(BLINKER_F("strlen: "), strlen(static_cast<Proto*>(this)->dataParse()));
+                    BLINKER_LOG(BLINKER_F("strlen: "), strlen(BLINKER_CMD_OK));
+                    static_cast<Proto*>(this)->flush();
+                }
+                // ::delay(10);
+            }
+
+            _now_time += timeout;
+        }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::initCheck(const String & _data, uint32_t timeout)
+    {
+        static_cast<Proto*>(this)->connect();
+
+        atRespOK(BLINKER_CMD_AT);
+
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=1"));
+        #elif defined(BLINKER_ALIGENIE_OUTLET)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=2"));
+        #elif defined(BLINKER_ALIGENIE_SENSOR)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=3"));
+        #endif
+
+        String cmd_start = BLINKER_CMD_AT + STRING_format("+") + \
+                        BLINKER_CMD_BLINKER_MQTT + STRING_format("=");
+
+        #if defined(BLINKER_ESP_SMARTCONFIG)
+            cmd_start += "1,";
+        #elif defined(BLINKER_APCONFIG)
+            cmd_start += "2,";
+        #else
+            cmd_start += "0,";
+        #endif
+
+        ::delay(100);
+
+        static_cast<Proto*>(this)->_print(cmd_start + _data);
+
+        bool _isInit = false;
+        while (!_isInit) {
+            static_cast<Proto*>(this)->run();
+
+            if (static_cast<Proto*>(this)->available())
+            {
+                // if (!_masterAT) {
+                _masterAT = new BlinkerMasterAT();
+
+                _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
+                // }
+                // else {
+                //     _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
+                // }
+
+                BLINKER_LOG_ALL(BLINKER_F("getState: "), _masterAT->getState());
+                BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
+                BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
+
+                BLINKER_LOG_FreeHeap();
+
+                if (_masterAT->reqName() == BLINKER_CMD_BLINKER_MQTT && 
+                    _masterAT->paramNum() == 2)
+                {
+                    _isInit = true;
+                    BLINKER_LOG_ALL("ESP AT init");
+                }
+
+                free(_masterAT);
+            }
+        }
+    }
 #endif
 
 #if defined(BLINKER_PRO)
@@ -4524,7 +4789,10 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 else
                 {
                     // String _dataGet_ = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
-                    _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
+                    if (_type == BLINKER_CMD_OTA_NUMBER)
+                        _dataGet = data_rp[BLINKER_CMD_DETAIL].as<String>();
+                    else
+                        _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
                 }
             }
 

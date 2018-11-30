@@ -1,16 +1,17 @@
 // #define BLINKER_ESP_SMARTCONFIG
 // #define BLINKER_WIFI
 #define BLINKER_MQTT
-// #define BLINKER_PRO
 // #define BLINKER_BLE
 // #define BLINKER_ALIGENIE_OUTLET
 #include "Blinker4.h"
 
+
+
 #define BLINKER_PRINT Serial
 
 char auth[] = "bc5a991c7ec4";
-char ssid[] = "有没有wifi";
-char pswd[] = "i8888888";
+char ssid[] = "mostfun";
+char pswd[] = "18038083873";
 // bool oState = false;
 
 // void aligeniePowerState(const String & state)
@@ -62,7 +63,17 @@ void tests(const String & data)
 {
     BLINKER_LOG("get data: ", data);
     BLINKER_LOG_FreeHeap();
+
+    // Blinker.ota();
 }
+
+// #include "Blinker/BlinkerDebug.h"
+// #include "BlinkerESPMQTT.h"
+
+// BlinkerMQTT  _blinkerTransport;
+// BlinkerESPMQTT      Blinker(_blinkerTransport);
+
+// #include "BlinkerWidgets.h"
 
 void setup()
 {
@@ -89,33 +100,3 @@ void loop()
 {
     Blinker.run();
 }
-
-// #define BLINKER_PRINT Serial
-// #define BLINKER_PRO
-// // #define BLINKER_BUTTON
-// // #define BLINKER_BUTTON_PIN D7
-
-// #include <Blinker4.h>
-
-
-// void setup()
-// {
-//     Serial.begin(115200);
-
-//     pinMode(LED_BUILTIN, OUTPUT);
-//     digitalWrite(LED_BUILTIN, LOW);
-
-//     #if defined(BLINKER_PRINT)
-//     BLINKER_DEBUG.stream(BLINKER_PRINT);
-//     #endif
-//     BLINKER_DEBUG.debugAll();
-//     BLINKER_DEBUG.freeheap();
-
-//     Blinker.begin(BLINKER_AIR_DETECTOR);
-
-// }
-
-// void loop()
-// {
-//     Blinker.run();
-// }

@@ -97,7 +97,18 @@
         #include "BlinkerESPMQTT.h"
 
         static BlinkerMQTT  _blinkerTransport;
-        BlinkerESPMQTT      Blinker(_blinkerTransport);        
+        BlinkerESPMQTT      Blinker(_blinkerTransport);     
+    #else
+        #define BLINKER_ESP_AT
+
+        #define BLINKER_MQTT_AT
+
+        #undef BLINKER_MQTT
+
+        #include "BlinkerSerialESPMQTT.h"
+
+        static BlinkerSerialMQTT    _blinkerTransport;
+        BlinkerSerialESPMQTT        Blinker(_blinkerTransport);  
     #endif
 
 #elif defined(BLINKER_PRO)
