@@ -151,6 +151,7 @@ attachColorTemperature	KEYWORD2
 attachRelativeColorTemperature	KEYWORD2
 attachQuery	KEYWORD2
 attachSummary	KEYWORD2
+attachData	KEYWORD2
 STRING_format	KEYWORD2
 powerState	KEYWORD2
 colorTemp	KEYWORD2
