@@ -38,27 +38,35 @@ BlinkerNumber Number1("num-abc");
 
 int counter = 0;
 
-void button1_callback(const String & state) {
+void button1_callback(const String & state)
+{
     BLINKER_LOG("get button state: ", state);
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
+void dataRead(const String & data)
+{
+    BLINKER_LOG("Blinker readString: ", data);
+    counter++;
+    Number1.print(counter);
+}
+
 void setup() {
     Serial.begin(115200);
+
+    #if defined(BLINKER_PRINT)
+        BLINKER_DEBUG.stream(BLINKER_PRINT);
+    #endif
     
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
     
     Blinker.begin(ssid, pswd);
+    Blinker.attachData(dataRead);
+    
     Button1.attach(button1_callback);
 }
 
 void loop() {
     Blinker.run();
-    
-    if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
-        counter++;
-        Number1.print(counter);
-    }
 }

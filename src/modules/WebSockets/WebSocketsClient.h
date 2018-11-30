@@ -25,9 +25,9 @@
 #ifndef WEBSOCKETSCLIENT_H_
 #define WEBSOCKETSCLIENT_H_
 
-#include "WebSockets.h"
-
 #if defined(ESP8266) || defined(ESP32)
+
+#include "WebSockets.h"
 
 class WebSocketsClient: private WebSockets {
     public:
@@ -43,6 +43,7 @@ class WebSocketsClient: private WebSockets {
 
         void begin(const char *host, uint16_t port, const char * url = "/", const char * protocol = "arduino");
         void begin(String host, uint16_t port, String url = "/", String protocol = "arduino");
+        void begin(IPAddress host, uint16_t port, const char * url = "/", const char * protocol = "arduino");
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266) || (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP32)
         void beginSSL(const char *host, uint16_t port, const char * url = "/", const char * = "", const char * protocol = "arduino");

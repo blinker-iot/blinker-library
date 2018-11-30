@@ -1,5 +1,5 @@
-#ifndef BlinkerJoystick_H
-#define BlinkerJoystick_H
+#ifndef BLINKER_JOYSTICK_H
+#define BLINKER_JOYSTICK_H
 
 #include "Blinker/BlinkerConfig.h"
 #include "utility/BlinkerUtility.h"
@@ -7,18 +7,13 @@
 class BlinkerJoystick
 {
     public :
-        BlinkerJoystick(char _name[], callback_with_joy_arg_t _func = NULL)
+        BlinkerJoystick(char _name[], blinker_callback_with_joy_arg_t _func = NULL)
             // : jName(_name)
         {
             wNum = Blinker.attachWidget(_name, _func);
-
-            // wNum ? (registered = true) : (registered = false);
-
-            // jName = (char*)malloc((_name.length()+1)*sizeof(char));
-            // strcpy(jName, _name.c_str());
         }
         
-        void attach(callback_with_joy_arg_t _func)
+        void attach(blinker_callback_with_joy_arg_t _func)
         {
             if (wNum == 0) {
                 return;
@@ -28,10 +23,7 @@ class BlinkerJoystick
         }
     
     private :
-        // String jName;
-        // char * jName;
         uint8_t wNum;
-        // bool registered = false;
 };
 
 #endif

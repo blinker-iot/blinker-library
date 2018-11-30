@@ -43,14 +43,33 @@ void rgb1_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t br
     BLINKER_LOG("Rrightness value: ", bright_value);
 }
 
+void dataRead(const String & data)
+{
+    BLINKER_LOG("Blinker readString: ", data);
+
+    Blinker.vibrate();
+    
+    uint32_t BlinkerTime = millis();
+    Blinker.print(BlinkerTime);
+    Blinker.print("millis", BlinkerTime);
+
+    RGB1.brightness(random(0, 255));
+    RGB1.print(random(0, 255), random(0, 255), random(0, 255));
+}
+
 void setup()
 {
     Serial.begin(115200);
+
+    #if defined(BLINKER_PRINT)
+        BLINKER_DEBUG.stream(BLINKER_PRINT);
+    #endif
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin();
+    Blinker.attachData(dataRead);
 
     RGB1.attach(rgb1_callback);
 }
@@ -58,17 +77,4 @@ void setup()
 void loop()
 {
     Blinker.run();
-
-    if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
-
-        Blinker.vibrate();
-        
-        uint32_t BlinkerTime = millis();
-        Blinker.print(BlinkerTime);
-        Blinker.print("millis", BlinkerTime);
-
-        RGB1.brightness(random(0, 255));
-        RGB1.print(random(0, 255), random(0, 255), random(0, 255));
-    }
 }

@@ -1,5 +1,9 @@
-#ifndef BlinkerWidgets_H
-#define BlinkerWidgets_H
+#ifndef BLINKER_WIDGETS_H
+#define BLINKER_WIDGETS_H
+
+#if defined(BLINKER_MQTT)
+    #include "utility/BlinkerBridge.h"
+#endif
 
 #include "utility/BlinkerButton.h"
 #include "utility/BlinkerJoystick.h"
@@ -12,13 +16,15 @@
 #if defined(BLINKER_ALIGENIE)
     #include "utility/BlinkerAliGenie.h"
 
-    BLINKERALIGENIE BlinkerAliGenie;
+    BLINKERALIGENIE BlinkerAliGenie;    
 #endif
 
 #if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \
     defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_NBIOT)
+
     BlinkerSwitch BUILTIN_SWITCH;
+
 #endif
 
 #endif
