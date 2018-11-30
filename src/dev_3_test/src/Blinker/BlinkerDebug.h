@@ -25,7 +25,8 @@ class BlinkerDebug
 
     public :
         BlinkerDebug()
-            : debug_level(_debug_none)
+            : isInit(false)
+            , debug_level(_debug_none)
         {}
 
         // BlinkerDebug(Stream& s, blinker_debug_level_t level = _debug_default)
@@ -39,8 +40,8 @@ class BlinkerDebug
         void time();
         void freeheap();
 
-        bool isDebug()      { return debug_level != _debug_none; }
-        bool isDebugAll()   { return debug_level == _debug_all;}
+        bool isDebug()      { return isInit ? debug_level != _debug_none : false; }
+        bool isDebugAll()   { return isInit ? debug_level == _debug_all : false;}
 
         template <typename T>
         void print(T arg)   { debugger->print(arg); }
@@ -50,6 +51,7 @@ class BlinkerDebug
         void println()      { debugger->println(); }
 
     private :
+        bool    isInit;
         Stream* debugger;
         blinker_debug_level_t debug_level;
 

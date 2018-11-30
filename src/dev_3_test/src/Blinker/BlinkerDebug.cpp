@@ -43,6 +43,7 @@ BlinkerDebug BLINKER_DEBUG;
 
 void BlinkerDebug::stream(Stream& s, blinker_debug_level_t level)
 {
+    isInit = true;
     debugger = &s;
     debug_level = level;
 }
