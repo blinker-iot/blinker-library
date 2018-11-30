@@ -2338,7 +2338,7 @@ uint8_t BlinkerApi<Proto>::attachWidget(char _name[], blinker_callback_with_stri
 
     if (num == BLINKER_OBJECT_NOT_AVAIL)
     {
-        if (_wCount_str < BLINKER_MAX_WIDGET_SIZE)
+        if (_wCount_str < BLINKER_MAX_WIDGET_SIZE*2)
         {
             _Widgets_str[_wCount_str] = new BlinkerWidgets_string(_name, _func);
             _wCount_str++;
@@ -2370,7 +2370,7 @@ uint8_t BlinkerApi<Proto>::attachWidget(char _name[], blinker_callback_with_joy_
     int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
     if (num == BLINKER_OBJECT_NOT_AVAIL)
     {
-        if (_wCount_joy < BLINKER_MAX_WIDGET_SIZE)
+        if (_wCount_joy < BLINKER_MAX_WIDGET_SIZE/2)
         {
             _Widgets_joy[_wCount_joy] = new BlinkerWidgets_joy(_name, _func);
             _wCount_joy++;
@@ -2403,7 +2403,7 @@ uint8_t BlinkerApi<Proto>::attachWidget(char _name[], blinker_callback_with_rgb_
     int8_t num = checkNum(_name, _Widgets_rgb, _wCount_rgb);
     if (num == BLINKER_OBJECT_NOT_AVAIL)
     {
-        if (_wCount_rgb < BLINKER_MAX_WIDGET_SIZE)
+        if (_wCount_rgb < BLINKER_MAX_WIDGET_SIZE/2)
         {
             _Widgets_rgb[_wCount_rgb] = new BlinkerWidgets_rgb(_name, _func);
             _wCount_rgb++;
@@ -2437,7 +2437,7 @@ uint8_t BlinkerApi<Proto>::attachWidget(char _name[], blinker_callback_with_int3
     int8_t num = checkNum(_name, _Widgets_int, _wCount_int);
     if (num == BLINKER_OBJECT_NOT_AVAIL)
     {
-        if (_wCount_int < BLINKER_MAX_WIDGET_SIZE)
+        if (_wCount_int < BLINKER_MAX_WIDGET_SIZE*2)
         {
             _Widgets_int[_wCount_int] = new BlinkerWidgets_int32(_name, _func);
             _wCount_int++;
@@ -2946,7 +2946,9 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     template <class Proto>
     void BlinkerApi<Proto>::json_parse(char _data[])
     {
-        setSwitch(_data);
+        setSwitch(_data);        
+
+        BLINKER_LOG_ALL("====_wCount_str: ", _wCount_str, " ====");
 
         for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
             strWidgetsParse(_Widgets_str[wNum]->getName(), _data);
