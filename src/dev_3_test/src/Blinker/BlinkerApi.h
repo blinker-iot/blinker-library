@@ -7,7 +7,7 @@
     #include <Ticker.h>
     #include <EEPROM.h>
 
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         #include "Blinker/BlinkerAuto.h"
     #endif
 
@@ -31,7 +31,7 @@
 
 #include "Blinker/BlinkerApiBase.h"
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     #include "Blinker/BlinkerTimer.h"
     #include "utility/BlinkerTimingTimer.h"
 #endif
@@ -71,7 +71,7 @@ class BlinkerApi
         int16_t ahrs(b_ahrsattitude_t attitude) { return ahrsValue[attitude]; }
         float gps(b_gps_t axis);
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             void setTimezone(float tz);
             float getTimezone() { return _timezone; }
             int8_t second();
@@ -106,7 +106,7 @@ class BlinkerApi
             bool timingState()      { return taskCount ? true : false; }
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             template<typename T>
             bool configUpdate(const T& msg);
             String configGet();
@@ -219,7 +219,7 @@ class BlinkerApi
         class BlinkerWidgets_int32 *        _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
         class BlinkerWidgets_string *       _BUILTIN_SWITCH;
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             bool        _isNTPInit = false;
             float       _timezone = 8.0;
             uint32_t    _ntpStart;
@@ -233,10 +233,10 @@ class BlinkerApi
             char                            _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
             char                            _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
             char                            _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
-            class BlinkerTimingTimer *      timingTask[BLINKER_TIMING_TIMER_SIZE];
+            class BlinkerTimingTimer *      timingTask[2];
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             uint8_t                         data_dataCount = 0;
             uint8_t                         _aCount = 0;
             uint8_t                         _bridgeCount = 0;
@@ -266,7 +266,7 @@ class BlinkerApi
         blinker_callback_t                  _heartbeatFunc = NULL;
         blinker_callback_return_string_t    _summaryFunc = NULL;
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             blinker_callback_with_string_arg_t  _powerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _setColorFunc = NULL;
             blinker_callback_with_string_arg_t  _setModeFunc = NULL;
@@ -312,7 +312,7 @@ class BlinkerApi
             void json_parse(char _data[]);
         #endif
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             void freshNTP();
             bool ntpInit();
             void ntpConfig();
@@ -341,7 +341,7 @@ class BlinkerApi
             bool checkAQI();
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             void autoStart();
             bool autoManager(const JsonObject& data);
             
@@ -355,7 +355,7 @@ class BlinkerApi
             String bridgeQuery(char key[]);
         #endif
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             String postServer(const String & url, const String & host, int port, const String & msg);
             String getServer(const String & url, const String & host, int port);
             String blinkerServer(uint8_t _type, const String & msg, bool state = false);
@@ -533,7 +533,7 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                     checkRegister(root);
                 #endif
 
-                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     autoManager(root);
                     timerManager(root);
                 #endif
@@ -622,7 +622,7 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
     }
 }
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     template <class Proto>
     void BlinkerApi<Proto>::aliParse(const String & _data)
     {
@@ -1243,7 +1243,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     }
 #endif
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     template <class Proto> template<typename T>
     bool BlinkerApi<Proto>::configUpdate(const T& msg)
     {
@@ -2424,7 +2424,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     template <class Proto>
     void BlinkerApi<Proto>:: freshNTP()
     {
@@ -2496,7 +2496,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             
             _isNTPInit = true;
 
-            #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+            #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                 loadTiming();
             #endif
         }
@@ -3860,7 +3860,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     template <class Proto>
     void BlinkerApi<Proto>::autoStart()
     {
@@ -4185,7 +4185,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     template <class Proto>
     String BlinkerApi<Proto>::postServer(const String & url, const String & host, int port, const String & msg)
     {
@@ -4268,7 +4268,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 break;
             case BLINKER_CMD_BRIDGE_NUMBER :
                 break;
-            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                 case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                     if (!checkCUPDATE()) {
                         return BLINKER_CMD_FALSE;
@@ -4332,6 +4332,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                         extern BearSSL::WiFiClientSecure client_mqtt;
                     #elif defined(BLINKER_PRO)
                         extern BearSSL::WiFiClientSecure client_pro;
+                    #elif defined(BLINKER_AT_MQTT)
+                        extern BearSSL::WiFiClientSecure client_mqtt_at;
                     #endif
                     BearSSL::WiFiClientSecure client_s;
                     // extern WiFiClientSecure client_mqtt;
@@ -4352,6 +4354,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 client_mqtt.stop();
             #elif defined(BLINKER_PRO)
                 client_pro.stop();
+            #elif defined(BLINKER_AT_MQTT)
+                client_mqtt_at.stop();
             #endif
 
             ::delay(100);
@@ -4414,7 +4418,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     url += msg;
                     client_s.print(getServer(url, host, httpsPort));
                     break;
-                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         url = BLINKER_F("/api/v1/user/device/userconfig");
                         client_s.print(postServer(url, host, httpsPort, msg));
@@ -4544,7 +4548,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     break;
                 case BLINKER_CMD_BRIDGE_NUMBER :
                     break;
-                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         _cUpdateTime = millis();
                         break;
@@ -4666,7 +4670,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     http.begin(url_iot);
                     httpCode = http.GET();
                     break;
-                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         url_iot = host;
                         url_iot += BLINKER_F("/api/v1/user/device/userconfig");
@@ -4793,7 +4797,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
-                        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+                        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                             case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                                 _cUpdateTime = millis();
                                 break;

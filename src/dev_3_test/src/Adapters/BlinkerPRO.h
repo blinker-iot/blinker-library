@@ -87,11 +87,11 @@ class BlinkerPRO {
 #if defined(ESP8266)
     extern BearSSL::WiFiClientSecure   client_pro;
     // WiFiClientSecure            client_mqtt;
-// #elif defined(ESP32)
-//     extern WiFiClientSecure            client_s;
+#elif defined(ESP32)
+    extern WiFiClientSecure            client_s_PRO;
 #endif
 
-// extern WiFiClient              client;
+extern WiFiClient              client_PRO;
 
 #endif
 

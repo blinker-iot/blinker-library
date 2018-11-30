@@ -125,6 +125,20 @@
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
+#elif defined(BLINKER_AT_MQTT)
+
+    #define BLINKER_ESP_AT
+
+    #if defined(ESP8266) || defined(ESP32)
+        #include "Blinker/BlinkerDebug.h"
+        #include "BlinkerESPMQTTAT.h"
+
+        static BlinkerMQTTAT    _blinkerTransport;
+        BlinkerESPMQTTAT        Blinker(_blinkerTransport); 
+    #else
+        #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
+    #endif
+
 #endif
 
 #include "BlinkerWidgets.h"

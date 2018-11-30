@@ -42,6 +42,14 @@ extern "C" {
     // typedef void (*callback_with_bool_arg_t)(bool state);
 }
 
+// enum blinker_at_aligenie_t
+// {
+//     ALI_NONE,
+//     ALI_LIGHT,
+//     ALI_OUTLET,
+//     ALI_SENSOR
+// };
+
 template<class T>
 String STRING_format(T p) { return String(p); }
 

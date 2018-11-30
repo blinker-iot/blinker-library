@@ -1,7 +1,7 @@
 // #define BLINKER_ESP_SMARTCONFIG
 // #define BLINKER_WIFI
-// #define BLINKER_MQTT
-#define BLINKER_PRO
+#define BLINKER_MQTT
+// #define BLINKER_PRO
 // #define BLINKER_BLE
 // #define BLINKER_ALIGENIE_OUTLET
 #include "Blinker4.h"
@@ -9,8 +9,8 @@
 #define BLINKER_PRINT Serial
 
 char auth[] = "bc5a991c7ec4";
-char ssid[] = "mostfun";
-char pswd[] = "18038083873";
+char ssid[] = "有没有wifi";
+char pswd[] = "i8888888";
 // bool oState = false;
 
 // void aligeniePowerState(const String & state)
@@ -74,8 +74,8 @@ void setup()
     BLINKER_DEBUG.debugAll();
     BLINKER_DEBUG.freeheap();
 
-    // Blinker.begin(auth, ssid, pswd);
-    Blinker.begin();
+    Blinker.begin(auth, ssid, pswd);
+    // Blinker.begin();
 
     Blinker.attachData(tests);
 

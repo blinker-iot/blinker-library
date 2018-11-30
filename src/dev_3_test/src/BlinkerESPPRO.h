@@ -7,8 +7,6 @@
     #define BLINKER_ARDUINOJSON
 #endif
 
-#define BLINKER_PRO
-
 #include "Adapters/BlinkerPRO.h"
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerProtocol.h"
@@ -22,12 +20,7 @@ class BlinkerESPPRO : public BlinkerProtocol<BlinkerPRO>
             : Base(transp)
         {}
 
-        void begin(const char* _type = BLINKER_AIR_DETECTOR)
-        {
-            Base::begin(_type);
-            Base::loadTimer();
-            BLINKER_LOG(BLINKER_F("ESP8266_PRO initialized..."));
-        }
+        void begin(const char* _type = BLINKER_AIR_DETECTOR);
 };
 
 #endif
