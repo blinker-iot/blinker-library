@@ -60,7 +60,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         bool connect(uint32_t timeout = BLINKER_STREAM_TIMEOUT);
         bool connected()    { return state == CONNECTED; }
         void disconnect()   { conn.disconnect(); state = DISCONNECTED; }
-        // bool available()    { if (availState) {availState = false; return true;} else return false; }
+        bool available()    { if (availState) {availState = false; return true;} else return false; }
         // String readString();
         void attachData(blinker_callback_with_string_arg_t newFunction)
         { _availableFunc = newFunction; }
@@ -1997,9 +1997,7 @@ void BlinkerProtocol<Transp>::begin()
     }
 
     template <class Transp>
-    void BlinkerProtocol<Transp>::atInit(const char* _auth,
-                const char* _ssid,
-                const char* _pswd)
+    void BlinkerProtocol<Transp>::atInit(const char* _auth, const char* _ssid, const char* _pswd)
     {
         // strcpy(_authKey, _auth);
 

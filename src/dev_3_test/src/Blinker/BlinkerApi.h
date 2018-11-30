@@ -145,7 +145,7 @@ class BlinkerApi
         #endif
 
         #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT)) && defined(BLINKER_ALIGENIE)
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT)) && defined(BLINKER_ALIGENIE)
             void attachSetPowerState(blinker_callback_with_string_arg_t newFunction)
             { _powerStateFunc = newFunction; }
             void attachSetColor(blinker_callback_with_string_arg_t newFunction)
@@ -199,6 +199,32 @@ class BlinkerApi
             // class BlinkerMasterAT *         _masterAT;
             // void atRespOK(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
             void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
+            void atResp();
+            void parseATdata();
+            int analogRead();
+            void pinMode(uint8_t pin, uint8_t mode);
+            void digitalWrite(uint8_t pin, uint8_t val);
+            int digitalRead(uint8_t pin);
+            void setTimezone(float tz);
+            float getTimezone();
+            int32_t atGetInt(const String & cmd);
+            template<typename T>
+            String atGetString(const String & cmd, const T& msg);
+            time_t time()   { return atGetInt(BLINKER_CMD_TIME_AT); }
+            // time_t dtime()   { return atGetInt(BLINKER_CMD_D); }
+            int8_t second() { return atGetInt(BLINKER_CMD_SECOND); }
+            int8_t minute() { return atGetInt(BLINKER_CMD_MINUTE); }
+            int8_t hour()   { return atGetInt(BLINKER_CMD_HOUR); }
+            int8_t mday()   { return atGetInt(BLINKER_CMD_MDAY); }
+            int8_t wday()   { return atGetInt(BLINKER_CMD_WDAY); }
+            int8_t month()  { return atGetInt(BLINKER_CMD_MONTH); }
+            int16_t year()  { return atGetInt(BLINKER_CMD_YEAR); }
+            int16_t yday()  { return atGetInt(BLINKER_CMD_YDAY); }
+            String weather(const String & _city = BLINKER_CMD_DEFAULT);
+            String aqi(const String & _city = BLINKER_CMD_DEFAULT);
+            template<typename T>
+            bool sms(const T& msg);
+            void reset();
         #endif
         
         void attachHeartbeat(blinker_callback_t newFunction)
@@ -1787,7 +1813,8 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         bool _isAlive = false;
         uint32_t _now_time = millis();
         while (!_isAlive) {
-            static_cast<Proto*>(this)->_print(_data);
+            static_cast<Proto*>(this)->print(_data);
+            static_cast<Proto*>(this)->printNow();
             // _now_time = millis();
 
             while((millis() - _now_time) < timeout)
@@ -1842,9 +1869,12 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             cmd_start += "0,";
         #endif
 
+        cmd_start += _data;
+
         ::delay(100);
 
-        static_cast<Proto*>(this)->_print(cmd_start + _data);
+        static_cast<Proto*>(this)->print(cmd_start);//cmd_start + _data);
+        static_cast<Proto*>(this)->printNow();
 
         bool _isInit = false;
         while (!_isInit) {
@@ -1877,6 +1907,250 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
                 free(_masterAT);
             }
         }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::atResp()
+    {
+        if (strcmp(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_OK) == 0 ||
+            strcmp(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_ERROR) == 0)
+        {
+            _fresh = true;
+            // static_cast<Proto*>(this)->flushAll();
+        }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::parseATdata()
+    {
+        uint32_t at_start = millis();
+        while (!static_cast<Proto*>(this)->available())
+        {
+            static_cast<Proto*>(this)->run();
+            if (millis() - at_start > BLINKER_AT_MSG_TIMEOUT) break;
+        }
+
+        _masterAT = new BlinkerMasterAT();
+        _masterAT->update(STRING_format(static_cast<Proto*>(this)->dataParse()));
+
+        BLINKER_LOG_ALL(BLINKER_F("getState: "), _masterAT->getState());
+        BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
+        BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
+
+        static_cast<Proto*>(this)->flush();
+    }
+
+    template <class Proto>
+    int BlinkerApi<Proto>::analogRead()
+    {
+        static_cast<Proto*>(this)->print(BLINKER_CMD_AT + STRING_format("+") + \
+                                        BLINKER_CMD_ADC + "?");
+        static_cast<Proto*>(this)->printNow();
+
+        parseATdata();
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == BLINKER_CMD_ADC) {              
+
+            int a_read = _masterAT->getParam(0).toInt();
+            free(_masterAT);
+
+            return a_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 0;
+        }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::pinMode(uint8_t pin, uint8_t mode)
+    {
+        String pin_data = BLINKER_CMD_AT + STRING_format("+") + \
+                            BLINKER_CMD_IOSETCFG + "=" + \
+                            STRING_format(pin) + ",";
+        switch (mode)
+        {
+            case INPUT :
+                pin_data += "0,0";
+                break;
+            case OUTPUT :
+                pin_data += "1,0";
+            break;
+            case INPUT_PULLUP :
+                pin_data += "0,1";
+                break;
+#if defined(ESP8266)
+            case INPUT_PULLDOWN_16 :
+                pin_data += "0,2";
+                break;
+#elif defined(ESP32)
+            case INPUT_PULLDOWN :
+                pin_data += "0,2";
+                break;
+#endif
+            default :
+                pin_data += "0,0";
+                break;
+        }
+
+        // parseATdata();
+        // free(_masterAT);
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::digitalWrite(uint8_t pin, uint8_t val)
+    {
+        static_cast<Proto*>(this)->print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            BLINKER_CMD_GPIOWRITE + "=" + \
+                                            STRING_format(pin) + "," + \
+                                            STRING_format(val ? 0 : 1));
+
+        static_cast<Proto*>(this)->printNow();
+
+        // parseATdata();
+    }
+
+    template <class Proto>
+    int BlinkerApi<Proto>::digitalRead(uint8_t pin)
+    {
+        static_cast<Proto*>(this)->print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            BLINKER_CMD_GPIOWREAD + "=" + \
+                                            STRING_format(pin));
+
+        static_cast<Proto*>(this)->printNow();
+
+        parseATdata();
+        // free(_masterAT);
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == BLINKER_CMD_GPIOWREAD) {              
+
+            int d_read = _masterAT->getParam(2).toInt();
+            free(_masterAT);
+
+            return d_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 0;
+        }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::setTimezone(float tz)
+    {
+        static_cast<Proto*>(this)->print(BLINKER_CMD_AT + STRING_format("+") + \
+                                            BLINKER_CMD_TIMEZONE + "=" + \
+                                            STRING_format(tz));
+
+        static_cast<Proto*>(this)->printNow();
+    }
+
+    template <class Proto>
+    float BlinkerApi<Proto>::getTimezone()
+    {
+        static_cast<Proto*>(this)->print(BLINKER_CMD_AT + STRING_format("+") + \
+                                        BLINKER_CMD_TIMEZONE + "?");
+
+        static_cast<Proto*>(this)->printNow();
+
+        parseATdata();
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == BLINKER_CMD_TIMEZONE) {
+            
+            float tz_read = _masterAT->getParam(0).toFloat();
+            free(_masterAT);
+
+            return tz_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 8.0;
+        }
+    }
+
+    template <class Proto>
+    int32_t BlinkerApi<Proto>::atGetInt(const String & cmd)
+    {
+        static_cast<Proto*>(this)->print(BLINKER_CMD_AT + STRING_format("+") + \
+                                        cmd + "?");
+
+        static_cast<Proto*>(this)->printNow();
+
+        parseATdata();
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == cmd) {
+            
+            int32_t at_read = _masterAT->getParam(0).toInt();
+            free(_masterAT);
+
+            return at_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 0;
+        }
+    }
+
+    
+    template <class Proto> template<typename T>
+    String BlinkerApi<Proto>::atGetString(const String & cmd, const T& msg)
+    {
+        static_cast<Proto*>(this)->print(BLINKER_CMD_AT + STRING_format("+") + \
+                                        cmd + "=" + STRING_format(msg));
+
+        static_cast<Proto*>(this)->printNow();
+
+        parseATdata();
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == cmd) {
+            
+            String at_read = _masterAT->getParam(0);
+            free(_masterAT);
+
+            return at_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 0;
+        }
+    }
+
+    template <class Proto>
+    String BlinkerApi<Proto>::weather(const String & _city = BLINKER_CMD_DEFAULT)
+    {
+        return atGetString(BLINKER_CMD_WEATHER_AT, _city);
+    }
+
+    template <class Proto>
+    String BlinkerApi<Proto>::aqi(const String & _city = BLINKER_CMD_DEFAULT)
+    {
+        return atGetString(BLINKER_CMD_AQI_AT, _city);
+    }
+
+    
+    template <class Proto> template<typename T>
+    bool BlinkerApi<Proto>::sms(const T& msg)
+    {
+        return atGetString(BLINKER_CMD_SMS_AT, msg);
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::reset()
+    {
+        static_cast<Proto*>(this)->print(BLINKER_CMD_AT + STRING_format("+") + \
+                                        BLINKER_CMD_RST);
+
+        static_cast<Proto*>(this)->printNow();
     }
 #endif
 
