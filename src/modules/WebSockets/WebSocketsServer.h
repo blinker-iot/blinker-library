@@ -25,11 +25,13 @@
 #ifndef WEBSOCKETSSERVER_H_
 #define WEBSOCKETSSERVER_H_
 
-#include "WebSockets.h"
-
 #if defined(ESP8266) || defined(ESP32)
 
+#include "WebSockets.h"
+
+#ifndef WEBSOCKETS_SERVER_CLIENT_MAX
 #define WEBSOCKETS_SERVER_CLIENT_MAX  (5)
+#endif
 
 
 
@@ -49,6 +51,7 @@ public:
         virtual ~WebSocketsServer(void);
 
         void begin(void);
+        void close(void);
 
 #if (WEBSOCKETS_NETWORK_TYPE != NETWORK_ESP8266_ASYNC)
         void loop(void);
@@ -94,6 +97,8 @@ public:
         void setAuthorization(const char * user, const char * password);
         void setAuthorization(const char * auth);
 
+        int connectedClients(bool ping = false);
+
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266) || (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266_ASYNC) || (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP32)
         IPAddress remoteIP(uint8_t num);
 #endif
@@ -112,6 +117,8 @@ protected:
 
         WebSocketServerEvent _cbEvent;
         WebSocketServerHttpHeaderValFunc _httpHeaderValidationFunc;
+
+        bool _runnning;
 
         bool newClient(WEBSOCKETS_NETWORK_CLASS * TCPclient);
 
@@ -201,6 +208,7 @@ private:
         bool hasMandatoryHeader(String headerName);
 
 };
+
 
 #endif
 

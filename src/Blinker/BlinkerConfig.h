@@ -1,9 +1,10 @@
 #ifndef BlinkerConfig_H
 #define BlinkerConfig_H
 
-#include "utility/BlinkerDebug.h"
+// #include "utility/BlinkerDebug.h"
+// #include "utility/BlinkerUtility.h"
 
-#define BLINKER_VERSION                 "0.2.3"
+#define BLINKER_VERSION                 "0.2.4"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
@@ -64,7 +65,7 @@
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else
-    #define BLINKER_MAX_WIDGET_SIZE         4
+    #define BLINKER_MAX_WIDGET_SIZE         6
 #endif
 
 #define BLINKER_OBJECT_NOT_AVAIL        -1
@@ -84,7 +85,7 @@
 #ifndef BLINKER_MAX_SEND_SIZE
     #if defined(ESP8266) || defined(ESP32)
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
-            #define BLINKER_MAX_SEND_SIZE       1024
+            #define BLINKER_MAX_SEND_SIZE       512
         #else
             #define BLINKER_MAX_SEND_SIZE       512
         #endif
@@ -401,11 +402,17 @@
 
 #define BLINKER_CMD_QUERY_PM25_NUMBER           8
 
-#define BLINKER_JOYSTICK_VALUE_DEFAULT  128
+#define BLINKER_JOYSTICK_VALUE_DEFAULT          128
 
-#define BLINKER_ONE_HOUR_TIME           3600UL
+#define BLINKER_ONE_HOUR_TIME                   3600UL
 
-#define BLINKER_ONE_DAY_TIME            86400UL
+#define BLINKER_ONE_DAY_TIME                    86400UL
+
+// #define BLINKER_NTP_SERVER_1                    "ntp1.aliyun.com"
+
+// #define BLINKER_NTP_SERVER_2                    "210.72.145.44"
+
+// #define BLINKER_NTP_SERVER_3                    "time.pool.aliyun.com"
 
 #ifndef BLINKER_MAX_BRIDGE_SIZE
     #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
@@ -1154,7 +1161,7 @@
         #define BLINKER_PRO_VERSION             "1.0.0"
     #endif
 
-    #define BLINKER_OTA_VERSION_CODE        B00000001
+    // #define BLINKER_OTA_VERSION_CODE        B00000001
 
     #define BLINKER_OTA_START               B01010011
 

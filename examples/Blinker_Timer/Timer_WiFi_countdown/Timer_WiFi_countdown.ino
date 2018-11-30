@@ -56,7 +56,7 @@ void loop()
     Blinker.run();
 
     if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
+        BLINKER_LOG("Blinker readString: ", data);
 
         Blinker.vibrate();
         

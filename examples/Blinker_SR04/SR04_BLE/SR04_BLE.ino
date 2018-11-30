@@ -38,6 +38,10 @@ void setup()
 {
     Serial.begin(115200);
 
+    #if defined(BLINKER_PRINT)
+        BLINKER_DEBUG.stream(BLINKER_PRINT);
+    #endif
+
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
     
@@ -47,16 +51,6 @@ void setup()
 void loop()
 {
     Blinker.run();
-
-    if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
-
-        Blinker.vibrate();
-        
-        uint32_t BlinkerTime = millis();
-        Blinker.print(BlinkerTime);
-        Blinker.print("millis", BlinkerTime);
-    }
 
     BLINKER_LOG("SR04: ", SR04.cm(), " cm");
 

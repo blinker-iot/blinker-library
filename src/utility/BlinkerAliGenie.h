@@ -9,47 +9,47 @@ class BLINKERALIGENIE
     public :
         BLINKERALIGENIE() {}
 
-        void attachPowerState(callback_with_string_arg_t newFunction)
+        void attachPowerState(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachSetPowerState(newFunction);
         }
 
-        void attachColor(callback_with_string_arg_t newFunction)
+        void attachColor(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachSetColor(newFunction);
         }
 
-        void attachMode(callback_with_string_arg_t newFunction)
+        void attachMode(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachSetMode(newFunction);
         }
 
-        void attachCancelMode(callback_with_string_arg_t newFunction)
+        void attachCancelMode(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachSetcMode(newFunction);
         }
 
-        void attachBrightness(callback_with_string_arg_t newFunction)
+        void attachBrightness(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachSetBrightness(newFunction);
         }
 
-        void attachRelativeBrightness(callback_with_int32_arg_t newFunction)
+        void attachRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
         {
             Blinker.attachRelativeBrightness(newFunction);
         }
 
-        void attachColorTemperature(callback_with_int32_arg_t newFunction)
+        void attachColorTemperature(blinker_callback_with_int32_arg_t newFunction)
         {
             Blinker.attachSetColorTemperature(newFunction);
         }
 
-        void attachRelativeColorTemperature(callback_with_int32_arg_t newFunction)
+        void attachRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
         {
             Blinker.attachRelativeColorTemperature(newFunction);
         }
 
-        void attachQuery(callback_with_int32_arg_t newFunction)
+        void attachQuery(blinker_callback_with_int32_arg_t newFunction)
         {
             Blinker.attachQuery(newFunction);
         }

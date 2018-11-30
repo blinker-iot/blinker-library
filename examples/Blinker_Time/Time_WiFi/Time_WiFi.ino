@@ -33,40 +33,47 @@
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
+void dataRead(const String & data)
+{
+    BLINKER_LOG("Blinker readString: ", data);
+
+    Blinker.vibrate();
+    
+    uint32_t BlinkerTime = millis();
+    Blinker.print(BlinkerTime);
+    Blinker.print("millis", BlinkerTime);
+
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+
+    BLINKER_LOG("Now second: ", Blinker.second());
+    BLINKER_LOG("Now minute: ", Blinker.minute());
+    BLINKER_LOG("Now hour: ", Blinker.hour());
+    BLINKER_LOG("Now wday: ", Blinker.wday());
+    BLINKER_LOG("Now month: ", Blinker.month());
+    BLINKER_LOG("Now mday: ", Blinker.mday());
+    BLINKER_LOG("Now year: ", Blinker.year());
+    BLINKER_LOG("Now yday: ", Blinker.yday());
+    BLINKER_LOG("Now ntp time: ", Blinker.time());
+}
+
 void setup()
 {
     Serial.begin(115200);
+
+    #if defined(BLINKER_PRINT)
+        BLINKER_DEBUG.stream(BLINKER_PRINT);
+    #endif
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
+    Blinker.attachData(dataRead);
+
     Blinker.setTimezone(8.0);
 }
 
 void loop()
 {
     Blinker.run();
-
-    if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
-
-        Blinker.vibrate();
-        
-        uint32_t BlinkerTime = millis();
-        Blinker.print(BlinkerTime);
-        Blinker.print("millis", BlinkerTime);
-
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-
-        BLINKER_LOG("Now second: ", Blinker.second());
-        BLINKER_LOG("Now minute: ", Blinker.minute());
-        BLINKER_LOG("Now hour: ", Blinker.hour());
-        BLINKER_LOG("Now wday: ", Blinker.wday());
-        BLINKER_LOG("Now month: ", Blinker.month());
-        BLINKER_LOG("Now mday: ", Blinker.mday());
-        BLINKER_LOG("Now year: ", Blinker.year());
-        BLINKER_LOG("Now yday: ", Blinker.yday());
-        BLINKER_LOG("Now ntp time: ", Blinker.time());
-    }
 }

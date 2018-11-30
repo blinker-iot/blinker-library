@@ -8,18 +8,20 @@ class BlinkerSwitch
 {
     public :
         BlinkerSwitch()
-            : sName(BLINKER_CMD_BUILTIN_SWITCH)
+            // : sName(BLINKER_CMD_BUILTIN_SWITCH)
         {}
         
-        void attach(callback_with_string_arg_t _func) {
+        void attach(blinker_callback_with_string_arg_t _func)
+        {
             Blinker.attachSwitch(_func);
         }
-        void print(const String & _state) {
-            Blinker.print(sName, _state);
+        void print(const String & _state)
+        {
+            Blinker.print(BLINKER_CMD_BUILTIN_SWITCH, _state);
         }
     
     private :
-        String sName;
+        // String sName;
 };
 
 #endif

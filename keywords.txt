@@ -9,6 +9,7 @@ BlinkerNumber	KEYWORD1
 BlinkerTEXT	KEYWORD1
 BlinkerJoystick	KEYWORD1
 BUILTIN_SWITCH	KEYWORD1
+BLINKER_DEBUG	KEYWORD1
 BlinkerTimer	KEYWORD1
 
 BlinkerAliGenie	KEYWORD1
@@ -150,6 +151,7 @@ attachColorTemperature	KEYWORD2
 attachRelativeColorTemperature	KEYWORD2
 attachQuery	KEYWORD2
 attachSummary	KEYWORD2
+attachData	KEYWORD2
 STRING_format	KEYWORD2
 powerState	KEYWORD2
 colorTemp	KEYWORD2
@@ -157,6 +159,9 @@ temp	KEYWORD2
 humi	KEYWORD2
 pm25	KEYWORD2
 mode	KEYWORD2
+
+stream	KEYWORD2
+debugAll	KEYWORD2
 
 #######################################
 # Literals (LITERAL1)

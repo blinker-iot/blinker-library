@@ -1,5 +1,5 @@
-#ifndef Blinker_H
-#define Blinker_H
+#ifndef BLINKER_H
+#define BLINKER_H
 
 #if defined(BLINKER_BLE)
 
@@ -10,22 +10,32 @@
     #endif
 
     #if defined(ESP32)
-        #include "BlinkerESP32_BLE.h"
+        #include "Blinker/BlinkerDebug.h"
+        #include "BlinkerESP32BLE.h"
+
+        static BlinkerBLE       _blinkerTransport;
+        BlinkerESP32BLE         Blinker(_blinkerTransport);
     #else
+        #include "Blinker/BlinkerDebug.h"
         #include "BlinkerSerialBLE.h"
+
+        static BlinkerSerial    _blinkerTransport;
+        BlinkerSerialBLE        Blinker(_blinkerTransport);
     #endif
 
 #elif defined(BLINKER_WIFI)
 
-    #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) \
-    ||  defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
+    #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) || \
+        defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
         #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
     #endif
 
-    #if defined(ESP8266)
-        #include "BlinkerESP8266_WS.h"
-    #elif defined(ESP32)
-        #include "BlinkerESP32_WS.h"
+    #if defined(ESP8266) || defined(ESP32)
+        #include "Blinker/BlinkerDebug.h"
+        #include "BlinkerESPWiFi.h"
+
+        static BlinkerWiFi  _blinkerTransport;
+        BlinkerESPWiFi      Blinker(_blinkerTransport);
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
@@ -82,10 +92,12 @@
         #define BLINKER_ALIGENIE
     #endif
 
-    #if defined(ESP8266)
-        #include "BlinkerESP8266_MQTT.h"
-    #elif defined(ESP32)
-        #include "BlinkerESP32_MQTT.h"
+    #if defined(ESP8266) || defined(ESP32)
+        #include "Blinker/BlinkerDebug.h"
+        #include "BlinkerESPMQTT.h"
+
+        static BlinkerMQTT  _blinkerTransport;
+        BlinkerESPMQTT      Blinker(_blinkerTransport);     
     #else
         #define BLINKER_ESP_AT
 
@@ -93,8 +105,10 @@
 
         #undef BLINKER_MQTT
 
-        #include "BlinkerSerialESP.h"
-        // #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
+        #include "BlinkerSerialESPMQTT.h"
+
+        static BlinkerSerialMQTT    _blinkerTransport;
+        BlinkerSerialESPMQTT        Blinker(_blinkerTransport);  
     #endif
 
 #elif defined(BLINKER_PRO)
@@ -112,45 +126,32 @@
         #endif
     #endif
 
-    #if defined(ESP8266)
-        #include "BlinkerESP8266_PRO.h"
-    #elif defined(ESP32)
-        #include "BlinkerESP32_PRO.h"
+    #if defined(ESP8266) || defined(ESP32)
+        #include "Blinker/BlinkerDebug.h"
+        #include "BlinkerESPPRO.h"
+
+        static BlinkerPRO   _blinkerTransport;
+        BlinkerESPPRO       Blinker(_blinkerTransport); 
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
-#elif defined(BLINKER_NBIOT)
-    #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) \
-    ||  defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
-        #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
-    
-    #endif
-
-    #ifndef BLINKER_NB73
-        #define BLINKER_NB73
-    #endif
-    
-    #include "BlinkerSerialNBIOT.h"
-    
 #elif defined(BLINKER_AT_MQTT)
 
     #define BLINKER_ESP_AT
 
     #if defined(ESP8266) || defined(ESP32)
-        #include "BlinkerESPAT_MQTT.h"
+        #include "Blinker/BlinkerDebug.h"
+        #include "BlinkerESPMQTTAT.h"
+
+        static BlinkerMQTTAT    _blinkerTransport;
+        BlinkerESPMQTTAT        Blinker(_blinkerTransport); 
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
-// #elif defined(BLINKER_MQTT_AT)
-
-//     #define BLINKER_ESP_AT
-
-//     #include <BlinkerSerialESP.h>
-
-// #else
-//     #error Please setting connect mode ahead! Here provided BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT mode!
 #endif
+
+#include "BlinkerWidgets.h"
 
 #endif

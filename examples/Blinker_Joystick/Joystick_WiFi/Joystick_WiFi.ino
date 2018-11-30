@@ -43,14 +43,30 @@ void joystick1_callback(uint8_t xAxis, uint8_t yAxis)
     BLINKER_LOG("Joystick1 Y axis: ", yAxis);
 }
 
+void dataRead(const String & data)
+{
+    BLINKER_LOG("Blinker readString: ", data);
+
+    Blinker.vibrate();
+    
+    uint32_t BlinkerTime = millis();
+    Blinker.print(BlinkerTime);
+    Blinker.print("millis", BlinkerTime);
+}
+
 void setup()
 {
     Serial.begin(115200);
+
+    #if defined(BLINKER_PRINT)
+        BLINKER_DEBUG.stream(BLINKER_PRINT);
+    #endif
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(ssid, pswd);
+    Blinker.attachData(dataRead);
 
     JOY1.attach(joystick1_callback);
 }
@@ -58,14 +74,4 @@ void setup()
 void loop()
 {
     Blinker.run();
-
-    if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
-
-        Blinker.vibrate();
-        
-        uint32_t BlinkerTime = millis();
-        Blinker.print(BlinkerTime);
-        Blinker.print("millis", BlinkerTime);
-    }
 }
