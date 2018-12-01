@@ -2651,8 +2651,12 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     {
         int8_t num = checkNum(_bName, _Bridge, _bridgeCount);
 
-        if (num == BLINKER_OBJECT_NOT_AVAIL) return;
-
+        if (num == BLINKER_OBJECT_NOT_AVAIL ||
+            !data.containsKey(BLINKER_CMD_FROMDEVICE))
+        {
+            return;
+        }
+        
         String _name = data[BLINKER_CMD_FROMDEVICE];
 
         // if (data.containsKey(_bName))
