@@ -166,6 +166,8 @@
 
 #define BLINKER_CMD_BUILTIN_SWITCH      "switch"
 
+#define BLINKER_CMD_FROMDEVICE          "fromDevice"
+
 #define BLINKER_CMD_NOTFOUND            "device not found"
 
 #define BLINKER_CMD_COMMAND             "cmd"
