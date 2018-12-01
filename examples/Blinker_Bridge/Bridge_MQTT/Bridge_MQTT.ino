@@ -25,54 +25,39 @@
 //  * 
 //  * *****************************************************************/
 
-// #define BLINKER_PRINT Serial
-// #define BLINKER_MQTT
+#define BLINKER_PRINT Serial
+#define BLINKER_MQTT
 
-// #include <Blinker.h>
+#include <Blinker.h>
 
-// char auth[] = "Your MQTT Secret Key";
-// char ssid[] = "Your WiFi network SSID or name";
-// char pswd[] = "Your WiFi network WPA password or WEP key";
+char auth[] = "Your MQTT Secret Key";
+char ssid[] = "Your WiFi network SSID or name";
+char pswd[] = "Your WiFi network WPA password or WEP key";
 
-// char bridgeKey[] = "Your MQTT Secret Key of bridge to device";
+#define BRIDGE_1 "Your MQTT Secret Key of bridge to device"
 
-// void setup() {
-//     Serial.begin(115200);
+BlinkerBridge BridgeDevice1(BRIDGE_1);
 
-//     pinMode(LED_BUILTIN, OUTPUT);
-//     digitalWrite(LED_BUILTIN, LOW);
+void bridge1Read(const String & data)
+{
+    BLINKER_LOG("BridgeDevice1 readString: ", data);
 
-//     Blinker.begin(auth, ssid, pswd);
-//     Blinker.bridge(bridgeKey);
+    // must print Json data
+    BridgeDevice1.print("{\"hello\":\"bridge\"}");
+}
 
-//     while (!Blinker.connected()) {
-//         Blinker.delay(10);
-//     }
-// }
+void setup() {
+    Serial.begin(115200);
 
-// void loop()
-// {
-//     Blinker.run();
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
 
-//     if (Blinker.available()) {
-//         BLINKER_LOG("Blinker readString: ", data);
+    Blinker.begin(auth, ssid, pswd);
 
-//         uint32_t BlinkerTime = millis();
+    BridgeDevice1.attach(bridge1Read);
+}
 
-//         Blinker.vibrate();        
-//         Blinker.print("millis", BlinkerTime);
-
-//         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-
-//         Blinker.bridgeBeginFormat();
-//         Blinker.bridgePrint(bridgeKey, "Hello", "Blinker");
-//         Blinker.bridgePrint(bridgeKey, "millis", BlinkerTime);
-//         Blinker.bridgeEndFormat();
-
-//         Blinker.delay(60000);
-//     }
-
-//     if (Blinker.bridgeAvailable(bridgeKey)) {
-//         BLINKER_LOG("Blinker.bridgeRead(): ", Blinker.bridgeRead(bridgeKey));
-//     }
-// }
+void loop()
+{
+    Blinker.run();
+}
