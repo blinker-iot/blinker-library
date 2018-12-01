@@ -27,6 +27,7 @@
 
 #define BLINKER_PRINT Serial
 #define BLINKER_MQTT
+#define BLINKER_OTA_VERSION_CODE "0.1.1"
 
 #include <Blinker.h>
 

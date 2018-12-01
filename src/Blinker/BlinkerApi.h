@@ -1797,7 +1797,8 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         }        
         else
         {
-            _OTA.saveVersion();
+            if (_OTA.loadVersion()) _OTA.saveVersion();
+            
             _OTA.clearOTACheck();
         }
         
