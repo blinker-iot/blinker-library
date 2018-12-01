@@ -4904,13 +4904,13 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
             #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                 #ifndef BLINKER_LAN_DEBUG
-                    #if defined(BLINKER_MQTT)
+                    // #if defined(BLINKER_MQTT)
                         extern BearSSL::WiFiClientSecure client_mqtt;
-                    #elif defined(BLINKER_PRO)
-                        extern BearSSL::WiFiClientSecure client_pro;
-                    #elif defined(BLINKER_AT_MQTT)
-                        extern BearSSL::WiFiClientSecure client_mqtt_at;
-                    #endif
+                    // #elif defined(BLINKER_PRO)
+                    //     extern BearSSL::WiFiClientSecure client_pro;
+                    // #elif defined(BLINKER_AT_MQTT)
+                    //     extern BearSSL::WiFiClientSecure client_mqtt_at;
+                    // #endif
                     BearSSL::WiFiClientSecure client_s;
                     // extern WiFiClientSecure client_mqtt;
                 #elif defined(BLINKER_LAN_DEBUG)
@@ -4926,13 +4926,13 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             
             uint8_t connet_times = 0;
 
-            #if defined(BLINKER_MQTT)
+            // #if defined(BLINKER_MQTT)
                 client_mqtt.stop();
-            #elif defined(BLINKER_PRO)
-                client_pro.stop();
-            #elif defined(BLINKER_AT_MQTT)
-                client_mqtt_at.stop();
-            #endif
+            // #elif defined(BLINKER_PRO)
+            //     client_pro.stop();
+            // #elif defined(BLINKER_AT_MQTT)
+            //     client_mqtt_at.stop();
+            // #endif
 
             ::delay(100);
 
