@@ -374,6 +374,8 @@
 
 #define BLINKER_CMD_COMMON              "common"
 
+#define BLINKER_CMD_UPDATE              "update"
+
 #define BLINKER_CMD_MODE_READING_NUMBER         0
 
 #define BLINKER_CMD_MODE_MOVIE_NUMBER           1
@@ -1004,6 +1006,8 @@
 
     #define BLINKER_CMD_OTA_NUMBER              14
 
+    #define BLINKER_CMD_OTA_STATUS_NUMBER       15
+
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 
 #endif
@@ -1163,7 +1167,9 @@
         #define BLINKER_PRO_VERSION             "1.0.0"
     #endif
 
-    // #define BLINKER_OTA_VERSION_CODE        B00000001
+    #define BLINKER_OTA_VERSION_CODE        B00000001
+
+    #define BLINKER_OTA_RUN                 B00000111
 
     #define BLINKER_OTA_START               B01010011
 
@@ -1212,9 +1218,11 @@
 
     #endif
 
-    #define BLINKER_OTA_START               B01010011
+    #define BLINKER_OTA_RUN                 1
 
-    #define BLINKER_OTA_CLEAR               B00000001
+    #define BLINKER_OTA_START               2
+
+    #define BLINKER_OTA_CLEAR               0
 
     #define BLINKER_EEP_ADDR_OTA_INFO       2436
 
