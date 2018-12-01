@@ -55,7 +55,7 @@ class BlinkerMQTTAT
         void ping();
         bool available();
         bool aligenieAvail();
-        bool extraAvailable();
+        // bool extraAvailable();
         void subscribe();
         char * lastRead();
         void flush();
@@ -113,7 +113,7 @@ class BlinkerMQTTAT
         // char        _authKey[BLINKER_AUTHKEY_SIZE];
         bool*       isHandle;// = &isConnect;
         bool        isAlive = false;
-        bool        isBavail = false;
+        // bool        isBavail = false;
         uint32_t    latestTime;
         uint32_t    printTime = 0;
         uint32_t    bPrintTime = 0;
@@ -499,18 +499,18 @@ bool BlinkerMQTTAT::aligenieAvail()
     }
 }
 
-bool BlinkerMQTTAT::extraAvailable()
-{
-    if (isBavail)
-    {
-        isBavail = false;        
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
+// bool BlinkerMQTTAT::extraAvailable()
+// {
+//     if (isBavail)
+//     {
+//         isBavail = false;        
+//         return true;
+//     }
+//     else
+//     {
+//         return false;
+//     }
+// }
 
 void BlinkerMQTTAT::subscribe()
 {
@@ -621,7 +621,7 @@ void BlinkerMQTTAT::flush()
     if (isFresh_MQTT_AT)
     {
         free(msgBuf_MQTT_AT); isFresh_MQTT_AT = false; isAvail_MQTT_AT = false;
-        isAliAvail = false; isBavail = false;
+        isAliAvail = false; //isBavail = false;
     }
 }
 

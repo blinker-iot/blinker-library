@@ -342,6 +342,7 @@ class BlinkerApi
             void getVersion(const JsonObject& data);
             void setSwitch(const JsonObject& data);
 
+            void bridgeParse(char _bName[], const JsonObject& data);
             void strWidgetsParse(char _wName[], const JsonObject& data);
             void joyWidgetsParse(char _wName[], const JsonObject& data);
             void rgbWidgetsParse(char _wName[], const JsonObject& data);
@@ -594,6 +595,11 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     autoManager(root);
                     timerManager(root);
+
+                    for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
+                    {
+                        bridgeParse(_Bridge[bNum]->getName(), root);
+                    }
                 #endif
 
                 heartBeat(root);
@@ -2637,6 +2643,30 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 if (sFunc) sFunc(state);
             }
             _fresh = true;
+        }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::bridgeParse(char _bName[], const JsonObject& data)
+    {
+        int8_t num = checkNum(_bName, _Bridge, _bridgeCount);
+
+        if (num == BLINKER_OBJECT_NOT_AVAIL) return;
+
+        String _name = data[BLINKER_CMD_FROMDEVICE];
+
+        // if (data.containsKey(_bName))
+        if (_name == _bName)
+        {
+            String state = data[BLINKER_CMD_DATA];//[_bName];
+
+            _fresh = true;
+            
+            BLINKER_LOG_ALL(BLINKER_F("bridgeParse: "), _bName);
+
+            blinker_callback_with_string_arg_t nbFunc = _Bridge[num]->getFunc();
+            
+            if (nbFunc) nbFunc(state);
         }
     }
 

@@ -36,7 +36,7 @@ class BlinkerPRO {
         void ping();
         bool available();
         bool aligenieAvail();
-        bool extraAvailable();
+        // bool extraAvailable();
         void subscribe();
         char * lastRead();
         void flush();
@@ -323,18 +323,18 @@ bool BlinkerPRO::aligenieAvail()
     }
 }
 
-bool BlinkerPRO::extraAvailable()
-{
-    if (isBavail)
-    {
-        isBavail = false;        
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
+// bool BlinkerPRO::extraAvailable()
+// {
+//     if (isBavail)
+//     {
+//         isBavail = false;        
+//         return true;
+//     }
+//     else
+//     {
+//         return false;
+//     }
+// }
 
 void BlinkerPRO::subscribe()
 {
@@ -383,7 +383,9 @@ void BlinkerPRO::subscribe()
                 
                 // return;
 
-                isBavail = true;
+                // isBavail = true;
+                isAvail_PRO = true;
+                isAlive = true;
             }
 
             // memset(msgBuf_PRO, 0, BLINKER_MAX_READ_SIZE);
@@ -412,7 +414,7 @@ void BlinkerPRO::flush()
     if (isFresh_PRO)
     {
         free(msgBuf_PRO); isFresh_PRO = false; isAvail_PRO = false;
-        isAliAvail = false; isBavail = false;
+        isAliAvail = false; //isBavail = false;
     }
 }
 
