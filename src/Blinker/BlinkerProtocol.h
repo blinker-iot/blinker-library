@@ -1958,6 +1958,17 @@ void BlinkerProtocol<Transp>::begin()
             "Give Blinker a github star, thanks!\n"
             "=> https://github.com/blinker-iot/blinker-library\n"));
     #endif
+
+    #if defined(BLINKER_OTA_VERSION_CODE)
+        if (strlen(BLINKER_OTA_VERSION_CODE) >= BLINKER_OTA_INFO_SIZE)
+        {
+            while(1)
+            {
+                BLINKER_ERR_LOG(BLINKER_F("The OTA version code you set is too long!"));
+                ::delay(10000);
+            }
+        }
+    #endif
 }
 
 #if defined(BLINKER_PRO)

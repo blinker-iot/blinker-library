@@ -142,6 +142,7 @@ class BlinkerApi
             void loadOTA();
             void ota();
             String checkOTA();
+            bool updateOTAStatus(int8_t status);
         #endif
 
         #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -397,6 +398,7 @@ class BlinkerApi
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             void autoStart();
             bool autoManager(const JsonObject& data);
+            void otaPrase(const JsonObject& data);
             
             bool checkCUPDATE();
             bool checkCGET();
@@ -592,9 +594,12 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                     checkRegister(root);
                 #endif
 
+                // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     autoManager(root);
                     timerManager(root);
+                    otaPrase(root);
 
                     for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
                     {
@@ -1729,48 +1734,140 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     template <class Proto>
     void BlinkerApi<Proto>::loadOTA()
     {
-        if (_OTA.loadOTACheck())
+        // if (_OTA.loadOTACheck())
+        // {
+        //     if (!_OTA.loadVersion())
+        //     {
+        //         _OTA.saveVersion();
+        //     }
+        // }
+
+        BLINKER_LOG_ALL("OTA load");
+
+        if (_OTA.loadOTACheck() == BLINKER_OTA_RUN)
         {
-            if (!_OTA.loadVersion())
+            // _OTA.saveOTACheck();
+            updateOTAStatus(10);
+
+            String otaData = checkOTA();
+
+            if (otaData != BLINKER_CMD_FALSE)
             {
-                _OTA.saveVersion();
+                DynamicJsonBuffer jsonBuffer;
+                JsonObject& otaJson = jsonBuffer.parseObject(otaData);
+
+                if (!otaJson.success())
+                {
+                    BLINKER_ERR_LOG_ALL("check ota data error");
+                    return;
+                }
+
+                String otaHost = otaJson["host"];
+                String otaUrl = otaJson["url"];
+                String otaFp = otaJson["fingerprint"];
+
+                _OTA.config(otaHost, otaUrl, otaFp);
+
+                _OTA.update();
             }
         }
+        else if (_OTA.loadOTACheck() == BLINKER_OTA_START)
+        {
+            if (_OTA.loadVersion())
+            {
+                // _OTA.saveVersion();
+                _OTA.clearOTACheck();
+
+                updateOTAStatus(-2);
+                // ota failed
+            }
+            else
+            {
+                _OTA.saveVersion();
+                _OTA.clearOTACheck();
+
+                updateOTAStatus(100);
+                // ota success
+            }
+        }
+        else if (_OTA.loadOTACheck() == BLINKER_OTA_CLEAR)
+        {
+            // _OTA.saveVersion();
+            // _OTA.clearOTACheck();
+        }        
+        else
+        {
+            if (_OTA.loadVersion()) _OTA.saveVersion();
+            
+            _OTA.clearOTACheck();
+        }
+        
     }
 
     template <class Proto>
     void BlinkerApi<Proto>::ota()
     {
-        String otaData = checkOTA();
+        _OTA.saveOTARun();
 
-        if (otaData != BLINKER_CMD_FALSE)
-        {
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& otaJson = jsonBuffer.parseObject(otaData);
+        ::delay(100);
+        ESP.restart();
+        // String otaData = checkOTA();
 
-            if (!otaJson.success())
-            {
-                BLINKER_ERR_LOG_ALL("check ota data error");
-                return;
-            }
+        // if (otaData != BLINKER_CMD_FALSE)
+        // {
+        //     DynamicJsonBuffer jsonBuffer;
+        //     JsonObject& otaJson = jsonBuffer.parseObject(otaData);
 
-            String otaHost = otaJson["host"];
-            String otaUrl = otaJson["url"];
-            String otaFp = otaJson["fingerprint"];
+        //     if (!otaJson.success())
+        //     {
+        //         BLINKER_ERR_LOG_ALL("check ota data error");
+        //         return;
+        //     }
 
-            _OTA.config(otaHost, otaUrl, otaFp);
+        //     String otaHost = otaJson["host"];
+        //     String otaUrl = otaJson["url"];
+        //     String otaFp = otaJson["fingerprint"];
 
-            _OTA.update();
-        }
+        //     _OTA.config(otaHost, otaUrl, otaFp);
+
+        //     _OTA.update();
+        // }
     }
 
     template <class Proto>
     String BlinkerApi<Proto>::checkOTA()
     {
-        String data = "/ota/upgrade?deviceName=" + \
-            STRING_format(static_cast<Proto*>(this)->conn.deviceName());
+        String data = BLINKER_F("/ota/upgrade?deviceName=");// + 
+        data += STRING_format(static_cast<Proto*>(this)->conn.deviceName());
 
         return blinkerServer(BLINKER_CMD_OTA_NUMBER, data);
+    }
+
+    template <class Proto>
+    bool BlinkerApi<Proto>::updateOTAStatus(int8_t status)
+    {
+        // String data = BLINKER_F("/ota/upgrade_status?deviceName=");// + 
+        // data += STRING_format(static_cast<Proto*>(this)->conn.deviceName());
+
+        // String data = BLINKER_F("{\"upgrade\":true,\"upgradeData\":{\"step\":\"");
+        // data += STRING_format(status);
+        // data += BLINKER_F("\",\"desc\":\" xxxxxxxx \"}}");
+
+        String data;
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+            data = BLINKER_F("{\"deviceName\":\"");
+            data += static_cast<Proto*>(this)->conn.deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += static_cast<Proto*>(this)->conn.authKey();
+            data += BLINKER_F("\"upgrade\":true,\"upgradeData\":{\"step\":\"");
+            data += STRING_format(status);
+            data += BLINKER_F("\",\"desc\":\" xxxxxxxx \"}}");
+        #elif defined(BLINKER_WIFI)
+            return false;
+        #endif
+
+        return blinkerServer(BLINKER_CMD_OTA_STATUS_NUMBER, data) == BLINKER_CMD_FALSE;
     }
 
     // template <class Proto>
@@ -4692,6 +4789,28 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 
     template <class Proto>
+    void BlinkerApi<Proto>::otaPrase(const JsonObject& data)
+    {
+        if (data.containsKey(BLINKER_CMD_SET))
+        {
+            String value = data[BLINKER_CMD_SET];
+
+            DynamicJsonBuffer jsonBufferSet;
+            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+
+            if (!rootSet.success()) {
+                // BLINKER_ERR_LOG_ALL("Json error");
+                return;
+            }
+
+            if (rootSet.containsKey(BLINKER_CMD_POWERSTATE))
+            {
+                ota();
+            }
+        }
+    }
+
+    template <class Proto>
     bool BlinkerApi<Proto>::checkCUPDATE()
     {
         if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
@@ -4882,6 +5001,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     break;
                 case BLINKER_CMD_OTA_NUMBER :
                     break;
+                case BLINKER_CMD_OTA_STATUS_NUMBER :
+                    break;
             #endif
             default :
                 return BLINKER_CMD_FALSE;
@@ -4904,13 +5025,13 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
             #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                 #ifndef BLINKER_LAN_DEBUG
-                    #if defined(BLINKER_MQTT)
+                    // #if defined(BLINKER_MQTT)
                         extern BearSSL::WiFiClientSecure client_mqtt;
-                    #elif defined(BLINKER_PRO)
-                        extern BearSSL::WiFiClientSecure client_pro;
-                    #elif defined(BLINKER_AT_MQTT)
-                        extern BearSSL::WiFiClientSecure client_mqtt_at;
-                    #endif
+                    // #elif defined(BLINKER_PRO)
+                    //     extern BearSSL::WiFiClientSecure client_pro;
+                    // #elif defined(BLINKER_AT_MQTT)
+                    //     extern BearSSL::WiFiClientSecure client_mqtt_at;
+                    // #endif
                     BearSSL::WiFiClientSecure client_s;
                     // extern WiFiClientSecure client_mqtt;
                 #elif defined(BLINKER_LAN_DEBUG)
@@ -4926,13 +5047,13 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             
             uint8_t connet_times = 0;
 
-            #if defined(BLINKER_MQTT)
+            // #if defined(BLINKER_MQTT)
                 client_mqtt.stop();
-            #elif defined(BLINKER_PRO)
-                client_pro.stop();
-            #elif defined(BLINKER_AT_MQTT)
-                client_mqtt_at.stop();
-            #endif
+            // #elif defined(BLINKER_PRO)
+            //     client_pro.stop();
+            // #elif defined(BLINKER_AT_MQTT)
+            //     client_mqtt_at.stop();
+            // #endif
 
             ::delay(100);
 
@@ -5032,6 +5153,11 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                         url = BLINKER_F("/api/v1/user/device");
                         url += msg;
                         client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_OTA_STATUS_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device/ota/upgrade_status");
+                        // url += msg;
+                        client_s.print(postServer(url, host, httpsPort, msg));
                         break;
                 #endif
                 default :
@@ -5152,6 +5278,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                         _autoPullTime = millis();
                         break;
                     case BLINKER_CMD_OTA_NUMBER :
+                        break;
+                    case BLINKER_CMD_OTA_STATUS_NUMBER :
                         break;
                 #endif
                 default :
@@ -5316,6 +5444,14 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                         http.begin(url_iot);
                         httpCode = http.GET();
                         break;
+                    case BLINKER_CMD_OTA_STATUS_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device/ota/upgrade_status");
+
+                        http.begin(url_iot);
+                        http.addHeader(conType, application);
+                        httpCode = http.POST(msg);
+                        break;
                 #endif
                 default :
                     return BLINKER_CMD_FALSE;
@@ -5408,6 +5544,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                                 _autoPullTime = millis();
                                 break;
                             case BLINKER_CMD_OTA_NUMBER :
+                                break;
+                            case BLINKER_CMD_OTA_STATUS_NUMBER :
                                 break;
                         #endif
                         default :

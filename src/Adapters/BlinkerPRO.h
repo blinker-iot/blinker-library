@@ -97,13 +97,13 @@ class BlinkerPRO {
 };
 
 // #if defined(ESP8266)
-//     extern BearSSL::WiFiClientSecure   client_pro;
+//     extern BearSSL::WiFiClientSecure   client_mqtt;
 //     // WiFiClientSecure            client_mqtt;
 // #elif defined(ESP32)
-//     extern WiFiClientSecure            client_s_PRO;
+//     extern WiFiClientSecure            client_s;
 // #endif
 
-// extern WiFiClient              client_PRO;
+// extern WiFiClient              client;
 
 char*       MQTT_HOST_PRO;
 char*       MQTT_ID_PRO;
@@ -120,13 +120,13 @@ uint16_t MQTT_PORT_PRO;
 
 
 #if defined(ESP8266)
-    BearSSL::WiFiClientSecure   client_pro;
-    // WiFiClientSecure            client_pro;
+    BearSSL::WiFiClientSecure   client_mqtt;
+    // WiFiClientSecure            client_mqtt;
 #elif defined(ESP32)
-    WiFiClientSecure            client_s_PRO;
+    WiFiClientSecure            client_s;
 #endif
 
-WiFiClient              client_PRO;
+WiFiClient              client;
 Adafruit_MQTT_Client*       mqtt_PRO;
 // Adafruit_MQTT_Publish   *iotPub;
 Adafruit_MQTT_Subscribe*    iotSub_PRO;
@@ -160,7 +160,7 @@ void webSocketEvent_PRO(uint8_t num, WStype_t type, \
                                 BLINKER_F(", Connected from: "), ip, 
                                 BLINKER_F(", url: "), (char *)payload);
                 
-                // send message to client_PRO
+                // send message to client
                 webSocket_PRO.sendTXT(num, "{\"state\":\"connected\"}\n");
 
                 ws_num_PRO = num;
@@ -185,7 +185,7 @@ void webSocketEvent_PRO(uint8_t num, WStype_t type, \
 
             ws_num_PRO = num;
 
-            // send message to client_PRO
+            // send message to client
             // webSocket_PRO.sendTXT(num, "message here");
 
             // send data to all connected clients
@@ -195,7 +195,7 @@ void webSocketEvent_PRO(uint8_t num, WStype_t type, \
             // BLINKER_LOG("num: ", num, " get binary length: ", length);
             // hexdump(payload, length);
 
-            // send message to client_PRO
+            // send message to client
             // webSocket_PRO.sendBIN(num, payload, length);
             break;
     }
@@ -225,7 +225,7 @@ bool BlinkerPRO::connect()
     BLINKER_LOG(BLINKER_F("Connecting to MQTT... "));
 
     #if defined(ESP8266)
-        client_pro.setInsecure();
+        client_mqtt.setInsecure();
     #endif
 
     if ((ret = mqtt_PRO->connect()) != 0)
@@ -970,27 +970,27 @@ bool BlinkerPRO::connectServer() {
     String host = BLINKER_F("iotdev.clz.me");
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
-    // WiFiClientSecure client_s_PRO;
+    // WiFiClientSecure client_s;
 
-    BearSSL::WiFiClientSecure client_s_PRO;
+    BearSSL::WiFiClientSecure client_s;
     
     BLINKER_LOG_ALL(BLINKER_F("connecting to "), host);
 
     // BLINKER_LOG_FreeHeap();
     
     uint8_t connet_times = 0;
-    // client_s_PRO.stop();
+    // client_s.stop();
     ::delay(100);
 
-    bool mfln = client_s_PRO.probeMaxFragmentLength(host, httpsPort, 1024);
+    bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
     if (mfln) {
-        client_s_PRO.setBufferSizes(1024, 1024);
+        client_s.setBufferSizes(1024, 1024);
     }
-    client_s_PRO.setFingerprint(fingerprint.c_str());
+    client_s.setFingerprint(fingerprint.c_str());
 
     while (1) {
         bool cl_connected = false;
-        if (!client_s_PRO.connect(host, httpsPort)) {
+        if (!client_s.connect(host, httpsPort)) {
             BLINKER_ERR_LOG(BLINKER_F("server connection failed"));
             connet_times++;
 
@@ -1042,15 +1042,15 @@ bool BlinkerPRO::connectServer() {
     client_msg += STRING_format(httpsPort);
     client_msg += BLINKER_F("\r\nConnection: close\r\n\r\n");
 
-    client_s_PRO.print(client_msg);
+    client_s.print(client_msg);
     
     BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
 
     unsigned long timeout = millis();
-    while (client_s_PRO.available() == 0) {
+    while (client_s.available() == 0) {
         if (millis() - timeout > 5000) {
             BLINKER_LOG_ALL(BLINKER_F(">>> Client Timeout !"));
-            client_s_PRO.stop();
+            client_s.stop();
             return BLINKER_CMD_FALSE;
         }
     }
@@ -1058,9 +1058,9 @@ bool BlinkerPRO::connectServer() {
     String _dataGet;
     String lastGet;
     String lengthOfJson;
-    while (client_s_PRO.available()) {
-        // String line = client_s_PRO.readStringUntil('\r');
-        _dataGet = client_s_PRO.readStringUntil('\n');
+    while (client_s.available()) {
+        // String line = client_s.readStringUntil('\r');
+        _dataGet = client_s.readStringUntil('\n');
 
         if (_dataGet.startsWith("Content-Length: ")){
             int addr_start = _dataGet.indexOf(' ');
@@ -1076,13 +1076,13 @@ bool BlinkerPRO::connectServer() {
     }
 
     for(int i=0;i<lengthOfJson.toInt();i++){
-        lastGet += (char)client_s_PRO.read();
+        lastGet += (char)client_s.read();
     }
 
     // BLINKER_LOG_FreeHeap();
 
-    client_s_PRO.stop();
-    client_s_PRO.flush();
+    client_s.stop();
+    client_s.flush();
 
     // BLINKER_LOG_FreeHeap();
 
@@ -1376,30 +1376,30 @@ bool BlinkerPRO::connectServer() {
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         #if defined(ESP8266)
-            // bool mfln = client_pro.probeMaxFragmentLength(MQTT_HOST_PRO, MQTT_PORT_PRO, 4096);
+            // bool mfln = client_mqtt.probeMaxFragmentLength(MQTT_HOST_PRO, MQTT_PORT_PRO, 4096);
             // if (mfln) {
-            //     client_pro.setBufferSizes(1024, 1024);
+            //     client_mqtt.setBufferSizes(1024, 1024);
             // }
-            // client_pro.setInsecure();
-            mqtt_PRO = new Adafruit_MQTT_Client(&client_pro, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
+            // client_mqtt.setInsecure();
+            mqtt_PRO = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
         #elif defined(ESP32)
-            mqtt_PRO = new Adafruit_MQTT_Client(&client_s_PRO, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
+            mqtt_PRO = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
         #endif
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
         #if defined(ESP8266)
-            // bool mfln = client_pro.probeMaxFragmentLength(MQTT_HOST_PRO, MQTT_PORT_PRO, 4096);
+            // bool mfln = client_mqtt.probeMaxFragmentLength(MQTT_HOST_PRO, MQTT_PORT_PRO, 4096);
             // if (mfln) {
-            //     client_pro.setBufferSizes(1024, 1024);
+            //     client_mqtt.setBufferSizes(1024, 1024);
             // }
-            // client_pro.setInsecure();
-            mqtt_PRO = new Adafruit_MQTT_Client(&client_pro, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
+            // client_mqtt.setInsecure();
+            mqtt_PRO = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
         #elif defined(ESP32)
-            mqtt_PRO = new Adafruit_MQTT_Client(&client_s_PRO, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
+            mqtt_PRO = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
         #endif
     }
     else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
-        mqtt_PRO = new Adafruit_MQTT_Client(&client_PRO, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
+        mqtt_PRO = new Adafruit_MQTT_Client(&client, MQTT_HOST_PRO, MQTT_PORT_PRO, MQTT_ID_PRO, MQTT_NAME_PRO, MQTT_KEY_PRO);
     }
 
     // iotPub = new Adafruit_MQTT_Publish(mqtt_PRO, BLINKER_PUB_TOPIC_PRO);

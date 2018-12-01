@@ -23,6 +23,7 @@
 
 enum bota_status_t{
     BLINKER_UPGRADE_DISABLE,
+    BLINKER_UPGRADE_BEGIN,
     BLINKER_UPGRADE_START,
     BLINKER_UPGRADE_FAIL,
     BLINKER_UPGRADE_LOAD_FAIL,
@@ -59,7 +60,8 @@ class BlinkerOTA
         bota_status_t status() {
             return _status;
         }
-        bool loadOTACheck();
+        uint8_t loadOTACheck();
+        void saveOTARun();
         void saveOTACheck();
         void clearOTACheck();
         bool loadVersion();
@@ -329,21 +331,34 @@ void BlinkerOTA::update() {
 // #endif
 }
 
-bool BlinkerOTA::loadOTACheck() {
-    char OTACheck;
+uint8_t BlinkerOTA::loadOTACheck() {
+    uint8_t OTACheck;
     EEPROM.begin(BLINKER_EEP_SIZE);
     EEPROM.get(BLINKER_EEP_ADDR_OTA_CHECK, OTACheck);
     EEPROM.commit();
     EEPROM.end();
 
-    if (OTACheck != BLINKER_OTA_START) {
-        BLINKER_LOG_ALL(BLINKER_F("OTA NOT START"));
-        return false;
-    }
-    else {
-        BLINKER_LOG_ALL(BLINKER_F("OTA START"));
-        return true;
-    }
+    BLINKER_LOG_ALL(BLINKER_F("loadOTACheck"), STRING_format(OTACheck));
+    
+    return OTACheck;
+
+    // if (OTACheck != BLINKER_OTA_START) {
+    //     BLINKER_LOG_ALL(BLINKER_F("OTA NOT START"));
+    //     return false;
+    // }
+    // else {
+    //     BLINKER_LOG_ALL(BLINKER_F("OTA START"));
+    //     return true;
+    // }
+}
+
+void BlinkerOTA::saveOTARun() {
+    EEPROM.begin(BLINKER_EEP_SIZE);
+    EEPROM.put(BLINKER_EEP_ADDR_OTA_CHECK, BLINKER_OTA_RUN);
+    EEPROM.commit();
+    EEPROM.end();
+
+    BLINKER_LOG_ALL(BLINKER_F("OTA START-saveOTACheck()"));
 }
 
 void BlinkerOTA::saveOTACheck() {
