@@ -22,7 +22,7 @@ class BlinkerBridge
         template <typename T1>
         void print(T1 n1)
         {
-            if (strcpy(Blinker.bridgeName(bNum), BLINKER_CMD_FALSE) != 0)
+            if (strcmp(Blinker.bridgeName(bNum), BLINKER_CMD_FALSE) != 0)
             {
                 Blinker.bridgePrint(Blinker.bridgeName(bNum), STRING_format(n1));
             }
@@ -31,7 +31,7 @@ class BlinkerBridge
         template <typename T1, typename T2>
         void print(T1 n1, T2 n2)
         {
-            if (strcpy(Blinker.bridgeName(bNum), BLINKER_CMD_FALSE) != 0)
+            if (strcmp(Blinker.bridgeName(bNum), BLINKER_CMD_FALSE) != 0)
             {
                 String msg = BLINKER_F("{\"");
                 msg += STRING_format(n1);

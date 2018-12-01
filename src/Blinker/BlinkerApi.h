@@ -1712,7 +1712,8 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         for (uint8_t num = 0; num < _bridgeCount; num++)
         {
             register_r = bridgeQuery(_Bridge[num]->getKey());
-            if (register_r != BLINKER_CMD_FALSE)
+            BLINKER_LOG_ALL(BLINKER_F("bridgeQuery name: "), register_r);
+            if (strcmp(register_r.c_str(), BLINKER_CMD_FALSE) != 0)
             {
                 _Bridge[num]->name(register_r);
             }
@@ -5065,7 +5066,9 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 else
                 {
                     // String _dataGet_ = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
-                    if (_type == BLINKER_CMD_OTA_NUMBER)
+                    if (_type == BLINKER_CMD_BRIDGE_NUMBER)
+                        _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
+                    else if (_type == BLINKER_CMD_OTA_NUMBER)
                         _dataGet = data_rp[BLINKER_CMD_DETAIL].as<String>();
                     else
                         _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
@@ -5317,8 +5320,15 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                         }
                         else
                         {
-                            String _payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
-                            payload = _payload;
+                            // String _payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                            // payload = _payload;
+
+                            if (_type == BLINKER_CMD_BRIDGE_NUMBER)
+                                payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
+                            else if (_type == BLINKER_CMD_OTA_NUMBER)
+                                payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
+                            else
+                                payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
                         }
                     }
 

@@ -2146,6 +2146,7 @@ void BlinkerProtocol<Transp>::run()
                 _disconnectTime = millis();
 
                 BApi::loadOTA();
+                BApi::bridgeInit();
                 
                 BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
             }
