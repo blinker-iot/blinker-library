@@ -22,7 +22,7 @@
     #if defined(BLINKER_WIFI)
         #include <WiFiClientSecure.h>
 
-        // static BearSSL::WiFiClientSecure client_s;
+        static BearSSL::WiFiClientSecure client_s;
     #endif
     
 #elif defined(ESP32)
@@ -344,7 +344,9 @@ class BlinkerApi
             void getVersion(const JsonObject& data);
             void setSwitch(const JsonObject& data);
 
-            void bridgeParse(char _bName[], const JsonObject& data);
+            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                void bridgeParse(char _bName[], const JsonObject& data);
+            #endif
             void strWidgetsParse(char _wName[], const JsonObject& data);
             void joyWidgetsParse(char _wName[], const JsonObject& data);
             void rgbWidgetsParse(char _wName[], const JsonObject& data);
@@ -2746,33 +2748,35 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         }
     }
 
-    template <class Proto>
-    void BlinkerApi<Proto>::bridgeParse(char _bName[], const JsonObject& data)
-    {
-        int8_t num = checkNum(_bName, _Bridge, _bridgeCount);
-
-        if (num == BLINKER_OBJECT_NOT_AVAIL ||
-            !data.containsKey(BLINKER_CMD_FROMDEVICE))
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        template <class Proto>
+        void BlinkerApi<Proto>::bridgeParse(char _bName[], const JsonObject& data)
         {
-            return;
-        }
-        
-        String _name = data[BLINKER_CMD_FROMDEVICE];
+            int8_t num = checkNum(_bName, _Bridge, _bridgeCount);
 
-        // if (data.containsKey(_bName))
-        if (_name == _bName)
-        {
-            String state = data[BLINKER_CMD_DATA];//[_bName];
-
-            _fresh = true;
+            if (num == BLINKER_OBJECT_NOT_AVAIL ||
+                !data.containsKey(BLINKER_CMD_FROMDEVICE))
+            {
+                return;
+            }
             
-            BLINKER_LOG_ALL(BLINKER_F("bridgeParse: "), _bName);
+            String _name = data[BLINKER_CMD_FROMDEVICE];
 
-            blinker_callback_with_string_arg_t nbFunc = _Bridge[num]->getFunc();
-            
-            if (nbFunc) nbFunc(state);
+            // if (data.containsKey(_bName))
+            if (_name == _bName)
+            {
+                String state = data[BLINKER_CMD_DATA];//[_bName];
+
+                _fresh = true;
+                
+                BLINKER_LOG_ALL(BLINKER_F("bridgeParse: "), _bName);
+
+                blinker_callback_with_string_arg_t nbFunc = _Bridge[num]->getFunc();
+                
+                if (nbFunc) nbFunc(state);
+            }
         }
-    }
+    #endif
 
     template <class Proto>
     void BlinkerApi<Proto>::strWidgetsParse(char _wName[], const JsonObject& data)
@@ -5052,13 +5056,13 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             
             uint8_t connet_times = 0;
 
-            // #if defined(BLINKER_MQTT)
+            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                 client_mqtt.stop();
             // #elif defined(BLINKER_PRO)
             //     client_pro.stop();
             // #elif defined(BLINKER_AT_MQTT)
             //     client_mqtt_at.stop();
-            // #endif
+            #endif
 
             ::delay(100);
 
