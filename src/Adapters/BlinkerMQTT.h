@@ -115,7 +115,7 @@ uint16_t    MQTT_PORT_MQTT;
     BearSSL::WiFiClientSecure   client_mqtt;
     // WiFiClientSecure         client_mqtt;
 #elif defined(ESP32)
-    WiFiClientSecure     client_s_MQTT;
+    WiFiClientSecure     client_s;
 #endif
 
 WiFiClient               client_MQTT;
@@ -973,27 +973,27 @@ bool BlinkerMQTT::connectServer() {
     String host = BLINKER_F("iotdev.clz.me");
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
-    // WiFiClientSecure client_s_MQTT;
+    // WiFiClientSecure client_s;
 
-    BearSSL::WiFiClientSecure client_s_MQTT;
+    BearSSL::WiFiClientSecure client_s;
     
     BLINKER_LOG_ALL(BLINKER_F("connecting to "), host);
 
     // BLINKER_LOG_FreeHeap();
     
     uint8_t connet_times = 0;
-    // client_s_MQTT.stop();
+    // client_s.stop();
     ::delay(100);
 
-    bool mfln = client_s_MQTT.probeMaxFragmentLength(host, httpsPort, 1024);
+    bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
     if (mfln) {
-        client_s_MQTT.setBufferSizes(1024, 1024);
+        client_s.setBufferSizes(1024, 1024);
     }
-    client_s_MQTT.setFingerprint(fingerprint.c_str());
+    client_s.setFingerprint(fingerprint.c_str());
 
     while (1) {
         bool cl_connected = false;
-        if (!client_s_MQTT.connect(host, httpsPort)) {
+        if (!client_s.connect(host, httpsPort)) {
             BLINKER_ERR_LOG(BLINKER_F("server connection failed"));
             connet_times++;
 
@@ -1035,15 +1035,15 @@ bool BlinkerMQTT::connectServer() {
     client_msg += STRING_format(httpsPort);
     client_msg += BLINKER_F("\r\nConnection: close\r\n\r\n");
 
-    client_s_MQTT.print(client_msg);
+    client_s.print(client_msg);
     
     BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
 
     unsigned long timeout = millis();
-    while (client_s_MQTT.available() == 0) {
+    while (client_s.available() == 0) {
         if (millis() - timeout > 5000) {
             BLINKER_LOG_ALL(BLINKER_F(">>> Client Timeout !"));
-            client_s_MQTT.stop();
+            client_s.stop();
             return BLINKER_CMD_FALSE;
         }
     }
@@ -1051,9 +1051,9 @@ bool BlinkerMQTT::connectServer() {
     String _dataGet;
     String lastGet;
     String lengthOfJson;
-    while (client_s_MQTT.available()) {
-        // String line = client_s_MQTT.readStringUntil('\r');
-        _dataGet = client_s_MQTT.readStringUntil('\n');
+    while (client_s.available()) {
+        // String line = client_s.readStringUntil('\r');
+        _dataGet = client_s.readStringUntil('\n');
 
         if (_dataGet.startsWith("Content-Length: ")){
             int addr_start = _dataGet.indexOf(' ');
@@ -1069,13 +1069,13 @@ bool BlinkerMQTT::connectServer() {
     }
 
     for(int i=0;i<lengthOfJson.toInt();i++){
-        lastGet += (char)client_s_MQTT.read();
+        lastGet += (char)client_s.read();
     }
 
     // BLINKER_LOG_FreeHeap();
 
-    client_s_MQTT.stop();
-    client_s_MQTT.flush();
+    client_s.stop();
+    client_s.flush();
 
     // BLINKER_LOG_FreeHeap();
 
@@ -1346,7 +1346,7 @@ bool BlinkerMQTT::connectServer() {
             // client_mqtt.setInsecure();
             mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
         #elif defined(ESP32)
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_s_MQTT, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+            mqtt_MQTT = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
         #endif
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
@@ -1358,7 +1358,7 @@ bool BlinkerMQTT::connectServer() {
             // client_mqtt.setInsecure();
             mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
         #elif defined(ESP32)
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_s_MQTT, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+            mqtt_MQTT = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
         #endif
     }
     else if (_broker == BLINKER_MQTT_BORKER_ONENET) {

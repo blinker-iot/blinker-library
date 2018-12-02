@@ -60,6 +60,7 @@ class BlinkerMQTTAT
         char * lastRead();
         void flush();
         bool print(char * data, bool needCheck = true);
+        bool mqttPrint(const String & data);
         bool bPrint(char * name, const String & data);
         bool aliPrint(const String & data);
         // void aliType(const String & type);
@@ -771,6 +772,33 @@ bool BlinkerMQTTAT::print(char * data, bool needCheck)
             return false;
         }
     }
+}
+
+bool BlinkerMQTTAT::mqttPrint(const String & data) {
+    BLINKER_LOG_ALL(("mqttPrint data: "), data);
+
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& print_data = jsonBuffer.parseObject(data);
+
+    if (!print_data.success()) {
+        BLINKER_ERR_LOG(("Print data not a Json data"));
+        return false;
+    }
+
+    String _dType = print_data["deviceType"];
+
+    if (_dType == "vAssistant")
+    {
+        return aliPrint(data);
+    }
+    else
+    {
+        char data_print[256];
+        strcpy(data_print, data.c_str());
+        return print(data_print);
+    }
+
+    return false;
 }
 
 bool BlinkerMQTTAT::bPrint(char * name, const String & data)
