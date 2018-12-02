@@ -22,7 +22,7 @@
     #if defined(BLINKER_WIFI)
         #include <WiFiClientSecure.h>
 
-        static BearSSL::WiFiClientSecure client_s;
+        // static BearSSL::WiFiClientSecure client_s;
     #endif
     
 #elif defined(ESP32)

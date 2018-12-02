@@ -27,14 +27,12 @@
 
 #define BLINKER_PRINT Serial
 #define BLINKER_MQTT
-#define BLINKER_ESP_SMARTCONFIG
-#define BLINKER_DEBUG_ALL
 
 #include <Blinker.h>
 
-char auth[] = "bc5a991c7ec4";
-//char ssid[] = "Your WiFi network SSID or name";
-//char pswd[] = "Your WiFi network WPA password or WEP key";
+char auth[] = "Your MQTT Secret Key";
+char ssid[] = "Your WiFi network SSID or name";
+char pswd[] = "Your WiFi network WPA password or WEP key";
 
 // 新建组件对象
 BlinkerButton Button1("btn-abc");
@@ -61,6 +59,11 @@ void setup()
 {
     // 初始化串口
     Serial.begin(115200);
+
+    #if defined(BLINKER_PRINT)
+        BLINKER_DEBUG.stream(BLINKER_PRINT);
+    #endif
+    
     // 初始化有LED的IO
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
