@@ -77,7 +77,8 @@ class BlinkerApi
         int16_t ahrs(b_ahrsattitude_t attitude) { return ahrsValue[attitude]; }
         float gps(b_gps_t axis);
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             void setTimezone(float tz);
             float getTimezone() { return _timezone; }
             int8_t second();
@@ -366,7 +367,8 @@ class BlinkerApi
             void json_parse(char _data[]);
         #endif
 
-        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             void freshNTP();
             bool ntpInit();
             void ntpConfig();
@@ -994,7 +996,8 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     return gpsValue[axis]*1000000;
 }
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     template <class Proto>
     void BlinkerApi<Proto>::setTimezone(float tz)
     {
@@ -2085,15 +2088,15 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             case INPUT_PULLUP :
                 pin_data += "0,1";
                 break;
-#if defined(ESP8266)
-            case INPUT_PULLDOWN_16 :
-                pin_data += "0,2";
-                break;
-#elif defined(ESP32)
-            case INPUT_PULLDOWN :
-                pin_data += "0,2";
-                break;
-#endif
+            #if defined(ESP8266)
+                case INPUT_PULLDOWN_16 :
+                    pin_data += "0,2";
+                    break;
+            #elif defined(ESP32)
+                case INPUT_PULLDOWN :
+                    pin_data += "0,2";
+                    break;
+            #endif
             default :
                 pin_data += "0,0";
                 break;
@@ -3097,7 +3100,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     template <class Proto>
     void BlinkerApi<Proto>:: freshNTP()
     {
@@ -4880,7 +4884,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     template <class Proto>
     String BlinkerApi<Proto>::postServer(const String & url, const String & host, int port, const String & msg)
     {
