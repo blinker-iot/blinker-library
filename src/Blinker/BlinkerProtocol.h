@@ -596,7 +596,7 @@ void BlinkerProtocol<Transp>::flush()
     canParse = false; isAvail = false;
 }
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     template <class Transp>
     void BlinkerProtocol<Transp>::beginAuto()
     {
@@ -625,7 +625,7 @@ void BlinkerProtocol<Transp>::flush()
     template <class Transp>
     bool BlinkerProtocol<Transp>::checkCanOTA()
     {
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined (BLINKER_AT_MQTT)
+        // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined (BLINKER_AT_MQTT)
             #if defined(ESP8266)
                 int boot_mode = (GPI >> 16) & 0xf;
                 if (boot_mode == 1)
@@ -642,7 +642,7 @@ void BlinkerProtocol<Transp>::flush()
                     return false;
                 }
             #endif
-        #endif        
+        // #endif        
                 
         return true;
     }
@@ -1293,18 +1293,24 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
                     // conn.serialPrint();
                     break;
                 case AT_TEST:
-                    reqData = STRING_format(BLINKER_CMD_AT) + \
-                            "+" + STRING_format(BLINKER_CMD_UART_CUR) + \
-                            "=<baudrate>,<databits>,<stopbits>,<parity>";
+                    reqData = BLINKER_CMD_AT;// + 
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_UART_CUR;// + 
+                    reqData += BLINKER_F("=<baudrate>,<databits>,<stopbits>,<parity>");
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
                 case AT_QUERY:
-                    reqData = "+" + STRING_format(BLINKER_CMD_UART_CUR) + \
-                            ":" + STRING_format(serialSet >> 8 & 0x00FFFFFF) + \
-                            "," + STRING_format(serialSet >> 4 & 0x0F) + \
-                            "," + STRING_format(serialSet >> 2 & 0x03) + \
-                            "," + STRING_format(serialSet      & 0x03);
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_UART_CUR;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(serialSet >> 8 & 0x00FFFFFF);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet >> 4 & 0x0F);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet >> 2 & 0x03);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet      & 0x03);
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
@@ -1351,18 +1357,24 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
                     // conn.serialPrint();
                     break;
                 case AT_TEST:
-                    reqData = STRING_format(BLINKER_CMD_AT) + \
-                            "+" + STRING_format(BLINKER_CMD_UART_DEF) + \
-                            "=<baudrate>,<databits>,<stopbits>,<parity>";
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_UART_DEF;
+                    reqData += BLINKER_F("=<baudrate>,<databits>,<stopbits>,<parity>");
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
                 case AT_QUERY:
-                    reqData = "+" + STRING_format(BLINKER_CMD_UART_DEF) + \
-                            ":" + STRING_format(serialSet >> 8 & 0x00FFFFFF) + \
-                            "," + STRING_format(serialSet >> 4 & 0x0F) + \
-                            "," + STRING_format(serialSet >> 2 & 0x03) + \
-                            "," + STRING_format(serialSet      & 0x03);
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_UART_DEF;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(serialSet >> 8 & 0x00FFFFFF);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet >> 4 & 0x0F);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet >> 2 & 0x03);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet      & 0x03);
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
@@ -1405,15 +1417,19 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
             }
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_RAM && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_RAM) + \
-                    ":" + STRING_format(BLINKER_FreeHeap());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_RAM;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BLINKER_FreeHeap());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_ADC && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_ADC) + \
-                    ":" + STRING_format(analogRead(A0));
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_ADC;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(analogRead(A0));
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
@@ -1473,15 +1489,19 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
                 if (_pinData[_num]->checkPin(set_pin))
                 {
                     _isGet = true;
-                    reqData = "+" + STRING_format(BLINKER_CMD_IOGETCFG) + \
-                            ":" + _pinData[_num]->data();
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_IOGETCFG;
+                    reqData += BLINKER_F(":");
+                    reqData += _pinData[_num]->data();
                     conn.serialPrint(reqData);
                 }
             }
             if (!_isGet) {
-                reqData = "+" + STRING_format(BLINKER_CMD_IOGETCFG) + \
-                        ":" + _slaverAT->getParam(PIN_SET) + \
-                        ",2,0";
+                reqData = BLINKER_F("+");
+                reqData += BLINKER_CMD_IOGETCFG;
+                reqData += BLINKER_F(":");
+                reqData += _slaverAT->getParam(PIN_SET);
+                reqData += BLINKER_F(",2,0");
                 conn.serialPrint(reqData);
             }
 
@@ -1537,10 +1557,14 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
                     // if (_pinData[_num]->getMode() == BLINKER_IO_INPUT_NUM)
                     // {
                     //     if (set_lvl <= 1) {
-                            reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
-                                    ":" + STRING_format(set_pin) + \
-                                    "," + STRING_format(_pinData[_num]->getMode()) + \
-                                    "," + STRING_format(digitalRead(set_pin));
+                            reqData = BLINKER_F("+");
+                            reqData += BLINKER_CMD_GPIOWREAD;
+                            reqData += BLINKER_F(":");
+                            reqData += STRING_format(set_pin);
+                            reqData += BLINKER_F(",");
+                            reqData += STRING_format(_pinData[_num]->getMode());
+                            reqData += BLINKER_F(",");
+                            reqData += STRING_format(digitalRead(set_pin));
                             conn.serialPrint(reqData);
                             conn.serialPrint(BLINKER_CMD_OK);
                             return;
@@ -1548,9 +1572,12 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
                     // }
                 }
             }
-            reqData = "+" + STRING_format(BLINKER_CMD_GPIOWREAD) + \
-                    ":" + STRING_format(set_pin) + \
-                    ",3," + STRING_format(digitalRead(set_pin));
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_GPIOWREAD;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(set_pin);
+            reqData += BLINKER_F(",3,");
+            reqData += STRING_format(digitalRead(set_pin));
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
             // conn.serialPrint(BLINKER_CMD_ERROR);
@@ -1570,19 +1597,25 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
                     // conn.serialPrint();
                     break;
                 case AT_TEST:
-                    reqData = STRING_format(BLINKER_CMD_AT) + \
-                            "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                            "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + \
-                            "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_MQTT;
+                    reqData += BLINKER_F("=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>");
+                    reqData += BLINKER_F("[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]");
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
                 case AT_QUERY:
-                    reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                            ":" + STRING_format(_wlanMode) + \
-                            "," + STRING_format(conn.authKey()) + \
-                            "," + WiFi.SSID() + \
-                            "," + WiFi.psk();
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_MQTT;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(_wlanMode);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(conn.authKey());
+                    reqData += BLINKER_F(",");
+                    reqData += WiFi.SSID();
+                    reqData += BLINKER_F(",");
+                    reqData += WiFi.psk();
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
@@ -1600,9 +1633,12 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
 
                         if (_status == BL_INITED)
                         {
-                            reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                                    ":" + conn.deviceId() + \
-                                    "," + conn.uuid();
+                            reqData = BLINKER_F("+");
+                            reqData += BLINKER_CMD_BLINKER_MQTT;
+                            reqData += BLINKER_F(":");
+                            reqData += conn.deviceId();
+                            reqData += BLINKER_F(",");
+                            reqData += conn.uuid();
                             conn.serialPrint(reqData);
                             conn.serialPrint(BLINKER_CMD_OK);
                             return;
@@ -1623,9 +1659,12 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
 
                         if (_status == BL_INITED)
                         {
-                            reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                                    ":" + conn.deviceId() + \
-                                    "," + conn.uuid();
+                            reqData = BLINKER_F("+");
+                            reqData += BLINKER_CMD_BLINKER_MQTT;
+                            reqData += BLINKER_F(":");
+                            reqData += conn.deviceId();
+                            reqData += BLINKER_F(",");
+                            reqData += conn.uuid();
                             conn.serialPrint(reqData);
                             conn.serialPrint(BLINKER_CMD_OK);
                             return;
@@ -1645,9 +1684,12 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
 
                         if (_status == BL_INITED)
                         {
-                            reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                                    ":" + conn.deviceId() + \
-                                    "," + conn.uuid();
+                            reqData = BLINKER_F("+");
+                            reqData += BLINKER_CMD_BLINKER_MQTT;
+                            reqData += BLINKER_F(":");
+                            reqData += conn.deviceId();
+                            reqData += BLINKER_F(",");
+                            reqData += conn.uuid();
                             conn.serialPrint(reqData);
                             conn.serialPrint(BLINKER_CMD_OK);
                             return;
@@ -1671,9 +1713,12 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
                         return;
                     }
 
-                    reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                            ":" + conn.deviceId() + \
-                            "," + conn.uuid();
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_MQTT;
+                    reqData += BLINKER_F(":");
+                    reqData += conn.deviceId();
+                    reqData += BLINKER_F(",");
+                    reqData += conn.uuid();
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
@@ -1699,15 +1744,18 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
                     // conn.serialPrint();
                     break;
                 case AT_TEST:
-                    reqData = STRING_format(BLINKER_CMD_AT) + \
-                            "+" + STRING_format(BLINKER_CMD_BLINKER_ALIGENIE) + \
-                            "=<type>";
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_ALIGENIE;
+                    reqData += BLINKER_F("=<type>");
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
                 case AT_QUERY:
-                    reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_ALIGENIE) + \
-                            ":" + STRING_format(_aliType);
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_ALIGENIE;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(_aliType);
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
@@ -1759,15 +1807,18 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
                     // conn.serialPrint();
                     break;
                 case AT_TEST:
-                    reqData = STRING_format(BLINKER_CMD_AT) + \
-                            "+" + STRING_format(BLINKER_CMD_TIMEZONE) + \
-                            "=<TIMEZONE>";
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_TIMEZONE;
+                    reqData += BLINKER_F("=<TIMEZONE>");
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
                 case AT_QUERY:
-                    reqData = "+" + STRING_format(BLINKER_CMD_BLINKER_MQTT) + \
-                            ":" + STRING_format(BApi::getTimezone());
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_MQTT;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(BApi::getTimezone());
                     conn.serialPrint(reqData);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
@@ -1788,71 +1839,91 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
             }
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_TIME_AT && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_TIME_AT) + \
-                    ":" + STRING_format(BApi::time());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_TIME_AT;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::time());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_SECOND && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_SECOND) + \
-                    ":" + STRING_format(BApi::second());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_SECOND;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::second());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_SECOND && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_SECOND) + \
-                    ":" + STRING_format(BApi::second());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_SECOND;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::second());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_MINUTE && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_MINUTE) + \
-                    ":" + STRING_format(BApi::minute());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_MINUTE;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::minute());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_HOUR && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_HOUR) + \
-                    ":" + STRING_format(BApi::hour());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_HOUR;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::hour());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_WDAY && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_WDAY) + \
-                    ":" + STRING_format(BApi::wday());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_WDAY;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::wday());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_MDAY && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_MDAY) + \
-                    ":" + STRING_format(BApi::mday());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_MDAY;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::mday());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_YDAY && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_YDAY) + \
-                    ":" + STRING_format(BApi::yday());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_YDAY;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::yday());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_MONTH && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_MONTH) + \
-                    ":" + STRING_format(BApi::month());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_MONTH;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::month());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_YEAR && _slaverAT->state() == AT_QUERY) {
-            reqData = "+" + STRING_format(BLINKER_CMD_YEAR) + \
-                    ":" + STRING_format(BApi::year());
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_YEAR;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::year());
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
@@ -1860,8 +1931,10 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
         else if (_slaverAT->cmd() == BLINKER_CMD_WEATHER_AT && _slaverAT->state() == AT_SETTING) {
             if (1 != _slaverAT->paramNum()) return;
             
-            reqData = "+" + STRING_format(BLINKER_CMD_WEATHER_AT) + \
-                    ":" + STRING_format(BApi::weather(_slaverAT->getParam(0)));
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_WEATHER_AT;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::weather(_slaverAT->getParam(0)));
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
@@ -1869,8 +1942,10 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
         else if (_slaverAT->cmd() == BLINKER_CMD_AQI_AT && _slaverAT->state() == AT_SETTING) {
             if (1 != _slaverAT->paramNum()) return;
             
-            reqData = "+" + STRING_format(BLINKER_CMD_AQI_AT) + \
-                    ":" + STRING_format(BApi::aqi(_slaverAT->getParam(0)));
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_AQI_AT;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BApi::aqi(_slaverAT->getParam(0)));
             
             conn.serialPrint(reqData);
             conn.serialPrint(BLINKER_CMD_OK);
@@ -2183,7 +2258,7 @@ void BlinkerProtocol<Transp>::run()
                 _disconnectTime = millis();
 
                 if (checkCanOTA()) BApi::loadOTA();
-                
+
                 BApi::bridgeInit();
                 
                 BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
