@@ -634,9 +634,6 @@ void BlinkerProtocol<Transp>::flush()
                     // return false;
                     BLINKER_ERR_LOG(BLINKER_F("==========================================================="));
                     BLINKER_ERR_LOG(BLINKER_F("Invalid bootstrapping state, reset ESP8266 before updating!"));
-                    BLINKER_ERR_LOG(BLINKER_F("Invalid bootstrapping state, reset ESP8266 before updating!"));
-                    BLINKER_ERR_LOG(BLINKER_F("Invalid bootstrapping state, reset ESP8266 before updating!"));
-                    BLINKER_ERR_LOG(BLINKER_F("Invalid bootstrapping state, reset ESP8266 before updating!"));
                     BLINKER_ERR_LOG(BLINKER_F("==========================================================="));
                 
                     return false;
@@ -1418,7 +1415,7 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_RAM && _slaverAT->state() == AT_QUERY) {
             reqData = BLINKER_F("+");
-            reqData += BLINKER_CMD_RAM;
+            reqData += BLINKER_F(BLINKER_CMD_RAM);
             reqData += BLINKER_F(":");
             reqData += STRING_format(BLINKER_FreeHeap());
             
