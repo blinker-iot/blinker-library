@@ -1812,10 +1812,13 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     template <class Proto>
     void BlinkerApi<Proto>::ota()
     {
-        _OTA.saveOTARun();
+        if (static_cast<Proto*>(this)->checkCanOTA())
+        {
+            _OTA.saveOTARun();
 
-        ::delay(100);
-        ESP.restart();
+            ::delay(100);
+            ESP.restart();
+        }
         // String otaData = checkOTA();
 
         // if (otaData != BLINKER_CMD_FALSE)

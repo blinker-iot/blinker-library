@@ -141,6 +141,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             void beginAuto();
             bool autoTrigged(uint32_t _id);
+            bool checkCanOTA();
             // bool autoTrigged(char *name, char *type, char *data);
             // bool autoTrigged(char *name1, char *type1, char *data1, \
             //                 char *name2, char *type2, char *data2);
@@ -619,6 +620,31 @@ void BlinkerProtocol<Transp>::flush()
         BLINKER_LOG_ALL(BLINKER_F("autoTrigged id: "), _id);
         
         return conn.autoPrint(_id);
+    }
+
+    template <class Transp>
+    bool BlinkerProtocol<Transp>::checkCanOTA()
+    {
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined (BLINKER_AT_MQTT)
+            #if defined(ESP8266)
+                int boot_mode = (GPI >> 16) & 0xf;
+                if (boot_mode == 1)
+                {
+                    // _setError(UPDATE_ERROR_BOOTSTRAP);
+                    // return false;
+                    BLINKER_ERR_LOG(BLINKER_F("==========================================================="));
+                    BLINKER_ERR_LOG(BLINKER_F("Invalid bootstrapping state, reset ESP8266 before updating!"));
+                    BLINKER_ERR_LOG(BLINKER_F("Invalid bootstrapping state, reset ESP8266 before updating!"));
+                    BLINKER_ERR_LOG(BLINKER_F("Invalid bootstrapping state, reset ESP8266 before updating!"));
+                    BLINKER_ERR_LOG(BLINKER_F("Invalid bootstrapping state, reset ESP8266 before updating!"));
+                    BLINKER_ERR_LOG(BLINKER_F("==========================================================="));
+                
+                    return false;
+                }
+            #endif
+        #endif        
+                
+        return true;
     }
 
     // template <class Transp>
@@ -2122,7 +2148,7 @@ void BlinkerProtocol<Transp>::run()
                     // strcpy(_deviceName, conn.deviceName());
                     _proStatus = PRO_DEV_INIT_SUCCESS;
 
-                    BApi::loadOTA();
+                    if (checkCanOTA()) BApi::loadOTA();
                 }
             }
             else
@@ -2156,7 +2182,8 @@ void BlinkerProtocol<Transp>::run()
                 _isInit =true;
                 _disconnectTime = millis();
 
-                BApi::loadOTA();
+                if (checkCanOTA()) BApi::loadOTA();
+                
                 BApi::bridgeInit();
                 
                 BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
