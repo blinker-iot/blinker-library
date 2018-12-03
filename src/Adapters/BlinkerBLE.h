@@ -160,12 +160,15 @@ bool BlinkerBLE::available()
             ble_d = timedRead();
         }
 
-        if (ble_d == '\n') BLINKER_LOG_ALL(BLINKER_F("GET \\n"));
+        if (ble_d == '\n') 
+        {
+            BLINKER_LOG_ALL(BLINKER_F("GET \\n"));
 
-        // _bufLen++;
-        // BLEBuf = (char*)realloc(BLEBuf, _bufLen*sizeof(char));
+            // _bufLen++;
+            // BLEBuf = (char*)realloc(BLEBuf, _bufLen*sizeof(char));
 
-        BLEBuf[_bufLen] = '\0';
+            BLEBuf[_bufLen+1] = '\0';
+        }
 
         BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), BLEBuf);
         BLINKER_LOG_ALL(BLINKER_F("_bufLen: "), _bufLen);
