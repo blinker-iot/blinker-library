@@ -98,7 +98,7 @@ class BlinkerMQTT
 //     extern WiFiClientSecure            client_s_MQTT;
 // #endif
 
-// extern WiFiClient              client_MQTT;
+// extern WiFiClient              client;
 
 char*       MQTT_HOST_MQTT;
 char*       MQTT_ID_MQTT;
@@ -118,7 +118,7 @@ uint16_t    MQTT_PORT_MQTT;
     WiFiClientSecure     client_s;
 #endif
 
-WiFiClient               client_MQTT;
+WiFiClient               client;
 Adafruit_MQTT_Client*    mqtt_MQTT;
 // Adafruit_MQTT_Publish   *iotPub;
 Adafruit_MQTT_Subscribe* iotSub_MQTT;
@@ -152,7 +152,7 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
                                 BLINKER_F(", Connected from: "), ip, 
                                 BLINKER_F(", url: "), (char *)payload);
                 
-                // send message to client_MQTT
+                // send message to client
                 webSocket_MQTT.sendTXT(num, "{\"state\":\"connected\"}\n");
 
                 ws_num_MQTT = num;
@@ -177,7 +177,7 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
 
             ws_num_MQTT = num;
 
-            // send message to client_MQTT
+            // send message to client
             // webSocket_MQTT.sendTXT(num, "message here");
 
             // send data to all connected clients
@@ -187,7 +187,7 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
             // BLINKER_LOG("num: ", num, " get binary length: ", length);
             // hexdump(payload, length);
 
-            // send message to client_MQTT
+            // send message to client
             // webSocket_MQTT.sendBIN(num, payload, length);
             break;
     }
