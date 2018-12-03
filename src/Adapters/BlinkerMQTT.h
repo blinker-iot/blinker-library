@@ -1362,7 +1362,7 @@ bool BlinkerMQTT::connectServer() {
         #endif
     }
     else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
-        mqtt_MQTT = new Adafruit_MQTT_Client(&client_MQTT, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+        mqtt_MQTT = new Adafruit_MQTT_Client(&client, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
     }
 
     // iotPub = new Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
