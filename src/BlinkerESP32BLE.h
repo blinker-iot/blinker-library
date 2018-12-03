@@ -3,6 +3,10 @@
 
 #if defined(ESP32)
 
+#ifndef BLINKER_ARDUINOJSON
+    #define BLINKER_ARDUINOJSON
+#endif
+
 #include "Adapters/BlinkerBLE.h"
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerProtocol.h"
