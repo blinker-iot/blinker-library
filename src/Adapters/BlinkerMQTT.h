@@ -991,11 +991,13 @@ bool BlinkerMQTT::connectServer() {
     }
     client_s.setFingerprint(fingerprint.c_str());
 
+    client_s.setInsecure();
+
     while (1) {
         bool cl_connected = false;
         if (!client_s.connect(host, httpsPort)) {
             BLINKER_ERR_LOG(BLINKER_F("server connection failed"));
-            connet_times++;
+            // connet_times++;
 
             ::delay(1000);
         }
@@ -1006,7 +1008,7 @@ bool BlinkerMQTT::connectServer() {
             break;
         }
 
-        if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
+        // if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
     }
 
     String client_msg;

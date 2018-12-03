@@ -160,7 +160,7 @@ void BlinkerOTA::update() {
 
     BLINKER_LOG_FreeHeap();
 
-    // client_s.setInsecure();
+    client_s.setInsecure();
 
     BLINKER_LOG_ALL(BLINKER_F("Connecting to: "), ota_host);
 #endif
@@ -195,15 +195,15 @@ void BlinkerOTA::update() {
             // Connection Succeed.
             // Fecthing the bin
             BLINKER_LOG_ALL(BLINKER_F("Fetching Bin: "), ota_url);
-    #if defined(ESP32)
-            if (client_s.verify(ota_fingerPrint.c_str(), ota_host.c_str())) {
-                BLINKER_LOG_ALL(BLINKER_F("Fingerprint verified"));
-            }
-            else {
-                BLINKER_LOG_ALL(BLINKER_F("Fingerprint verification failed!"));
-                return;
-            }
-    #endif
+    // #if defined(ESP32)
+    //         if (client_s.verify(ota_fingerPrint.c_str(), ota_host.c_str())) {
+    //             BLINKER_LOG_ALL(BLINKER_F("Fingerprint verified"));
+    //         }
+    //         else {
+    //             BLINKER_LOG_ALL(BLINKER_F("Fingerprint verification failed!"));
+    //             return;
+    //         }
+    // #endif
             // Get the contents of the bin file
             client_s.print(String("GET ") + ota_url + " HTTP/1.1\r\n" +
                         "Host: " + ota_host + "\r\n" +

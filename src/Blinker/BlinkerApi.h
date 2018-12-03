@@ -1799,6 +1799,8 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         {
             // _OTA.saveVersion();
             // _OTA.clearOTACheck();
+
+            if (_OTA.loadVersion()) _OTA.saveVersion();
         }        
         else
         {
@@ -5075,6 +5077,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             }
 
             client_s.setFingerprint(fingerprint.c_str());
+
+            client_s.setInsecure();
 
             while (1) {
                 bool cl_connected = false;
