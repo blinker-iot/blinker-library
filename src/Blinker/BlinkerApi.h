@@ -4814,7 +4814,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 return;
             }
 
-            if (rootSet.containsKey(BLINKER_CMD_POWERSTATE))
+            if (rootSet.containsKey(BLINKER_CMD_UPDATE))
             {
                 ota();
             }
