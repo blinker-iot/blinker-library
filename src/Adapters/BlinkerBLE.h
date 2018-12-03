@@ -110,7 +110,7 @@ void BlinkerBLE::begin()
     // bleReadBuf = (char*)malloc(1*sizeof(char));
     // memset(bleReadBuf, '\0', 1);
 
-    BLEBuf = (char*)malloc(1*sizeof(char));
+    // BLEBuf = (char*)malloc(1*sizeof(char));
 
     _bufLen = 0;
 }
@@ -139,13 +139,13 @@ bool BlinkerBLE::available()
         if (_isFresh) 
         {
             free(BLEBuf);
-            BLEBuf = (char*)malloc(1*sizeof(char));
+            BLEBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
 
             _bufLen = 0;
         }
         else if(!_isFresh && _bufLen == 0)
         {
-            BLEBuf = (char*)malloc(1*sizeof(char));
+            BLEBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
         }
 
         int ble_d = timedRead();
@@ -155,7 +155,7 @@ bool BlinkerBLE::available()
             BLEBuf[_bufLen] = (char)ble_d;
             // Serial.print(BLEBuf[_bufLen]);
             _bufLen++;
-            BLEBuf = (char*)realloc(BLEBuf, (_bufLen+1)*sizeof(char));
+            // BLEBuf = (char*)realloc(BLEBuf, (_bufLen+1)*sizeof(char));
 
             ble_d = timedRead();
         }
@@ -164,7 +164,7 @@ bool BlinkerBLE::available()
         {
             BLINKER_LOG_ALL(BLINKER_F("GET \\n"));
 
-            // _bufLen++;
+            // _bufLen = _bufLen+1;
             // BLEBuf = (char*)realloc(BLEBuf, _bufLen*sizeof(char));
 
             BLEBuf[_bufLen+1] = '\0';
