@@ -1239,7 +1239,7 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
     if (strlen(n) <= BLINKER_MAX_SEND_SIZE || \
         !needCheckLength)
     {
-        BLINKER_LOG_FreeHeap();
+        BLINKER_LOG_FreeHeap_ALL();
         conn.print(n, isCheck);
         if (!isCheck) isCheck = true;
     }
