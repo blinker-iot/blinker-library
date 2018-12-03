@@ -53,15 +53,16 @@ class BlinkerBLE : public BLEServerCallbacks, public BLECharacteristicCallbacks
         uint32_t                respTime = 0;
 
         
-        bool                    isAvailBLE = false;
-        uint8_t*                bleReadBuf;//[20];
-        uint32_t                bleReadBufLen = 0;
-        uint32_t                getNum = 0;
+        // bool                    isAvailBLE = false;
+        // uint8_t*                bleReadBuf;//[20];
+        // uint32_t                bleReadBufLen = 0;
+        // uint32_t                getNum = 0;
+        // bool                    isNewLine = false;
 
         void onConnect(BLEServer* pServer);
         void onDisconnect(BLEServer* pServer);
         void onWrite(BLECharacteristic *pCharacteristic);
-        void checkTimeOut();
+        bool checkTimeOut();
         bool checkPrintSpan();
 };
 
@@ -105,13 +106,6 @@ void BlinkerBLE::begin()
     pAdvertising->addServiceUUID(BLEUUID((uint16_t)0xffe0));
     pAdvertising->start();
 
-    // Base::loadTimer();
-
-    // bleReadBuf = (char*)malloc(1*sizeof(char));
-    // memset(bleReadBuf, '\0', 1);
-
-    // BLEBuf = (char*)malloc(1*sizeof(char));
-
     _bufLen = 0;
 }
 
@@ -119,109 +113,84 @@ bool BlinkerBLE::available()
 {
     // checkTimeOut();
 
-    // if (isAvail)
-    // {
-    //     BLINKER_LOG_ALL(BLINKER_F("handleBLE: "), BLEBuf);
-
-    //     BLINKER_LOG_FreeHeap_ALL();
-        
-    //     isAvail = false;
-    //     isFresh = false;
-
-    //     return true;
-    // }
-    // else {
-    //     return false;
-    // }
-
-    if (isAvailBLE)
+    if (_bufLen)
     {
-        if (_isFresh) 
-        {
-            free(BLEBuf);
-            BLEBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
+        bool isNewLine = false;
 
-            _bufLen = 0;
-        }
-        else if(!_isFresh && _bufLen == 0)
+        for (uint8_t num = 0; num < _bufLen; num++)
         {
-            BLEBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
-        }
-
-        int ble_d = timedRead();
-        while (_bufLen < BLINKER_MAX_READ_SIZE &&
-            ble_d >= 0 && ble_d != '\n')
-        {
-            BLEBuf[_bufLen] = (char)ble_d;
-            // Serial.print(BLEBuf[_bufLen]);
-            _bufLen++;
-            // BLEBuf = (char*)realloc(BLEBuf, (_bufLen+1)*sizeof(char));
-
-            ble_d = timedRead();
+            if (BLEBuf[num] == '\n')
+            {
+                BLEBuf[num] = '\0';
+                isNewLine = true;
+            }
         }
 
-        if (ble_d == '\n') 
-        {
-            BLINKER_LOG_ALL(BLINKER_F("GET \\n"));
-
-            // _bufLen = _bufLen+1;
-            // BLEBuf = (char*)realloc(BLEBuf, _bufLen*sizeof(char));
-
-            BLEBuf[_bufLen+1] = '\0';
-        }
-
-        BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), BLEBuf);
-        BLINKER_LOG_ALL(BLINKER_F("_bufLen: "), _bufLen);
-        BLINKER_LOG_FreeHeap_ALL();
-
-        for (uint8_t _num = 0; _num < bleReadBufLen; _num++)
-        {
-            Serial.print((char)bleReadBuf[_num]);
-        }
-
-        isAvailBLE = false;
-        free(bleReadBuf);
-
-        if (strlen(BLEBuf) < BLINKER_MAX_READ_SIZE && ble_d == '\n')
-        {
+        if (isNewLine)
+        {                   
+            BLINKER_LOG_ALL(BLINKER_F("GET: "), BLEBuf);
+            isAvail = true;
             _isFresh = true;
-            isFresh = true;
-            return true;
+
+            // for (uint8_t num = 0; num < _bufLen; num++)
+            // {
+            //     Serial.print(BLEBuf[num]);
+            // }
+            // Serial.println();
         }
         else
         {
-            free(BLEBuf);
-            return false;
+            if (checkTimeOut())
+            {
+                BLEBuf[_bufLen] = '\0';
+                BLINKER_LOG_ALL(BLINKER_F("GET: "), BLEBuf);
+                isAvail = true;
+                _isFresh = true;
+            }
         }
+    }
+
+    if (isAvail)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("handleBLE: "), BLEBuf);
+
+        BLINKER_LOG_FreeHeap_ALL();
+        
+        isAvail = false;
+
+        return true;
+    }
+    else {
+        return false;
     }
 
     return false;
 }
 
-int BlinkerBLE::read()
-{
-    uint32_t num = getNum;
-    if (num < bleReadBufLen)
-    {
-        getNum++;
-        return bleReadBuf[num];
-    }
-    else
-    {
-        return -1;
-    }
-}
+// int BlinkerBLE::read()
+// {
+//     uint32_t num = getNum;
+//     if (num < bleReadBufLen)
+//     {
+//         getNum++;
+//         return bleReadBuf[num];
+//     }
+//     else
+//     {
+//         return -1;
+//     }
+// }
 
-int BlinkerBLE::timedRead()
-{
-    int c;
-    uint32_t _startMillis = millis();
-    do {
-        c = read();
-        if (c >= 0) return c;
-    } while(millis() - _startMillis < 1000);
-    return -1; 
-}
+// int BlinkerBLE::timedRead()
+// {
+//     int c;
+//     uint32_t _startMillis = millis();
+//     do {
+//         c = read();
+//         if (c >= 0) return c;
+//     } while(millis() - _startMillis < 1000);
+//     return -1; 
+// }
 
 char * BlinkerBLE::lastRead()
 {
@@ -231,11 +200,11 @@ char * BlinkerBLE::lastRead()
 
 void BlinkerBLE::flush()
 {
-    if (isFresh)
+    if (_isFresh)
     {
-        free(BLEBuf); isFresh = false; 
+        free(BLEBuf); //isFresh = false; 
         isAvail = false; _isFresh = false;
-        _bufLen = 0;
+        _bufLen = 0; //isNewLine = false;
     }
 }
 
@@ -301,63 +270,43 @@ void BlinkerBLE::onWrite(BLECharacteristic *pCharacteristic)
 
     if (vlen > 0)
     {
-        isAvailBLE = true;
-        getNum = 0;
+        int data;
+        uint8_t num;
 
-        bleReadBuf = (uint8_t*)malloc((vlen+1)*sizeof(uint8_t));
+        if (!_bufLen) BLEBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
 
-        for (uint8_t _num = 0; _num < vlen; _num++)
+        for (num = 0; num < vlen; num++)
         {
-            bleReadBuf[_num] = value[_num];
+            data = value[num];
+            if (data == '\n')
+            {
+                BLEBuf[_bufLen+num] = data;
+                num++;
+                BLINKER_LOG_ALL(BLINKER_F("GET \\n"));                
+                break;
+            }
+            BLEBuf[_bufLen+num] = (char)data;
         }
 
-        bleReadBufLen = vlen;
+        if (_bufLen) _bufLen += num;
+        else _bufLen = num;
 
-        BLINKER_LOG_ALL("onWrite vlen: ", vlen);
-        // BLINKER_LOG_ALL("onWrite value: ", value);
-        // BLINKER_LOG_ALL("bleReadBuf: ", bleReadBuf);
+        freshTime = millis();
 
-        // freshTime = millis();
-
-        // BLINKER_LOG_ALL("isAvail: ", isAvail);
-        // BLINKER_LOG_ALL("isFresh: ", isFresh);
-        // BLINKER_LOG_ALL("_bufLen: ", _bufLen);
-
-        // if (_bufLen == 0) {
-        //     // memset(BLEBuf, '\0', BLINKER_MAX_READ_SIZE);
-        //     // if (_isFresh) free(BLEBuf);
-        //     // BLEBuf = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
-        //     // memset(BLEBuf, '\0', BLINKER_MAX_READ_SIZE);
-
-        //     BLINKER_LOG_FreeHeap_ALL();
-        // }
-
-        // for (uint8_t _num = 0; _num < vlen; _num++) {
-        //     BLEBuf[_bufLen] = value[_num];
-        //     _bufLen++;
-        //     // BLEBuf = (char*)realloc(BLEBuf, (_bufLen+1)*sizeof(char));
-        // }
-
-        // isFresh = true;
-        // _isFresh = true;
-
-        // BLINKER_LOG_ALL("_bufLen: ", _bufLen);
-
-        // if (value[vlen] == '\n') {
-        //     isAvail = true;
-        //     _bufLen = 0;
-        // }
-
-        // BLINKER_LOG_ALL("BLEBuf: ", BLEBuf);
+        BLINKER_LOG_ALL(BLINKER_F("vlen: "), vlen);
+        BLINKER_LOG_ALL(BLINKER_F("_bufLen: "), _bufLen);
     }
 }
 
-void BlinkerBLE::checkTimeOut()
+bool BlinkerBLE::checkTimeOut()
 {
-    // if (isFresh && !isAvail && (millis() - freshTime) > BLINKER_STREAM_TIMEOUT) {
-    //     isAvail = true;
-    //     _bufLen = 0;
-    // }
+    ::delay(10);
+
+    uint32_t timeout_ms = millis() - freshTime;
+
+    // BLINKER_LOG_ALL(BLINKER_F("timeout_ms: "), timeout_ms);    
+
+    return timeout_ms > 1000;
 }
 
 bool BlinkerBLE::checkPrintSpan()
