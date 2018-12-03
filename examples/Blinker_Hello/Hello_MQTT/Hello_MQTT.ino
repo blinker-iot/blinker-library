@@ -68,8 +68,7 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
     // 初始化blinker
-    //Blinker.begin(auth, ssid, pswd);
-    Blinker.begin(auth);
+    Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
 
     Button1.attach(button1_callback);
