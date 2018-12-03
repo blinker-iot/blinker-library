@@ -261,7 +261,7 @@ void BlinkerMQTT::disconnect()
 
 void BlinkerMQTT::ping()
 {
-    BLINKER_LOG_ALL(BLINKER_F("MQTT Ping!"));
+    BLINKER_LOG(BLINKER_F("MQTT Ping!"));
 
     if (!mqtt_MQTT->ping())
     {
