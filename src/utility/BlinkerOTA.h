@@ -56,7 +56,7 @@ class BlinkerOTA
             ota_url = _url;
             ota_fingerPrint = _fingerPrint;
         }
-        void update();
+        bool update();
         bota_status_t status() {
             return _status;
         }
@@ -94,7 +94,7 @@ void BlinkerOTA::setURL(String url) {
     update();
 }
 
-void BlinkerOTA::update() {
+bool BlinkerOTA::update() {
     saveOTACheck();
     //Serial.println(F("LOAD OTA URL"));
 // #if defined(ESP8266)
@@ -217,7 +217,7 @@ void BlinkerOTA::update() {
                     client_s.stop();
 
                     _status = BLINKER_UPGRADE_LOAD_FAIL;
-                    return;
+                    return false;
                 }
             }
             // Once the response is available,
@@ -301,15 +301,21 @@ void BlinkerOTA::update() {
                         if (Update.isFinished()) {
                             BLINKER_LOG_ALL(BLINKER_F("Update successfully completed. Rebooting."));
                             _status = BLINKER_UPGRADE_SUCCESS;
-                            ESP.restart();
+
+                            return true;
+                            // ESP.restart();
                         } else {
                             BLINKER_LOG_ALL(BLINKER_F("Update not finished? Something went wrong!"));
                             _status = BLINKER_UPGRADE_FAIL;
+
+                            return false;
                         }
                     }
                     else {
                         BLINKER_LOG_ALL(BLINKER_F("Error Occurred. Error #: "), Update.getError());
                         _status = BLINKER_UPGRADE_FAIL;
+
+                        return false;
                     }
                 }
                 else {
@@ -319,12 +325,16 @@ void BlinkerOTA::update() {
                     BLINKER_LOG_ALL(BLINKER_F("Not enough space to begin OTA"));
                     client_s.flush();
                     _status = BLINKER_UPGRADE_FAIL;
+
+                    return false;
                 }
             }
             else {
                 BLINKER_LOG_ALL(BLINKER_F("There was no content in the response"));
                 client_s.flush();
                 _status = BLINKER_UPGRADE_FAIL;
+
+                return false;
             }
         }
     }
@@ -338,7 +348,7 @@ uint8_t BlinkerOTA::loadOTACheck() {
     EEPROM.commit();
     EEPROM.end();
 
-    BLINKER_LOG_ALL(BLINKER_F("loadOTACheck"), STRING_format(OTACheck));
+    BLINKER_LOG_ALL(BLINKER_F("loadOTACheck: "), STRING_format(OTACheck));
     
     return OTACheck;
 
@@ -406,13 +416,13 @@ bool BlinkerOTA::loadVersion() {
     EEPROM.commit();
     EEPROM.end();
 
-    if (String(versionCheck) != String(BLINKER_OTA_VERSION_CODE)) {
+    if (strcmp(versionCheck, BLINKER_OTA_VERSION_CODE)) {
         BLINKER_LOG_ALL(BLINKER_F("OTA SUCCESS BLINKER_OTA_VERSION_CODE NOT UPGRADE"));
         _status = BLINKER_UPGRADE_SUCCESS;
         return false;
     }
     else {
-        BLINKER_LOG_ALL(BLINKER_F("OTA FAIL"));
+        BLINKER_LOG_ALL(BLINKER_F("NOT OTA"));
         _status = BLINKER_UPGRADE_FAIL;
         return true;
     }

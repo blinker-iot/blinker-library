@@ -1774,7 +1774,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         //     }
         // }
 
-        BLINKER_LOG_ALL("OTA load");
+        BLINKER_LOG_ALL(BLINKER_F("OTA load: "), BLINKER_OTA_VERSION_CODE);
 
         if (_OTA.loadOTACheck() == BLINKER_OTA_RUN)
         {
@@ -1790,7 +1790,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
 
                 if (!otaJson.success())
                 {
-                    BLINKER_ERR_LOG_ALL("check ota data error");
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("check ota data error"));
                     return;
                 }
 
@@ -1800,7 +1800,20 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
 
                 _OTA.config(otaHost, otaUrl, otaFp);
 
-                _OTA.update();
+                if (_OTA.update())
+                {
+                    _OTA.saveVersion();
+                    _OTA.clearOTACheck();
+
+                    updateOTAStatus(100);
+
+                    ESP.restart();
+                }
+                else
+                {
+                    _OTA.clearOTACheck();
+                    updateOTAStatus(-2);
+                }
             }
         }
         else if (_OTA.loadOTACheck() == BLINKER_OTA_START)
@@ -1827,11 +1840,11 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             // _OTA.saveVersion();
             // _OTA.clearOTACheck();
 
-            if (_OTA.loadVersion()) _OTA.saveVersion();
+            if (!_OTA.loadVersion()) _OTA.saveVersion();
         }        
         else
         {
-            if (_OTA.loadVersion()) _OTA.saveVersion();
+            if (!_OTA.loadVersion()) _OTA.saveVersion();
             
             _OTA.clearOTACheck();
         }
@@ -1897,7 +1910,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             data += static_cast<Proto*>(this)->conn.deviceName();
             data += BLINKER_F("\",\"key\":\"");
             data += static_cast<Proto*>(this)->conn.authKey();
-            data += BLINKER_F("\"upgrade\":true,\"upgradeData\":{\"step\":\"");
+            data += BLINKER_F("\",\"upgrade\":true,\"upgradeData\":{\"step\":\"");
             data += STRING_format(status);
             data += BLINKER_F("\",\"desc\":\" xxxxxxxx \"}}");
         #elif defined(BLINKER_WIFI)
