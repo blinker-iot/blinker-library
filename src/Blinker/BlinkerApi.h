@@ -258,6 +258,20 @@ class BlinkerApi
         uint8_t     _wCount_joy = 0;
         uint8_t     _wCount_rgb = 0;
         uint8_t     _wCount_int = 0;
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+            uint8_t     data_dataCount = 0;
+            uint8_t     _aCount = 0;
+            uint8_t     _bridgeCount = 0;
+
+            uint32_t    _cUpdateTime = 0;
+            uint32_t    _dUpdateTime = 0;
+            uint32_t    _cGetTime = 0;
+            uint32_t    _cDelTime = 0;
+            uint32_t    _dGetTime = 0;
+            uint32_t    _dDelTime = 0;
+            uint32_t    _autoPullTime = 0;
+        #endif
         
         class BlinkerWidgets_string *       _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
         class BlinkerWidgets_joy *          _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
@@ -283,9 +297,9 @@ class BlinkerApi
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-            uint8_t                         data_dataCount = 0;
-            uint8_t                         _aCount = 0;
-            uint8_t                         _bridgeCount = 0;
+            // uint8_t                         data_dataCount = 0;
+            // uint8_t                         _aCount = 0;
+            // uint8_t                         _bridgeCount = 0;
             
             // class BlinkerWidgets_string *    _Bridge_str[BLINKER_MAX_BRIDGE_SIZE];
             class BlinkerBridge_key *       _Bridge[BLINKER_MAX_BRIDGE_SIZE];
@@ -293,13 +307,13 @@ class BlinkerApi
             class BlinkerAUTO *             _AUTO[2];
 
             
-            uint32_t                        _cUpdateTime = 0;
-            uint32_t                        _dUpdateTime = 0;
-            uint32_t                        _cGetTime = 0;
-            uint32_t                        _cDelTime = 0;
-            uint32_t                        _dGetTime = 0;
-            uint32_t                        _dDelTime = 0;
-            uint32_t                        _autoPullTime = 0;
+            // uint32_t                        _cUpdateTime = 0;
+            // uint32_t                        _dUpdateTime = 0;
+            // uint32_t                        _cGetTime = 0;
+            // uint32_t                        _cDelTime = 0;
+            // uint32_t                        _dGetTime = 0;
+            // uint32_t                        _dDelTime = 0;
+            // uint32_t                        _autoPullTime = 0;
 
             BlinkerOTA                      _OTA;
         #endif
@@ -607,43 +621,29 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
 
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     autoManager(root);
-
-                    BLINKER_LOG_ALL(BLINKER_F("parse autoManager"));
-
                     otaPrase(root);
 
-                    BLINKER_LOG_ALL(BLINKER_F("parse otaPrase, _bridgeCount: "), _bridgeCount);
-
-                    if (_bridgeCount && _bridgeCount < BLINKER_MAX_BRIDGE_SIZE)
+                    for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
                     {
-                        for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
-                        {
-                            bridgeParse(_Bridge[bNum]->getName(), root);
-                        }
+                        bridgeParse(_Bridge[bNum]->getName(), root);
                     }
-
-                    BLINKER_LOG_ALL(BLINKER_F("parse bridgeParse"));
                 #endif
 
                 heartBeat(root);
-
-                BLINKER_LOG_ALL(BLINKER_F("parse heartBeat"));
-
                 getVersion(root);
-
-                BLINKER_LOG_ALL(BLINKER_F("parse getVersion"));
 
                 json_parse(root);
 
-                BLINKER_LOG_ALL(BLINKER_F("parse json_parse"));
-
                 ahrs(Yaw, root);
-
-                BLINKER_LOG_ALL(BLINKER_F("parse ahrs"));
-
                 gps(LONG, root);
 
-                BLINKER_LOG_ALL(BLINKER_F("parse all done"));
+                // BLINKER_LOG_ALL(BLINKER_F("data_dataCount: "), data_dataCount);
+                // BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                // BLINKER_LOG_ALL(BLINKER_F("_bridgeCount: "), _bridgeCount);
+                // BLINKER_LOG_ALL(BLINKER_F("_wCount_str: "), _wCount_str);
+                // BLINKER_LOG_ALL(BLINKER_F("_wCount_joy: "), _wCount_joy);
+                // BLINKER_LOG_ALL(BLINKER_F("_wCount_rgb: "), _wCount_rgb);
+                // BLINKER_LOG_ALL(BLINKER_F("_wCount_int: "), _wCount_int);
             #else
                 BLINKER_LOG_ALL(BLINKER_F("ndef BLINKER_ARDUINOJSON"));
 
