@@ -600,24 +600,50 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
 
                 // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 
+                #if defined(BLINKER_WIF) || defined(BLINKER_MQTT) || \
+                    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                    timerManager(root);
+                #endif
+
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     autoManager(root);
-                    timerManager(root);
+
+                    BLINKER_LOG_ALL(BLINKER_F("parse autoManager"));
+
                     otaPrase(root);
 
-                    for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
+                    BLINKER_LOG_ALL(BLINKER_F("parse otaPrase, _bridgeCount: "), _bridgeCount);
+
+                    if (_bridgeCount && _bridgeCount < BLINKER_MAX_BRIDGE_SIZE)
                     {
-                        bridgeParse(_Bridge[bNum]->getName(), root);
+                        for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
+                        {
+                            bridgeParse(_Bridge[bNum]->getName(), root);
+                        }
                     }
+
+                    BLINKER_LOG_ALL(BLINKER_F("parse bridgeParse"));
                 #endif
 
                 heartBeat(root);
+
+                BLINKER_LOG_ALL(BLINKER_F("parse heartBeat"));
+
                 getVersion(root);
+
+                BLINKER_LOG_ALL(BLINKER_F("parse getVersion"));
 
                 json_parse(root);
 
+                BLINKER_LOG_ALL(BLINKER_F("parse json_parse"));
+
                 ahrs(Yaw, root);
+
+                BLINKER_LOG_ALL(BLINKER_F("parse ahrs"));
+
                 gps(LONG, root);
+
+                BLINKER_LOG_ALL(BLINKER_F("parse all done"));
             #else
                 BLINKER_LOG_ALL(BLINKER_F("ndef BLINKER_ARDUINOJSON"));
 
@@ -672,7 +698,8 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                             JsonObject& _array = _jsonBuffer.parseObject(arrayData);
 
                             json_parse(_array);
-                            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                            #if defined(BLINKER_WIF) || defined(BLINKER_MQTT) || \
+                                defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                                 timerManager(_array, true);
                             #endif
                         }
@@ -4324,7 +4351,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, taskCount);
                 for(uint8_t task = 0; task < taskCount; task++)
                 {
-                    strcpy(_tmAction_, timingTask[task]->getAction().c_str());
+                    strcpy(_tmAction_, timingTask[task]->getAction());
 
                     EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE
                                 , timingTask[task]->getTimerData());
@@ -4339,6 +4366,9 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
                 static_cast<Proto*>(this)->_timerPrint(timingConfig());
                 static_cast<Proto*>(this)->printNow();
+
+                BLINKER_LOG_FreeHeap_ALL();
+
                 return true;
             }
         }
@@ -4482,7 +4512,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 // String _tmAction = timingTask[triggedTask]->getAction();
                 char _tmAction[BLINKER_TIMER_TIMING_ACTION_SIZE];
 
-                strcpy(_tmAction, (timingTask[triggedTask]->getAction()).c_str());
+                strcpy(_tmAction, timingTask[triggedTask]->getAction());
 
                 BLINKER_LOG(BLINKER_F("timing trigged, action is: "), _tmAction);
 
