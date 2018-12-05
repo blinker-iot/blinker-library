@@ -986,7 +986,7 @@ bool BlinkerPRO::connectServer() {
     if (mfln) {
         client_s.setBufferSizes(1024, 1024);
     }
-    client_s.setFingerprint(fingerprint.c_str());
+    // client_s.setFingerprint(fingerprint.c_str());
 
     client_s.setInsecure();
 

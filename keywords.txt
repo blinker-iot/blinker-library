@@ -162,6 +162,7 @@ mode	KEYWORD2
 
 stream	KEYWORD2
 debugAll	KEYWORD2
+BLINKER_OTA_VERSION_CODE	KEYWORD2
 
 #######################################
 # Literals (LITERAL1)

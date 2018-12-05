@@ -293,7 +293,7 @@ class BlinkerApi
             char                            _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
             char                            _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
             char                            _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
-            class BlinkerTimingTimer *      timingTask[2];
+            class BlinkerTimingTimer *      timingTask[BLINKER_TIMING_TIMER_SIZE];
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
@@ -1778,7 +1778,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
 
         if (_OTA.loadOTACheck() == BLINKER_OTA_RUN)
         {
-            // _OTA.saveOTACheck();
+            _OTA.saveOTACheck();
             updateOTAStatus(10);
 
             String otaData = checkOTA();
@@ -1802,12 +1802,12 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
 
                 if (_OTA.update())
                 {
-                    _OTA.saveVersion();
-                    _OTA.clearOTACheck();
+                    // _OTA.saveVersion();
+                    // _OTA.clearOTACheck();
 
-                    updateOTAStatus(100);
+                    // updateOTAStatus(100);
 
-                    ESP.restart();
+                    // ESP.restart();
                 }
                 else
                 {
@@ -1818,9 +1818,9 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         }
         else if (_OTA.loadOTACheck() == BLINKER_OTA_START)
         {
-            if (_OTA.loadVersion())
+            if (!_OTA.loadVersion())
             {
-                // _OTA.saveVersion();
+                _OTA.saveVersion();
                 _OTA.clearOTACheck();
 
                 updateOTAStatus(-2);
@@ -1828,7 +1828,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             }
             else
             {
-                _OTA.saveVersion();
+                // _OTA.saveVersion();
                 _OTA.clearOTACheck();
 
                 updateOTAStatus(100);
@@ -1844,9 +1844,28 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         }        
         else
         {
-            if (!_OTA.loadVersion()) _OTA.saveVersion();
-            
-            _OTA.clearOTACheck();
+            if (!_OTA.loadVersion())
+            {
+                if (_OTA.loadOTACheck() > 0)
+                {
+                    updateOTAStatus(100);
+                    _OTA.clearOTACheck();
+                    _OTA.saveVersion();
+                }
+                else
+                {
+                    _OTA.saveVersion();
+                }
+            }
+            else if (_OTA.loadVersion() && _OTA.loadOTACheck() == 0)
+            {
+                updateOTAStatus(-2);
+                _OTA.clearOTACheck();
+            }
+            else
+            {
+                _OTA.clearOTACheck();
+            }
         }
         
     }
@@ -2724,7 +2743,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
                 #endif
 
-                #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+                    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     String _timer = taskCount ? "1":"0";
                     _timer += _cdState ? "1":"0";
                     _timer += _lpState ? "1":"0";
@@ -2733,6 +2753,11 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
                     static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
                     // static_cast<Proto*>(this)->printJson(timerSetting());
+
+                    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                        defined(BLINKER_AT_MQTT)
+                        static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, "0.1.0");
+                    #endif
                 #endif
 
                 if (_heartbeatFunc) {
@@ -5119,7 +5144,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 client_s.setBufferSizes(1024, 1024);
             }
 
-            client_s.setFingerprint(fingerprint.c_str());
+            // client_s.setFingerprint(fingerprint.c_str());
 
             client_s.setInsecure();
 
