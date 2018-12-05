@@ -270,6 +270,10 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
             void begin(const char* _type);
         #endif
 
+        // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        //     void loadOTA();
+        // #endif
+
         #if defined(BLINKER_MQTT_AT)
             void atInit(const char* _auth);
             void atInit(const char* _auth, const char* _ssid, const char* _pswd);
@@ -2096,6 +2100,14 @@ void BlinkerProtocol<Transp>::begin()
     }
 #endif
 
+// #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+//     template <class Transp>
+//     void BlinkerProtocol<Transp>::loadOTA()
+//     {
+//         if (checkCanOTA()) BApi::loadOTA();
+//     }
+// #endif
+
 #if defined(BLINKER_MQTT_AT)
     template <class Transp>
     void BlinkerProtocol<Transp>::atInit(const char* _auth)
@@ -2149,6 +2161,8 @@ void BlinkerProtocol<Transp>::run()
                 _initTime = millis();
                 
                 BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+
+                // loadOTA();
 
                 if (conn.authCheck())
                 {

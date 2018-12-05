@@ -92,6 +92,7 @@ void BlinkerESPMQTT::commonBegin(const char* _auth,
 {
     Base::begin();
     connectWiFi(_ssid, _pswd);
+    // Base::loadOTA();
     this->conn.aliType(_type);
     this->conn.begin(_auth);
     Base::loadTimer();
@@ -107,6 +108,7 @@ void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _type)
 {
     Base::begin();
     if (!autoInit()) smartconfig();
+    // Base::loadOTA();
     this->conn.aliType(_type);
     this->conn.begin(_auth);
     Base::loadTimer();
@@ -130,6 +132,7 @@ void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _type)
         //     ::delay(10);
         // }
     }
+    // Base::loadOTA();
 
     this->conn.aliType(_type);
     this->conn.begin(_auth);
