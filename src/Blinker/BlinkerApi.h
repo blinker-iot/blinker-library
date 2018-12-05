@@ -614,9 +614,10 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
 
                 // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 
-                #if defined(BLINKER_WIF) || defined(BLINKER_MQTT) || \
+                #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
                     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     timerManager(root);
+                    BLINKER_LOG_ALL(BLINKER_F("timerManager"));
                 #endif
 
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
@@ -698,7 +699,7 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                             JsonObject& _array = _jsonBuffer.parseObject(arrayData);
 
                             json_parse(_array);
-                            #if defined(BLINKER_WIF) || defined(BLINKER_MQTT) || \
+                            #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
                                 defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                                 timerManager(_array, true);
                             #endif
@@ -5121,7 +5122,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 #endif
             #endif
 
-            // #if defined(BLINKER_WIF)
+            // #if defined(BLINKER_WIFI)
                 // BearSSL::WiFiClientSecure client_s;
             // #endif
 
