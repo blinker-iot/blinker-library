@@ -483,7 +483,7 @@ void BlinkerProtocol<Transp>::print(T1 n1, int n)
     String _msg = BLINKER_F("\"");
     _msg += STRING_format(n1);
     _msg += BLINKER_F("\":");
-    _msg + STRING_format(n);
+    _msg += STRING_format(n);
 
     checkFormat();
 
@@ -502,7 +502,7 @@ void BlinkerProtocol<Transp>::print(T1 n1, unsigned int n)
     String _msg = BLINKER_F("\"");
     _msg += STRING_format(n1);
     _msg += BLINKER_F("\":");
-    _msg + STRING_format(n);
+    _msg += STRING_format(n);
 
     checkFormat();
 
@@ -521,7 +521,7 @@ void BlinkerProtocol<Transp>::print(T1 n1, long n)
     String _msg = BLINKER_F("\"");
     _msg += STRING_format(n1);
     _msg += BLINKER_F("\":");
-    _msg + STRING_format(n);
+    _msg += STRING_format(n);
 
     checkFormat();
 
@@ -540,7 +540,7 @@ void BlinkerProtocol<Transp>::print(T1 n1, unsigned long n)
     String _msg = BLINKER_F("\"");
     _msg += STRING_format(n1);
     _msg += BLINKER_F("\":");
-    _msg + STRING_format(n);
+    _msg += STRING_format(n);
 
     checkFormat();
 

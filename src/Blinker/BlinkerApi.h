@@ -143,7 +143,7 @@ class BlinkerApi
             void loadOTA();
             void ota();
             String checkOTA();
-            bool updateOTAStatus(int8_t status);
+            bool updateOTAStatus(int8_t status, const String & msg);
         #endif
 
         #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -1780,7 +1780,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         if (_OTA.loadOTACheck() == BLINKER_OTA_RUN)
         {
             _OTA.saveOTACheck();
-            updateOTAStatus(10);
+            updateOTAStatus(10, "download firmware");
 
             String otaData = checkOTA();
 
@@ -1813,7 +1813,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
                 else
                 {
                     _OTA.clearOTACheck();
-                    updateOTAStatus(-2);
+                    updateOTAStatus(-2, "update failed");
                 }
             }
         }
@@ -1824,7 +1824,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
                 _OTA.saveVersion();
                 _OTA.clearOTACheck();
 
-                updateOTAStatus(-2);
+                updateOTAStatus(100, "update success");
                 // ota failed
             }
             else
@@ -1832,7 +1832,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
                 // _OTA.saveVersion();
                 _OTA.clearOTACheck();
 
-                updateOTAStatus(100);
+                updateOTAStatus(-2, "update failed");
                 // ota success
             }
         }
@@ -1849,7 +1849,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             {
                 if (_OTA.loadOTACheck() > 0)
                 {
-                    updateOTAStatus(100);
+                    // updateOTAStatus(100);
                     _OTA.clearOTACheck();
                     _OTA.saveVersion();
                 }
@@ -1860,7 +1860,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             }
             else if (_OTA.loadVersion() && _OTA.loadOTACheck() == 0)
             {
-                updateOTAStatus(-2);
+                // updateOTAStatus(-2);
                 _OTA.clearOTACheck();
             }
             else
@@ -1914,7 +1914,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     }
 
     template <class Proto>
-    bool BlinkerApi<Proto>::updateOTAStatus(int8_t status)
+    bool BlinkerApi<Proto>::updateOTAStatus(int8_t status, const String & msg)
     {
         // String data = BLINKER_F("/ota/upgrade_status?deviceName=");// + 
         // data += STRING_format(static_cast<Proto*>(this)->conn.deviceName());
@@ -1932,7 +1932,9 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             data += static_cast<Proto*>(this)->conn.authKey();
             data += BLINKER_F("\",\"upgrade\":true,\"upgradeData\":{\"step\":\"");
             data += STRING_format(status);
-            data += BLINKER_F("\",\"desc\":\" xxxxxxxx \"}}");
+            data += BLINKER_F("\",\"desc\":\"");
+            data += msg;
+            data += BLINKER_F("\"}}");
         #elif defined(BLINKER_WIFI)
             return false;
         #endif

@@ -283,36 +283,36 @@ bool BlinkerOTA::update() {
 
                 // If yes, begin
                 if (canBegin) {
-                    BLINKER_LOG_ALL(BLINKER_F("Begin OTA. This may take 2 - 5 mins to complete. Things might be quite for a while.. Patience!"));
+                    BLINKER_LOG(BLINKER_F("Begin OTA. This may take 2 - 5 mins to complete. Things might be quite for a while.. Patience!"));
                     // No activity would appear on the Serial monitor
                     // So be patient. This may take 2 - 5mins to complete
                     size_t written = Update.writeStream(client_s);
 
                     if (written == contentLength) {
-                        BLINKER_LOG_ALL(BLINKER_F("Written : "), written, BLINKER_F(" successfully"));
+                        BLINKER_LOG(BLINKER_F("Written : "), written, BLINKER_F(" successfully"));
                     }
                     else {
-                        BLINKER_LOG_ALL(BLINKER_F("Written only : "), written,
+                        BLINKER_LOG(BLINKER_F("Written only : "), written,
                                         BLINKER_F("/"), contentLength, BLINKER_F(". Retry?"));
                     }
 
                     if (Update.end()) {
-                        BLINKER_LOG_ALL(BLINKER_F("OTA done!"));
+                        BLINKER_LOG(BLINKER_F("OTA done!"));
                         if (Update.isFinished()) {
-                            BLINKER_LOG_ALL(BLINKER_F("Update successfully completed. Rebooting."));
+                            BLINKER_LOG(BLINKER_F("Update successfully completed. Rebooting."));
                             _status = BLINKER_UPGRADE_SUCCESS;
                             ESP.restart();
 
                             return true;
                         } else {
-                            BLINKER_LOG_ALL(BLINKER_F("Update not finished? Something went wrong!"));
+                            BLINKER_LOG(BLINKER_F("Update not finished? Something went wrong!"));
                             _status = BLINKER_UPGRADE_FAIL;
 
                             return false;
                         }
                     }
                     else {
-                        BLINKER_LOG_ALL(BLINKER_F("Error Occurred. Error #: "), Update.getError());
+                        BLINKER_LOG(BLINKER_F("Error Occurred. Error #: "), Update.getError());
                         _status = BLINKER_UPGRADE_FAIL;
 
                         return false;
@@ -322,7 +322,7 @@ bool BlinkerOTA::update() {
                     // not enough space to begin OTA
                     // Understand the partitions and
                     // space availability
-                    BLINKER_LOG_ALL(BLINKER_F("Not enough space to begin OTA"));
+                    BLINKER_LOG(BLINKER_F("Not enough space to begin OTA"));
                     client_s.flush();
                     _status = BLINKER_UPGRADE_FAIL;
 
@@ -330,7 +330,7 @@ bool BlinkerOTA::update() {
                 }
             }
             else {
-                BLINKER_LOG_ALL(BLINKER_F("There was no content in the response"));
+                BLINKER_LOG(BLINKER_F("There was no content in the response"));
                 client_s.flush();
                 _status = BLINKER_UPGRADE_FAIL;
 
