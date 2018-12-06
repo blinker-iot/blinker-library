@@ -2061,7 +2061,7 @@ void BlinkerProtocol<Transp>::begin()
             "=> https://github.com/blinker-iot/blinker-library\n"));
     #endif
 
-    #if defined(BLINKER_OTA_VERSION_CODE)
+    #if defined(BLINKER_OTA_VERSION_CODE) && (defined(BLINKER_MQTT) || defined(BLINKER_MQTT_AT))
         if (strlen(BLINKER_OTA_VERSION_CODE) >= BLINKER_OTA_INFO_SIZE)
         {
             while(1)
