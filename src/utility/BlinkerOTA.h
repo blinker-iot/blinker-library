@@ -448,7 +448,7 @@ bool BlinkerOTA::loadVersion() {
         return false;
     }
     else {
-        BLINKER_LOG_ALL(BLINKER_F("NOT OTA"));
+        BLINKER_LOG_ALL(BLINKER_F("OTA FAIL OR NOT START OTA"));
         _status = BLINKER_UPGRADE_FAIL;
         return true;
     }
