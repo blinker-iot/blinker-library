@@ -2277,6 +2277,12 @@ void BlinkerProtocol<Transp>::run()
                 _isInit =true;
                 _disconnectTime = millis();
 
+                conn.connect();
+                conn.connect();
+                conn.connect();
+                conn.connect();
+                if (!conn.connected()) conn.connect();
+
                 if (checkCanOTA()) BApi::loadOTA();
 
                 BApi::bridgeInit();
