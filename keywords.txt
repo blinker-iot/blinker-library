@@ -13,6 +13,7 @@ BLINKER_DEBUG	KEYWORD1
 BlinkerTimer	KEYWORD1
 
 BlinkerAliGenie	KEYWORD1
+BlinkerUpdater	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
