@@ -1878,8 +1878,10 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         {
             _OTA.saveOTARun();
 
-            ::delay(100);
-            ESP.restart();
+            // ::delay(100);
+            // ESP.restart();
+
+            loadOTA();
         }
         // String otaData = checkOTA();
 
@@ -4889,6 +4891,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
             if (rootSet.containsKey(BLINKER_CMD_UPDATE))
             {
+                _fresh = true;
+                
                 ota();
             }
         }
@@ -5159,7 +5163,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             // #endif
                     // return BLINKER_CMD_FALSE;
 
-                    connet_times++;
+                    // connet_times++;
                     ::delay(1000);
                 }
                 else {
@@ -5170,7 +5174,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     break;
                 }
 
-                if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
+                // if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
             }
 
             String url;

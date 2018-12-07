@@ -19,6 +19,8 @@
     extern WiFiClientSecure client_s;
 #endif
 
+#include "utility/BlinkerUpdater.h"
+
 // extern WiFiClientSecure client_s;
 
 enum bota_status_t{
@@ -140,6 +142,8 @@ bool BlinkerOTA::update() {
 //             // break;
 //     }
 // #elif defined(ESP32)
+
+
 
 #if defined(ESP8266)
     // client_mqtt.stop();
@@ -279,14 +283,14 @@ bool BlinkerOTA::update() {
             if (contentLength && isValidContentType)
             {
                 // Check if there is enough to OTA Update
-                bool canBegin = Update.begin(contentLength);
+                bool canBegin = BlinkerUpdater.begin(contentLength);
 
                 // If yes, begin
                 if (canBegin) {
                     BLINKER_LOG(BLINKER_F("Begin OTA. This may take 2 - 5 mins to complete. Things might be quite for a while.. Patience!"));
                     // No activity would appear on the Serial monitor
                     // So be patient. This may take 2 - 5mins to complete
-                    size_t written = Update.writeStream(client_s);
+                    size_t written = BlinkerUpdater.writeStream(client_s);
 
                     if (written == contentLength) {
                         BLINKER_LOG(BLINKER_F("Written : "), written, BLINKER_F(" successfully"));
@@ -296,9 +300,9 @@ bool BlinkerOTA::update() {
                                         BLINKER_F("/"), contentLength, BLINKER_F(". Retry?"));
                     }
 
-                    if (Update.end()) {
+                    if (BlinkerUpdater.end()) {
                         BLINKER_LOG(BLINKER_F("OTA done!"));
-                        if (Update.isFinished()) {
+                        if (BlinkerUpdater.isFinished()) {
                             BLINKER_LOG(BLINKER_F("Update successfully completed. Rebooting."));
                             _status = BLINKER_UPGRADE_SUCCESS;
                             ESP.restart();
@@ -312,7 +316,7 @@ bool BlinkerOTA::update() {
                         }
                     }
                     else {
-                        BLINKER_LOG(BLINKER_F("Error Occurred. Error #: "), Update.getError());
+                        BLINKER_LOG(BLINKER_F("Error Occurred. Error #: "), BlinkerUpdater.getError());
                         _status = BLINKER_UPGRADE_FAIL;
 
                         return false;

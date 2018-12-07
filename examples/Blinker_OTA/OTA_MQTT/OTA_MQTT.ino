@@ -35,6 +35,10 @@ char auth[] = "Your MQTT Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
+#define BLINKER_OTA_BLINK_TIME 500
+
+uint32_t os_time;
+
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
@@ -44,6 +48,16 @@ void dataRead(const String & data)
     uint32_t BlinkerTime = millis();
     Blinker.print(BlinkerTime);
     Blinker.print("millis", BlinkerTime);
+}
+
+void otaStatus(uint32_t a, uint32_t b)
+{
+    if (millis() - os_time >= BLINKER_OTA_BLINK_TIME)
+    {
+        os_time = millis();
+
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
 }
 
 void setup()
@@ -59,6 +73,8 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
+    
+    BlinkerUpdater.onProgress(ota);
 }
 
 void loop()
