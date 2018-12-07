@@ -176,9 +176,10 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
             void bridgePrint(char * bName, const String & data);
             void aligeniePrint(String & _msg);
+            // void freshAlive();
         #endif
 
-        void printNow();
+        // void printNow();
 
     private :
         #if defined(BLINKER_ARDUINOJSON)
@@ -193,7 +194,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         char* lastRead()    { return conn.lastRead(); }
         void isParsed()     { flush(); }
         bool parseState()   { return canParse; }
-        // void printNow();
+        void printNow();
         void checkAutoFormat();
 
         #if defined(BLINKER_AT_MQTT)
@@ -1060,6 +1061,12 @@ void BlinkerProtocol<Transp>::flush()
             BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
         }
     }
+
+    // template <class Transp>
+    // void BlinkerProtocol<Transp>::freshAlive()
+    // {
+    //     conn.freshAlive();
+    // }
 #endif
 
 #if defined(BLINKER_ARDUINOJSON)

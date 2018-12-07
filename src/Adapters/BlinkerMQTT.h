@@ -52,6 +52,7 @@ class BlinkerMQTT
         char * authKey() { return _authKey; }
         bool init() { return isMQTTinit; }
         bool reRegister() { return connectServer(); }
+        void freshAlive() { kaTime = millis(); isAlive = true; }
 
     private :
         bool isMQTTinit = false;

@@ -1843,6 +1843,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
 
                     // updateOTAStatus(100);
 
+                    static_cast<Proto*>(this)->conn.freshAlive();
                     otaStatus(99, BLINKER_F("Firmware download sucessed"));
                     updateOTAStatus(99, BLINKER_F("Firmware download sucessed"));
                     ESP.restart();
@@ -1850,6 +1851,8 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
                 else
                 {
                     _OTA.clearOTACheck();
+
+                    static_cast<Proto*>(this)->conn.freshAlive();
                     otaStatus(-2, BLINKER_F("Firmware download failed"));
                     updateOTAStatus(-2, BLINKER_F("Firmware download failed"));
                 }
@@ -1862,6 +1865,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
                 _OTA.saveVersion();
                 _OTA.clearOTACheck();
 
+                static_cast<Proto*>(this)->conn.freshAlive();
                 otaStatus(100, BLINKER_F("Firmware update success"));
                 updateOTAStatus(100, BLINKER_F("Firmware update success"));
                 // ota failed
@@ -1870,11 +1874,8 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             {
                 // _OTA.saveVersion();
                 _OTA.clearOTACheck();
-
-                // static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
-                // static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
-                // static_cast<Proto*>(this)->printObject("upgradeData","{\"step\":-2,\"desc\":\"update failed\"}");
-                // static_cast<Proto*>(this)->printNow();
+                
+                static_cast<Proto*>(this)->conn.freshAlive();
                 otaStatus(-2, BLINKER_F("Firmware download failed"));
                 updateOTAStatus(-2, BLINKER_F("Firmware download failed"));
                 // ota success

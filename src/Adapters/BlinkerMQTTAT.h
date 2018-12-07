@@ -82,6 +82,7 @@ class BlinkerMQTTAT
         bool init() { return isMQTTinit; }
         bool reRegister() { return connectServer(); }
         void aligenieType(blinker_at_aligenie_t _type) { _aliType = _type; }
+        void freshAlive() { kaTime = millis(); isAlive = true; }
 
     private :
         bool isMQTTinit = false;
