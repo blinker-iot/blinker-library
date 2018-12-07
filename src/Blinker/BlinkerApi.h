@@ -674,52 +674,52 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                     }
                 #endif
             }
-        }
-        else
-        {
-            #if defined(BLINKER_ARDUINOJSON)
-                String arrayData = BLINKER_F("{\"data\":");
-                arrayData += _data;
-                arrayData += BLINKER_F("}");
-                DynamicJsonBuffer jsonBuffer;
-                JsonObject& root = jsonBuffer.parseObject(arrayData);
+        }        
+    }
+    else
+    {
+        #if defined(BLINKER_ARDUINOJSON)
+            String arrayData = BLINKER_F("{\"data\":");
+            arrayData += _data;
+            arrayData += BLINKER_F("}");
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& root = jsonBuffer.parseObject(arrayData);
+
+            if (!root.success()) return;
+
+            arrayData = root["data"][0].as<String>();
+
+            if (arrayData.length())
+            {
+                for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
+                {
+                    arrayData = root["data"][a_num].as<String>();
+
+                    if(arrayData.length()) {
+                        DynamicJsonBuffer _jsonBuffer;
+                        JsonObject& _array = _jsonBuffer.parseObject(arrayData);
+
+                        json_parse(_array);
+                        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+                            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                            timerManager(_array, true);
+                        #endif
+                    }
+                    else {
+                        return;
+                    }
+                }
+            }
+            else {
+                JsonObject& root = jsonBuffer.parseObject(_data);
 
                 if (!root.success()) return;
 
-                arrayData = root["data"][0].as<String>();
-
-                if (arrayData.length())
-                {
-                    for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
-                    {
-                        arrayData = root["data"][a_num].as<String>();
-
-                        if(arrayData.length()) {
-                            DynamicJsonBuffer _jsonBuffer;
-                            JsonObject& _array = _jsonBuffer.parseObject(arrayData);
-
-                            json_parse(_array);
-                            #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-                                defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-                                timerManager(_array, true);
-                            #endif
-                        }
-                        else {
-                            return;
-                        }
-                    }
-                }
-                else {
-                    JsonObject& root = jsonBuffer.parseObject(_data);
-
-                    if (!root.success()) return;
-
-                    json_parse(root);
-                }
-            #else
-                json_parse(_data);
-            #endif
-        }
+                json_parse(root);
+            }
+        #else
+            json_parse(_data);
+        #endif
     }
 }
 
@@ -3689,7 +3689,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         }
         timingTaskStr += BLINKER_F("]}");
         
-        BLINKER_LOG(BLINKER_F("timingTaskStr: "), timingTaskStr);
+        BLINKER_LOG_ALL(BLINKER_F("timingTaskStr: "), timingTaskStr);
         
         return timingTaskStr;
     }
@@ -3715,13 +3715,13 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 // timingDayStr += String((day < 6) ? ((timingDay >> (day + 1)) ? ",":""):"");
             }
 
-            BLINKER_LOG(BLINKER_F("timingDayStr: "), timingDayStr);
+            BLINKER_LOG_ALL(BLINKER_F("timingDayStr: "), timingDayStr);
 
         }
         else {
             timingDayStr = BLINKER_F("0000000");
 
-            BLINKER_LOG(BLINKER_F("timingDayStr: "), timingDay);
+            BLINKER_LOG_ALL(BLINKER_F("timingDayStr: "), timingDay);
         }
 
         String timingConfig = BLINKER_F("{\""BLINKER_CMD_TASK"\":");
