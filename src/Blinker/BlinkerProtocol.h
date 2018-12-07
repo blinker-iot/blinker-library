@@ -178,6 +178,8 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
             void aligeniePrint(String & _msg);
         #endif
 
+        void printNow();
+
     private :
         #if defined(BLINKER_ARDUINOJSON)
             void autoFormatData(const String & key, const String & jsonValue);
@@ -191,7 +193,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         char* lastRead()    { return conn.lastRead(); }
         void isParsed()     { flush(); }
         bool parseState()   { return canParse; }
-        void printNow();
+        // void printNow();
         void checkAutoFormat();
 
         #if defined(BLINKER_AT_MQTT)
