@@ -100,6 +100,8 @@ class BlinkerApi
             bool push(const T& msg);
             template<typename T>
             bool wechat(const T& msg);
+            template<typename T>
+            bool wechat(const String & title, const String & state, const T& msg);
             String weather(const String & _city = BLINKER_CMD_DEFAULT);
             String aqi(const String & _city = BLINKER_CMD_DEFAULT);
             
@@ -1318,7 +1320,39 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
             data += BLINKER_F("\"}");
         #endif
 
-        return (blinkerServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        return (blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+    }
+
+    template <class Proto> template<typename T>
+    bool BlinkerApi<Proto>::wechat(const String & title, const String & state, const T& msg)
+    {
+        String _msg = STRING_format(msg);
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += static_cast<Proto*>(this)->conn.deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += static_cast<Proto*>(this)->conn.authKey();
+            data += BLINKER_F("\",\"title\":\"");
+            data += title;
+            data += BLINKER_F("\",\"state\":\"");
+            data += state;
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+        #elif defined(BLINKER_WIFI)
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += macDeviceName();
+            data += BLINKER_F("\",\"title\":\"");
+            data += title;
+            data += BLINKER_F("\",\"state\":\"");
+            data += state;
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+        #endif
+
+        return (blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
     }
 
     template <class Proto>
@@ -5190,7 +5224,10 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     client_s.print(postServer(url, host, httpsPort, msg));
                     break;
                 case BLINKER_CMD_WECHAT_NUMBER :
-                    return BLINKER_CMD_FALSE;
+                    url = BLINKER_F("/api/v1/user/device/wxMsg/");
+                    client_s.print(postServer(url, host, httpsPort, msg));
+                    // return BLINKER_CMD_FALSE;
+                    break;
                 case BLINKER_CMD_WEATHER_NUMBER :
                     url = BLINKER_F("/api/v1");
                     url += msg;
@@ -5337,7 +5374,9 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     _pushTime = millis();
                     break;
                 case BLINKER_CMD_WECHAT_NUMBER :
-                    return BLINKER_CMD_FALSE;
+                    _wechatTime = millis();
+                    break;
+                    // return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WEATHER_NUMBER :
                     _weatherTime = millis();
                     break;
@@ -5445,7 +5484,14 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     break;
                     // return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WECHAT_NUMBER :
-                    return BLINKER_CMD_FALSE;
+                    url_iot = host;
+                    url_iot += BLINKER_F("/api/v1/user/device/wxMsg/");
+
+                    http.begin(url_iot);
+                    http.addHeader(conType, application);
+                    httpCode = http.POST(msg);
+                    break;
+                    // return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WEATHER_NUMBER :
                     url_iot = host;
                     url_iot += BLINKER_F("/api/v1");
@@ -5603,7 +5649,9 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                             _pushTime = millis();
                             break;
                         case BLINKER_CMD_WECHAT_NUMBER :
-                            return BLINKER_CMD_FALSE;
+                            _wechatTime = millis();
+                            break;
+                            // return BLINKER_CMD_FALSE;
                         case BLINKER_CMD_WEATHER_NUMBER :
                             _weatherTime = millis();
                             break;
