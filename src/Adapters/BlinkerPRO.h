@@ -55,6 +55,7 @@ class BlinkerPRO {
         bool reRegister() { return connectServer(); }
         bool deviceRegister() { return connectServer(); }
         bool authCheck();
+        void freshAlive() { kaTime = millis(); isAlive = true; }
 
     private :
         bool isMQTTinit = false;

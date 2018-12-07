@@ -98,50 +98,67 @@ void BlinkerOTA::setURL(String url) {
 
 bool BlinkerOTA::update() {
     saveOTACheck();
-    //Serial.println(F("LOAD OTA URL"));
+//     //Serial.println(F("LOAD OTA URL"));
 // #if defined(ESP8266)
-//     t_httpUpdate_return ret = ESPhttpUpdate.update(otaUrl);
 
-//     free(otaUrl);
-//     //t_httpUpdate_return  ret = ESPhttpUpdate.update("https://server/file.bin");
-//     // pubOTAsteptest();
+//     BearSSL::WiFiClientSecure client;
+//     bool mfln = client.probeMaxFragmentLength(ota_url, ota_port, 1024);  // server must be the same as in ESPhttpUpdate.update()
+//     // USE_SERIAL.printf("MFLN supported: %s\n", mfln ? "yes" : "no");
+//     if (mfln) {
+//         client.setBufferSizes(1024, 1024);
+//     }
+
+//     client.setInsecure();
+
+//     // t_httpUpdate_return ret = ESPhttpUpdate.update(otaUrl);
+
+//     // free(otaUrl);
+//     // t_httpUpdate_return  ret = ESPhttpUpdate.update("https://server/file.bin");
 //     // delay(500);
+
+// #elif defined(ESP32)
+
+//     WiFiClientSecure client;
+
+//     client.setTimeout(12000);
+
+// #endif
+//     String blinker_url = "https://" + ota_host + ota_url;
+
+//     t_httpUpdate_return  ret = ESPhttpUpdate.update(client, blinker_url);
+
+//     BLINKER_LOG_ALL(BLINKER_F("Connecting to: "), blinker_url);
 
 //     switch(ret) {
 //         case HTTP_UPDATE_FAILED:
 //             //Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s \r\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
-//             // pubOTAerrortest();
-//             // delay(500);
-//             // pubOTAtest();
+//             BLINKER_LOG_ALL(F("HTTP_UPDATE_FAILD Error ("), ESPhttpUpdate.getLastError(), "): ", ESPhttpUpdate.getLastErrorString().c_str());
 //             // break;
 //             // return UPGRADE_FAIL;
 //             _status = BLINKER_UPGRADE_FAIL;
-//             return;
+//             return false;
 
 //         case HTTP_UPDATE_NO_UPDATES:
 //             //Serial.println(F("HTTP_UPDATE_NO_UPDATES"));
-//             // pubOTAerrortest();
-//             // delay(500);
-//             // pubOTAtest();
 //             // break;
 //             // return UPGRADE_LOAD_FAIL;
 //             _status = BLINKER_UPGRADE_LOAD_FAIL;
-//             return;
+//             return false;
 
 //         case HTTP_UPDATE_OK:
 //             //Serial.println(F("HTTP_UPDATE_OK"));
 //             // break;
 //             // return UPGRADE_SUCCESS;
 //             _status = BLINKER_UPGRADE_SUCCESS;
-//             return;
+//             return true;
 
 //         default :
 //             _status = BLINKER_UPGRADE_FAIL;
-//             return;
+//             return false;
 //             // return UPGRADE_FAIL;
 //             // break;
 //     }
-// #elif defined(ESP32)
+// // #elif defined(ESP32)
 
 
 
@@ -305,7 +322,7 @@ bool BlinkerOTA::update() {
                         if (BlinkerUpdater.isFinished()) {
                             BLINKER_LOG(BLINKER_F("Update successfully completed. Rebooting."));
                             _status = BLINKER_UPGRADE_SUCCESS;
-                            ESP.restart();
+                            // ESP.restart();
 
                             return true;
                         } else {
@@ -411,7 +428,7 @@ bool BlinkerOTA::loadVersion() {
         return false;
     }
     else {
-        BLINKER_LOG_ALL(BLINKER_F("OTA FAIL"));
+        BLINKER_LOG_ALL(BLINKER_F("OTA FAIL OR NOT START OTA"));
         _status = BLINKER_UPGRADE_FAIL;
         return true;
     }
