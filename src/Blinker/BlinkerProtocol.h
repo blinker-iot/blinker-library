@@ -2243,6 +2243,12 @@ void BlinkerProtocol<Transp>::run()
                     // strcpy(_deviceName, conn.deviceName());
                     _proStatus = PRO_DEV_INIT_SUCCESS;
 
+                    conn.connect();
+                    conn.connect();
+                    conn.connect();
+                    conn.connect();
+                    if (!conn.connected()) conn.connect();
+
                     if (checkCanOTA()) BApi::loadOTA();
                 }
             }
