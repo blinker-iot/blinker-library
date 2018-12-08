@@ -974,7 +974,7 @@ bool BlinkerMQTT::connectServer() {
     String host = BLINKER_F("iotdev.clz.me");
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
-    // WiFiClientSecure client_s;
+//  // WiFiClientSecure client_s;
 
 //     BearSSL::WiFiClientSecure client_s;
     
