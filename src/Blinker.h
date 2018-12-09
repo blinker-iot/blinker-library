@@ -154,4 +154,39 @@
 
 #include "BlinkerWidgets.h"
 
+#if defined(BLINKER_MQTT)
+
+    #if defined(ESP8266)
+        extern "C" {
+        #   include "user_interface.h"
+        }
+
+        #define blinker_procTaskPrio        2
+        #define blinker_procTaskQueueLen    1
+        os_event_t    blinker_procTaskQueue[blinker_procTaskQueueLen];
+
+        // uint32_t oldtime = 0;
+
+        static void  blinker_run(os_event_t *events)
+        {
+            //user code
+            // if (millis() - oldtime > 1000) {
+            //     oldtime = millis();
+            //     Serial.println("user loop");
+            // }
+            Blinker.run();
+            // run (schedule) this loop task again
+            system_os_post(blinker_procTaskPrio, 0, 0 );
+        }
+
+        void blinkerTaskInit()
+        {
+            // ets_task
+            system_os_task(blinker_run, blinker_procTaskPrio, blinker_procTaskQueue, blinker_procTaskQueueLen);
+            system_os_post(blinker_procTaskPrio, 0, 0 );
+        }
+    #endif
+
+#endif
+
 #endif

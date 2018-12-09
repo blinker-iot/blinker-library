@@ -216,6 +216,10 @@ bool BlinkerMQTT::connect()
 
     BLINKER_LOG(BLINKER_F("Connecting to MQTT... "));
 
+    // BLINKER_LOG_ALL(BLINKER_F("MQTT_ID_MQTT: "), MQTT_ID_MQTT);
+    // BLINKER_LOG_ALL(BLINKER_F("MQTT_NAME_MQTT: "), MQTT_NAME_MQTT);
+    // BLINKER_LOG_ALL(BLINKER_F("MQTT_KEY_MQTT: "), MQTT_KEY_MQTT);
+
     #if defined(ESP8266)
         client_mqtt.setInsecure();
     #endif
