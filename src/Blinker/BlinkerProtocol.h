@@ -2243,11 +2243,18 @@ void BlinkerProtocol<Transp>::run()
                     // strcpy(_deviceName, conn.deviceName());
                     _proStatus = PRO_DEV_INIT_SUCCESS;
 
-                    conn.connect();
-                    conn.connect();
-                    conn.connect();
-                    conn.connect();
-                    if (!conn.connected()) conn.connect();
+                    // conn.connect();
+                    // conn.connect();
+                    // conn.connect();
+                    // conn.connect();
+                    // if (!conn.connected()) conn.connect();
+
+                    uint32_t connect_time = millis();
+
+                    while (!conn.mConnected() && (millis() - connect_time) < 10000)
+                    {
+                        conn.connect();
+                    }
 
                     if (checkCanOTA()) BApi::loadOTA();
                 }
@@ -2283,11 +2290,18 @@ void BlinkerProtocol<Transp>::run()
                 _isInit =true;
                 _disconnectTime = millis();
 
-                conn.connect();
-                conn.connect();
-                conn.connect();
-                conn.connect();
-                if (!conn.connected()) conn.connect();
+                // conn.connect();
+                // conn.connect();
+                // conn.connect();
+                // conn.connect();
+                // if (!conn.connected()) conn.connect();
+
+                uint32_t connect_time = millis();
+
+                while (!conn.mConnected() && (millis() - connect_time) < 10000)
+                {
+                    conn.connect();
+                }
 
                 if (checkCanOTA()) BApi::loadOTA();
 
