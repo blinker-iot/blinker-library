@@ -1,3 +1,5 @@
+#if defined(ESP8266) || defined(ESP32)
+
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
 #include "utility/BlinkerUpdater.h"
@@ -864,3 +866,5 @@ void BlinkerUpdaterClass::printError(Stream &out){
 #endif
 
 BlinkerUpdaterClass BlinkerUpdater;
+
+#endif
