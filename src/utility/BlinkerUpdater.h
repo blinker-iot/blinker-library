@@ -1,6 +1,8 @@
 #ifndef BLINKER_UPDATER_H
 #define BLINKER_UPDATER_H
 
+#if defined(ESP8266) || defined(ESP32)
+
 #if defined(ESP8266)
 
 #include <Arduino.h>
@@ -358,5 +360,7 @@ class BlinkerUpdaterClass {
 #endif
 
 extern BlinkerUpdaterClass BlinkerUpdater;
+
+#endif
 
 #endif
