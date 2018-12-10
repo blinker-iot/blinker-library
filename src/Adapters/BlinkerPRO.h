@@ -50,7 +50,7 @@ class BlinkerPRO {
         // bool autoPrint(char *name1, char *type1, char *data1, \
         //             char *name2, char *type2, char *data2);
         char * deviceName();
-        char * authKey() { return _authKey; }
+        char * authKey() { return AUTHKEY_PRO; }
         bool init() { return isMQTTinit; }
         bool reRegister() { return connectServer(); }
         bool deviceRegister() { return connectServer(); }
@@ -72,7 +72,7 @@ class BlinkerPRO {
 
     protected :
         const char* _deviceType;
-        char*       _authKey;
+        // char*       _authKey;
         // char*       _aliType;
         bool*       isHandle;// = &isConnect;
         bool        isAlive = false;
@@ -1139,9 +1139,9 @@ bool BlinkerPRO::connectServer() {
                 // Serial.println(payload);
             }
         } else {
-            BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
+            BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
             payload = http.getString();
-            BLINKER_LOG_ALL(payload);
+            BLINKER_LOG(payload);
         }
 
         http.end();
@@ -1232,9 +1232,9 @@ bool BlinkerPRO::connectServer() {
         }
     }
     else {
-        BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
+        BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
         payload = http.getString();
-        BLINKER_LOG_ALL(payload);
+        BLINKER_LOG(payload);
     }
 
     http.end();
@@ -1271,6 +1271,22 @@ bool BlinkerPRO::connectServer() {
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
     String _authKey = root[BLINKER_CMD_DETAIL][BLINKER_CMD_KEY];
+
+    if (isMQTTinit)
+    {
+        free(MQTT_HOST_PRO);
+        free(MQTT_ID_PRO);
+        free(MQTT_NAME_PRO);
+        free(MQTT_KEY_PRO);
+        free(MQTT_PRODUCTINFO_PRO);
+        free(UUID_PRO);
+        free(AUTHKEY_PRO);
+        free(MQTT_DEVICEID_PRO);
+        free(BLINKER_PUB_TOPIC_PRO);
+        free(BLINKER_SUB_TOPIC_PRO);
+        free(mqtt_PRO);
+        // free(iotSub_PRO);
+    }
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         // memcpy(DEVICE_NAME, _userID.c_str(), 12);
@@ -1460,7 +1476,7 @@ bool BlinkerPRO::connectServer() {
     }
 
     // iotPub = new Adafruit_MQTT_Publish(mqtt_PRO, BLINKER_PUB_TOPIC_PRO);
-    iotSub_PRO = new Adafruit_MQTT_Subscribe(mqtt_PRO, BLINKER_SUB_TOPIC_PRO);
+    if (!isMQTTinit) iotSub_PRO = new Adafruit_MQTT_Subscribe(mqtt_PRO, BLINKER_SUB_TOPIC_PRO);
 
     // mqtt_broker = (char*)malloc((_broker.length()+1)*sizeof(char));
     // strcpy(mqtt_broker, _broker.c_str());
@@ -1468,7 +1484,7 @@ bool BlinkerPRO::connectServer() {
 
     // mDNSInit(MQTT_ID_PRO);
     this->latestTime = millis();
-    mqtt_PRO->subscribe(iotSub_PRO);
+    if (!isMQTTinit) mqtt_PRO->subscribe(iotSub_PRO);
     isMQTTinit = true;
     connect();
 

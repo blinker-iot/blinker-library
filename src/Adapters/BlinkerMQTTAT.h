@@ -1581,9 +1581,9 @@ bool BlinkerMQTTAT::connectServer() {
                 // Serial.println(payload);
             }
         } else {
-            BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
+            BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
             payload = http.getString();
-            BLINKER_LOG_ALL(payload);
+            BLINKER_LOG(payload);
         }
 
         http.end();
@@ -1673,9 +1673,9 @@ bool BlinkerMQTTAT::connectServer() {
         }
     }
     else {
-        BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
+        BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
         payload = http.getString();
-        BLINKER_LOG_ALL(payload);
+        BLINKER_LOG(payload);
     }
 
     http.end();
@@ -1713,6 +1713,21 @@ bool BlinkerMQTTAT::connectServer() {
     String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
+
+    if (isMQTTinit)
+    {
+        free(MQTT_HOST_MQTT_AT);
+        free(MQTT_ID_MQTT_AT);
+        free(MQTT_NAME_MQTT_AT);
+        free(MQTT_KEY_MQTT_AT);
+        free(MQTT_PRODUCTINFO_MQTT_AT);
+        free(UUID_MQTT_AT);
+        free(DEVICE_NAME_MQTT_AT);
+        free(BLINKER_PUB_TOPIC_MQTT_AT);
+        free(BLINKER_SUB_TOPIC_MQTT_AT);
+        free(mqtt_MQTT_AT);
+        // free(iotSub_MQTT_AT);
+    }
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         // memcpy(DEVICE_NAME_MQTT_AT, _userID.c_str(), 12);
@@ -1882,7 +1897,7 @@ bool BlinkerMQTTAT::connectServer() {
     }
 
     // iotPub = new Adafruit_MQTT_Publish(mqtt_MQTT_AT, BLINKER_PUB_TOPIC_MQTT_AT);
-    iotSub_MQTT_AT = new Adafruit_MQTT_Subscribe(mqtt_MQTT_AT, BLINKER_SUB_TOPIC_MQTT_AT);
+    if (!isMQTTinit) iotSub_MQTT_AT = new Adafruit_MQTT_Subscribe(mqtt_MQTT_AT, BLINKER_SUB_TOPIC_MQTT_AT);
 
     mqtt_broker = (char*)malloc((_broker.length()+1)*sizeof(char));
     strcpy(mqtt_broker, _broker.c_str());
@@ -1890,7 +1905,7 @@ bool BlinkerMQTTAT::connectServer() {
 
     // mDNSInit(MQTT_ID_MQTT_AT);
     this->latestTime = millis();
-    mqtt_MQTT_AT->subscribe(iotSub_MQTT_AT);
+    if (!isMQTTinit) mqtt_MQTT_AT->subscribe(iotSub_MQTT_AT);
     connect();
 
     return true;
