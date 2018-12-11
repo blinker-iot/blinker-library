@@ -205,11 +205,11 @@ bool BlinkerMQTT::connect()
     if (mqtt_MQTT->connected())
     {
         return true;
-    }
+    }    
 
     disconnect();
 
-    if ((millis() - latestTime) < 5000 && latestTime > 0)
+    if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
     {
         return false;
     }
@@ -819,7 +819,8 @@ void BlinkerMQTT::begin(const char* auth) {
             {
                 isConnect_MQTT = true;
             }
-            ::delay(10);
+            // ::delay(10);
+            yield();
             // WiFi.status();
         }
     }
@@ -1091,6 +1092,8 @@ bool BlinkerMQTT::connectServer() {
 //     BLINKER_LOG_ALL(BLINKER_F("_dataGet: "), _dataGet);
 
 //     String payload = _dataGet;
+
+    client_mqtt.stop();
 
     std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
 
@@ -1440,6 +1443,10 @@ bool BlinkerMQTT::connectServer() {
     // mDNSInit(MQTT_ID_MQTT);
     this->latestTime = millis();
     if (!isMQTTinit) mqtt_MQTT->subscribe(iotSub_MQTT);
+
+    #if defined(ESP8266)
+        client_s->stop();
+    #endif
     connect();
 
     return true;

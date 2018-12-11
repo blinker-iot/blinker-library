@@ -1095,6 +1095,8 @@ bool BlinkerPRO::connectServer() {
 
 //     String payload = _dataGet;
 
+    client_mqtt.stop();
+
     std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
 
     // client_s->setFingerprint(fingerprint);
@@ -1486,6 +1488,10 @@ bool BlinkerPRO::connectServer() {
     this->latestTime = millis();
     if (!isMQTTinit) mqtt_PRO->subscribe(iotSub_PRO);
     isMQTTinit = true;
+    
+    #if defined(ESP8266)
+        client_s->stop();
+    #endif
     connect();
 
     return true;
