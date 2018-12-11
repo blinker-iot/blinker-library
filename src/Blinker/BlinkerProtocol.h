@@ -2243,17 +2243,20 @@ void BlinkerProtocol<Transp>::run()
                     // strcpy(_deviceName, conn.deviceName());
                     _proStatus = PRO_DEV_INIT_SUCCESS;
 
-                    // conn.connect();
-                    // conn.connect();
-                    // conn.connect();
-                    // conn.connect();
-                    // if (!conn.connected()) conn.connect();
-
                     uint32_t connect_time = millis();
+                    uint32_t time_slot = 0;
 
-                    while (!conn.mConnected() && (millis() - connect_time) < 10000)
+                    while (time_slot < 30000)
                     {
+                        time_slot = millis() - connect_time;
                         conn.connect();
+                        yield();
+
+                        if (conn.mConnected())
+                        {
+                            state = CONNECTED;
+                            break;
+                        }
                     }
 
                     if (checkCanOTA()) BApi::loadOTA();
@@ -2296,12 +2299,26 @@ void BlinkerProtocol<Transp>::run()
                 // conn.connect();
                 // if (!conn.connected()) conn.connect();
 
-                uint32_t connect_time = millis();
+                // conn.disconnect();
 
-                while (!conn.mConnected() && (millis() - connect_time) < 10000)
+                uint32_t connect_time = millis();
+                uint32_t time_slot = 0;
+
+                while (time_slot < 30000)
                 {
+                    time_slot = millis() - connect_time;
                     conn.connect();
+                    yield();
+
+                    if (conn.mConnected())
+                    {
+                        state = CONNECTED;
+                        break;
+                    }
                 }
+
+                BLINKER_LOG_ALL(BLINKER_F("millis: "), millis(),
+                                BLINKER_F(", connect_time: "), connect_time);
 
                 if (checkCanOTA()) BApi::loadOTA();
 
@@ -2311,18 +2328,19 @@ void BlinkerProtocol<Transp>::run()
             }
         }
         else {
-            if (((millis() - _disconnectTime) > 60000 && \
-                _disconnectCount) || _disconnectCount >= 12)
+            // if (((millis() - _disconnectTime) > BLINKER_MQTT_CONNECT_TIMESLOT * 10 && \
+            //     _disconnectCount) || _disconnectCount >= 12)
+            if (_disconnectCount >= 12)
             {
                 BLINKER_LOG_ALL(BLINKER_F("device reRegister"));
                 BLINKER_LOG_FreeHeap();
                 
-                if (BLINKER_FreeHeap() < 15000) {
-                    conn.disconnect();
-                    return;
-                }
+                // if (BLINKER_FreeHeap() < 15000) {
+                //     conn.disconnect();
+                //     return;
+                // }
 
-                BLINKER_LOG_FreeHeap();
+                // BLINKER_LOG_FreeHeap();
 
                 if (conn.reRegister()) {
                     _disconnectCount = 0;
@@ -2399,7 +2417,7 @@ void BlinkerProtocol<Transp>::run()
                         else
                         {
                             // if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
-                            if ((millis() - _disFreshTime) >= 5000)
+                            if ((millis() - _disFreshTime) >= BLINKER_MQTT_CONNECT_TIMESLOT)
                             {
                                 _disFreshTime = millis();
                                 _disconnectCount++;

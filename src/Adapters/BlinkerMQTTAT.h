@@ -1538,6 +1538,8 @@ bool BlinkerMQTTAT::connectServer() {
 
 //     String payload = _dataGet;
 
+    client_mqtt.stop();
+
     std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
 
     // client_s->setFingerprint(fingerprint);
@@ -1906,6 +1908,10 @@ bool BlinkerMQTTAT::connectServer() {
     // mDNSInit(MQTT_ID_MQTT_AT);
     this->latestTime = millis();
     if (!isMQTTinit) mqtt_MQTT_AT->subscribe(iotSub_MQTT_AT);
+    
+    #if defined(ESP8266)
+        client_s->stop();
+    #endif
     connect();
 
     return true;

@@ -950,6 +950,8 @@ void BlinkerApi<Proto>::delay(unsigned long ms)
         {
             ms = 0;
         }
+
+        yield();
     }
 }
 
