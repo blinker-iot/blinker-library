@@ -150,25 +150,48 @@ class BlinkerApi
         #endif
 
         #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT)) && defined(BLINKER_ALIGENIE)
-            void attachSetPowerState(blinker_callback_with_string_arg_t newFunction)
-            { _powerStateFunc = newFunction; }
-            void attachSetColor(blinker_callback_with_string_arg_t newFunction)
-            { _setColorFunc = newFunction; }
-            void attachSetMode(blinker_callback_with_string_arg_t newFunction)
-            { _setModeFunc = newFunction; }
-            void attachSetcMode(blinker_callback_with_string_arg_t newFunction)
-            { _setcModeFunc = newFunction; }
-            void attachSetBrightness(blinker_callback_with_string_arg_t newFunction)
-            { _setBrightnessFunc = newFunction; }
-            void attachRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
-            { _setRelativeBrightnessFunc = newFunction; }
-            void attachSetColorTemperature(blinker_callback_with_int32_arg_t newFunction)
-            { _setColorTemperature = newFunction; }
-            void attachRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
-            { _setRelativeColorTemperature = newFunction; }
-            void attachQuery(blinker_callback_with_int32_arg_t newFunction)
-            { _queryFunc = newFunction; }
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT)) 
+            #if defined(BLINKER_ALIGENIE)
+                void attachAliGenieSetPowerState(blinker_callback_with_string_arg_t newFunction)
+                { _AliGeniePowerStateFunc = newFunction; }
+                void attachAliGenieSetColor(blinker_callback_with_string_arg_t newFunction)
+                { _AliGenieSetColorFunc = newFunction; }
+                void attachAliGenieSetMode(blinker_callback_with_string_arg_t newFunction)
+                { _AliGenieSetModeFunc = newFunction; }
+                void attachAliGenieSetcMode(blinker_callback_with_string_arg_t newFunction)
+                { _AliGenieSetcModeFunc = newFunction; }
+                void attachAliGenieSetBrightness(blinker_callback_with_string_arg_t newFunction)
+                { _AliGenieSetBrightnessFunc = newFunction; }
+                void attachAliGenieRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
+                { _AliGenieSetRelativeBrightnessFunc = newFunction; }
+                void attachAliGenieSetColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+                { _AliGenieSetColorTemperature = newFunction; }
+                void attachAliGenieRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+                { _AliGenieSetRelativeColorTemperature = newFunction; }
+                void attachAliGenieQuery(blinker_callback_with_int32_arg_t newFunction)
+                { _AliGenieQueryFunc = newFunction; }
+            #endif
+
+            #if defined(BLINKER_DUEROS)
+                void attachDuerOSSetPowerState(blinker_callback_with_string_arg_t newFunction)
+                { _DuerOSPowerStateFunc = newFunction; }
+                void attachDuerOSSetColor(blinker_callback_with_string_arg_t newFunction)
+                { _DuerOSSetColorFunc = newFunction; }
+                void attachDuerOSSetMode(blinker_callback_with_string_arg_t newFunction)
+                { _DuerOSSetModeFunc = newFunction; }
+                void attachDuerOSSetcMode(blinker_callback_with_string_arg_t newFunction)
+                { _DuerOSSetcModeFunc = newFunction; }
+                void attachDuerOSSetBrightness(blinker_callback_with_string_arg_t newFunction)
+                { _DuerOSSetBrightnessFunc = newFunction; }
+                void attachDuerOSRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
+                { _DuerOSSetRelativeBrightnessFunc = newFunction; }
+                void attachDuerOSSetColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+                { _DuerOSSetColorTemperature = newFunction; }
+                void attachDuerOSRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+                { _DuerOSSetRelativeColorTemperature = newFunction; }
+                void attachDuerOSQuery(blinker_callback_with_int32_arg_t newFunction)
+                { _DuerOSQueryFunc = newFunction; }
+            #endif
         #endif
         // #endif
 
@@ -338,17 +361,28 @@ class BlinkerApi
         blinker_callback_return_string_t    _summaryFunc = NULL;
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
-            blinker_callback_with_string_arg_t  _powerStateFunc = NULL;
-            blinker_callback_with_string_arg_t  _setColorFunc = NULL;
-            blinker_callback_with_string_arg_t  _setModeFunc = NULL;
-            blinker_callback_with_string_arg_t  _setcModeFunc = NULL;
-            blinker_callback_with_string_arg_t  _setBrightnessFunc = NULL;
-            blinker_callback_with_int32_arg_t   _setRelativeBrightnessFunc = NULL;
-            blinker_callback_with_int32_arg_t   _setColorTemperature = NULL;
-            blinker_callback_with_int32_arg_t   _setRelativeColorTemperature = NULL;
-            blinker_callback_with_int32_arg_t   _queryFunc = NULL;
+            blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
+            blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
+            blinker_callback_with_string_arg_t  _AliGenieSetModeFunc = NULL;
+            blinker_callback_with_string_arg_t  _AliGenieSetcModeFunc = NULL;
+            blinker_callback_with_string_arg_t  _AliGenieSetBrightnessFunc = NULL;
+            blinker_callback_with_int32_arg_t   _AliGenieSetRelativeBrightnessFunc = NULL;
+            blinker_callback_with_int32_arg_t   _AliGenieSetColorTemperature = NULL;
+            blinker_callback_with_int32_arg_t   _AliGenieSetRelativeColorTemperature = NULL;
+            blinker_callback_with_int32_arg_t   _AliGenieQueryFunc = NULL;
+
+            blinker_callback_with_string_arg_t  _DuerOSPowerStateFunc = NULL;
+            blinker_callback_with_string_arg_t  _DuerOSSetColorFunc = NULL;
+            blinker_callback_with_string_arg_t  _DuerOSSetModeFunc = NULL;
+            blinker_callback_with_string_arg_t  _DuerOSSetcModeFunc = NULL;
+            blinker_callback_with_string_arg_t  _DuerOSSetBrightnessFunc = NULL;
+            blinker_callback_with_int32_arg_t   _DuerOSSetRelativeBrightnessFunc = NULL;
+            blinker_callback_with_int32_arg_t   _DuerOSSetColorTemperature = NULL;
+            blinker_callback_with_int32_arg_t   _DuerOSSetRelativeColorTemperature = NULL;
+            blinker_callback_with_int32_arg_t   _DuerOSQueryFunc = NULL;
 
             void aliParse(const String & _data);
+            void duerParse(const String & _data);
         #endif
 
         void parse(char _data[], bool ex_data = false);
@@ -742,31 +776,31 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
             String value = root[BLINKER_CMD_GET];
 
             if (value == BLINKER_CMD_STATE){
-                if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
             }
             else if (value == BLINKER_CMD_POWERSTATE) {
-                if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
             }
             else if (value == BLINKER_CMD_COLOR) {
-                if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
             }
             else if (value == BLINKER_CMD_COLORTEMP) {
-                if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLORTEMP_NUMBER);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLORTEMP_NUMBER);
             }
             else if (value == BLINKER_CMD_BRIGHTNESS) {
-                if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
             }
             else if (value == BLINKER_CMD_TEMP) {
-                if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
             }
             else if (value == BLINKER_CMD_HUMI) {
-                if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
             }
             else if (value == BLINKER_CMD_PM25) {
-                if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
             }
             else if (value == BLINKER_CMD_MODE) {
-                if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
             }
         }
         else if (root.containsKey(BLINKER_CMD_SET)) {
@@ -785,52 +819,154 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
             if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
 
-                if (_powerStateFunc) _powerStateFunc(setValue);
+                if (_AliGeniePowerStateFunc) _AliGeniePowerStateFunc(setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
 
-                if (_setColorFunc) _setColorFunc(setValue);
+                if (_AliGenieSetColorFunc) _AliGenieSetColorFunc(setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_BRIGHTNESS)) {
                 String setValue = rootSet[BLINKER_CMD_BRIGHTNESS];
 
-                if (_setBrightnessFunc) _setBrightnessFunc(setValue);
+                if (_AliGenieSetBrightnessFunc) _AliGenieSetBrightnessFunc(setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_UPBRIGHTNESS)) {
                 String setValue = rootSet[BLINKER_CMD_UPBRIGHTNESS];
 
-                if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(setValue.toInt());
+                if (_AliGenieSetRelativeBrightnessFunc) _AliGenieSetRelativeBrightnessFunc(setValue.toInt());
             }
             else if (rootSet.containsKey(BLINKER_CMD_DOWNBRIGHTNESS)) {
                 String setValue = rootSet[BLINKER_CMD_DOWNBRIGHTNESS];
 
-                if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(- setValue.toInt());
+                if (_AliGenieSetRelativeBrightnessFunc) _AliGenieSetRelativeBrightnessFunc(- setValue.toInt());
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLORTEMP)) {
                 String setValue = rootSet[BLINKER_CMD_COLORTEMP];
 
-                if (_setColorTemperature) _setColorTemperature(setValue.toInt());
+                if (_AliGenieSetColorTemperature) _AliGenieSetColorTemperature(setValue.toInt());
             }
             else if (rootSet.containsKey(BLINKER_CMD_UPCOLORTEMP)) {
                 String setValue = rootSet[BLINKER_CMD_UPCOLORTEMP];
 
-                if (_setRelativeColorTemperature) _setRelativeColorTemperature(setValue.toInt());
+                if (_AliGenieSetRelativeColorTemperature) _AliGenieSetRelativeColorTemperature(setValue.toInt());
             }
             else if (rootSet.containsKey(BLINKER_CMD_DOWNCOLORTEMP)) {
                 String setValue = rootSet[BLINKER_CMD_DOWNCOLORTEMP];
 
-                if (_setRelativeColorTemperature) _setRelativeColorTemperature(- setValue.toInt());
+                if (_AliGenieSetRelativeColorTemperature) _AliGenieSetRelativeColorTemperature(- setValue.toInt());
             }
             else if (rootSet.containsKey(BLINKER_CMD_MODE)) {
                 String setMode = rootSet[BLINKER_CMD_MODE];
 
-                if (_setModeFunc) _setModeFunc(setMode);
+                if (_AliGenieSetModeFunc) _AliGenieSetModeFunc(setMode);
             }
             else if (rootSet.containsKey(BLINKER_CMD_CANCELMODE)) {
                 String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
 
-                if (_setcModeFunc) _setcModeFunc(setcMode);
+                if (_AliGenieSetcModeFunc) _AliGenieSetcModeFunc(setcMode);
+            }
+        }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::duerParse(const String & _data)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("DuerOS parse data: "), _data);
+
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject& root = jsonBuffer.parseObject(_data);
+
+        if (!root.success()) return;
+
+        if (root.containsKey(BLINKER_CMD_GET))
+        {
+            String value = root[BLINKER_CMD_GET];
+
+            if (value == BLINKER_CMD_AQI) {
+                if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_AQI_NUMBER);
+            }
+            else if (value == BLINKER_CMD_PM25) {
+                if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
+            }
+            else if (value == BLINKER_CMD_PM10) {
+                if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_PM10_NUMBER);
+            }
+            else if (value == BLINKER_CMD_CO2) {
+                if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_CO2_NUMBER);
+            }
+            else if (value == BLINKER_CMD_TEMP) {
+                if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
+            }
+            else if (value == BLINKER_CMD_HUMI) {
+                if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
+            }
+            else if (value == BLINKER_CMD_MODE) {
+                if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
+            }
+        }
+        else if (root.containsKey(BLINKER_CMD_SET)) {
+            String value = root[BLINKER_CMD_SET];
+
+            DynamicJsonBuffer jsonBufferSet;
+            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+
+            if (!rootSet.success()) {
+                // BLINKER_ERR_LOG_ALL("Json error");
+                return;
+            }
+
+            // BLINKER_LOG_ALL("Json parse success");
+
+            if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
+                String setValue = rootSet[BLINKER_CMD_POWERSTATE];
+
+                if (_DuerOSPowerStateFunc) _DuerOSPowerStateFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
+                String setValue = rootSet[BLINKER_CMD_COLOR];
+
+                if (_DuerOSSetColorFunc) _DuerOSSetColorFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_BRIGHTNESS)) {
+                String setValue = rootSet[BLINKER_CMD_BRIGHTNESS];
+
+                if (_DuerOSSetBrightnessFunc) _DuerOSSetBrightnessFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_UPBRIGHTNESS)) {
+                String setValue = rootSet[BLINKER_CMD_UPBRIGHTNESS];
+
+                if (_DuerOSSetRelativeBrightnessFunc) _DuerOSSetRelativeBrightnessFunc(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_DOWNBRIGHTNESS)) {
+                String setValue = rootSet[BLINKER_CMD_DOWNBRIGHTNESS];
+
+                if (_DuerOSSetRelativeBrightnessFunc) _DuerOSSetRelativeBrightnessFunc(- setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_COLORTEMP)) {
+                String setValue = rootSet[BLINKER_CMD_COLORTEMP];
+
+                if (_DuerOSSetColorTemperature) _DuerOSSetColorTemperature(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_UPCOLORTEMP)) {
+                String setValue = rootSet[BLINKER_CMD_UPCOLORTEMP];
+
+                if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_DOWNCOLORTEMP)) {
+                String setValue = rootSet[BLINKER_CMD_DOWNCOLORTEMP];
+
+                if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(- setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_MODE)) {
+                String setMode = rootSet[BLINKER_CMD_MODE];
+
+                if (_DuerOSSetModeFunc) _DuerOSSetModeFunc(setMode);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_CANCELMODE)) {
+                String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
+
+                if (_DuerOSSetcModeFunc) _DuerOSSetcModeFunc(setcMode);
             }
         }
     }
@@ -838,7 +974,7 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
 
 #if defined(BLINKER_MQTT_AT)
     template <class Proto>
-    void BlinkerApi<Proto>:: aliParse(const String & _data)
+    void BlinkerApi<Proto>::aliParse(const String & _data)
     {
         BLINKER_LOG_ALL(BLINKER_F("AliGenie parse data: "), _data);
 
@@ -848,74 +984,158 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
             if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
             {
                 if (value == BLINKER_CMD_STATE) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
                 }
                 else if (value == BLINKER_CMD_POWERSTATE) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
                 }
                 else if (value == BLINKER_CMD_COLOR) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
                 }
                 else if (value == BLINKER_CMD_COLORTEMP) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_COLORTEMP_NUMBER);
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLORTEMP_NUMBER);
                 }
                 else if (value == BLINKER_CMD_BRIGHTNESS) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
                 }
                 else if (value == BLINKER_CMD_TEMP) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
                 }
                 else if (value == BLINKER_CMD_HUMI) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
                 }
                 else if (value == BLINKER_CMD_PM25) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
                 }
                 else if (value == BLINKER_CMD_MODE) {
-                    if (_queryFunc) _queryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
                 }
             }
             else if (STRING_contains_string(_data, BLINKER_CMD_SET))
             {
                 if (STRING_find_string_value(_data, value, BLINKER_CMD_POWERSTATE))
                 {
-                    if (_powerStateFunc) _powerStateFunc(value);
+                    if (_AliGeniePowerStateFunc) _AliGeniePowerStateFunc(value);
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLOR))
                 {
-                    if (_setColorFunc) _setColorFunc(value);
+                    if (_AliGenieSetColorFunc) _AliGenieSetColorFunc(value);
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_BRIGHTNESS))
                 {
-                    if (_setBrightnessFunc) _setBrightnessFunc(value);
+                    if (_AliGenieSetBrightnessFunc) _AliGenieSetBrightnessFunc(value);
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPBRIGHTNESS))
                 {
-                    if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(value.toInt());
+                    if (_AliGenieSetRelativeBrightnessFunc) _AliGenieSetRelativeBrightnessFunc(value.toInt());
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNBRIGHTNESS))
                 {
-                    if (_setRelativeBrightnessFunc) _setRelativeBrightnessFunc(- value.toInt());
+                    if (_AliGenieSetRelativeBrightnessFunc) _AliGenieSetRelativeBrightnessFunc(- value.toInt());
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLORTEMP))
                 {
-                    if (_setColorTemperature) _setColorTemperature(value.toInt());
+                    if (_AliGenieSetColorTemperature) _AliGenieSetColorTemperature(value.toInt());
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPCOLORTEMP))
                 {
-                    if (_setRelativeColorTemperature) _setRelativeColorTemperature(value.toInt());
+                    if (_AliGenieSetRelativeColorTemperature) _AliGenieSetRelativeColorTemperature(value.toInt());
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNCOLORTEMP))
                 {
-                    if (_setRelativeColorTemperature) _setRelativeColorTemperature(- value.toInt());
+                    if (_AliGenieSetRelativeColorTemperature) _AliGenieSetRelativeColorTemperature(- value.toInt());
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_MODE))
                 {
-                    if (_setModeFunc) _setModeFunc(value);
+                    if (_AliGenieSetModeFunc) _AliGenieSetModeFunc(value);
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_CANCELMODE))
                 {
-                    if (_setcModeFunc) _setcModeFunc(value);
+                    if (_AliGenieSetcModeFunc) _AliGenieSetcModeFunc(value);
+                }
+            }
+        }
+    }
+
+    template <class Proto>
+    void BlinkerApi<Proto>::duerParse(const String & _data)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("DuerOS parse data: "), _data);
+
+        if (STRING_contains_string(_data, "vAssistant"))
+        {
+            String value = "";
+            if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
+            {
+                if (value == BLINKER_CMD_STATE) {
+                    if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                }
+                else if (value == BLINKER_CMD_POWERSTATE) {
+                    if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                }
+                else if (value == BLINKER_CMD_COLOR) {
+                    if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
+                }
+                else if (value == BLINKER_CMD_COLORTEMP) {
+                    if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_COLORTEMP_NUMBER);
+                }
+                else if (value == BLINKER_CMD_BRIGHTNESS) {
+                    if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
+                }
+                else if (value == BLINKER_CMD_TEMP) {
+                    if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
+                }
+                else if (value == BLINKER_CMD_HUMI) {
+                    if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
+                }
+                else if (value == BLINKER_CMD_PM25) {
+                    if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
+                }
+                else if (value == BLINKER_CMD_MODE) {
+                    if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
+                }
+            }
+            else if (STRING_contains_string(_data, BLINKER_CMD_SET))
+            {
+                if (STRING_find_string_value(_data, value, BLINKER_CMD_POWERSTATE))
+                {
+                    if (_DuerOSPowerStateFunc) _DuerOSPowerStateFunc(value);
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLOR))
+                {
+                    if (_DuerOSSetColorFunc) _DuerOSSetColorFunc(value);
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_BRIGHTNESS))
+                {
+                    if (_DuerOSSetBrightnessFunc) _DuerOSSetBrightnessFunc(value);
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPBRIGHTNESS))
+                {
+                    if (_DuerOSSetRelativeBrightnessFunc) _DuerOSSetRelativeBrightnessFunc(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNBRIGHTNESS))
+                {
+                    if (_DuerOSSetRelativeBrightnessFunc) _DuerOSSetRelativeBrightnessFunc(- value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLORTEMP))
+                {
+                    if (_DuerOSSetColorTemperature) _DuerOSSetColorTemperature(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPCOLORTEMP))
+                {
+                    if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNCOLORTEMP))
+                {
+                    if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(- value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_MODE))
+                {
+                    if (_DuerOSSetModeFunc) _DuerOSSetModeFunc(value);
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_CANCELMODE))
+                {
+                    if (_DuerOSSetcModeFunc) _DuerOSSetcModeFunc(value);
                 }
             }
         }

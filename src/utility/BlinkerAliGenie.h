@@ -11,47 +11,47 @@ class BLINKERALIGENIE
 
         void attachPowerState(blinker_callback_with_string_arg_t newFunction)
         {
-            Blinker.attachSetPowerState(newFunction);
+            Blinker.attachAliGenieSetPowerState(newFunction);
         }
 
         void attachColor(blinker_callback_with_string_arg_t newFunction)
         {
-            Blinker.attachSetColor(newFunction);
+            Blinker.attachAliGenieSetColor(newFunction);
         }
 
         void attachMode(blinker_callback_with_string_arg_t newFunction)
         {
-            Blinker.attachSetMode(newFunction);
+            Blinker.attachAliGenieSetMode(newFunction);
         }
 
         void attachCancelMode(blinker_callback_with_string_arg_t newFunction)
         {
-            Blinker.attachSetcMode(newFunction);
+            Blinker.attachAliGenieSetcMode(newFunction);
         }
 
         void attachBrightness(blinker_callback_with_string_arg_t newFunction)
         {
-            Blinker.attachSetBrightness(newFunction);
+            Blinker.attachAliGenieSetBrightness(newFunction);
         }
 
         void attachRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
         {
-            Blinker.attachRelativeBrightness(newFunction);
+            Blinker.attachAliGenieRelativeBrightness(newFunction);
         }
 
         void attachColorTemperature(blinker_callback_with_int32_arg_t newFunction)
         {
-            Blinker.attachSetColorTemperature(newFunction);
+            Blinker.attachAliGenieSetColorTemperature(newFunction);
         }
 
         void attachRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
         {
-            Blinker.attachRelativeColorTemperature(newFunction);
+            Blinker.attachAliGenieRelativeColorTemperature(newFunction);
         }
 
         void attachQuery(blinker_callback_with_int32_arg_t newFunction)
         {
-            Blinker.attachQuery(newFunction);
+            Blinker.attachAliGenieQuery(newFunction);
         }
 
         void powerState(const String & state)

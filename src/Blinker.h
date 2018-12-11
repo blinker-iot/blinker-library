@@ -92,6 +92,14 @@
         #define BLINKER_ALIGENIE
     #endif
 
+    #if defined(BLINKER_DUEROS_LIGHT)
+        #define BLINKER_DUEROS
+    #elif defined(BLINKER_DUEROS_OUTLET)
+        #define BLINKER_DUEROS
+    #elif defined(BLINKER_DUEROS_SENSOR)
+        #define BLINKER_DUEROS
+    #endif
+
     #if defined(ESP8266) || defined(ESP32)
         #include "Blinker/BlinkerDebug.h"
         #include "BlinkerESPMQTT.h"
