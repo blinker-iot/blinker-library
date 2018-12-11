@@ -243,4 +243,34 @@
 
 #endif
 
+#if defined(ESP32)
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/task.h"
+    #include "Arduino.h"
+
+    // #if CONFIG_AUTOSTART_ARDUINO
+
+    #if CONFIG_FREERTOS_UNICORE
+    #define ARDUINO_RUNNING_CORE 0
+    #else
+    #define ARDUINO_RUNNING_CORE 1
+    #endif
+
+    void blinkerLoopTask(void *pvParameters)
+    {
+        for(;;) {
+            Blinker.run();
+            delay(1);
+        }
+    }
+
+    extern "C" void blinkerTaskInit()
+    {
+        // initArduino();
+        xTaskCreatePinnedToCore(blinkerLoopTask, "blinkerLoopTask", 4096, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
+    }
+
+    // #endif
+#endif
+
 #endif
