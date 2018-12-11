@@ -416,9 +416,9 @@
 
 #define BLINKER_CMD_QUERY_PM10_NUMBER           9
 
-#define BLINKER_CMD_QUERY_AQI_NUMBER            10
+#define BLINKER_CMD_QUERY_CO2_NUMBER            10
 
-#define BLINKER_CMD_QUERY_CO2_NUMBER            11
+#define BLINKER_CMD_QUERY_AQI_NUMBER            11
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT          128
 

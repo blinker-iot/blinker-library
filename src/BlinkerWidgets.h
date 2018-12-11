@@ -30,7 +30,6 @@
     defined(BLINKER_NBIOT)
 
     BlinkerSwitch BUILTIN_SWITCH;
-
 #endif
 
 #endif
