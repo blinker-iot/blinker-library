@@ -43,10 +43,20 @@ class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
                 String _aliType = BLINKER_F("");
             #endif
 
+            #if defined(BLINKER_DUEROS_LIGHT)
+                String _duerType = BLINKER_F("&duerType=LIGHT");
+            #elif defined(BLINKER_DUEROS_OUTLET)
+                String _duerType = BLINKER_F("&duerType=outlet");
+            #elif defined(BLINKER_DUEROS_SENSOR)
+                String _duerType = BLINKER_F("&duerType=sensor");
+            #else
+                String _duerType = BLINKER_F("");
+            #endif
+
             #if defined(BLINKER_ESP_SMARTCONFIG)
-                smartconfigBegin(_auth, _aliType);
+                smartconfigBegin(_auth, _aliType, _duerType);
             #elif defined(BLINKER_APCONFIG)
-                apconfigBegin(_auth, _aliType);
+                apconfigBegin(_auth, _aliType, _duerType);
             #endif
         }
 
@@ -63,17 +73,28 @@ class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
             #else
                 String _aliType = BLINKER_F("");
             #endif
+
+            #if defined(BLINKER_DUEROS_LIGHT)
+                String _duerType = BLINKER_F("&duerType=LIGHT");
+            #elif defined(BLINKER_DUEROS_OUTLET)
+                String _duerType = BLINKER_F("&duerType=SOCKET");
+            #elif defined(BLINKER_DUEROS_SENSOR)
+                String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
+            #else
+                String _duerType = BLINKER_F("");
+            #endif
             
-            commonBegin(_auth, _ssid, _pswd, _aliType);
+            commonBegin(_auth, _ssid, _pswd, _aliType, _duerType);
         }
 
     private :
         void commonBegin(const char* _auth, 
                         const char* _ssid, 
                         const char* _pswd,
-                        String & _type);
-        void smartconfigBegin(const char* _auth, String & _type);
-        void apconfigBegin(const char* _auth, String & _type);
+                        String & _alitype,
+                        String & _duertype);
+        void smartconfigBegin(const char* _auth, String & _alitype, String & _duertype);
+        void apconfigBegin(const char* _auth, String & _alitype, String & _duertype);
 
         bool autoInit();
         void smartconfig();
@@ -88,12 +109,14 @@ class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
 void BlinkerESPMQTT::commonBegin(const char* _auth,
                                 const char* _ssid,
                                 const char* _pswd,
-                                String & _type)
+                                String & _alitype,
+                                String & _duertype)
 {
     Base::begin();
     connectWiFi(_ssid, _pswd);
     // Base::loadOTA();
-    this->conn.aliType(_type);
+    this->conn.aliType(_alitype);
+    this->conn.duerType(_duertype);
     this->conn.begin(_auth);
     Base::loadTimer();
 
@@ -104,12 +127,14 @@ void BlinkerESPMQTT::commonBegin(const char* _auth,
     #endif
 }
 
-void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _type)
+void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _alitype,
+                                String & _duertype)
 {
     Base::begin();
     if (!autoInit()) smartconfig();
     // Base::loadOTA();
-    this->conn.aliType(_type);
+    this->conn.aliType(_alitype);
+    this->conn.duerType(_duertype);
     this->conn.begin(_auth);
     Base::loadTimer();
 
@@ -120,7 +145,8 @@ void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _type)
     #endif
 }
 
-void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _type)
+void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _alitype,
+                                String & _duertype)
 {
     Base::begin();
     if (!autoInit())
@@ -134,7 +160,8 @@ void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _type)
     }
     // Base::loadOTA();
 
-    this->conn.aliType(_type);
+    this->conn.aliType(_alitype);
+    this->conn.duerType(_duertype);
     this->conn.begin(_auth);
     Base::loadTimer();
 

@@ -19,12 +19,17 @@
     BLINKERALIGENIE BlinkerAliGenie;    
 #endif
 
+#if defined(BLINKER_DUEROS)
+    #include "utility/BlinkerDuerOS.h"
+
+    BLINKERDUEROS BlinkerDuerOS;    
+#endif
+
 #if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \
     defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_NBIOT)
 
     BlinkerSwitch BUILTIN_SWITCH;
-
 #endif
 
 #endif

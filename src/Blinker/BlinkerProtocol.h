@@ -176,6 +176,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
             void bridgePrint(char * bName, const String & data);
             void aligeniePrint(String & _msg);
+            void duerPrint(String & _msg);
             // void freshAlive();
         #endif
 
@@ -190,6 +191,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void checkFormat();
         bool checkAvail();
         bool checkAliAvail() { return conn.aligenieAvail(); }
+        bool checkDuerAvail() { return conn.duerAvail(); }
         char* dataParse()   { if (canParse) return conn.lastRead(); else return ""; }
         char* lastRead()    { return conn.lastRead(); }
         void isParsed()     { flush(); }
@@ -1054,6 +1056,27 @@ void BlinkerProtocol<Transp>::flush()
             // memcpy(aliData, '\0', _msg.length()+128);
             // strcpy(aliData, _msg.c_str());
             conn.aliPrint(_msg);
+            // free(aliData);
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        }
+    }
+
+    template <class Transp>
+    void BlinkerProtocol<Transp>::duerPrint(String & _msg)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("response to DuerOS: "), _msg);
+
+        // conn.aliPrint(_msg);
+
+        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+        {
+            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
+            // memcpy(aliData, '\0', _msg.length()+128);
+            // strcpy(aliData, _msg.c_str());
+            conn.duerPrint(_msg);
             // free(aliData);
         }
         else
@@ -2441,11 +2464,20 @@ void BlinkerProtocol<Transp>::run()
                     BApi::parse(dataParse());
                 }
 
-                #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) && defined(BLINKER_ALIGENIE)
-                    if (checkAliAvail())
-                    {
-                        BApi::aliParse(conn.lastRead());
-                    }
+                #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) 
+                    #if defined(BLINKER_ALIGENIE)
+                        if (checkAliAvail())
+                        {
+                            BApi::aliParse(conn.lastRead());
+                        }
+                    #endif
+
+                    #if defined(BLINKER_DUEROS)
+                        if (checkDuerAvail())
+                        {
+                            BApi::duerParse(conn.lastRead());
+                        }
+                    #endif
                 #endif
 
                 #if defined(BLINKER_MQTT_AT) && defined(BLINKER_ALIGENIE)
