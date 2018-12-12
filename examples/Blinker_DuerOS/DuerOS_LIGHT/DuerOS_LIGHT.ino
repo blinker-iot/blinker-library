@@ -201,22 +201,22 @@ void duerMode(const String & mode)
 {
     BLINKER_LOG("need set mode: ", mode);
 
-    if (mode == BLINKER_CMD_READING) {
+    if (cmode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_MOVIE) {
+    else if (cmode == BLINKER_CMD_DUEROS_SLEEP) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_SLEEP) {
+    else if (cmode == BLINKER_CMD_DUEROS_ALARM) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_HOLIDAY) {
+    else if (cmode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_MUSIC) {
+    else if (cmode == BLINKER_CMD_DUEROS_ROMANTIC) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_COMMON) {
+    else if (cmode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
 
@@ -230,22 +230,22 @@ void duercMode(const String & cmode)
 {
     BLINKER_LOG("need cancel mode: ", cmode);
 
-    if (cmode == BLINKER_CMD_READING) {
+    if (cmode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_MOVIE) {
+    else if (cmode == BLINKER_CMD_DUEROS_SLEEP) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_SLEEP) {
+    else if (cmode == BLINKER_CMD_DUEROS_ALARM) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_HOLIDAY) {
+    else if (cmode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_MUSIC) {
+    else if (cmode == BLINKER_CMD_DUEROS_ROMANTIC) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_COMMON) {
+    else if (cmode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
 
