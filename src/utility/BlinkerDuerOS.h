@@ -423,7 +423,7 @@ class BLINKERDUEROS
         void time(uint32_t _time)
         {
             String payload = "\"" + STRING_format(BLINKER_CMD_TIME_ALL) + 
-                "\":\"" + STRING_format(_time/1000/60) + "\"";
+                "\":" + STRING_format(_time/1000);
 
             // Blinker.DuerOSPrint(payload);
 
