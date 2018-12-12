@@ -115,7 +115,7 @@ class BLINKERDUEROS
         void brightness(int now_bright)
         {
             String payload = "\"" + STRING_format(BLINKER_CMD_BRIGHTNESS) + 
-                "\":[," + \
+                "\":[\"\"," + \
                 STRING_format(now_bright) + "]";
 
             // Blinker.DuerOSPrint(payload);
@@ -418,6 +418,23 @@ class BLINKERDUEROS
             strcpy(aAQI, payload.c_str());
 
             _fresh |= 0x01 << 9;
+        }        
+
+        void time(uint32_t _time)
+        {
+            String payload = "\"" + STRING_format(BLINKER_CMD_TIME_ALL) + 
+                "\":\"" + STRING_format(_time/1000/60) + "\"";
+
+            // Blinker.DuerOSPrint(payload);
+
+            if (_fresh >> 10 & 0x01) {
+                free(aTIME);
+            }
+
+            aTIME = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aTIME, payload.c_str());
+
+            _fresh |= 0x01 << 10;
         }
 
         void print()
@@ -516,6 +533,15 @@ class BLINKERDUEROS
                 free(aAQI);
             }
 
+            if (_fresh >> 10 & 0x01) {
+                if (duerData.length()) duerData += BLINKER_F(",");
+                else duerData += BLINKER_F("{");
+                
+                duerData += aTIME;
+                
+                free(aTIME);
+            }
+
             duerData += BLINKER_F("}");
 
             _fresh = 0;
@@ -534,7 +560,8 @@ class BLINKERDUEROS
         char * aPm10;
         char * aCO2;        
         char * aAQI;
-        uint8_t _fresh = 0;
+        char * aTIME;
+        uint16_t _fresh = 0;
 };
 
 #endif

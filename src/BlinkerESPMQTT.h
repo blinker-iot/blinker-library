@@ -46,9 +46,9 @@ class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
             #if defined(BLINKER_DUEROS_LIGHT)
                 String _duerType = BLINKER_F("&duerType=LIGHT");
             #elif defined(BLINKER_DUEROS_OUTLET)
-                String _duerType = BLINKER_F("&duerType=outlet");
+                String _duerType = BLINKER_F("&duerType=SOCKET");
             #elif defined(BLINKER_DUEROS_SENSOR)
-                String _duerType = BLINKER_F("&duerType=sensor");
+                String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
             #else
                 String _duerType = BLINKER_F("");
             #endif

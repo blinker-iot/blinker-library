@@ -71,6 +71,11 @@ void duerQuery(int32_t queryCode)
             BlinkerDuerOS.temp(20);
             BlinkerDuerOS.print();
             break;
+        case BLINKER_CMD_QUERY_TIME_NUMBER :
+            BLINKER_LOG("DuerOS Query time");
+            BlinkerDuerOS.time(millis());
+            BlinkerDuerOS.print();
+            break;
         default :
             BlinkerDuerOS.temp(20);
             BlinkerDuerOS.humi(20);
@@ -78,6 +83,7 @@ void duerQuery(int32_t queryCode)
             BlinkerDuerOS.pm10(20);
             BlinkerDuerOS.co2(20);
             BlinkerDuerOS.aqi(20);
+            BlinkerDuerOS.time(millis());
             BlinkerDuerOS.print();
             break;
     }
