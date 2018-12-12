@@ -1118,7 +1118,7 @@ void BlinkerProtocol<Transp>::flush()
 
                 _data = _data.substring(0, _data.length() - 1);
 
-                _data += BLINKER_F(",");
+                if (_data.length() > 4 ) _data += BLINKER_F(",");
                 _data += jsonValue;
                 _data += BLINKER_F("}");
             }
