@@ -903,6 +903,9 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
             }
             else if (value == BLINKER_CMD_MODE) {
                 if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
+            }            
+            else if (value == BLINKER_CMD_TIME_ALL) {
+                if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_TIME_NUMBER);
             }
         }
         else if (root.containsKey(BLINKER_CMD_SET)) {

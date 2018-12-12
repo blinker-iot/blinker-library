@@ -260,7 +260,7 @@
     {
         for(;;) {
             Blinker.run();
-            delay(1);
+            vTaskDelay(1);
         }
     }
 

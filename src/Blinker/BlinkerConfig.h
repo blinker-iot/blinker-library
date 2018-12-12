@@ -256,6 +256,8 @@
 
 #define BLINKER_CMD_TIME                "tim"
 
+#define BLINKER_CMD_TIME_ALL            "time"
+
 #define BLINKER_CMD_TIMES               "tis"
 
 #define BLINKER_CMD_TRIGGED             "tri"
@@ -419,6 +421,8 @@
 #define BLINKER_CMD_QUERY_CO2_NUMBER            10
 
 #define BLINKER_CMD_QUERY_AQI_NUMBER            11
+
+#define BLINKER_CMD_QUERY_TIME_NUMBER           12
 
 #define BLINKER_JOYSTICK_VALUE_DEFAULT          128
 

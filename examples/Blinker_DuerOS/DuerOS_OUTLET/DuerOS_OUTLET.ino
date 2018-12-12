@@ -59,6 +59,24 @@ void duerPowerState(const String & state)
     }
 }
 
+void duerQuery(int32_t queryCode)
+{
+    BLINKER_LOG("DuerOS Query codes: ", queryCode);
+
+    switch (queryCode)
+    {
+        case BLINKER_CMD_QUERY_TIME_NUMBER :
+            BLINKER_LOG("DuerOS Query time");
+            BlinkerDuerOS.time(millis());
+            BlinkerDuerOS.print();
+            break;
+        default :
+            BlinkerDuerOS.time(millis());
+            BlinkerDuerOS.print();
+            break;
+    }
+}
+
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
@@ -85,6 +103,7 @@ void setup()
     Blinker.attachData(dataRead);
     
     BlinkerDuerOS.attachPowerState(duerPowerState);
+    BlinkerDuerOS.attachQuery(duerQuery);
 }
 
 void loop()
