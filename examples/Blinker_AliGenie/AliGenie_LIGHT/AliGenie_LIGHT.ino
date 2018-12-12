@@ -201,22 +201,22 @@ void aligenieMode(const String & mode)
 {
     BLINKER_LOG("need set mode: ", mode);
 
-    if (mode == BLINKER_CMD_READING) {
+    if (mode == BLINKER_CMD_ALIGENIE_READING) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_MOVIE) {
+    else if (mode == BLINKER_CMD_ALIGENIE_MOVIE) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_SLEEP) {
+    else if (mode == BLINKER_CMD_ALIGENIE_SLEEP) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_HOLIDAY) {
+    else if (mode == BLINKER_CMD_ALIGENIE_HOLIDAY) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_MUSIC) {
+    else if (mode == BLINKER_CMD_ALIGENIE_MUSIC) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_COMMON) {
+    else if (mode == BLINKER_CMD_ALIGENIE_COMMON) {
         // Your mode function
     }
 
@@ -230,22 +230,22 @@ void aligeniecMode(const String & cmode)
 {
     BLINKER_LOG("need cancel mode: ", cmode);
 
-    if (cmode == BLINKER_CMD_READING) {
+    if (cmode == BLINKER_CMD_ALIGENIE_READING) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_MOVIE) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_MOVIE) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_SLEEP) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_SLEEP) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_HOLIDAY) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_HOLIDAY) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_MUSIC) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_MUSIC) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_COMMON) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_COMMON) {
         // Your mode function
     }
 
