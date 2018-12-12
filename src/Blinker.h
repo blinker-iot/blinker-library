@@ -204,6 +204,10 @@
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
+#else
+
+    #error Please set a mode BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT ! Please check your mode setting.
+
 #endif
 
 #include "BlinkerWidgets.h"
