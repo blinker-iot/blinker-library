@@ -143,7 +143,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
             bool autoTrigged(uint32_t _id);
             bool checkCanOTA();
             // bool autoTrigged(char *name, char *type, char *data);
-            // bool autoTrigged(char *name1, char *type1, char *data1, \
+            // bool autoTrigged(char *name1, char *type1, char *data1, 
             //                 char *name2, char *type2, char *data2);
         #endif
 
@@ -192,7 +192,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         bool checkAvail();
         bool checkAliAvail() { return conn.aligenieAvail(); }
         bool checkDuerAvail() { return conn.duerAvail(); }
-        char* dataParse()   { if (canParse) return conn.lastRead(); else return ""; }
+        char* dataParse()   { if (canParse) return conn.lastRead(); else return NULL; }
         char* lastRead()    { return conn.lastRead(); }
         void isParsed()     { flush(); }
         bool parseState()   { return canParse; }
@@ -267,7 +267,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         // String              _bKey_forwhile;
                 
         void _timerPrint(const String & n);
-        void _print(char * n, bool needParse = true, bool needCheckLength = true);
+        void _print(char * n, bool needCheckLength = true);
         void begin();
 
         #if defined(BLINKER_PRO)
@@ -667,7 +667,7 @@ void BlinkerProtocol<Transp>::flush()
     // }
 
     // template <class Transp>
-    // bool BlinkerProtocol<Transp>::autoTrigged(char *name1, char *type1, char *data1, \
+    // bool BlinkerProtocol<Transp>::autoTrigged(char *name1, char *type1, char *data1, 
     //     char *name2, char *type2, char *data2)
     // {
     //     BLINKER_LOG_ALL(BLINKER_F("autoTrigged"));
@@ -1268,7 +1268,7 @@ void BlinkerProtocol<Transp>::_timerPrint(const String & n)
 }
 
 template <class Transp>
-void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLength)
+void BlinkerProtocol<Transp>::_print(char * n, bool needCheckLength)
 {
     BLINKER_LOG_ALL(BLINKER_F("print: "), n);
     
@@ -1308,8 +1308,8 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
             ESP.restart();
         }
         else if (_slaverAT->cmd() == BLINKER_CMD_GMR) {
-            // reqData = "+" + STRING_format(BLINKER_CMD_GMR) + \
-            //         "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + \
+            // reqData = "+" + STRING_format(BLINKER_CMD_GMR) + 
+            //         "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + 
             //         "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
             conn.serialPrint(BLINKER_ESP_AT_VERSION);
             conn.serialPrint(BLINKER_VERSION);
@@ -1986,7 +1986,7 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
         else if (_slaverAT->cmd() == BLINKER_CMD_NOTICE_AT && _slaverAT->state() == AT_SETTING) {
             if (1 != _slaverAT->paramNum()) return;
             
-            // reqData = "+" + STRING_format(BLINKER_CMD_NOTICE_AT) + \
+            // reqData = "+" + STRING_format(BLINKER_CMD_NOTICE_AT) + 
             //         ":" + STRING_format(BApi::aqi(_slaverAT->getParam(0)));
             notify(_slaverAT->getParam(0));
             // conn.serialPrint(reqData);
@@ -1995,7 +1995,7 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needParse, bool needCheckLen
         else if (_slaverAT->cmd() == BLINKER_CMD_SMS_AT && _slaverAT->state() == AT_SETTING) {
             if (1 != _slaverAT->paramNum()) return;
             
-            // reqData = "+" + STRING_format(BLINKER_CMD_NOTICE_AT) + \
+            // reqData = "+" + STRING_format(BLINKER_CMD_NOTICE_AT) + 
             //         ":" + STRING_format(BApi::aqi(_slaverAT->getParam(0)));
             BApi::sms(_slaverAT->getParam(0));
             // conn.serialPrint(reqData);
@@ -2069,28 +2069,28 @@ void BlinkerProtocol<Transp>::begin()
 {
     BLINKER_LOG(BLINKER_F(""));
     #if defined(BLINKER_NO_LOGO)
-        BLINKER_LOG(BLINKER_F("Blinker v"BLINKER_VERSION"\n"
-                    "    Give Blinker a Github star, thanks!\n"
-                    "    => https://github.com/blinker-iot/blinker-library\n"));
+        BLINKER_LOG(BLINKER_F("Blinker v"), BLINKER_VERSION, BLINKER_F("\n"),
+                    BLINKER_F("    Give Blinker a Github star, thanks!\n"),
+                    BLINKER_F("    => https://github.com/blinker-iot/blinker-library\n"));
     #elif defined(BLINKER_LOGO_3D)
-        BLINKER_LOG(BLINKER_F("\n"
-            " ____    ___                __                       \n"
-            "/\\  _`\\ /\\_ \\    __        /\\ \\               v"BLINKER_VERSION"\n"
-            "\\ \\ \\L\\ \\//\\ \\  /\\_\\    ___\\ \\ \\/'\\      __   _ __   \n"
-            " \\ \\  _ <'\\ \\ \\ \\/\\ \\ /' _ `\\ \\ , <    /'__`\\/\\`'__\\ \n"
-            "  \\ \\ \\L\\ \\\\_\\ \\_\\ \\ \\/\\ \\/\\ \\ \\ \\\\`\\ /\\  __/\\ \\ \\/  \n"
-            "   \\ \\____//\\____\\\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\____\\\\ \\_\\  \n"
-            "    \\/___/ \\/____/ \\/_/\\/_/\\/_/\\/_/\\/_/\\/____/ \\/_/  \n"
-            "   Give Blinker a Github star, thanks!\n"
-            "   => https://github.com/blinker-iot/blinker-library\n"));
+        BLINKER_LOG(BLINKER_F("\n"),
+            BLINKER_F(" ____    ___                __                       \n"),
+            BLINKER_F("/\\  _`\\ /\\_ \\    __        /\\ \\               v"), BLINKER_VERSION, BLINKER_F("\n"),
+            BLINKER_F("\\ \\ \\L\\ \\//\\ \\  /\\_\\    ___\\ \\ \\/'\\      __   _ __   \n"),
+            BLINKER_F(" \\ \\  _ <'\\ \\ \\ \\/\\ \\ /' _ `\\ \\ , <    /'__`\\/\\`'__\\ \n"),
+            BLINKER_F("  \\ \\ \\L\\ \\\\_\\ \\_\\ \\ \\/\\ \\/\\ \\ \\ \\\\`\\ /\\  __/\\ \\ \\/  \n"),
+            BLINKER_F("   \\ \\____//\\____\\\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\____\\\\ \\_\\  \n"),
+            BLINKER_F("    \\/___/ \\/____/ \\/_/\\/_/\\/_/\\/_/\\/_/\\/____/ \\/_/  \n"),
+            BLINKER_F("   Give Blinker a Github star, thanks!\n"),
+            BLINKER_F("   => https://github.com/blinker-iot/blinker-library\n"));
     #else
-        BLINKER_LOG(BLINKER_F("\n"
-            "   ___  ___      __    v"BLINKER_VERSION"\n"
-            "  / _ )/ (_)__  / /_____ ____\n"
-            " / _  / / / _ \\/  '_/ -_) __/\n"
-            "/____/_/_/_//_/_/\\_\\\\__/_/   \n"
-            "Give Blinker a github star, thanks!\n"
-            "=> https://github.com/blinker-iot/blinker-library\n"));
+        BLINKER_LOG(BLINKER_F("\n"),
+            BLINKER_F("   ___  ___      __    v"), BLINKER_VERSION, BLINKER_F("\n"),
+            BLINKER_F("  / _ )/ (_)__  / /_____ ____\n"),
+            BLINKER_F(" / _  / / / _ \\/  '_/ -_) __/\n")
+            BLINKER_F("/____/_/_/_//_/_/\\_\\\\__/_/   \n")
+            BLINKER_F("Give Blinker a github star, thanks!\n")
+            BLINKER_F("=> https://github.com/blinker-iot/blinker-library\n"));
     #endif
 
     #if defined(BLINKER_OTA_VERSION_CODE) && (defined(BLINKER_MQTT) || defined(BLINKER_MQTT_AT))
@@ -2351,7 +2351,7 @@ void BlinkerProtocol<Transp>::run()
             }
         }
         else {
-            // if (((millis() - _disconnectTime) > BLINKER_MQTT_CONNECT_TIMESLOT * 10 && \
+            // if (((millis() - _disconnectTime) > BLINKER_MQTT_CONNECT_TIMESLOT * 10 && 
             //     _disconnectCount) || _disconnectCount >= 12)
 
             // if (_disconnectCount >= 12)

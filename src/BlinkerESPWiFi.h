@@ -285,7 +285,7 @@ void BlinkerESPWiFi::softAPinit()
 
 //                 BLINKER_LOG(BLINKER_F("clientData: "), data);
 
-//                 if (STRING_contains_string(data, "ssid") && \
+//                 if (STRING_contains_string(data, "ssid") && 
 //                     STRING_contains_string(data, "pswd"))
 //                 {
 //                     String msg = BLINKER_F("{\"hello\":\"world\"}");

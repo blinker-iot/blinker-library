@@ -81,7 +81,8 @@ class BlinkerOTA
         uint16_t ota_port = 443;
         char *otaUrl;
         bota_status_t _status;
-        int contentLength = 0;
+        // int
+        size_t contentLength = 0;
         bool isValidContentType = false;
 };
 
@@ -186,7 +187,7 @@ bool BlinkerOTA::update() {
     BLINKER_LOG_ALL(BLINKER_F("Connecting to: "), ota_host);
 #endif
     while (1) {
-        bool cl_connected = false;
+        // bool cl_connected = false;
         if (!client_s.connect(ota_host.c_str(), ota_port)) {
     // #ifdef BLINKER_DEBUG_ALL
             BLINKER_ERR_LOG(BLINKER_F("server connection failed"));

@@ -109,6 +109,8 @@ void webSocketEvent(uint8_t num, WStype_t type, \
             // send message to client
             // webSocket.sendBIN(num, payload, length);
             break;
+        default :
+            break;
     }
 }
 
@@ -139,7 +141,7 @@ bool BlinkerWiFi::available()
 char * BlinkerWiFi::lastRead()
 {
     if (isFresh) return msgBuf;
-    else "";
+    else return NULL;
 }
 
 void BlinkerWiFi::flush()

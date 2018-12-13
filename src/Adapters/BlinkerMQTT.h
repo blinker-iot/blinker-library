@@ -49,7 +49,7 @@ class BlinkerMQTT
         void begin(const char* auth);
         bool autoPrint(uint32_t id);
         // bool autoPrint(char *name, char *type, char *data);
-        // bool autoPrint(char *name1, char *type1, char *data1, \
+        // bool autoPrint(char *name1, char *type1, char *data1, 
         //             char *name2, char *type2, char *data2);
         char * deviceName();
         char * authKey() { return _authKey; }
@@ -201,6 +201,8 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
 
             // send message to client
             // webSocket_MQTT.sendBIN(num, payload, length);
+            break;
+        default :
             break;
     }
 }
@@ -448,7 +450,7 @@ void BlinkerMQTT::subscribe()
 char * BlinkerMQTT::lastRead()
 {
     if (isFresh_MQTT) return msgBuf_MQTT;
-    return "";
+    else return NULL;
 }
 
 void BlinkerMQTT::flush()
@@ -688,7 +690,7 @@ bool BlinkerMQTT::bPrint(char * name, const String & data)
 
         String bPubTopic = BLINKER_F("");
 
-        if (mqtt_broker == BLINKER_MQTT_BORKER_ONENET)
+        if (strcmp(mqtt_broker, BLINKER_MQTT_BORKER_ONENET) == 0)
         {
             bPubTopic = MQTT_PRODUCTINFO_MQTT;
             bPubTopic += BLINKER_F("/");
@@ -973,7 +975,7 @@ bool BlinkerMQTT::autoPrint(uint32_t id)
 //     BLINKER_LOG_ALL(BLINKER_F("autoPrint..."));
     
 //     if (mqtt_MQTT->connected()) {
-//         if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || \
+//         if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || 
 //             linkTime == 0)
 //         {
 //             linkTime = millis();
@@ -1012,7 +1014,7 @@ bool BlinkerMQTT::autoPrint(uint32_t id)
     
 //     if (mqtt_MQTT->connected())
 //     {
-//         if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || \
+//         if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || 
 //             linkTime == 0)
 //         {
 //             linkTime = millis();
@@ -1050,7 +1052,7 @@ bool BlinkerMQTT::autoPrint(uint32_t id)
 char * BlinkerMQTT::deviceName() { return DEVICE_NAME_MQTT;/*MQTT_ID_MQTT;*/ }
 
 bool BlinkerMQTT::connectServer() {
-    const int httpsPort = 443;
+    // const int httpsPort = 443;
 #if defined(ESP8266)
     String host = BLINKER_F("iotdev.clz.me");
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
@@ -1217,33 +1219,33 @@ bool BlinkerMQTT::connectServer() {
 
 #elif defined(ESP32)
     String host = BLINKER_F("https://iotdev.clz.me");
-    // const char* ca = \ 
-    //     "-----BEGIN CERTIFICATE-----\n" \
-    //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
-    //     "MQswCQYDVQQGEwJDTjElMCMGA1UEChMcVHJ1c3RBc2lhIFRlY2hub2xvZ2llcywg\n" \
-    //     "SW5jLjEdMBsGA1UECxMURG9tYWluIFZhbGlkYXRlZCBTU0wxHTAbBgNVBAMTFFRy\n" \
-    //     "dXN0QXNpYSBUTFMgUlNBIENBMB4XDTE4MDEwNDAwMDAwMFoXDTE5MDEwNDEyMDAw\n" \
-    //     "MFowGDEWMBQGA1UEAxMNaW90ZGV2LmNsei5tZTCCASIwDQYJKoZIhvcNAQEBBQAD\n" \
-    //     "ggEPADCCAQoCggEBALbOFn7cJ2I/FKMJqIaEr38n4kCuJCCeNf1bWdWvOizmU2A8\n" \
-    //     "QeTAr5e6Q3GKeJRdPnc8xXhqkTm4LOhgdZB8KzuVZARtu23D4vj4sVzxgC/zwJlZ\n" \
-    //     "MRMxN+cqI37kXE8gGKW46l2H9vcukylJX+cx/tjWDfS2YuyXdFuS/RjhCxLgXzbS\n" \
-    //     "cve1W0oBZnBPRSMV0kgxTWj7hEGZNWKIzK95BSCiMN59b+XEu3NWGRb/VzSAiJEy\n" \
-    //     "Hy9DcDPBC9TEg+p5itHtdMhy2gq1OwsPgl9HUT0xmDATSNEV2RB3vwviNfu9/Eif\n" \
-    //     "ObhsV078zf30TqdiESqISEB68gJ0Otru67ePoTkCAwEAAaOCAWowggFmMB8GA1Ud\n" \
-    //     "IwQYMBaAFH/TmfOgRw4xAFZWIo63zJ7dygGKMB0GA1UdDgQWBBR/KLqnke61779P\n" \
-    //     "xc9htonQwLOxPDAYBgNVHREEETAPgg1pb3RkZXYuY2x6Lm1lMA4GA1UdDwEB/wQE\n" \
-    //     "AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwTAYDVR0gBEUwQzA3\n" \
-    //     "BglghkgBhv1sAQIwKjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQu\n" \
-    //     "Y29tL0NQUzAIBgZngQwBAgEwgYEGCCsGAQUFBwEBBHUwczAlBggrBgEFBQcwAYYZ\n" \
-    //     "aHR0cDovL29jc3AyLmRpZ2ljZXJ0LmNvbTBKBggrBgEFBQcwAoY+aHR0cDovL2Nh\n" \
-    //     "Y2VydHMuZGlnaXRhbGNlcnR2YWxpZGF0aW9uLmNvbS9UcnVzdEFzaWFUTFNSU0FD\n" \
-    //     "QS5jcnQwCQYDVR0TBAIwADANBgkqhkiG9w0BAQsFAAOCAQEAhtM4eyrWB14ajJpQ\n" \
-    //     "ibZ5FbzVuvv2Le0FOSoss7UFCDJUYiz2LiV8yOhL4KTY+oVVkqHaYtcFS1CYZNzj\n" \
-    //     "6xWcqYZJ+pgsto3WBEgNEEe0uLSiTW6M10hm0LFW9Det3k8fqwSlljqMha3gkpZ6\n" \
-    //     "8WB0f2clXOuC+f1SxAOymnGUsSqbU0eFSgevcOIBKR7Hr3YXBXH3jjED76Q52OMS\n" \
-    //     "ucfOM9/HB3jN8o/ioQbkI7xyd/DUQtzK6hSArEoYRl3p5H2P4fr9XqmpoZV3i3gQ\n" \
-    //     "oOdVycVtpLunyUoVAB2DcOElfDxxXCvDH3XsgoIU216VY03MCaUZf7kZ2GiNL+UX\n" \
-    //     "9UBd0Q==\n" \
+    // const char* ca = 
+    //     "-----BEGIN CERTIFICATE-----\n" 
+    //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" 
+    //     "MQswCQYDVQQGEwJDTjElMCMGA1UEChMcVHJ1c3RBc2lhIFRlY2hub2xvZ2llcywg\n" 
+    //     "SW5jLjEdMBsGA1UECxMURG9tYWluIFZhbGlkYXRlZCBTU0wxHTAbBgNVBAMTFFRy\n"  
+    //     "dXN0QXNpYSBUTFMgUlNBIENBMB4XDTE4MDEwNDAwMDAwMFoXDTE5MDEwNDEyMDAw\n"  
+    //     "MFowGDEWMBQGA1UEAxMNaW90ZGV2LmNsei5tZTCCASIwDQYJKoZIhvcNAQEBBQAD\n"  
+    //     "ggEPADCCAQoCggEBALbOFn7cJ2I/FKMJqIaEr38n4kCuJCCeNf1bWdWvOizmU2A8\n"  
+    //     "QeTAr5e6Q3GKeJRdPnc8xXhqkTm4LOhgdZB8KzuVZARtu23D4vj4sVzxgC/zwJlZ\n"  
+    //     "MRMxN+cqI37kXE8gGKW46l2H9vcukylJX+cx/tjWDfS2YuyXdFuS/RjhCxLgXzbS\n"  
+    //     "cve1W0oBZnBPRSMV0kgxTWj7hEGZNWKIzK95BSCiMN59b+XEu3NWGRb/VzSAiJEy\n"  
+    //     "Hy9DcDPBC9TEg+p5itHtdMhy2gq1OwsPgl9HUT0xmDATSNEV2RB3vwviNfu9/Eif\n"  
+    //     "ObhsV078zf30TqdiESqISEB68gJ0Otru67ePoTkCAwEAAaOCAWowggFmMB8GA1Ud\n"  
+    //     "IwQYMBaAFH/TmfOgRw4xAFZWIo63zJ7dygGKMB0GA1UdDgQWBBR/KLqnke61779P\n"  
+    //     "xc9htonQwLOxPDAYBgNVHREEETAPgg1pb3RkZXYuY2x6Lm1lMA4GA1UdDwEB/wQE\n"  
+    //     "AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwTAYDVR0gBEUwQzA3\n"  
+    //     "BglghkgBhv1sAQIwKjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQu\n"  
+    //     "Y29tL0NQUzAIBgZngQwBAgEwgYEGCCsGAQUFBwEBBHUwczAlBggrBgEFBQcwAYYZ\n"  
+    //     "aHR0cDovL29jc3AyLmRpZ2ljZXJ0LmNvbTBKBggrBgEFBQcwAoY+aHR0cDovL2Nh\n"  
+    //     "Y2VydHMuZGlnaXRhbGNlcnR2YWxpZGF0aW9uLmNvbS9UcnVzdEFzaWFUTFNSU0FD\n"  
+    //     "QS5jcnQwCQYDVR0TBAIwADANBgkqhkiG9w0BAQsFAAOCAQEAhtM4eyrWB14ajJpQ\n"  
+    //     "ibZ5FbzVuvv2Le0FOSoss7UFCDJUYiz2LiV8yOhL4KTY+oVVkqHaYtcFS1CYZNzj\n"  
+    //     "6xWcqYZJ+pgsto3WBEgNEEe0uLSiTW6M10hm0LFW9Det3k8fqwSlljqMha3gkpZ6\n"  
+    //     "8WB0f2clXOuC+f1SxAOymnGUsSqbU0eFSgevcOIBKR7Hr3YXBXH3jjED76Q52OMS\n"  
+    //     "ucfOM9/HB3jN8o/ioQbkI7xyd/DUQtzK6hSArEoYRl3p5H2P4fr9XqmpoZV3i3gQ\n"  
+    //     "oOdVycVtpLunyUoVAB2DcOElfDxxXCvDH3XsgoIU216VY03MCaUZf7kZ2GiNL+UX\n"  
+    //     "9UBd0Q==\n"  
     //     "-----END CERTIFICATE-----\n";
 // #endif
 
@@ -1461,7 +1463,7 @@ bool BlinkerMQTT::connectServer() {
         BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
     }
     else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
-        uint8_t str_len;
+        // uint8_t str_len;
         String PUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
         PUB_TOPIC_STR += BLINKER_F("/onenet_rule/r");
         // str_len = PUB_TOPIC_STR.length() + 1;

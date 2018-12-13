@@ -38,7 +38,7 @@ class BlinkerTimingTimer
             , isLoopTask(false)
         {
             timerState = _state;
-            timingDay  = timingDay;
+            timingDay  = _timingDay;
             timingTime = _timingTime;
 
             actionData = (char*)malloc((_action.length()+1)*sizeof(char));

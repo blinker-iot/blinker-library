@@ -233,6 +233,7 @@
             //     Serial.println("user loop");
             // }
             Blinker.run();
+            (void) events;
             // run (schedule) this loop task again
             system_os_post(blinker_procTaskPrio, 0, 0 );
         }
