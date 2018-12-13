@@ -253,6 +253,14 @@ bool BlinkerMQTT::connect()
     BLINKER_LOG(BLINKER_F("MQTT Connected!"));
     BLINKER_LOG_FreeHeap();
 
+    if (!isMQTTinit)
+    {
+        isMQTTinit = true;
+
+        mqtt_MQTT->subscribeTopic(BLINKER_SUB_TOPIC_MQTT);
+        BLINKER_LOG_ALL(BLINKER_F("MQTT subscribe: "), BLINKER_SUB_TOPIC_MQTT);
+    }
+
     this->latestTime = millis();
 
     return true;
@@ -1333,7 +1341,9 @@ bool BlinkerMQTT::connectServer() {
         free(BLINKER_PUB_TOPIC_MQTT);
         free(BLINKER_SUB_TOPIC_MQTT);
         free(mqtt_MQTT);
-        // free(iotSub_MQTT);
+        free(iotSub_MQTT);
+
+        isMQTTinit = false;
     }
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
@@ -1504,7 +1514,8 @@ bool BlinkerMQTT::connectServer() {
     }
 
     // iotPub = new Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
-    if (!isMQTTinit) iotSub_MQTT = new Adafruit_MQTT_Subscribe(mqtt_MQTT, BLINKER_SUB_TOPIC_MQTT);
+    // if (!isMQTTinit) 
+    iotSub_MQTT = new Adafruit_MQTT_Subscribe(mqtt_MQTT, BLINKER_SUB_TOPIC_MQTT);
 
     mqtt_broker = (char*)malloc((_broker.length()+1)*sizeof(char));
     strcpy(mqtt_broker, _broker.c_str());
@@ -1512,7 +1523,8 @@ bool BlinkerMQTT::connectServer() {
 
     // mDNSInit(MQTT_ID_MQTT);
     this->latestTime = millis();
-    if (!isMQTTinit) mqtt_MQTT->subscribe(iotSub_MQTT);
+    // if (!isMQTTinit) 
+    mqtt_MQTT->subscribe(iotSub_MQTT);
 
     #if defined(ESP8266)
         client_s->stop();

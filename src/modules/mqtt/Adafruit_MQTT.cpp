@@ -368,6 +368,61 @@ bool Adafruit_MQTT::subscribe(Adafruit_MQTT_Subscribe *sub) {
   return false;
 }
 
+int8_t Adafruit_MQTT::subscribePacketWrite(const char *_topic, uint8_t _qos) {
+  if (connected()) {
+    // Ignore subscriptions that aren't defined.
+    // if (subscriptions[i] == 0) continue;
+
+    bool success = false;
+    for (uint8_t retry=0; (retry<3) && !success; retry++) { // retry until we get a suback    
+      // Construct and send subscription packet.
+      // uint8_t len = subscribePacket(buffer, subscriptions[i]->topic, qos);
+      uint8_t len = subscribePacket(buffer, _topic, _qos);
+      if (!sendPacket(buffer, len))
+	return -1;
+	  
+      if(MQTT_PROTOCOL_LEVEL < 3) // older versions didn't suback
+	break;
+
+      // Check for SUBACK if using MQTT 3.1.1 or higher
+      // TODO: The Server is permitted to start sending PUBLISH packets matching the
+      // Subscription before the Server sends the SUBACK Packet. (will really need to use callbacks - ada)
+
+      //Serial.println("\t**looking for suback");
+      if (processPacketsUntil(buffer, MQTT_CTRL_SUBACK, SUBACK_TIMEOUT_MS)) {
+	success = true;
+	break;
+      }
+      //Serial.println("\t**failed, retrying!");
+    }
+    if (! success) return -2; // failed to sub for some reason
+  // }
+  }
+
+  return 0;
+}
+
+bool Adafruit_MQTT::subscribeTopic(const char *topic) {
+  int8_t rc = subscribePacketWrite(topic);
+  
+  if (rc == 0) {
+    // subDeviceSubscriptions = sub;
+
+    DEBUG_PRINT(F("subscribeTopic: "));
+    DEBUG_PRINT(topic);
+    DEBUG_PRINTLN(F(" ,success!"));
+
+    // subDeviceSubscriptions->topic = topic;
+    return true;
+  }
+  else {
+    DEBUG_PRINT(F("subscribeTopic: "));
+    DEBUG_PRINT(topic);
+    DEBUG_PRINTLN(F(" ,failed!"));
+    return false;
+  }
+}
+
 bool Adafruit_MQTT::unsubscribe(Adafruit_MQTT_Subscribe *sub) {
   uint8_t i;
 

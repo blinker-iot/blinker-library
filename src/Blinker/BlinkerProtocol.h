@@ -2416,16 +2416,19 @@ void BlinkerProtocol<Transp>::run()
 
     bool conState = conn.connected();
 
-    if (_disconnectCount >= 5)
-    {
-        if ((millis() - _disconnectTime) > \
-            BLINKER_MQTT_CONNECT_TIMESLOT * 12)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
+        if (_disconnectCount >= 3)
         {
-            _disconnectCount = 0;
-            _disconnectTime = millis();
+            if ((millis() - _disconnectTime) > \
+                BLINKER_MQTT_CONNECT_TIMESLOT * 12)
+            {
+                _disconnectCount = 0;
+                _disconnectTime = millis();
+            }
+            yield();
+            return;
         }
-        return;
-    }
+    #endif
 
     switch (state)
     {
