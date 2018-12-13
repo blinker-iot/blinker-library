@@ -14,7 +14,7 @@ class BLINKERDUEROS
             Blinker.attachDuerOSSetPowerState(newFunction);
         }
 
-        void attachColor(blinker_callback_with_string_arg_t newFunction)
+        void attachColor(blinker_callback_with_int32_arg_t newFunction)
         {
             Blinker.attachDuerOSSetColor(newFunction);
         }
@@ -61,10 +61,10 @@ class BLINKERDUEROS
             _fresh |= 0x01 << 0;
         }
 
-        void color(const String & clr)
+        void color(int32_t clr)
         {
             String payload = "\"" + STRING_format(BLINKER_CMD_COLOR) + 
-                "\":\"" + clr + "\"";
+                "\":\"" + STRING_format(clr) + "\"";
 
             // Blinker.DuerOSPrint(payload);
 
