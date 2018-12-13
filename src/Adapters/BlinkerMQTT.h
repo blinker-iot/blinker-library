@@ -222,6 +222,7 @@ bool BlinkerMQTT::connect()
 
     if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
     {
+        yield();
         return false;
     }
 
@@ -239,7 +240,11 @@ bool BlinkerMQTT::connect()
     if ((ret = mqtt_MQTT->connect()) != 0)
     {
         BLINKER_LOG(mqtt_MQTT->connectErrorString(ret));
-        BLINKER_LOG(BLINKER_F("Retrying MQTT connection in 5 seconds..."));
+        BLINKER_LOG(BLINKER_F("Retrying MQTT connection in "), \
+                    BLINKER_MQTT_CONNECT_TIMESLOT/1000, \
+                    BLINKER_F(" seconds..."));
+
+        if (ret == 4) reRegister();
 
         this->latestTime = millis();
         return false;
