@@ -175,7 +175,7 @@ class BlinkerApi
             #if defined(BLINKER_DUEROS)
                 void attachDuerOSSetPowerState(blinker_callback_with_string_arg_t newFunction)
                 { _DuerOSPowerStateFunc = newFunction; }
-                void attachDuerOSSetColor(blinker_callback_with_string_arg_t newFunction)
+                void attachDuerOSSetColor(blinker_callback_with_int32_arg_t newFunction)
                 { _DuerOSSetColorFunc = newFunction; }
                 void attachDuerOSSetMode(blinker_callback_with_string_arg_t newFunction)
                 { _DuerOSSetModeFunc = newFunction; }
@@ -372,7 +372,7 @@ class BlinkerApi
             blinker_callback_with_int32_arg_t   _AliGenieQueryFunc = NULL;
 
             blinker_callback_with_string_arg_t  _DuerOSPowerStateFunc = NULL;
-            blinker_callback_with_string_arg_t  _DuerOSSetColorFunc = NULL;
+            blinker_callback_with_int32_arg_t   _DuerOSSetColorFunc = NULL;
             blinker_callback_with_string_arg_t  _DuerOSSetModeFunc = NULL;
             blinker_callback_with_string_arg_t  _DuerOSSetcModeFunc = NULL;
             blinker_callback_with_string_arg_t  _DuerOSSetBrightnessFunc = NULL;
@@ -929,7 +929,7 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
 
-                if (_DuerOSSetColorFunc) _DuerOSSetColorFunc(setValue);
+                if (_DuerOSSetColorFunc) _DuerOSSetColorFunc(setValue.toInt());
             }
             else if (rootSet.containsKey(BLINKER_CMD_BRIGHTNESS)) {
                 String setValue = rootSet[BLINKER_CMD_BRIGHTNESS];
