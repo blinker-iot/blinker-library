@@ -2353,49 +2353,50 @@ void BlinkerProtocol<Transp>::run()
         else {
             // if (((millis() - _disconnectTime) > BLINKER_MQTT_CONNECT_TIMESLOT * 10 && \
             //     _disconnectCount) || _disconnectCount >= 12)
-            if (_disconnectCount >= 12)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("device reRegister"));
-                BLINKER_LOG_FreeHeap();
+
+            // if (_disconnectCount >= 12)
+            // {
+            //     BLINKER_LOG_ALL(BLINKER_F("device reRegister"));
+            //     BLINKER_LOG_FreeHeap();
                 
-                // if (BLINKER_FreeHeap() < 15000) {
-                //     conn.disconnect();
-                //     return;
-                // }
+            //     // if (BLINKER_FreeHeap() < 15000) {
+            //     //     conn.disconnect();
+            //     //     return;
+            //     // }
 
-                // BLINKER_LOG_FreeHeap();
+            //     // BLINKER_LOG_FreeHeap();
 
-                if (conn.reRegister()) {
-                    _disconnectCount = 0;
-                    _disconnectTime = millis();
-                }
-                else {
-                    _disconnectCount = 0;
-                    _disconnectTime = millis() - 10000;
-                }
-            }
+            //     if (conn.reRegister()) {
+            //         _disconnectCount = 0;
+            //         _disconnectTime = millis();
+            //     }
+            //     else {
+            //         _disconnectCount = 0;
+            //         _disconnectTime = millis() - 10000;
+            //     }
+            // }
 
             BApi::ntpInit();
         }
 
-        if ((millis() - _refreshTime) >= BLINKER_ONE_DAY_TIME * 2 * 1000)
-        {
-            conn.disconnect();
+        // if ((millis() - _refreshTime) >= BLINKER_ONE_DAY_TIME * 2 * 1000)
+        // {
+        //     conn.disconnect();
 
-            BLINKER_LOG_ALL(BLINKER_F("device reRegister"));
-            BLINKER_LOG_FreeHeap();
+        //     BLINKER_LOG_ALL(BLINKER_F("device reRegister"));
+        //     BLINKER_LOG_FreeHeap();
 
-            if (BLINKER_FreeHeap() < 15000) {
-                conn.disconnect();
-                return;
-            }
+        //     if (BLINKER_FreeHeap() < 15000) {
+        //         conn.disconnect();
+        //         return;
+        //     }
 
-            BLINKER_LOG_FreeHeap();
+        //     BLINKER_LOG_FreeHeap();
 
-            if (conn.reRegister()) {
-                _refreshTime = millis();
-            }
-        }
+        //     if (conn.reRegister()) {
+        //         _refreshTime = millis();
+        //     }
+        // }
     #endif
 
     #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
@@ -2414,6 +2415,17 @@ void BlinkerProtocol<Transp>::run()
     #endif
 
     bool conState = conn.connected();
+
+    if (_disconnectCount >= 5)
+    {
+        if ((millis() - _disconnectTime) > \
+            BLINKER_MQTT_CONNECT_TIMESLOT * 12)
+        {
+            _disconnectCount = 0;
+            _disconnectTime = millis();
+        }
+        return;
+    }
 
     switch (state)
     {
