@@ -6,7 +6,7 @@
 #include "utility/BlinkerUtility.h"
 
 template <class T>
-int8_t checkNum(char name[], T * c, uint8_t count)
+int8_t checkNum(char * name, T * c, uint8_t count)
 {
     for (uint8_t cNum = 0; cNum < count; cNum++)
     {
@@ -20,7 +20,7 @@ int8_t checkNum(char name[], T * c, uint8_t count)
 class BlinkerWidgets_string
 {
     public :
-        BlinkerWidgets_string(char _name[], blinker_callback_with_string_arg_t _func = NULL)
+        BlinkerWidgets_string(char * _name, blinker_callback_with_string_arg_t _func = NULL)
         {
             wName = (char*)malloc((strlen(_name)+1)*sizeof(char));
             strcpy(wName, _name);
@@ -31,7 +31,7 @@ class BlinkerWidgets_string
         char * getName() { return wName; }
         void setFunc(blinker_callback_with_string_arg_t _func) { wfunc = _func; }
         blinker_callback_with_string_arg_t getFunc() { return wfunc; }
-        bool checkName(char name[]) {
+        bool checkName(char * name) {
             return strcmp(name, wName) == 0;
         }
 
@@ -43,7 +43,7 @@ class BlinkerWidgets_string
 class BlinkerWidgets_int32
 {
     public :
-        BlinkerWidgets_int32(char _name[], blinker_callback_with_int32_arg_t _func = NULL)
+        BlinkerWidgets_int32(char * _name, blinker_callback_with_int32_arg_t _func = NULL)
         {
             wName = (char*)malloc((strlen(_name)+1)*sizeof(char));
             strcpy(wName, _name);
@@ -54,7 +54,7 @@ class BlinkerWidgets_int32
         char * getName() { return wName; }
         void setFunc(blinker_callback_with_int32_arg_t _func) { wfunc = _func; }
         blinker_callback_with_int32_arg_t getFunc() { return wfunc; }
-        bool checkName(char name[]) {
+        bool checkName(char * name) {
             return strcmp(name, wName) == 0;
         }
 
@@ -66,7 +66,7 @@ class BlinkerWidgets_int32
 class BlinkerWidgets_rgb
 {
     public :
-        BlinkerWidgets_rgb(char _name[], blinker_callback_with_rgb_arg_t _func = NULL)
+        BlinkerWidgets_rgb(char * _name, blinker_callback_with_rgb_arg_t _func = NULL)
         {
             wName = (char*)malloc((strlen(_name)+1)*sizeof(char));
             strcpy(wName, _name);
@@ -77,7 +77,7 @@ class BlinkerWidgets_rgb
         char * getName() { return wName; }
         void setFunc(blinker_callback_with_rgb_arg_t _func) { wfunc = _func; }
         blinker_callback_with_rgb_arg_t getFunc() { return wfunc; }
-        bool checkName(char name[]) {
+        bool checkName(char * name) {
             return strcmp(name, wName) == 0;
         }
 
@@ -89,7 +89,7 @@ class BlinkerWidgets_rgb
 class BlinkerWidgets_joy
 {
     public :
-        BlinkerWidgets_joy(char _name[], blinker_callback_with_joy_arg_t _func = NULL)
+        BlinkerWidgets_joy(char * _name, blinker_callback_with_joy_arg_t _func = NULL)
         {
             wName = (char*)malloc((strlen(_name)+1)*sizeof(char));
             strcpy(wName, _name);
@@ -100,7 +100,7 @@ class BlinkerWidgets_joy
         char * getName() { return wName; }
         void setFunc(blinker_callback_with_joy_arg_t _func) { wfunc = _func; }
         blinker_callback_with_joy_arg_t getFunc() { return wfunc; }
-        bool checkName(char name[]) {
+        bool checkName(char * name) {
             return strcmp(name, wName) == 0;
         }
 
@@ -113,7 +113,7 @@ class BlinkerWidgets_joy
     class BlinkerBridge_key
     {
         public :
-            BlinkerBridge_key(char _key[], blinker_callback_with_string_arg_t _func = NULL)
+            BlinkerBridge_key(char * _key, blinker_callback_with_string_arg_t _func = NULL)
             {
                 bKey = (char*)malloc((strlen(_key)+1)*sizeof(char));
                 strcpy(bKey, _key);
@@ -124,11 +124,11 @@ class BlinkerWidgets_joy
             char * getKey() { return bKey; }
             void setFunc(blinker_callback_with_string_arg_t _func) { wfunc = _func; }
             blinker_callback_with_string_arg_t getFunc() { return wfunc; }
-            bool checkName(char _key[]) { return strcmp(_key, bKey) == 0; }
+            bool checkName(char * _key) { return strcmp(_key, bKey) == 0; }
             char * getName()
             {
                 if (_register) return bName;
-                else return BLINKER_CMD_FALSE;
+                else return NULL;
             }
             void name(const String & name)
             {
@@ -168,7 +168,7 @@ class BlinkerWidgets_joy
     {
         public :
             BlinkerData()
-                : _dname(NULL)
+                // : _dname(NULL)
             {
                 memcpy(data,"\0",256);
             }

@@ -56,7 +56,9 @@ class BlinkerSlider
 
             if (n.length())
             {
-                sliderData += BLINKER_F("{\""BLINKER_CMD_VALUE"\":");
+                sliderData += BLINKER_F("{\"");
+                sliderData += BLINKER_F(BLINKER_CMD_VALUE);
+                sliderData += BLINKER_F("\":");
                 sliderData += n;
             }
 
@@ -65,7 +67,9 @@ class BlinkerSlider
                 if (sliderData.length()) sliderData += BLINKER_F(",");
                 else sliderData += BLINKER_F("{");
 
-                sliderData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
+                sliderData += BLINKER_F("\"");
+                sliderData += BLINKER_F(BLINKER_CMD_COLOR);
+                sliderData += BLINKER_F("\":\"");
                 sliderData += (textClr);
                 sliderData += BLINKER_F("\"");
 

@@ -16,7 +16,9 @@ class BlinkerText
         template <typename T>
         void print(T _text)
         {
-            String textData = BLINKER_F("{\""BLINKER_CMD_TEXT"\":\"");
+            String textData = BLINKER_F("{\"");
+            textData += BLINKER_F(BLINKER_CMD_TEXT);
+            textData += BLINKER_F("\":\"");
             textData += STRING_format(_text);
             textData += BLINKER_F("\"}");
 
@@ -26,9 +28,13 @@ class BlinkerText
         template <typename T1, typename T2>
         void print(T1 _text1, T2 _text2)
         {
-            String textData = BLINKER_F("{\""BLINKER_CMD_TEXT"\":\"");
+            String textData = BLINKER_F("{\"");
+            textData += BLINKER_F(BLINKER_CMD_TEXT);
+            textData += BLINKER_F("\":\"");
             textData += STRING_format(_text1);
-            textData += BLINKER_F("\",\""BLINKER_CMD_TEXT1"\":\"");
+            textData += BLINKER_F("\",\"");
+            textData += BLINKER_F(BLINKER_CMD_TEXT1);
+            textData += BLINKER_F("\":\"");
             textData += STRING_format(_text2);
             textData += BLINKER_F("\"}");
 

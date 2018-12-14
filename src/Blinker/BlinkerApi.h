@@ -303,7 +303,8 @@ class BlinkerApi
         class BlinkerWidgets_joy *          _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_rgb *          _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_int32 *        _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
-        class BlinkerWidgets_string *       _BUILTIN_SWITCH;
+        // class BlinkerWidgets_string *       _BUILTIN_SWITCH;
+        BlinkerWidgets_string _BUILTIN_SWITCH = BlinkerWidgets_string(BLINKER_CMD_BUILTIN_SWITCH);
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             bool        _isNTPInit = false;
@@ -462,7 +463,7 @@ class BlinkerApi
             bool checkDataGet();
             bool checkDataDel();
             bool checkAutoPull();
-            String bridgeQuery(char key[]);
+            String bridgeQuery(char * key);
         #endif
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
@@ -1797,7 +1798,7 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
         BLINKER_LOG_ALL(BLINKER_F("dataUpdate: "), data);
 
         // return true;
-                        //  + \ _msg + \
+                        //  + \ _msg + 
                         // "\"}}";
 
         if (blinkerServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE)
@@ -1999,14 +2000,14 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
     char * BlinkerApi<Proto>::bridgeKey(uint8_t num)
     {
         if (num) return _Bridge[num - 1]->getKey();
-        else return "";
+        else return NULL;
     }
 
     template <class Proto>
     char * BlinkerApi<Proto>::bridgeName(uint8_t num)
     {
         if (num) return _Bridge[num - 1]->getName();
-        else return "";
+        else return NULL;
     }
 
     template <class Proto>
@@ -2934,42 +2935,44 @@ uint8_t BlinkerApi<Proto>::attachWidget(char _name[], blinker_callback_with_int3
 template <class Proto>
 void BlinkerApi<Proto>::attachSwitch(blinker_callback_with_string_arg_t _func)
 {
-    if (!_BUILTIN_SWITCH)
-    {
-        _BUILTIN_SWITCH = new BlinkerWidgets_string(BLINKER_CMD_BUILTIN_SWITCH, _func);
-    }
-    else
-    {
-        _BUILTIN_SWITCH->setFunc(_func);
-    }
+    // if (!_BUILTIN_SWITCH)
+    // {
+    //     _BUILTIN_SWITCH = new BlinkerWidgets_string(BLINKER_CMD_BUILTIN_SWITCH, _func);
+    // }
+    // else
+    // {
+    //     _BUILTIN_SWITCH->setFunc(_func);
+    // }
+
+    _BUILTIN_SWITCH.setFunc(_func);
 }
 
 template <class Proto>
 char * BlinkerApi<Proto>::widgetName_str(uint8_t num)
 {
     if (num) return _Widgets_str[num - 1]->getName();
-    else return "";
+    else return NULL;
 }
 
 template <class Proto>
 char * BlinkerApi<Proto>::widgetName_joy(uint8_t num)
 {
     if (num) return _Widgets_joy[num - 1]->getName();
-    else return "";
+    else return NULL;
 }
 
 template <class Proto>
 char * BlinkerApi<Proto>::widgetName_rgb(uint8_t num)
 {
     if (num) return _Widgets_rgb[num - 1]->getName();
-    else return "";
+    else return NULL;
 }
 
 template <class Proto>
 char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 {
     if (num) return _Widgets_int[num - 1]->getName();
-    else return "";
+    else return NULL;
 }
 
 #if defined(BLINKER_ARDUINOJSON)
@@ -2994,7 +2997,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     template <class Proto>
     float BlinkerApi<Proto>::gps(b_gps_t axis, const JsonObject& data)
     {
-        // if (((millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT || \
+        // if (((millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT || 
         //     gps_get_time == 0) && !newData)
         // {
         //     static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
@@ -3102,19 +3105,22 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
         if (state.length())
         {
-            if (_BUILTIN_SWITCH)
-            {
-                blinker_callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
+            // if (_BUILTIN_SWITCH)
+            // {
+            //     blinker_callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
 
-                if (sFunc) sFunc(state);
-            }
+            //     if (sFunc) sFunc(state);
+            // }
+            blinker_callback_with_string_arg_t sFunc = _BUILTIN_SWITCH.getFunc();
+
+            if (sFunc) sFunc(state);
             _fresh = true;
         }
     }
 
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         template <class Proto>
-        void BlinkerApi<Proto>::bridgeParse(char _bName[], const JsonObject& data)
+        void BlinkerApi<Proto>::bridgeParse(char * _bName, const JsonObject& data)
         {
             int8_t num = checkNum(_bName, _Bridge, _bridgeCount);
 
@@ -3266,7 +3272,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     template <class Proto>
     float BlinkerApi<Proto>::gps(b_gps_t axis, char data[])
     {
-        // if (((millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT || \
+        // if (((millis() - gps_get_time) >= BLINKER_GPS_MSG_LIMIT || 
         //     gps_get_time == 0) && !newData)
         // {
         //     static_cast<Proto*>(this)->print(BLINKER_CMD_GET, BLINKER_CMD_GPS);
@@ -3352,12 +3358,15 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
         if (STRING_find_string_value(data, state, BLINKER_CMD_BUILTIN_SWITCH))
         {
-            if (_BUILTIN_SWITCH)
-            {
-                blinker_callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
+            // if (_BUILTIN_SWITCH)
+            // {
+            //     blinker_callback_with_string_arg_t sFunc = _BUILTIN_SWITCH->getFunc();
 
-                if (sFunc) sFunc(state);
-            }
+            //     if (sFunc) sFunc(state);
+            // }
+            blinker_callback_with_string_arg_t sFunc = _BUILTIN_SWITCH.getFunc();
+
+            if (sFunc) sFunc(state);
             _fresh = true;
         }
     }
@@ -3505,7 +3514,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             // String ntp2 = BLINKER_F("210.72.145.44");
             // String ntp3 = BLINKER_F("time.pool.aliyun.com");
 
-            // configTime((long)(_timezone * 3600), 0, \
+            // configTime((long)(_timezone * 3600), 0, 
             //     ntp1.c_str(), ntp2.c_str(), ntp3.c_str());
             // configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");
 
@@ -3517,7 +3526,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             if (now_ntp < _com_timezone * 3600 * 12)
             {
                 ntpConfig();
-                // configTime((long)(_timezone * 3600), 0, \
+                // configTime((long)(_timezone * 3600), 0, 
                 //     ntp1.c_str(), ntp2.c_str(), ntp3.c_str());
                 // configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", "210.72.145.44", "time.pool.aliyun.com");
                 now_ntp = ::time(nullptr);
@@ -3556,7 +3565,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         // String ntp2 = BLINKER_F("210.72.145.44");
         // String ntp3 = BLINKER_F("time.pool.aliyun.com");
 
-        // configTime((long)(_timezone * 3600), 0, \
+        // configTime((long)(_timezone * 3600), 0, 
         //         ntp1.c_str(), ntp2.c_str(), ntp3.c_str());
 
         configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", \
@@ -3740,7 +3749,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
         uint8_t  cbackData;
         uint8_t  nextTask = BLINKER_TIMING_TIMER_SIZE;
-        uint16_t timingMinsNext;
+        // uint16_t timingMinsNext;
         uint32_t apartSeconds = BLINKER_ONE_DAY_TIME;
         uint32_t checkSeconds = BLINKER_ONE_DAY_TIME;
         uint32_t nowSeconds = dtime();
@@ -3907,11 +3916,17 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     String BlinkerApi<Proto>::timerSetting()
     {
 
-        String _data = BLINKER_F("\""BLINKER_CMD_COUNTDOWN"\":");
+        String _data = BLINKER_F("\"");
+        _data += BLINKER_F(BLINKER_CMD_COUNTDOWN);
+        _data += BLINKER_F("\":");
         _data += STRING_format(_cdState ? "true" : "false");
-        _data += BLINKER_F(",\""BLINKER_CMD_LOOP"\":");
+        _data += BLINKER_F(",\"");
+        _data += BLINKER_F(BLINKER_CMD_LOOP);
+        _data += BLINKER_F("\":");
         _data += STRING_format(_lpState ? "true" : "false");
-        _data += BLINKER_F(",\""BLINKER_CMD_TIMING"\":");
+        _data += BLINKER_F(",\"");
+        _data += BLINKER_F(BLINKER_CMD_TIMING);
+        _data += BLINKER_F("\":");
         _data += STRING_format(taskCount ? "true" : "false");
 
 
@@ -3927,31 +3942,53 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
         if (!_cdState)
         {
-            cdData = BLINKER_F("{\""BLINKER_CMD_COUNTDOWN"\":false}");
+            cdData = BLINKER_F("{\"");
+            cdData += BLINKER_F(BLINKER_CMD_COUNTDOWN);
+            cdData += BLINKER_F("\":false}");
         }
         else
         {
             if (_cdRunState)
             {
-                cdData = BLINKER_F("{\""BLINKER_CMD_COUNTDOWN"\":{\""BLINKER_CMD_RUN"\":");
+                cdData = BLINKER_F("{\"");
+                cdData += BLINKER_F(BLINKER_CMD_COUNTDOWN);
+                cdData += BLINKER_F("\":{\"");
+                cdData += BLINKER_F(BLINKER_CMD_RUN);
+                cdData += BLINKER_F("\":");
                 cdData += STRING_format(_cdRunState ? 1 : 0);
-                cdData += BLINKER_F(",\""BLINKER_CMD_TOTALTIME"\":");
+                cdData += BLINKER_F(",\"");
+                cdData += BLINKER_F(BLINKER_CMD_TOTALTIME);
+                cdData += BLINKER_F("\":");
                 cdData += STRING_format(_cdTime1);
-                cdData += BLINKER_F(",\""BLINKER_CMD_RUNTIME"\":");
+                cdData += BLINKER_F(",\"");
+                cdData += BLINKER_F(BLINKER_CMD_RUNTIME);
+                cdData += BLINKER_F("\":");
                 cdData += STRING_format((millis() - _cdStart) / 1000 / 60);
-                cdData += BLINKER_F(",\""BLINKER_CMD_ACTION"\":");
+                cdData += BLINKER_F(",\"");
+                cdData += BLINKER_F(BLINKER_CMD_ACTION);
+                cdData += BLINKER_F("\":");
                 cdData += _cdAction;
                 cdData += BLINKER_F("}}");
             }
             else
             {
-                cdData = BLINKER_F("{\""BLINKER_CMD_COUNTDOWN"\":{\""BLINKER_CMD_RUN"\":");
+                cdData = BLINKER_F("{\"");
+                cdData += BLINKER_F(BLINKER_CMD_COUNTDOWN);
+                cdData += BLINKER_F("\":{\"");
+                cdData += BLINKER_F(BLINKER_CMD_RUN);
+                cdData += BLINKER_F("\":");
                 cdData += STRING_format(_cdRunState ? 1 : 0);
-                cdData += BLINKER_F(",\""BLINKER_CMD_TOTALTIME"\":");
+                cdData += BLINKER_F(",\"");
+                cdData += BLINKER_F(BLINKER_CMD_TOTALTIME);
+                cdData += BLINKER_F("\":");
                 cdData += STRING_format(_cdTime1);
-                cdData += BLINKER_F(",\""BLINKER_CMD_RUNTIME"\":");
+                cdData += BLINKER_F(",\"");
+                cdData += BLINKER_F(BLINKER_CMD_RUNTIME);
+                cdData += BLINKER_F("\":");
                 cdData += STRING_format(_cdTime2);
-                cdData += BLINKER_F(",\""BLINKER_CMD_ACTION"\":");
+                cdData += BLINKER_F(",\"");
+                cdData += BLINKER_F(BLINKER_CMD_ACTION);
+                cdData += BLINKER_F("\":");
                 cdData += _cdAction;
                 cdData += BLINKER_F("}}");
             }
@@ -3963,7 +4000,9 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     template <class Proto>
     String BlinkerApi<Proto>::timingConfig()
     {
-        String timingTaskStr = BLINKER_F("{\""BLINKER_CMD_TIMING"\":[");
+        String timingTaskStr = BLINKER_F("{\"");
+        timingTaskStr += BLINKER_F(BLINKER_CMD_TIMING);
+        timingTaskStr += BLINKER_F("\":[");
 
         for (uint8_t task = 0; task < taskCount; task++)
         {
@@ -4015,15 +4054,25 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
             BLINKER_LOG_ALL(BLINKER_F("timingDayStr: "), timingDay);
         }
 
-        String timingConfig = BLINKER_F("{\""BLINKER_CMD_TASK"\":");
+        String timingConfig = BLINKER_F("{\"");
+        timingConfig += BLINKER_F(BLINKER_CMD_TASK);
+        timingConfig += BLINKER_F("\":");
         timingConfig += STRING_format(task);
-        timingConfig += BLINKER_F(",\""BLINKER_CMD_ENABLE"\":");
+        timingConfig += BLINKER_F(",\"");
+        timingConfig += BLINKER_F(BLINKER_CMD_ENABLE);
+        timingConfig += BLINKER_F("\":");
         timingConfig += STRING_format((timingTask[task]->state()) ? 1 : 0);
-        timingConfig += BLINKER_F(",\""BLINKER_CMD_DAY"\":\"");
+        timingConfig += BLINKER_F(",\"");
+        timingConfig += BLINKER_F(BLINKER_CMD_DAY);
+        timingConfig += BLINKER_F("\":\"");
         timingConfig += timingDayStr;
-        timingConfig += BLINKER_F("\",\""BLINKER_CMD_TIME"\":");
+        timingConfig += BLINKER_F("\",\"");
+        timingConfig += BLINKER_F(BLINKER_CMD_TIME);
+        timingConfig += BLINKER_F("\":");
         timingConfig += STRING_format(timingTask[task]->getTime());
-        timingConfig += BLINKER_F(",\""BLINKER_CMD_ACTION"\":");
+        timingConfig += BLINKER_F(",\"");
+        timingConfig += BLINKER_F(BLINKER_CMD_ACTION);
+        timingConfig += BLINKER_F("\":");
         timingConfig += timingTask[task]->getAction();
         timingConfig += BLINKER_F("}");
 
@@ -4035,22 +4084,40 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     {
         String lpData;
         if (!_lpState) {
-            lpData = BLINKER_F("{\""BLINKER_CMD_LOOP"\":false}");
+            lpData = BLINKER_F("{\"");
+            lpData += BLINKER_F(BLINKER_CMD_LOOP);
+            lpData += BLINKER_F("\":false}");
         }
         else {
-            lpData = BLINKER_F("{\""BLINKER_CMD_LOOP"\":{\""BLINKER_CMD_TIMES"\":");
+            lpData = BLINKER_F("{\"");
+            lpData += BLINKER_F(BLINKER_CMD_LOOP);
+            lpData += BLINKER_F("\":{\"");
+            lpData += BLINKER_F(BLINKER_CMD_TIMES);
+            lpData += BLINKER_F("\":");
             lpData += STRING_format(_lpTimes);
-            lpData += BLINKER_F(",\""BLINKER_CMD_RUN"\":");
+            lpData += BLINKER_F(",\"");
+            lpData += BLINKER_F(BLINKER_CMD_RUN);
+            lpData += BLINKER_F("\":");
             lpData += STRING_format(_lpRunState ? 1 : 0);
-            lpData += BLINKER_F(",\""BLINKER_CMD_TRIGGED"\":");
+            lpData += BLINKER_F(",\"");
+            lpData += BLINKER_F(BLINKER_CMD_TRIGGED);
+            lpData += BLINKER_F("\":");
             lpData += STRING_format(_lpTimes ? _lpTrigged_times : 0);
-            lpData += BLINKER_F(",\""BLINKER_CMD_TIME1"\":");
+            lpData += BLINKER_F(",\"");
+            lpData += BLINKER_F(BLINKER_CMD_TIME1);
+            lpData += BLINKER_F("\":");
             lpData += STRING_format(_lpTime1);
-            lpData += BLINKER_F(",\""BLINKER_CMD_ACTION1"\":");
+            lpData += BLINKER_F(",\"");
+            lpData += BLINKER_F(BLINKER_CMD_ACTION1);
+            lpData += BLINKER_F("\":");
             lpData += _lpAction1;
-            lpData += BLINKER_F(",\""BLINKER_CMD_TIME2"\":");
+            lpData += BLINKER_F(",\"");
+            lpData += BLINKER_F(BLINKER_CMD_TIME2);
+            lpData += BLINKER_F("\":");
             lpData += STRING_format(_lpTime2);
-            lpData += BLINKER_F(",\""BLINKER_CMD_ACTION2"\":");
+            lpData += BLINKER_F(",\"");
+            lpData += BLINKER_F(BLINKER_CMD_ACTION2);
+            lpData += BLINKER_F("\":");
             lpData += _lpAction2;
             lpData += BLINKER_F("}}");
         }
@@ -4217,7 +4284,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     _cdTime1 = 0;
                     _cdTime2 = 0;
                     // _cdAction = "";
-                    memcpy(_cdAction, '\0', BLINKER_ACTION_SIZE);
+                    // memcpy(_cdAction, '\0', BLINKER_ACTION_SIZE);
 
                     _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
 
@@ -4406,8 +4473,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                     _lpTime2 = 0;
                     // _lpAction1 = "";
                     // _lpAction2 = "";
-                    memcpy(_lpAction1, '\0', BLINKER_ACTION_SIZE);
-                    memcpy(_lpAction2, '\0', BLINKER_ACTION_SIZE);
+                    // memcpy(_lpAction1, '\0', BLINKER_ACTION_SIZE);
+                    // memcpy(_lpAction2, '\0', BLINKER_ACTION_SIZE);
 
                     _lpData = _lpState << 31 | _lpRunState << 30 | _lpTimes << 22 | _lpTime1 << 11 | _lpTime2;
 
@@ -4741,6 +4808,8 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         {
             return false;
         }
+
+        return false;
     }
 
     template <class Proto>
@@ -4857,14 +4926,20 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 checkOverlapping(wDay, timingTask[triggedTask]->getTime());
 
                 freshTiming(wDay, timingTask[triggedTask]->getTime());
+
+                return true;
             }
             else
             {
                 BLINKER_LOG_ALL(BLINKER_F("timing trigged, none action"));
 
                 freshTiming(wDay, 0);
+
+                return false;
             }
         }
+
+        return false;
     }
 
     template <class Proto>
@@ -5049,14 +5124,17 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                         if (_AUTO[_num]->id() == _autoId)
                         {
                             // _AUTO[_num]->manager(static_cast<Proto*>(this)->dataParse());
-                            for (_num; _num < _aCount; _num++)
+                            for (uint8_t a_num = _num; a_num < _aCount; a_num++)
                             {
-                                if (_num < _aCount - 1)
+                                if (a_num < _aCount - 1)
                                 {
-                                    _AUTO[_num]->setNum(_num + 1);
-                                    _AUTO[_num]->deserialization();
-                                    _AUTO[_num]->setNum(_num);
-                                    _AUTO[_num]->serialization();
+                                    _AUTO[a_num]->setNum(a_num + 1);
+                                    _AUTO[a_num]->deserialization();
+                                    _AUTO[a_num]->setNum(a_num);
+                                    _AUTO[a_num]->serialization();
+                                }
+                                else{
+                                    _num = _aCount;
                                 }
                             }
                             _aCount--;
@@ -5244,7 +5322,7 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     }
 
     template <class Proto>
-    String BlinkerApi<Proto>::bridgeQuery(char key[])
+    String BlinkerApi<Proto>::bridgeQuery(char * key)
     {
         String data = BLINKER_F("/query?");
         data += BLINKER_F("deviceName=");
@@ -5388,11 +5466,11 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
 
         BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
 
-        #ifndef BLINKER_LAN_DEBUG
-            const int httpsPort = 443;
-        #elif defined(BLINKER_LAN_DEBUG)
-            const int httpsPort = 9090;
-        #endif
+        // #ifndef BLINKER_LAN_DEBUG
+        //     const int httpsPort = 443;
+        // #elif defined(BLINKER_LAN_DEBUG)
+        //     const int httpsPort = 9090;
+        // #endif
 
         // #if defined(ESP8266)
         //     #ifndef BLINKER_LAN_DEBUG
@@ -5679,33 +5757,33 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
                 String host = BLINKER_F("http://192.168.1.121:9090");
             #endif
 
-            // const char* ca = \
-            //     "-----BEGIN CERTIFICATE-----\n" \
-            //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
-            //     "MQswCQYDVQQGEwJDTjElMCMGA1UEChMcVHJ1c3RBc2lhIFRlY2hub2xvZ2llcywg\n" \
-            //     "SW5jLjEdMBsGA1UECxMURG9tYWluIFZhbGlkYXRlZCBTU0wxHTAbBgNVBAMTFFRy\n" \
-            //     "dXN0QXNpYSBUTFMgUlNBIENBMB4XDTE4MDEwNDAwMDAwMFoXDTE5MDEwNDEyMDAw\n" \
-            //     "MFowGDEWMBQGA1UEAxMNaW90ZGV2LmNsei5tZTCCASIwDQYJKoZIhvcNAQEBBQAD\n" \
-            //     "ggEPADCCAQoCggEBALbOFn7cJ2I/FKMJqIaEr38n4kCuJCCeNf1bWdWvOizmU2A8\n" \
-            //     "QeTAr5e6Q3GKeJRdPnc8xXhqkTm4LOhgdZB8KzuVZARtu23D4vj4sVzxgC/zwJlZ\n" \
-            //     "MRMxN+cqI37kXE8gGKW46l2H9vcukylJX+cx/tjWDfS2YuyXdFuS/RjhCxLgXzbS\n" \
-            //     "cve1W0oBZnBPRSMV0kgxTWj7hEGZNWKIzK95BSCiMN59b+XEu3NWGRb/VzSAiJEy\n" \
-            //     "Hy9DcDPBC9TEg+p5itHtdMhy2gq1OwsPgl9HUT0xmDATSNEV2RB3vwviNfu9/Eif\n" \
-            //     "ObhsV078zf30TqdiESqISEB68gJ0Otru67ePoTkCAwEAAaOCAWowggFmMB8GA1Ud\n" \
-            //     "IwQYMBaAFH/TmfOgRw4xAFZWIo63zJ7dygGKMB0GA1UdDgQWBBR/KLqnke61779P\n" \
-            //     "xc9htonQwLOxPDAYBgNVHREEETAPgg1pb3RkZXYuY2x6Lm1lMA4GA1UdDwEB/wQE\n" \
-            //     "AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwTAYDVR0gBEUwQzA3\n" \
-            //     "BglghkgBhv1sAQIwKjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQu\n" \
-            //     "Y29tL0NQUzAIBgZngQwBAgEwgYEGCCsGAQUFBwEBBHUwczAlBggrBgEFBQcwAYYZ\n" \
-            //     "aHR0cDovL29jc3AyLmRpZ2ljZXJ0LmNvbTBKBggrBgEFBQcwAoY+aHR0cDovL2Nh\n" \
-            //     "Y2VydHMuZGlnaXRhbGNlcnR2YWxpZGF0aW9uLmNvbS9UcnVzdEFzaWFUTFNSU0FD\n" \
-            //     "QS5jcnQwCQYDVR0TBAIwADANBgkqhkiG9w0BAQsFAAOCAQEAhtM4eyrWB14ajJpQ\n" \
-            //     "ibZ5FbzVuvv2Le0FOSoss7UFCDJUYiz2LiV8yOhL4KTY+oVVkqHaYtcFS1CYZNzj\n" \
-            //     "6xWcqYZJ+pgsto3WBEgNEEe0uLSiTW6M10hm0LFW9Det3k8fqwSlljqMha3gkpZ6\n" \
-            //     "8WB0f2clXOuC+f1SxAOymnGUsSqbU0eFSgevcOIBKR7Hr3YXBXH3jjED76Q52OMS\n" \
-            //     "ucfOM9/HB3jN8o/ioQbkI7xyd/DUQtzK6hSArEoYRl3p5H2P4fr9XqmpoZV3i3gQ\n" \
-            //     "oOdVycVtpLunyUoVAB2DcOElfDxxXCvDH3XsgoIU216VY03MCaUZf7kZ2GiNL+UX\n" \
-            //     "9UBd0Q==\n" \
+            // const char* ca = 
+            //     "-----BEGIN CERTIFICATE-----\n" 
+            //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" 
+            //     "MQswCQYDVQQGEwJDTjElMCMGA1UEChMcVHJ1c3RBc2lhIFRlY2hub2xvZ2llcywg\n" 
+            //     "SW5jLjEdMBsGA1UECxMURG9tYWluIFZhbGlkYXRlZCBTU0wxHTAbBgNVBAMTFFRy\n" 
+            //     "dXN0QXNpYSBUTFMgUlNBIENBMB4XDTE4MDEwNDAwMDAwMFoXDTE5MDEwNDEyMDAw\n" 
+            //     "MFowGDEWMBQGA1UEAxMNaW90ZGV2LmNsei5tZTCCASIwDQYJKoZIhvcNAQEBBQAD\n" 
+            //     "ggEPADCCAQoCggEBALbOFn7cJ2I/FKMJqIaEr38n4kCuJCCeNf1bWdWvOizmU2A8\n" 
+            //     "QeTAr5e6Q3GKeJRdPnc8xXhqkTm4LOhgdZB8KzuVZARtu23D4vj4sVzxgC/zwJlZ\n" 
+            //     "MRMxN+cqI37kXE8gGKW46l2H9vcukylJX+cx/tjWDfS2YuyXdFuS/RjhCxLgXzbS\n" 
+            //     "cve1W0oBZnBPRSMV0kgxTWj7hEGZNWKIzK95BSCiMN59b+XEu3NWGRb/VzSAiJEy\n" 
+            //     "Hy9DcDPBC9TEg+p5itHtdMhy2gq1OwsPgl9HUT0xmDATSNEV2RB3vwviNfu9/Eif\n" 
+            //     "ObhsV078zf30TqdiESqISEB68gJ0Otru67ePoTkCAwEAAaOCAWowggFmMB8GA1Ud\n" 
+            //     "IwQYMBaAFH/TmfOgRw4xAFZWIo63zJ7dygGKMB0GA1UdDgQWBBR/KLqnke61779P\n" 
+            //     "xc9htonQwLOxPDAYBgNVHREEETAPgg1pb3RkZXYuY2x6Lm1lMA4GA1UdDwEB/wQE\n" 
+            //     "AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwTAYDVR0gBEUwQzA3\n" 
+            //     "BglghkgBhv1sAQIwKjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQu\n" 
+            //     "Y29tL0NQUzAIBgZngQwBAgEwgYEGCCsGAQUFBwEBBHUwczAlBggrBgEFBQcwAYYZ\n" 
+            //     "aHR0cDovL29jc3AyLmRpZ2ljZXJ0LmNvbTBKBggrBgEFBQcwAoY+aHR0cDovL2Nh\n" 
+            //     "Y2VydHMuZGlnaXRhbGNlcnR2YWxpZGF0aW9uLmNvbS9UcnVzdEFzaWFUTFNSU0FD\n" 
+            //     "QS5jcnQwCQYDVR0TBAIwADANBgkqhkiG9w0BAQsFAAOCAQEAhtM4eyrWB14ajJpQ\n" 
+            //     "ibZ5FbzVuvv2Le0FOSoss7UFCDJUYiz2LiV8yOhL4KTY+oVVkqHaYtcFS1CYZNzj\n" 
+            //     "6xWcqYZJ+pgsto3WBEgNEEe0uLSiTW6M10hm0LFW9Det3k8fqwSlljqMha3gkpZ6\n" 
+            //     "8WB0f2clXOuC+f1SxAOymnGUsSqbU0eFSgevcOIBKR7Hr3YXBXH3jjED76Q52OMS\n" 
+            //     "ucfOM9/HB3jN8o/ioQbkI7xyd/DUQtzK6hSArEoYRl3p5H2P4fr9XqmpoZV3i3gQ\n" 
+            //     "oOdVycVtpLunyUoVAB2DcOElfDxxXCvDH3XsgoIU216VY03MCaUZf7kZ2GiNL+UX\n" 
+            //     "9UBd0Q==\n" 
             //     "-----END CERTIFICATE-----\n";
         // #endif
 

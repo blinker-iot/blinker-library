@@ -80,7 +80,9 @@ class BlinkerNumber
 
             if (value.length())
             {
-                numberData += BLINKER_F("{\""BLINKER_CMD_VALUE"\":");
+                numberData += BLINKER_F("{\"");
+                numberData += BLINKER_F(BLINKER_CMD_VALUE);
+                numberData += BLINKER_F("\":");
                 numberData += value;
             }
 
@@ -89,7 +91,9 @@ class BlinkerNumber
                 if (numberData.length()) numberData += BLINKER_F(",");
                 else numberData += BLINKER_F("{");
 
-                numberData += BLINKER_F("\""BLINKER_CMD_ICON"\":\"");
+                numberData += BLINKER_F("\"");
+                numberData += BLINKER_F(BLINKER_CMD_ICON);
+                numberData += BLINKER_F("\":\"");
                 numberData += nicon;
                 numberData += BLINKER_F("\"");
 
@@ -101,7 +105,9 @@ class BlinkerNumber
                 if (numberData.length()) numberData += BLINKER_F(",");
                 else numberData += BLINKER_F("{");
 
-                numberData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
+                numberData += BLINKER_F("\"");
+                numberData += BLINKER_F(BLINKER_CMD_COLOR);
+                numberData += BLINKER_F("\":\"");
                 numberData += ncolor;
                 numberData += BLINKER_F("\"");
 
@@ -113,7 +119,9 @@ class BlinkerNumber
                 if (numberData.length()) numberData += BLINKER_F(",");
                 else numberData += BLINKER_F("{");
 
-                numberData += BLINKER_F("\""BLINKER_CMD_UNIT"\":\"");
+                numberData += BLINKER_F("\"");
+                numberData += BLINKER_F(BLINKER_CMD_UNIT);
+                numberData += BLINKER_F("\":\"");
                 numberData += nunit;
                 numberData += BLINKER_F("\"");
 
@@ -125,7 +133,9 @@ class BlinkerNumber
                 if (numberData.length()) numberData += BLINKER_F(",");
                 else numberData += BLINKER_F("{");
 
-                numberData += BLINKER_F("\""BLINKER_CMD_TEXT"\":\"");
+                numberData += BLINKER_F("\"");
+                numberData += BLINKER_F(BLINKER_CMD_TEXT);
+                numberData += BLINKER_F("\":\"");
                 numberData += (ntext);
                 numberData += BLINKER_F("\"");
 

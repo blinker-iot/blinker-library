@@ -1227,13 +1227,13 @@
         #define BLINKER_PRO_VERSION             "1.0.0"
     #endif
 
-    #define BLINKER_OTA_VERSION_CODE        B00000001
+    // #define BLINKER_OTA_VERSION_CODE        B00000001
 
-    #define BLINKER_OTA_RUN                 B00000111
+    // #define BLINKER_OTA_RUN                 B00000111
 
-    #define BLINKER_OTA_START               B01010011
+    // #define BLINKER_OTA_START               B01010011
 
-    #define BLINKER_OTA_CLEAR               B00000001
+    // #define BLINKER_OTA_CLEAR               B00000001
 
     #define BLINKER_CHECK_AUTH_TIME         120000UL
 
@@ -1261,16 +1261,18 @@
 
     #define BLINKER_PRO_DATA_SIZE           (BLINKER_SSID_SIZE + BLINKER_PSWD_SIZE + BLINKER_WLAN_CHECK_SIZE + BLINKER_AUUID_SIZE + BLINKER_AUTH_CHECK_SIZE)
 
-    #define BLINKER_EEP_ADDR_OTA_INFO       (BLINKER_EEP_ADDR_AUTH_CHECK + BLINKER_AUTH_CHECK_SIZE)
+    #define BLINKER_PRO_HELLO               "{\"message\":\"Registration successful\"}"
+    // #define BLINKER_EEP_ADDR_OTA_INFO       (BLINKER_EEP_ADDR_AUTH_CHECK + BLINKER_AUTH_CHECK_SIZE)
 
-    #define BLINKER_OTA_INFO_SIZE           4
+    // #define BLINKER_OTA_INFO_SIZE           4
 
-    #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
+    // #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
 
-    #define BLINKER_OTA_CHECK_SIZE          1
+    // #define BLINKER_OTA_CHECK_SIZE          1
+#endif
 
-#elif (defined(BLINKER_WIFI) || defined(BLINKER_MQTT) \
-    || defined(BLINKER_AT_MQTT))
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+    defined(BLINKER_AT_MQTT) || defined(BLINKER_PRO)
 
     #ifndef BLINKER_OTA_VERSION_CODE
 
