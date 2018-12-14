@@ -523,6 +523,9 @@ bool BlinkerMQTT::print(char * data, bool needCheck)
         // }
 
         uint8_t num = strlen(data);
+
+        data[num+8] = '\0';
+        
         for(uint8_t c_num = num; c_num > 0; c_num--)
         {
             data[c_num+7] = data[c_num-1];
@@ -1671,6 +1674,8 @@ bool BlinkerMQTT::checkDuerPrintSpan()
 
 bool BlinkerMQTT::isJson(const String & data)
 {
+    BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
+
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
 

@@ -414,26 +414,26 @@ void BlinkerOTA::clearOTACheck() {
 }
 
 bool BlinkerOTA::loadVersion() {
-#if defined(BLINKER_PRO)
-    uint32_t versionCheck;
-    EEPROM.begin(BLINKER_EEP_SIZE);
-    EEPROM.get(BLINKER_EEP_ADDR_OTA_INFO, versionCheck);//+BUNDLINGSIZE+isBundling
-    EEPROM.commit();
-    EEPROM.end();
+// #if defined(BLINKER_PRO)
+//     uint32_t versionCheck;
+//     EEPROM.begin(BLINKER_EEP_SIZE);
+//     EEPROM.get(BLINKER_EEP_ADDR_OTA_INFO, versionCheck);//+BUNDLINGSIZE+isBundling
+//     EEPROM.commit();
+//     EEPROM.end();
 
-    BLINKER_LOG_ALL(BLINKER_F("loadVersion: "), versionCheck);
+//     BLINKER_LOG_ALL(BLINKER_F("loadVersion: "), versionCheck);
 
-    if (versionCheck != BLINKER_OTA_VERSION_CODE) {
-        BLINKER_LOG_ALL(BLINKER_F("OTA SUCCESS BLINKER_OTA_VERSION_CODE NOT UPGRADE"));
-        _status = BLINKER_UPGRADE_SUCCESS;
-        return false;
-    }
-    else {
-        BLINKER_LOG_ALL(BLINKER_F("OTA FAIL OR NOT START OTA"));
-        _status = BLINKER_UPGRADE_FAIL;
-        return true;
-    }
-#else
+//     if (versionCheck != BLINKER_OTA_VERSION_CODE) {
+//         BLINKER_LOG_ALL(BLINKER_F("OTA SUCCESS BLINKER_OTA_VERSION_CODE NOT UPGRADE"));
+//         _status = BLINKER_UPGRADE_SUCCESS;
+//         return false;
+//     }
+//     else {
+//         BLINKER_LOG_ALL(BLINKER_F("OTA FAIL OR NOT START OTA"));
+//         _status = BLINKER_UPGRADE_FAIL;
+//         return true;
+//     }
+// #else
     char versionCheck[11];
     
     EEPROM.begin(BLINKER_EEP_SIZE);
@@ -453,7 +453,7 @@ bool BlinkerOTA::loadVersion() {
         _status = BLINKER_UPGRADE_FAIL;
         return true;
     }
-#endif
+// #endif
 }
 
 void BlinkerOTA::saveVersion() {

@@ -25,6 +25,19 @@
 #include "Blinker/BlinkerDebug.h"
 #include "utility/BlinkerUtility.h"
 
+char*       MQTT_HOST_PRO;
+char*       MQTT_ID_PRO;
+char*       MQTT_NAME_PRO;
+char*       MQTT_KEY_PRO;
+char*       MQTT_PRODUCTINFO_PRO;
+char*       UUID_PRO;
+char*       AUTHKEY_PRO;
+char*       MQTT_DEVICEID_PRO;
+// char*       DEVICE_NAME;
+char*       BLINKER_PUB_TOPIC_PRO;
+char*       BLINKER_SUB_TOPIC_PRO;
+uint16_t MQTT_PORT_PRO;
+
 class BlinkerPRO {
     public :
         BlinkerPRO();
@@ -36,6 +49,7 @@ class BlinkerPRO {
         void ping();
         bool available();
         bool aligenieAvail();
+        bool duerAvail();
         // bool extraAvailable();
         void subscribe();
         char * lastRead();
@@ -43,6 +57,7 @@ class BlinkerPRO {
         bool print(char * data, bool needCheck = true);
         bool bPrint(char * name, const String & data);
         bool aliPrint(const String & data);
+        bool duerPrint(const String & data);
         // void aliType(const String & type);
         void begin(const char* _deviceType);
         bool autoPrint(uint32_t id);
@@ -64,10 +79,12 @@ class BlinkerPRO {
         void mDNSInit();
         void checkKA();
         bool checkAliKA();
+        bool checkDuerKA();
         bool checkCanPrint();
         bool checkCanBprint();
         bool checkPrintSpan();
         bool checkAliPrintSpan();
+        bool checkDuerPrintSpan();
         bool pubHello();
 
     protected :
@@ -75,6 +92,7 @@ class BlinkerPRO {
         // char*       _authKey;
         // char*       _aliType;
         bool*       isHandle;// = &isConnect;
+        // bool*       isHandle = &isConnect_PRO;
         bool        isAlive = false;
         bool        isBavail = false;
         uint32_t    latestTime;
@@ -86,10 +104,15 @@ class BlinkerPRO {
         uint32_t    respTime = 0;
         uint8_t     respAliTimes = 0;
         uint32_t    respAliTime = 0;
+        uint8_t     respDuerTimes = 0;
+        uint32_t    respDuerTime = 0;
 
         uint32_t    aliKaTime = 0;
         bool        isAliAlive = false;
         bool        isAliAvail = false;
+        uint32_t    duerKaTime = 0;
+        bool        isDuerAlive = false;
+        bool        isDuerAvail = false;
 
         bool        isNew = false;
         bool        isAuth = false;
@@ -105,19 +128,6 @@ class BlinkerPRO {
 // #endif
 
 // extern WiFiClient              client;
-
-char*       MQTT_HOST_PRO;
-char*       MQTT_ID_PRO;
-char*       MQTT_NAME_PRO;
-char*       MQTT_KEY_PRO;
-char*       MQTT_PRODUCTINFO_PRO;
-char*       UUID_PRO;
-char*       AUTHKEY_PRO;
-char*       MQTT_DEVICEID_PRO;
-// char*       DEVICE_NAME;
-char*       BLINKER_PUB_TOPIC_PRO;
-char*       BLINKER_SUB_TOPIC_PRO;
-uint16_t MQTT_PORT_PRO;
 
 
 #if defined(ESP8266)
@@ -204,12 +214,15 @@ void webSocketEvent_PRO(uint8_t num, WStype_t type, \
 
 BlinkerPRO::BlinkerPRO() { isHandle = &isConnect_PRO; }
 
-
 bool BlinkerPRO::connect()
 {
     int8_t ret;
 
     webSocket_PRO.loop();
+
+    if (!isMQTTinit) {
+        return *isHandle;
+    }
 
     if (mqtt_PRO->connected())
     {
@@ -241,6 +254,13 @@ bool BlinkerPRO::connect()
     BLINKER_LOG(BLINKER_F("MQTT Connected!"));
     BLINKER_LOG_FreeHeap();
 
+    if (isNew)
+    {
+        if (pubHello()) {
+            isNew = false;
+        }
+    }
+
     this->latestTime = millis();
 
     return true;
@@ -264,7 +284,7 @@ bool BlinkerPRO::mConnected()
 
 void BlinkerPRO::disconnect()
 {
-    mqtt_PRO->disconnect();
+    if (isMQTTinit) mqtt_PRO->disconnect();
 
     if (*isHandle) webSocket_PRO.disconnect();
 }
@@ -272,6 +292,8 @@ void BlinkerPRO::disconnect()
 void BlinkerPRO::ping()
 {
     BLINKER_LOG_ALL(BLINKER_F("MQTT Ping!"));
+
+    if (!isMQTTinit) return;
 
     if (!mqtt_PRO->ping())
     {
@@ -290,16 +312,18 @@ bool BlinkerPRO::available()
 {
     webSocket_PRO.loop();
 
-    checkKA();
+    if (isMQTTinit) {
+        checkKA();
 
-    if (!mqtt_PRO->connected() || \
-        (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
-    {
-        ping();
-    }
-    else
-    {
-        subscribe();
+        if (!mqtt_PRO->connected() || \
+            (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
+        {
+            ping();
+        }
+        else
+        {
+            subscribe();
+        }
     }
 
     if (isAvail_PRO)
@@ -317,6 +341,18 @@ bool BlinkerPRO::aligenieAvail()
     if (isAliAvail)
     {
         isAliAvail = false;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+bool BlinkerPRO::duerAvail()
+{
+    if (isDuerAvail)
+    {
+        isDuerAvail = false;
         return true;
     }
     else {
@@ -372,6 +408,14 @@ void BlinkerPRO::subscribe()
                 aliKaTime = millis();
                 isAliAlive = true;
                 isAliAvail = true;
+            }
+            else if (_uuid == BLINKER_CMD_DUEROS)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
+                
+                duerKaTime = millis();
+                isDuerAlive = true;
+                isDuerAvail = true;
             }
             else
             {
@@ -458,7 +502,7 @@ bool BlinkerPRO::print(char * data, bool needCheck)
         //     // payload = BLINKER_F("{\"data\":");
         //     // payload += data.substring(0, data.length() - 1);
         //     // payload += BLINKER_F(",\"fromDevice\":\"");
-        //     // payload += MQTT_ID_PRO;
+        //     // payload += MQTT_DEVICEID_PRO;
         //     // payload += BLINKER_F("\",\"toDevice\":\"");
         //     // payload += UUID_PRO;
         //     // payload += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
@@ -473,13 +517,18 @@ bool BlinkerPRO::print(char * data, bool needCheck)
         //     // payload = BLINKER_F("{\"data\":");
         //     // payload += data;
         //     // payload += BLINKER_F(",\"fromDevice\":\"");
-        //     // payload += MQTT_ID_PRO;
+        //     // payload += MQTT_DEVICEID_PRO;
         //     // payload += BLINKER_F("\",\"toDevice\":\"");
         //     // payload += UUID_PRO;
         //     // payload += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         // }
 
+        BLINKER_LOG_ALL(BLINKER_F("data: "), data);
+
         uint8_t num = strlen(data);
+
+        data[num+8] = '\0';
+
         for(uint8_t c_num = num; c_num > 0; c_num--)
         {
             data[c_num+7] = data[c_num-1];
@@ -493,7 +542,7 @@ bool BlinkerPRO::print(char * data, bool needCheck)
 
         data_add = BLINKER_F(",\"fromDevice\":\"");
         strcat(data, data_add.c_str());
-        strcat(data, MQTT_ID_PRO);
+        strcat(data, MQTT_DEVICEID_PRO);
         data_add = BLINKER_F("\",\"toDevice\":\"");
         strcat(data, data_add.c_str());
         strcat(data, UUID_PRO);
@@ -575,7 +624,7 @@ bool BlinkerPRO::bPrint(char * name, const String & data)
     //     payload = BLINKER_F("{\"data\":");
     //     payload += data.substring(0, data.length() - 1);
     //     payload += BLINKER_F(",\"fromDevice\":\"");
-    //     payload += MQTT_ID_PRO;
+    //     payload += MQTT_DEVICEID_PRO;
     //     payload += BLINKER_F("\",\"toDevice\":\"");
     //     payload += name;
     //     payload += BLINKER_F("\",\"deviceType\":\"DiyBridge\"}");
@@ -585,7 +634,7 @@ bool BlinkerPRO::bPrint(char * name, const String & data)
     //     payload = BLINKER_F("{\"data\":");
     //     payload += data;
     //     payload += BLINKER_F(",\"fromDevice\":\"");
-    //     payload += MQTT_ID_PRO;
+    //     payload += MQTT_DEVICEID_PRO;
     //     payload += BLINKER_F("\",\"toDevice\":\"");
     //     payload += name;
     //     payload += BLINKER_F("\",\"deviceType\":\"DiyBridge\"}");
@@ -605,14 +654,14 @@ bool BlinkerPRO::bPrint(char * name, const String & data)
 
     data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_ID_PRO;
+    data_add += MQTT_DEVICEID_PRO;
     data_add += BLINKER_F("\",\"toDevice\":\"");
     data_add += name;
     data_add += BLINKER_F("\",\"deviceType\":\"DiyBridge\"}");
 
     // data_add = BLINKER_F(",\"fromDevice\":\"");
     // strcat(data, data_add.c_str());
-    // strcat(data, MQTT_ID_PRO);
+    // strcat(data, MQTT_DEVICEID_PRO);
     // data_add = BLINKER_F("\",\"toDevice\":\"");
     // strcat(data, data_add.c_str());
     // strcat(data, name);
@@ -698,7 +747,7 @@ bool BlinkerPRO::aliPrint(const String & data)
     // payload = BLINKER_F("{\"data\":");
     // payload += data;
     // payload += BLINKER_F(",\"fromDevice\":\"");
-    // payload += MQTT_ID_PRO;
+    // payload += MQTT_DEVICEID_PRO;
     // payload += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
     // payload += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
@@ -716,7 +765,7 @@ bool BlinkerPRO::aliPrint(const String & data)
 
     // data_add = BLINKER_F(",\"fromDevice\":\"");
     // strcat(data, data_add.c_str());
-    // strcat(data, MQTT_ID_PRO);
+    // strcat(data, MQTT_DEVICEID_PRO);
     // data_add = BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
     // strcat(data, data_add.c_str());
     // data_add = BLINKER_F(",\"deviceType\":\"vAssistant\"}");
@@ -724,7 +773,7 @@ bool BlinkerPRO::aliPrint(const String & data)
 
     data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_ID_PRO;
+    data_add += MQTT_DEVICEID_PRO;
     data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
@@ -777,6 +826,61 @@ bool BlinkerPRO::aliPrint(const String & data)
     }
 }
 
+bool BlinkerPRO::duerPrint(const String & data)
+{
+    String data_add = BLINKER_F("{\"data\":");
+
+    data_add += data;
+    data_add += BLINKER_F(",\"fromDevice\":\"");
+    data_add += MQTT_DEVICEID_PRO;
+    data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+    data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+    if (!isJson(data_add)) return false;
+            
+    BLINKER_LOG_ALL(BLINKER_F("MQTT DuerOS Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (mqtt_PRO->connected())
+    {
+        if (!checkDuerKA())
+        {
+            return false;
+        }
+
+        if (!checkDuerPrintSpan())
+        {
+            respDuerTime = millis();
+            return false;
+        }
+        respDuerTime = millis();
+
+        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            isDuerAlive = false;
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            isDuerAlive = false;
+            return true;
+        }      
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
 // void BlinkerPRO::aliType(const String & type)
 // {
 //     _aliType = (char*)malloc((type.length()+1)*sizeof(char));
@@ -801,7 +905,7 @@ bool BlinkerPRO::autoPrint(uint32_t id)
     payload += STRING_format(id);
     payload += BLINKER_F("}}}");
     payload += BLINKER_F(",\"fromDevice\":\"");
-    payload += STRING_format(MQTT_ID_PRO);
+    payload += STRING_format(MQTT_DEVICEID_PRO);
     payload += BLINKER_F("\",\"toDevice\":\"autoManager\"}");
         // "\",\"deviceType\":\"" + "type" + "\"}";
 
@@ -1102,22 +1206,27 @@ bool BlinkerPRO::connectServer() {
     // client_s->setFingerprint(fingerprint);
     client_s->setInsecure();
 
-    String url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
+    String url_iot = BLINKER_F("/api/v1/user/device/register?deviceType=");
     url_iot += _deviceType;
     url_iot += BLINKER_F("&deviceName=");
     url_iot += macDeviceName();
 
     if (_deviceType == BLINKER_SMART_LAMP) {
         url_iot += BLINKER_F("&aliType=light");
+        url_iot += BLINKER_F("&duerType=LIGHT");
     }
     else if (_deviceType == BLINKER_SMART_PLUGIN) {
         url_iot += BLINKER_F("&aliType=outlet");
+        url_iot += BLINKER_F("&duerType=SOCKET");
     }
     else if (_deviceType == BLINKER_AIR_DETECTOR) {
         url_iot += BLINKER_F("&aliType=sensor");
+        url_iot += BLINKER_F("&duerType=AIR_MONITOR");
     }
 
     url_iot = "https://" + host + url_iot;
+
+    BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 
     HTTPClient http;
 
@@ -1193,12 +1302,15 @@ bool BlinkerPRO::connectServer() {
 
     if (_deviceType == BLINKER_SMART_LAMP) {
         url_iot += BLINKER_F("&aliType=light");
+        url_iot += BLINKER_F("&duerType=LIGHT");
     }
     else if (_deviceType == BLINKER_SMART_PLUGIN) {
         url_iot += BLINKER_F("&aliType=outlet");
+        url_iot += BLINKER_F("&duerType=SOCKET");
     }
     else if (_deviceType == BLINKER_AIR_DETECTOR) {
         url_iot += BLINKER_F("&aliType=sensor");
+        url_iot += BLINKER_F("&duerType=AIR_MONITOR");
     }
 
 // #if defined(BLINKER_ALIGENIE_LIGHT)
@@ -1290,6 +1402,8 @@ bool BlinkerPRO::connectServer() {
         // free(iotSub_PRO);
     }
 
+    BLINKER_LOG_ALL(("===================="));
+
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         // memcpy(DEVICE_NAME, _userID.c_str(), 12);
         String _deviceName = _userID.substring(12, 36);
@@ -1308,6 +1422,8 @@ bool BlinkerPRO::connectServer() {
         AUTHKEY_PRO = (char*)malloc((_authKey.length()+1)*sizeof(char));
         strcpy(AUTHKEY_PRO, _authKey.c_str());
         MQTT_PORT_PRO = BLINKER_MQTT_ALIYUN_PORT;
+
+        BLINKER_LOG_ALL(("===================="));
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
         // String id2name = _userID.subString(10, _userID.length());
@@ -1347,12 +1463,18 @@ bool BlinkerPRO::connectServer() {
     UUID_PRO = (char*)malloc((_uuid.length()+1)*sizeof(char));
     strcpy(UUID_PRO, _uuid.c_str());
 
+    char uuid_eeprom[33];
+
+    // BLINKER_LOG_ALL(("===================="));
+
     char _authCheck;
     EEPROM.begin(BLINKER_EEP_SIZE);
-    EEPROM.get(BLINKER_EEP_ADDR_AUUID, UUID_PRO);
-    if (STRING_format(UUID_PRO) != _uuid) {
-        strcpy(UUID_PRO, _uuid.c_str());
+    EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+    if (strcmp(uuid_eeprom, _uuid.c_str())) {
+        // strcpy(UUID_PRO, _uuid.c_str());
         EEPROM.put(BLINKER_EEP_ADDR_AUUID, UUID_PRO);
+
+        // BLINKER_LOG_ALL(("===================="));
         isNew = true;
     }
     EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
@@ -1366,6 +1488,7 @@ bool BlinkerPRO::connectServer() {
     BLINKER_LOG_ALL(BLINKER_F("===================="));
     BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME: "), macDeviceName());
     BLINKER_LOG_ALL(BLINKER_F("MQTT_PRODUCTINFO_PRO: "), MQTT_PRODUCTINFO_PRO);
+    BLINKER_LOG_ALL(BLINKER_F("MQTT_DEVICEID_PRO: "), MQTT_DEVICEID_PRO);
     BLINKER_LOG_ALL(BLINKER_F("MQTT_ID_PRO: "), MQTT_ID_PRO);
     BLINKER_LOG_ALL(BLINKER_F("MQTT_NAME_PRO: "), MQTT_NAME_PRO);
     BLINKER_LOG_ALL(BLINKER_F("MQTT_KEY_PRO: "), MQTT_KEY_PRO);
@@ -1380,7 +1503,7 @@ bool BlinkerPRO::connectServer() {
         String PUB_TOPIC_STR = BLINKER_F("/");
         PUB_TOPIC_STR += MQTT_PRODUCTINFO_PRO;
         PUB_TOPIC_STR += BLINKER_F("/");
-        PUB_TOPIC_STR += MQTT_ID_PRO;
+        PUB_TOPIC_STR += MQTT_DEVICEID_PRO;
         PUB_TOPIC_STR += BLINKER_F("/s");
 
         BLINKER_PUB_TOPIC_PRO = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
@@ -1392,7 +1515,7 @@ bool BlinkerPRO::connectServer() {
         String SUB_TOPIC_STR = BLINKER_F("/");
         SUB_TOPIC_STR += MQTT_PRODUCTINFO_PRO;
         SUB_TOPIC_STR += BLINKER_F("/");
-        SUB_TOPIC_STR += MQTT_ID_PRO;
+        SUB_TOPIC_STR += MQTT_DEVICEID_PRO;
         SUB_TOPIC_STR += BLINKER_F("/r");
         
         BLINKER_SUB_TOPIC_PRO = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
@@ -1534,6 +1657,13 @@ bool BlinkerPRO::checkAliKA() {
         return true;
 }
 
+bool BlinkerPRO::checkDuerKA() {
+    if (millis() - duerKaTime >= 10000)
+        return false;
+    else
+        return true;
+}
+
 bool BlinkerPRO::checkCanPrint() {
     if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
         return true;
@@ -1599,17 +1729,42 @@ bool BlinkerPRO::checkAliPrintSpan()
     }
 }
 
+bool BlinkerPRO::checkDuerPrintSpan()
+{
+    if (millis() - respDuerTime < BLINKER_PRINT_MSG_LIMIT/2)
+    {
+        if (respDuerTimes > BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            BLINKER_ERR_LOG_ALL(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+            
+            return false;
+        }
+        else
+        {
+            respDuerTimes++;
+            return true;
+        }
+    }
+    else
+    {
+        respDuerTimes = 0;
+        return true;
+    }
+}
+
 bool BlinkerPRO::pubHello()
 {
-    String stateJsonStr = BLINKER_F("{\"message\":\"Registration successful\"}");
+    char stateJsonStr[256] = ("{\"message\":\"Registration successful\"}");
     
     BLINKER_LOG_ALL(BLINKER_F("PUB hello: "), stateJsonStr);
     
-    return print("{\"message\":\"Registration successful\"}");
+    return print(stateJsonStr, false);
 }
 
 bool BlinkerPRO::isJson(const String & data)
 {
+    BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
+
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
 

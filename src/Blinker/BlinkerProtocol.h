@@ -2188,6 +2188,8 @@ void BlinkerProtocol<Transp>::run()
             {
                 _proStatus = PRO_WLAN_CONNECTED;
 
+                if (checkCanOTA()) BApi::loadOTA();
+
                 conn.begin(BApi::type());
                 _isConnBegin = true;
                 _initTime = millis();
@@ -2222,6 +2224,8 @@ void BlinkerProtocol<Transp>::run()
 
                     BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
                 }
+
+                BLINKER_LOG_FreeHeap_ALL();
             }
         }
 
@@ -2249,6 +2253,8 @@ void BlinkerProtocol<Transp>::run()
         
         if (!conn.init())
         {
+            yield();
+
             if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
                 !_getRegister)
             {
@@ -2282,7 +2288,7 @@ void BlinkerProtocol<Transp>::run()
                         }
                     }
 
-                    if (checkCanOTA()) BApi::loadOTA();
+                    // if (checkCanOTA()) BApi::loadOTA();
                 }
             }
             else
