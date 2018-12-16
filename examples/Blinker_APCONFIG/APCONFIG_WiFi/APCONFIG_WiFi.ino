@@ -31,6 +31,8 @@
 
 #include <Blinker.h>
 
+char auth[] = "Your Device Secret Key";
+
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
@@ -53,7 +55,7 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
     
-    Blinker.begin();
+    Blinker.begin(auth);
     Blinker.attachData(dataRead);
 }
 

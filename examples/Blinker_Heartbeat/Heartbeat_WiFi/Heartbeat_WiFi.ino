@@ -30,6 +30,7 @@
 
 #include <Blinker.h>
 
+char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
@@ -59,6 +60,13 @@ void heartbeat()
     else BUILTIN_SWITCH.print("off");
 }
 
+String summary()
+{
+    String data = "online, switch: " + STRING_format(switch_state ? "on" : "off");
+
+    return data;
+}
+
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
@@ -81,9 +89,10 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-    Blinker.begin(ssid, pswd);
-    Blinker.attachData(dataRead);
+    Blinker.begin(auth, ssid, pswd);
+    Blinker.attachData(dataRead);    
     Blinker.attachHeartbeat(heartbeat);
+    Blinker.attachSummary(summary);
     
     BUILTIN_SWITCH.attach(switch_callback);
 }

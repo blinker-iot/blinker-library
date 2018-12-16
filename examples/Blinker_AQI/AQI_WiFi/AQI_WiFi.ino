@@ -26,11 +26,11 @@
  * *****************************************************************/
 
 #define BLINKER_PRINT Serial
-#define BLINKER_MQTT
+#define BLINKER_WIFI
 
 #include <Blinker.h>
 
-char auth[] = "Your MQTT Secret Key";
+char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
@@ -44,12 +44,9 @@ void dataRead(const String & data)
     Blinker.print("millis", BlinkerTime);
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    if (Blinker.configUpdate("Hello blinker!")) {
-        String config_data = Blinker.configGet();
-
-        BLINKER_LOG("Blinker.configGet(): ", config_data);
-    }
-
+    String get_aqi = Blinker.aqi();
+    BLINKER_LOG("AQI: ", get_aqi);
+    
     Blinker.delay(60000);
 }
 

@@ -26,11 +26,11 @@
  * *****************************************************************/
 
 #define BLINKER_PRINT Serial
-#define BLINKER_MQTT
+#define BLINKER_WIFI
 
 #include <Blinker.h>
 
-char auth[] = "Your MQTT Secret Key";
+char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 

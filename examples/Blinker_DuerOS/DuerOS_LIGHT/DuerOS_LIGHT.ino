@@ -26,12 +26,12 @@
  * *****************************************************************/
 
 #define BLINKER_PRINT Serial
-#define BLINKER_MQTT
+#define BLINKER_WIFI
 #define BLINKER_DUEROS_LIGHT
 
 #include <Blinker.h>
 
-char auth[] = "Your MQTT Secret Key";
+char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
@@ -132,15 +132,64 @@ void duerPowerState(const String & state)
     pixelShow();
 }
 
-void duerColor(int32_t color)
+void duerColor(const String & color)
 {
     BLINKER_LOG("need set color: ", color);
 
-    colorR = color >> 16 & 0xFF;
-    colorG = color >>  8 & 0xFF;
-    colorB = color       & 0xFF;
+    if (color == "Red") {
+        colorR = 255;
+        colorG = 0;
+        colorB = 0;
+    }
+    else if (color == "Yellow") {
+        colorR = 255;
+        colorG = 255;
+        colorB = 0;
+    }
+    else if (color == "Blue") {
+        colorR = 0;
+        colorG = 0;
+        colorB = 255;
+    }
+    else if (color == "Green") {
+        colorR = 0;
+        colorG = 255;
+        colorB = 0;
+    }
+    else if (color == "White") {
+        colorR = 255;
+        colorG = 255;
+        colorB = 255;
+    }
+    else if (color == "Black") {
+        colorR = 0;
+        colorG = 0;
+        colorB = 0;
+    }
+    else if (color == "Cyan") {
+        colorR = 0;
+        colorG = 255;
+        colorB = 255;
+    }
+    else if (color == "Purple") {
+        colorR = 128;
+        colorG = 0;
+        colorB = 128;
+    }
+    else if (color == "Orange") {
+        colorR = 255;
+        colorG = 165;
+        colorB = 0;
+    }
 
-    BLINKER_LOG("colorR: ", colorR, ", colorG: ", colorG, ", colorB: ", colorB);
+    if (wsState == false) {
+        wsState = true;
+        colorW = 255;
+    }
+
+    if (colorW == 0) {
+        colorW = 255;
+    }
 
     pixelShow();
 
@@ -152,22 +201,22 @@ void duerMode(const String & mode)
 {
     BLINKER_LOG("need set mode: ", mode);
 
-    if (mode == BLINKER_CMD_DUEROS_READING) {
+    if (cmode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_SLEEP) {
+    else if (cmode == BLINKER_CMD_DUEROS_SLEEP) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_ALARM) {
+    else if (cmode == BLINKER_CMD_DUEROS_ALARM) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
+    else if (cmode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_ROMANTIC) {
+    else if (cmode == BLINKER_CMD_DUEROS_ROMANTIC) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_READING) {
+    else if (cmode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
 
