@@ -26,56 +26,27 @@
  * *****************************************************************/
 
 #define BLINKER_PRINT Serial
-#define BLINKER_MQTT
+#define BLINKER_WIFI
 
 #include <Blinker.h>
 
-char auth[] = "Your MQTT Secret Key";
+char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
-
-bool switch_state = false;
-
-void switch_callback(const String & state)
-{
-    BLINKER_LOG("get switch state: ", state);
-
-    if (state == BLINKER_CMD_ON) {
-        switch_state = true;
-        digitalWrite(LED_BUILTIN, HIGH);
-
-        BUILTIN_SWITCH.print("on");
-    }
-    else if (state == BLINKER_CMD_OFF) {
-        switch_state = false;
-        digitalWrite(LED_BUILTIN, LOW);
-
-        BUILTIN_SWITCH.print("off");
-    }
-}
-
-void heartbeat()
-{
-    if (switch_state) BUILTIN_SWITCH.print("on");
-    else BUILTIN_SWITCH.print("off");
-}
-
-String summary()
-{
-    String data = "online, switch: " + STRING_format(switch_state ? "on" : "off");
-
-    return data;
-}
 
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
 
-    Blinker.vibrate();
-    
     uint32_t BlinkerTime = millis();
-    Blinker.print(BlinkerTime);
+
+    Blinker.vibrate();        
     Blinker.print("millis", BlinkerTime);
+
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    Blinker.push("Hello blinker!");
+
+    Blinker.delay(60000);
 }
 
 void setup()
@@ -90,11 +61,7 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(auth, ssid, pswd);
-    Blinker.attachData(dataRead);    
-    Blinker.attachHeartbeat(heartbeat);
-    Blinker.attachSummary(summary);
-    
-    BUILTIN_SWITCH.attach(switch_callback);
+    Blinker.attachData(dataRead);
 }
 
 void loop()

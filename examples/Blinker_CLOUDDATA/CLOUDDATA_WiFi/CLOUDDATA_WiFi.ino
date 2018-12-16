@@ -26,11 +26,11 @@
  * *****************************************************************/
 
 #define BLINKER_PRINT Serial
-#define BLINKER_MQTT
+#define BLINKER_WIFI
 
 #include <Blinker.h>
 
-char auth[] = "Your MQTT Secret Key";
+char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
@@ -43,24 +43,12 @@ void dataRead(const String & data)
     Blinker.vibrate();        
     Blinker.print("millis", BlinkerTime);
 
+    Blinker.dataUpdate();
+
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    String get_weather = Blinker.weather();
-
-    BLINKER_LOG("weather: ", get_weather);
-
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& weather = jsonBuffer.parseObject(get_weather);
-
-    if (!weather.success()) {
-        BLINKER_LOG(get_weather, " , not a Json buffer!");
-    }
-
-    String weather_text = weather["cond_txt"];
-    int8_t weather_temp = weather["tmp"];
-
-    BLINKER_LOG("Local weather is: ", weather_text, " ,temperature is: ", weather_temp, "℃");
-
-    Blinker.delay(60000);
+    
+    Blinker.dataStorage("data1", random(0,120));
+    Blinker.dataStorage("data2", random(0,120)/2.0);
 }
 
 void setup()

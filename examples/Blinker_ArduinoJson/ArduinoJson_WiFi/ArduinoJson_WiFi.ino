@@ -26,38 +26,41 @@
  * *****************************************************************/
 
 #define BLINKER_PRINT Serial
-#define BLINKER_MQTT
-#define BLINKER_OTA_VERSION_CODE "0.1.1"
+#define BLINKER_WIFI
 
 #include <Blinker.h>
 
-char auth[] = "Your MQTT Secret Key";
+char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
-
-#define BLINKER_OTA_BLINK_TIME 500
-
-uint32_t os_time;
 
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
 
-    Blinker.vibrate();
-    
     uint32_t BlinkerTime = millis();
-    Blinker.print(BlinkerTime);
+
+    Blinker.vibrate();        
     Blinker.print("millis", BlinkerTime);
-}
 
-void otaStatus(uint32_t load_size, uint32_t total_size)
-{
-    if (millis() - os_time >= BLINKER_OTA_BLINK_TIME)
-    {
-        os_time = millis();
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    String get_weather = Blinker.weather();
 
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    BLINKER_LOG("weather: ", get_weather);
+
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& weather = jsonBuffer.parseObject(get_weather);
+
+    if (!weather.success()) {
+        BLINKER_LOG(get_weather, " , not a Json buffer!");
     }
+
+    String weather_text = weather["cond_txt"];
+    int8_t weather_temp = weather["tmp"];
+
+    BLINKER_LOG("Local weather is: ", weather_text, " ,temperature is: ", weather_temp, "℃");
+
+    Blinker.delay(60000);
 }
 
 void setup()
@@ -73,8 +76,6 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
-
-    BlinkerUpdater.onProgress(otaStatus);
 }
 
 void loop()

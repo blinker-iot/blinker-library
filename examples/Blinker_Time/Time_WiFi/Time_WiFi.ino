@@ -30,6 +30,7 @@
 
 #include <Blinker.h>
 
+char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
@@ -67,7 +68,7 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-    Blinker.begin(ssid, pswd);
+    Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
 
     Blinker.setTimezone(8.0);
