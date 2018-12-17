@@ -78,7 +78,7 @@ void setup()
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
 
-    BlinkerUpdater.onProgress(ota);
+    BlinkerUpdater.onProgress(otaStatus);
 }
 
 void loop()
