@@ -9,6 +9,10 @@
  * You can easily build graphic interfaces for all your 
  * projects by simply dragging and dropping widgets.
  * 
+ * Make sure installed 2.5.0 or later ESP8266/Arduino package,
+ * if use ESP8266 with Blinker.
+ * https://github.com/esp8266/Arduino/releases
+ * 
  * Docs: https://doc.blinker.app/
  *       https://github.com/blinker-iot/blinker-doc/wiki
  * 
@@ -18,14 +22,17 @@
  * https://github.com/blinker-iot/blinker-library/archive/master.zip
  * 
  * Blinker 是一个运行在 IOS 和 Android 上用于控制嵌入式硬件的应用程序。
- * 你可以通过拖放控制组件，轻松地为你的项目建立图形化控制界面。
+ * 你可以通过拖放控制组件, 轻松地为你的项目建立图形化控制界面。
+ * 
+ * 如果使用 ESP8266 接入 Blinker,
+ * 请确保安装了 2.5.0 或更新的 ESP8266/Arduino 支持包。
+ * https://github.com/esp8266/Arduino/releases
  * 
  * 文档: https://doc.blinker.app/
  *       https://github.com/blinker-iot/blinker-doc/wiki
  * 
  * *****************************************************************/
 
-#define BLINKER_PRINT Serial
 #define BLINKER_WIFI
 
 #include <Blinker.h>
@@ -60,10 +67,7 @@ void dataRead(const String & data)
 void setup()
 {
     Serial.begin(115200);
-
-    #if defined(BLINKER_PRINT)
-        BLINKER_DEBUG.stream(BLINKER_PRINT);
-    #endif
+    BLINKER_DEBUG.stream(Serial);
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
