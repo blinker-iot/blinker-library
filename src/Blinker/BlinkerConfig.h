@@ -4,7 +4,7 @@
 // #include "utility/BlinkerDebug.h"
 // #include "utility/BlinkerUtility.h"
 
-#define BLINKER_VERSION                 "0.2.4"
+#define BLINKER_VERSION                 "0.2.5"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
