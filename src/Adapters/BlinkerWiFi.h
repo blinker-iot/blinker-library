@@ -194,7 +194,7 @@ bool BlinkerWiFi::checkPrintSpan()
 {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
         if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
-            BLINKER_ERR_LOG_ALL(BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
+            BLINKER_ERR_LOG(BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
             
             return false;
         }

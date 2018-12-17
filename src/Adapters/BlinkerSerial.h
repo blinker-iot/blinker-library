@@ -175,7 +175,7 @@ bool BlinkerSerial::checkPrintSpan()
     {
         if (respTimes > BLINKER_PRINT_MSG_LIMIT)
         {
-            BLINKER_ERR_LOG_ALL(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
+            BLINKER_ERR_LOG(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
             
             return false;
         }

@@ -940,7 +940,7 @@ bool BlinkerPRO::autoPrint(uint32_t id)
         }
         else
         {
-            BLINKER_ERR_LOG_ALL(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT "), linkTime);
+            BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT "), linkTime);
             
             return false;
         }
@@ -1669,7 +1669,7 @@ bool BlinkerPRO::checkCanPrint() {
         return true;
     }
     else {
-        BLINKER_ERR_LOG_ALL(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
+        BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
         
         checkKA();
 
@@ -1682,7 +1682,7 @@ bool BlinkerPRO::checkCanBprint() {
         return true;
     }
     else {
-        BLINKER_ERR_LOG_ALL(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
+        BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
         
         return false;
     }
@@ -1691,7 +1691,7 @@ bool BlinkerPRO::checkCanBprint() {
 bool BlinkerPRO::checkPrintSpan() {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
         if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
-            BLINKER_ERR_LOG_ALL(BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
+            BLINKER_ERR_LOG(BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
             
             return false;
         }
@@ -1712,7 +1712,7 @@ bool BlinkerPRO::checkAliPrintSpan()
     {
         if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2)
         {
-            BLINKER_ERR_LOG_ALL(BLINKER_F("ALIGENIE NOT ALIVE OR MSG LIMIT"));
+            BLINKER_ERR_LOG(BLINKER_F("ALIGENIE NOT ALIVE OR MSG LIMIT"));
             
             return false;
         }
@@ -1735,7 +1735,7 @@ bool BlinkerPRO::checkDuerPrintSpan()
     {
         if (respDuerTimes > BLINKER_PRINT_MSG_LIMIT/2)
         {
-            BLINKER_ERR_LOG_ALL(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+            BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
             
             return false;
         }
@@ -1770,7 +1770,7 @@ bool BlinkerPRO::isJson(const String & data)
 
     if (!root.success())
     {
-        BLINKER_ERR_LOG("Not a Json data!");
+        BLINKER_ERR_LOG("Print data is not Json! ", data);
         return false;
     }
 
