@@ -116,6 +116,7 @@ bool BlinkerUpdaterClass::begin(size_t size, int command, int ledPin, uint8_t le
     //     DEBUG_UPDATER.printf("[begin] updateEndAddress:  0x%08zX (%zd)\n", updateEndAddress, updateEndAddress);
     //     DEBUG_UPDATER.printf("[begin] currentSketchSize: 0x%08zX (%zd)\n", currentSketchSize, currentSketchSize);
     // #endif
+        BLINKER_LOG_ALL(F("[begin] _SPIFFS_start: "), _SPIFFS_start, F(" "), _SPIFFS_start);
         BLINKER_LOG_ALL(F("[begin] roundedSize: "), roundedSize, F(" "), roundedSize);
         BLINKER_LOG_ALL(F("[begin] updateEndAddress: "), updateEndAddress, F(" "), updateEndAddress);
         BLINKER_LOG_ALL(F("[begin] currentSketchSize: "), currentSketchSize, F(" "), currentSketchSize);
