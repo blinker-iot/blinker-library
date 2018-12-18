@@ -21,6 +21,7 @@ extern "C" {
 }
 
 extern "C" uint32_t _SPIFFS_start;
+extern "C" uint32_t _SPIFFS_end;
 
 BlinkerUpdaterClass::BlinkerUpdaterClass()
 : _async(false)
@@ -105,7 +106,16 @@ bool BlinkerUpdaterClass::begin(size_t size, int command, int ledPin, uint8_t le
         //size of current sketch rounded to a sector
         size_t currentSketchSize = (ESP.getSketchSize() + FLASH_SECTOR_SIZE - 1) & (~(FLASH_SECTOR_SIZE - 1));
         //address of the end of the space available for sketch and update
-        uintptr_t updateEndAddress = (uintptr_t)&_SPIFFS_start - 0x40200000;
+        uintptr_t updateEndAddress;// = (uintptr_t)&_SPIFFS_start - 0x40200000;
+
+        if ((uintptr_t)&_SPIFFS_start > (uintptr_t)&_SPIFFS_end)
+        {
+            updateEndAddress = (uintptr_t)&_SPIFFS_end - 0x40200000;
+        }
+        else
+        {
+            updateEndAddress = (uintptr_t)&_SPIFFS_start - 0x40200000;
+        }
         //size of the update rounded to a sector
         size_t roundedSize = (size + FLASH_SECTOR_SIZE - 1) & (~(FLASH_SECTOR_SIZE - 1));
         //address where we will start writing the update
@@ -116,7 +126,7 @@ bool BlinkerUpdaterClass::begin(size_t size, int command, int ledPin, uint8_t le
     //     DEBUG_UPDATER.printf("[begin] updateEndAddress:  0x%08zX (%zd)\n", updateEndAddress, updateEndAddress);
     //     DEBUG_UPDATER.printf("[begin] currentSketchSize: 0x%08zX (%zd)\n", currentSketchSize, currentSketchSize);
     // #endif
-        BLINKER_LOG_ALL(F("[begin] _SPIFFS_start: "), _SPIFFS_start, F(" "), _SPIFFS_start);
+        // BLINKER_LOG_ALL(F("[begin] _SPIFFS_start: "), _SPIFFS_start, F(" "), _SPIFFS_start);
         BLINKER_LOG_ALL(F("[begin] roundedSize: "), roundedSize, F(" "), roundedSize);
         BLINKER_LOG_ALL(F("[begin] updateEndAddress: "), updateEndAddress, F(" "), updateEndAddress);
         BLINKER_LOG_ALL(F("[begin] currentSketchSize: "), currentSketchSize, F(" "), currentSketchSize);

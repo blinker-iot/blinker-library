@@ -16,9 +16,6 @@
     #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
     #include <ESP8266WebServer.h>
-
-    extern "C" uint32_t _SPIFFS_start;
-    extern "C" uint32_t _SPIFFS_end;
 #elif defined(ESP32)
     #include <ESPmDNS.h>
     #include <WiFi.h>
@@ -36,8 +33,6 @@ class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
         
         void begin(const char* _auth)
         {
-            if (_SPIFFS_start > _SPIFFS_end) _SPIFFS_start = _SPIFFS_end;
-
             #if defined(BLINKER_ALIGENIE_LIGHT)
                 String _aliType = BLINKER_F("&aliType=light");
             #elif defined(BLINKER_ALIGENIE_OUTLET)
@@ -69,8 +64,6 @@ class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
                     const char* _ssid, 
                     const char* _pswd )
         {
-            if (_SPIFFS_start > _SPIFFS_end) _SPIFFS_start = _SPIFFS_end;
-            
             #if defined(BLINKER_ALIGENIE_LIGHT)
                 String _aliType = BLINKER_F("&aliType=light");
             #elif defined(BLINKER_ALIGENIE_OUTLET)
