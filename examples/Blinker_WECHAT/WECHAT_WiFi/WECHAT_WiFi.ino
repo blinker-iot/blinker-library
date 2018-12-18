@@ -51,7 +51,7 @@ void dataRead(const String & data)
     Blinker.print("millis", BlinkerTime);
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    Blinker.wechat("Hello blinker!");
+    Blinker.wechat("Hello blinker!","state","message");
 
     Blinker.delay(60000);
 }
