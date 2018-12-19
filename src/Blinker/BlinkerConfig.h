@@ -518,7 +518,11 @@
 
     #define BLINKER_ALIGENIE_CFG_NUM            0
 
-    #define BLINKER_ALIGENIE_PARAM_NUM          1
+    #define BLINKER_ALIGENIE_PARAM_NUM          1    
+
+    #define BLINKER_DUEROS_CFG_NUM              0
+
+    #define BLINKER_DUEROS_PARAM_NUM            1
 
     #define BLINKER_TIMEZONE_CFG_NUM            0
 
@@ -560,6 +564,8 @@
 
     #define BLINKER_CMD_BLINKER_ALIGENIE        "BLINKER_ALIGENIE"
 
+    #define BLINKER_CMD_BLINKER_DUEROS          "BLINKER_DUEROS"
+    
     #define BLINKER_CMD_TIMEZONE                "TIMEZONE"
 
     #define BLINKER_CMD_TIME_AT                 "TIME"

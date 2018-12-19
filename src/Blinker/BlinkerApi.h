@@ -2326,6 +2326,17 @@ float BlinkerApi<Proto>::gps(b_gps_t axis)
                     BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=3"));
         #endif
 
+        #if defined(BLINKER_DUEROS_LIGHT)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_DUEROS + STRING_format("=1"));
+        #elif defined(BLINKER_DUEROS_OUTLET)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_DUEROS + STRING_format("=2"));
+        #elif defined(BLINKER_DUEROS_SENSOR)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_DUEROS + STRING_format("=3"));
+        #endif
+
         String cmd_start = BLINKER_CMD_AT + STRING_format("+") + \
                         BLINKER_CMD_BLINKER_MQTT + STRING_format("=");
 

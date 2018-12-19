@@ -248,6 +248,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         #if defined(BLINKER_AT_MQTT)
             blinker_at_status_t     _status = BL_BEGIN;
             blinker_at_aligenie_t   _aliType = ALI_NONE;
+            blinker_at_dueros_t     _duerType = DUER_NONE;
             uint8_t                 _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
             uint8_t                 pinDataNum = 0;
             // bool                    _isAtRegister = false;
@@ -1036,7 +1037,7 @@ void BlinkerProtocol<Transp>::flush()
 //     }
 // }
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
     template <class Transp>
     void BlinkerProtocol<Transp>::bridgePrint(char * bName, const String & data)
     {
@@ -1802,12 +1803,12 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needCheckLength)
                         BLINKER_LOG_ALL(BLINKER_F("ALI_LIGHT"));
                         _aliType = ALI_LIGHT;
                     }
-                    else if ((_slaverAT->getParam(MQTT_CONFIG_MODE)).toInt() == ALI_OUTLET)
+                    else if ((_slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_OUTLET)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("ALI_OUTLET"));
                         _aliType = ALI_OUTLET;
                     }
-                    else if ((_slaverAT->getParam(MQTT_CONFIG_MODE)).toInt() == ALI_SENSOR)
+                    else if ((_slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_SENSOR)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("ALI_SENSOR"));
                         _aliType = ALI_SENSOR;
@@ -1817,6 +1818,70 @@ void BlinkerProtocol<Transp>::_print(char * n, bool needCheckLength)
                         _aliType = ALI_NONE;
                     }
                     conn.aligenieType(_aliType);
+                    conn.serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_ACTION:
+                    // conn.serialPrint();
+                    break;
+                default :
+                    break;
+            }
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_BLINKER_DUEROS) {
+            // conn.serialPrint(BLINKER_CMD_OK);
+
+            BLINKER_LOG(BLINKER_CMD_BLINKER_DUEROS);
+
+            blinker_at_state_t at_state = _slaverAT->state();
+
+            BLINKER_LOG_ALL(at_state);
+
+            switch (at_state)
+            {
+                case AT_NONE:
+                    // conn.serialPrint();
+                    break;
+                case AT_TEST:
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_DUEROS;
+                    reqData += BLINKER_F("=<type>");
+                    conn.serialPrint(reqData);
+                    conn.serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_QUERY:
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_DUEROS;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(_duerType);
+                    conn.serialPrint(reqData);
+                    conn.serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_SETTING:
+                    BLINKER_LOG_ALL(BLINKER_F("BLINKER_DUEROS_CFG_NUM: "), _slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM));
+
+                    if (BLINKER_DUEROS_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                    if ((_slaverAT->getParam(BLINKER_DUEROS_CFG_NUM)).toInt() == ALI_LIGHT)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("DUER_LIGHT"));
+                        _duerType = DUER_LIGHT;
+                    }
+                    else if ((_slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_OUTLET)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("DUER_OUTLET"));
+                        _duerType = DUER_OUTLET;
+                    }
+                    else if ((_slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_SENSOR)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("DUER_SENSOR"));
+                        _duerType = DUER_SENSOR;
+                    }
+                    else {
+                        BLINKER_LOG_ALL(BLINKER_F("DUER_NONE"));
+                        _duerType = DUER_NONE;
+                    }
+                    conn.duerType(_duerType);
                     conn.serialPrint(BLINKER_CMD_OK);
                     break;
                 case AT_ACTION:
@@ -2506,7 +2571,7 @@ void BlinkerProtocol<Transp>::run()
                     {
                         BApi::aliParse(conn.lastRead());
 
-                        if (STRING_contains_string(conn.lastRead(), "vAssistant"))
+                        if (STRING_contains_string(conn.lastRead(), "AliGenie"))
                         {
                             flush();
                         }
