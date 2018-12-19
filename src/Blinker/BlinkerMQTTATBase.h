@@ -63,6 +63,13 @@ enum blinker_at_aligenie_t {
     ALI_SENSOR
 };
 
+enum blinker_at_dueros_t {
+    DUER_NONE,
+    DUER_LIGHT,
+    DUER_OUTLET,
+    DUER_SENSOR
+};
+
 // uint32_t serialSet = BLINKER_SERIAL_DEFAULT;
 
 // #if defined(ESP8266)

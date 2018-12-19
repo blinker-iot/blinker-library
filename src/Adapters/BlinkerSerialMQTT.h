@@ -35,6 +35,7 @@ class BlinkerSerialMQTT
         char * lastRead() { return isFresh ? streamData : NULL; }
         void flush();
         bool aliPrint(String s);
+        bool duerPrint(String s);
         bool print(const String & s, bool needCheck = true);
         bool connect()      { isConnect = true; return connected(); }
         bool connected()    { return isConnect; }
@@ -148,11 +149,38 @@ bool BlinkerSerialMQTT::aliPrint(String s)
     }
 
     s = s.substring(0, s.length() - 1) + \
-            ",\"deviceType\":\"vAssistant\"}";
+            ",\"toDeviceAT\":\"AliGenie\"}";
 
     respTime = millis();
     
     BLINKER_LOG_ALL(BLINKER_F("AliGenie Response: "), s);
+    
+    if(connected()) {
+        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        
+        stream->println(s);
+        return true;
+    }
+    else {
+        BLINKER_LOG_ALL(BLINKER_F("Faile... Disconnected"));
+        
+        return false;
+    }
+}
+
+bool BlinkerSerialMQTT::duerPrint(String s)
+{
+    if (!checkPrintSpan()) {
+        respTime = millis();
+        return false;
+    }
+
+    s = s.substring(0, s.length() - 1) + \
+            ",\"toDeviceAT\":\"DuerOS\"}";
+
+    respTime = millis();
+    
+    BLINKER_LOG_ALL(BLINKER_F("DuerOS Response: "), s);
     
     if(connected()) {
         BLINKER_LOG_ALL(BLINKER_F("Succese..."));
