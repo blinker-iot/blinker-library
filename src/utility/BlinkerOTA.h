@@ -121,6 +121,8 @@ bool BlinkerOTA::update() {
     client_s.setInsecure();
 
     BLINKER_LOG_ALL(BLINKER_F("Connecting to: "), ota_host);
+#elif defined(ESP32)
+    client_s.stop();
 #endif
 
     while (1) {
