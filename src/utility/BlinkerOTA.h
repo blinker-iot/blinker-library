@@ -76,6 +76,9 @@ class BlinkerOTA
         }
 
     protected :
+        // #if defined(ESP32)
+        //     uint8_t OTACheck;
+        // #endif
         String ota_host;
         String ota_url;
         String ota_fingerPrint;
@@ -413,7 +416,9 @@ bool BlinkerOTA::update() {
 // }
 
 uint8_t BlinkerOTA::loadOTACheck() {
-    uint8_t OTACheck;
+    // #if defined(ESP8266)
+    static uint8_t OTACheck;
+    // #endif
     EEPROM.begin(BLINKER_EEP_SIZE);
     EEPROM.get(BLINKER_EEP_ADDR_OTA_CHECK, OTACheck);
     EEPROM.commit();
