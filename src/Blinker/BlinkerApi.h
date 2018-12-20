@@ -261,16 +261,22 @@ class BlinkerApi
         { _summaryFunc = newFunction; }
 
         void freshAttachWidget(char _name[], blinker_callback_with_string_arg_t _func);
-        void freshAttachWidget(char _name[], blinker_callback_with_joy_arg_t _func);
+        #if defined(BLINKER_BLE)
+            void freshAttachWidget(char _name[], blinker_callback_with_joy_arg_t _func);
+        #endif
         void freshAttachWidget(char _name[], blinker_callback_with_rgb_arg_t _func);
         void freshAttachWidget(char _name[], blinker_callback_with_int32_arg_t _func);
         uint8_t attachWidget(char _name[], blinker_callback_with_string_arg_t _func);
-        uint8_t attachWidget(char _name[], blinker_callback_with_joy_arg_t _func);
+        #if defined(BLINKER_BLE)
+            uint8_t attachWidget(char _name[], blinker_callback_with_joy_arg_t _func);
+        #endif
         uint8_t attachWidget(char _name[], blinker_callback_with_rgb_arg_t _func);
         uint8_t attachWidget(char _name[], blinker_callback_with_int32_arg_t _func);
         void attachSwitch(blinker_callback_with_string_arg_t _func);
         char * widgetName_str(uint8_t num);
-        char * widgetName_joy(uint8_t num);
+        #if defined(BLINKER_BLE)
+            char * widgetName_joy(uint8_t num);
+        #endif
         char * widgetName_rgb(uint8_t num);
         char * widgetName_int(uint8_t num);
 
@@ -300,7 +306,9 @@ class BlinkerApi
         #endif
         
         class BlinkerWidgets_string *       _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
-        class BlinkerWidgets_joy *          _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
+        #if defined(BLINKER_BLE)
+            class BlinkerWidgets_joy *          _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
+        #endif
         class BlinkerWidgets_rgb *          _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_int32 *        _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
         // class BlinkerWidgets_string *       _BUILTIN_SWITCH;
@@ -400,7 +408,9 @@ class BlinkerApi
                 void bridgeParse(char _bName[], const JsonObject& data);
             #endif
             void strWidgetsParse(char _wName[], const JsonObject& data);
-            void joyWidgetsParse(char _wName[], const JsonObject& data);
+            #if defined(BLINKER_BLE)
+                void joyWidgetsParse(char _wName[], const JsonObject& data);
+            #endif
             void rgbWidgetsParse(char _wName[], const JsonObject& data);
             void intWidgetsParse(char _wName[], const JsonObject& data);
 
@@ -414,7 +424,9 @@ class BlinkerApi
             void setSwitch(char data[]);
 
             void strWidgetsParse(char _wName[], char _data[]);
-            void joyWidgetsParse(char _wName[], char _data[]);
+            #if defined(BLINKER_BLE)
+                void joyWidgetsParse(char _wName[], char _data[]);
+            #endif
             void rgbWidgetsParse(char _wName[], char _data[]);
             void intWidgetsParse(char _wName[], char _data[]);
 
@@ -2789,12 +2801,14 @@ void BlinkerApi<Proto>::freshAttachWidget(char _name[], blinker_callback_with_st
     if(num >= 0 ) _Widgets_str[num]->setFunc(_func);
 }
 
-template <class Proto>
-void BlinkerApi<Proto>::freshAttachWidget(char _name[], blinker_callback_with_joy_arg_t _func)
-{
-    int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
-    if(num >= 0 ) _Widgets_joy[num]->setFunc(_func);
-}
+#if defined(BLINKER_BLE)
+    template <class Proto>
+    void BlinkerApi<Proto>::freshAttachWidget(char _name[], blinker_callback_with_joy_arg_t _func)
+    {
+        int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
+        if(num >= 0 ) _Widgets_joy[num]->setFunc(_func);
+    }
+#endif
 
 template <class Proto>
 void BlinkerApi<Proto>::freshAttachWidget(char _name[], blinker_callback_with_rgb_arg_t _func)
@@ -2843,38 +2857,40 @@ uint8_t BlinkerApi<Proto>::attachWidget(char _name[], blinker_callback_with_stri
     }
 }
 
-template <class Proto>
-uint8_t BlinkerApi<Proto>::attachWidget(char _name[], blinker_callback_with_joy_arg_t _func)
-{
-    int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
-    if (num == BLINKER_OBJECT_NOT_AVAIL)
+#if defined(BLINKER_BLE)
+    template <class Proto>
+    uint8_t BlinkerApi<Proto>::attachWidget(char _name[], blinker_callback_with_joy_arg_t _func)
     {
-        if (_wCount_joy < BLINKER_MAX_WIDGET_SIZE/2)
+        int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
+        if (num == BLINKER_OBJECT_NOT_AVAIL)
         {
-            _Widgets_joy[_wCount_joy] = new BlinkerWidgets_joy(_name, _func);
-            _wCount_joy++;
+            if (_wCount_joy < BLINKER_MAX_WIDGET_SIZE/2)
+            {
+                _Widgets_joy[_wCount_joy] = new BlinkerWidgets_joy(_name, _func);
+                _wCount_joy++;
 
-            BLINKER_LOG_ALL(BLINKER_F("new widgets: "), _name, \
-            BLINKER_F(" _wCount_joy: "), _wCount_joy);
+                BLINKER_LOG_ALL(BLINKER_F("new widgets: "), _name, \
+                BLINKER_F(" _wCount_joy: "), _wCount_joy);
 
-            return _wCount_joy;
+                return _wCount_joy;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        else if(num >= 0 )
+        {
+            BLINKER_ERR_LOG(BLINKER_F("widgets name > "), _name, \
+                    BLINKER_F(" < has been registered, please register another name!"));
+            return 0;
         }
         else
         {
             return 0;
         }
     }
-    else if(num >= 0 )
-    {
-        BLINKER_ERR_LOG(BLINKER_F("widgets name > "), _name, \
-                BLINKER_F(" < has been registered, please register another name!"));
-        return 0;
-    }
-    else
-    {
-        return 0;
-    }
-}
+#endif
 
 template <class Proto>
 uint8_t BlinkerApi<Proto>::attachWidget(char _name[], blinker_callback_with_rgb_arg_t _func)
@@ -2965,12 +2981,14 @@ char * BlinkerApi<Proto>::widgetName_str(uint8_t num)
     else return NULL;
 }
 
-template <class Proto>
-char * BlinkerApi<Proto>::widgetName_joy(uint8_t num)
-{
-    if (num) return _Widgets_joy[num - 1]->getName();
-    else return NULL;
-}
+#if defined(BLINKER_BLE)
+    template <class Proto>
+    char * BlinkerApi<Proto>::widgetName_joy(uint8_t num)
+    {
+        if (num) return _Widgets_joy[num - 1]->getName();
+        else return NULL;
+    }
+#endif
 
 template <class Proto>
 char * BlinkerApi<Proto>::widgetName_rgb(uint8_t num)
@@ -3180,24 +3198,26 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         }
     }
 
-    template <class Proto>
-    void BlinkerApi<Proto>::joyWidgetsParse(char _wName[], const JsonObject& data)
-    {
-        int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
-
-        if (num == BLINKER_OBJECT_NOT_AVAIL) return;
-
-        if (data.containsKey(_wName))
+    #if defined(BLINKER_BLE)
+        template <class Proto>
+        void BlinkerApi<Proto>::joyWidgetsParse(char _wName[], const JsonObject& data)
         {
-            int16_t jxAxisValue = data[_wName][BLINKER_J_Xaxis];
-            uint8_t jyAxisValue = data[_wName][BLINKER_J_Yaxis];
+            int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
 
-            _fresh = true;
+            if (num == BLINKER_OBJECT_NOT_AVAIL) return;
 
-            blinker_callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
-            if (wFunc) wFunc(jxAxisValue, jyAxisValue);
+            if (data.containsKey(_wName))
+            {
+                int16_t jxAxisValue = data[_wName][BLINKER_J_Xaxis];
+                uint8_t jyAxisValue = data[_wName][BLINKER_J_Yaxis];
+
+                _fresh = true;
+
+                blinker_callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
+                if (wFunc) wFunc(jxAxisValue, jyAxisValue);
+            }
         }
-    }
+    #endif
 
     template <class Proto>
     void BlinkerApi<Proto>::rgbWidgetsParse(char _wName[], const JsonObject& data)
@@ -3253,9 +3273,11 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
             rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), data);
         }
-        for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
-            joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), data);
-        }
+        #if defined(BLINKER_BLE)
+            for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
+                joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), data);
+            }
+        #endif
     }
 
 #else
@@ -3400,28 +3422,30 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         }
     }
 
-    template <class Proto>
-    void BlinkerApi<Proto>::joyWidgetsParse(char _wName[], char _data[])
-    {
-        int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
-
-        if (num == BLINKER_OBJECT_NOT_AVAIL) return;
-
-        int16_t jxAxisValue = STRING_find_array_numberic_value(_data, \
-                                            _wName, BLINKER_J_Xaxis);
-
-        if (jxAxisValue != FIND_KEY_VALUE_FAILED)
+    #if defined(BLINKER_BLE)
+        template <class Proto>
+        void BlinkerApi<Proto>::joyWidgetsParse(char _wName[], char _data[])
         {
-            uint8_t jyAxisValue = STRING_find_array_numberic_value(_data, \
-                                                _wName, BLINKER_J_Yaxis);
+            int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
 
-            _fresh = true;
+            if (num == BLINKER_OBJECT_NOT_AVAIL) return;
 
-            blinker_callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
+            int16_t jxAxisValue = STRING_find_array_numberic_value(_data, \
+                                                _wName, BLINKER_J_Xaxis);
 
-            if (wFunc) wFunc(jxAxisValue, jyAxisValue);
+            if (jxAxisValue != FIND_KEY_VALUE_FAILED)
+            {
+                uint8_t jyAxisValue = STRING_find_array_numberic_value(_data, \
+                                                    _wName, BLINKER_J_Yaxis);
+
+                _fresh = true;
+
+                blinker_callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
+
+                if (wFunc) wFunc(jxAxisValue, jyAxisValue);
+            }
         }
-    }
+    #endif
 
     template <class Proto>
     void BlinkerApi<Proto>::rgbWidgetsParse(char _wName[], char _data[])
@@ -3482,9 +3506,11 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
         for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
             rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
         }
-        for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
-            joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), _data);
-        }
+        #if defined(BLINKER_BLE)
+            for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
+                joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), _data);
+            }
+        #endif
     }
 #endif
 
