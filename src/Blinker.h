@@ -34,12 +34,12 @@
         #define BLINKER_MQTT
     #endif
 
-//     #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) || \
+//     #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) || 
 //         defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
 //         #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
 //     #endif
 
-//     #if defined(BLINKER_DUEROS_LIGHT) || defined(BLINKER_DUEROS_OUTLET) || \
+//     #if defined(BLINKER_DUEROS_LIGHT) || defined(BLINKER_DUEROS_OUTLET) || 
 //         defined(BLINKER_DUEROS_SWITCH)|| defined(BLINKER_DUEROS_SENSOR)
 //         #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
 //     #endif

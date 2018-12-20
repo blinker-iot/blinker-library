@@ -448,7 +448,13 @@ class BlinkerApi
             void freshTiming(uint8_t wDay, uint16_t nowMins);
             void deleteTiming(uint8_t taskDel);
             void addTimingTask(uint8_t taskSet, uint32_t timerData, const String & action);
+            
+            // #if defined(ESP32)
+            //     uint8_t isErase;
+            // #endif
+            
             void checkTimerErase();
+            
             String timerSetting();
             String countdownConfig();
             String loopConfig();
@@ -3931,7 +3937,9 @@ char * BlinkerApi<Proto>::widgetName_int(uint8_t num)
     template <class Proto>
     void BlinkerApi<Proto>::checkTimerErase()
     {
-        uint8_t isErase;
+        // #if defined(ESP8266)
+        static uint8_t isErase;
+        // #endif
 
         EEPROM.begin(BLINKER_EEP_SIZE);
         EEPROM.get(BLINKER_EEP_ADDR_TIMER_ERASE, isErase);
