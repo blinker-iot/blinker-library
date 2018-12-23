@@ -56,8 +56,11 @@ class BLINKERALIGENIE
 
         void powerState(const String & state)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_POWERSTATE) + 
-                "\":\"" + state + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_POWERSTATE);
+            payload += BLINKER_F("\":\"");
+            payload += state;
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -73,8 +76,11 @@ class BLINKERALIGENIE
 
         void color(const String & clr)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_COLOR) + 
-                "\":\"" + clr + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_COLOR);
+            payload += BLINKER_F("\":\"");
+            payload += clr;
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -90,8 +96,11 @@ class BLINKERALIGENIE
 
         void mode(const String & md)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_MODE) + 
-                "\":\"" + md + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_MODE);
+            payload += BLINKER_F("\":\"");
+            payload += md;
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -107,8 +116,11 @@ class BLINKERALIGENIE
 
         void colorTemp(int clrTemp)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_COLORTEMP) + 
-                "\":\"" + STRING_format(clrTemp) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_COLORTEMP);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(clrTemp);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -124,8 +136,11 @@ class BLINKERALIGENIE
 
         void brightness(int bright)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_BRIGHTNESS) + 
-                "\":\"" + STRING_format(bright) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_BRIGHTNESS);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(bright);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -141,8 +156,11 @@ class BLINKERALIGENIE
 
         void temp(double _temp)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_TEMP) + 
-                "\":\"" + STRING_format(_temp) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_TEMP);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_temp);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -158,8 +176,11 @@ class BLINKERALIGENIE
 
         void temp(float _temp)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_TEMP) + 
-                "\":\"" + STRING_format(_temp) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_TEMP);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_temp);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -175,8 +196,11 @@ class BLINKERALIGENIE
 
         void temp(int _temp)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_TEMP) + 
-                "\":\"" + STRING_format(_temp) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_TEMP);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_temp);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -192,8 +216,11 @@ class BLINKERALIGENIE
 
         void humi(double _humi)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_HUMI) + 
-                "\":\"" + STRING_format(_humi) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_HUMI);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_humi);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -209,8 +236,11 @@ class BLINKERALIGENIE
 
         void humi(float _humi)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_HUMI) + 
-                "\":\"" + STRING_format(_humi) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_HUMI);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_humi);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -226,8 +256,11 @@ class BLINKERALIGENIE
 
         void humi(int _humi)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_HUMI) + 
-                "\":\"" + STRING_format(_humi) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_HUMI);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_humi);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -243,8 +276,11 @@ class BLINKERALIGENIE
 
         void pm25(double _pm25)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM25) + 
-                "\":\"" + STRING_format(_pm25) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM25);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_pm25);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -260,8 +296,11 @@ class BLINKERALIGENIE
 
         void pm25(float _pm25)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM25) + 
-                "\":\"" + STRING_format(_pm25) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM25);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_pm25);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
@@ -277,8 +316,11 @@ class BLINKERALIGENIE
 
         void pm25(int _pm25)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM25) + 
-                "\":\"" + STRING_format(_pm25) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM25);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_pm25);
+            payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
