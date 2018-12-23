@@ -46,8 +46,11 @@ class BLINKERDUEROS
 
         void powerState(const String & state)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_POWERSTATE) + 
-                "\":\"" + state + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_POWERSTATE);
+            payload += BLINKER_F("\":\"");
+            payload += state;
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -63,8 +66,11 @@ class BLINKERDUEROS
 
         void color(int32_t clr)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_COLOR) + 
-                "\":\"" + STRING_format(clr) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_COLOR);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(clr);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -80,8 +86,11 @@ class BLINKERDUEROS
 
         void mode(const String & now_md)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_MODE) + 
-                "\":[\"\",\"" + now_md + "\"]";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_MODE);
+            payload += BLINKER_F("\":[\"\",\"");
+            payload += now_md;
+            payload += BLINKER_F("\"]");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -97,8 +106,13 @@ class BLINKERDUEROS
 
         void mode(const String & pre_md, const String & now_md)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_MODE) + 
-                "\":[\"" + pre_md + "\",\"" + now_md + "\"]";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_MODE);
+            payload += BLINKER_F("\":[\"");
+            payload += pre_md;
+            payload += BLINKER_F("\",\"");
+            payload += now_md;
+            payload += BLINKER_F("\"]");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -114,9 +128,11 @@ class BLINKERDUEROS
 
         void brightness(int now_bright)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_BRIGHTNESS) + 
-                "\":[\"\"," + \
-                STRING_format(now_bright) + "]";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_BRIGHTNESS);
+            payload += BLINKER_F("\":[\"\",");
+            payload += STRING_format(now_bright);
+            payload += BLINKER_F("]");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -132,9 +148,13 @@ class BLINKERDUEROS
 
         void brightness(int pre_bright, int now_bright)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_BRIGHTNESS) + 
-                "\":[" + STRING_format(pre_bright) + "," + \
-                STRING_format(now_bright) + "]";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_BRIGHTNESS);
+            payload += BLINKER_F("\":[");
+            payload += STRING_format(pre_bright);
+            payload += BLINKER_F(",");
+            payload += STRING_format(now_bright);
+            payload += BLINKER_F("]");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -150,8 +170,11 @@ class BLINKERDUEROS
 
         void temp(double _temp)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_TEMP) + 
-                "\":\"" + STRING_format(_temp) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_TEMP);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_temp);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -167,8 +190,11 @@ class BLINKERDUEROS
 
         void temp(float _temp)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_TEMP) + 
-                "\":\"" + STRING_format(_temp) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_TEMP);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_temp);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -184,8 +210,11 @@ class BLINKERDUEROS
 
         void temp(int _temp)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_TEMP) + 
-                "\":\"" + STRING_format(_temp) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_TEMP);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_temp);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -201,8 +230,11 @@ class BLINKERDUEROS
 
         void humi(double _humi)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_HUMI) + 
-                "\":\"" + STRING_format(_humi) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_HUMI);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_humi);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -218,8 +250,11 @@ class BLINKERDUEROS
 
         void humi(float _humi)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_HUMI) + 
-                "\":\"" + STRING_format(_humi) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_HUMI);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_humi);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -235,8 +270,11 @@ class BLINKERDUEROS
 
         void humi(int _humi)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_HUMI) + 
-                "\":\"" + STRING_format(_humi) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_HUMI);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_humi);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -252,8 +290,11 @@ class BLINKERDUEROS
 
         void pm25(double _pm25)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM25) + 
-                "\":\"" + STRING_format(_pm25) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM25);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_pm25);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -269,8 +310,11 @@ class BLINKERDUEROS
 
         void pm25(float _pm25)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM25) + 
-                "\":\"" + STRING_format(_pm25) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM25);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_pm25);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -286,8 +330,11 @@ class BLINKERDUEROS
 
         void pm25(int _pm25)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM25) + 
-                "\":\"" + STRING_format(_pm25) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM25);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_pm25);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -303,8 +350,11 @@ class BLINKERDUEROS
 
         void pm10(double _pm10)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM10) + 
-                "\":\"" + STRING_format(_pm10) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM10);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_pm10);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -320,8 +370,11 @@ class BLINKERDUEROS
 
         void pm10(float _pm10)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM10) + 
-                "\":\"" + STRING_format(_pm10) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM10);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_pm10);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -337,8 +390,11 @@ class BLINKERDUEROS
 
         void pm10(int _pm10)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM10) + 
-                "\":\"" + STRING_format(_pm10) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM10);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_pm10);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -354,8 +410,11 @@ class BLINKERDUEROS
 
         void co2(double _co2)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM10) + 
-                "\":\"" + STRING_format(_co2) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM10);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_co2);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -371,8 +430,11 @@ class BLINKERDUEROS
 
         void co2(float _co2)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM10) + 
-                "\":\"" + STRING_format(_co2) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM10);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_co2);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -388,8 +450,11 @@ class BLINKERDUEROS
 
         void co2(int _co2)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_PM10) + 
-                "\":\"" + STRING_format(_co2) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_PM10);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_co2);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -405,8 +470,11 @@ class BLINKERDUEROS
 
         void aqi(int _aqi)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_AQI) + 
-                "\":\"" + STRING_format(_aqi) + "\"";
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_AQI);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_aqi);
+            payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
 
@@ -422,8 +490,10 @@ class BLINKERDUEROS
 
         void time(uint32_t _time)
         {
-            String payload = "\"" + STRING_format(BLINKER_CMD_TIME_ALL) + 
-                "\":" + STRING_format(_time/1000);
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_TIME_ALL);
+            payload += BLINKER_F("\":");
+            payload += STRING_format(_time/1000);
 
             // Blinker.DuerOSPrint(payload);
 

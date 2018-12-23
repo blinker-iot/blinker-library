@@ -2,9 +2,9 @@
 Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.  
 
 # What's Blinker
-[Blinker](https://blinker.app/) is a platform with iOS and Android apps to control embedded hardware like Arduino. You can easily build graphic interfaces for all your projects by simply dragging and dropping widgets.  
+[Blinker](https://blinker.app/) is a cross-hardware, cross-platform solution for the IoT. It provides APP, device and server support, and uses public cloud services for data transmission and storage. It can be used in smart home, data monitoring and other fields to help users build Internet of Things projects better and faster.   
   
-[Blinker](https://blinker.app/) 是一个运行在 IOS 和 Android 上用于控制嵌入式硬件的应用程序。你可以通过拖放控制组件，轻松地为你的项目建立图形化控制界面。  
+[Blinker](https://blinker.app/) 是一套跨硬件、跨平台的物联网解决方案，提供APP端、设备端、服务器端支持，使用公有云服务进行数据传输存储。可用于智能家居、数据监测等领域，可以帮助用户更好更快地搭建物联网项目。  
 
 # Reference/参考
 * [EN-英文](https://github.com/blinker-iot/blinker-doc/wiki/Blinker-Arduino-library-reference)  
