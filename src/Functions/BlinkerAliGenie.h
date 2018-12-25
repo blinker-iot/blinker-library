@@ -2,7 +2,7 @@
 #define BLINKER_ALIGENIE_H
 
 #include "Blinker/BlinkerConfig.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerUtility.h"
 
 class BLINKERALIGENIE
 {

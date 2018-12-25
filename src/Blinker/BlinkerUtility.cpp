@@ -1,4 +1,4 @@
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerUtility.h"
 
 #if defined(ESP8266)
 extern "C" {

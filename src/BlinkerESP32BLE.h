@@ -8,25 +8,23 @@
 #endif
 
 #include "Adapters/BlinkerBLE.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerProtocol.h"
+#include "Blinker/BlinkerApi.h"
 
-class BlinkerESP32BLE
-    : public BlinkerProtocol<BlinkerBLE>
+typedef BlinkerApi BApi;
+
+class BlinkerESP32BLE : public BlinkerApi
 {
-    typedef BlinkerProtocol<BlinkerBLE> Base;
-
-    public:
-        BlinkerESP32BLE(BlinkerBLE & transp)
-            : Base(transp)
-        {}
-
+    public :
         void begin()
         {
-            Base::begin();
-            this->conn.begin();
+            BApi::begin();
+            Transp.begin();
+            transport(Transp);
             BLINKER_LOG("ESP32_BLE initialized...");
         }
+
+    private :
+        BlinkerBLE Transp;
 };
 
 #endif

@@ -29,8 +29,8 @@
 
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
-#include "utility/BlinkerUtility.h"
-#include "utility/BlinkerWlan.h"
+#include "Blinker/BlinkerUtility.h"
+#include "Functions/BlinkerWlan.h"
 #include "modules/ArduinoJson/ArduinoJson.h"
 
 #if defined(ESP8266)

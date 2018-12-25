@@ -3,7 +3,7 @@
 
 #if defined(ESP8266) || defined(ESP32)
 #include "Blinker/BlinkerConfig.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerUtility.h"
 
 class BlinkerTimingTimer
 {

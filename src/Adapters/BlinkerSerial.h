@@ -10,7 +10,8 @@
 // #include "Adapters/BlinkerSerial.h"
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerStream.h"
+#include "Blinker/BlinkerUtility.h"
 
 #if defined(ESP32)
     #include <HardwareSerial.h>
@@ -22,21 +23,21 @@
     SoftwareSerial *SSerialBLE;
 #endif
 
-class BlinkerSerial
+class BlinkerSerial : public BlinkerStream
 {
     public :
         BlinkerSerial()
             : stream(NULL), isConnect(false)
         {}
 
-        bool available();
+        int available();
         void begin(Stream& s, bool state);
         int timedRead();
-        char * lastRead() { return isFresh ? streamData : NULL; }
+        char * lastRead()   { return isFresh ? streamData : NULL; }
         void flush();
-        bool print(const String & s, bool needCheck = true);
-        bool connect()      { isConnect = true; return connected(); }
-        bool connected()    { return isConnect; }
+        int print(char * data, bool needCheck = true);
+        int connect()       { isConnect = true; return connected(); }
+        int connected()     { return isConnect; }
         void disconnect()   { isConnect = false; }
 
     protected :
@@ -48,10 +49,10 @@ class BlinkerSerial
         uint8_t respTimes = 0;
         uint32_t    respTime = 0;
 
-        bool checkPrintSpan();
+        int checkPrintSpan();
 };
 
-bool BlinkerSerial::available()
+int BlinkerSerial::available()
 {
     if (!isHWS)
     {
@@ -63,7 +64,6 @@ bool BlinkerSerial::available()
             }
         #endif
     }
-
 
     if (stream->available())
     {
@@ -139,7 +139,8 @@ void BlinkerSerial::flush()
     }
 }
 
-bool BlinkerSerial::print(const String & s, bool needCheck)
+// int BlinkerSerial::print(const String & s, bool needCheck)
+int BlinkerSerial::print(char * data, bool needCheck)
 {
     if (needCheck)
     {
@@ -152,13 +153,13 @@ bool BlinkerSerial::print(const String & s, bool needCheck)
 
     respTime = millis();
     
-    BLINKER_LOG_ALL(BLINKER_F("Response: "), s);
+    BLINKER_LOG_ALL(BLINKER_F("Response: "), data);
 
     if(connected())
     {
         BLINKER_LOG_ALL(BLINKER_F("Succese..."));
         
-        stream->println(s);
+        stream->println(data);
         return true;
     }
     else
@@ -169,7 +170,7 @@ bool BlinkerSerial::print(const String & s, bool needCheck)
     }
 }
 
-bool BlinkerSerial::checkPrintSpan()
+int BlinkerSerial::checkPrintSpan()
 {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT)
     {
@@ -191,11 +192,5 @@ bool BlinkerSerial::checkPrintSpan()
         return true;
     }
 }
-
-// #if defined(ESP32)
-//     extern HardwareSerial *HSerialBLE;
-// #else
-//     extern SoftwareSerial *SSerialBLE;
-// #endif
 
 #endif

@@ -14,17 +14,13 @@
     #endif
 
     #if defined(ESP32)
-        #include "Blinker/BlinkerDebug.h"
         #include "BlinkerESP32BLE.h"
 
-        static BlinkerBLE       _blinkerTransport;
-        BlinkerESP32BLE         Blinker(_blinkerTransport);
+        BlinkerESP32BLE     Blinker;
     #else
-        #include "Blinker/BlinkerDebug.h"
         #include "BlinkerSerialBLE.h"
 
-        static BlinkerSerial    _blinkerTransport;
-        BlinkerSerialBLE        Blinker(_blinkerTransport);
+        BlinkerSerialBLE    Blinker;
     #endif
 
 #elif defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
@@ -33,28 +29,6 @@
         #undef BLINKER_WIFI
         #define BLINKER_MQTT
     #endif
-
-//     #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) || 
-//         defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
-//         #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
-//     #endif
-
-//     #if defined(BLINKER_DUEROS_LIGHT) || defined(BLINKER_DUEROS_OUTLET) || 
-//         defined(BLINKER_DUEROS_SWITCH)|| defined(BLINKER_DUEROS_SENSOR)
-//         #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
-//     #endif
-
-//     #if defined(ESP8266) || defined(ESP32)
-//         #include "Blinker/BlinkerDebug.h"
-//         #include "BlinkerESPWiFi.h"
-
-//         static BlinkerWiFi  _blinkerTransport;
-//         BlinkerESPWiFi      Blinker(_blinkerTransport);
-//     #else
-//         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
-//     #endif
-
-// #elif defined(BLINKER_MQTT)
 
     #if defined(BLINKER_ALIGENIE_LIGHT)
         #if defined(BLINKER_ALIGENIE_OUTLET)
@@ -145,22 +119,19 @@
     #endif
 
     #if defined(ESP8266) || defined(ESP32)
-        #include "Blinker/BlinkerDebug.h"
         #include "BlinkerESPMQTT.h"
 
-        static BlinkerMQTT  _blinkerTransport;
-        BlinkerESPMQTT      Blinker(_blinkerTransport);     
+        BlinkerESPMQTT      Blinker;     
     #else
         #define BLINKER_ESP_AT
 
         #define BLINKER_MQTT_AT
 
         #undef BLINKER_MQTT
-
+        
         #include "BlinkerSerialESPMQTT.h"
 
-        static BlinkerSerialMQTT    _blinkerTransport;
-        BlinkerSerialESPMQTT        Blinker(_blinkerTransport);  
+        BlinkerSerialESPMQTT      Blinker;  
     #endif
 
 #elif defined(BLINKER_PRO)
@@ -186,11 +157,9 @@
     #endif
 
     #if defined(ESP8266) || defined(ESP32)
-        #include "Blinker/BlinkerDebug.h"
         #include "BlinkerESPPRO.h"
-
-        static BlinkerPRO   _blinkerTransport;
-        BlinkerESPPRO       Blinker(_blinkerTransport); 
+        
+        BlinkerESPPRO       Blinker; 
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
@@ -200,87 +169,15 @@
     #define BLINKER_ESP_AT
 
     #if defined(ESP8266) || defined(ESP32)
-        #include "Blinker/BlinkerDebug.h"
         #include "BlinkerESPMQTTAT.h"
 
-        static BlinkerMQTTAT    _blinkerTransport;
-        BlinkerESPMQTTAT        Blinker(_blinkerTransport); 
+        BlinkerESPMQTTAT    Blinker; 
     #else
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
-#else
-
-    #error Please set a mode BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT ! Please check your mode setting.
-
 #endif
 
 #include "BlinkerWidgets.h"
-
-#if defined(BLINKER_MQTT)
-
-    #if defined(ESP8266)
-        extern "C" {
-        #   include "user_interface.h"
-        }
-
-        #define blinker_procTaskPrio        2
-        #define blinker_procTaskQueueLen    1
-        os_event_t    blinker_procTaskQueue[blinker_procTaskQueueLen];
-
-        // uint32_t oldtime = 0;
-
-        static void  blinker_run(os_event_t *events)
-        {
-            //user code
-            // if (millis() - oldtime > 1000) {
-            //     oldtime = millis();
-            //     Serial.println("user loop");
-            // }
-            Blinker.run();
-            (void) events;
-            // run (schedule) this loop task again
-            system_os_post(blinker_procTaskPrio, 0, 0 );
-        }
-
-        void blinkerTaskInit()
-        {
-            // ets_task
-            system_os_task(blinker_run, blinker_procTaskPrio, blinker_procTaskQueue, blinker_procTaskQueueLen);
-            system_os_post(blinker_procTaskPrio, 0, 0 );
-        }
-    #endif
-
-#endif
-
-#if defined(ESP32)
-    #include "freertos/FreeRTOS.h"
-    #include "freertos/task.h"
-    #include "Arduino.h"
-
-    // #if CONFIG_AUTOSTART_ARDUINO
-
-    #if CONFIG_FREERTOS_UNICORE
-    #define ARDUINO_RUNNING_CORE 0
-    #else
-    #define ARDUINO_RUNNING_CORE 1
-    #endif
-
-    void blinkerLoopTask(void *pvParameters)
-    {
-        for(;;) {
-            Blinker.run();
-            vTaskDelay(1);
-        }
-    }
-
-    extern "C" void blinkerTaskInit()
-    {
-        // initArduino();
-        xTaskCreatePinnedToCore(blinkerLoopTask, "blinkerLoopTask", 4096, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
-    }
-
-    // #endif
-#endif
 
 #endif

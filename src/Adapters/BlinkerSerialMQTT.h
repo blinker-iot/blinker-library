@@ -10,7 +10,8 @@
 // #include "Adapters/BlinkerSerialMQTT.h"
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerStream.h"
+#include "Blinker/BlinkerUtility.h"
 
 #if defined(ESP32)
     #include <HardwareSerial.h>
@@ -22,23 +23,24 @@
     SoftwareSerial *SSerialMQTT;
 #endif
 
-class BlinkerSerialMQTT
+class BlinkerSerialMQTT : public BlinkerStream
 {
     public :
         BlinkerSerialMQTT()
             : stream(NULL), isConnect(false)
         {}
 
-        bool available();
+        int available();
         int timedRead();
         void begin(Stream& s, bool state);
         char * lastRead() { return isFresh ? streamData : NULL; }
         void flush();
-        bool aliPrint(String s);
-        bool duerPrint(String s);
-        bool print(const String & s, bool needCheck = true);
-        bool connect()      { isConnect = true; return connected(); }
-        bool connected()    { return isConnect; }
+        int aliPrint(const String & s);
+        int duerPrint(const String & s);
+        // int print(const String & s, bool needCheck = true);
+        int print(char * data, bool needCheck = true);
+        int connect()      { isConnect = true; return connected(); }
+        int connected()    { return isConnect; }
         void disconnect()   { isConnect = false; }
 
     protected :
@@ -50,10 +52,10 @@ class BlinkerSerialMQTT
         uint8_t respTimes = 0;
         uint32_t    respTime = 0;
 
-        bool checkPrintSpan();
+        int checkPrintSpan();
 };
 
-bool BlinkerSerialMQTT::available()
+int BlinkerSerialMQTT::available()
 {
     if (!isHWS)
     {
@@ -141,7 +143,7 @@ void BlinkerSerialMQTT::flush()
     }
 }
 
-bool BlinkerSerialMQTT::aliPrint(String s)
+int BlinkerSerialMQTT::aliPrint(const String & s)
 {
     if (!checkPrintSpan()) {
         respTime = millis();
@@ -168,7 +170,7 @@ bool BlinkerSerialMQTT::aliPrint(String s)
     }
 }
 
-bool BlinkerSerialMQTT::duerPrint(String s)
+int BlinkerSerialMQTT::duerPrint(const String & s)
 {
     if (!checkPrintSpan()) {
         respTime = millis();
@@ -195,7 +197,8 @@ bool BlinkerSerialMQTT::duerPrint(String s)
     }
 }
 
-bool BlinkerSerialMQTT::print(const String & s, bool needCheck)
+// int BlinkerSerialMQTT::print(const String & s, bool needCheck)
+int BlinkerSerialMQTT::print(char * data, bool needCheck)
 {
     if (needCheck)
     {
@@ -208,13 +211,13 @@ bool BlinkerSerialMQTT::print(const String & s, bool needCheck)
 
     respTime = millis();
     
-    BLINKER_LOG_ALL(BLINKER_F("Response: "), s);
+    BLINKER_LOG_ALL(BLINKER_F("Response: "), data);
 
     if(connected())
     {
         BLINKER_LOG_ALL(BLINKER_F("Succese..."));
         
-        stream->println(s);
+        stream->println(data);
         return true;
     }
     else
@@ -225,7 +228,7 @@ bool BlinkerSerialMQTT::print(const String & s, bool needCheck)
     }
 }
 
-bool BlinkerSerialMQTT::checkPrintSpan()
+int BlinkerSerialMQTT::checkPrintSpan()
 {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT)
     {

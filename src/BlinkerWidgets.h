@@ -2,27 +2,27 @@
 #define BLINKER_WIDGETS_H
 
 #if defined(BLINKER_MQTT)
-    #include "utility/BlinkerBridge.h"
+    #include "Functions/BlinkerBridge.h"
 #endif
 
-#include "utility/BlinkerButton.h"
-#include "utility/BlinkerJoystick.h"
-#include "utility/BlinkerNumber.h"
-#include "utility/BlinkerRGB.h"
+#include "Functions/BlinkerButton.h"
+#include "Functions/BlinkerJoystick.h"
+#include "Functions/BlinkerNumber.h"
+#include "Functions/BlinkerRGB.h"
 #if defined(BLINKER_BLE)
-    #include "utility/BlinkerSlider.h"
+    #include "Functions/BlinkerSlider.h"
 #endif
-#include "utility/BlinkerSwitch.h"
-#include "utility/BlinkerText.h"
+#include "Functions/BlinkerSwitch.h"
+#include "Functions/BlinkerText.h"
 
 #if defined(BLINKER_ALIGENIE)
-    #include "utility/BlinkerAliGenie.h"
+    #include "Functions/BlinkerAliGenie.h"
 
     BLINKERALIGENIE BlinkerAliGenie;    
 #endif
 
 #if defined(BLINKER_DUEROS)
-    #include "utility/BlinkerDuerOS.h"
+    #include "Functions/BlinkerDuerOS.h"
 
     BLINKERDUEROS BlinkerDuerOS;    
 #endif

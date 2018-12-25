@@ -16,9 +16,10 @@
 
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerStream.h"
+#include "Blinker/BlinkerUtility.h"
 
-class BlinkerBLE : public BLEServerCallbacks, public BLECharacteristicCallbacks
+class BlinkerBLE : public BlinkerStream, public BLEServerCallbacks, public BLECharacteristicCallbacks
 {
     public :
         BlinkerBLE()
@@ -26,15 +27,16 @@ class BlinkerBLE : public BLEServerCallbacks, public BLECharacteristicCallbacks
         {}
 
         void begin();
-        bool available();
+        int available();
         int  read();
         int  timedRead();
         char * lastRead();// { return _isFresh ? BLEBuf : ""; }
         void flush();        
-        bool print(String s, bool needCheck = true);
-        bool connect()      { return deviceConnected; }
+        // bool print(String s, bool needCheck = true);
+        int print(char * data, bool needCheck = true);
+        int connect()      { return deviceConnected; }
         void disconnect()   { deviceConnected = false; }
-        bool connected()    { return deviceConnected; }
+        int connected()    { return deviceConnected; }
 
     private :
         bool                    deviceConnected;
@@ -62,8 +64,8 @@ class BlinkerBLE : public BLEServerCallbacks, public BLECharacteristicCallbacks
         void onConnect(BLEServer* pServer);
         void onDisconnect(BLEServer* pServer);
         void onWrite(BLECharacteristic *pCharacteristic);
-        bool checkTimeOut();
-        bool checkPrintSpan();
+        int checkTimeOut();
+        int checkPrintSpan();
 };
 
 void BlinkerBLE::begin()
@@ -109,7 +111,7 @@ void BlinkerBLE::begin()
     _bufLen = 0;
 }
 
-bool BlinkerBLE::available()
+int BlinkerBLE::available()
 {
     // checkTimeOut();
 
@@ -208,7 +210,8 @@ void BlinkerBLE::flush()
     }
 }
 
-bool BlinkerBLE::print(String s, bool needCheck)
+// bool BlinkerBLE::print(String s, bool needCheck)
+int BlinkerBLE::print(char * data, bool needCheck)
 {
     if (needCheck)
     {
@@ -218,6 +221,8 @@ bool BlinkerBLE::print(String s, bool needCheck)
             return false;
         }
     }
+
+    String s = data;
 
     respTime = millis();
 
@@ -298,7 +303,7 @@ void BlinkerBLE::onWrite(BLECharacteristic *pCharacteristic)
     }
 }
 
-bool BlinkerBLE::checkTimeOut()
+int BlinkerBLE::checkTimeOut()
 {
     ::delay(10);
 
@@ -309,7 +314,7 @@ bool BlinkerBLE::checkTimeOut()
     return timeout_ms > 1000;
 }
 
-bool BlinkerBLE::checkPrintSpan()
+int BlinkerBLE::checkPrintSpan()
 {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT)
     {

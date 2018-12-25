@@ -3,7 +3,7 @@
 
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerConfig.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerUtility.h"
 
 template <class T>
 int8_t checkNum(char * name, T * c, uint8_t count)

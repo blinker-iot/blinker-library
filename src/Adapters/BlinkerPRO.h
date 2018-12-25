@@ -23,7 +23,8 @@
 // #include "Adapters/BlinkerPRO.h"
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerStream.h"
+#include "Blinker/BlinkerUtility.h"
 
 char*       MQTT_HOST_PRO;
 char*       MQTT_ID_PRO;
@@ -38,54 +39,55 @@ char*       BLINKER_PUB_TOPIC_PRO;
 char*       BLINKER_SUB_TOPIC_PRO;
 uint16_t MQTT_PORT_PRO;
 
-class BlinkerPRO {
+class BlinkerPRO : public BlinkerStream
+{
     public :
         BlinkerPRO();
 
-        bool connect();
-        bool connected();
-        bool mConnected();// { if (!isMQTTinit) return false; else return mqtt->connected(); }
+        int connect();
+        int connected();
+        int mConnected();// { if (!isMQTTinit) return false; else return mqtt->connected(); }
         void disconnect();
         void ping();
-        bool available();
-        bool aligenieAvail();
-        bool duerAvail();
+        int available();
+        int aligenieAvail();
+        int duerAvail();
         // bool extraAvailable();
         void subscribe();
         char * lastRead();
         void flush();
-        bool print(char * data, bool needCheck = true);
-        bool bPrint(char * name, const String & data);
-        bool aliPrint(const String & data);
-        bool duerPrint(const String & data);
+        int print(char * data, bool needCheck = true);
+        int bPrint(char * name, const String & data);
+        int aliPrint(const String & data);
+        int duerPrint(const String & data);
         // void aliType(const String & type);
         void begin(const char* _deviceType);
-        bool autoPrint(uint32_t id);
+        int autoPrint(uint32_t id);
         // bool autoPrint(char *name, char *type, char *data);
         // bool autoPrint(char *name1, char *type1, char *data1, \
         //             char *name2, char *type2, char *data2);
         char * deviceName();
         char * authKey() { return AUTHKEY_PRO; }
-        bool init() { return isMQTTinit; }
-        bool reRegister() { return connectServer(); }
-        bool deviceRegister() { return connectServer(); }
-        bool authCheck();
+        int init() { return isMQTTinit; }
+        int reRegister() { return connectServer(); }
+        int deviceRegister() { return connectServer(); }
+        int authCheck();
         void freshAlive() { kaTime = millis(); isAlive = true; }
 
     private :
         bool isMQTTinit = false;
 
-        bool connectServer();
+        int connectServer();
         void mDNSInit();
         void checkKA();
-        bool checkAliKA();
-        bool checkDuerKA();
-        bool checkCanPrint();
-        bool checkCanBprint();
-        bool checkPrintSpan();
-        bool checkAliPrintSpan();
-        bool checkDuerPrintSpan();
-        bool pubHello();
+        int checkAliKA();
+        int checkDuerKA();
+        int checkCanPrint();
+        int checkCanBprint();
+        int checkPrintSpan();
+        int checkAliPrintSpan();
+        int checkDuerPrintSpan();
+        int pubHello();
 
     protected :
         const char* _deviceType;
@@ -117,7 +119,7 @@ class BlinkerPRO {
         bool        isNew = false;
         bool        isAuth = false;
 
-        bool isJson(const String & data);
+        int isJson(const String & data);
 };
 
 // #if defined(ESP8266)
@@ -214,7 +216,7 @@ void webSocketEvent_PRO(uint8_t num, WStype_t type, \
 
 BlinkerPRO::BlinkerPRO() { isHandle = &isConnect_PRO; }
 
-bool BlinkerPRO::connect()
+int BlinkerPRO::connect()
 {
     int8_t ret;
 
@@ -266,7 +268,7 @@ bool BlinkerPRO::connect()
     return true;
 }
 
-bool BlinkerPRO::connected()
+int BlinkerPRO::connected()
 { 
     if (!isMQTTinit)
     {
@@ -276,7 +278,7 @@ bool BlinkerPRO::connected()
     return mqtt_PRO->connected() || *isHandle; 
 }
 
-bool BlinkerPRO::mConnected()
+int BlinkerPRO::mConnected()
 {
     if (!isMQTTinit) return false;
     else return mqtt_PRO->connected();
@@ -308,7 +310,7 @@ void BlinkerPRO::ping()
     }
 }
 
-bool BlinkerPRO::available()
+int BlinkerPRO::available()
 {
     webSocket_PRO.loop();
 
@@ -336,7 +338,7 @@ bool BlinkerPRO::available()
     }
 }
 
-bool BlinkerPRO::aligenieAvail()
+int BlinkerPRO::aligenieAvail()
 {
     if (isAliAvail)
     {
@@ -348,7 +350,7 @@ bool BlinkerPRO::aligenieAvail()
     }
 }
 
-bool BlinkerPRO::duerAvail()
+int BlinkerPRO::duerAvail()
 {
     if (isDuerAvail)
     {
@@ -463,7 +465,7 @@ void BlinkerPRO::flush()
     }
 }
 
-bool BlinkerPRO::print(char * data, bool needCheck)
+int BlinkerPRO::print(char * data, bool needCheck)
 {
     // BLINKER_LOG_FreeHeap();
     if (*isHandle && dataFrom_PRO == BLINKER_MSG_FROM_WS)
@@ -616,7 +618,7 @@ bool BlinkerPRO::print(char * data, bool needCheck)
     }
 }
 
-bool BlinkerPRO::bPrint(char * name, const String & data)
+int BlinkerPRO::bPrint(char * name, const String & data)
 {
     // String payload;
     // if (STRING_contains_string(data, BLINKER_CMD_NEWLINE))
@@ -740,7 +742,7 @@ bool BlinkerPRO::bPrint(char * name, const String & data)
     // }
 }
 
-bool BlinkerPRO::aliPrint(const String & data)
+int BlinkerPRO::aliPrint(const String & data)
 {
     // String payload;
 
@@ -826,7 +828,7 @@ bool BlinkerPRO::aliPrint(const String & data)
     }
 }
 
-bool BlinkerPRO::duerPrint(const String & data)
+int BlinkerPRO::duerPrint(const String & data)
 {
     String data_add = BLINKER_F("{\"data\":");
 
@@ -897,7 +899,7 @@ void BlinkerPRO::begin(const char* _type)
     mDNSInit();
 }
 
-bool BlinkerPRO::autoPrint(uint32_t id)
+int BlinkerPRO::autoPrint(uint32_t id)
 {
     String payload = BLINKER_F("{\"data\":{\"set\":{");
     payload += BLINKER_F("\"trigged\":true,\"autoData\":{");
@@ -1043,7 +1045,7 @@ bool BlinkerPRO::autoPrint(uint32_t id)
 
 char * BlinkerPRO::deviceName() { return MQTT_DEVICEID_PRO;/*MQTT_ID_PRO;*/ }
 
-bool BlinkerPRO::authCheck()
+int BlinkerPRO::authCheck()
 {
     uint8_t _authCheck;
     
@@ -1069,7 +1071,7 @@ bool BlinkerPRO::authCheck()
     return false;
 }
 
-bool BlinkerPRO::connectServer() {
+int BlinkerPRO::connectServer() {
     const int httpsPort = 443;
 #if defined(ESP8266)
     String host = BLINKER_F("iotdev.clz.me");
@@ -1650,21 +1652,21 @@ void BlinkerPRO::checkKA() {
         isAlive = false;
 }
 
-bool BlinkerPRO::checkAliKA() {
+int BlinkerPRO::checkAliKA() {
     if (millis() - aliKaTime >= 10000)
         return false;
     else
         return true;
 }
 
-bool BlinkerPRO::checkDuerKA() {
+int BlinkerPRO::checkDuerKA() {
     if (millis() - duerKaTime >= 10000)
         return false;
     else
         return true;
 }
 
-bool BlinkerPRO::checkCanPrint() {
+int BlinkerPRO::checkCanPrint() {
     if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
         return true;
     }
@@ -1677,7 +1679,7 @@ bool BlinkerPRO::checkCanPrint() {
     }
 }
 
-bool BlinkerPRO::checkCanBprint() {
+int BlinkerPRO::checkCanBprint() {
     if ((millis() - bPrintTime >= BLINKER_BRIDGE_MSG_LIMIT) || bPrintTime == 0) {
         return true;
     }
@@ -1688,7 +1690,7 @@ bool BlinkerPRO::checkCanBprint() {
     }
 }
 
-bool BlinkerPRO::checkPrintSpan() {
+int BlinkerPRO::checkPrintSpan() {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
         if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
             BLINKER_ERR_LOG(BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
@@ -1706,7 +1708,7 @@ bool BlinkerPRO::checkPrintSpan() {
     }
 }
 
-bool BlinkerPRO::checkAliPrintSpan()
+int BlinkerPRO::checkAliPrintSpan()
 {
     if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2)
     {
@@ -1729,7 +1731,7 @@ bool BlinkerPRO::checkAliPrintSpan()
     }
 }
 
-bool BlinkerPRO::checkDuerPrintSpan()
+int BlinkerPRO::checkDuerPrintSpan()
 {
     if (millis() - respDuerTime < BLINKER_PRINT_MSG_LIMIT/2)
     {
@@ -1752,7 +1754,7 @@ bool BlinkerPRO::checkDuerPrintSpan()
     }
 }
 
-bool BlinkerPRO::pubHello()
+int BlinkerPRO::pubHello()
 {
     char stateJsonStr[256] = ("{\"message\":\"Registration successful\"}");
     
@@ -1761,7 +1763,7 @@ bool BlinkerPRO::pubHello()
     return print(stateJsonStr, false);
 }
 
-bool BlinkerPRO::isJson(const String & data)
+int BlinkerPRO::isJson(const String & data)
 {
     BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
 

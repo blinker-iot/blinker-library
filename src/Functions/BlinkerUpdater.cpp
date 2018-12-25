@@ -2,7 +2,7 @@
 
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
-#include "utility/BlinkerUpdater.h"
+#include "Functions/BlinkerUpdater.h"
 
 #if defined(ESP8266)
 

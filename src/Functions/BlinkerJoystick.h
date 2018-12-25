@@ -3,7 +3,7 @@
 
 #if defined(BLINKER_BLE)
     #include "Blinker/BlinkerConfig.h"
-    #include "utility/BlinkerUtility.h"
+    #include "Blinker/BlinkerUtility.h"
 
     class BlinkerJoystick
     {

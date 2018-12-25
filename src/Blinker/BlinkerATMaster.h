@@ -3,7 +3,7 @@
 
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerConfig.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerUtility.h"
 
 enum blinker_at_m_state_t {
     AT_M_NONE,
