@@ -100,33 +100,75 @@ class BlinkerProtocol
             void connectWiFi(const char* _ssid, const char* _pswd) { return conn->connectWiFi(_ssid, _pswd); }
         #endif
         void checkFormat();
-        void checkAutoFormat()
-        {
-            if (autoFormat)
-            {
-                if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
-                {
-                    if (strlen(_sendBuf))
-                    {
-                        #if defined(BLINKER_ARDUINOJSON)
-                            _print(_sendBuf);
-                        #else
-                            strcat(_sendBuf, "}");
-                            _print(_sendBuf);
-                        #endif
-                    }
-                    free(_sendBuf);
-                    autoFormat = false;
-                }
-            }
-        }
+        void checkAutoFormat();
         char* dataParse()       { if (canParse) return conn->lastRead(); else return NULL; }
         char* lastRead()        { return conn->lastRead(); }
         void isParsed()         { flush(); }
         int parseState()        { return canParse; }
-        void printNow()
+        void printNow();
+        void _timerPrint(const String & n);
+        void _print(char * n, bool needCheckLength = true);
+
+        void autoFormatData(const String & key, const String & jsonValue);
+};
+
+void BlinkerProtocol::flush()
+{
+    isFresh = false; availState = false; 
+    canParse = false; isAvail = false;
+    if (isInit) conn->flush();
+}
+
+void BlinkerProtocol::print(const String & data)
+{
+    checkFormat();
+    strcpy(_sendBuf, data.c_str());
+    _print(_sendBuf);
+    free(_sendBuf);
+    autoFormat = false;
+}
+
+void BlinkerProtocol::print(const String & key, const String & data)
+{
+    checkFormat();
+    autoFormatData(key, data);
+    autoFormatFreshTime = millis();
+}
+
+int BlinkerProtocol::checkAvail()
+{
+    if (!isInit) return false;
+
+    flush();
+
+    isAvail = conn->available();
+    if (isAvail)
+    {
+        isFresh = true;
+        canParse = true;
+        availState = true;
+    }
+
+    return isAvail;
+}
+
+void BlinkerProtocol::checkFormat()
+{
+    if (!autoFormat)
+    {
+        autoFormat = true;
+        _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+        memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+    }
+}
+
+void BlinkerProtocol::checkAutoFormat()
+{
+    if (autoFormat)
+    {
+        if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
         {
-            if (strlen(_sendBuf) && autoFormat)
+            if (strlen(_sendBuf))
             {
                 #if defined(BLINKER_ARDUINOJSON)
                     _print(_sendBuf);
@@ -134,103 +176,149 @@ class BlinkerProtocol
                     strcat(_sendBuf, "}");
                     _print(_sendBuf);
                 #endif
+            }
+            free(_sendBuf);
+            autoFormat = false;
+        }
+    }
+}
 
-                free(_sendBuf);
-                autoFormat = false;
+void BlinkerProtocol::printNow()
+{
+    if (strlen(_sendBuf) && autoFormat)
+    {
+        #if defined(BLINKER_ARDUINOJSON)
+            _print(_sendBuf);
+        #else
+            strcat(_sendBuf, "}");
+            _print(_sendBuf);
+        #endif
+
+        free(_sendBuf);
+        autoFormat = false;
+    }
+}
+
+void BlinkerProtocol::_timerPrint(const String & n)
+{
+    BLINKER_LOG_ALL(BLINKER_F("print: "), n);
+    
+    if (n.length() <= BLINKER_MAX_SEND_SIZE)
+    {
+        checkFormat();
+        checkState(false);
+        strcpy(_sendBuf, n.c_str());
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+    }
+}
+
+void BlinkerProtocol::_print(char * n, bool needCheckLength)
+{
+    BLINKER_LOG_ALL(BLINKER_F("print: "), n);
+    
+    if (strlen(n) <= BLINKER_MAX_SEND_SIZE || \
+        !needCheckLength)
+    {
+        BLINKER_LOG_FreeHeap_ALL();
+        conn->print(n, isCheck);
+        if (!isCheck) isCheck = true;
+    }
+    else {
+        BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+    }
+}
+
+void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValue)
+{
+    #if defined(BLINKER_ARDUINOJSON)
+        BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key, \
+                        BLINKER_F(", json: "), jsonValue);
+        
+        String _data;
+
+        if (STRING_contains_string(STRING_format(_sendBuf), key))
+        {
+
+            DynamicJsonBuffer jsonSendBuffer;                
+
+            if (strlen(_sendBuf)) {
+                BLINKER_LOG_ALL(BLINKER_F("add"));
+
+                JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
+
+                if (root.containsKey(key)) {
+                    root.remove(key);
+                }
+                root.printTo(_data);
+
+                _data = _data.substring(0, _data.length() - 1);
+
+                if (_data.length() > 4 ) _data += BLINKER_F(",");
+                _data += jsonValue;
+                _data += BLINKER_F("}");
+            }
+            else {
+                BLINKER_LOG_ALL(BLINKER_F("new"));
+                
+                _data = BLINKER_F("{");
+                _data += jsonValue;
+                _data += BLINKER_F("}");
             }
         }
-        void _timerPrint(const String & n);
-        void _print(char * n, bool needCheckLength = true);
+        else {
+            _data = STRING_format(_sendBuf);
 
-        void autoFormatData(const String & key, const String & jsonValue)
-        {
-            #if defined(BLINKER_ARDUINOJSON)
-                BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key, \
-                                BLINKER_F(", json: "), jsonValue);
+            if (_data.length())
+            {
+                BLINKER_LOG_ALL(BLINKER_F("add."));
+
+                _data = _data.substring(0, _data.length() - 1);
+
+                _data += BLINKER_F(",");
+                _data += jsonValue;
+                _data += BLINKER_F("}");
+            }
+            else {
+                BLINKER_LOG_ALL(BLINKER_F("new."));
                 
-                String _data;
-
-                if (STRING_contains_string(STRING_format(_sendBuf), key))
-                {
-
-                    DynamicJsonBuffer jsonSendBuffer;                
-
-                    if (strlen(_sendBuf)) {
-                        BLINKER_LOG_ALL(BLINKER_F("add"));
-
-                        JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
-
-                        if (root.containsKey(key)) {
-                            root.remove(key);
-                        }
-                        root.printTo(_data);
-
-                        _data = _data.substring(0, _data.length() - 1);
-
-                        if (_data.length() > 4 ) _data += BLINKER_F(",");
-                        _data += jsonValue;
-                        _data += BLINKER_F("}");
-                    }
-                    else {
-                        BLINKER_LOG_ALL(BLINKER_F("new"));
-                        
-                        _data = BLINKER_F("{");
-                        _data += jsonValue;
-                        _data += BLINKER_F("}");
-                    }
-                }
-                else {
-                    _data = STRING_format(_sendBuf);
-
-                    if (_data.length())
-                    {
-                        BLINKER_LOG_ALL(BLINKER_F("add."));
-
-                        _data = _data.substring(0, _data.length() - 1);
-
-                        _data += BLINKER_F(",");
-                        _data += jsonValue;
-                        _data += BLINKER_F("}");
-                    }
-                    else {
-                        BLINKER_LOG_ALL(BLINKER_F("new."));
-                        
-                        _data = BLINKER_F("{");
-                        _data += jsonValue;
-                        _data += BLINKER_F("}");
-                    }
-                }
-
-                if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE)
-                {
-                    BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
-                    return;
-                }
-
-                strcpy(_sendBuf, _data.c_str());
-            #else
-                String data;
-
-                BLINKER_LOG_ALL(BLINKER_F("autoFormatData data: "), jsonValue);
-                BLINKER_LOG_ALL(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
-                BLINKER_LOG_ALL(BLINKER_F("data.length(): "), jsonValue.length());
-
-                if ((strlen(_sendBuf) + jsonValue.length()) >= BLINKER_MAX_SEND_SIZE)
-                {
-                    BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
-                    return;
-                }
-
-                if (strlen(_sendBuf) > 0) {
-                    data = "," + jsonValue;
-                    strcat(_sendBuf, data.c_str());
-                }
-                else {
-                    data = "{" + jsonValue;
-                    strcpy(_sendBuf, data.c_str());
-                }
-            #endif
+                _data = BLINKER_F("{");
+                _data += jsonValue;
+                _data += BLINKER_F("}");
+            }
         }
-};
+
+        if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
+            return;
+        }
+
+        strcpy(_sendBuf, _data.c_str());
+    #else
+        String data;
+
+        BLINKER_LOG_ALL(BLINKER_F("autoFormatData data: "), jsonValue);
+        BLINKER_LOG_ALL(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
+        BLINKER_LOG_ALL(BLINKER_F("data.length(): "), jsonValue.length());
+
+        if ((strlen(_sendBuf) + jsonValue.length()) >= BLINKER_MAX_SEND_SIZE)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
+            return;
+        }
+
+        if (strlen(_sendBuf) > 0) {
+            data = "," + jsonValue;
+            strcat(_sendBuf, data.c_str());
+        }
+        else {
+            data = "{" + jsonValue;
+            strcpy(_sendBuf, data.c_str());
+        }
+    #endif
+}
 
 #endif
