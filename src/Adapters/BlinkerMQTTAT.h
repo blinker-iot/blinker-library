@@ -3,8 +3,8 @@
 
 #if defined(ESP8266) || defined(ESP32)
 
-// #define BLINKER_AT_MQTT
-// #define BLINKER_ESP_AT
+#define BLINKER_AT_MQTT
+#define BLINKER_ESP_AT
 
 #if defined(ESP8266)
     #include <ESP8266mDNS.h>
@@ -29,45 +29,46 @@
 // #include "Adapters/BlinkerMQTTAT.h"
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
+#include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerMQTTATBase.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerUtility.h"
 
-class BlinkerMQTTAT
+class BlinkerMQTTAT : public BlinkerStream
 {
     public :
         BlinkerMQTTAT();
 
-        bool serialAvailable();
+        int serialAvailable();
         void serialBegin(Stream& s, bool state);
         int serialTimedRead();
         char * serialLastRead();
         // void serialFlush();
-        bool serialPrint(const String & s1, const String & s2, bool needCheck = true);
-        bool serialPrint(const String & s, bool needCheck = true);
-        bool serialConnect();
-        bool serialConnected();
+        int serialPrint(const String & s1, const String & s2, bool needCheck = true);
+        int serialPrint(const String & s, bool needCheck = true);
+        int serialConnect();
+        int serialConnected();
         void serialDisconnect();
 
-        bool connect();
-        bool connected();
-        bool mConnected();
+        int connect();
+        int connected();
+        int mConnected();
         void disconnect();
         void ping();
-        bool available();
-        bool aligenieAvail();
-        bool duerAvail();
+        int available();
+        int aligenieAvail();
+        int duerAvail();
         // bool extraAvailable();
         void subscribe();
         char * lastRead();
         void flush();
-        bool print(char * data, bool needCheck = true);
-        bool mqttPrint(const String & data);
-        bool bPrint(char * name, const String & data);
-        bool aliPrint(const String & data);
-        bool duerPrint(const String & data);
+        int print(char * data, bool needCheck = true);
+        int mqttPrint(const String & data);
+        int bPrint(char * name, const String & data);
+        int aliPrint(const String & data);
+        int duerPrint(const String & data);
         // void aliType(const String & type);
         void begin(const char* auth);
-        bool autoPrint(uint32_t id);
+        int autoPrint(uint32_t id);
         // bool autoPrint(char *name, char *type, char *data);
         // bool autoPrint(char *name1, char *type1, char *data1, 
         //             char *name2, char *type2, char *data2);
@@ -76,34 +77,34 @@ class BlinkerMQTTAT
         char * deviceId();// { return MQTT_ID; }
         char * uuid();// { return UUID; }
         void softAPinit();
-        bool parseUrl(String data);
-        bool autoInit();
+        int parseUrl(String data);
+        int autoInit();
         void smartconfig();
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
-        bool init() { return isMQTTinit; }
-        bool reRegister() { return connectServer(); }
-        void aligenieType(blinker_at_aligenie_t _type) { _aliType = _type; }
-        void duerType(blinker_at_dueros_t _type) { _duerType = _type; }
+        int init() { return isMQTTinit; }
+        int reRegister() { return connectServer(); }
+        void aligenieType(int _type) { _aliType = _type; }
+        void duerType(int _type) { _duerType = _type; }
         void freshAlive() { kaTime = millis(); isAlive = true; }
 
     private :
         bool isMQTTinit = false;
 
-        bool connectServer();
+        int connectServer();
         void mDNSInit();
         void checkKA();
-        bool checkAliKA();
-        bool checkDuerKA();
-        bool checkCanPrint();
-        bool checkCanBprint();
-        bool checkPrintSpan();
-        bool checkAliPrintSpan();
-        bool checkDuerPrintSpan();
+        int checkAliKA();
+        int checkDuerKA();
+        int checkCanPrint();
+        int checkCanBprint();
+        int checkPrintSpan();
+        int checkAliPrintSpan();
+        int checkDuerPrintSpan();
 
     protected :
-        blinker_at_aligenie_t   _aliType = ALI_NONE;
-        blinker_at_dueros_t     _duerType = DUER_NONE;
+        int _aliType = ALI_NONE;
+        int _duerType = DUER_NONE;
         // uint8_t     pinDataNum = 0;
 
         // io 
@@ -148,7 +149,7 @@ class BlinkerMQTTAT
         bool        isSerialConnect;
         bool        isHWS = false;
 
-        bool isJson(const String & data);
+        int isJson(const String & data);
 };
 
 // #if defined(ESP8266)
@@ -269,7 +270,7 @@ BlinkerMQTTAT::BlinkerMQTTAT()
     isHandle = &isConnect_MQTT_AT;
 }
 
-bool BlinkerMQTTAT::serialAvailable()
+int BlinkerMQTTAT::serialAvailable()
 {
     if (stream->available())
     {
@@ -361,12 +362,12 @@ char * BlinkerMQTTAT::serialLastRead()
 //     }
 // }
 
-bool BlinkerMQTTAT::serialPrint(const String & s1, const String & s2, bool needCheck)
+int BlinkerMQTTAT::serialPrint(const String & s1, const String & s2, bool needCheck)
 {
     return serialPrint(s1 + s2, needCheck);
 }
 
-bool BlinkerMQTTAT::serialPrint(const String & s, bool needCheck)
+int BlinkerMQTTAT::serialPrint(const String & s, bool needCheck)
 {
     BLINKER_LOG_ALL(BLINKER_F("Serial Response: "), s);
     
@@ -385,17 +386,17 @@ bool BlinkerMQTTAT::serialPrint(const String & s, bool needCheck)
     }
 }
 
-bool BlinkerMQTTAT::serialConnect()
+int BlinkerMQTTAT::serialConnect()
 {
     isSerialConnect = true;
     return serialConnected();
 }
 
-bool BlinkerMQTTAT::serialConnected() { return isSerialConnect; }
+int BlinkerMQTTAT::serialConnected() { return isSerialConnect; }
 
 void BlinkerMQTTAT::serialDisconnect() { isSerialConnect = false; }
 
-bool BlinkerMQTTAT::connect()
+int BlinkerMQTTAT::connect()
 {
     int8_t ret;
 
@@ -436,7 +437,7 @@ bool BlinkerMQTTAT::connect()
     return true;
 }
 
-bool BlinkerMQTTAT::connected()
+int BlinkerMQTTAT::connected()
 { 
     if (!isMQTTinit)
     {
@@ -446,7 +447,7 @@ bool BlinkerMQTTAT::connected()
     return mqtt_MQTT_AT->connected() || *isHandle; 
 }
 
-bool BlinkerMQTTAT::mConnected()
+int BlinkerMQTTAT::mConnected()
 {
     if (!isMQTTinit) return false;
     else return mqtt_MQTT_AT->connected();
@@ -476,7 +477,7 @@ void BlinkerMQTTAT::ping()
     }
 }
 
-bool BlinkerMQTTAT::available()
+int BlinkerMQTTAT::available()
 {
     webSocket_MQTT_AT.loop();
 
@@ -502,7 +503,7 @@ bool BlinkerMQTTAT::available()
     }
 }
 
-bool BlinkerMQTTAT::aligenieAvail()
+int BlinkerMQTTAT::aligenieAvail()
 {
     if (isAliAvail)
     {
@@ -514,7 +515,7 @@ bool BlinkerMQTTAT::aligenieAvail()
     }
 }
 
-bool BlinkerMQTTAT::duerAvail()
+int BlinkerMQTTAT::duerAvail()
 {
     if (isDuerAvail)
     {
@@ -526,7 +527,7 @@ bool BlinkerMQTTAT::duerAvail()
     }
 }
 
-// bool BlinkerMQTTAT::extraAvailable()
+// int BlinkerMQTTAT::extraAvailable()
 // {
 //     if (isBavail)
 //     {
@@ -678,7 +679,7 @@ void BlinkerMQTTAT::flush()
     }
 }
 
-bool BlinkerMQTTAT::print(char * data, bool needCheck)
+int BlinkerMQTTAT::print(char * data, bool needCheck)
 {
     // BLINKER_LOG_FreeHeap();
     if (*isHandle && dataFrom_MQTT_AT == BLINKER_MSG_FROM_WS)
@@ -826,7 +827,7 @@ bool BlinkerMQTTAT::print(char * data, bool needCheck)
     }
 }
 
-bool BlinkerMQTTAT::mqttPrint(const String & data) {
+int BlinkerMQTTAT::mqttPrint(const String & data) {
     BLINKER_LOG_ALL(("mqttPrint data: "), data);
 
     DynamicJsonBuffer jsonBuffer;
@@ -857,7 +858,7 @@ bool BlinkerMQTTAT::mqttPrint(const String & data) {
     return false;
 }
 
-bool BlinkerMQTTAT::bPrint(char * name, const String & data)
+int BlinkerMQTTAT::bPrint(char * name, const String & data)
 {
     // String payload;
     // if (STRING_contains_string(data, BLINKER_CMD_NEWLINE))
@@ -981,7 +982,7 @@ bool BlinkerMQTTAT::bPrint(char * name, const String & data)
     // }
 }
 
-bool BlinkerMQTTAT::aliPrint(const String & data)
+int BlinkerMQTTAT::aliPrint(const String & data)
 {
     String data_add = BLINKER_F("{\"data\":");
 
@@ -1036,7 +1037,7 @@ bool BlinkerMQTTAT::aliPrint(const String & data)
     }
 }
 
-bool BlinkerMQTTAT::duerPrint(const String & data)
+int BlinkerMQTTAT::duerPrint(const String & data)
 {
     String data_add = BLINKER_F("{\"data\":");
 
@@ -1144,7 +1145,7 @@ void BlinkerMQTTAT::begin(const char* auth) {
     // }
 }
 
-bool BlinkerMQTTAT::autoPrint(uint32_t id)
+int BlinkerMQTTAT::autoPrint(uint32_t id)
 {
     String payload = BLINKER_F("{\"data\":{\"set\":{");
     payload += BLINKER_F("\"trigged\":true,\"autoData\":{");
@@ -1199,7 +1200,7 @@ bool BlinkerMQTTAT::autoPrint(uint32_t id)
     }
 }
 
-// bool BlinkerMQTTAT::autoPrint(char *name, char *type, char *data)
+// int BlinkerMQTTAT::autoPrint(char *name, char *type, char *data)
 // {
 //     String payload = BLINKER_F("{\"data\":{");
 //     payload += STRING_format(data);
@@ -1236,7 +1237,7 @@ bool BlinkerMQTTAT::autoPrint(uint32_t id)
 //     }
 // }
 
-// bool BlinkerMQTTAT::autoPrint(char *name1, char *type1, char *data1
+// int BlinkerMQTTAT::autoPrint(char *name1, char *type1, char *data1
 //     , char *name2, char *type2, char *data2)
 // {
 //     String payload = BLINKER_F("{\"data\":{");
@@ -1372,7 +1373,7 @@ void BlinkerMQTTAT::softAPinit()
     }
 }
 
-bool BlinkerMQTTAT::parseUrl(String data)
+int BlinkerMQTTAT::parseUrl(String data)
 {
     BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
     DynamicJsonBuffer jsonBuffer;
@@ -1393,7 +1394,7 @@ bool BlinkerMQTTAT::parseUrl(String data)
     return true;
 }
 
-bool BlinkerMQTTAT::autoInit()
+int BlinkerMQTTAT::autoInit()
 {
     WiFi.mode(WIFI_STA);
     String _hostname = BLINKER_F("DiyArduino_");
@@ -1488,7 +1489,7 @@ void BlinkerMQTTAT::smartconfig()
     #endif
 }
 
-bool BlinkerMQTTAT::connectServer() {
+int BlinkerMQTTAT::connectServer() {
     const int httpsPort = 443;
 #if defined(ESP8266)
     String host = BLINKER_F("iotdev.clz.me");
@@ -2044,21 +2045,21 @@ void BlinkerMQTTAT::checkKA() {
         isAlive = false;
 }
 
-bool BlinkerMQTTAT::checkAliKA() {
+int BlinkerMQTTAT::checkAliKA() {
     if (millis() - aliKaTime >= 10000)
         return false;
     else
         return true;
 }
 
-bool BlinkerMQTTAT::checkDuerKA() {
+int BlinkerMQTTAT::checkDuerKA() {
     if (millis() - duerKaTime >= 10000)
         return false;
     else
         return true;
 }
 
-bool BlinkerMQTTAT::checkCanPrint() {
+int BlinkerMQTTAT::checkCanPrint() {
     if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
         return true;
     }
@@ -2071,7 +2072,7 @@ bool BlinkerMQTTAT::checkCanPrint() {
     }
 }
 
-bool BlinkerMQTTAT::checkCanBprint() {
+int BlinkerMQTTAT::checkCanBprint() {
     if ((millis() - bPrintTime >= BLINKER_BRIDGE_MSG_LIMIT) || bPrintTime == 0) {
         return true;
     }
@@ -2082,7 +2083,7 @@ bool BlinkerMQTTAT::checkCanBprint() {
     }
 }
 
-bool BlinkerMQTTAT::checkPrintSpan() {
+int BlinkerMQTTAT::checkPrintSpan() {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
         if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
             BLINKER_ERR_LOG(BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
@@ -2100,7 +2101,7 @@ bool BlinkerMQTTAT::checkPrintSpan() {
     }
 }
 
-bool BlinkerMQTTAT::checkAliPrintSpan()
+int BlinkerMQTTAT::checkAliPrintSpan()
 {
     if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2)
     {
@@ -2123,7 +2124,7 @@ bool BlinkerMQTTAT::checkAliPrintSpan()
     }
 }
 
-bool BlinkerMQTTAT::checkDuerPrintSpan()
+int BlinkerMQTTAT::checkDuerPrintSpan()
 {
     if (millis() - respDuerTime < BLINKER_PRINT_MSG_LIMIT/2)
     {
@@ -2146,7 +2147,7 @@ bool BlinkerMQTTAT::checkDuerPrintSpan()
     }
 }
 
-bool BlinkerMQTTAT::isJson(const String & data)
+int BlinkerMQTTAT::isJson(const String & data)
 {
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(STRING_format(data));

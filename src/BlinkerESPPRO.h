@@ -8,24 +8,23 @@
 #endif
 
 #include "Adapters/BlinkerPRO.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerProtocol.h"
+#include "Blinker/BlinkerApi.h"
 
-class BlinkerESPPRO : public BlinkerProtocol<BlinkerPRO>
+typedef BlinkerApi BApi;
+
+class BlinkerESPPRO : public BlinkerApi
 {
-    typedef BlinkerProtocol<BlinkerPRO> Base;
-
     public : 
-        BlinkerESPPRO(BlinkerPRO &transp)
-            : Base(transp)
-        {}
-
         void begin(const char* _type = BLINKER_AIR_DETECTOR)
         {
-            Base::begin(_type);
-            Base::loadTimer();
+            transport(Transp);
+            BApi::begin(_type);
+            BApi::loadTimer();
             BLINKER_LOG(BLINKER_F("ESP8266_PRO initialized..."));
         }
+
+    private :
+        BlinkerPRO Transp;
 };
 
 #endif

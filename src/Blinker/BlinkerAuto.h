@@ -12,10 +12,10 @@
 
 #include <EEPROM.h>
 
-#include "Blinker/BlinkerAuto.h"
+// #include "Blinker/BlinkerAuto.h"
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
-#include "utility/BlinkerUtility.h"
+#include "Blinker/BlinkerUtility.h"
 #include "modules/ArduinoJson/ArduinoJson.h"
 
 class BlinkerAUTO

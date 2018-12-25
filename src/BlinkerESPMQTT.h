@@ -8,8 +8,7 @@
 #endif
 
 #include "Adapters/BlinkerMQTT.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerProtocol.h"
+#include "Blinker/BlinkerApi.h"
 #include "modules/ArduinoJson/ArduinoJson.h"
 
 #if defined(ESP8266)
@@ -22,15 +21,11 @@
     #include <WebServer.h>
 #endif
 
-class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
-{
-    typedef BlinkerProtocol<BlinkerMQTT> Base;
+typedef BlinkerApi BApi;
 
-    public : 
-        BlinkerESPMQTT(BlinkerMQTT &transp)
-            : Base(transp)
-        {}
-        
+class BlinkerESPMQTT : public BlinkerApi
+{
+    public :        
         void begin(const char* _auth)
         {
             #if defined(BLINKER_ALIGENIE_LIGHT)
@@ -104,6 +99,8 @@ class BlinkerESPMQTT: public BlinkerProtocol<BlinkerMQTT>
         
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
+
+        BlinkerMQTT Transp;
 };
 
 void BlinkerESPMQTT::commonBegin(const char* _auth,
@@ -112,13 +109,14 @@ void BlinkerESPMQTT::commonBegin(const char* _auth,
                                 String & _alitype,
                                 String & _duertype)
 {
-    Base::begin();
+    BApi::begin();
     connectWiFi(_ssid, _pswd);
-    // Base::loadOTA();
-    this->conn.aliType(_alitype);
-    this->conn.duerType(_duertype);
-    this->conn.begin(_auth);
-    Base::loadTimer();
+    // BApi::loadOTA();
+    Transp.aliType(_alitype);
+    Transp.duerType(_duertype);
+    Transp.begin(_auth);
+    transport(Transp);
+    BApi::loadTimer();
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
@@ -130,13 +128,14 @@ void BlinkerESPMQTT::commonBegin(const char* _auth,
 void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _alitype,
                                 String & _duertype)
 {
-    Base::begin();
+    BApi::begin();
     if (!autoInit()) smartconfig();
-    // Base::loadOTA();
-    this->conn.aliType(_alitype);
-    this->conn.duerType(_duertype);
-    this->conn.begin(_auth);
-    Base::loadTimer();
+    // BApi::loadOTA();
+    Transp.aliType(_alitype);
+    Transp.duerType(_duertype);
+    Transp.begin(_auth);
+    transport(Transp);
+    BApi::loadTimer();
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
@@ -148,7 +147,7 @@ void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _alitype,
 void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _alitype,
                                 String & _duertype)
 {
-    Base::begin();
+    BApi::begin();
     if (!autoInit())
     {
         softAPinit();
@@ -158,12 +157,13 @@ void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _alitype,
         //     ::delay(10);
         // }
     }
-    // Base::loadOTA();
+    // BApi::loadOTA();
 
-    this->conn.aliType(_alitype);
-    this->conn.duerType(_duertype);
-    this->conn.begin(_auth);
-    Base::loadTimer();
+    Transp.aliType(_alitype);
+    Transp.duerType(_duertype);
+    Transp.begin(_auth);
+    transport(Transp);
+    BApi::loadTimer();
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
