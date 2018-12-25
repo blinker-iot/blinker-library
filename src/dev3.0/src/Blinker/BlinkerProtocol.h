@@ -100,12 +100,45 @@ class BlinkerProtocol
             void connectWiFi(const char* _ssid, const char* _pswd) { return conn->connectWiFi(_ssid, _pswd); }
         #endif
         void checkFormat();
-        void checkAutoFormat();
+        void checkAutoFormat()
+        {
+            if (autoFormat)
+            {
+                if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
+                {
+                    if (strlen(_sendBuf))
+                    {
+                        #if defined(BLINKER_ARDUINOJSON)
+                            _print(_sendBuf);
+                        #else
+                            strcat(_sendBuf, "}");
+                            _print(_sendBuf);
+                        #endif
+                    }
+                    free(_sendBuf);
+                    autoFormat = false;
+                }
+            }
+        }
         char* dataParse()       { if (canParse) return conn->lastRead(); else return NULL; }
         char* lastRead()        { return conn->lastRead(); }
         void isParsed()         { flush(); }
         int parseState()        { return canParse; }
-        void printNow();
+        void printNow()
+        {
+            if (strlen(_sendBuf) && autoFormat)
+            {
+                #if defined(BLINKER_ARDUINOJSON)
+                    _print(_sendBuf);
+                #else
+                    strcat(_sendBuf, "}");
+                    _print(_sendBuf);
+                #endif
+
+                free(_sendBuf);
+                autoFormat = false;
+            }
+        }
         void _timerPrint(const String & n);
         void _print(char * n, bool needCheckLength = true);
 

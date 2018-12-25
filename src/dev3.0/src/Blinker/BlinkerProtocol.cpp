@@ -50,42 +50,42 @@ void BlinkerProtocol::checkFormat()
     }
 }
 
-void BlinkerProtocol::checkAutoFormat()
-{
-    if (autoFormat)
-    {
-        if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
-        {
-            if (strlen(_sendBuf))
-            {
-                #if defined(BLINKER_ARDUINOJSON)
-                    _print(_sendBuf);
-                #else
-                    strcat(_sendBuf, "}");
-                    _print(_sendBuf);
-                #endif
-            }
-            free(_sendBuf);
-            autoFormat = false;
-        }
-    }
-}
+// void BlinkerProtocol::checkAutoFormat()
+// {
+//     if (autoFormat)
+//     {
+//         if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
+//         {
+//             if (strlen(_sendBuf))
+//             {
+//                 #if defined(BLINKER_ARDUINOJSON)
+//                     _print(_sendBuf);
+//                 #else
+//                     strcat(_sendBuf, "}");
+//                     _print(_sendBuf);
+//                 #endif
+//             }
+//             free(_sendBuf);
+//             autoFormat = false;
+//         }
+//     }
+// }
 
-void BlinkerProtocol::printNow()
-{
-    if (strlen(_sendBuf) && autoFormat)
-    {
-        #if defined(BLINKER_ARDUINOJSON)
-            _print(_sendBuf);
-        #else
-            strcat(_sendBuf, "}");
-            _print(_sendBuf);
-        #endif
+// void BlinkerProtocol::printNow()
+// {
+//     if (strlen(_sendBuf) && autoFormat)
+//     {
+//         #if defined(BLINKER_ARDUINOJSON)
+//             _print(_sendBuf);
+//         #else
+//             strcat(_sendBuf, "}");
+//             _print(_sendBuf);
+//         #endif
 
-        free(_sendBuf);
-        autoFormat = false;
-    }
-}
+//         free(_sendBuf);
+//         autoFormat = false;
+//     }
+// }
 
 void BlinkerProtocol::_timerPrint(const String & n)
 {

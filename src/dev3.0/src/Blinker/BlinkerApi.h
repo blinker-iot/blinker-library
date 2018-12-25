@@ -1223,7 +1223,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
                     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     timerManager(root);
-                    BLINKER_LOG_ALL(BLINKER_F("timerManager"));
+                    // BLINKER_LOG_ALL(BLINKER_F("timerManager"));
                 #endif
 
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
@@ -7221,7 +7221,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         bool _isAlive = false;
         uint32_t _now_time = millis();
         while (!_isAlive) {
-            print(_data);
+            BProto::print(_data);
             BProto::printNow();
             // _now_time = millis();
 
@@ -7292,7 +7292,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
         ::delay(100);
 
-        print(cmd_start);//cmd_start + _data);
+        BProto::print(cmd_start);//cmd_start + _data);
         BProto::printNow();
 
         bool _isInit = false;
@@ -7362,8 +7362,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     
     int BlinkerApi::analogRead()
     {
-        print(BLINKER_CMD_AT + STRING_format("+") + \
-                BLINKER_CMD_ADC + "?");
+        BProto::print(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_ADC + "?");
         BProto::printNow();
 
         parseATdata();
@@ -7421,10 +7421,10 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     
     void BlinkerApi::digitalWrite(uint8_t pin, uint8_t val)
     {
-        print(BLINKER_CMD_AT + STRING_format("+") + \
-                BLINKER_CMD_GPIOWRITE + "=" + \
-                STRING_format(pin) + "," + \
-                STRING_format(val ? 0 : 1));
+        BProto::print(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_GPIOWRITE + "=" + \
+                    STRING_format(pin) + "," + \
+                    STRING_format(val ? 0 : 1));
 
         BProto::printNow();
 
@@ -7434,9 +7434,9 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     
     int BlinkerApi::digitalRead(uint8_t pin)
     {
-        print(BLINKER_CMD_AT + STRING_format("+") + \
-                BLINKER_CMD_GPIOWREAD + "=" + \
-                STRING_format(pin));
+        BProto::print(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_GPIOWREAD + "=" + \
+                    STRING_format(pin));
 
         BProto::printNow();
 
@@ -7461,9 +7461,9 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     
     void BlinkerApi::setTimezone(float tz)
     {
-        print(BLINKER_CMD_AT + STRING_format("+") + \
-                BLINKER_CMD_TIMEZONE + "=" + \
-                STRING_format(tz));
+        BProto::print(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_TIMEZONE + "=" + \
+                    STRING_format(tz));
 
         BProto::printNow();
     }
@@ -7471,8 +7471,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     
     float BlinkerApi::getTimezone()
     {
-        print(BLINKER_CMD_AT + STRING_format("+") + \
-                BLINKER_CMD_TIMEZONE + "?");
+        BProto::print(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_TIMEZONE + "?");
 
         BProto::printNow();
 
@@ -7496,7 +7496,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     
     int32_t BlinkerApi::atGetInt(const String & cmd)
     {
-        print(BLINKER_CMD_AT + STRING_format("+") + cmd + "?");
+        BProto::print(BLINKER_CMD_AT + STRING_format("+") + cmd + "?");
 
         BProto::printNow();
 
@@ -7521,8 +7521,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
      template<typename T>
     String BlinkerApi::atGetString(const String & cmd, const T& msg)
     {
-        print(BLINKER_CMD_AT + STRING_format("+") + \
-                                        cmd + "=" + STRING_format(msg));
+        BProto::print(BLINKER_CMD_AT + STRING_format("+") + \
+                    cmd + "=" + STRING_format(msg));
 
         BProto::printNow();
 
@@ -7565,8 +7565,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     
     void BlinkerApi::reset()
     {
-        print(BLINKER_CMD_AT + STRING_format("+") + \
-                                        BLINKER_CMD_RST);
+        BProto::print(BLINKER_CMD_AT + STRING_format("+") + BLINKER_CMD_RST);
 
         BProto::printNow();
     }
