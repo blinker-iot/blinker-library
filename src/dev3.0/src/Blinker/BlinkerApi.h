@@ -7,12 +7,13 @@
     #include <Ticker.h>
     #include <EEPROM.h>
 
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+        defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
         #include "Blinker/BlinkerAuto.h"
     #endif
 
     #if defined(BLINKER_PRO)
-        #include "utility/BlinkerWlan.h"
+        #include "Functions/BlinkerWlan.h"
     #endif
 #endif
 
@@ -29,10 +30,20 @@
     #include <HTTPClient.h>
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+    defined(BLINKER_PRO) 
     #include "Blinker/BlinkerTimer.h"
     #include "Functions/BlinkerTimingTimer.h"
     #include "Functions/BlinkerOTA.h"
+#endif
+
+#if defined(BLINKER_AT_MQTT)
+    #include "Blinker/BlinkerMQTTATBase.h"
+#endif
+
+#if defined(BLINKER_MQTT_AT)
+    #include "Blinker/BlinkerATMASTER.h"
+    #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 
 #include "Blinker/BlinkerApiBase.h"
@@ -62,6 +73,25 @@ enum b_rgb_t {
     BLINKER_B,
     BLINKER_BRIGHT
 };
+
+#if defined(BLINKER_PRO)
+    enum BlinkerStatus
+    {
+        PRO_WLAN_CONNECTING,
+        PRO_WLAN_CONNECTED,
+        // PRO_WLAN_DISCONNECTED,
+        PRO_WLAN_SMARTCONFIG_BEGIN,
+        PRO_WLAN_SMARTCONFIG_DONE,
+        PRO_DEV_AUTHCHECK_FAIL,
+        PRO_DEV_AUTHCHECK_SUCCESS,
+        PRO_DEV_REGISTER_FAIL,
+        PRO_DEV_REGISTER_SUCCESS,
+        PRO_DEV_INIT_SUCCESS,
+        PRO_DEV_CONNECTING,
+        PRO_DEV_CONNECTED,
+        PRO_DEV_DISCONNECTED
+    };
+#endif
 
 class BlinkerApi : public BlinkerProtocol
 {
@@ -208,6 +238,12 @@ class BlinkerApi : public BlinkerProtocol
             bool updateOTAStatus(int8_t status, const String & msg);
             void otaStatus(int8_t status, const String & msg);
 
+        #endif
+
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+            defined(BLINKER_MQTT_AT)
+
             #if defined(BLINKER_ALIGENIE)
                 void attachAliGenieSetPowerState(blinker_callback_with_string_arg_t newFunction)
                 { _AliGeniePowerStateFunc = newFunction; }
@@ -250,6 +286,44 @@ class BlinkerApi : public BlinkerProtocol
                 { _DuerOSQueryFunc = newFunction; }
             #endif
         #endif
+
+        // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
+        //     void bridgePrint(char * bName, const String & data);
+        //     void aligeniePrint(String & _msg);
+        //     void duerPrint(String & _msg);
+        // #endif
+
+        #if defined(BLINKER_MQTT_AT)
+            // class BlinkerMasterAT *         _masterAT;
+            // void atRespOK(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
+            void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
+            void atResp();
+            void parseATdata();
+            int analogRead();
+            void pinMode(uint8_t pin, uint8_t mode);
+            void digitalWrite(uint8_t pin, uint8_t val);
+            int digitalRead(uint8_t pin);
+            void setTimezone(float tz);
+            float getTimezone();
+            int32_t atGetInt(const String & cmd);
+            template<typename T>
+            String atGetString(const String & cmd, const T& msg);
+            time_t time()   { return atGetInt(BLINKER_CMD_TIME_AT); }
+            // time_t dtime()   { return atGetInt(BLINKER_CMD_D); }
+            int8_t second() { return atGetInt(BLINKER_CMD_SECOND); }
+            int8_t minute() { return atGetInt(BLINKER_CMD_MINUTE); }
+            int8_t hour()   { return atGetInt(BLINKER_CMD_HOUR); }
+            int8_t mday()   { return atGetInt(BLINKER_CMD_MDAY); }
+            int8_t wday()   { return atGetInt(BLINKER_CMD_WDAY); }
+            int8_t month()  { return atGetInt(BLINKER_CMD_MONTH); }
+            int16_t year()  { return atGetInt(BLINKER_CMD_YEAR); }
+            int16_t yday()  { return atGetInt(BLINKER_CMD_YDAY); }
+            String weather(const String & _city = BLINKER_CMD_DEFAULT);
+            String aqi(const String & _city = BLINKER_CMD_DEFAULT);
+            template<typename T>
+            bool sms(const T& msg);
+            void reset();
+        #endif
         
         void attachData(blinker_callback_with_string_arg_t newFunction)
         { _availableFunc = newFunction; }
@@ -277,6 +351,39 @@ class BlinkerApi : public BlinkerProtocol
         #endif
         char * widgetName_rgb(uint8_t num);
         char * widgetName_int(uint8_t num);
+
+        #if defined(BLINKER_PRO)
+            void attachParse(blinker_callback_with_json_arg_t newFunction)
+            { _parseFunc = newFunction; }
+            void attachClick(blinker_callback_t newFunction)
+            { _clickFunc = newFunction; }
+            void attachDoubleClick(blinker_callback_t newFunction)
+            { _doubleClickFunc = newFunction; }
+            void attachLongPressStart(blinker_callback_t newFunction)
+            { _longPressStartFunc = newFunction; }
+            void attachLongPressStop(blinker_callback_t newFunction)
+            { _longPressStopFunc = newFunction; }
+            void attachDuringLongPress(blinker_callback_t newFunction)
+            { _duringLongPressFunc = newFunction; }
+            #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+                void attachLongPressPowerdown(blinker_callback_t newFunction)
+                { _powerdownFunc = newFunction; }
+                void attachLongPressReset(blinker_callback_t newFunction)
+                { _resetFunc = newFunction; }
+
+                uint16_t pressedTime();
+            #endif
+
+            void setType(const char* _type);
+            const char* type() { return _deviceType; }
+            void reset();
+            void tick();
+            void checkRegister(const JsonObject& data);            
+            
+            bool init()                         { return _isInit; }
+            bool registered()                   { return BProto::authCheck(); }
+            uint8_t status()                    { return _proStatus; }
+        #endif
 
     private :
         bool        _fresh = false;
@@ -338,7 +445,19 @@ class BlinkerApi : public BlinkerProtocol
             class BlinkerData *             _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
             class BlinkerAUTO *             _AUTO[2];
             BlinkerOTA                      _OTA;
+        #endif
 
+        #if defined(BLINKER_PRO)
+            bool            _isConnBegin = false;
+            bool            _getRegister = false;
+            // bool            _isInit = false;
+            bool            _isRegistered = false;
+            uint32_t        _register_fresh = 0;
+            uint32_t        _initTime;
+            uint8_t         _proStatus = PRO_WLAN_CONNECTING;
+        #endif
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
             blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetModeFunc = NULL;
@@ -358,6 +477,12 @@ class BlinkerApi : public BlinkerProtocol
             // blinker_callback_with_int32_arg_t   _DuerOSSetColorTemperature = NULL;
             // blinker_callback_with_int32_arg_t   _DuerOSSetRelativeColorTemperature = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSQueryFunc = NULL;
+        #endif
+
+        #if defined(BLINKER_MQTT_AT)
+            class BlinkerMasterAT *         _masterAT;
+            void atRespOK(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
+            // void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
         #endif
 
         blinker_callback_t                  _heartbeatFunc = NULL;
@@ -457,13 +582,191 @@ class BlinkerApi : public BlinkerProtocol
             String postServer(const String & url, const String & host, int port, const String & msg);
             String getServer(const String & url, const String & host, int port);
             String blinkerServer(uint8_t _type, const String & msg, bool state = false);
+        #endif
 
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
             void aliParse(const String & _data);
             void duerParse(const String & _data);
         #endif
 
+        #if defined(BLINKER_AT_MQTT)
+            blinker_at_status_t     _status = BL_BEGIN;
+            blinker_at_aligenie_t   _aliType = ALI_NONE;
+            blinker_at_dueros_t     _duerType = DUER_NONE;
+            uint8_t                 _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
+            uint8_t                 pinDataNum = 0;
+            class BlinkerSlaverAT * _slaverAT;
+            class PinData *         _pinData[BLINKER_MAX_PIN_NUM];
+            
+            void parseATdata();
+            String getMode(uint8_t mode);
+            bool serialAvailable();
+            void serialPrint(const String & s);
+            void atHeartbeat();
+        #endif
+
     protected :
         void begin();
+
+        #if defined(BLINKER_AT_MQTT)
+            void atBegin();
+        #endif
+
+        #if defined(BLINKER_MQTT_AT)
+            void atInit(const char* _auth);
+            void atInit(const char* _auth, const char* _ssid, const char* _pswd);
+        #endif
+
+        #if defined(BLINKER_PRO)
+            bool beginPro() { return wlanRun(); }
+            void begin(const char* _type);
+
+            const char* _deviceType;
+            BlinkerWlan Bwlan;
+
+            blinker_callback_with_json_arg_t    _parseFunc = NULL;
+
+            #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+                blinker_callback_t _powerdownFunc = NULL;
+                blinker_callback_t _resetFunc = NULL;
+            #endif
+            // OneButton   button1;
+
+            int _pin;        // hardware pin number.
+            int _debounceTicks; // number of ticks for debounce times.
+            int _clickTicks; // number of ticks that have to pass by before a click is detected
+            int _pressTicks; // number of ticks that have to pass by before a long button press is detected
+
+            int _buttonReleased;
+            int _buttonPressed;
+
+            bool _isLongPressed;
+
+            // These variables will hold functions acting as event source.
+            blinker_callback_t _clickFunc;
+            blinker_callback_t _doubleClickFunc;
+            blinker_callback_t _pressFunc;
+            blinker_callback_t _longPressStartFunc;
+            blinker_callback_t _longPressStopFunc;
+            blinker_callback_t _duringLongPressFunc;
+
+            // These variables that hold information across the upcoming tick calls.
+            // They are initialized once on program start and are updated every time the tick function is called.
+            int _state;
+            unsigned long _startTime; // will be set in state 1
+            unsigned long _stopTime; // will be set in state 2
+
+            bool wlanRun()
+            {
+                #if defined(BLINKER_BUTTON)
+                    tick();
+                #endif
+                return Bwlan.run();
+            }
+
+            uint8_t wlanStatus() { return Bwlan.status(); }
+
+            bool isPressed = false;
+
+            void _click() { BLINKER_LOG_ALL(BLINKER_F("Button click.")); } // click
+
+            void _doubleClick() { BLINKER_LOG_ALL(BLINKER_F("Button doubleclick.")); } // doubleclick1
+
+            void _longPressStart()
+            {
+                BLINKER_LOG_ALL(BLINKER_F("Button longPress start"));
+                // _longPressStartFunc();
+                isPressed = true;
+            } // longPressStart
+
+            void _longPress()
+            {
+                if (isPressed)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("Button longPress..."));                    
+                    isPressed = false;
+                }// _duringLongPressFunc();
+            } // longPress
+
+            void _longPressStop()
+            {
+                BLINKER_LOG_ALL(BLINKER_F("Button longPress stop"));
+                // _longPressStopFunc();
+                // Bwlan.deleteConfig();
+                // Bwlan.reset();
+                // ESP.restart();
+                // reset();
+
+                uint32_t _pressedTime = millis() - _startTime;
+                
+                BLINKER_LOG_ALL(BLINKER_F("_stopTime: "), millis(), BLINKER_F(" ,_startTime: "), _startTime);
+                BLINKER_LOG_ALL(BLINKER_F("long pressed time: "), _pressedTime);
+
+                #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+                    if (_pressedTime >= BLINKER_PRESSTIME_RESET) {
+                        if (_resetFunc) {
+                            _resetFunc();
+                        }
+
+                        reset();
+                    }
+                    else {
+                        BLINKER_LOG(BLINKER_F("BLINKER_PRESSTIME_POWERDOWN"));
+
+                        if (_powerdownFunc) {
+                            _powerdownFunc();
+                        }
+                    }
+                #else
+                    // if (_resetFunc) {
+                    //     _resetFunc();
+                    // }
+
+                    reset();
+                #endif
+            } // longPressStop
+
+            void buttonInit(int activeLow = true)
+            {
+                _pin = BLINKER_BUTTON_PIN;
+
+                _debounceTicks = 50;      // number of millisec that have to pass by before a click is assumed as safe.
+                _clickTicks = 600;        // number of millisec that have to pass by before a click is detected.
+                _pressTicks = 1000;       // number of millisec that have to pass by before a long button press is detected.
+
+                _state = 0; // starting with state 0: waiting for button to be pressed
+                _isLongPressed = false;  // Keep track of long press state
+
+                if (activeLow) {
+                    // the button connects the input pin to GND when pressed.
+                    _buttonReleased = HIGH; // notPressed
+                    _buttonPressed = LOW;
+
+                    // use the given pin as input and activate internal PULLUP resistor.
+                    pinMode( _pin, INPUT_PULLUP );
+
+                } else {
+                    // the button connects the input pin to VCC when pressed.
+                    _buttonReleased = LOW;
+                    _buttonPressed = HIGH;
+
+                    // use the given pin as input
+                    pinMode(_pin, INPUT);
+                } // if
+
+                _clickFunc = NULL;
+                _doubleClickFunc = NULL;
+                _pressFunc = NULL;
+                _longPressStartFunc = NULL;
+                _longPressStopFunc = NULL;
+                _duringLongPressFunc = NULL;
+
+                // attachInterrupt(BLINKER_BUTTON_PIN, checkButton, CHANGE);
+
+                BLINKER_LOG_ALL(BLINKER_F("Button initialled"));
+            }
+
+        #endif
 };
 
 void BlinkerApi::begin()
@@ -493,7 +796,44 @@ void BlinkerApi::begin()
                     BLINKER_F("Give Blinker a github star, thanks!\n")
                     BLINKER_F("=> https://github.com/blinker-iot/blinker-library\n"));
     #endif
+
+    #if defined(BLINKER_OTA_VERSION_CODE) && (defined(BLINKER_MQTT) || defined(BLINKER_MQTT_AT))
+        if (strlen(BLINKER_OTA_VERSION_CODE) >= BLINKER_OTA_INFO_SIZE)
+        {
+            while(1)
+            {
+                BLINKER_ERR_LOG(BLINKER_F("The OTA version code you set is too long!"));
+                ::delay(10000);
+            }
+        }
+    #endif
 }
+
+#if defined(BLINKER_PRO)
+    void BlinkerApi::begin(const char* _type)
+    {
+        begin();
+
+        BLINKER_LOG(BLINKER_F(
+                    "\n==========================================================="
+                    "\n================= Blinker PRO mode init ! ================="
+                    "\nWarning! EEPROM address 1280-1535 is used for Auto Control!"
+                    "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
+                    "\n===========================================================\n"));
+
+        BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+
+        #if defined(BLINKER_BUTTON)
+            #if defined(BLINKER_BUTTON_PULLDOWN)
+                buttonInit(false);
+            #else
+                buttonInit();
+            #endif
+        #endif
+
+        setType(_type);
+    }
+#endif
 
 void BlinkerApi::run()
 {
@@ -522,7 +862,7 @@ void BlinkerApi::run()
 
                 if (checkCanOTA()) loadOTA();
 
-                conn.begin(type());
+                BProto::begin(type());
                 _isConnBegin = true;
                 _initTime = millis();
                 
@@ -530,13 +870,13 @@ void BlinkerApi::run()
 
                 // loadOTA();
 
-                if (conn.authCheck())
+                if (BProto::authCheck())
                 {
                     _proStatus = PRO_DEV_AUTHCHECK_SUCCESS;
 
                     BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
 
-                    _isRegistered = conn.deviceRegister();
+                    _isRegistered = BProto::deviceRegister();
                     _getRegister = true;
 
                     if (!_isRegistered)
@@ -568,7 +908,7 @@ void BlinkerApi::run()
             {
                 BLINKER_LOG_ALL(BLINKER_F("conn deviceRegister"));
                 
-                _isRegistered = conn.deviceRegister();
+                _isRegistered = BProto::deviceRegister();
 
                 if (!_isRegistered)
                 {
@@ -583,7 +923,7 @@ void BlinkerApi::run()
             }
         }
         
-        if (!conn.init())
+        if (!BProto::init())
         {
             yield();
 
@@ -610,10 +950,10 @@ void BlinkerApi::run()
                     while (time_slot < 30000)
                     {
                         time_slot = millis() - connect_time;
-                        conn.connect();
+                        BProto::connect();
                         yield();
 
-                        if (conn.mConnected())
+                        if (BProto::mConnected())
                         {
                             state = CONNECTED;
                             break;
@@ -629,7 +969,7 @@ void BlinkerApi::run()
                     _proStatus = PRO_DEV_CONNECTING;
                 }
                 else if (state == CONNECTED && _proStatus != PRO_DEV_CONNECTED) {
-                    if (conn.mConnected()) _proStatus = PRO_DEV_CONNECTED;
+                    if (BProto::mConnected()) _proStatus = PRO_DEV_CONNECTED;
                 }
                 else if (state == DISCONNECTED && _proStatus != PRO_DEV_DISCONNECTED) {
                     _proStatus = PRO_DEV_DISCONNECTED;
@@ -753,16 +1093,16 @@ void BlinkerApi::run()
 
                 #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO)) 
                     #if defined(BLINKER_ALIGENIE)
-                        if (checkAliAvail())
+                        if (BProto::checkAliAvail())
                         {
-                            aliParse(conn.lastRead());
+                            aliParse(BProto::lastRead());
                         }
                     #endif
 
                     #if defined(BLINKER_DUEROS)
-                        if (checkDuerAvail())
+                        if (BProto::checkDuerAvail())
                         {
-                            duerParse(conn.lastRead());
+                            duerParse(BProto::lastRead());
                         }
                     #endif
                 #endif
@@ -770,9 +1110,9 @@ void BlinkerApi::run()
                 #if defined(BLINKER_MQTT_AT) && defined(BLINKER_ALIGENIE)
                     if (isAvail)
                     {
-                        aliParse(conn.lastRead());
+                        aliParse(BProto::lastRead());
 
-                        if (STRING_contains_string(conn.lastRead(), "AliGenie"))
+                        if (STRING_contains_string(BProto::lastRead(), "AliGenie"))
                         {
                             flush();
                         }
@@ -783,12 +1123,12 @@ void BlinkerApi::run()
                     if (isAvail)
                     {
                         // BLINKER_LOG_ALL("isAvail");
-                        conn.serialPrint(conn.lastRead());
+                        BProto::serialPrint(BProto::lastRead());
                     }
 
                     if (serialAvailable())
                     {
-                        conn.mqttPrint(conn.serialLastRead());
+                        BProto::mqttPrint(BProto::serialLastRead());
                     }
                 #endif
 
@@ -882,18 +1222,18 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
                 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
                     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-                    // timerManager(root);
+                    timerManager(root);
                     BLINKER_LOG_ALL(BLINKER_F("timerManager"));
                 #endif
 
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-                    // autoManager(root);
-                    // otaPrase(root);
+                    autoManager(root);
+                    otaPrase(root);
 
-                    // for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
-                    // {
-                    //     bridgeParse(_Bridge[bNum]->getName(), root);
-                    // }
+                    for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
+                    {
+                        bridgeParse(_Bridge[bNum]->getName(), root);
+                    }
                 #endif
 
                 heartBeat(root);
@@ -960,7 +1300,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                         json_parse(_array);
                         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
                             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-                            // timerManager(_array, true);
+                            timerManager(_array, true);
                         #endif
                     }
                     else {
@@ -1717,7 +2057,7 @@ float BlinkerApi::gps(b_gps_t axis)
         EEPROM.end();
     }
 
-     template<typename T>
+    template<typename T>
     bool BlinkerApi::configUpdate(const T& msg)
     {
         String _msg = STRING_format(msg);
@@ -1757,7 +2097,7 @@ float BlinkerApi::gps(b_gps_t axis)
         return (blinkerServer(BLINKER_CMD_CONFIG_DELETE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
     }
 
-     template<typename T>
+    template<typename T>
     void BlinkerApi::dataStorage(char _name[], const T& msg)
     {
         String _msg = STRING_format(msg);
@@ -2536,13 +2876,13 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
                 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
                     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-                    // String _timer = taskCount ? "1":"0";
-                    // _timer += _cdState ? "1":"0";
-                    // _timer += _lpState ? "1":"0";
+                    String _timer = taskCount ? "1":"0";
+                    _timer += _cdState ? "1":"0";
+                    _timer += _lpState ? "1":"0";
 
-                    // BLINKER_LOG_ALL(BLINKER_F("timer codes: "), _timer);
+                    BLINKER_LOG_ALL(BLINKER_F("timer codes: "), _timer);
 
-                    // print(BLINKER_CMD_TIMER, _timer);
+                    print(BLINKER_CMD_TIMER, _timer);
                     // static_cast<Proto*>(this)->printJson(timerSetting());
 
                     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -2571,7 +2911,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 _fresh = true;
 
                 // #if defined(BLINKER_AT_MQTT)
-                //     static_cast<Proto*>(this)->atHeartbeat();
+                //     atHeartbeat();
                 // #endif
             }
         }
@@ -4360,7 +4700,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             // _parse(_cdAction);
 
             #if defined(BLINKER_AT_MQTT)
-                static_cast<Proto*>(this)->serialPrint(_cdAction);
+                BProto::serialPrint(_cdAction);
             #else
                 parse(_cdAction, true);
             #endif
@@ -4384,7 +4724,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 // _parse(_lpAction2);
 
                 #if defined(BLINKER_AT_MQTT)
-                    static_cast<Proto*>(this)->serialPrint(_lpAction2);
+                    BProto::serialPrint(_lpAction2);
                 #else
                     parse(_lpAction2, true);
                 #endif
@@ -4396,7 +4736,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 // _parse(_lpAction1);
 
                 #if defined(BLINKER_AT_MQTT)
-                    static_cast<Proto*>(this)->serialPrint(_lpAction1);
+                    BProto::serialPrint(_lpAction1);
                 #else
                     parse(_lpAction1, true);
                 #endif
@@ -4447,7 +4787,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 BLINKER_LOG(BLINKER_F("timing trigged, action is: "), _tmAction);
 
                 #if defined(BLINKER_AT_MQTT)
-                    static_cast<Proto*>(this)->serialPrint(_tmAction);
+                    BProto::serialPrint(_tmAction);
                 #else
                     parse(_tmAction, true);
                 #endif
@@ -5867,8 +6207,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_MQTT_AT)
-    
+#if defined(BLINKER_MQTT_AT)    
     void BlinkerApi::aliParse(const String & _data)
     {
         BLINKER_LOG_ALL(BLINKER_F("AliGenie parse data: "), _data);
@@ -5998,7 +6337,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLOR))
                 {
-                    if (_DuerOSSetColorFunc) _DuerOSSetColorFunc(value);
+                    if (_DuerOSSetColorFunc) _DuerOSSetColorFunc(value.toInt());
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_BRIGHTNESS))
                 {
@@ -6034,6 +6373,1376 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 }
             }
         }
+    }
+#endif
+
+#if defined(BLINKER_AT_MQTT)    
+    void BlinkerApi::atBegin()
+    {
+        while (_status == BL_BEGIN)
+        {
+            serialAvailable();
+        }
+    }
+    
+    void BlinkerApi::parseATdata()
+    {
+        String reqData;
+        
+        if (_slaverAT->cmd() == BLINKER_CMD_AT) {
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_RST) {
+            BProto::serialPrint(BLINKER_CMD_OK);
+            ::delay(100);
+            ESP.restart();
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_GMR) {
+            // reqData = "+" + STRING_format(BLINKER_CMD_GMR) + 
+            //         "=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>" + 
+            //         "[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]";
+            BProto::serialPrint(BLINKER_ESP_AT_VERSION);
+            BProto::serialPrint(BLINKER_VERSION);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_UART_CUR) {
+            blinker_at_state_t at_state = _slaverAT->state();
+
+            BLINKER_LOG(at_state);
+
+            switch (at_state)
+            {
+                case AT_NONE:
+                    // BProto::serialPrint();
+                    break;
+                case AT_TEST:
+                    reqData = BLINKER_CMD_AT;// + 
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_UART_CUR;// + 
+                    reqData += BLINKER_F("=<baudrate>,<databits>,<stopbits>,<parity>");
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_QUERY:
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_UART_CUR;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(serialSet >> 8 & 0x00FFFFFF);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet >> 4 & 0x0F);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet >> 2 & 0x03);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet      & 0x03);
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_SETTING:
+                    BLINKER_LOG_ALL(BLINKER_F("SER_BAUD: "), _slaverAT->getParam(SER_BAUD));
+                    BLINKER_LOG_ALL(BLINKER_F("SER_DBIT: "), _slaverAT->getParam(SER_DBIT));
+                    BLINKER_LOG_ALL(BLINKER_F("SER_SBIT: "), _slaverAT->getParam(SER_SBIT));
+                    BLINKER_LOG_ALL(BLINKER_F("SER_PRIT: "), _slaverAT->getParam(SER_PRIT));
+                    if (BLINKER_UART_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                    serialSet = (_slaverAT->getParam(SER_BAUD)).toInt() << 8 |
+                                (_slaverAT->getParam(SER_DBIT)).toInt() << 4 |
+                                (_slaverAT->getParam(SER_SBIT)).toInt() << 2 |
+                                (_slaverAT->getParam(SER_PRIT)).toInt();
+
+                    ss_cfg = serConfig();
+
+                    BLINKER_LOG_ALL(BLINKER_F("SER_PRIT: "), serialSet);
+
+                    BProto::serialPrint(BLINKER_CMD_OK);
+
+                    // if (isHWS) {
+                        Serial.begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+                    // }
+                    // else {
+                    //     SSerialBLE->begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+                    // }
+                    break;
+                case AT_ACTION:
+                    // BProto::serialPrint();
+                    break;
+                default :
+                    break;
+            }
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_UART_DEF) {
+            blinker_at_state_t at_state = _slaverAT->state();
+
+            BLINKER_LOG(at_state);
+
+            switch (at_state)
+            {
+                case AT_NONE:
+                    // BProto::serialPrint();
+                    break;
+                case AT_TEST:
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_UART_DEF;
+                    reqData += BLINKER_F("=<baudrate>,<databits>,<stopbits>,<parity>");
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_QUERY:
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_UART_DEF;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(serialSet >> 8 & 0x00FFFFFF);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet >> 4 & 0x0F);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet >> 2 & 0x03);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(serialSet      & 0x03);
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_SETTING:
+                    BLINKER_LOG_ALL(BLINKER_F("SER_BAUD: "), _slaverAT->getParam(SER_BAUD));
+                    BLINKER_LOG_ALL(BLINKER_F("SER_DBIT: "), _slaverAT->getParam(SER_DBIT));
+                    BLINKER_LOG_ALL(BLINKER_F("SER_SBIT: "), _slaverAT->getParam(SER_SBIT));
+                    BLINKER_LOG_ALL(BLINKER_F("SER_PRIT: "), _slaverAT->getParam(SER_PRIT));
+                    
+                    if (BLINKER_UART_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                    serialSet = (_slaverAT->getParam(SER_BAUD)).toInt() << 8 |
+                                (_slaverAT->getParam(SER_DBIT)).toInt() << 4 |
+                                (_slaverAT->getParam(SER_SBIT)).toInt() << 2 |
+                                (_slaverAT->getParam(SER_PRIT)).toInt();
+
+                    ss_cfg = serConfig();
+
+                    BLINKER_LOG_ALL(BLINKER_F("SER_PRIT: "), serialSet);
+
+                    BProto::serialPrint(BLINKER_CMD_OK);
+
+                    // if (isHWS) {
+                        Serial.begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+                    // }
+                    // else {
+                    //     SSerialBLE->begin(serialSet >> 8 & 0x00FFFFFF, ss_cfg);
+                    // }
+
+                    EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_SERIALCFG, serialSet);
+                    EEPROM.commit();
+                    EEPROM.end();
+                    break;
+                case AT_ACTION:
+                    // BProto::serialPrint();
+                    break;
+                default :
+                    break;
+            }
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_RAM && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_F(BLINKER_CMD_RAM);
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(BLINKER_FreeHeap());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_ADC && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_ADC;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(analogRead(A0));
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_IOSETCFG && _slaverAT->state() == AT_SETTING) {
+            BLINKER_LOG_ALL(BLINKER_F("PIN_SET: "), _slaverAT->getParam(PIN_SET));
+            BLINKER_LOG_ALL(BLINKER_F("PIN_MODE: "), _slaverAT->getParam(PIN_MODE));
+            BLINKER_LOG_ALL(BLINKER_F("PIN_PULLSTATE: "), _slaverAT->getParam(PIN_PULLSTATE));
+
+            if (BLINKER_IOSETCFG_PARAM_NUM != _slaverAT->paramNum()) return;
+
+            uint8_t set_pin = (_slaverAT->getParam(PIN_SET)).toInt();
+            uint8_t set_mode = (_slaverAT->getParam(PIN_MODE)).toInt();
+            uint8_t set_pull = (_slaverAT->getParam(PIN_PULLSTATE)).toInt();
+
+            if (set_pin >= BLINKER_MAX_PIN_NUM || 
+                set_mode > BLINKER_IO_OUTPUT_NUM ||
+                set_pull > 2)
+            {
+                return;
+            }
+
+            if (pinDataNum == 0) {
+                _pinData[pinDataNum] = new PinData(set_pin, set_mode, set_pull);
+                pinDataNum++;
+            }
+            else {
+                bool _isSet = false;
+                for (uint8_t _num = 0; _num < pinDataNum; _num++)
+                {
+                    if (_pinData[_num]->checkPin(set_pin))
+                    {
+                        _isSet = true;
+                        _pinData[_num]->fresh(set_mode, set_pull);
+                    }
+                }
+                if (!_isSet) {
+                    _pinData[pinDataNum] = new PinData(set_pin, set_mode, set_pull);
+                    pinDataNum++;
+                }
+            }
+            
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_IOGETCFG && _slaverAT->state() == AT_SETTING) {
+            BLINKER_LOG_ALL(BLINKER_F("PIN_SET: "), _slaverAT->getParam(PIN_SET));
+
+            if (BLINKER_IOGETCFG_PARAM_NUM != _slaverAT->paramNum()) return;
+
+            uint8_t set_pin = (_slaverAT->getParam(PIN_SET)).toInt();
+
+            if (set_pin >= BLINKER_MAX_PIN_NUM) return;
+
+            bool _isGet = false;
+            for (uint8_t _num = 0; _num < pinDataNum; _num++)
+            {
+                if (_pinData[_num]->checkPin(set_pin))
+                {
+                    _isGet = true;
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_IOGETCFG;
+                    reqData += BLINKER_F(":");
+                    reqData += _pinData[_num]->data();
+                    BProto::serialPrint(reqData);
+                }
+            }
+            if (!_isGet) {
+                reqData = BLINKER_F("+");
+                reqData += BLINKER_CMD_IOGETCFG;
+                reqData += BLINKER_F(":");
+                reqData += _slaverAT->getParam(PIN_SET);
+                reqData += BLINKER_F(",2,0");
+                BProto::serialPrint(reqData);
+            }
+
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_GPIOWRITE && _slaverAT->state() == AT_SETTING) {
+            BLINKER_LOG_ALL(BLINKER_F("IO_PIN: "), _slaverAT->getParam(IO_PIN));
+            BLINKER_LOG_ALL(BLINKER_F("IO_LVL: "),  _slaverAT->getParam(IO_LVL));
+
+            if (BLINKER_GPIOWRITE_PARAM_NUM != _slaverAT->paramNum()) return;
+
+            uint8_t set_pin = (_slaverAT->getParam(IO_PIN)).toInt();
+            uint8_t set_lvl = (_slaverAT->getParam(IO_LVL)).toInt();
+
+            if (set_pin >= BLINKER_MAX_PIN_NUM) return;
+
+            // bool _isSet = false;
+            for (uint8_t _num = 0; _num < pinDataNum; _num++)
+            {
+                if (_pinData[_num]->checkPin(set_pin))
+                {
+                    if (_pinData[_num]->getMode() == BLINKER_IO_OUTPUT_NUM)
+                    {
+                        if (set_lvl <= 1) {
+                            digitalWrite(set_pin, set_lvl ? HIGH : LOW);
+                            BProto::serialPrint(BLINKER_CMD_OK);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            BProto::serialPrint(BLINKER_CMD_ERROR);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_GPIOWREAD && _slaverAT->state() == AT_SETTING) {
+            BLINKER_LOG_ALL(BLINKER_F("IO_PIN: "), _slaverAT->getParam(IO_PIN));
+
+            if (BLINKER_GPIOREAD_PARAM_NUM != _slaverAT->paramNum()) return;
+
+            uint8_t set_pin = (_slaverAT->getParam(IO_PIN)).toInt();
+
+            if (set_pin >= BLINKER_MAX_PIN_NUM)
+            {
+                BProto::serialPrint(BLINKER_CMD_ERROR);
+                return;
+            }
+
+            // bool _isSet = false;
+            for (uint8_t _num = 0; _num < pinDataNum; _num++)
+            {
+                if (_pinData[_num]->checkPin(set_pin))
+                {
+                    // if (_pinData[_num]->getMode() == BLINKER_IO_INPUT_NUM)
+                    // {
+                    //     if (set_lvl <= 1) {
+                            reqData = BLINKER_F("+");
+                            reqData += BLINKER_CMD_GPIOWREAD;
+                            reqData += BLINKER_F(":");
+                            reqData += STRING_format(set_pin);
+                            reqData += BLINKER_F(",");
+                            reqData += STRING_format(_pinData[_num]->getMode());
+                            reqData += BLINKER_F(",");
+                            reqData += STRING_format(digitalRead(set_pin));
+                            BProto::serialPrint(reqData);
+                            BProto::serialPrint(BLINKER_CMD_OK);
+                            return;
+                    //     }
+                    // }
+                }
+            }
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_GPIOWREAD;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(set_pin);
+            reqData += BLINKER_F(",3,");
+            reqData += STRING_format(digitalRead(set_pin));
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+            // BProto::serialPrint(BLINKER_CMD_ERROR);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_BLINKER_MQTT) {
+            // BProto::serialPrint(BLINKER_CMD_OK);
+
+            BLINKER_LOG(BLINKER_CMD_BLINKER_MQTT);
+
+            blinker_at_state_t at_state = _slaverAT->state();
+
+            BLINKER_LOG(at_state);
+
+            switch (at_state)
+            {
+                case AT_NONE:
+                    // BProto::serialPrint();
+                    break;
+                case AT_TEST:
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_MQTT;
+                    reqData += BLINKER_F("=<MQTT_CONFIG_MODE>,<MQTT_AUTH_KEY>");
+                    reqData += BLINKER_F("[,<MQTT_WIFI_SSID>,<MQTT_WIFI_PSWD>]");
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_QUERY:
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_MQTT;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(_wlanMode);
+                    reqData += BLINKER_F(",");
+                    reqData += STRING_format(BProto::authKey());
+                    reqData += BLINKER_F(",");
+                    reqData += WiFi.SSID();
+                    reqData += BLINKER_F(",");
+                    reqData += WiFi.psk();
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_SETTING:
+                    BLINKER_LOG_ALL(BLINKER_F("MQTT_CONFIG_MODE: "), _slaverAT->getParam(MQTT_CONFIG_MODE));
+                    BLINKER_LOG_ALL(BLINKER_F("MQTT_AUTH_KEY: "),  _slaverAT->getParam(MQTT_AUTH_KEY));
+                    BLINKER_LOG_ALL(BLINKER_F("MQTT_WIFI_SSID: "), _slaverAT->getParam(MQTT_WIFI_SSID));
+                    BLINKER_LOG_ALL(BLINKER_F("MQTT_WIFI_PSWD: "), _slaverAT->getParam(MQTT_WIFI_PSWD));
+
+                    if ((_slaverAT->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_COMCONFIG_NUM)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("BLINKER_CMD_COMWLAN"));
+
+                        if (BLINKER_COMWLAN_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                        if (_status == BL_INITED)
+                        {
+                            reqData = BLINKER_F("+");
+                            reqData += BLINKER_CMD_BLINKER_MQTT;
+                            reqData += BLINKER_F(":");
+                            reqData += BProto::deviceId();
+                            reqData += BLINKER_F(",");
+                            reqData += BProto::uuid();
+                            BProto::serialPrint(reqData);
+                            BProto::serialPrint(BLINKER_CMD_OK);
+                            return;
+                        }
+
+                        BProto::connectWiFi((_slaverAT->getParam(MQTT_WIFI_SSID)).c_str(), 
+                                    (_slaverAT->getParam(MQTT_WIFI_PSWD)).c_str());
+                        
+                        BProto::begin((_slaverAT->getParam(MQTT_AUTH_KEY)).c_str());
+                        _status = BL_INITED;
+                        _wlanMode = BLINKER_CMD_COMCONFIG_NUM;
+                    }
+                    else if ((_slaverAT->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_SMARTCONFIG_NUM)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("BLINKER_CMD_SMARTCONFIG"));
+
+                        if (BLINKER_SMCFG_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                        if (_status == BL_INITED)
+                        {
+                            reqData = BLINKER_F("+");
+                            reqData += BLINKER_CMD_BLINKER_MQTT;
+                            reqData += BLINKER_F(":");
+                            reqData += BProto::deviceId();
+                            reqData += BLINKER_F(",");
+                            reqData += BProto::uuid();
+                            BProto::serialPrint(reqData);
+                            BProto::serialPrint(BLINKER_CMD_OK);
+                            return;
+                        }
+
+                        if (!BProto::autoInit()) BProto::smartconfig();
+
+                        BProto::begin((_slaverAT->getParam(MQTT_AUTH_KEY)).c_str());
+                        _status = BL_INITED;
+                        _wlanMode = BLINKER_CMD_SMARTCONFIG_NUM;
+                    }
+                    else if ((_slaverAT->getParam(MQTT_CONFIG_MODE)).toInt() == BLINKER_CMD_APCONFIG_NUM)
+                    {
+                        BLINKER_LOG(BLINKER_F("BLINKER_CMD_APCONFIG"));
+
+                        if (BLINKER_APCFG_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                        if (_status == BL_INITED)
+                        {
+                            reqData = BLINKER_F("+");
+                            reqData += BLINKER_CMD_BLINKER_MQTT;
+                            reqData += BLINKER_F(":");
+                            reqData += BProto::deviceId();
+                            reqData += BLINKER_F(",");
+                            reqData += BProto::uuid();
+                            BProto::serialPrint(reqData);
+                            BProto::serialPrint(BLINKER_CMD_OK);
+                            return;
+                        }
+
+                        if (!BProto::autoInit())
+                        {
+                            BProto::softAPinit();
+                            // while(WiFi.status() != WL_CONNECTED) {
+                            //     BProto::serverClient();
+
+                            //     ::delay(10);
+                            // }
+                        }
+
+                        BProto::begin((_slaverAT->getParam(MQTT_AUTH_KEY)).c_str());
+                        _status = BL_INITED;
+                        _wlanMode = BLINKER_CMD_APCONFIG_NUM;
+                    }
+                    else {
+                        return;
+                    }
+
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_MQTT;
+                    reqData += BLINKER_F(":");
+                    reqData += BProto::deviceId();
+                    reqData += BLINKER_F(",");
+                    reqData += BProto::uuid();
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_ACTION:
+                    // BProto::serialPrint();
+                    break;
+                default :
+                    break;
+            }
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_BLINKER_ALIGENIE) {
+            // BProto::serialPrint(BLINKER_CMD_OK);
+
+            BLINKER_LOG(BLINKER_CMD_BLINKER_ALIGENIE);
+
+            blinker_at_state_t at_state = _slaverAT->state();
+
+            BLINKER_LOG_ALL(at_state);
+
+            switch (at_state)
+            {
+                case AT_NONE:
+                    // BProto::serialPrint();
+                    break;
+                case AT_TEST:
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_ALIGENIE;
+                    reqData += BLINKER_F("=<type>");
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_QUERY:
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_ALIGENIE;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(_aliType);
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_SETTING:
+                    BLINKER_LOG_ALL(BLINKER_F("BLINKER_ALIGENIE_CFG_NUM: "), _slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM));
+
+                    if (BLINKER_ALIGENIE_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                    if ((_slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_LIGHT)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("ALI_LIGHT"));
+                        _aliType = ALI_LIGHT;
+                    }
+                    else if ((_slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_OUTLET)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("ALI_OUTLET"));
+                        _aliType = ALI_OUTLET;
+                    }
+                    else if ((_slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_SENSOR)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("ALI_SENSOR"));
+                        _aliType = ALI_SENSOR;
+                    }
+                    else {
+                        BLINKER_LOG_ALL(BLINKER_F("ALI_NONE"));
+                        _aliType = ALI_NONE;
+                    }
+                    BProto::aligenieType(_aliType);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_ACTION:
+                    // BProto::serialPrint();
+                    break;
+                default :
+                    break;
+            }
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_BLINKER_DUEROS) {
+            // BProto::serialPrint(BLINKER_CMD_OK);
+
+            BLINKER_LOG(BLINKER_CMD_BLINKER_DUEROS);
+
+            blinker_at_state_t at_state = _slaverAT->state();
+
+            BLINKER_LOG_ALL(at_state);
+
+            switch (at_state)
+            {
+                case AT_NONE:
+                    // BProto::serialPrint();
+                    break;
+                case AT_TEST:
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_DUEROS;
+                    reqData += BLINKER_F("=<type>");
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_QUERY:
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_DUEROS;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(_duerType);
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_SETTING:
+                    BLINKER_LOG_ALL(BLINKER_F("BLINKER_DUEROS_CFG_NUM: "), _slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM));
+
+                    if (BLINKER_DUEROS_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                    if ((_slaverAT->getParam(BLINKER_DUEROS_CFG_NUM)).toInt() == ALI_LIGHT)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("DUER_LIGHT"));
+                        _duerType = DUER_LIGHT;
+                    }
+                    else if ((_slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_OUTLET)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("DUER_OUTLET"));
+                        _duerType = DUER_OUTLET;
+                    }
+                    else if ((_slaverAT->getParam(BLINKER_ALIGENIE_CFG_NUM)).toInt() == ALI_SENSOR)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("DUER_SENSOR"));
+                        _duerType = DUER_SENSOR;
+                    }
+                    else {
+                        BLINKER_LOG_ALL(BLINKER_F("DUER_NONE"));
+                        _duerType = DUER_NONE;
+                    }
+                    BProto::duerType(_duerType);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_ACTION:
+                    // BProto::serialPrint();
+                    break;
+                default :
+                    break;
+            }
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_TIMEZONE) {
+
+            BLINKER_LOG(BLINKER_CMD_TIMEZONE);
+
+            blinker_at_state_t at_state = _slaverAT->state();
+
+            BLINKER_LOG(at_state);
+
+            switch (at_state)
+            {
+                case AT_NONE:
+                    // BProto::serialPrint();
+                    break;
+                case AT_TEST:
+                    reqData = BLINKER_CMD_AT;
+                    reqData += BLINKER_F("+");
+                    reqData += BLINKER_CMD_TIMEZONE;
+                    reqData += BLINKER_F("=<TIMEZONE>");
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_QUERY:
+                    reqData = BLINKER_F("+");
+                    reqData += BLINKER_CMD_BLINKER_MQTT;
+                    reqData += BLINKER_F(":");
+                    reqData += STRING_format(getTimezone());
+                    BProto::serialPrint(reqData);
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_SETTING:
+                    BLINKER_LOG_ALL(BLINKER_F("BLINKER_TIMEZONE_CFG_NUM: "), _slaverAT->getParam(BLINKER_TIMEZONE_CFG_NUM));
+
+                    if (BLINKER_TIMEZONE_PARAM_NUM != _slaverAT->paramNum()) return;
+
+                    setTimezone((_slaverAT->getParam(BLINKER_TIMEZONE_CFG_NUM)).toFloat());
+
+                    BProto::serialPrint(BLINKER_CMD_OK);
+                    break;
+                case AT_ACTION:
+                    // BProto::serialPrint();
+                    break;
+                default :
+                    break;
+            }
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_TIME_AT && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_TIME_AT;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(time());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_SECOND && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_SECOND;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(second());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_SECOND && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_SECOND;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(second());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_MINUTE && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_MINUTE;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(minute());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_HOUR && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_HOUR;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(hour());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_WDAY && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_WDAY;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(wday());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_MDAY && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_MDAY;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(mday());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_YDAY && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_YDAY;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(yday());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_MONTH && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_MONTH;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(month());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_YEAR && _slaverAT->state() == AT_QUERY) {
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_YEAR;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(year());
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_WEATHER_AT && _slaverAT->state() == AT_SETTING) {
+            if (1 != _slaverAT->paramNum()) return;
+            
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_WEATHER_AT;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(weather(_slaverAT->getParam(0)));
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_AQI_AT && _slaverAT->state() == AT_SETTING) {
+            if (1 != _slaverAT->paramNum()) return;
+            
+            reqData = BLINKER_F("+");
+            reqData += BLINKER_CMD_AQI_AT;
+            reqData += BLINKER_F(":");
+            reqData += STRING_format(aqi(_slaverAT->getParam(0)));
+            
+            BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_NOTICE_AT && _slaverAT->state() == AT_SETTING) {
+            if (1 != _slaverAT->paramNum()) return;
+            
+            // reqData = "+" + STRING_format(BLINKER_CMD_NOTICE_AT) + 
+            //         ":" + STRING_format(aqi(_slaverAT->getParam(0)));
+            notify(_slaverAT->getParam(0));
+            // BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+        else if (_slaverAT->cmd() == BLINKER_CMD_SMS_AT && _slaverAT->state() == AT_SETTING) {
+            if (1 != _slaverAT->paramNum()) return;
+            
+            // reqData = "+" + STRING_format(BLINKER_CMD_NOTICE_AT) + 
+            //         ":" + STRING_format(aqi(_slaverAT->getParam(0)));
+            sms(_slaverAT->getParam(0));
+            // BProto::serialPrint(reqData);
+            BProto::serialPrint(BLINKER_CMD_OK);
+        }
+    }
+    
+    String BlinkerApi::getMode(uint8_t mode)
+    {
+        switch (mode)
+        {
+            case BLINKER_CMD_COMCONFIG_NUM :
+                return BLINKER_CMD_COMCONFIG;
+            case BLINKER_CMD_SMARTCONFIG_NUM :
+                return BLINKER_CMD_SMARTCONFIG;
+            case BLINKER_CMD_APCONFIG_NUM :
+                return BLINKER_CMD_APCONFIG;
+            default :
+                return BLINKER_CMD_COMCONFIG;
+        }
+    }    
+    
+    bool BlinkerApi::serialAvailable()
+    {
+        if (BProto::serialAvailable())
+        {
+            _slaverAT = new BlinkerSlaverAT();
+
+            _slaverAT->update(BProto::serialLastRead());
+            
+            BLINKER_LOG_ALL(BLINKER_F("state: "), _slaverAT->state());
+            BLINKER_LOG_ALL(BLINKER_F("cmd: "), _slaverAT->cmd());
+            BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _slaverAT->paramNum());
+
+            if (_slaverAT->state())
+            {
+                parseATdata();
+
+                free(_slaverAT);
+
+                return false;
+            }
+
+            free(_slaverAT);
+
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    void BlinkerApi::serialPrint(const String & s)
+    {
+        BProto::serialPrint(s);
+    }
+    
+    void BlinkerApi::atHeartbeat()
+    {
+        BProto::serialPrint(BProto::lastRead());
+    }
+#endif
+
+#if defined(BLINKER_MQTT_AT)
+    
+    void BlinkerApi::atRespOK(const String & _data, uint32_t timeout)
+    {
+        bool _isAlive = false;
+        uint32_t _now_time = millis();
+        while (!_isAlive) {
+            print(_data);
+            BProto::printNow();
+            // _now_time = millis();
+
+            while((millis() - _now_time) < timeout)
+            {
+                run();
+
+                if (BProto::available())
+                {
+                    if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+                    {
+                        _isAlive = true;
+                    }
+
+                    BLINKER_LOG(BLINKER_F("dataParse: "), BProto::dataParse());
+                    BLINKER_LOG(BLINKER_F("strlen: "), strlen(BProto::dataParse()));
+                    BLINKER_LOG(BLINKER_F("strlen: "), strlen(BLINKER_CMD_OK));
+                    BProto::flush();
+                }
+                // ::delay(10);
+            }
+
+            _now_time += timeout;
+        }
+    }
+
+    
+    void BlinkerApi::initCheck(const String & _data, uint32_t timeout)
+    {
+        BProto::connect();
+
+        atRespOK(BLINKER_CMD_AT);
+
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=1"));
+        #elif defined(BLINKER_ALIGENIE_OUTLET)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=2"));
+        #elif defined(BLINKER_ALIGENIE_SENSOR)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_ALIGENIE + STRING_format("=3"));
+        #endif
+
+        #if defined(BLINKER_DUEROS_LIGHT)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_DUEROS + STRING_format("=1"));
+        #elif defined(BLINKER_DUEROS_OUTLET)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_DUEROS + STRING_format("=2"));
+        #elif defined(BLINKER_DUEROS_SENSOR)
+            atRespOK(BLINKER_CMD_AT + STRING_format("+") + \
+                    BLINKER_CMD_BLINKER_DUEROS + STRING_format("=3"));
+        #endif
+
+        String cmd_start = BLINKER_CMD_AT + STRING_format("+") + \
+                        BLINKER_CMD_BLINKER_MQTT + STRING_format("=");
+
+        #if defined(BLINKER_ESP_SMARTCONFIG)
+            cmd_start += "1,";
+        #elif defined(BLINKER_APCONFIG)
+            cmd_start += "2,";
+        #else
+            cmd_start += "0,";
+        #endif
+
+        cmd_start += _data;
+
+        ::delay(100);
+
+        print(cmd_start);//cmd_start + _data);
+        BProto::printNow();
+
+        bool _isInit = false;
+        while (!_isInit) {
+            run();
+
+            if (BProto::available())
+            {
+                // if (!_masterAT) {
+                _masterAT = new BlinkerMasterAT();
+
+                _masterAT->update(STRING_format(BProto::dataParse()));
+                // }
+                // else {
+                //     _masterAT->update(STRING_format(BProto::dataParse()));
+                // }
+
+                BLINKER_LOG_ALL(BLINKER_F("getState: "), _masterAT->getState());
+                BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
+                BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
+
+                BLINKER_LOG_FreeHeap();
+
+                if (_masterAT->reqName() == BLINKER_CMD_BLINKER_MQTT && 
+                    _masterAT->paramNum() == 2)
+                {
+                    _isInit = true;
+                    BLINKER_LOG_ALL("ESP AT init");
+                }
+
+                free(_masterAT);
+            }
+        }
+    }
+
+    
+    void BlinkerApi::atResp()
+    {
+        if (strcmp(BProto::dataParse(), BLINKER_CMD_OK) == 0 ||
+            strcmp(BProto::dataParse(), BLINKER_CMD_ERROR) == 0)
+        {
+            _fresh = true;
+            // BProto::flushAll();
+        }
+    }
+
+    
+    void BlinkerApi::parseATdata()
+    {
+        uint32_t at_start = millis();
+        while (!BProto::available())
+        {
+            run();
+            if (millis() - at_start > BLINKER_AT_MSG_TIMEOUT) break;
+        }
+
+        _masterAT = new BlinkerMasterAT();
+        _masterAT->update(STRING_format(BProto::dataParse()));
+
+        BLINKER_LOG_ALL(BLINKER_F("getState: "), _masterAT->getState());
+        BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
+        BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
+
+        BProto::flush();
+    }
+
+    
+    int BlinkerApi::analogRead()
+    {
+        print(BLINKER_CMD_AT + STRING_format("+") + \
+                BLINKER_CMD_ADC + "?");
+        BProto::printNow();
+
+        parseATdata();
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == BLINKER_CMD_ADC) {              
+
+            int a_read = _masterAT->getParam(0).toInt();
+            free(_masterAT);
+
+            return a_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 0;
+        }
+    }
+
+    
+    void BlinkerApi::pinMode(uint8_t pin, uint8_t mode)
+    {
+        String pin_data = BLINKER_CMD_AT + STRING_format("+") + \
+                            BLINKER_CMD_IOSETCFG + "=" + \
+                            STRING_format(pin) + ",";
+        switch (mode)
+        {
+            case INPUT :
+                pin_data += "0,0";
+                break;
+            case OUTPUT :
+                pin_data += "1,0";
+            break;
+            case INPUT_PULLUP :
+                pin_data += "0,1";
+                break;
+            #if defined(ESP8266)
+                case INPUT_PULLDOWN_16 :
+                    pin_data += "0,2";
+                    break;
+            #elif defined(ESP32)
+                case INPUT_PULLDOWN :
+                    pin_data += "0,2";
+                    break;
+            #endif
+            default :
+                pin_data += "0,0";
+                break;
+        }
+
+        // parseATdata();
+        // free(_masterAT);
+    }
+
+    
+    void BlinkerApi::digitalWrite(uint8_t pin, uint8_t val)
+    {
+        print(BLINKER_CMD_AT + STRING_format("+") + \
+                BLINKER_CMD_GPIOWRITE + "=" + \
+                STRING_format(pin) + "," + \
+                STRING_format(val ? 0 : 1));
+
+        BProto::printNow();
+
+        // parseATdata();
+    }
+
+    
+    int BlinkerApi::digitalRead(uint8_t pin)
+    {
+        print(BLINKER_CMD_AT + STRING_format("+") + \
+                BLINKER_CMD_GPIOWREAD + "=" + \
+                STRING_format(pin));
+
+        BProto::printNow();
+
+        parseATdata();
+        // free(_masterAT);
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == BLINKER_CMD_GPIOWREAD) {              
+
+            int d_read = _masterAT->getParam(2).toInt();
+            free(_masterAT);
+
+            return d_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 0;
+        }
+    }
+
+    
+    void BlinkerApi::setTimezone(float tz)
+    {
+        print(BLINKER_CMD_AT + STRING_format("+") + \
+                BLINKER_CMD_TIMEZONE + "=" + \
+                STRING_format(tz));
+
+        BProto::printNow();
+    }
+
+    
+    float BlinkerApi::getTimezone()
+    {
+        print(BLINKER_CMD_AT + STRING_format("+") + \
+                BLINKER_CMD_TIMEZONE + "?");
+
+        BProto::printNow();
+
+        parseATdata();
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == BLINKER_CMD_TIMEZONE) {
+            
+            float tz_read = _masterAT->getParam(0).toFloat();
+            free(_masterAT);
+
+            return tz_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 8.0;
+        }
+    }
+
+    
+    int32_t BlinkerApi::atGetInt(const String & cmd)
+    {
+        print(BLINKER_CMD_AT + STRING_format("+") + cmd + "?");
+
+        BProto::printNow();
+
+        parseATdata();
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == cmd) {
+            
+            int32_t at_read = _masterAT->getParam(0).toInt();
+            free(_masterAT);
+
+            return at_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 0;
+        }
+    }
+
+    
+     template<typename T>
+    String BlinkerApi::atGetString(const String & cmd, const T& msg)
+    {
+        print(BLINKER_CMD_AT + STRING_format("+") + \
+                                        cmd + "=" + STRING_format(msg));
+
+        BProto::printNow();
+
+        parseATdata();
+
+        if (_masterAT->getState() != AT_M_NONE && 
+            _masterAT->reqName() == cmd) {
+            
+            String at_read = _masterAT->getParam(0);
+            free(_masterAT);
+
+            return at_read;
+        }
+        else {
+            free(_masterAT);
+
+            return 0;
+        }
+    }
+
+    
+    String BlinkerApi::weather(const String & _city)
+    {
+        return atGetString(BLINKER_CMD_WEATHER_AT, _city);
+    }
+
+    
+    String BlinkerApi::aqi(const String & _city)
+    {
+        return atGetString(BLINKER_CMD_AQI_AT, _city);
+    }
+
+    
+     template<typename T>
+    bool BlinkerApi::sms(const T& msg)
+    {
+        return atGetString(BLINKER_CMD_SMS_AT, msg);
+    }
+
+    
+    void BlinkerApi::reset()
+    {
+        print(BLINKER_CMD_AT + STRING_format("+") + \
+                                        BLINKER_CMD_RST);
+
+        BProto::printNow();
+    }
+#endif
+
+#if defined(BLINKER_MQTT_AT)
+    // void BlinkerApi::freshAlive()
+    // {
+    //     BProto::freshAlive();
+    // }
+
+    void BlinkerApi::atInit(const char* _auth)
+    {
+        // strcpy(_authKey, _auth);
+
+        initCheck(STRING_format(_auth));
+    }
+
+    void BlinkerApi::atInit(const char* _auth, const char* _ssid, const char* _pswd)
+    {
+        // strcpy(_authKey, _auth);
+
+        String init_data =  STRING_format(_auth) + "," + \
+                            STRING_format(_ssid) + "," + \
+                            STRING_format(_pswd);
+
+        initCheck(init_data);
+    }
+#endif
+
+#if defined(BLINKER_PRO)
+    #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+        
+        uint16_t BlinkerApi::pressedTime()
+        {
+            uint32_t _pressedTime = millis() - _startTime;
+
+            if (_isLongPressed)
+            {
+                if (_pressedTime >= BLINKER_PRESSTIME_RESET) return BLINKER_PRESSTIME_RESET;
+                else return _pressedTime;
+            }
+            else {
+                return 0;
+            }
+        }
+    #endif
+
+    
+    void BlinkerApi::checkRegister(const JsonObject& data)
+    {
+        String _type = data[BLINKER_CMD_REGISTER];
+
+        if (_type.length() > 0)
+        {
+            if (_type == STRING_format(_deviceType))
+            {
+                _getRegister = true;
+                
+                BLINKER_LOG_ALL(BLINKER_F("getRegister!"));
+                
+                print(BLINKER_CMD_MESSAGE, "success");
+            }
+            else
+            {
+                BLINKER_LOG_ALL(BLINKER_F("not getRegister!"));
+                
+                print(BLINKER_CMD_MESSAGE, "deviceType check fail");
+            }
+            BProto::printNow();
+        }
+    }
+
+    
+    void BlinkerApi::setType(const char* _type)
+    {
+        _deviceType = _type;
+
+        Bwlan.setType(_type);
+        
+        BLINKER_LOG_ALL(BLINKER_F("API deviceType: "), _type);
+    }
+
+    
+    void BlinkerApi::reset()
+    {
+        BLINKER_LOG(BLINKER_F("Blinker reset..."));
+        char _authCheck = 0x00;
+        char _uuid[BLINKER_AUUID_SIZE] = {0};
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+        EEPROM.put(BLINKER_EEP_ADDR_AUUID, _uuid);
+        EEPROM.commit();
+        EEPROM.end();
+        Bwlan.deleteConfig();
+        Bwlan.reset();
+        ESP.restart();
+    }
+
+    
+    void BlinkerApi::tick()
+    {
+        // Detect the input information
+        int buttonLevel = digitalRead(_pin); // current button signal.
+        unsigned long now = millis(); // current (relative) time in msecs.
+
+        // Implementation of the state machine
+        if (_state == 0) { // waiting for menu pin being pressed.
+            if (buttonLevel == _buttonPressed) {
+                _state = 1; // step to state 1
+                _startTime = now; // remember starting time
+            } // if
+
+        } else if (_state == 1) { // waiting for menu pin being released.
+
+            if ((buttonLevel == _buttonReleased) && ((unsigned long)(now - _startTime) < _debounceTicks)) {
+                // button was released to quickly so I assume some debouncing.
+                // go back to state 0 without calling a function.
+                _state = 0;
+
+            } else if (buttonLevel == _buttonReleased) {
+                _state = 2; // step to state 2
+                _stopTime = now; // remember stopping time
+
+            } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _startTime) > _pressTicks)) {
+                _isLongPressed = true;  // Keep track of long press state
+                if (_pressFunc) _pressFunc();
+                _longPressStart();
+                if (_longPressStartFunc) _longPressStartFunc();
+                _longPress();
+                if (_duringLongPressFunc) _duringLongPressFunc();
+                _state = 6; // step to state 6
+
+            } else {
+            // wait. Stay in this state.
+            } // if
+
+        } else if (_state == 2) { // waiting for menu pin being pressed the second time or timeout.
+            // if (_doubleClickFunc == NULL || (unsigned long)(now - _startTime) > _clickTicks) {
+            if ((unsigned long)(now - _startTime) > _clickTicks) {
+                // this was only a single short click
+                _click();
+                if (_clickFunc) _clickFunc();
+                _state = 0; // restart.
+
+            } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _stopTime) > _debounceTicks)) {
+                _state = 3; // step to state 3
+                _startTime = now; // remember starting time
+            } // if
+
+        } else if (_state == 3) { // waiting for menu pin being released finally.
+            // Stay here for at least _debounceTicks because else we might end up in state 1 if the
+            // button bounces for too long.
+            if (buttonLevel == _buttonReleased && ((unsigned long)(now - _startTime) > _debounceTicks)) {
+                // this was a 2 click sequence.
+                _doubleClick();
+                if (_doubleClickFunc) _doubleClickFunc();
+                _state = 0; // restart.
+            } // if
+
+        } else if (_state == 6) { // waiting for menu pin being release after long press.
+            if (buttonLevel == _buttonReleased) {
+                _isLongPressed = false;  // Keep track of long press state
+                _longPressStop();
+                if(_longPressStopFunc) _longPressStopFunc();
+                _state = 0; // restart.
+            } else {
+                // button is being long pressed
+                _isLongPressed = true; // Keep track of long press state
+                _longPress();
+                if (_duringLongPressFunc) _duringLongPressFunc();
+            } // if
+
+        } // if
+
+        // BLINKER_LOG("_state: ", _state);
     }
 #endif
 

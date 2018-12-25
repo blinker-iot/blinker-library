@@ -30,21 +30,31 @@ class BlinkerProtocol
         int connect()       { return isInit ? conn->connect() : false; }
         int connected()     { return isInit ? state == CONNECTED : false; }
         void disconnect()   { if (isInit) { conn->disconnect(); state = DISCONNECTED; } }
+        bool available()    { if (availState) {availState = false; return true;} else return false; }
         void flush();
         void checkState(bool state = true)      { isCheck = state; }
         void print(const String & data);
         void print(const String & key, const String & data);
 
-        #if defined(BLINKER_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT)
+            int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
+            int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
+            int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
+        #endif
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             char * deviceName() { if (isInit) return conn->deviceName(); else return NULL; }
             char * authKey()    { if (isInit) return conn->authKey(); else return NULL;  }
             int init()          { return isInit ? conn->init() : false; }
             int mConnected()    { return isInit ? conn->mConnected() : false; }
-            int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
-            int bPrint(char * name, const String & data) { conn->bPrint(name, data); }
-            int aliPrint(const String & data) { conn->aliPrint(data); }
-            int duerPrint(const String & data) { conn->duerPrint(data); }
-            void freshAlive() { conn->freshAlive(); }
+            int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
+            void freshAlive() { if (isInit) conn->freshAlive(); }
+        #endif
+
+        #if defined(BLINKER_PRO)
+            int deviceRegister(){ return conn->deviceRegister(); }
+            int authCheck()     { return conn->authCheck(); }
+            void begin(const char* _deviceType) { conn->begin(_deviceType); }
         #endif
 
     private :
@@ -64,12 +74,37 @@ class BlinkerProtocol
         blinker_callback_with_string_arg_t  _availableFunc = NULL;
 
         int checkAvail();
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+            bool checkAliAvail()    { return conn->aligenieAvail(); }
+            bool checkDuerAvail()   { return conn->duerAvail(); }
+        #elif defined(BLINKER_AT_MQTT)
+            void begin(const char* auth) { return conn->begin(auth); }
+            int serialAvailable()   { return conn->serialAvailable(); }
+            int serialPrint(const String & s1, const String & s2, bool needCheck = true)
+            { return conn->serialPrint(s1, s2, needCheck); }
+            int serialPrint(const String & s, bool needCheck = true)
+            { return conn->serialPrint(s, needCheck); }
+            int mqttPrint(const String & data)
+            { return conn->mqttPrint(data); }
+            char * serialLastRead() { return conn->serialLastRead(); }
+            void aligenieType(blinker_at_aligenie_t _type)
+            { conn->aligenieType(_type); }
+            void duerType(blinker_at_dueros_t _type)
+            { conn->duerType(_type); }
+            char * deviceId()   { return conn->deviceId(); }
+            char * uuid()       { return conn->uuid(); }
+            void softAPinit()   { conn->softAPinit(); }
+            void smartconfig()  { conn->smartconfig(); }
+            int autoInit()      { return conn->autoInit(); }
+            void connectWiFi(String _ssid, String _pswd) { return conn->connectWiFi(_ssid, _pswd); }
+            void connectWiFi(const char* _ssid, const char* _pswd) { return conn->connectWiFi(_ssid, _pswd); }
+        #endif
         void checkFormat();
         void checkAutoFormat();
-        char* dataParse()   { if (canParse) return conn->lastRead(); else return NULL; }
-        char* lastRead()    { return conn->lastRead(); }
-        void isParsed()     { flush(); }
-        int parseState()   { return canParse; }
+        char* dataParse()       { if (canParse) return conn->lastRead(); else return NULL; }
+        char* lastRead()        { return conn->lastRead(); }
+        void isParsed()         { flush(); }
+        int parseState()        { return canParse; }
         void printNow();
         void _timerPrint(const String & n);
         void _print(char * n, bool needCheckLength = true);
