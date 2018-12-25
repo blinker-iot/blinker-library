@@ -31,7 +31,7 @@
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_PRO) 
+    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
     #include "Blinker/BlinkerTimer.h"
     #include "Functions/BlinkerTimingTimer.h"
     #include "Functions/BlinkerOTA.h"

@@ -39,7 +39,6 @@ class BlinkerProtocol
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
-            int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
@@ -48,6 +47,7 @@ class BlinkerProtocol
             int init()          { return isInit ? conn->init() : false; }
             int mConnected()    { return isInit ? conn->mConnected() : false; }
             int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
+            int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
             void freshAlive() { if (isInit) conn->freshAlive(); }
         #endif
 

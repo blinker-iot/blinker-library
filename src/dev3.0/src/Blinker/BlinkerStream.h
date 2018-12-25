@@ -23,12 +23,14 @@ class BlinkerStream
         virtual int connected() = 0;
         virtual void disconnect() = 0;
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT)            
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT)            
             virtual int aliPrint(const String & data) = 0;
             virtual int duerPrint(const String & data) = 0; 
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT)
             virtual char * deviceName() = 0;
             virtual char * authKey() = 0;
             virtual int init() = 0;           
