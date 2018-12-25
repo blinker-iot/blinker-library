@@ -35,6 +35,18 @@ class BlinkerProtocol
         void print(const String & data);
         void print(const String & key, const String & data);
 
+        #if defined(BLINKER_MQTT)
+            char * deviceName() { if (isInit) return conn->deviceName(); else return NULL; }
+            char * authKey()    { if (isInit) return conn->authKey(); else return NULL;  }
+            int init()          { return isInit ? conn->init() : false; }
+            int mConnected()    { return isInit ? conn->mConnected() : false; }
+            int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
+            int bPrint(char * name, const String & data) { conn->bPrint(name, data); }
+            int aliPrint(const String & data) { conn->aliPrint(data); }
+            int duerPrint(const String & data) { conn->duerPrint(data); }
+            void freshAlive() { conn->freshAlive(); }
+        #endif
+
     private :
 
     protected :

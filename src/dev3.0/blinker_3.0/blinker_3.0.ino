@@ -1,4 +1,5 @@
-#define BLINKER_BLE
+#define BLINKER_WIFI
+// #define BLINKER_BLE
 
 #include "Blinker3.h"
 
@@ -29,7 +30,8 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
     
-    Blinker.begin();
+    Blinker.begin(auth, ssid, pswd);
+    // Blinker.begin();
     Blinker.attachData(dataRead);
 
     Button1.attach(button1_callback);

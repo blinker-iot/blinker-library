@@ -24,13 +24,13 @@ class BlinkerSerialBLE : public BlinkerApi
                 BApi::begin();
         #if defined (__AVR_ATmega32U4__)
                 Serial1.begin(ss_baud);
-                transp.begin(Serial1, true);
-                transport(transp);
+                Transp.begin(Serial1, true);
+                transport(Transp);
                 // this->conn.begin(Serial1, true);
         #else
                 Serial.begin(ss_baud);
-                transp.begin(Serial, true);
-                transport(transp);
+                Transp.begin(Serial, true);
+                transport(Transp);
                 // this->conn.begin(Serial, true);
         #endif
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
@@ -40,8 +40,8 @@ class BlinkerSerialBLE : public BlinkerApi
             else if (ss_rx_pin == 19 && ss_tx_pin == 18){
                 BApi::begin();
                 Serial1.begin(ss_baud);
-                transp.begin(Serial1, true);
-                transport(transp);
+                Transp.begin(Serial1, true);
+                transport(Transp);
                 // this->conn.begin(Serial1, true);
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 return;
@@ -49,8 +49,8 @@ class BlinkerSerialBLE : public BlinkerApi
             else if (ss_rx_pin == 17 && ss_tx_pin == 16){
                 BApi::begin();
                 Serial2.begin(ss_baud);
-                transp.begin(Serial2, true);
-                transport(transp);
+                Transp.begin(Serial2, true);
+                transport(Transp);
                 // this->conn.begin(Serial2, true);
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 return;
@@ -58,8 +58,8 @@ class BlinkerSerialBLE : public BlinkerApi
             else if (ss_rx_pin == 15 && ss_tx_pin == 14){
                 BApi::begin();
                 Serial3.begin(ss_baud);
-                transp.begin(Serial3, true);
-                transport(transp);
+                Transp.begin(Serial3, true);
+                transport(Transp);
                 // this->conn.begin(Serial3, true);
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 return;
@@ -69,8 +69,8 @@ class BlinkerSerialBLE : public BlinkerApi
                 BApi::begin();
                 SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
                 SSerialBLE->begin(ss_baud);
-                transp.begin(*SSerialBLE, false);
-                transport(transp);
+                Transp.begin(*SSerialBLE, false);
+                transport(Transp);
                 // this->conn.begin(*SSerialBLE, false);
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
             }
@@ -78,8 +78,8 @@ class BlinkerSerialBLE : public BlinkerApi
             if (ss_rx_pin == RX && ss_tx_pin == TX) {
                 BApi::begin();
                 Serial.begin(ss_baud);
-                transp.begin(Serial, true);
-                transport(transp);
+                Transp.begin(Serial, true);
+                transport(Transp);
                 // this->conn.begin(Serial, true);
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 return;
@@ -88,8 +88,8 @@ class BlinkerSerialBLE : public BlinkerApi
                 BApi::begin();
                 SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
                 SSerialBLE->begin(ss_baud);
-                transp.begin(*SSerialBLE, false);
-                transport(transp);
+                Transp.begin(*SSerialBLE, false);
+                transport(Transp);
                 // this->conn.begin(*SSerialBLE, false);
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
             }
@@ -97,23 +97,23 @@ class BlinkerSerialBLE : public BlinkerApi
             BApi::begin();
             HSerialBLE = new HardwareSerial(1);
             HSerialBLE->begin(ss_baud, SERIAL_8N1, ss_rx_pin, ss_tx_pin);
-            transp.begin(*HSerialBLE, true);
-            transport(transp);
+            Transp.begin(*HSerialBLE, true);
+            transport(Transp);
             // this->conn.begin(*HSerialBLE, true);
             BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
         #else
             BApi::begin();
             SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
             SSerialBLE->begin(ss_baud);
-            transp.begin(*SSerialBLE, false);
-            transport(transp);
+            Transp.begin(*SSerialBLE, false);
+            transport(Transp);
             // this->conn.begin(*SSerialBLE, false);
             BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
         #endif
         }
 
     private :
-        BlinkerSerial transp;
+        BlinkerSerial Transp;
 };
 
 #endif
