@@ -1,6 +1,6 @@
 {
-    "name": "BlinkerV3",
-    "description": "Build a easy way for your project to communicate with smartphone, works with smartphone app Blinker. Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.",
+    "name": "Blinker",
+    "description": "Build a easy way for your IoT project. Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.",
     "keywords": "wifi, websocket, Bluetooth, mqtt",
     "authors": [
         {
