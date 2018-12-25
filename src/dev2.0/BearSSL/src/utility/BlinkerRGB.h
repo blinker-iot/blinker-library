@@ -7,22 +7,15 @@
 class BlinkerRGB
 {
     public :
-        BlinkerRGB(char _name[], callback_with_rgb_arg_t _func = NULL)
+        BlinkerRGB(char _name[], blinker_callback_with_rgb_arg_t _func = NULL)
             // : rgbName(_name)
         {
             wNum = Blinker.attachWidget(_name, _func);
-
-            // wNum ? (registered = true) : (registered = false);
-
-            // rgbName = (char*)malloc((_name.length()+1)*sizeof(char));
-            // strcpy(rgbName, _name.c_str());
         }
 
-        void attach(callback_with_rgb_arg_t _func)
+        void attach(blinker_callback_with_rgb_arg_t _func)
         {
-            if (wNum == 0) {
-                return;
-            }
+            if (wNum == 0) return;
 
             Blinker.freshAttachWidget(Blinker.widgetName_rgb(wNum), _func);
         }
@@ -31,12 +24,17 @@ class BlinkerRGB
 
         void print(uint8_t _r, uint8_t _g, uint8_t _b)
         {
-            if (wNum == 0) {
-                return;
-            }
+            if (wNum == 0) return;
 
-            String rgbData = "[" + STRING_format(_r) + "," + STRING_format(_g) + "," + \
-                            STRING_format(_b) + "," + STRING_format(rgbrightness) + "]";
+            String rgbData = BLINKER_F("[");
+            rgbData += STRING_format(_r);
+            rgbData += BLINKER_F(",");
+            rgbData += STRING_format(_g);
+            rgbData += BLINKER_F(",");
+            rgbData += STRING_format(_b);
+            rgbData += BLINKER_F(",");
+            rgbData += STRING_format(rgbrightness);
+            rgbData += BLINKER_F("]");
 
             Blinker.printArray(Blinker.widgetName_rgb(wNum), rgbData);
         }
@@ -47,17 +45,21 @@ class BlinkerRGB
                 return;
             }
 
-            String rgbData = "[" + STRING_format(_r) + "," + STRING_format(_g) + "," + \
-                            STRING_format(_b) + "," + STRING_format(_bright) + "]";
+            String rgbData = BLINKER_F("[");
+            rgbData += STRING_format(_r);
+            rgbData += BLINKER_F(",");
+            rgbData += STRING_format(_g);
+            rgbData += BLINKER_F(",");
+            rgbData += STRING_format(_b);
+            rgbData += BLINKER_F(",");
+            rgbData += STRING_format(_bright);
+            rgbData += BLINKER_F("]");
 
             Blinker.printArray(Blinker.widgetName_rgb(wNum), rgbData);
         }
 
     private :
-        // String  rgbName;
-        // char *  rgbName;
         uint8_t wNum;
-        // bool    registered = false;
         uint8_t rgbrightness = 0;
 };
 

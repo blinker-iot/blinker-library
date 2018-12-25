@@ -185,6 +185,8 @@ class Adafruit_MQTT {
   // Must be called before connect(), subscribing after the connection
   // is made is not currently supported.
   bool subscribe(Adafruit_MQTT_Subscribe *sub);
+  int8_t subscribePacketWrite(const char *_topic, uint8_t _qos = 0);
+  bool subscribeTopic(const char *topic);
 
   // Unsubscribe from a previously subscribed MQTT topic.
   bool unsubscribe(Adafruit_MQTT_Subscribe *sub);

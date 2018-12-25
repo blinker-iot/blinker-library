@@ -7,30 +7,22 @@
 class BlinkerSlider
 {
     public :
-        BlinkerSlider(char _name[], callback_with_int32_arg_t _func = NULL)
+        BlinkerSlider(char _name[], blinker_callback_with_int32_arg_t _func = NULL)
             // : sliderName(_name)
         {
             wNum = Blinker.attachWidget(_name, _func);
-
-            // wNum ? (registered = true) : (registered = false);
-
-            // sliderName = (char*)malloc((_name.length()+1)*sizeof(char));
-            // strcpy(sliderName, _name.c_str());
         }
         
-        void attach(callback_with_int32_arg_t _func)
+        void attach(blinker_callback_with_int32_arg_t _func)
         {
-            if (wNum == 0) {
-                return;
-            }
+            if (wNum == 0) return;
 
             Blinker.freshAttachWidget(Blinker.widgetName_int(wNum), _func);
         }
         
-        void color(const String & _clr) {
-            if (_fresh >> 0 & 0x01) {
-                free(textClr);
-            }
+        void color(const String & _clr)
+        {
+            if (_fresh >> 0 & 0x01) free(textClr);
 
             textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());
@@ -48,33 +40,36 @@ class BlinkerSlider
         void print()                        { _print(""); }
     
     private :
-        // String sliderName;
-        // char * sliderName;
         uint8_t wNum;
-        // bool registered = false;
-        // String textClr = "";
-        char * textClr;// = "";
+        char * textClr;
         uint8_t _fresh = 0;
 
-        void _print(const String & n) {
-            if (wNum == 0 || (_fresh == 0 && n.length() == 0)) {
+        void _print(const String & n)
+        {
+            if ((_fresh == 0 && n.length() == 0) || \
+                wNum == 0)
+            {
                 return;
             }
 
             String sliderData;
 
-            if (n.length()) {
-                sliderData += BLINKER_F("{\""BLINKER_CMD_VALUE"\":");
+            if (n.length())
+            {
+                sliderData += BLINKER_F("{\"");
+                sliderData += BLINKER_F(BLINKER_CMD_VALUE);
+                sliderData += BLINKER_F("\":");
                 sliderData += n;
             }
 
-            // if (textClr.length()) {
-            // if (textClr && (_fresh >> 0 & 0x01)) {
-            if (_fresh >> 0 & 0x01) {
+            if (_fresh >> 0 & 0x01)
+            {
                 if (sliderData.length()) sliderData += BLINKER_F(",");
                 else sliderData += BLINKER_F("{");
 
-                sliderData += BLINKER_F("\""BLINKER_CMD_COLOR"\":\"");
+                sliderData += BLINKER_F("\"");
+                sliderData += BLINKER_F(BLINKER_CMD_COLOR);
+                sliderData += BLINKER_F("\":\"");
                 sliderData += (textClr);
                 sliderData += BLINKER_F("\"");
 
@@ -86,8 +81,6 @@ class BlinkerSlider
             _fresh = 0;
 
             Blinker.printArray(Blinker.widgetName_int(wNum), sliderData);
-
-            // textClr = "";
         }
 };
 

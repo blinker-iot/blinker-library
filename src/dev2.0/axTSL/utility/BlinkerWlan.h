@@ -1,25 +1,56 @@
 #ifndef BLINKER_WLAN_H
 #define BLINKER_WLAN_H
 
-#if defined(BLINKER_PRO)
+#if defined(ESP8266) || defined(ESP32)
+
+// #if defined(BLINKER_PRO)
+
+// #include "Blinker/BlinkerConfig.h"
+// #include "modules/ArduinoJson/ArduinoJson.h"
+// #if defined(ESP8266)
+//     #include <ESP8266WiFi.h>
+// #elif defined(ESP32)
+//     #include <WiFi.h>
+// #endif
+// #include <EEPROM.h>
+
+// static WiFiServer *_server;
+// static WiFiClient _client;
+// static IPAddress apIP(192, 168, 4, 1);
+// #if defined(ESP8266)
+// static IPAddress netMsk(255, 255, 255, 0);
+// #endif
+
+#if ARDUINO >= 100
+    #include <Arduino.h>
+#else
+    #include <WProgram.h>
+#endif
 
 #include "Blinker/BlinkerConfig.h"
+#include "Blinker/BlinkerDebug.h"
+#include "utility/BlinkerUtility.h"
+#include "utility/BlinkerWlan.h"
 #include "modules/ArduinoJson/ArduinoJson.h"
+
 #if defined(ESP8266)
     #include <ESP8266WiFi.h>
 #elif defined(ESP32)
     #include <WiFi.h>
 #endif
+
 #include <EEPROM.h>
 
 static WiFiServer *_server;
 static WiFiClient _client;
 static IPAddress apIP(192, 168, 4, 1);
 #if defined(ESP8266)
-static IPAddress netMsk(255, 255, 255, 0);
+    static IPAddress netMsk(255, 255, 255, 0);
 #endif
 
-enum bwl_status_t{
+
+enum bwl_status_t
+{
     BWL_CONFIG_CKECK,
     BWL_CONFIG_FAIL,
     BWL_CONFIG_SUCCESS,
@@ -37,7 +68,8 @@ enum bwl_status_t{
     BWL_RESET
 };
 
-class BlinkerWlan {
+class BlinkerWlan
+{
     public :
         BlinkerWlan()
             : _status(BWL_CONFIG_CKECK)
@@ -280,6 +312,9 @@ bool BlinkerWlan::connected() {
                 // WiFi.setAutoReconnect(true);
 
                 _status = BWL_CONNECTED_CHECK;
+
+                BLINKER_LOG_FreeHeap_ALL();
+                
                 return true;
             }
             break;
@@ -395,13 +430,9 @@ void BlinkerWlan::serverClient()
     }
     else
     {
-#if defined(ESP8266)
-        if (_client.status() == CLOSED)
-        {
-#elif defined(ESP32)
+        // if (_client.status() == CLOSED)
         if (!_client.connected())
         {
-#endif
             _client.stop();
             BLINKER_LOG(("Connection closed on _client"));
         }
@@ -480,11 +511,11 @@ void BlinkerWlan::connectWiFi(const char* _ssid, const char* _pswd)
     WiFi.mode(WIFI_STA);
     String _hostname = STRING_format(_deviceType) + "_" + macDeviceName();
 
-#if defined(ESP8266)
-    WiFi.hostname(_hostname);
-#elif defined(ESP32)
-    WiFi.setHostname(_hostname.c_str());
-#endif
+    #if defined(ESP8266)
+        WiFi.hostname(_hostname);
+    #elif defined(ESP32)
+        WiFi.setHostname(_hostname.c_str());
+    #endif
 
     if (_pswd && strlen(_pswd)) {
         WiFi.begin(_ssid, _pswd);
@@ -510,25 +541,24 @@ void BlinkerWlan::connectWiFi(const char* _ssid, const char* _pswd)
     // mDNSInit();
 }
 
-bool BlinkerWlan::run() {
-#if defined(BLINKER_DEBUG_ALL)
+bool BlinkerWlan::run()
+{
     if (millis() - debugStatusTime > 10000) {
         debugStatusTime = millis();
 
-        BLINKER_LOG("WLAN status: ", _status);
+        BLINKER_LOG_ALL("WLAN status: ", _status);
     }
-#endif
 
     switch (_status) {
         case BWL_CONFIG_CKECK :
             checkConfig();
             break;
         case BWL_CONFIG_FAIL :
-#if defined(BLINKER_ESP_SMARTCONFIG)
-            smartconfigBegin();
-#elif defined(BLINKER_APCONFIG)
-            softAPinit();
-#endif
+            #if defined(BLINKER_ESP_SMARTCONFIG)
+                smartconfigBegin();
+            #elif defined(BLINKER_APCONFIG)
+                softAPinit();
+            #endif
             break;
         case BWL_CONFIG_SUCCESS :
             connect();
@@ -574,6 +604,7 @@ bool BlinkerWlan::run() {
     return false;
 }
 
+// #endif
 #endif
 
 #endif

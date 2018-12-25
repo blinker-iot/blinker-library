@@ -1,9 +1,10 @@
 #ifndef BlinkerConfig_H
 #define BlinkerConfig_H
 
-#include "utility/BlinkerDebug.h"
+// #include "utility/BlinkerDebug.h"
+// #include "utility/BlinkerUtility.h"
 
-#define BLINKER_VERSION                 "0.2.3"
+#define BLINKER_VERSION                 "0.2.5"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
@@ -16,6 +17,8 @@
 #define BLINKER_PRINT_MSG_LIMIT         20
 
 #define BLINKER_MQTT_MSG_LIMIT          1000UL
+
+#define BLINKER_MQTT_CONNECT_TIMESLOT   5000UL
 
 #define BLINKER_BRIDGE_MSG_LIMIT        60000UL
 
@@ -64,7 +67,7 @@
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else
-    #define BLINKER_MAX_WIDGET_SIZE         4
+    #define BLINKER_MAX_WIDGET_SIZE         6
 #endif
 
 #define BLINKER_OBJECT_NOT_AVAIL        -1
@@ -84,7 +87,7 @@
 #ifndef BLINKER_MAX_SEND_SIZE
     #if defined(ESP8266) || defined(ESP32)
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
-            #define BLINKER_MAX_SEND_SIZE       1024
+            #define BLINKER_MAX_SEND_SIZE       512
         #else
             #define BLINKER_MAX_SEND_SIZE       512
         #endif
@@ -164,6 +167,8 @@
 #define BLINKER_CMD_NOTICE              "notice"
 
 #define BLINKER_CMD_BUILTIN_SWITCH      "switch"
+
+#define BLINKER_CMD_FROMDEVICE          "fromDevice"
 
 #define BLINKER_CMD_NOTFOUND            "device not found"
 
@@ -250,6 +255,8 @@
 #define BLINKER_CMD_LOOPDATA            "loopData"
 
 #define BLINKER_CMD_TIME                "tim"
+
+#define BLINKER_CMD_TIME_ALL            "time"
 
 #define BLINKER_CMD_TIMES               "tis"
 
@@ -349,11 +356,17 @@
 
 #define BLINKER_CMD_PM25                "pm25"
 
+#define BLINKER_CMD_PM10                "pm10"
+
+#define BLINKER_CMD_CO2                 "co2"
+
 #define BLINKER_CMD_MAX                 "max"
 
 #define BLINKER_CMD_MIN                 "min"
 
 #define BLINKER_CMD_ALIGENIE            "AliGenie"
+
+#define BLINKER_CMD_DUEROS              "DuerOS"
 
 #define BLINKER_CMD_MODE                "mode"
 
@@ -370,6 +383,50 @@
 #define BLINKER_CMD_MUSIC               "music"
 
 #define BLINKER_CMD_COMMON              "common"
+
+#define BLINKER_CMD_ALIGENIE_READING    "reading"
+
+#define BLINKER_CMD_ALIGENIE_MOVIE      "movie"
+
+#define BLINKER_CMD_ALIGENIE_SLEEP      "sleep"
+
+#define BLINKER_CMD_ALIGENIE_HOLIDAY    "holiday"
+
+#define BLINKER_CMD_ALIGENIE_MUSIC      "music"
+
+#define BLINKER_CMD_ALIGENIE_COMMON     "common"
+
+#define BLINKER_CMD_DUEROS_READING      "READING"
+
+#define BLINKER_CMD_DUEROS_SLEEP        "SLEEP"
+
+#define BLINKER_CMD_DUEROS_ALARM        "ALARM"
+
+#define BLINKER_CMD_DUEROS_NIGHT_LIGHT  "NIGHT_LIGHT"
+
+#define BLINKER_CMD_DUEROS_ROMANTIC     "ROMANTIC"
+
+#define BLINKER_CMD_DUEROS_READING      "READING"
+
+#define BLINKER_CMD_DUEROS_SUNDOWN      "SUNDOWN"
+
+#define BLINKER_CMD_DUEROS_SUNRISE      "SUNRISE"
+
+#define BLINKER_CMD_DUEROS_RELAX        "RELAX"
+
+#define BLINKER_CMD_DUEROS_LIGHTING     "LIGHTING"
+
+#define BLINKER_CMD_DUEROS_SUN          "SUN"
+
+#define BLINKER_CMD_DUEROS_STAR         "STAR"
+
+#define BLINKER_CMD_DUEROS_ENERGY_SAVING "ENERGY_SAVING"
+
+#define BLINKER_CMD_DUEROS_MOON         "MOON"
+
+#define BLINKER_CMD_DUEROS_JUDI         "JUDI"
+
+#define BLINKER_CMD_UPDATE              "update"
 
 #define BLINKER_CMD_MODE_READING_NUMBER         0
 
@@ -401,11 +458,25 @@
 
 #define BLINKER_CMD_QUERY_PM25_NUMBER           8
 
-#define BLINKER_JOYSTICK_VALUE_DEFAULT  128
+#define BLINKER_CMD_QUERY_PM10_NUMBER           9
 
-#define BLINKER_ONE_HOUR_TIME           3600UL
+#define BLINKER_CMD_QUERY_CO2_NUMBER            10
 
-#define BLINKER_ONE_DAY_TIME            86400UL
+#define BLINKER_CMD_QUERY_AQI_NUMBER            11
+
+#define BLINKER_CMD_QUERY_TIME_NUMBER           12
+
+#define BLINKER_JOYSTICK_VALUE_DEFAULT          128
+
+#define BLINKER_ONE_HOUR_TIME                   3600UL
+
+#define BLINKER_ONE_DAY_TIME                    86400UL
+
+// #define BLINKER_NTP_SERVER_1                    "ntp1.aliyun.com"
+
+// #define BLINKER_NTP_SERVER_2                    "210.72.145.44"
+
+// #define BLINKER_NTP_SERVER_3                    "time.pool.aliyun.com"
 
 #ifndef BLINKER_MAX_BRIDGE_SIZE
     #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
@@ -447,7 +518,11 @@
 
     #define BLINKER_ALIGENIE_CFG_NUM            0
 
-    #define BLINKER_ALIGENIE_PARAM_NUM          1
+    #define BLINKER_ALIGENIE_PARAM_NUM          1    
+
+    #define BLINKER_DUEROS_CFG_NUM              0
+
+    #define BLINKER_DUEROS_PARAM_NUM            1
 
     #define BLINKER_TIMEZONE_CFG_NUM            0
 
@@ -489,6 +564,8 @@
 
     #define BLINKER_CMD_BLINKER_ALIGENIE        "BLINKER_ALIGENIE"
 
+    #define BLINKER_CMD_BLINKER_DUEROS          "BLINKER_DUEROS"
+    
     #define BLINKER_CMD_TIMEZONE                "TIMEZONE"
 
     #define BLINKER_CMD_TIME_AT                 "TIME"
@@ -995,6 +1072,8 @@
 
     #define BLINKER_CMD_OTA_NUMBER              14
 
+    #define BLINKER_CMD_OTA_STATUS_NUMBER       15
+
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 
 #endif
@@ -1154,11 +1233,13 @@
         #define BLINKER_PRO_VERSION             "1.0.0"
     #endif
 
-    #define BLINKER_OTA_VERSION_CODE        B00000001
+    // #define BLINKER_OTA_VERSION_CODE        B00000001
 
-    #define BLINKER_OTA_START               B01010011
+    // #define BLINKER_OTA_RUN                 B00000111
 
-    #define BLINKER_OTA_CLEAR               B00000001
+    // #define BLINKER_OTA_START               B01010011
+
+    // #define BLINKER_OTA_CLEAR               B00000001
 
     #define BLINKER_CHECK_AUTH_TIME         120000UL
 
@@ -1186,16 +1267,18 @@
 
     #define BLINKER_PRO_DATA_SIZE           (BLINKER_SSID_SIZE + BLINKER_PSWD_SIZE + BLINKER_WLAN_CHECK_SIZE + BLINKER_AUUID_SIZE + BLINKER_AUTH_CHECK_SIZE)
 
-    #define BLINKER_EEP_ADDR_OTA_INFO       (BLINKER_EEP_ADDR_AUTH_CHECK + BLINKER_AUTH_CHECK_SIZE)
+    #define BLINKER_PRO_HELLO               "{\"message\":\"Registration successful\"}"
+    // #define BLINKER_EEP_ADDR_OTA_INFO       (BLINKER_EEP_ADDR_AUTH_CHECK + BLINKER_AUTH_CHECK_SIZE)
 
-    #define BLINKER_OTA_INFO_SIZE           4
+    // #define BLINKER_OTA_INFO_SIZE           4
 
-    #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
+    // #define BLINKER_EEP_ADDR_OTA_CHECK      (BLINKER_EEP_ADDR_OTA_INFO + BLINKER_OTA_INFO_SIZE)
 
-    #define BLINKER_OTA_CHECK_SIZE          1
+    // #define BLINKER_OTA_CHECK_SIZE          1
+#endif
 
-#elif (defined(BLINKER_WIFI) || defined(BLINKER_MQTT) \
-    || defined(BLINKER_AT_MQTT))
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+    defined(BLINKER_AT_MQTT) || defined(BLINKER_PRO)
 
     #ifndef BLINKER_OTA_VERSION_CODE
 
@@ -1203,9 +1286,11 @@
 
     #endif
 
-    #define BLINKER_OTA_START               B01010011
+    #define BLINKER_OTA_RUN                 1
 
-    #define BLINKER_OTA_CLEAR               B00000001
+    #define BLINKER_OTA_START               2
+
+    #define BLINKER_OTA_CLEAR               0
 
     #define BLINKER_EEP_ADDR_OTA_INFO       2436
 
@@ -1229,7 +1314,7 @@
 
     #define BLINKER_TIMER_COUNTDOWN_SIZE            4
 
-    #define BLINKER_EEP_ADDR_TIMER_COUNTDOWN_ACTION (BLINKER_EEP_ADDR_TIMER + BLINKER_TIMER_COUNTDOWN_SIZE)
+    #define BLINKER_EEP_ADDR_TIMER_COUNTDOWN_ACTION (BLINKER_EEP_ADDR_TIMER_COUNTDOWN + BLINKER_TIMER_COUNTDOWN_SIZE)
 
     #define BLINKER_TIMER_COUNTDOWN_ACTION_SIZE     (BLINKER_ACTION_SIZE * BLINKER_ACTION_NUM)
 

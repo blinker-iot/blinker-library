@@ -19,7 +19,11 @@ class BlinkerTimingTimer
             , isLoopTask(false)
         {
             timerData  = _timerData;
-            actionData = _action;
+            // actionData = _action;
+
+            actionData = (char*)malloc((_action.length()+1)*sizeof(char));
+            strcpy(actionData, _action.c_str());
+
             // timerText = _text;
 
             isLoopTask = timerData >> 31;
@@ -34,9 +38,13 @@ class BlinkerTimingTimer
             , isLoopTask(false)
         {
             timerState = _state;
-            timingDay  = timingDay;
+            timingDay  = _timingDay;
             timingTime = _timingTime;
-            actionData = _action;
+
+            actionData = (char*)malloc((_action.length()+1)*sizeof(char));
+            strcpy(actionData, _action.c_str());
+
+            // actionData = _action;
             // timerText = _text;
             isLoopTask = _isLoop;
 
@@ -46,7 +54,11 @@ class BlinkerTimingTimer
         // void freshTimer(uint32_t _timerData, String _action, String _text) {
         void freshTimer(uint32_t _timerData, String _action) {
             timerData = _timerData;
-            actionData = _action;
+
+            actionData = (char*)malloc((_action.length()+1)*sizeof(char));
+            strcpy(actionData, _action.c_str());
+            
+            // actionData = _action;
             // timerText = _text;
 
             isLoopTask = timerData >> 31;
@@ -62,7 +74,7 @@ class BlinkerTimingTimer
 
         uint8_t getTimingday() { return timingDay; }
 
-        String getAction() { return actionData; }
+        char * getAction() { return actionData; }
 
         // String getText() { return timerText; }
 
@@ -88,7 +100,7 @@ class BlinkerTimingTimer
         // | 32 isLoopTask
         uint32_t timerData;
         uint8_t  timingDay;
-        String   actionData;
+        char*   actionData;
         // String   timerText;
         uint16_t timingTime;
         bool     timerState;

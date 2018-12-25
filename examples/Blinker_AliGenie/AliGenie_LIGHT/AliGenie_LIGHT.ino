@@ -4,10 +4,15 @@
  * https://github.com/blinker-iot/blinker-library/archive/master.zip
  * 
  * 
- * Blinker is a platform with iOS and Android apps to 
- * control embedded hardware like Arduino, Raspberrt Pi.
- * You can easily build graphic interfaces for all your 
- * projects by simply dragging and dropping widgets.
+ * Blinker is a cross-hardware, cross-platform solution for the IoT. 
+ * It provides APP, device and server support, 
+ * and uses public cloud services for data transmission and storage.
+ * It can be used in smart home, data monitoring and other fields 
+ * to help users build Internet of Things projects better and faster.
+ * 
+ * Make sure installed 2.5.0 or later ESP8266/Arduino package,
+ * if use ESP8266 with Blinker.
+ * https://github.com/esp8266/Arduino/releases
  * 
  * Docs: https://doc.blinker.app/
  *       https://github.com/blinker-iot/blinker-doc/wiki
@@ -17,21 +22,25 @@
  * Blinker 库下载地址:
  * https://github.com/blinker-iot/blinker-library/archive/master.zip
  * 
- * Blinker 是一个运行在 IOS 和 Android 上用于控制嵌入式硬件的应用程序。
- * 你可以通过拖放控制组件，轻松地为你的项目建立图形化控制界面。
+ * Blinker 是一套跨硬件、跨平台的物联网解决方案，提供APP端、设备端、
+ * 服务器端支持，使用公有云服务进行数据传输存储。可用于智能家居、
+ * 数据监测等领域，可以帮助用户更好更快地搭建物联网项目。
+ * 
+ * 如果使用 ESP8266 接入 Blinker,
+ * 请确保安装了 2.5.0 或更新的 ESP8266/Arduino 支持包。
+ * https://github.com/esp8266/Arduino/releases
  * 
  * 文档: https://doc.blinker.app/
  *       https://github.com/blinker-iot/blinker-doc/wiki
  * 
  * *****************************************************************/
 
-#define BLINKER_PRINT Serial
-#define BLINKER_MQTT
+#define BLINKER_WIFI
 #define BLINKER_ALIGENIE_LIGHT
 
 #include <Blinker.h>
 
-char auth[] = "Your MQTT Secret Key";
+char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
@@ -201,22 +210,22 @@ void aligenieMode(const String & mode)
 {
     BLINKER_LOG("need set mode: ", mode);
 
-    if (mode == BLINKER_CMD_READING) {
+    if (mode == BLINKER_CMD_ALIGENIE_READING) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_MOVIE) {
+    else if (mode == BLINKER_CMD_ALIGENIE_MOVIE) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_SLEEP) {
+    else if (mode == BLINKER_CMD_ALIGENIE_SLEEP) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_HOLIDAY) {
+    else if (mode == BLINKER_CMD_ALIGENIE_HOLIDAY) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_MUSIC) {
+    else if (mode == BLINKER_CMD_ALIGENIE_MUSIC) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_COMMON) {
+    else if (mode == BLINKER_CMD_ALIGENIE_COMMON) {
         // Your mode function
     }
 
@@ -230,22 +239,22 @@ void aligeniecMode(const String & cmode)
 {
     BLINKER_LOG("need cancel mode: ", cmode);
 
-    if (cmode == BLINKER_CMD_READING) {
+    if (cmode == BLINKER_CMD_ALIGENIE_READING) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_MOVIE) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_MOVIE) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_SLEEP) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_SLEEP) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_HOLIDAY) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_HOLIDAY) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_MUSIC) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_MUSIC) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_COMMON) {
+    else if (cmode == BLINKER_ALIGENIE_CMD_COMMON) {
         // Your mode function
     }
 
@@ -360,15 +369,28 @@ void aligenieQuery(int32_t queryCode)
     }
 }
 
+void dataRead(const String & data)
+{
+    BLINKER_LOG("Blinker readString: ", data);
+
+    Blinker.vibrate();
+    
+    uint32_t BlinkerTime = millis();
+    Blinker.print(BlinkerTime);
+    Blinker.print("millis", BlinkerTime);
+}
+
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(115200);    
+    BLINKER_DEBUG.stream(Serial);
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(auth, ssid, pswd);
-
+    Blinker.attachData(dataRead);
+    
     BlinkerAliGenie.attachPowerState(aligeniePowerState);
     BlinkerAliGenie.attachColor(aligenieColor);
     BlinkerAliGenie.attachMode(aligenieMode);
@@ -399,15 +421,6 @@ void setup()
 void loop()
 {
     Blinker.run();
-
-    if (Blinker.available()) {
-        BLINKER_LOG("Blinker.readString(): ", Blinker.readString());
-
-        uint32_t BlinkerTime = millis();
-
-        Blinker.vibrate();        
-        Blinker.print("millis", BlinkerTime);
-    }
 
     for(int i = 0; i < NUMPIXELS; i++){
         pixels.setPixelColor(i, colorR, colorG, colorB);
