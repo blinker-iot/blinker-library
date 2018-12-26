@@ -190,10 +190,10 @@
     #include "cont.h"
     }
 
-    #define blinker_procTaskPrio        0
+    #define blinker_procTaskPrio        1
     #define blinker_procTaskQueueLen    1
     os_event_t    blinker_procTaskQueue[blinker_procTaskQueueLen];
-    // cont_t* blinker_g_pcont __attribute__((section(".noinit")));
+    cont_t* blinker_g_pcont __attribute__((section(".noinit")));
 
     // uint32_t oldtime = 0;
     // static uint32_t s_micros_at_task_start;
@@ -217,7 +217,7 @@
 
     static void blinker_run(os_event_t *events)
     {
-        cont_run(g_pcont, &blinker_loop_wrapper);
+        cont_run(blinker_g_pcont, &blinker_loop_wrapper);
         system_os_post(blinker_procTaskPrio, 0, 0 );
     }
 
