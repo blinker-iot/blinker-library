@@ -773,27 +773,30 @@ void BlinkerApi::begin()
 {
     BLINKER_LOG(BLINKER_F(""));
     #if defined(BLINKER_NO_LOGO)
-        BLINKER_LOG(BLINKER_F("Blinker v"), BLINKER_VERSION, BLINKER_F("\n"),
-                    BLINKER_F("    Give Blinker a Github star, thanks!\n"),
+        BLINKER_LOG(BLINKER_F("blinker v"), BLINKER_VERSION, BLINKER_F("\n"),
+                    BLINKER_F("    To better use blinker with your IoT project!\n"),
+                    BLINKER_F("    Download latest blinker library here!\n"),
                     BLINKER_F("    => https://github.com/blinker-iot/blinker-library\n"));
     #elif defined(BLINKER_LOGO_3D)
         BLINKER_LOG(BLINKER_F("\n"),
-                    BLINKER_F(" ____    ___                __                       \n"),
-                    BLINKER_F("/\\  _`\\ /\\_ \\    __        /\\ \\               v"), BLINKER_VERSION, BLINKER_F("\n"),
-                    BLINKER_F("\\ \\ \\L\\ \\//\\ \\  /\\_\\    ___\\ \\ \\/'\\      __   _ __   \n"),
-                    BLINKER_F(" \\ \\  _ <'\\ \\ \\ \\/\\ \\ /' _ `\\ \\ , <    /'__`\\/\\`'__\\ \n"),
-                    BLINKER_F("  \\ \\ \\L\\ \\\\_\\ \\_\\ \\ \\/\\ \\/\\ \\ \\ \\\\`\\ /\\  __/\\ \\ \\/  \n"),
-                    BLINKER_F("   \\ \\____//\\____\\\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\____\\\\ \\_\\  \n"),
-                    BLINKER_F("    \\/___/ \\/____/ \\/_/\\/_/\\/_/\\/_/\\/_/\\/____/ \\/_/  \n"),
-                    BLINKER_F("   Give Blinker a Github star, thanks!\n"),
-                    BLINKER_F("   => https://github.com/blinker-iot/blinker-library\n"));
+                    BLINKER_F(" __       __                __\n"),
+                    BLINKER_F("/\\ \\     /\\ \\    __        /\\ \\              v"), BLINKER_VERSION, BLINKER_F("\n"),
+                    BLINKER_F("\\ \\ \\___ \\ \\ \\  /\\_\\    ___\\ \\ \\/'\\      __   _ __   \n"),
+                    BLINKER_F(" \\ \\ '__`\\\\ \\ \\ \\/\\ \\ /' _ `\\ \\ , <    /'__`\\/\\`'__\\ \n"),
+                    BLINKER_F("  \\ \\ \\L\\ \\\\ \\ \\_\\ \\ \\/\\ \\/\\ \\ \\ \\\\`\\ /\\  __/\\ \\ \\./ \n"),
+                    BLINKER_F("   \\ \\_,__/ \\ \\__\\\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\____\\\\ \\_\\  \n"),
+                    BLINKER_F("    \\/___/   \\/__/ \\/_/\\/_/\\/_/\\/_/\\/_/\\/____/ \\/_/  \n"),
+                    BLINKER_F("    To better use blinker with your IoT project!\n"),
+                    BLINKER_F("    Download latest blinker library here!\n"),
+                    BLINKER_F("    => https://github.com/blinker-iot/blinker-library\n"));
     #else
         BLINKER_LOG(BLINKER_F("\n"),
-                    BLINKER_F("   ___  ___      __    v"), BLINKER_VERSION, BLINKER_F("\n"),
-                    BLINKER_F("  / _ )/ (_)__  / /_____ ____\n"),
-                    BLINKER_F(" / _  / / / _ \\/  '_/ -_) __/\n")
-                    BLINKER_F("/____/_/_/_//_/_/\\_\\\\__/_/   \n")
-                    BLINKER_F("Give Blinker a github star, thanks!\n")
+                    BLINKER_F(".   .        .   v"), BLINKER_VERSION, BLINKER_F("\n"),
+                    BLINKER_F("|-. |  . ,-. | , ,-. ,-.\n"),
+                    BLINKER_F("| | |  | | | |<  |-' |\n"),
+                    BLINKER_F("`-' `' ' ' ' ' ` `-' '\n"),
+                    BLINKER_F("To better use blinker with your IoT project!\n"),
+                    BLINKER_F("Download latest blinker library here!\n"),
                     BLINKER_F("=> https://github.com/blinker-iot/blinker-library\n"));
     #endif
 
