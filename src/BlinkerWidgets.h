@@ -6,12 +6,12 @@
 #endif
 
 #include "Functions/BlinkerButton.h"
-#include "Functions/BlinkerJoystick.h"
 #include "Functions/BlinkerNumber.h"
 #include "Functions/BlinkerRGB.h"
 #if defined(BLINKER_BLE)
-    #include "Functions/BlinkerSlider.h"
+    #include "Functions/BlinkerJoystick.h"
 #endif
+#include "Functions/BlinkerSlider.h"
 #include "Functions/BlinkerSwitch.h"
 #include "Functions/BlinkerText.h"
 
