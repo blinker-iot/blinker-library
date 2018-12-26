@@ -1,10 +1,22 @@
 # blinker-library
 Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.  
 
-# What's Blinker
-[Blinker](https://blinker.app/) is a cross-hardware, cross-platform solution for the IoT. It provides APP, device and server support, and uses public cloud services for data transmission and storage. It can be used in smart home, data monitoring and other fields to help users build Internet of Things projects better and faster.   
+# Why named blinker
+When we learn a new embedded hardware, we usually started with the sketch **Blink**.  
+We think **Blink** is the **hello world** of embedded hardware.  
+We aim to build a easy learn IoT solution project, which like **Blink** a led.  
+So we named this project **blinker** with this inspiration.  
+
+# 为什么叫 blinker
+当我们接触学习一个新的嵌入式硬件平台时, 我们通常是从 **Blink** 点亮一颗LED开始的。  
+我们把 **Blink** 当作硬件开发第一课的 **hello world** 。  
+我们期望做像 **Blink** 点亮一颗LED 那样简单的物联网解决方案。  
+根据这个灵感, 我们将这个项目命名为 **blinker** 。  
+
+# What's blinker
+[blinker](https://blinker.app/) is a cross-hardware, cross-platform solution for the IoT. It provides APP, device and server support, and uses public cloud services for data transmission and storage. It can be used in smart home, data monitoring and other fields to help users build Internet of Things projects better and faster.   
   
-[Blinker](https://blinker.app/) 是一套跨硬件、跨平台的物联网解决方案，提供APP端、设备端、服务器端支持，使用公有云服务进行数据传输存储。可用于智能家居、数据监测等领域，可以帮助用户更好更快地搭建物联网项目。  
+[blinker](https://blinker.app/) 是一套跨硬件、跨平台的物联网解决方案，提供APP端、设备端、服务器端支持，使用公有云服务进行数据传输存储。可用于智能家居、数据监测等领域，可以帮助用户更好更快地搭建物联网项目。  
 
 # Reference/参考
 * [EN-英文](https://github.com/blinker-iot/blinker-doc/wiki/Blinker-Arduino-library-reference)  
