@@ -119,9 +119,9 @@ class BlinkerESPMQTT : public BlinkerApi
             #endif
 
             #if defined(BLINKER_ESP_SMARTCONFIG)
-                smartconfigBegin(_auth, __aliType, __duerType);
+                smartconfigBegin(__auth, _aliType, _duerType);
             #elif defined(BLINKER_APCONFIG)
-                apconfigBegin(__auth, __aliType, __duerType);
+                apconfigBegin(__auth, _aliType, _duerType);
             #else
                 commonBegin(__auth, __ssid, __pswd, _aliType, _duerType);
             #endif
