@@ -132,7 +132,10 @@ void BlinkerProtocol::print(const String & key, const String & data)
 {
     checkFormat();
     autoFormatData(key, data);
-    autoFormatFreshTime = millis();
+    if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
+    {
+        autoFormatFreshTime = millis();
+    }
 }
 
 int BlinkerProtocol::checkAvail()
