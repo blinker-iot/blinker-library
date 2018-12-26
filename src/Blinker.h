@@ -180,61 +180,62 @@
 
 #include "BlinkerWidgets.h"
 
-#if defined(BLINKER_MQTT)
+// #if defined(BLINKER_MQTT)
+#if defined(BLINKER_ESP_TASK)
+#if defined(ESP8266)
+    #include "Schedule.h"
+    extern "C" {
+    #include "ets_sys.h"
+    #include "user_interface.h"
+    #include "cont.h"
+    }
 
-    #if defined(ESP8266)
-        #include "Schedule.h"
-        extern "C" {
-        #include "ets_sys.h"
-        #include "user_interface.h"
-        #include "cont.h"
-        }
+    #define blinker_procTaskPrio        0
+    #define blinker_procTaskQueueLen    1
+    os_event_t    blinker_procTaskQueue[blinker_procTaskQueueLen];
+    // cont_t* blinker_g_pcont __attribute__((section(".noinit")));
 
-        #define blinker_procTaskPrio        0
-        #define blinker_procTaskQueueLen    1
-        os_event_t    blinker_procTaskQueue[blinker_procTaskQueueLen];
-        // cont_t* blinker_g_pcont __attribute__((section(".noinit")));
+    // uint32_t oldtime = 0;
+    // static uint32_t s_micros_at_task_start;
 
-        // uint32_t oldtime = 0;
-        // static uint32_t s_micros_at_task_start;
+    // static uint32_t oldtime = 0;
 
-        // static uint32_t oldtime = 0;
-
-        void preloop_update_frequency() __attribute__((weak));
-        void preloop_update_frequency() {
-        #if defined(F_CPU) && (F_CPU == 160000000L)
-            REG_SET_BIT(0x3ff00014, BIT(0));
-            ets_update_cpu_frequency(160);
-        #endif
-        }
-
-        static void blinker_loop_wrapper() {
-            preloop_update_frequency();
-            Blinker.run();
-            run_scheduled_functions();
-            esp_schedule();
-        }
-
-        static void blinker_run(os_event_t *events)
-        {
-            cont_run(g_pcont, &blinker_loop_wrapper);
-            system_os_post(blinker_procTaskPrio, 0, 0 );
-        }
-
-        void BLINKER_TAST_INIT()
-        {
-            // ets_task
-            #if defined(BLINKER_MQTT)
-                Blinker.beginMQTT();
-            #endif
-            system_os_task(blinker_run, blinker_procTaskPrio, blinker_procTaskQueue, blinker_procTaskQueueLen);
-            system_os_post(blinker_procTaskPrio, 0, 0 );
-        }
+    void preloop_update_frequency() __attribute__((weak));
+    void preloop_update_frequency() {
+    #if defined(F_CPU) && (F_CPU == 160000000L)
+        REG_SET_BIT(0x3ff00014, BIT(0));
+        ets_update_cpu_frequency(160);
     #endif
+    }
 
-#endif
+    static void blinker_loop_wrapper() {
+        preloop_update_frequency();
+        Blinker.run();
+        run_scheduled_functions();
+        // esp_schedule();
+    }
 
-#if defined(ESP32)
+    static void blinker_run(os_event_t *events)
+    {
+        cont_run(g_pcont, &blinker_loop_wrapper);
+        system_os_post(blinker_procTaskPrio, 0, 0 );
+    }
+
+    void BLINKER_TAST_INIT()
+    {
+        // ets_task
+        #if defined(BLINKER_MQTT)
+            Blinker.beginMQTT();
+        #endif
+        system_os_task(blinker_run, blinker_procTaskPrio, blinker_procTaskQueue, blinker_procTaskQueueLen);
+        system_os_post(blinker_procTaskPrio, 0, 0 );
+    }
+// #endif
+
+// #endif
+
+// #if defined(ESP32)
+#elif defined(ESP32)
     #include "freertos/FreeRTOS.h"
     #include "freertos/task.h"
     #include "Arduino.h"
@@ -258,10 +259,17 @@
     extern "C" void BLINKER_TAST_INIT()
     {
         // initArduino();
+        #if defined(BLINKER_MQTT)
+            Blinker.beginMQTT();
+        #endif
         xTaskCreatePinnedToCore(blinkerLoopTask, "blinkerLoopTask", 4096, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
     }
 
     // #endif
+#else
+    #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
+#endif
+
 #endif
 
 #endif

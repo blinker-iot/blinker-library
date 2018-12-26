@@ -36,6 +36,7 @@
  * *****************************************************************/
 
 #define BLINKER_WIFI
+#define BLINKER_ESP_TASK
 
 #include <Blinker.h>
 

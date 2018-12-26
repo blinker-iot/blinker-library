@@ -55,6 +55,10 @@ class BlinkerESPMQTT : public BlinkerApi
             // #endif
 
             __auth = _auth;
+
+            #ifndef BLINKER_ESP_TASK
+                beginMQTT();
+            #endif
         }
 
         void begin( const char* _auth, 
@@ -86,6 +90,10 @@ class BlinkerESPMQTT : public BlinkerApi
             __auth = _auth;
             __ssid = _ssid;
             __pswd = _pswd;
+
+            #ifndef BLINKER_ESP_TASK
+                beginMQTT();
+            #endif
         }
 
         void beginMQTT()
