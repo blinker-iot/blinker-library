@@ -28,6 +28,68 @@ class BlinkerESPMQTT : public BlinkerApi
     public :        
         void begin(const char* _auth)
         {
+            // #if defined(BLINKER_ALIGENIE_LIGHT)
+            //     String _aliType = BLINKER_F("&aliType=light");
+            // #elif defined(BLINKER_ALIGENIE_OUTLET)
+            //     String _aliType = BLINKER_F("&aliType=outlet");
+            // #elif defined(BLINKER_ALIGENIE_SENSOR)
+            //     String _aliType = BLINKER_F("&aliType=sensor");
+            // #else
+            //     String _aliType = BLINKER_F("");
+            // #endif
+
+            // #if defined(BLINKER_DUEROS_LIGHT)
+            //     String _duerType = BLINKER_F("&duerType=LIGHT");
+            // #elif defined(BLINKER_DUEROS_OUTLET)
+            //     String _duerType = BLINKER_F("&duerType=SOCKET");
+            // #elif defined(BLINKER_DUEROS_SENSOR)
+            //     String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
+            // #else
+            //     String _duerType = BLINKER_F("");
+            // #endif
+
+            // #if defined(BLINKER_ESP_SMARTCONFIG)
+            //     smartconfigBegin(_auth, _aliType, _duerType);
+            // #elif defined(BLINKER_APCONFIG)
+            //     apconfigBegin(_auth, _aliType, _duerType);
+            // #endif
+
+            __auth = _auth;
+        }
+
+        void begin( const char* _auth, 
+                    const char* _ssid, 
+                    const char* _pswd )
+        {
+            // #if defined(BLINKER_ALIGENIE_LIGHT)
+            //     String _aliType = BLINKER_F("&aliType=light");
+            // #elif defined(BLINKER_ALIGENIE_OUTLET)
+            //     String _aliType = BLINKER_F("&aliType=outlet");
+            // #elif defined(BLINKER_ALIGENIE_SENSOR)
+            //     String _aliType = BLINKER_F("&aliType=sensor");
+            // #else
+            //     String _aliType = BLINKER_F("");
+            // #endif
+
+            // #if defined(BLINKER_DUEROS_LIGHT)
+            //     String _duerType = BLINKER_F("&duerType=LIGHT");
+            // #elif defined(BLINKER_DUEROS_OUTLET)
+            //     String _duerType = BLINKER_F("&duerType=SOCKET");
+            // #elif defined(BLINKER_DUEROS_SENSOR)
+            //     String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
+            // #else
+            //     String _duerType = BLINKER_F("");
+            // #endif
+            
+            // commonBegin(_auth, _ssid, _pswd, _aliType, _duerType);
+
+            __auth = _auth;
+            __ssid = _ssid;
+            __pswd = _pswd;
+        }
+
+        void beginMQTT()
+        {
             #if defined(BLINKER_ALIGENIE_LIGHT)
                 String _aliType = BLINKER_F("&aliType=light");
             #elif defined(BLINKER_ALIGENIE_OUTLET)
@@ -49,37 +111,12 @@ class BlinkerESPMQTT : public BlinkerApi
             #endif
 
             #if defined(BLINKER_ESP_SMARTCONFIG)
-                smartconfigBegin(_auth, _aliType, _duerType);
+                smartconfigBegin(_auth, __aliType, __duerType);
             #elif defined(BLINKER_APCONFIG)
-                apconfigBegin(_auth, _aliType, _duerType);
-            #endif
-        }
-
-        void begin( const char* _auth, 
-                    const char* _ssid, 
-                    const char* _pswd )
-        {
-            #if defined(BLINKER_ALIGENIE_LIGHT)
-                String _aliType = BLINKER_F("&aliType=light");
-            #elif defined(BLINKER_ALIGENIE_OUTLET)
-                String _aliType = BLINKER_F("&aliType=outlet");
-            #elif defined(BLINKER_ALIGENIE_SENSOR)
-                String _aliType = BLINKER_F("&aliType=sensor");
+                apconfigBegin(__auth, __aliType, __duerType);
             #else
-                String _aliType = BLINKER_F("");
+                commonBegin(__auth, __ssid, __pswd, _aliType, _duerType);
             #endif
-
-            #if defined(BLINKER_DUEROS_LIGHT)
-                String _duerType = BLINKER_F("&duerType=LIGHT");
-            #elif defined(BLINKER_DUEROS_OUTLET)
-                String _duerType = BLINKER_F("&duerType=SOCKET");
-            #elif defined(BLINKER_DUEROS_SENSOR)
-                String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
-            #else
-                String _duerType = BLINKER_F("");
-            #endif
-            
-            commonBegin(_auth, _ssid, _pswd, _aliType, _duerType);
         }
 
     private :
@@ -99,6 +136,10 @@ class BlinkerESPMQTT : public BlinkerApi
         
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
+
+        const char* __auth;
+        const char* __ssid;
+        const char* __pswd;
 
         BlinkerMQTT Transp;
 };

@@ -310,6 +310,7 @@ int BlinkerMQTT::available()
 
     if (!mqtt_MQTT->connected() || \
         (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
+    // if ((millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
     {
         ping();
     }
