@@ -170,6 +170,7 @@ class BlinkerWidgets_joy
             BlinkerData()
                 // : _dname(NULL)
             {
+                // data = (char*)malloc((256)*sizeof(char));
                 memcpy(data,"\0",256);
             }
 
@@ -271,6 +272,7 @@ class BlinkerWidgets_joy
         private :
             uint8_t dataCount = 0;
             String _dname;
+            // char * data;
             char data[256];
     };
 #endif

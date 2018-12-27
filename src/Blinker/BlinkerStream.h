@@ -38,6 +38,7 @@ class BlinkerStream
             virtual int bPrint(char * name, const String & data) = 0;
             virtual int autoPrint(uint32_t id) = 0;
             virtual void freshAlive() = 0;
+            virtual void sharers(const String & data);
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)

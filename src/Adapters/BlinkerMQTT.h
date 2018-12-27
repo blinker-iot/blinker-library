@@ -45,6 +45,21 @@ enum b_configStatus_t {
 // static WiFiServer *_apServer;
 // static WiFiClient _apClient;
 
+class BlinkerSharer
+{
+    public :
+        BlinkerSharer(const String & _uuid)
+        {
+            name = (char*)malloc((_uuid.length()+1)*sizeof(char));
+            strcpy(name, _uuid.c_str());
+        }
+
+        char * uuid() { return name; }
+
+    private :
+        char * name;
+};
+
 class BlinkerMQTT : public BlinkerStream
 {
     public :
@@ -79,6 +94,7 @@ class BlinkerMQTT : public BlinkerStream
         int init() { return isMQTTinit; }
         int reRegister() { return connectServer(); }
         void freshAlive() { kaTime = millis(); isAlive = true; }
+        void sharers(const String & data);
 
         bool checkInit();
         void commonBegin(const char* _ssid, const char* _pswd);
@@ -109,6 +125,9 @@ class BlinkerMQTT : public BlinkerStream
         int checkDuerPrintSpan();
 
     protected :
+        BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
+        uint8_t     _sharerCount = 0;
+        uint8_t     _sharerFrom = BLINKER_MQTT_MAX_SHARERS_NUM;
         bool        _isWiFiInit = false;
         bool        _isBegin = false;
         b_config_t  _configType = COMM;
@@ -343,6 +362,8 @@ void BlinkerMQTT::ping()
 
     BLINKER_LOG(BLINKER_F("MQTT Ping!"));
 
+    BLINKER_LOG_FreeHeap_ALL();
+
     if (!mqtt_MQTT->ping())
     {
         disconnect();
@@ -455,6 +476,8 @@ void BlinkerMQTT::subscribe()
                 kaTime = millis();
                 isAvail_MQTT = true;
                 isAlive = true;
+
+                _sharerFrom = BLINKER_MQTT_MAX_SHARERS_NUM;
             }
             else if (_uuid == BLINKER_CMD_ALIGENIE)
             {
@@ -601,7 +624,14 @@ int BlinkerMQTT::print(char * data, bool needCheck)
         strcat(data, MQTT_ID_MQTT);
         data_add = BLINKER_F("\",\"toDevice\":\"");
         strcat(data, data_add.c_str());
-        strcat(data, UUID_MQTT);
+        if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
+        {
+            strcat(data, _sharers[_sharerFrom]->uuid());
+        }
+        else
+        {
+            strcat(data, UUID_MQTT);
+        }
         data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         strcat(data, data_add.c_str());
 
@@ -660,6 +690,9 @@ int BlinkerMQTT::print(char * data, bool needCheck)
                 {
                     isAlive = false;
                 }
+
+                this->latestTime = millis();
+
                 return true;
             }
         }
@@ -786,6 +819,9 @@ int BlinkerMQTT::bPrint(char * name, const String & data)
             // if (!_alive) {
             //     isAlive = false;
             // }
+
+            this->latestTime = millis();
+
             return true;
         }
     }
@@ -845,6 +881,9 @@ int BlinkerMQTT::aliPrint(const String & data)
             BLINKER_LOG_FreeHeap_ALL();
 
             isAliAlive = false;
+
+            this->latestTime = millis();
+
             return true;
         }
     }
@@ -902,6 +941,9 @@ int BlinkerMQTT::duerPrint(const String & data)
             BLINKER_LOG_FreeHeap_ALL();
 
             isDuerAlive = false;
+
+            this->latestTime = millis();
+
             return true;
         }
     }
@@ -1033,6 +1075,9 @@ int BlinkerMQTT::autoPrint(uint32_t id)
                 BLINKER_LOG_ALL(BLINKER_F("...OK!"));
 
                 linkTime = millis();
+
+                this->latestTime = millis();
+
                 return true;
             }
         }
@@ -1140,6 +1185,44 @@ int BlinkerMQTT::autoPrint(uint32_t id)
 // }
 
 char * BlinkerMQTT::deviceName() { return DEVICE_NAME_MQTT;/*MQTT_ID_MQTT;*/ }
+
+void BlinkerMQTT::sharers(const String & data)
+{
+    BLINKER_LOG_ALL(BLINKER_F("sharers data: "), data);
+
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(data);
+
+    if (!root.success()) return;
+
+    String user_name = "";
+
+    if (_sharerCount)
+    {
+        for (_sharerCount; _sharerCount > 0; _sharerCount--)
+        {
+            delete _sharers[_sharerCount - 1];
+        }
+    }
+
+    for (uint8_t num = 0; num < BLINKER_MQTT_MAX_SHARERS_NUM; num++)
+    {
+        user_name = root["users"][num].as<String>();
+
+        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
+
+            _sharerCount++;
+
+            _sharers[num] = new BlinkerSharer(user_name);
+        }
+        else
+        {
+            break;
+        }
+    }
+}
 
 int BlinkerMQTT::connectServer() {
     // const int httpsPort = 443;
