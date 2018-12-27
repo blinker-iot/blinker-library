@@ -63,6 +63,8 @@ class BlinkerESPMQTT : public BlinkerApi
                 Transp.apconfigBegin();
             #endif
 
+            BApi::loadTimer();
+
             // #if defined(BLINKER_ESP_SMARTCONFIG)
             //     smartconfigBegin(_auth, _aliType, _duerType);
             // #elif defined(BLINKER_APCONFIG)
@@ -109,6 +111,7 @@ class BlinkerESPMQTT : public BlinkerApi
             transport(Transp);
 
             Transp.commonBegin(_ssid, _pswd);
+            BApi::loadTimer();
             // __auth = _auth;
             // __ssid = _ssid;
             // __pswd = _pswd;

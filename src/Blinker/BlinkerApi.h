@@ -1029,7 +1029,7 @@ void BlinkerApi::run()
     #endif
 
     #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
-        if (WiFi.status() != WL_CONNECTED)
+        if (WiFi.status() != WL_CONNECTED && BProto::init())
         {        
             if ((millis() - _reconTime) >= 10000 || \
                 _reconTime == 0 )
@@ -3551,6 +3551,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     
     void BlinkerApi::loadTiming()
     {
+        BLINKER_LOG_ALL(BLINKER_F("load timing"));
+
         EEPROM.begin(BLINKER_EEP_SIZE);
         EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, taskCount);
         uint32_t _tmData;

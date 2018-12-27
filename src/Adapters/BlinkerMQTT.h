@@ -937,7 +937,9 @@ bool BlinkerMQTT::begin() {
     //     isMQTTinit = true;
     // }
     // else {
-    uint32_t re_time = millis();
+    // uint32_t re_time = millis();
+
+    if (isMQTTinit) return true;
     // bool isConnect_MQTT = true;
     // while(1)
     // {
@@ -946,18 +948,22 @@ bool BlinkerMQTT::begin() {
         // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
         // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
         // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
+    if (_connectTime == 0 || (millis() - _connectTime) >= 10000)
+    {
+        _connectTime = millis();
         if (connectServer()) {
             mDNSInit();
             isMQTTinit = true;
             return true;
         }
         else {
-            ::delay(10000);
-            BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
-            BLINKER_ERR_LOG("Or maybe your request is too frequently!");
-            BLINKER_ERR_LOG("Or maybe your network is disconnected!");
+            // ::delay(10000);
+            // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
+            // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
+            // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
             return false;
         }
+    }
         // delay(10000);
         // while ((millis() - re_time) < 10000)
         // {
@@ -1787,6 +1793,7 @@ bool BlinkerMQTT::checkInit()
                 BLINKER_LOG(BLINKER_F("IP Address: "));
                 BLINKER_LOG(WiFi.localIP());
                 _isWiFiInit = true;
+                _connectTime = 0;
 
                 begin();
 
@@ -1802,28 +1809,33 @@ bool BlinkerMQTT::checkInit()
 
                             _configStatus = SMART_DONE;
                         }
-                        return false;
+                        else return false;
                     case SMART_DONE :
                         if (WiFi.status() != WL_CONNECTED)
                         {
                             if (millis() - _connectTime > 15000)
                             {
                                 BLINKER_LOG(BLINKER_F("SmartConfig timeout."));
+                                WiFi.stopSmartConfig();
                                 _configStatus = SMART_TIMEOUT;
                             }
                             return false;
                         }
-                        else {
+                        else if (WiFi.status() == WL_CONNECTED)
+                        {
+                            // WiFi.stopSmartConfig();
+
                             BLINKER_LOG(BLINKER_F("WiFi Connected."));
                             BLINKER_LOG(BLINKER_F("IP Address: "));
                             BLINKER_LOG(WiFi.localIP());
                             _isWiFiInit = true;
+                            _connectTime = 0;
 
                             begin();
                             
                             return true;
                         }
-                        break;
+                        // return false;
                     case SMART_TIMEOUT :
                         WiFi.beginSmartConfig();
                         _configStatus = SMART_BEGIN;
@@ -1848,17 +1860,19 @@ bool BlinkerMQTT::checkInit()
                             }
                             return false;
                         }
-                        else {
+                        else if (WiFi.status() == WL_CONNECTED)
+                        {
                             BLINKER_LOG(BLINKER_F("WiFi Connected."));
                             BLINKER_LOG(BLINKER_F("IP Address: "));
                             BLINKER_LOG(WiFi.localIP());
                             _isWiFiInit = true;
+                            _connectTime = 0;
 
                             begin();
                             
                             return true;
                         }
-                        break;
+                        return false;
                     case APCFG_TIMEOUT :
                         softAPinit();
                         return false;
@@ -1945,6 +1959,7 @@ void BlinkerMQTT::smartconfigBegin()
     _configType = SMART;
 
     if (!autoInit()) smartconfig();
+    else _configStatus = SMART_DONE;
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
@@ -1957,10 +1972,8 @@ void BlinkerMQTT::apconfigBegin()
 {
     _configType = APCFG;
 
-    if (!autoInit())
-    {
-        softAPinit();
-    }
+    if (!autoInit()) softAPinit();
+    else _configStatus = APCFG_DONE;
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
@@ -1998,12 +2011,12 @@ bool BlinkerMQTT::autoInit()
 
     if (WiFi.status() != WL_CONNECTED) return false;
     else {
-        BLINKER_LOG(BLINKER_F("WiFi Connected."));
-        BLINKER_LOG(BLINKER_F("IP Address: "));
-        BLINKER_LOG(WiFi.localIP());
-        _isWiFiInit = true;
+        // BLINKER_LOG(BLINKER_F("WiFi Connected."));
+        // BLINKER_LOG(BLINKER_F("IP Address: "));
+        // BLINKER_LOG(WiFi.localIP());
+        // _isWiFiInit = true;
 
-        begin();
+        // begin();
 
         return true;
     }
