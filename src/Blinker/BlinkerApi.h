@@ -570,7 +570,8 @@ class BlinkerApi : public BlinkerProtocol
 
             void autoStart();
             bool autoManager(const JsonObject& data);
-            void otaPrase(const JsonObject& data);
+            void otaParse(const JsonObject& data);
+            void shareParse(const JsonObject& data);
             
             bool checkCUPDATE();
             bool checkCGET();
@@ -1233,7 +1234,8 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                     autoManager(root);
-                    otaPrase(root);
+                    otaParse(root);
+                    shareParse(root);
 
                     for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
                     {
@@ -5127,7 +5129,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     }
 
     
-    void BlinkerApi::otaPrase(const JsonObject& data)
+    void BlinkerApi::otaParse(const JsonObject& data)
     {
         if (data.containsKey(BLINKER_CMD_SET))
         {
@@ -5150,6 +5152,28 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         }
     }
 
+    void BlinkerApi::shareParse(const JsonObject& data)
+    {
+        if (data.containsKey(BLINKER_CMD_SET))
+        {
+            String value = data[BLINKER_CMD_SET];
+
+            DynamicJsonBuffer jsonBufferSet;
+            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+
+            if (!rootSet.success()) {
+                // BLINKER_ERR_LOG_ALL("Json error");
+                return;
+            }
+
+            if (rootSet.containsKey(BLINKER_CMD_SHARE))
+            {
+                _fresh = true;
+                
+                BProto::sharers(freshSharers());
+            }
+        }
+    }
     
     bool BlinkerApi::checkCUPDATE()
     {

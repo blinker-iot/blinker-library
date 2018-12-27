@@ -49,6 +49,7 @@ class BlinkerProtocol
             int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
             int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
             void freshAlive() { if (isInit) conn->freshAlive(); }
+            void sharers(const String & data) { if (isInit) conn->sharers(data); }
         #endif
 
         #if defined(BLINKER_PRO)
@@ -126,6 +127,7 @@ void BlinkerProtocol::print(const String & data)
     _print(_sendBuf);
     free(_sendBuf);
     autoFormat = false;
+    BLINKER_LOG_FreeHeap_ALL();
 }
 
 void BlinkerProtocol::print(const String & key, const String & data)
@@ -182,6 +184,7 @@ void BlinkerProtocol::checkAutoFormat()
             }
             free(_sendBuf);
             autoFormat = false;
+            BLINKER_LOG_FreeHeap_ALL();
         }
     }
 }
@@ -199,6 +202,7 @@ void BlinkerProtocol::printNow()
 
         free(_sendBuf);
         autoFormat = false;
+        BLINKER_LOG_FreeHeap_ALL();
     }
 }
 
@@ -225,7 +229,7 @@ void BlinkerProtocol::_print(char * n, bool needCheckLength)
     if (strlen(n) <= BLINKER_MAX_SEND_SIZE || \
         !needCheckLength)
     {
-        BLINKER_LOG_FreeHeap_ALL();
+        // BLINKER_LOG_FreeHeap_ALL();
         conn->print(n, isCheck);
         if (!isCheck) isCheck = true;
     }

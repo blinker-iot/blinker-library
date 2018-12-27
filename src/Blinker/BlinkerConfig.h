@@ -428,6 +428,8 @@
 
 #define BLINKER_CMD_UPGRADE             "upgrade"
 
+#define BLINKER_CMD_SHARE               "share"
+
 #define BLINKER_CMD_MODE_READING_NUMBER         0
 
 #define BLINKER_CMD_MODE_MOVIE_NUMBER           1
@@ -1117,6 +1119,10 @@
 
     #define BLINKER_MQTT_DEVICENAME_SIZE    14
 
+    #define BLINKER_MQTT_USER_UUID_SIZE     32
+
+    #define BLINKER_MQTT_MAX_SHARERS_NUM    9
+
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
@@ -1270,6 +1276,7 @@
     #define BLINKER_PRO_DATA_SIZE           (BLINKER_SSID_SIZE + BLINKER_PSWD_SIZE + BLINKER_WLAN_CHECK_SIZE + BLINKER_AUUID_SIZE + BLINKER_AUTH_CHECK_SIZE)
 
     #define BLINKER_PRO_HELLO               "{\"message\":\"Registration successful\"}"
+    
     // #define BLINKER_EEP_ADDR_OTA_INFO       (BLINKER_EEP_ADDR_AUTH_CHECK + BLINKER_AUTH_CHECK_SIZE)
 
     // #define BLINKER_OTA_INFO_SIZE           4

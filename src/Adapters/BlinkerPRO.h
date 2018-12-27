@@ -317,8 +317,9 @@ int BlinkerPRO::available()
     if (isMQTTinit) {
         checkKA();
 
-        if (!mqtt_PRO->connected() || \
-            (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
+        // if (!mqtt_PRO->connected() || \
+        //     (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
+        if ((millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
         {
             ping();
         }
@@ -606,6 +607,9 @@ int BlinkerPRO::print(char * data, bool needCheck)
                 {
                     isAlive = false;
                 }
+
+                this->latestTime = millis();
+
                 return true;
             }            
         }
@@ -730,6 +734,9 @@ int BlinkerPRO::bPrint(char * name, const String & data)
             // if (!_alive) {
             //     isAlive = false;
             // }
+
+            this->latestTime = millis();
+
             return true;
         }            
     }
@@ -818,6 +825,9 @@ int BlinkerPRO::aliPrint(const String & data)
             BLINKER_LOG_FreeHeap_ALL();
             
             isAliAlive = false;
+
+            this->latestTime = millis();
+
             return true;
         }      
     }
@@ -873,6 +883,9 @@ int BlinkerPRO::duerPrint(const String & data)
             BLINKER_LOG_FreeHeap_ALL();
             
             isDuerAlive = false;
+
+            this->latestTime = millis();
+
             return true;
         }      
     }
@@ -937,6 +950,9 @@ int BlinkerPRO::autoPrint(uint32_t id)
                 BLINKER_LOG_ALL(BLINKER_F("...OK!"));
                 
                 linkTime = millis();
+
+                this->latestTime = millis();
+
                 return true;
             }
         }
