@@ -292,6 +292,8 @@ bool BlinkerWlan::connected() {
                 return false;
             }
             else if (WiFi.status() == WL_CONNECTED) {
+                // WiFi.stopSmartConfig();
+
                 IPAddress deviceIP = WiFi.localIP();
                 BLINKER_LOG(("WiFi connected"));
                 BLINKER_LOG(("IP address: "));
