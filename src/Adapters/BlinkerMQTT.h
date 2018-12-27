@@ -1835,7 +1835,7 @@ bool BlinkerMQTT::checkInit()
                             
                             return true;
                         }
-                        return false;
+                        // return false;
                     case SMART_TIMEOUT :
                         WiFi.beginSmartConfig();
                         _configStatus = SMART_BEGIN;
@@ -1872,7 +1872,7 @@ bool BlinkerMQTT::checkInit()
                             
                             return true;
                         }
-                        return false;
+                        // return false;
                     case APCFG_TIMEOUT :
                         softAPinit();
                         return false;

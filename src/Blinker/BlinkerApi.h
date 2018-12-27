@@ -238,6 +238,8 @@ class BlinkerApi : public BlinkerProtocol
             bool updateOTAStatus(int8_t status, const String & msg);
             void otaStatus(int8_t status, const String & msg);
 
+            String freshSharers();
+
         #endif
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
@@ -2616,6 +2618,17 @@ float BlinkerApi::gps(b_gps_t axis)
             printObject(BLINKER_F("upgradeData"), data);
             BProto::printNow();
         #endif
+    }
+
+    String BlinkerApi::freshSharers()
+    {
+        String data = BLINKER_F("/share/device?");
+        data += BLINKER_F("deviceName=");
+        data += BProto::deviceName();
+        data += BLINKER_F("&key=");
+        data += BProto::authKey();
+
+        return blinkerServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
     }
 #endif
 
@@ -5128,7 +5141,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 return;
             }
 
-            if (rootSet.containsKey(BLINKER_CMD_UPDATE))
+            if (rootSet.containsKey(BLINKER_CMD_UPGRADE))
             {
                 _fresh = true;
                 
@@ -5164,7 +5177,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     
     bool BlinkerApi::checkDataUpdata()
     {
-        if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT * 60 || \
+        if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
             _dUpdateTime == 0) return true;
         else return false;
     }
@@ -5325,6 +5338,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 case BLINKER_CMD_OTA_NUMBER :
                     break;
                 case BLINKER_CMD_OTA_STATUS_NUMBER :
+                    break;
+                case BLINKER_CMD_FRESH_SHARERS_NUMBER :
                     break;
             #endif
             default :
@@ -5875,6 +5890,19 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                         http.addHeader(conType, application);
                         httpCode = http.POST(msg);
                         break;
+                    case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+                        
+                        httpCode = http.GET();
+                        break;
                 #endif
                 default :
                     return BLINKER_CMD_FALSE;
@@ -5971,6 +5999,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                             case BLINKER_CMD_OTA_NUMBER :
                                 break;
                             case BLINKER_CMD_OTA_STATUS_NUMBER :
+                                break;
+                            case BLINKER_CMD_FRESH_SHARERS_NUMBER :
                                 break;
                         #endif
                         default :
