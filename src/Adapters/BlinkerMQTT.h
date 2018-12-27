@@ -81,14 +81,16 @@ class BlinkerMQTT : public BlinkerStream
         void freshAlive() { kaTime = millis(); isAlive = true; }
 
         bool checkInit();
-        void checkAPCFG();
         void commonBegin(const char* _ssid, const char* _pswd);
         void smartconfigBegin();
         void apconfigBegin();
         bool autoInit();
         void smartconfig();
+        #if defined(BLINKER_APCONFIG)
         void softAPinit();
+        void checkAPCFG();
         bool parseUrl(String data);
+        #endif
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
 
@@ -142,8 +144,10 @@ class BlinkerMQTT : public BlinkerStream
 
         int isJson(const String & data);
 
+        #if defined(BLINKER_APCONFIG)
         WiFiServer *_apServer;
         WiFiClient _apClient;
+        #endif
 };
 
 char*       MQTT_HOST_MQTT;
@@ -360,9 +364,9 @@ int BlinkerMQTT::available()
 
     checkKA();
 
-    if (!mqtt_MQTT->connected() || \
-        (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
-    // if ((millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
+    // if (!mqtt_MQTT->connected() || \
+    //     (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
+    if ((millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
     {
         ping();
     }
@@ -957,13 +961,19 @@ bool BlinkerMQTT::begin() {
             return true;
         }
         else {
+            isMQTTinit = false;
             // ::delay(10000);
+            // BLINKER_ERR_LOG("init error, ", _connectTime);
             // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
             // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
             // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
             return false;
         }
     }
+
+    // BLINKER_ERR_LOG("init error1, ", _connectTime);
+    // ::delay(1000);
+    return false;
         // delay(10000);
         // while ((millis() - re_time) < 10000)
         // {
@@ -1377,6 +1387,8 @@ int BlinkerMQTT::connectServer() {
 
     http.end();
 #endif
+
+    // payload = "";
 
     BLINKER_LOG_ALL(BLINKER_F("reply was:"));
     BLINKER_LOG_ALL(BLINKER_F("=============================="));
@@ -1795,9 +1807,9 @@ bool BlinkerMQTT::checkInit()
                 _isWiFiInit = true;
                 _connectTime = 0;
 
-                begin();
+                // begin();
 
-                return true;
+                return false;
             case SMART :
                 switch (_configStatus)
                 {
@@ -1831,9 +1843,9 @@ bool BlinkerMQTT::checkInit()
                             _isWiFiInit = true;
                             _connectTime = 0;
 
-                            begin();
+                            // begin();
                             
-                            return true;
+                            return false;
                         }
                         // return false;
                     case SMART_TIMEOUT :
@@ -1845,6 +1857,7 @@ bool BlinkerMQTT::checkInit()
                         return false;
                 }
             case APCFG :
+                #if defined(BLINKER_APCONFIG)
                 switch (_configStatus)
                 {
                     case APCFG_BEGIN :
@@ -1868,9 +1881,9 @@ bool BlinkerMQTT::checkInit()
                             _isWiFiInit = true;
                             _connectTime = 0;
 
-                            begin();
+                            // begin();
                             
-                            return true;
+                            return false;
                         }
                         // return false;
                     case APCFG_TIMEOUT :
@@ -1878,7 +1891,8 @@ bool BlinkerMQTT::checkInit()
                         return false;
                     default :
                         return false;
-                }
+                }                
+                #endif
             default :
                 return false;
         }
@@ -1890,55 +1904,6 @@ bool BlinkerMQTT::checkInit()
         return _isBegin;
     }
     return true;
-}
-
-void BlinkerMQTT::checkAPCFG()
-{
-    if(WiFi.status() != WL_CONNECTED)
-    {
-        // serverClient();
-        _apClient = _apServer->available();
-        // if (_apClient.status() == CLOSED)
-        if (!_apClient.connected())
-        {
-            _apClient.stop();
-            BLINKER_LOG(BLINKER_F("Connection closed on _apClient"));
-        }
-        else
-        {
-            if (_apClient.available())
-            {
-                String data = _apClient.readStringUntil('\r');
-
-                // data = data.substring(4, data.length() - 9);
-                _apClient.flush();
-
-                BLINKER_LOG(BLINKER_F("clientData: "), data);
-
-                if (STRING_contains_string(data, "ssid") && \
-                    STRING_contains_string(data, "pswd"))
-                {
-                    String msg = BLINKER_F("{\"hello\":\"world\"}");
-
-                    String s= BLINKER_F("HTTP/1.1 200 OK\r\n");
-                    s += BLINKER_F("Content-Type: application/json;");
-                    s += BLINKER_F("charset=utf-8\r\n");
-                    s += BLINKER_F("Content-Length: ");
-                    s += String(msg.length());
-                    s += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
-                    s += msg;
-                    s += BLINKER_F("\r\n");
-
-                    _apClient.print(s);
-
-                    _apClient.stop();
-
-                    parseUrl(data);
-                }
-            }
-        }
-        ::delay(10);
-    }
 }
 
 void BlinkerMQTT::commonBegin(const char* _ssid, const char* _pswd)
@@ -1970,6 +1935,7 @@ void BlinkerMQTT::smartconfigBegin()
 
 void BlinkerMQTT::apconfigBegin()
 {
+    #if defined(BLINKER_APCONFIG)
     _configType = APCFG;
 
     if (!autoInit()) softAPinit();
@@ -1979,6 +1945,7 @@ void BlinkerMQTT::apconfigBegin()
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
     #elif defined(ESP32)
         BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
+    #endif
     #endif
 }
 
@@ -2055,7 +2022,7 @@ void BlinkerMQTT::smartconfig()
     // BLINKER_LOG(BLINKER_F("IP Address: "));
     // BLINKER_LOG(WiFi.localIP());
 }
-
+#if defined(BLINKER_APCONFIG)
 void BlinkerMQTT::softAPinit()
 {
     // WiFiServer _apServer(80);
@@ -2138,6 +2105,55 @@ void BlinkerMQTT::softAPinit()
     // }
 }
 
+void BlinkerMQTT::checkAPCFG()
+{
+    if(WiFi.status() != WL_CONNECTED)
+    {
+        // serverClient();
+        _apClient = _apServer->available();
+        // if (_apClient.status() == CLOSED)
+        if (!_apClient.connected())
+        {
+            _apClient.stop();
+            BLINKER_LOG(BLINKER_F("Connection closed on _apClient"));
+        }
+        else
+        {
+            if (_apClient.available())
+            {
+                String data = _apClient.readStringUntil('\r');
+
+                // data = data.substring(4, data.length() - 9);
+                _apClient.flush();
+
+                BLINKER_LOG(BLINKER_F("clientData: "), data);
+
+                if (STRING_contains_string(data, "ssid") && \
+                    STRING_contains_string(data, "pswd"))
+                {
+                    String msg = BLINKER_F("{\"hello\":\"world\"}");
+
+                    String s= BLINKER_F("HTTP/1.1 200 OK\r\n");
+                    s += BLINKER_F("Content-Type: application/json;");
+                    s += BLINKER_F("charset=utf-8\r\n");
+                    s += BLINKER_F("Content-Length: ");
+                    s += String(msg.length());
+                    s += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
+                    s += msg;
+                    s += BLINKER_F("\r\n");
+
+                    _apClient.print(s);
+
+                    _apClient.stop();
+
+                    parseUrl(data);
+                }
+            }
+        }
+        ::delay(10);
+    }
+}
+
 // void BlinkerMQTT::serverClient()
 // {
 //     if (!_apClient)
@@ -2212,7 +2228,7 @@ bool BlinkerMQTT::parseUrl(String data)
     _connectTime = millis();
     return true;
 }
-
+#endif
 void BlinkerMQTT::connectWiFi(String _ssid, String _pswd)
 {
     connectWiFi(_ssid.c_str(), _pswd.c_str());
