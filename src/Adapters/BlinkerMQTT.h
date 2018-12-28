@@ -45,20 +45,20 @@ enum b_configStatus_t {
 // static WiFiServer *_apServer;
 // static WiFiClient _apClient;
 
-class BlinkerSharer
-{
-    public :
-        BlinkerSharer(const String & _uuid)
-        {
-            name = (char*)malloc((_uuid.length()+1)*sizeof(char));
-            strcpy(name, _uuid.c_str());
-        }
+// class BlinkerSharer
+// {
+//     public :
+//         BlinkerSharer(const String & _uuid)
+//         {
+//             name = (char*)malloc((_uuid.length()+1)*sizeof(char));
+//             strcpy(name, _uuid.c_str());
+//         }
 
-        char * uuid() { return name; }
+//         char * uuid() { return name; }
 
-    private :
-        char * name;
-};
+//     private :
+//         char * name;
+// };
 
 class BlinkerMQTT : public BlinkerStream
 {

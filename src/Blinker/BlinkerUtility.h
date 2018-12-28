@@ -50,6 +50,23 @@ extern "C" {
 //     ALI_SENSOR
 // };
 
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+class BlinkerSharer
+{
+    public :
+        BlinkerSharer(const String & _uuid)
+        {
+            name = (char*)malloc((_uuid.length()+1)*sizeof(char));
+            strcpy(name, _uuid.c_str());
+        }
+
+        char * uuid() { return name; }
+
+    private :
+        char * name;
+};
+#endif
+
 template<class T>
 String STRING_format(T p) { return String(p); }
 
