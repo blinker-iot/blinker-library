@@ -39,15 +39,24 @@
 
 #include <Blinker.h>
 
-#include <modules/dht/DHT.h>
+BlinkerNumber HUMI("humi");
+BlinkerNumber TEMP("temp");
 
-#define DHTPIN 4
+// Download Adafruit DHT-sensor-library library here:
+// https://github.com/adafruit/DHT-sensor-library
+#include <DHT.h>
+
+#define DHTPIN 2
 
 //#define DHTTYPE DHT11   // DHT 11
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
 
 DHT dht(DHTPIN, DHTTYPE);
+
+uint32_t read_time = 0;
+
+float humi_read, temp_read;
 
 void dataRead(const String & data)
 {
@@ -58,6 +67,12 @@ void dataRead(const String & data)
     uint32_t BlinkerTime = millis();
     Blinker.print(BlinkerTime);
     Blinker.print("millis", BlinkerTime);
+}
+
+void heartbeat()
+{
+    HUMI.print(humi_read);
+    TEMP.print(temp_read);
 }
 
 void setup()
@@ -77,23 +92,25 @@ void loop()
 {
     Blinker.run();
 
-    float h = dht.readHumidity();
-    float t = dht.readTemperature();
+    if (read_time == 0 || (millis() - read_time) >= 2000)
+    {
+        read_time = millis();
 
-    if (isnan(h) || isnan(t)) {
-        BLINKER_LOG("Failed to read from DHT sensor!");
-        return;
+        float h = dht.readHumidity();
+        float t = dht.readTemperature();        
+
+        if (isnan(h) || isnan(t)) {
+            BLINKER_LOG("Failed to read from DHT sensor!");
+            return;
+        }
+
+        float hic = dht.computeHeatIndex(t, h, false);
+
+        humi_read = h;
+        temp_read = t;
+
+        BLINKER_LOG("Humidity: ", h, " %");
+        BLINKER_LOG("Temperature: ", t, " *C");
+        BLINKER_LOG("Heat index: ", hic, " *C");
     }
-
-    float hic = dht.computeHeatIndex(t, h, false);
-
-    BLINKER_LOG("Humidity: ", h, " %");
-    BLINKER_LOG("Temperature: ", t, " *C");
-    BLINKER_LOG("Heat index: ", hic, " *C");
-
-    Blinker.print("humi", h, " %");
-    Blinker.print("temp", t, " *C");
-    Blinker.print("hic", hic, " *C");
-
-    Blinker.delay(2000);
 }
