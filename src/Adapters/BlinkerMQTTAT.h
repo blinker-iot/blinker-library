@@ -87,6 +87,7 @@ class BlinkerMQTTAT : public BlinkerStream
         void aligenieType(int _type) { _aliType = _type; }
         void duerType(int _type) { _duerType = _type; }
         void freshAlive() { kaTime = millis(); isAlive = true; }
+        void sharers(const String & data);
 
     private :
         bool isMQTTinit = false;
@@ -103,6 +104,9 @@ class BlinkerMQTTAT : public BlinkerStream
         int checkDuerPrintSpan();
 
     protected :
+        BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
+        uint8_t     _sharerCount = 0;
+        uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
         int _aliType = ALI_NONE;
         int _duerType = DUER_NONE;
         // uint8_t     pinDataNum = 0;
@@ -598,6 +602,8 @@ void BlinkerMQTTAT::subscribe()
                 dataGet = dataGet.substring(0, dataGet.length() - 1) + \
                         ",\"deviceType\":\"AliGenie\"}";
 
+                _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+
                 if (!isFresh_MQTT_AT && dataGet.length() < BLINKER_MAX_READ_SIZE)
                 {
                     msgBuf_MQTT_AT = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
@@ -638,12 +644,48 @@ void BlinkerMQTTAT::subscribe()
             }
             else
             {
-                // dataGet = String((char *)iotSub_MQTT_AT->lastread);
-                root.printTo(dataGet);
-                
-                BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
-                                    check is from bridge/share device, \
-                                    data: "), dataGet);
+                if (_sharerCount)
+                {
+                    for (uint8_t num = 0; num < _sharerCount; num++)
+                    {
+                        if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+                        {
+                            _sharerFrom = num;
+
+                            kaTime = millis();
+
+                            isAvail_MQTT_AT = true;
+                            isAlive = true;
+
+                            dataGet = dataGet.substring(0, dataGet.length() - 1) + \
+                                        ",\"deviceType\":\"OwnApp\"}";
+
+                            if (!isFresh_MQTT_AT && dataGet.length() < BLINKER_MAX_READ_SIZE)
+                            {
+                                msgBuf_MQTT_AT = (char*)malloc(BLINKER_MAX_READ_SIZE*sizeof(char));
+                                strcpy(msgBuf_MQTT_AT, dataGet.c_str());
+                                isFresh_MQTT_AT = true;
+                            }
+                            else if (dataGet.length() < BLINKER_MAX_READ_SIZE)
+                            {
+                                strcpy(msgBuf_MQTT_AT, dataGet.c_str());
+                                isFresh_MQTT_AT = true;
+                            }
+
+                            BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+                            BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+                        }
+                    }
+                }
+                else
+                {
+                    // dataGet = String((char *)iotSub_MQTT_AT->lastread);
+                    root.printTo(dataGet);
+                    
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                                        check is from bridge/share device, \
+                                        data: "), dataGet);
+                }
                 
                 // return;
 
@@ -757,7 +799,14 @@ int BlinkerMQTTAT::print(char * data, bool needCheck)
         strcat(data, MQTT_ID_MQTT_AT);
         data_add = BLINKER_F("\",\"toDevice\":\"");
         strcat(data, data_add.c_str());
-        strcat(data, UUID_MQTT_AT);
+        if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
+        {
+            strcat(data, _sharers[_sharerFrom]->uuid());
+        }
+        else
+        {
+            strcat(data, UUID_MQTT_AT);
+        }
         data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         strcat(data, data_add.c_str());
 
@@ -1310,6 +1359,46 @@ char * BlinkerMQTTAT::deviceName() { return DEVICE_NAME_MQTT_AT;/*MQTT_ID_MQTT_A
 char * BlinkerMQTTAT::deviceId() { return MQTT_ID_MQTT_AT; }
 
 char * BlinkerMQTTAT::uuid() { return UUID_MQTT_AT; }
+
+void BlinkerMQTTAT::sharers(const String & data)
+{
+    BLINKER_LOG_ALL(BLINKER_F("sharers data: "), data);
+
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(data);
+
+    if (!root.success()) return;
+
+    String user_name = "";
+
+    if (_sharerCount)
+    {
+        for (_sharerCount; _sharerCount > 0; _sharerCount--)
+        {
+            delete _sharers[_sharerCount - 1];
+        }
+    }
+
+    _sharerCount = 0;
+
+    for (uint8_t num = 0; num < BLINKER_MQTT_MAX_SHARERS_NUM; num++)
+    {
+        user_name = root["users"][num].as<String>();
+
+        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
+
+            _sharerCount++;
+
+            _sharers[num] = new BlinkerSharer(user_name);
+        }
+        else
+        {
+            break;
+        }
+    }
+}
 
 void BlinkerMQTTAT::softAPinit()
 {
