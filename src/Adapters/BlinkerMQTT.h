@@ -127,7 +127,7 @@ class BlinkerMQTT : public BlinkerStream
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
         uint8_t     _sharerCount = 0;
-        uint8_t     _sharerFrom = BLINKER_MQTT_MAX_SHARERS_NUM;
+        uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
         bool        _isWiFiInit = false;
         bool        _isBegin = false;
         b_config_t  _configType = COMM;
@@ -477,7 +477,7 @@ void BlinkerMQTT::subscribe()
                 isAvail_MQTT = true;
                 isAlive = true;
 
-                _sharerFrom = BLINKER_MQTT_MAX_SHARERS_NUM;
+                _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
             }
             else if (_uuid == BLINKER_CMD_ALIGENIE)
             {
@@ -497,16 +497,34 @@ void BlinkerMQTT::subscribe()
             }
             else
             {
-                // dataGet = String((char *)iotSub_MQTT->lastread);
-                root.printTo(dataGet);
+                if (_sharerCount)
+                {
+                    for (uint8_t num = 0; num < _sharerCount; num++)
+                    {
+                        if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+                        {
+                            _sharerFrom = num;
 
-                BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
-                                    check is from bridge/share device, \
-                                    data: "), dataGet);
+                            kaTime = millis();
 
-                // return;
+                            BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+                            BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+                        }
+                    }
+                }
+                else
+                {
+                    // dataGet = String((char *)iotSub_MQTT->lastread);
+                    root.printTo(dataGet);
 
-                // isBavail = true;
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                                        check is from bridge/share device, \
+                                        data: "), dataGet);
+
+                    // return;
+
+                    // isBavail = true;
+                }
 
                 isAvail_MQTT = true;
                 isAlive = true;
@@ -1204,6 +1222,8 @@ void BlinkerMQTT::sharers(const String & data)
             delete _sharers[_sharerCount - 1];
         }
     }
+
+    _sharerCount = 0;
 
     for (uint8_t num = 0; num < BLINKER_MQTT_MAX_SHARERS_NUM; num++)
     {

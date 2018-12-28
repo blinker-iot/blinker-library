@@ -1123,6 +1123,8 @@
 
     #define BLINKER_MQTT_MAX_SHARERS_NUM    9
 
+    #define BLINKER_MQTT_FROM_AUTHER        BLINKER_MQTT_MAX_SHARERS_NUM
+
 #endif
 
 #if defined(ESP8266) || defined(ESP32)

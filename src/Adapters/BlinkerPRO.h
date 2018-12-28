@@ -73,6 +73,7 @@ class BlinkerPRO : public BlinkerStream
         int deviceRegister() { return connectServer(); }
         int authCheck();
         void freshAlive() { kaTime = millis(); isAlive = true; }
+        void sharers(const String & data);
 
     private :
         bool isMQTTinit = false;
@@ -90,6 +91,9 @@ class BlinkerPRO : public BlinkerStream
         int pubHello();
 
     protected :
+        BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
+        uint8_t     _sharerCount = 0;
+        uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
         const char* _deviceType;
         // char*       _authKey;
         // char*       _aliType;
@@ -422,16 +426,35 @@ void BlinkerPRO::subscribe()
             }
             else
             {
-                // dataGet = String((char *)iotSub_PRO->lastread);
-                root.printTo(dataGet);
-                
-                BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
-                                    check is from bridge/share device, \
-                                    data: "), dataGet);
-                
-                // return;
+                if (_sharerCount)
+                {
+                    for (uint8_t num = 0; num < _sharerCount; num++)
+                    {
+                        if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+                        {
+                            _sharerFrom = num;
 
-                // isBavail = true;
+                            kaTime = millis();
+
+                            BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+                            BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+                        }
+                    }
+                }
+                else
+                {
+                    // dataGet = String((char *)iotSub_PRO->lastread);
+                    root.printTo(dataGet);
+                    
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                                        check is from bridge/share device, \
+                                        data: "), dataGet);
+                
+                    // return;
+
+                    // isBavail = true;
+                }
+
                 isAvail_PRO = true;
                 isAlive = true;
             }
@@ -548,7 +571,14 @@ int BlinkerPRO::print(char * data, bool needCheck)
         strcat(data, MQTT_DEVICEID_PRO);
         data_add = BLINKER_F("\",\"toDevice\":\"");
         strcat(data, data_add.c_str());
-        strcat(data, UUID_PRO);
+        if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
+        {
+            strcat(data, _sharers[_sharerFrom]->uuid());
+        }
+        else
+        {
+            strcat(data, UUID_PRO);
+        }
         data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         strcat(data, data_add.c_str());
 
@@ -1060,6 +1090,46 @@ int BlinkerPRO::autoPrint(uint32_t id)
 // }
 
 char * BlinkerPRO::deviceName() { return MQTT_DEVICEID_PRO;/*MQTT_ID_PRO;*/ }
+
+void BlinkerPRO::sharers(const String & data)
+{
+    BLINKER_LOG_ALL(BLINKER_F("sharers data: "), data);
+
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(data);
+
+    if (!root.success()) return;
+
+    String user_name = "";
+
+    if (_sharerCount)
+    {
+        for (_sharerCount; _sharerCount > 0; _sharerCount--)
+        {
+            delete _sharers[_sharerCount - 1];
+        }
+    }
+
+    _sharerCount = 0;
+
+    for (uint8_t num = 0; num < BLINKER_MQTT_MAX_SHARERS_NUM; num++)
+    {
+        user_name = root["users"][num].as<String>();
+
+        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
+
+            _sharerCount++;
+
+            _sharers[num] = new BlinkerSharer(user_name);
+        }
+        else
+        {
+            break;
+        }
+    }
+}
 
 int BlinkerPRO::authCheck()
 {
