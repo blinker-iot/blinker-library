@@ -454,9 +454,11 @@ void BlinkerWlan::serverClient()
                     String msg = BLINKER_F("{\"hello\":\"world\"}");
                     
                     String s= BLINKER_F("HTTP/1.1 200 OK\r\nContent-Type: application/json;charset=utf-8\r\n");
-                    s += String("Content-Length: " + String(msg.length()) + "\r\n" +  
-                        "Connection: Keep Alive\r\n\r\n" +  
-                        msg + "\r\n");
+                    s += BLINKER_F("Content-Length: ");
+                    s += String(msg.length());
+                    s += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
+                    s += msg;
+                    s += BLINKER_F("\r\n");
 
                     _client.print(s);
                     

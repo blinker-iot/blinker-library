@@ -139,10 +139,18 @@ bool BlinkerOTA::update() {
             BLINKER_LOG_FreeHeap();
             BLINKER_LOG_ALL(BLINKER_F("Fetching Bin: "), ota_url);
 
-            client_s.print(String("GET ") + ota_url + " HTTP/1.1\r\n" +
-                        "Host: " + ota_host + "\r\n" +
-                        "Cache-Control: no-cache\r\n" +
-                        "Connection: close\r\n\r\n");
+            String _ota_url = BLINKER_F("GET ");
+            _ota_url += ota_url;
+            _ota_url += BLINKER_F(" HTTP/1.1\r\nHost: ");
+            _ota_url += ota_host;
+            _ota_url += BLINKER_F("\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n");
+
+            // client_s.print(String("GET ") + ota_url + " HTTP/1.1\r\n" +
+            //             "Host: " + ota_host + "\r\n" +
+            //             "Cache-Control: no-cache\r\n" +
+            //             "Connection: close\r\n\r\n");
+
+            client_s.print(_ota_url);
 
             unsigned long timeout = millis();
             while (client_s.available() == 0) {
