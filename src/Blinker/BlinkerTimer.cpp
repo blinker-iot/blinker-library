@@ -71,7 +71,7 @@ void _cd_callback()
     // _cdState = false;
     _cdTrigged = true;
     
-    BLINKER_LOG_ALL(("countdown trigged!"));
+    BLINKER_LOG_ALL(BLINKER_F("countdown trigged!"));
 }
 
 void _lp_callback()
@@ -128,7 +128,7 @@ void _lp_callback()
     }
     _lpTrigged = true;
 
-    BLINKER_LOG_ALL(("loop trigged!"));
+    BLINKER_LOG_ALL(BLINKER_F("loop trigged!"));
 }
 
 void timingHandle(uint8_t cbackData)
