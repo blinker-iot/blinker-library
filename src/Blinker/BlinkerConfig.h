@@ -364,10 +364,6 @@
 
 #define BLINKER_CMD_MIN                 "min"
 
-#define BLINKER_CMD_ALIGENIE            "AliGenie"
-
-#define BLINKER_CMD_DUEROS              "DuerOS"
-
 #define BLINKER_CMD_MODE                "mode"
 
 #define BLINKER_CMD_CANCELMODE          "cMode"
@@ -429,6 +425,12 @@
 #define BLINKER_CMD_UPGRADE             "upgrade"
 
 #define BLINKER_CMD_SHARE               "share"
+
+#define BLINKER_CMD_ALIGENIE            "AliGenie"
+
+#define BLINKER_CMD_DUEROS              "DuerOS"
+
+#define BLINKER_CMD_SERVERCLIENT        "serverClient"
 
 #define BLINKER_CMD_MODE_READING_NUMBER         0
 
@@ -1124,6 +1126,8 @@
     #define BLINKER_MQTT_MAX_SHARERS_NUM    9
 
     #define BLINKER_MQTT_FROM_AUTHER        BLINKER_MQTT_MAX_SHARERS_NUM
+
+    #define BLINKER_MQTT_FORM_SERVER        BLINKER_MQTT_MAX_SHARERS_NUM + 1
 
 #endif
 

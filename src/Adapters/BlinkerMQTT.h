@@ -495,6 +495,15 @@ void BlinkerMQTT::subscribe()
                 isDuerAlive = true;
                 isDuerAvail = true;
             }
+            else if (_uuid == BLINKER_CMD_SERVERCLIENT)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("form Sever"));
+
+                isAvail_MQTT = true;
+                isAlive = true;
+
+                _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+            }
             else
             {
                 if (_sharerCount)
