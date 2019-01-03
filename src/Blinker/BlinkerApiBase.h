@@ -10,6 +10,9 @@ int8_t checkNum(char * name, T * c, uint8_t count)
 {
     for (uint8_t cNum = 0; cNum < count; cNum++)
     {
+        // BLINKER_LOG_ALL("checkName: ", name, ", name: ", c[cNum]->getName());
+        // BLINKER_LOG_ALL("is strcmp: ", strcmp(name, c[cNum]->getName()) == 0);
+        // BLINKER_LOG_ALL("is equal: ", name == c[cNum]->getName());
         if (c[cNum]->checkName(name))
             return cNum;
     }
