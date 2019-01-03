@@ -295,26 +295,45 @@ class BlinkerSlaverAT
                             BLINKER_LOG_ALL(BLINKER_F("serialize _atCmd: "), _atCmd);
                             return;
                         }
+                        else if (_data.length() == startCmd.length())
+                        {
+                            _set = AT_ACTION;
+
+                            // if (addr_end == -1) {
+                            _atCmd = startCmd;
+                            BLINKER_LOG_ALL(BLINKER_F("serialize _atCmd: "), _atCmd);
+                            return;
+                            // }
+
+                            // _atCmd = _data.substring(addr_start, addr_end);
+                            // BLINKER_LOG_ALL(BLINKER_F("serialize _atCmd: "), _atCmd);
+                            // return;
+                        }
                     }
                 }
 
                 // BLINKER_LOG(BLINKER_F("serialize _data: "), _data);
 
                 String serData;
-                uint16_t dataLen = _data.length() - 1;
+                uint16_t dataLen;
+                if (_data.indexOf("\r") != -1) dataLen = _data.length() - 1;
+                else dataLen = _data.length();
 
                 addr_start = 0;
 
                 for (_paramNum = 0; _paramNum < 11; _paramNum++) {
-                    addr_start += addr_end;
-                    addr_start += 1;
-                    serData = _data.substring(addr_start, dataLen);
+                    // if (addr_end != -1)
+                    // {
+                        addr_start += addr_end;
+                        addr_start += 1;
+                        serData = _data.substring(addr_start, dataLen);
 
-                    addr_end = serData.indexOf(",");
+                        addr_end = serData.indexOf(",");
 
-                    BLINKER_LOG_ALL(BLINKER_F("serialize serData: "), serData);
-                    BLINKER_LOG_ALL(BLINKER_F("serialize addr_start: "), addr_start);
-                    BLINKER_LOG_ALL(BLINKER_F("serialize addr_end: "), addr_end);
+                        BLINKER_LOG_ALL(BLINKER_F("serialize serData: "), serData);
+                        BLINKER_LOG_ALL(BLINKER_F("serialize addr_start: "), addr_start);
+                        BLINKER_LOG_ALL(BLINKER_F("serialize addr_end: "), addr_end);
+                    // }
 
                     if (addr_end == -1) {
                         if (addr_start >= dataLen) return;

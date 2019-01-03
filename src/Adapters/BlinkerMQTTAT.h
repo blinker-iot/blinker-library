@@ -1578,7 +1578,7 @@ void BlinkerMQTTAT::connectWiFi(const char* _ssid, const char* _pswd)
     IPAddress myip = WiFi.localIP();
     BLINKER_LOG(BLINKER_F("Your IP is: "), myip);
 
-    mDNSInit();
+    // mDNSInit();
 }
 
 void BlinkerMQTTAT::smartconfig()

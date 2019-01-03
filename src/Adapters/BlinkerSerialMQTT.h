@@ -150,17 +150,17 @@ int BlinkerSerialMQTT::aliPrint(const String & s)
         return false;
     }
 
-    s = s.substring(0, s.length() - 1) + \
+    String _s = s.substring(0, s.length() - 1) + \
             ",\"toDeviceAT\":\"AliGenie\"}";
 
     respTime = millis();
     
-    BLINKER_LOG_ALL(BLINKER_F("AliGenie Response: "), s);
+    BLINKER_LOG_ALL(BLINKER_F("AliGenie Response: "), _s);
     
     if(connected()) {
         BLINKER_LOG_ALL(BLINKER_F("Succese..."));
         
-        stream->println(s);
+        stream->println(_s);
         return true;
     }
     else {
@@ -177,17 +177,17 @@ int BlinkerSerialMQTT::duerPrint(const String & s)
         return false;
     }
 
-    s = s.substring(0, s.length() - 1) + \
+    String _s = s.substring(0, s.length() - 1) + \
             ",\"toDeviceAT\":\"DuerOS\"}";
 
     respTime = millis();
     
-    BLINKER_LOG_ALL(BLINKER_F("DuerOS Response: "), s);
+    BLINKER_LOG_ALL(BLINKER_F("DuerOS Response: "), _s);
     
     if(connected()) {
         BLINKER_LOG_ALL(BLINKER_F("Succese..."));
         
-        stream->println(s);
+        stream->println(_s);
         return true;
     }
     else {

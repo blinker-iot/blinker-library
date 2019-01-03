@@ -866,7 +866,7 @@ void BlinkerApi::run()
             {
                 _proStatus = PRO_WLAN_CONNECTED;
 
-                if (checkCanOTA()) loadOTA();
+                // if (checkCanOTA()) loadOTA();
 
                 BProto::begin(type());
                 _isConnBegin = true;
@@ -966,7 +966,8 @@ void BlinkerApi::run()
                         }
                     }
 
-                    // if (checkCanOTA()) loadOTA();
+                    if (checkCanOTA()) loadOTA();
+                    BProto::sharers(freshSharers());
                 }
             }
             else
@@ -1020,6 +1021,7 @@ void BlinkerApi::run()
                                 BLINKER_F(", connect_time: "), connect_time);
 
                 if (checkCanOTA()) loadOTA();
+                BProto::sharers(freshSharers());
 
                 bridgeInit();
                 
@@ -5970,7 +5972,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
                             if (_type == BLINKER_CMD_BRIDGE_NUMBER)
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
-                            else if (_type == BLINKER_CMD_OTA_NUMBER)
+                            else if (_type == BLINKER_CMD_OTA_NUMBER || _type == BLINKER_CMD_FRESH_SHARERS_NUMBER)
                                 payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
                             else
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
@@ -7288,7 +7290,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             {
                 run();
 
-                if (BProto::available())
+                if (BProto::isAvail)
                 {
                     if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
                     {
@@ -7598,7 +7600,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         else {
             free(_masterAT);
 
-            return 0;
+            return "";
         }
     }
 
