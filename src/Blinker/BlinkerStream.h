@@ -46,6 +46,7 @@ class BlinkerStream
             virtual int duerAvail() = 0;
         #elif defined(BLINKER_AT_MQTT)
             virtual void begin(const char* auth) = 0;
+            // virtual void begin() = 0;
             virtual int serialAvailable() = 0;
             virtual int serialPrint(const String & s1, const String & s2, bool needCheck = true) = 0;
             virtual int serialPrint(const String & s, bool needCheck = true) = 0;

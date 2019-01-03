@@ -3220,12 +3220,17 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     {
         int8_t num = checkNum(_wName, _Widgets_str, _wCount_str);
 
+        // BLINKER_LOG_ALL("====checkNum: ", num, " ====");
+        // BLINKER_LOG_ALL("====_data: ", _data, " ====");
+
         if (num == BLINKER_OBJECT_NOT_AVAIL) return;
 
         String state;
 
         if (STRING_find_string_value(_data, state, _wName))
         {
+            BLINKER_LOG_ALL("state: ", state);
+            
             _fresh = true;
 
             blinker_callback_with_string_arg_t nbFunc = _Widgets_str[num]->getFunc();
@@ -3439,6 +3444,17 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
             #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                 loadTiming();
+            #endif
+
+            #if defined(BLINKER_AT_MQTT)
+                String reqData = BLINKER_F("+");
+                reqData += BLINKER_CMD_BLINKER_MQTT;
+                reqData += BLINKER_F(":");
+                reqData += BProto::deviceId();
+                reqData += BLINKER_F(",");
+                reqData += BProto::uuid();
+                BProto::serialPrint(reqData);
+                BProto::serialPrint(BLINKER_CMD_OK);
             #endif
         }
 
@@ -6828,8 +6844,10 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                             return;
                         }
 
-                        BProto::connectWiFi((_slaverAT->getParam(MQTT_WIFI_SSID)).c_str(), 
-                                    (_slaverAT->getParam(MQTT_WIFI_PSWD)).c_str());
+                        // BProto::connectWiFi((_slaverAT->getParam(MQTT_WIFI_SSID)).c_str(), 
+                        //             (_slaverAT->getParam(MQTT_WIFI_PSWD)).c_str());
+
+                        BProto::connectWiFi("有没有wifi", "i8888888");
                         
                         BProto::begin((_slaverAT->getParam(MQTT_AUTH_KEY)).c_str());
                         _status = BL_INITED;
@@ -6854,7 +6872,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                             return;
                         }
 
-                        if (!BProto::autoInit()) BProto::smartconfig();
+                        // if (!BProto::autoInit()) 
+                        BProto::smartconfig();
 
                         BProto::begin((_slaverAT->getParam(MQTT_AUTH_KEY)).c_str());
                         _status = BL_INITED;
@@ -6897,14 +6916,14 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                         return;
                     }
 
-                    reqData = BLINKER_F("+");
-                    reqData += BLINKER_CMD_BLINKER_MQTT;
-                    reqData += BLINKER_F(":");
-                    reqData += BProto::deviceId();
-                    reqData += BLINKER_F(",");
-                    reqData += BProto::uuid();
-                    BProto::serialPrint(reqData);
-                    BProto::serialPrint(BLINKER_CMD_OK);
+                    // reqData = BLINKER_F("+");
+                    // reqData += BLINKER_CMD_BLINKER_MQTT;
+                    // reqData += BLINKER_F(":");
+                    // reqData += BProto::deviceId();
+                    // reqData += BLINKER_F(",");
+                    // reqData += BProto::uuid();
+                    // BProto::serialPrint(reqData);
+                    // BProto::serialPrint(BLINKER_CMD_OK);
                     break;
                 case AT_ACTION:
                     // BProto::serialPrint();
@@ -7360,7 +7379,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         while (!_isInit) {
             run();
 
-            if (BProto::available())
+            // if (BProto::available())
+            if (BProto::isAvail)
             {
                 // if (!_masterAT) {
                 _masterAT = new BlinkerMasterAT();
@@ -7404,7 +7424,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     void BlinkerApi::parseATdata()
     {
         uint32_t at_start = millis();
-        while (!BProto::available())
+        // while (!BProto::available())
+        while (!BProto::isAvail)
         {
             run();
             if (millis() - at_start > BLINKER_AT_MSG_TIMEOUT) break;

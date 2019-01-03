@@ -564,7 +564,7 @@
 
     #define BLINKER_CMD_GPIOWREAD               "SYSGPIOREAD"
 
-    #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_MQTT"
+    #define BLINKER_CMD_BLINKER_MQTT            "BLINKER_WIFI"
 
     #define BLINKER_CMD_BLINKER_ALIGENIE        "BLINKER_ALIGENIE"
 
