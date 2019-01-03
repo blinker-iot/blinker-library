@@ -866,7 +866,7 @@ void BlinkerApi::run()
             {
                 _proStatus = PRO_WLAN_CONNECTED;
 
-                if (checkCanOTA()) loadOTA();
+                // if (checkCanOTA()) loadOTA();
 
                 BProto::begin(type());
                 _isConnBegin = true;
@@ -966,7 +966,8 @@ void BlinkerApi::run()
                         }
                     }
 
-                    // if (checkCanOTA()) loadOTA();
+                    if (checkCanOTA()) loadOTA();
+                    BProto::sharers(freshSharers());
                 }
             }
             else
@@ -1020,6 +1021,7 @@ void BlinkerApi::run()
                                 BLINKER_F(", connect_time: "), connect_time);
 
                 if (checkCanOTA()) loadOTA();
+                BProto::sharers(freshSharers());
 
                 bridgeInit();
                 
