@@ -319,7 +319,7 @@ bool BlinkerWlan::connected() {
                 
                 return true;
             }
-            break;
+            // break;
         case BWL_APCONFIG_DONE :
             if (WiFi.status() != WL_CONNECTED) {
                 if (millis() - connectTime > 15000)
