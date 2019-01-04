@@ -150,8 +150,8 @@ int BlinkerSerialMQTT::aliPrint(const String & s)
         return false;
     }
 
-    String _s = s.substring(0, s.length() - 1) + \
-            ",\"toDeviceAT\":\"AliGenie\"}";
+    String _s = s.substring(0, s.length() - 1);
+    _s += BLINKER_F(",\"toDeviceAT\":\"AliGenie\"}");
 
     respTime = millis();
     
@@ -177,8 +177,8 @@ int BlinkerSerialMQTT::duerPrint(const String & s)
         return false;
     }
 
-    String _s = s.substring(0, s.length() - 1) + \
-            ",\"toDeviceAT\":\"DuerOS\"}";
+    String _s = s.substring(0, s.length() - 1);
+    _s += BLINKER_F(",\"toDeviceAT\":\"DuerOS\"}");
 
     respTime = millis();
     
