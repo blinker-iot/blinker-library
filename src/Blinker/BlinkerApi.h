@@ -3480,7 +3480,15 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
             #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                 loadTiming();
-                BProto::sharers(freshSharers());
+                String _shareData = freshSharers();
+                if (STRING_contains_string(_shareData, "users") == false)
+                {
+                    _shareData = freshSharers();
+                }
+                if (STRING_contains_string(_shareData, "users") == true)
+                {
+                    BProto::sharers(_shareData);
+                }
                 BProto::connect();
             #endif
 
@@ -5226,7 +5234,16 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             {
                 _fresh = true;
 
-                BProto::sharers(freshSharers());
+                // BProto::sharers(freshSharers());
+                String _shareData = freshSharers();
+                if (STRING_contains_string(_shareData, "users") == false)
+                {
+                    _shareData = freshSharers();
+                }
+                if (STRING_contains_string(_shareData, "users") == true)
+                {
+                    BProto::sharers(_shareData);
+                }
                 BProto::connect();
             }
         }
@@ -7394,15 +7411,17 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     BLINKER_CMD_BLINKER_DUEROS + STRING_format("=3"));
         #endif
 
-        String cmd_start = BLINKER_CMD_AT + STRING_format("+") + \
-                        BLINKER_CMD_BLINKER_MQTT + STRING_format("=");
+        String cmd_start = BLINKER_F(BLINKER_CMD_AT);
+        cmd_start += BLINKER_F("+");
+        cmd_start += BLINKER_F(BLINKER_CMD_BLINKER_MQTT);
+        cmd_start += BLINKER_F("=");
 
         #if defined(BLINKER_ESP_SMARTCONFIG)
-            cmd_start += "1,";
+            cmd_start += BLINKER_F("1,");
         #elif defined(BLINKER_APCONFIG)
-            cmd_start += "2,";
+            cmd_start += BLINKER_F("2,");
         #else
-            cmd_start += "0,";
+            cmd_start += BLINKER_F("0,");
         #endif
 
         cmd_start += _data;
@@ -7438,7 +7457,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     _masterAT->paramNum() == 2)
                 {
                     _isInit = true;
-                    BLINKER_LOG_ALL("ESP AT init");
+                    BLINKER_LOG_ALL(BLINKER_F("ESP AT init"));
                 }
 
                 free(_masterAT);
@@ -7511,25 +7530,25 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         switch (mode)
         {
             case INPUT :
-                pin_data += "0,0";
+                pin_data += BLINKER_F("0,0");
                 break;
             case OUTPUT :
-                pin_data += "1,0";
+                pin_data += BLINKER_F("1,0");
             break;
             case INPUT_PULLUP :
-                pin_data += "0,1";
+                pin_data += BLINKER_F("0,1");
                 break;
             #if defined(ESP8266)
                 case INPUT_PULLDOWN_16 :
-                    pin_data += "0,2";
+                    pin_data += BLINKER_F("0,2");
                     break;
             #elif defined(ESP32)
                 case INPUT_PULLDOWN :
-                    pin_data += "0,2";
+                    pin_data += BLINKER_F("0,2");
                     break;
             #endif
             default :
-                pin_data += "0,0";
+                pin_data += BLINKER_F("0,0");
                 break;
         }
 
@@ -7747,9 +7766,11 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     {
         // strcpy(_authKey, _auth);
 
-        String init_data =  STRING_format(_auth) + "," + \
-                            STRING_format(_ssid) + "," + \
-                            STRING_format(_pswd);
+        String init_data =  STRING_format(_auth);
+        init_data += BLINKER_F(",");
+        init_data += STRING_format(_ssid);
+        init_data += BLINKER_F(",");
+        init_data += STRING_format(_pswd);
 
         initCheck(init_data);
     }

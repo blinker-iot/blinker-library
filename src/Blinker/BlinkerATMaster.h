@@ -42,7 +42,7 @@ class BlinkerMasterAT
         uint8_t _paramNum;
         // String _data;
         String _reqName;
-        char _param[4][34];
+        char _param[4][32];
 
         bool serialize(String _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
