@@ -6844,10 +6844,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                             return;
                         }
 
-                        // BProto::connectWiFi((_slaverAT->getParam(MQTT_WIFI_SSID)).c_str(), 
-                        //             (_slaverAT->getParam(MQTT_WIFI_PSWD)).c_str());
-
-                        BProto::connectWiFi("有没有wifi", "i8888888");
+                        BProto::connectWiFi((_slaverAT->getParam(MQTT_WIFI_SSID)).c_str(), 
+                                    (_slaverAT->getParam(MQTT_WIFI_PSWD)).c_str());
                         
                         BProto::begin((_slaverAT->getParam(MQTT_AUTH_KEY)).c_str());
                         _status = BL_INITED;
