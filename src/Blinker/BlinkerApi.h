@@ -325,6 +325,9 @@ class BlinkerApi : public BlinkerProtocol
             template<typename T>
             bool sms(const T& msg);
             void reset();
+
+            void aligeniePrint(String & _msg);
+            void duerPrint(String & _msg);
         #endif
         
         void attachData(blinker_callback_with_string_arg_t newFunction)
@@ -1115,12 +1118,19 @@ void BlinkerApi::run()
                     #endif
                 #endif
 
-                #if defined(BLINKER_MQTT_AT) && defined(BLINKER_ALIGENIE)
+                #if defined(BLINKER_MQTT_AT) && (defined(BLINKER_ALIGENIE) || defined(BLINKER_DUEROS))
                     if (isAvail)
                     {
                         aliParse(BProto::lastRead());
 
                         if (STRING_contains_string(BProto::lastRead(), "AliGenie"))
+                        {
+                            flush();
+                        }
+
+                        duerParse(BProto::lastRead());
+
+                        if (STRING_contains_string(BProto::lastRead(), "DuerOS"))
                         {
                             flush();
                         }
@@ -6289,7 +6299,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     {
         BLINKER_LOG_ALL(BLINKER_F("AliGenie parse data: "), _data);
 
-        if (STRING_contains_string(_data, "vAssistant"))
+        if (STRING_contains_string(_data, "AliGenie"))
         {
             String value = "";
             if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
@@ -6373,7 +6383,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     {
         BLINKER_LOG_ALL(BLINKER_F("DuerOS parse data: "), _data);
 
-        if (STRING_contains_string(_data, "vAssistant"))
+        if (STRING_contains_string(_data, "DuerOS"))
         {
             String value = "";
             if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
@@ -7598,7 +7608,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     }
 
     
-     template<typename T>
+    template<typename T>
     String BlinkerApi::atGetString(const String & cmd, const T& msg)
     {
         BProto::print(BLINKER_CMD_AT + STRING_format("+") + \
@@ -7636,7 +7646,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     }
 
     
-     template<typename T>
+    template<typename T>
     bool BlinkerApi::sms(const T& msg)
     {
         return atGetString(BLINKER_CMD_SMS_AT, msg);
@@ -7648,6 +7658,46 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         BProto::print(BLINKER_CMD_AT + STRING_format("+") + BLINKER_CMD_RST);
 
         BProto::printNow();
+    }
+
+    void BlinkerApi::aligeniePrint(String & _msg)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
+
+        // BProto::aliPrint(_msg);
+
+        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+        {
+            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
+            // memcpy(aliData, '\0', _msg.length()+128);
+            // strcpy(aliData, _msg.c_str());
+            BProto::aliPrint(_msg);
+            // free(aliData);
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        }
+    }
+
+    void BlinkerApi::duerPrint(String & _msg)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("response to DuerOS: "), _msg);
+
+        // BProto::aliPrint(_msg);
+
+        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+        {
+            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
+            // memcpy(aliData, '\0', _msg.length()+128);
+            // strcpy(aliData, _msg.c_str());
+            BProto::duerPrint(_msg);
+            // free(aliData);
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        }
     }
 #endif
 
