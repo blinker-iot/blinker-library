@@ -1134,6 +1134,11 @@ void BlinkerApi::run()
                         {
                             flush();
                         }
+
+                        // if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+                        // {
+                        //     flush();
+                        // }
                     }
                 #endif
 
