@@ -502,6 +502,7 @@ void BlinkerMQTTAT::ping()
     }
 
     BLINKER_LOG_ALL(BLINKER_F("MQTT Ping!"));
+    BLINKER_LOG_FreeHeap_ALL();
 
     if (!mqtt_MQTT_AT->ping())
     {
@@ -659,8 +660,8 @@ void BlinkerMQTTAT::subscribe()
                 isAliAlive = true;
                 isAliAvail = true;
 
-                isAvail_MQTT_AT = true;
-                isAlive = true;
+                // isAvail_MQTT_AT = true;
+                // isAlive = true;
 
                 dataGet = dataGet.substring(0, dataGet.length() - 1) + \
                         ",\"deviceType\":\"AliGenie\"}";
@@ -687,8 +688,8 @@ void BlinkerMQTTAT::subscribe()
                 isDuerAlive = true;
                 isDuerAvail = true;
 
-                isAvail_MQTT_AT = true;
-                isAlive = true;
+                // isAvail_MQTT_AT = true;
+                // isAlive = true;
 
                 dataGet = dataGet.substring(0, dataGet.length() - 1) + \
                         ",\"deviceType\":\"DuerOS\"}";
@@ -956,18 +957,24 @@ int BlinkerMQTTAT::mqttPrint(const String & data) {
 
     String _dType = print_data["toDeviceAT"];
 
+    BLINKER_LOG_ALL(("mqttPrint _dType: "), _dType);
+
+    print_data.remove("toDeviceAT");
+    String _data_;
+    print_data.printTo(_data_);
+
     if (_dType == "AliGenie")
     {
-        return aliPrint(data);
+        return aliPrint(_data_);
     }
     else if (_dType == "DuerOS")
     {
-        return duerPrint(data);
+        return duerPrint(_data_);
     }
     else
     {
         char data_print[256];
-        strcpy(data_print, data.c_str());
+        strcpy(data_print, _data_.c_str());
         return print(data_print);
     }
 
@@ -1114,6 +1121,7 @@ int BlinkerMQTTAT::aliPrint(const String & data)
     if (!isJson(data_add)) return false;
             
     BLINKER_LOG_ALL(BLINKER_F("MQTT AliGenie Publish..."));
+    BLINKER_LOG_ALL(data_add);
     BLINKER_LOG_FreeHeap_ALL();
 
     if (mqtt_MQTT_AT->connected())
@@ -1132,7 +1140,7 @@ int BlinkerMQTTAT::aliPrint(const String & data)
 
         if (! mqtt_MQTT_AT->publish(BLINKER_PUB_TOPIC_MQTT_AT, data_add.c_str()))
         {
-            BLINKER_LOG_ALL(data_add);
+            // BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
             BLINKER_LOG_FreeHeap_ALL();
             
@@ -1141,7 +1149,7 @@ int BlinkerMQTTAT::aliPrint(const String & data)
         }
         else
         {
-            BLINKER_LOG_ALL(data_add);
+            // BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...OK!"));
             BLINKER_LOG_FreeHeap_ALL();
             

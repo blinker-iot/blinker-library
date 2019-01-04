@@ -39,12 +39,14 @@ class BlinkerStream
             virtual int autoPrint(uint32_t id) = 0;
             virtual void freshAlive() = 0;
             virtual void sharers(const String & data);
-        #endif
-
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
             virtual int aligenieAvail() = 0;
             virtual int duerAvail() = 0;
-        #elif defined(BLINKER_AT_MQTT)
+        #endif
+
+        // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        //     virtual int aligenieAvail() = 0;
+        //     virtual int duerAvail() = 0;
+        #if defined(BLINKER_AT_MQTT)
             virtual void begin(const char* auth) = 0;
             // virtual void begin() = 0;
             virtual int serialAvailable() = 0;
