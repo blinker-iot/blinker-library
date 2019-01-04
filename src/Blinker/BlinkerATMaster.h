@@ -42,7 +42,7 @@ class BlinkerMasterAT
         uint8_t _paramNum;
         // String _data;
         String _reqName;
-        String _param[4];
+        char _param[4][34];
 
         bool serialize(String _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
@@ -98,7 +98,8 @@ class BlinkerMasterAT
                         addr_end = serData.indexOf(" ");
 
                         if (addr_end != -1) {
-                            _param[_paramNum] = serData.substring(0, addr_end);
+                            // _param[_paramNum] = serData.substring(0, addr_end);
+                            strcpy(_param[_paramNum], serData.substring(0, addr_end).c_str());
                             _paramNum++;
                             _isReq = AT_M_RESP;
                             BLINKER_LOG_ALL(BLINKER_F("_param0["), _paramNum, \
@@ -106,22 +107,24 @@ class BlinkerMasterAT
                             return;
                         }
 
-                        _param[_paramNum] = serData;
+                        // _param[_paramNum] = serData;
+                        strcpy(_param[_paramNum], serData.c_str());
                         
-                        // BLINKER_LOG(BLINKER_F("serialize serData: "), serData);
+                        // BLINKER_LOG_ALL(BLINKER_F("serialize serData: "), serData);
                         
                         BLINKER_LOG_ALL(BLINKER_F("_param1["), _paramNum, \
                                         BLINKER_F("]: "), _param[_paramNum], \
                                         " ", serData);
 
-                        // BLINKER_LOG(BLINKER_F("serialize serData: "), serData);
+                        // BLINKER_LOG_ALL(BLINKER_F("serialize serData: "), serData);
                         
                         _paramNum++;
                         _isReq = AT_M_RESP;
                         return;
                     }
                     else {
-                        _param[_paramNum] = serData.substring(0, addr_end);
+                        // _param[_paramNum] = serData.substring(0, addr_end);
+                        strcpy(_param[_paramNum], serData.substring(0, addr_end).c_str());
                     }
                     BLINKER_LOG_ALL(BLINKER_F("_param["), _paramNum, \
                                     BLINKER_F("]: "), _param[_paramNum]);
