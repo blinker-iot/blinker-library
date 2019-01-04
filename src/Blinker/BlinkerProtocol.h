@@ -75,10 +75,12 @@ class BlinkerProtocol
         blinker_callback_with_string_arg_t  _availableFunc = NULL;
 
         int checkAvail();
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             bool checkAliAvail()    { return conn->aligenieAvail(); }
             bool checkDuerAvail()   { return conn->duerAvail(); }
-        #elif defined(BLINKER_AT_MQTT)
+        #endif
+        
+        #if defined(BLINKER_AT_MQTT)
             void begin(const char* auth) { return conn->begin(auth); }
             int serialAvailable()   { return conn->serialAvailable(); }
             int serialPrint(const String & s1, const String & s2, bool needCheck = true)
