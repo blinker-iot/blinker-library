@@ -3479,7 +3479,6 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             _isNTPInit = true;
 
             #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-                loadTiming();
                 String _shareData = freshSharers();
                 if (STRING_contains_string(_shareData, "users") == false)
                 {
@@ -3490,6 +3489,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     BProto::sharers(_shareData);
                 }
                 BProto::connect();
+
+                loadTiming();
             #endif
 
             #if defined(BLINKER_AT_MQTT)

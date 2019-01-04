@@ -1931,6 +1931,10 @@ bool BlinkerMQTT::checkInit()
                             BLINKER_LOG(BLINKER_F("SmartConfig received."));
                             _connectTime = millis();
 
+                            #if defined(ESP8266)
+                                BLINKER_LOG(BLINKER_F("SSID: "), WiFi.SSID(), BLINKER_F(" PSWD: "), WiFi.psk());
+                            #endif
+
                             _configStatus = SMART_DONE;
                         }
                         else return false;
