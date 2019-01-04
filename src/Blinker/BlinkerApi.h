@@ -1118,28 +1118,31 @@ void BlinkerApi::run()
                     #endif
                 #endif
 
-                #if defined(BLINKER_MQTT_AT) && (defined(BLINKER_ALIGENIE) || defined(BLINKER_DUEROS))
-                    if (isAvail)
-                    {
-                        aliParse(BProto::lastRead());
-
-                        if (STRING_contains_string(BProto::lastRead(), "AliGenie"))
+                #if defined(BLINKER_MQTT_AT)
+                    #if defined(BLINKER_ALIGENIE)
+                        if (isAvail)
                         {
-                            flush();
+                            aliParse(BProto::lastRead());
+
+                            if (STRING_contains_string(BProto::lastRead(), "AliGenie"))
+                            {
+                                flush();
+                            }
+
                         }
+                    #endif
 
-                        duerParse(BProto::lastRead());
-
-                        if (STRING_contains_string(BProto::lastRead(), "DuerOS"))
+                    #if defined(BLINKER_DUEROS)
+                        if (isAvail)
                         {
-                            flush();
-                        }
+                            duerParse(BProto::lastRead());
 
-                        // if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                        // {
-                        //     flush();
-                        // }
-                    }
+                            if (STRING_contains_string(BProto::lastRead(), "DuerOS"))
+                            {
+                                flush();
+                            }
+                        }
+                    #endif
                 #endif
 
                 #if defined(BLINKER_AT_MQTT)
