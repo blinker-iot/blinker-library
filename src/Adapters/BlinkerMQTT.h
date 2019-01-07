@@ -385,7 +385,7 @@ int BlinkerMQTT::available()
 
     checkKA();
 
-    // if (!mqtt_MQTT->connected() || \
+    // if (!mqtt_MQTT->connected() || 
     //     (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
     if ((millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
     {
@@ -1226,9 +1226,9 @@ void BlinkerMQTT::sharers(const String & data)
 
     if (_sharerCount)
     {
-        for (_sharerCount; _sharerCount > 0; _sharerCount--)
+        for (uint8_t num = _sharerCount; num > 0; num--)
         {
-            delete _sharers[_sharerCount - 1];
+            delete _sharers[num - 1];
         }
     }
 
@@ -2195,7 +2195,7 @@ void BlinkerMQTT::softAPinit()
 
     //             BLINKER_LOG(BLINKER_F("clientData: "), data);
 
-    //             if (STRING_contains_string(data, "ssid") && \
+    //             if (STRING_contains_string(data, "ssid") && 
     //                 STRING_contains_string(data, "pswd"))
     //             {
     //                 String msg = BLINKER_F("{\"hello\":\"world\"}");
