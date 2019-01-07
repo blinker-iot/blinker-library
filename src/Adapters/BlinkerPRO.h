@@ -1560,16 +1560,19 @@ int BlinkerPRO::connectServer() {
     UUID_PRO = (char*)malloc((_uuid.length()+1)*sizeof(char));
     strcpy(UUID_PRO, _uuid.c_str());
 
-    char uuid_eeprom[33];
+    char uuid_eeprom[BLINKER_AUUID_SIZE];
 
     // BLINKER_LOG_ALL(("===================="));
 
     char _authCheck;
     EEPROM.begin(BLINKER_EEP_SIZE);
     EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
-    if (strcmp(uuid_eeprom, _uuid.c_str())) {
+    if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
         // strcpy(UUID_PRO, _uuid.c_str());
-        EEPROM.put(BLINKER_EEP_ADDR_AUUID, UUID_PRO);
+
+        strcpy(uuid_eeprom, _uuid.c_str());
+        EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+        EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
 
         BLINKER_LOG_ALL(BLINKER_F("===================="));
         BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
