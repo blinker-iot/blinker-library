@@ -410,6 +410,8 @@ class BlinkerApi : public BlinkerProtocol
         // class BlinkerWidgets_string *       _BUILTIN_SWITCH;
         BlinkerWidgets_string _BUILTIN_SWITCH = BlinkerWidgets_string(BLINKER_CMD_BUILTIN_SWITCH);
 
+        bool _needInit = false;
+
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
             bool        _isInit = false;
@@ -613,6 +615,8 @@ class BlinkerApi : public BlinkerProtocol
 
     protected :
         void begin();
+
+        void needInit();
 
         #if defined(BLINKER_AT_MQTT)
             void atBegin();
@@ -818,6 +822,35 @@ void BlinkerApi::begin()
     #endif
 }
 
+void BlinkerApi::needInit()
+{
+    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        String _shareData = freshSharers();
+        if (STRING_contains_string(_shareData, "users") == false)
+        {
+            _shareData = freshSharers();
+        }
+        if (STRING_contains_string(_shareData, "users") == true)
+        {
+            BProto::sharers(_shareData);
+        }
+        BProto::connect();
+
+        loadTiming();
+    #endif
+
+    #if defined(BLINKER_AT_MQTT)
+        String reqData = BLINKER_F("+");
+        reqData += BLINKER_CMD_BLINKER_MQTT;
+        reqData += BLINKER_F(":");
+        reqData += BProto::deviceId();
+        reqData += BLINKER_F(",");
+        reqData += BProto::uuid();
+        BProto::serialPrint(reqData);
+        BProto::serialPrint(BLINKER_CMD_OK);
+    #endif
+}
+
 #if defined(BLINKER_PRO)
     void BlinkerApi::begin(const char* _type)
     {
@@ -971,6 +1004,12 @@ void BlinkerApi::run()
 
                     if (checkCanOTA()) loadOTA();
                     // BProto::sharers(freshSharers());
+
+                    if (_needInit == false)
+                    {
+                        _needInit = true;
+                        needInit();
+                    }
                 }
             }
             else
@@ -1027,6 +1066,12 @@ void BlinkerApi::run()
                 // BProto::sharers(freshSharers());
 
                 bridgeInit();
+
+                if (_needInit == false)
+                {
+                    _needInit = true;
+                    needInit();
+                }
 
                 BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
             }
@@ -3481,32 +3526,6 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
 
             _isNTPInit = true;
-
-            #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-                String _shareData = freshSharers();
-                if (STRING_contains_string(_shareData, "users") == false)
-                {
-                    _shareData = freshSharers();
-                }
-                if (STRING_contains_string(_shareData, "users") == true)
-                {
-                    BProto::sharers(_shareData);
-                }
-                BProto::connect();
-
-                loadTiming();
-            #endif
-
-            #if defined(BLINKER_AT_MQTT)
-                String reqData = BLINKER_F("+");
-                reqData += BLINKER_CMD_BLINKER_MQTT;
-                reqData += BLINKER_F(":");
-                reqData += BProto::deviceId();
-                reqData += BLINKER_F(",");
-                reqData += BProto::uuid();
-                BProto::serialPrint(reqData);
-                BProto::serialPrint(BLINKER_CMD_OK);
-            #endif
         }
 
         return true;
