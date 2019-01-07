@@ -1241,7 +1241,7 @@
 
     #define BLINKER_SMART_PLUGIN            "OwnPlug"
 
-    #define BLINKER_SMART_LAMP              "OwnLamp"
+    #define BLINKER_SMART_LAMP              "OwnLight"
 
     #ifndef BLINKER_PRO_VERSION
         #define BLINKER_PRO_VERSION             "1.0.0"
