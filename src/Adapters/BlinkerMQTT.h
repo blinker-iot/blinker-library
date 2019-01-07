@@ -15,6 +15,8 @@
     #include <HTTPClient.h>
 #endif
 
+// #include <EEPROM.h>
+
 #include "modules/WebSockets/WebSocketsServer.h"
 #include "modules/mqtt/Adafruit_MQTT.h"
 #include "modules/mqtt/Adafruit_MQTT_Client.h"
@@ -1605,6 +1607,33 @@ int BlinkerMQTT::connectServer() {
     }
     UUID_MQTT = (char*)malloc((_uuid.length()+1)*sizeof(char));
     strcpy(UUID_MQTT, _uuid.c_str());
+
+    // char uuid_eeprom[BLINKER_AUUID_SIZE];
+
+    // // BLINKER_LOG_ALL(("===================="));
+
+    // char _authCheck;
+    // EEPROM.begin(BLINKER_EEP_SIZE);
+    // EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+    // if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
+    //     // strcpy(UUID_MQTT, _uuid.c_str());
+
+    //     strcpy(uuid_eeprom, _uuid.c_str());
+    //     EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+    //     EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+
+    //     BLINKER_LOG_ALL(BLINKER_F("===================="));
+    //     BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
+    //     BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
+    //     // isNew = true;
+    // }
+    // EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+    // // if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
+    // //     EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
+    // //     isAuth = true;
+    // // }
+    // EEPROM.commit();
+    // EEPROM.end();
 
     BLINKER_LOG_ALL(BLINKER_F("===================="));
     BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME_MQTT: "), DEVICE_NAME_MQTT);
