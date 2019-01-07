@@ -1220,6 +1220,10 @@ void BlinkerApi::run()
         if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
         {
             if (autoPull()) _isAutoInit = true;
+            else
+            {
+                if (autoPull()) _isAutoInit = true;
+            }
         }
     #endif
 
