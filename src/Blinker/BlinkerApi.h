@@ -834,6 +834,9 @@ void BlinkerApi::needInit()
         {
             BProto::sharers(_shareData);
         }
+
+        // BProto::ping();
+        BProto::disconnect();
         BProto::connect();
 
         loadTiming();

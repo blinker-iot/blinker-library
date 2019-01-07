@@ -1571,7 +1571,9 @@ int BlinkerPRO::connectServer() {
         // strcpy(UUID_PRO, _uuid.c_str());
         EEPROM.put(BLINKER_EEP_ADDR_AUUID, UUID_PRO);
 
-        // BLINKER_LOG_ALL(("===================="));
+        BLINKER_LOG_ALL(BLINKER_F("===================="));
+        BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
+        BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
         isNew = true;
     }
     EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
