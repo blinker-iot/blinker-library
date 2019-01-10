@@ -85,6 +85,8 @@ void setup()
     
     Blinker.begin();
     Blinker.attachData(dataRead);
+    Blinker.attachHeartbeat(heartbeat);
+    
     dht.begin();
 }
 

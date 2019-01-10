@@ -407,6 +407,8 @@ void BlinkerPRO::subscribe()
                 kaTime = millis();
                 isAvail_PRO = true;
                 isAlive = true;
+
+                _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
             }
             else if (_uuid == BLINKER_CMD_ALIGENIE)
             {

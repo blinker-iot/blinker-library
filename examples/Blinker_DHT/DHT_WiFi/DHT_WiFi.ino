@@ -89,6 +89,8 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
+    Blinker.attachHeartbeat(heartbeat);
+
     dht.begin();
 }
 
