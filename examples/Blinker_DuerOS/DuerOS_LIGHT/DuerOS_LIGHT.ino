@@ -164,19 +164,19 @@ void duerMode(const String & mode)
     if (mode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_DUEROS_SLEEP) {
+    else if (mode == BLINKER_CMD_DUEROS_SLEEP) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_DUEROS_ALARM) {
+    else if (mode == BLINKER_CMD_DUEROS_ALARM) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
+    else if (mode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_DUEROS_ROMANTIC) {
+    else if (mode == BLINKER_CMD_DUEROS_ROMANTIC) {
         // Your mode function
     }
-    else if (cmode == BLINKER_CMD_DUEROS_READING) {
+    else if (mode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
 
@@ -193,19 +193,19 @@ void duercMode(const String & cmode)
     if (cmode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_SLEEP) {
+    else if (cmode == BLINKER_CMD_DUEROS_SLEEP) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_ALARM) {
+    else if (cmode == BLINKER_CMD_DUEROS_ALARM) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
+    else if (cmode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_ROMANTIC) {
+    else if (cmode == BLINKER_CMD_DUEROS_ROMANTIC) {
         // Your mode function
     }
-    else if (mode == BLINKER_CMD_DUEROS_READING) {
+    else if (cmode == BLINKER_CMD_DUEROS_READING) {
         // Your mode function
     }
 
