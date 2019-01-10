@@ -664,6 +664,8 @@ int BlinkerMQTT::print(char * data, bool needCheck)
         data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         strcat(data, data_add.c_str());
 
+        _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+
         if (!isJson(STRING_format(data))) return false;
 
         BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));

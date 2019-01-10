@@ -407,6 +407,8 @@ void BlinkerPRO::subscribe()
                 kaTime = millis();
                 isAvail_PRO = true;
                 isAlive = true;
+
+                _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
             }
             else if (_uuid == BLINKER_CMD_ALIGENIE)
             {
@@ -590,6 +592,8 @@ int BlinkerPRO::print(char * data, bool needCheck)
         }
         data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         strcat(data, data_add.c_str());
+
+        _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
 
         if (!isJson(STRING_format(data))) return false;
         
