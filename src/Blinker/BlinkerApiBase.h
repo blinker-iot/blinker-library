@@ -188,7 +188,7 @@ class BlinkerWidgets_joy
 
                 if (dataCount == 6) {
                     _data_ += BLINKER_F(",[");
-                    _data_ += STRING_format(millis());
+                    _data_ += STRING_format(dataCount);
                     _data_ += BLINKER_F(",");
                     _data_ += _data;
                     _data_ += BLINKER_F("]");
@@ -227,7 +227,7 @@ class BlinkerWidgets_joy
                     }
 
                     _data_ += BLINKER_F("[");
-                    _data_ += STRING_format(millis());
+                    _data_ += STRING_format(dataCount);
                     _data_ += BLINKER_F(",");
                     _data_ += _data;
                     _data_ += BLINKER_F("]");
@@ -254,8 +254,8 @@ class BlinkerWidgets_joy
                 uint32_t now_millis = millis();
 
                 for (uint8_t num = dataCount; num > 0; num--) {
-                    uint32_t data_time = dataArray["data"][num-1][0];
-                    uint32_t real_time = now_time - (now_millis - data_time)/1000;
+                    uint8_t data_time = dataArray["data"][num][0];
+                    uint32_t real_time = now_time - (dataCount - data_time - 1)*60;
                     dataArray["data"][num-1][0] = real_time;
                     
                     BLINKER_LOG_ALL(BLINKER_F("data_time: "), data_time, \

@@ -1889,7 +1889,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 localtime_r(&now_ntp, &timeinfo);
             #endif
 
-            return now_ntp;
+            return now_ntp - 8*60*60;
         }
         return millis();
     }
@@ -2239,7 +2239,7 @@ float BlinkerApi::gps(b_gps_t axis)
             return false;
         }
 
-        uint32_t now_time = time();
+        uint32_t now_time = time() - second();
 
         for (uint8_t _num = 0; _num < data_dataCount; _num++) {
             data += BLINKER_F("\"");
@@ -3527,6 +3527,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             #endif
 
             BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
+            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp - 8*60*60);
 
             _isNTPInit = true;
         }
@@ -5939,7 +5940,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                         break;
                     case BLINKER_CMD_DATA_STORAGE_NUMBER :
                         url_iot = host;
-                        url_iot += BLINKER_F("/api/v1/user/device/cloudStorage");
+                        url_iot += BLINKER_F("/api/v1/user/device/cloudStorage/");
 
                         #if defined(ESP8266)
                             http.begin(*client_s, url_iot);
