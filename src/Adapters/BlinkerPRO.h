@@ -1771,7 +1771,7 @@ int BlinkerPRO::checkDuerKA() {
 }
 
 int BlinkerPRO::checkCanPrint() {
-    if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
+    if ((millis() - printTime >= BLINKER_PRO_MSG_LIMIT && isAlive) || printTime == 0) {
         return true;
     }
     else {
