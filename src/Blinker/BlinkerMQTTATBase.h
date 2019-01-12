@@ -309,6 +309,14 @@ class BlinkerSlaverAT
                             // BLINKER_LOG_ALL(BLINKER_F("serialize _atCmd: "), _atCmd);
                             // return;
                         }
+                        else
+                        {
+                            _set = AT_ACTION;
+
+                            _atCmd = _data.substring(3, _data.length());
+                            BLINKER_LOG_ALL(BLINKER_F("serialize _atCmd: "), _atCmd);
+                            return;
+                        }
                     }
                 }
 
@@ -326,14 +334,19 @@ class BlinkerSlaverAT
                     // {
                         addr_start += addr_end;
                         addr_start += 1;
-                        serData = _data.substring(addr_start, dataLen);
-
-                        addr_end = serData.indexOf(",");
-
-                        BLINKER_LOG_ALL(BLINKER_F("serialize serData: "), serData);
-                        BLINKER_LOG_ALL(BLINKER_F("serialize addr_start: "), addr_start);
-                        BLINKER_LOG_ALL(BLINKER_F("serialize addr_end: "), addr_end);
                     // }
+                    // else
+                    // {
+                    //     addr_start = 3;
+                    // }
+                    
+                    serData = _data.substring(addr_start, dataLen);
+
+                    addr_end = serData.indexOf(",");
+
+                    BLINKER_LOG_ALL(BLINKER_F("serialize serData: "), serData);
+                    BLINKER_LOG_ALL(BLINKER_F("serialize addr_start: "), addr_start);
+                    BLINKER_LOG_ALL(BLINKER_F("serialize addr_end: "), addr_end);
 
                     if (addr_end == -1) {
                         if (addr_start >= dataLen) return;
