@@ -46,6 +46,12 @@
 
 #define BLINKER_AT_MSG_TIMEOUT          1000UL
 
+#if defined(BLINKER_DATA_HOUR_UPDATE)
+    #define BLINKER_DATA_FREQ_TIME          3600UL
+#else
+    #define BLINKER_DATA_FREQ_TIME          60
+#endif
+
 #define BLINKER_MDNS_SERVICE_BLINKER    "blinker"
 
 #define BLINKER_MSG_FROM_MQTT           0

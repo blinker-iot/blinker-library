@@ -2201,6 +2201,8 @@ float BlinkerApi::gps(b_gps_t axis)
 
         int8_t num = checkNum(_name, _Data, data_dataCount);
 
+        uint32_t now_time = time() - second();
+
         BLINKER_LOG_ALL(BLINKER_F("dataStorage num: "), num);
 
         if( num == BLINKER_OBJECT_NOT_AVAIL )
@@ -2212,16 +2214,27 @@ float BlinkerApi::gps(b_gps_t axis)
             _Data[data_dataCount] = new BlinkerData();
             _Data[data_dataCount]->name(_name);
             // _Data[data_dataCount]->saveData(time(), _msg);
-            _Data[data_dataCount]->saveData(_msg);
             data_dataCount++;
+            if (_Data[data_dataCount]->saveData(_msg, now_time, BLINKER_DATA_FREQ_TIME))
+            {
+                dataUpdate();
+            }
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _msg, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_dataCount: "), data_dataCount);
         }
         else {
             // _Data[num]->saveData(time(), _msg);
-            _Data[num]->saveData(_msg);
+            if (_Data[num]->saveData(_msg, now_time, BLINKER_DATA_FREQ_TIME))
+            {
+                dataUpdate();
+            }
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _msg, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_dataCount: "), data_dataCount);
         }
 
-        BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _msg);
-        BLINKER_LOG_ALL(BLINKER_F("data_dataCount: "), data_dataCount);
+        
     }
 
 
@@ -2239,13 +2252,13 @@ float BlinkerApi::gps(b_gps_t axis)
             return false;
         }
 
-        uint32_t now_time = time() - second();
+        // uint32_t now_time = time() - second();
 
         for (uint8_t _num = 0; _num < data_dataCount; _num++) {
             data += BLINKER_F("\"");
             data += _Data[_num]->getName();
             data += BLINKER_F("\":");
-            data += _Data[_num]->getData(now_time);
+            data += _Data[_num]->getData();
             if (_num < data_dataCount - 1) {
                 data += BLINKER_F(",");
             }
