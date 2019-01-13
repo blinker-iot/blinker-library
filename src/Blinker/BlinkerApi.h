@@ -115,6 +115,9 @@ class BlinkerApi : public BlinkerProtocol
         template <typename T1>
         void printArray(T1 n1, const String &s2);
 
+        // template <typename T1>
+        void printNumArray(char * _name, const String & data);
+
         template <typename T1>
         void printObject(T1 n1, const String &s2);
 
@@ -396,11 +399,13 @@ class BlinkerApi : public BlinkerProtocol
         float       gpsValue[2];
         uint32_t    gps_get_time;
 
+        uint8_t     _wCount_num = 0;
         uint8_t     _wCount_str = 0;
         uint8_t     _wCount_joy = 0;
         uint8_t     _wCount_rgb = 0;
         uint8_t     _wCount_int = 0;
 
+        class BlinkerWidgets_num *          _Widgets_num[BLINKER_MAX_WIDGET_SIZE*2];
         class BlinkerWidgets_string *       _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
         #if defined(BLINKER_BLE)
             class BlinkerWidgets_joy *          _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
@@ -577,6 +582,7 @@ class BlinkerApi : public BlinkerProtocol
             bool autoManager(const JsonObject& data);
             void otaParse(const JsonObject& data);
             void shareParse(const JsonObject& data);
+            void numParse(const JsonObject& data);
 
             bool checkCUPDATE();
             bool checkCGET();
@@ -1318,6 +1324,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     autoManager(root);
                     otaParse(root);
                     shareParse(root);
+                    numParse(root);
 
                     for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
                     {
@@ -1474,6 +1481,30 @@ void BlinkerApi::printArray(T1 n1, const String &s2)
     // autoFormatData(STRING_format(n1), _msg);
     // autoFormatFreshTime = millis();
     BProto::print(STRING_format(n1), _msg);
+}
+
+// template <typename T1>
+void BlinkerApi::printNumArray(char * _name, const String & data)
+{
+    // String _msg = BLINKER_F("\"");
+    // _msg += STRING_format(n1);
+    // _msg += BLINKER_F("\":");
+    // _msg += s2;
+
+    // // checkFormat();
+    // // autoFormatData(STRING_format(n1), _msg);
+    // // autoFormatFreshTime = millis();
+    // BProto::print(STRING_format(n1), _msg);
+
+    int8_t num = checkNum(_name, _Widgets_num, _wCount_num);
+
+    if( num != BLINKER_OBJECT_NOT_AVAIL )
+    {
+        if (_Widgets_num[num]->state())
+        {
+            dataStorage(_name, data);
+        }
+    }
 }
 
 template <typename T1>
@@ -5286,6 +5317,62 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     BProto::sharers(_shareData);
                 }
                 BProto::connect();
+            }
+        }
+    }
+
+    void BlinkerApi::numParse(const JsonObject& data)
+    {
+        if (data.containsKey(BLINKER_CMD_SET))
+        {
+            String value = data[BLINKER_CMD_SET];
+
+            DynamicJsonBuffer jsonBufferSet;
+            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+
+            if (!rootSet.success()) {
+                // BLINKER_ERR_LOG_ALL("Json error");
+                return;
+            }
+
+            if (rootSet.containsKey(BLINKER_CMD_AUTO_UPDATE_KEY))
+            {
+                _fresh = true;
+
+                String _name_ = rootSet[BLINKER_CMD_AUTO_UPDATE_KEY];
+
+                char _name[16];
+
+                strcpy(_name, _name_.c_str());
+
+                int8_t num = checkNum(_name, _Widgets_num, _wCount_num);
+
+                if( num == BLINKER_OBJECT_NOT_AVAIL )
+                {
+                    _Widgets_num[_wCount_num] = new BlinkerWidgets_num(_name);
+                    _wCount_num++;
+                }
+                else
+                {
+                    _Widgets_num[num]->setState(true);
+                }
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_CANCEL_UPDATE_KEY))
+            {
+                _fresh = true;
+
+                String _name_ = rootSet[BLINKER_CMD_AUTO_UPDATE_KEY];
+
+                char _name[16];
+
+                strcpy(_name, _name_.c_str());
+
+                int8_t num = checkNum(_name, _Widgets_num, _wCount_num);
+
+                if( num == BLINKER_OBJECT_NOT_AVAIL )
+                {
+                    _Widgets_num[num]->setState(false);
+                }
             }
         }
     }

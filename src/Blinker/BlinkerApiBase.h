@@ -20,6 +20,32 @@ int8_t checkNum(char * name, T * c, uint8_t count)
     return BLINKER_OBJECT_NOT_AVAIL;
 }
 
+class BlinkerWidgets_num
+{
+    public :
+        BlinkerWidgets_num(char * _name)
+        {
+            wName = (char*)malloc((strlen(_name)+1)*sizeof(char));
+            strcpy(wName, _name);
+
+            autoUpdate = true;
+        }
+
+        char * getName() { return wName; }
+
+        bool checkName(char * name) {
+            return strcmp(name, wName) == 0;
+        }
+
+        void setState(bool state) { autoUpdate = state; }
+
+        bool state() { return autoUpdate; }
+
+    private :
+        char *wName;
+        bool autoUpdate = false;
+};
+
 class BlinkerWidgets_string
 {
     public :
