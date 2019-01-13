@@ -1406,6 +1406,17 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
                             timerManager(_array, true);
                         #endif
+
+                        #if defined(BLINKER_PRO)
+                            if (_parseFunc) {
+                                if(_parseFunc(_array)) {
+                                    // _fresh = true;
+                                    // BProto::isParsed();
+                                }
+
+                                BLINKER_LOG_ALL(BLINKER_F("run parse callback function"));
+                            }
+                        #endif
                     }
                     else {
                         return;
@@ -1418,6 +1429,17 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                 if (!root.success()) return;
 
                 json_parse(root);
+
+                #if defined(BLINKER_PRO)
+                    if (_parseFunc) {
+                        if(_parseFunc(root)) {
+                            // _fresh = true;
+                            // BProto::isParsed();
+                        }
+
+                        BLINKER_LOG_ALL(BLINKER_F("run parse callback function"));
+                    }
+                #endif
             }
         #else
             json_parse(_data);
