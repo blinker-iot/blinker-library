@@ -181,14 +181,18 @@ class BlinkerWidgets_joy
 
             String getName() { return _dname; }
 
-            void saveData(const String & _data) {
+            bool saveData(const String & _data, time_t now_time, uint32_t _limit) {
+                if (now_time - latest_time < _limit) return false;
+
+                latest_time = now_time;
+
                 String _data_;
 
                 if (strlen(data)) _data_ = STRING_format(data);
 
                 if (dataCount == 6) {
                     _data_ += BLINKER_F(",[");
-                    _data_ += STRING_format(dataCount);
+                    _data_ += STRING_format(now_time);
                     _data_ += BLINKER_F(",");
                     _data_ += _data;
                     _data_ += BLINKER_F("]");
@@ -227,7 +231,7 @@ class BlinkerWidgets_joy
                     }
 
                     _data_ += BLINKER_F("[");
-                    _data_ += STRING_format(dataCount);
+                    _data_ += STRING_format(now_time);
                     _data_ += BLINKER_F(",");
                     _data_ += _data;
                     _data_ += BLINKER_F("]");
@@ -239,41 +243,44 @@ class BlinkerWidgets_joy
                 }
                 BLINKER_LOG_ALL(BLINKER_F("saveData: "), data);
                 BLINKER_LOG_ALL(BLINKER_F("saveData dataCount: "), dataCount);
+
+                return true;
             }
 
-            String getData(time_t now_time) {
+            String getData() {
                 BLINKER_LOG_ALL(BLINKER_F("getData data: "), data);
                 
-                String _data_ = BLINKER_F("{\"data\":[");
+                String _data_ = BLINKER_F("[");//{\"data\":
                 _data_ += STRING_format(data);
-                _data_ += BLINKER_F("]}");
+                _data_ += BLINKER_F("]");//}
 
-                DynamicJsonBuffer jsonDataBuffer;
-                JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
+                // DynamicJsonBuffer jsonDataBuffer;
+                // JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
 
-                uint32_t now_millis = millis();
+                // uint32_t now_millis = millis();
 
-                for (uint8_t num = dataCount; num > 0; num--) {
-                    uint8_t data_time = dataArray["data"][num][0];
-                    uint32_t real_time = now_time - (dataCount - data_time - 1)*60;
-                    dataArray["data"][num-1][0] = real_time;
+                // for (uint8_t num = dataCount; num > 0; num--) {
+                //     uint8_t data_time = dataArray["data"][num][0];
+                //     uint32_t real_time = now_time - (dataCount - data_time - 1)*60;
+                //     dataArray["data"][num-1][0] = real_time;
                     
-                    BLINKER_LOG_ALL(BLINKER_F("data_time: "), data_time, \
-                                    BLINKER_F(" now_time: "), now_time, \
-                                    BLINKER_F(" real_time: "), real_time);
-                }
+                //     BLINKER_LOG_ALL(BLINKER_F("data_time: "), data_time, 
+                //                     BLINKER_F(" now_time: "), now_time, 
+                //                     BLINKER_F(" real_time: "), real_time);
+                // }
 
-                String _data_decode = dataArray["data"];
+                // String _data_decode = dataArray["data"];
 
-                BLINKER_LOG_ALL(BLINKER_F("getData _data_: "), _data_decode);
+                BLINKER_LOG_ALL(BLINKER_F("getData _data_: "), _data_);
 
-                return _data_decode;
+                return _data_;
             }
 
             bool checkName(const String & name) { return ((_dname == name) ? true : false); }
 
         private :
             uint8_t dataCount = 0;
+            time_t  latest_time = 0;
             String _dname;
             // char * data;
             char data[256];
