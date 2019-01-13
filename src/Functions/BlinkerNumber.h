@@ -84,6 +84,8 @@ class BlinkerNumber
                 numberData += BLINKER_F(BLINKER_CMD_VALUE);
                 numberData += BLINKER_F("\":");
                 numberData += value;
+                
+                Blinker.printNumArray(numName, value);
             }
 
             if (_fresh >> 0 & 0x01)

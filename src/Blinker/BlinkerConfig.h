@@ -434,6 +434,10 @@
 
 #define BLINKER_CMD_SHARE               "share"
 
+#define BLINKER_CMD_AUTO_UPDATE_KEY     "upKey"
+
+#define BLINKER_CMD_CANCEL_UPDATE_KEY   "cKey"
+
 #define BLINKER_CMD_ALIGENIE            "AliGenie"
 
 #define BLINKER_CMD_DUEROS              "DuerOS"
