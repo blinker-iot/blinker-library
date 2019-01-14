@@ -28,7 +28,28 @@ class BlinkerProtocol
         void transport(BlinkerStream & bStream) { conn = &bStream; isInit = true; }
 
         int connect()       { return isInit ? conn->connect() : false; }
-        int connected()     { return isInit ? state == CONNECTED : false; }
+        int connected()
+        {
+            if (isInit)
+            {
+                // if (conn->connected())
+                // {
+                //     state == CONNECTED;
+                //     return true;
+                // }
+                // else
+                // {
+                //     state = DISCONNECTED;
+                //     return false;
+                // }
+                return conn->connected();
+            }
+            else
+            {
+                state = DISCONNECTED;
+                return false;
+            }
+        }
         void disconnect()   { if (isInit) { conn->disconnect(); state = DISCONNECTED; } }
         bool available()    { if (availState) {availState = false; return true;} else return false; }
         void flush();
@@ -149,12 +170,15 @@ int BlinkerProtocol::checkAvail()
 
     flush();
 
-    isAvail = conn->available();
-    if (isAvail)
+    if (connected())
     {
-        isFresh = true;
-        canParse = true;
-        availState = true;
+        isAvail = conn->available();
+        if (isAvail)
+        {
+            isFresh = true;
+            canParse = true;
+            availState = true;
+        }
     }
 
     return isAvail;
