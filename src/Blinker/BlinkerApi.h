@@ -783,6 +783,8 @@ class BlinkerApi : public BlinkerProtocol
             }
 
         #endif
+
+        uint32_t debug_time = 0;
 };
 
 void BlinkerApi::begin()
@@ -1010,8 +1012,6 @@ void BlinkerApi::run()
                             break;
                         }
                     }
-
-                    if (checkCanOTA()) loadOTA();
                     // BProto::sharers(freshSharers());
 
                     if (_needInit == false)
@@ -1019,6 +1019,8 @@ void BlinkerApi::run()
                         _needInit = true;
                         needInit();
                     }
+
+                    if (checkCanOTA()) loadOTA();
                 }
             }
             else
@@ -1070,8 +1072,6 @@ void BlinkerApi::run()
 
                 BLINKER_LOG_ALL(BLINKER_F("millis: "), millis(),
                                 BLINKER_F(", connect_time: "), connect_time);
-
-                if (checkCanOTA()) loadOTA();
                 // BProto::sharers(freshSharers());
 
                 bridgeInit();
@@ -1081,6 +1081,8 @@ void BlinkerApi::run()
                     _needInit = true;
                     needInit();
                 }
+
+                if (checkCanOTA()) loadOTA();
 
                 BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
             }
@@ -1106,6 +1108,14 @@ void BlinkerApi::run()
     #endif
 
     bool conState = BProto::connected();
+
+    // if (millis() - debug_time >= 2000)
+    // {
+    //     BLINKER_LOG_ALL("BProto::state: ", BProto::state);
+    //     BLINKER_LOG_ALL("BProto::connected: ", BProto::connected());
+
+    //     debug_time = millis();
+    // }
 
     switch (BProto::state)
     {
@@ -2608,9 +2618,13 @@ float BlinkerApi::gps(b_gps_t axis)
         //     }
         // }
 
+        ::delay(1000);
+
         BLINKER_LOG_ALL(BLINKER_F("OTA load: "), BLINKER_OTA_VERSION_CODE);
 
-        if (_OTA.loadOTACheck() == BLINKER_OTA_RUN)
+        uint8_t ota_check = _OTA.loadOTACheck();
+
+        if (ota_check == BLINKER_OTA_RUN)
         {
             _OTA.saveOTACheck();
             updateOTAStatus(10, "download firmware");
@@ -2656,7 +2670,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 }
             }
         }
-        else if (_OTA.loadOTACheck() == BLINKER_OTA_START)
+        else if (ota_check == BLINKER_OTA_START)
         {
             if (!_OTA.loadVersion())
             {
@@ -2679,7 +2693,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 // ota success
             }
         }
-        else if (_OTA.loadOTACheck() == BLINKER_OTA_CLEAR)
+        else if (ota_check == BLINKER_OTA_CLEAR)
         {
             // _OTA.saveVersion();
             // _OTA.clearOTACheck();
@@ -2690,7 +2704,7 @@ float BlinkerApi::gps(b_gps_t axis)
         {
             if (!_OTA.loadVersion())
             {
-                if (_OTA.loadOTACheck() > 0)
+                if (ota_check > 0)
                 {
                     // updateOTAStatus(100);
                     _OTA.clearOTACheck();
@@ -2701,7 +2715,7 @@ float BlinkerApi::gps(b_gps_t axis)
                     _OTA.saveVersion();
                 }
             }
-            else if (_OTA.loadVersion() && _OTA.loadOTACheck() == 0)
+            else if (_OTA.loadVersion() && ota_check == 0)
             {
                 // updateOTAStatus(-2);
                 _OTA.clearOTACheck();

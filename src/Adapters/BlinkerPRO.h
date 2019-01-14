@@ -122,6 +122,7 @@ class BlinkerPRO : public BlinkerStream
 
         bool        isNew = false;
         bool        isAuth = false;
+        bool        isFirst = false;
 
         int isJson(const String & data);
 };
@@ -237,8 +238,9 @@ int BlinkerPRO::connect()
 
     disconnect();
 
-    if ((millis() - latestTime) < 5000)
+    if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
     {
+        yield();
         return false;
     }
 
@@ -246,12 +248,17 @@ int BlinkerPRO::connect()
 
     #if defined(ESP8266)
         client_mqtt.setInsecure();
+        ::delay(10);
     #endif
 
     if ((ret = mqtt_PRO->connect()) != 0)
     {
         BLINKER_LOG(mqtt_PRO->connectErrorString(ret));
-        BLINKER_LOG(BLINKER_F("Retrying MQTT connection in 5 seconds..."));
+        BLINKER_LOG(BLINKER_F("Retrying MQTT connection in "), \
+                    BLINKER_MQTT_CONNECT_TIMESLOT/1000, \
+                    BLINKER_F(" seconds..."));
+
+        if (ret == 4) reRegister();
 
         this->latestTime = millis();
         return false;
@@ -1568,28 +1575,33 @@ int BlinkerPRO::connectServer() {
 
     // BLINKER_LOG_ALL(("===================="));
 
-    char _authCheck;
-    EEPROM.begin(BLINKER_EEP_SIZE);
-    EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
-    if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
-        // strcpy(UUID_PRO, _uuid.c_str());
-
-        strcpy(uuid_eeprom, _uuid.c_str());
-        EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+    if (!isFirst)
+    {
+        char _authCheck;
+        EEPROM.begin(BLINKER_EEP_SIZE);
         EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+        if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
+            // strcpy(UUID_PRO, _uuid.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("===================="));
-        BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
-        BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
-        isNew = true;
+            strcpy(uuid_eeprom, _uuid.c_str());
+            EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+            EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+
+            BLINKER_LOG_ALL(BLINKER_F("===================="));
+            BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
+            BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
+            isNew = true;
+        }
+        EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+        if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
+            EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
+            isAuth = true;
+        }
+        EEPROM.commit();
+        EEPROM.end();
+
+        isFirst = true;
     }
-    EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
-    if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
-        EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
-        isAuth = true;
-    }
-    EEPROM.commit();
-    EEPROM.end();
     
     BLINKER_LOG_ALL(BLINKER_F("===================="));
     BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME: "), macDeviceName());
@@ -1720,8 +1732,9 @@ int BlinkerPRO::connectServer() {
     
     #if defined(ESP8266)
         client_s->stop();
+        client_mqtt.setInsecure();
     #endif
-    connect();
+    // connect();
 
     return true;
 }
