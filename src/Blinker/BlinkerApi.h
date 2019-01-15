@@ -1105,6 +1105,12 @@ void BlinkerApi::run()
 
             return;
         }
+
+    #elif defined(BLINKER_PRO)
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            return;
+        }
     #endif
 
     bool conState = BProto::connected();
