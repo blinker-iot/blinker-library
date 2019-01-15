@@ -449,6 +449,8 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t    _dDelTime = 0;
             uint32_t    _autoPullTime = 0;
 
+            uint32_t    _autoUpdateTime = 0;
+
             char                            _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
             char                            _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
             char                            _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
@@ -1105,6 +1107,12 @@ void BlinkerApi::run()
 
             return;
         }
+
+    #elif defined(BLINKER_PRO)
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            return;
+        }
     #endif
 
     bool conState = BProto::connected();
@@ -1288,6 +1296,15 @@ void BlinkerApi::run()
             {
                 if (autoPull()) _isAutoInit = true;
             }
+        }
+
+        if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * 1 * 1000)
+        {
+            if (data_dataCount)
+            {
+                dataUpdate();
+                _autoUpdateTime = millis();
+            }            
         }
     #endif
 
@@ -2267,6 +2284,7 @@ float BlinkerApi::gps(b_gps_t axis)
         uint32_t now_time = time() - second();
 
         BLINKER_LOG_ALL(BLINKER_F("dataStorage num: "), num);
+        BLINKER_LOG_ALL(BLINKER_F("dataStorage count: "), data_dataCount);
 
         if( num == BLINKER_OBJECT_NOT_AVAIL )
         {
@@ -2277,21 +2295,23 @@ float BlinkerApi::gps(b_gps_t axis)
             _Data[data_dataCount] = new BlinkerData();
             _Data[data_dataCount]->name(_name);
             // _Data[data_dataCount]->saveData(time(), _msg);
+            // if 
+            _Data[data_dataCount]->saveData(_msg, now_time, BLINKER_DATA_FREQ_TIME);
             data_dataCount++;
-            if (_Data[data_dataCount]->saveData(_msg, now_time, BLINKER_DATA_FREQ_TIME))
-            {
-                dataUpdate();
-            }
+            // {
+            //     dataUpdate();
+            // }
 
             BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _msg, BLINKER_F(" time: "), now_time);
             BLINKER_LOG_ALL(BLINKER_F("data_dataCount: "), data_dataCount);
         }
         else {
             // _Data[num]->saveData(time(), _msg);
-            if (_Data[num]->saveData(_msg, now_time, BLINKER_DATA_FREQ_TIME))
-            {
-                dataUpdate();
-            }
+            // if 
+            _Data[num]->saveData(_msg, now_time, BLINKER_DATA_FREQ_TIME);
+            // {
+            //     dataUpdate();
+            // }
 
             BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _msg, BLINKER_F(" time: "), now_time);
             BLINKER_LOG_ALL(BLINKER_F("data_dataCount: "), data_dataCount);
@@ -2303,6 +2323,11 @@ float BlinkerApi::gps(b_gps_t axis)
 
     bool BlinkerApi::dataUpdate()
     {
+        if (!data_dataCount) {
+            // BLINKER_ERR_LOG(BLINKER_F("none data storaged!"));
+            return false;
+        }
+
         String data = BLINKER_F("{\"deviceName\":\"");
         data += BProto::deviceName();
         data += BLINKER_F("\",\"key\":\"");
@@ -2310,10 +2335,7 @@ float BlinkerApi::gps(b_gps_t axis)
         data += BLINKER_F("\",\"data\":{");
         // String _sdata;
 
-        if (!data_dataCount) {
-            BLINKER_ERR_LOG(BLINKER_F("none data storaged!"));
-            return false;
-        }
+        BLINKER_LOG_FreeHeap_ALL();
 
         // uint32_t now_time = time() - second();
 
@@ -2328,11 +2350,15 @@ float BlinkerApi::gps(b_gps_t axis)
 
             BLINKER_LOG_ALL(BLINKER_F("num: "), _num, \
                     BLINKER_F(" name: "), _Data[_num]->getName());
+
+            BLINKER_LOG_FreeHeap_ALL();
         }
 
         data += BLINKER_F("}}");
 
         BLINKER_LOG_ALL(BLINKER_F("dataUpdate: "), data);
+
+        BLINKER_LOG_FreeHeap_ALL();
 
         // return true;
                         //  + \ _msg +
@@ -5952,6 +5978,9 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             // }
             String conType = BLINKER_F("Content-Type");
             String application = BLINKER_F("application/json;charset=utf-8");
+
+            BLINKER_LOG_ALL(BLINKER_F("blinker server begin"));
+            BLINKER_LOG_FreeHeap_ALL();
 
             switch (_type) {
                 case BLINKER_CMD_SMS_NUMBER :

@@ -369,9 +369,9 @@ void BlinkerMQTT::ping()
     if (!mqtt_MQTT->ping())
     {
         disconnect();
-        delay(100);
+        // delay(100);
 
-        connect();
+        // connect();
     }
     else
     {
