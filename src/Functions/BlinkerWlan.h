@@ -356,10 +356,7 @@ bool BlinkerWlan::connected() {
             }
             break;
         case BWL_CONNECTING :
-            if (WiFi.status() != WL_CONNECTED) {
-                return false;
-            }
-            else if (WiFi.status() == WL_CONNECTED) {
+            if (WiFi.status() == WL_CONNECTED) {
                 IPAddress deviceIP = WiFi.localIP();
                 BLINKER_LOG(BLINKER_F("WiFi connected"));
                 BLINKER_LOG(BLINKER_F("IP address: "));
@@ -369,13 +366,34 @@ bool BlinkerWlan::connected() {
                 _status = BWL_CONNECTED_CHECK;
                 return true;
             }
+            else if (WiFi.status() != WL_CONNECTED) {
+                return false;
+            }
         case BWL_CONNECTED_CHECK :
             // if (WiFi.status() != WL_CONNECTED)
             //     _status = BWL_DISCONNECTED;
-            return (WiFi.status() == WL_CONNECTED);
+            if (WiFi.status() == WL_CONNECTED)
+            {
+                return true;
+            }
+            else
+            {
+                _status = BWL_DISCONNECTED;
+                return false;
+            }
         case BWL_RESET :
             return false;
         default :
+            if (WiFi.status() == WL_CONNECTED) {
+                IPAddress deviceIP = WiFi.localIP();
+                BLINKER_LOG(BLINKER_F("WiFi connected"));
+                BLINKER_LOG(BLINKER_F("IP address: "));
+                BLINKER_LOG(deviceIP);
+                BLINKER_LOG(BLINKER_F("SSID: "), WiFi.SSID(), BLINKER_F(" PSWD: "), WiFi.psk());
+                
+                _status = BWL_CONNECTED_CHECK;
+                return true;
+            }
             return false;
     }
     return false;
