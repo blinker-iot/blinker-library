@@ -306,14 +306,16 @@ void BlinkerPRO::ping()
 {
     BLINKER_LOG_ALL(BLINKER_F("MQTT Ping!"));
 
+    BLINKER_LOG_FreeHeap_ALL();
+
     if (!isMQTTinit) return;
 
     if (!mqtt_PRO->ping())
     {
         disconnect();
-        delay(100);
+        // delay(100);
 
-        connect();
+        // connect();
     }
     else
     {
@@ -569,17 +571,17 @@ int BlinkerPRO::print(char * data, bool needCheck)
 
         BLINKER_LOG_ALL(BLINKER_F("data: "), data);
 
-        uint8_t num = strlen(data);
+        uint16_t num = strlen(data);
 
         data[num+8] = '\0';
 
-        for(uint8_t c_num = num; c_num > 0; c_num--)
+        for(uint16_t c_num = num; c_num > 0; c_num--)
         {
             data[c_num+7] = data[c_num-1];
         }
 
         String data_add = BLINKER_F("{\"data\":");
-        for(uint8_t c_num = 0; c_num < 8; c_num++)
+        for(uint16_t c_num = 0; c_num < 8; c_num++)
         {
             data[c_num] = data_add[c_num];
         }
@@ -1507,7 +1509,9 @@ int BlinkerPRO::connectServer() {
         free(BLINKER_PUB_TOPIC_PRO);
         free(BLINKER_SUB_TOPIC_PRO);
         free(mqtt_PRO);
-        // free(iotSub_PRO);
+        free(iotSub_PRO);
+
+        isMQTTinit = false;
     }
 
     BLINKER_LOG_ALL(("===================="));
@@ -1719,7 +1723,8 @@ int BlinkerPRO::connectServer() {
     }
 
     // iotPub = new Adafruit_MQTT_Publish(mqtt_PRO, BLINKER_PUB_TOPIC_PRO);
-    if (!isMQTTinit) iotSub_PRO = new Adafruit_MQTT_Subscribe(mqtt_PRO, BLINKER_SUB_TOPIC_PRO);
+    // if (!isMQTTinit) 
+    iotSub_PRO = new Adafruit_MQTT_Subscribe(mqtt_PRO, BLINKER_SUB_TOPIC_PRO);
 
     // mqtt_broker = (char*)malloc((_broker.length()+1)*sizeof(char));
     // strcpy(mqtt_broker, _broker.c_str());
@@ -1727,7 +1732,8 @@ int BlinkerPRO::connectServer() {
 
     // mDNSInit(MQTT_ID_PRO);
     this->latestTime = millis();
-    if (!isMQTTinit) mqtt_PRO->subscribe(iotSub_PRO);
+    // if (!isMQTTinit) 
+    mqtt_PRO->subscribe(iotSub_PRO);
     isMQTTinit = true;
     
     #if defined(ESP8266)

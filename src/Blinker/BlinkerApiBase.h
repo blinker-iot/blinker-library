@@ -200,7 +200,7 @@ class BlinkerWidgets_joy
                 // : _dname(NULL)
             {
                 // data = (char*)malloc((256)*sizeof(char));
-                memcpy(data,"\0",256);
+                memcpy(data,"\0",128);
             }
 
             void name(const String & name) { _dname = name; }
@@ -244,7 +244,7 @@ class BlinkerWidgets_joy
                         if (num != dataCount - 1) _data_ += BLINKER_F(",");
                     }
 
-                    if (_data_.length() < 256)
+                    if (_data_.length() < 128)
                     {
                         strcpy(data, _data_.c_str());
                     }
@@ -262,7 +262,7 @@ class BlinkerWidgets_joy
                     _data_ += _data;
                     _data_ += BLINKER_F("]");
 
-                    if (_data_.length() < 256) {
+                    if (_data_.length() < 128) {
                         strcpy(data, _data_.c_str());
                         dataCount++;
                     }
@@ -309,7 +309,7 @@ class BlinkerWidgets_joy
             time_t  latest_time = 0;
             String _dname;
             // char * data;
-            char data[256];
+            char data[128];
     };
 #endif
 

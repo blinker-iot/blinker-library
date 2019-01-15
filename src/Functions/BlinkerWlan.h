@@ -565,11 +565,11 @@ void BlinkerWlan::connectWiFi(const char* _ssid, const char* _pswd)
 
 bool BlinkerWlan::run()
 {
-    if (millis() - debugStatusTime > 10000) {
-        debugStatusTime = millis();
+    // if (millis() - debugStatusTime > 10000) {
+    //     debugStatusTime = millis();
 
-        BLINKER_LOG_ALL("WLAN status: ", _status);
-    }
+    //     BLINKER_LOG_ALL("WLAN status: ", _status);
+    // }
 
     switch (_status) {
         case BWL_CONFIG_CKECK :
