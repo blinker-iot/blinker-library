@@ -1300,7 +1300,7 @@ void BlinkerApi::run()
 
         if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * 1 * 1000)
         {
-            if (data_dataCount)
+            if (data_dataCount && _isInit)
             {
                 dataUpdate();
                 _autoUpdateTime = millis();
@@ -5640,291 +5640,298 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
         BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
 
-        // #ifndef BLINKER_LAN_DEBUG
-        //     const int httpsPort = 443;
-        // #elif defined(BLINKER_LAN_DEBUG)
-        //     const int httpsPort = 9090;
-        // #endif
+        #ifndef BLINKER_LAN_DEBUG
+            const int httpsPort = 443;
+        #elif defined(BLINKER_LAN_DEBUG)
+            const int httpsPort = 9090;
+        #endif
 
-        // #if defined(ESP8266)
-        //     #ifndef BLINKER_LAN_DEBUG
-        //         String host = BLINKER_F("iotdev.clz.me");
-        //     #elif defined(BLINKER_LAN_DEBUG)
-        //         String host = BLINKER_F("192.168.1.121");
-        //     #endif
-        //         String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
-        //     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-        //         #ifndef BLINKER_LAN_DEBUG
-        //             // #if defined(BLINKER_MQTT)
-        //                 extern BearSSL::WiFiClientSecure client_mqtt;
-        //             // #elif defined(BLINKER_PRO)
-        //             //     extern BearSSL::WiFiClientSecure client_pro;
-        //             // #elif defined(BLINKER_AT_MQTT)
-        //             //     extern BearSSL::WiFiClientSecure client_mqtt_at;
-        //             // #endif
-        //             BearSSL::WiFiClientSecure client_s;
-        //             // extern WiFiClientSecure client_mqtt;
-        //         #elif defined(BLINKER_LAN_DEBUG)
-        //             WiFiClient client_s;
-        //         #endif
-        //     #endif
+        #if defined(ESP8266)
+            #ifndef BLINKER_LAN_DEBUG
+                String host = BLINKER_F("iotdev.clz.me");
+            #elif defined(BLINKER_LAN_DEBUG)
+                String host = BLINKER_F("192.168.1.121");
+            #endif
+                String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
+            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                #ifndef BLINKER_LAN_DEBUG
+                    // #if defined(BLINKER_MQTT)
+                        extern BearSSL::WiFiClientSecure client_mqtt;
+                    // #elif defined(BLINKER_PRO)
+                    //     extern BearSSL::WiFiClientSecure client_pro;
+                    // #elif defined(BLINKER_AT_MQTT)
+                    //     extern BearSSL::WiFiClientSecure client_mqtt_at;
+                    // #endif
+                    BearSSL::WiFiClientSecure client_s;
+                    // extern WiFiClientSecure client_mqtt;
+                #elif defined(BLINKER_LAN_DEBUG)
+                    WiFiClient client_s;
+                #endif
+            #endif
 
-        //     // #if defined(BLINKER_WIFI)
-        //         // BearSSL::WiFiClientSecure client_s;
-        //     // #endif
+            // #if defined(BLINKER_WIFI)
+                // BearSSL::WiFiClientSecure client_s;
+            // #endif
 
-        //     BLINKER_LOG_ALL(BLINKER_F("connecting to "), host);
+            BLINKER_LOG_ALL(BLINKER_F("connecting to "), host);
 
-        //     uint8_t connet_times = 0;
+            uint8_t connet_times = 0;
 
-        //     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-        //         client_mqtt.stop();
-        //     // #elif defined(BLINKER_PRO)
-        //     //     client_pro.stop();
-        //     // #elif defined(BLINKER_AT_MQTT)
-        //     //     client_mqtt_at.stop();
-        //     #endif
+            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                client_mqtt.stop();
+            // #elif defined(BLINKER_PRO)
+            //     client_pro.stop();
+            // #elif defined(BLINKER_AT_MQTT)
+            //     client_mqtt_at.stop();
+            #endif
 
-        //     ::delay(100);
+            ::delay(100);
 
-        //     bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
-        //     if (mfln) {
-        //         client_s.setBufferSizes(1024, 1024);
-        //     }
+            // bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
+            // if (mfln) {
+            //     client_s.setBufferSizes(1024, 1024);
+            // }
 
-        //     // client_s.setFingerprint(fingerprint.c_str());
+            // client_s.setFingerprint(fingerprint.c_str());
 
-        //     client_s.setInsecure();
+            client_s.setInsecure();
 
-        //     while (1) {
-        //         bool cl_connected = false;
-        //         if (!client_s.connect(host, httpsPort)) {
-        //     // #ifdef BLINKER_DEBUG_ALL
-        //             BLINKER_ERR_LOG(BLINKER_F("server connection failed"));
-        //     // #endif
-        //             // return BLINKER_CMD_FALSE;
+            // while (1) {
+                bool cl_connected = false;
+                if (!client_s.connect(host, httpsPort)) {
+            // #ifdef BLINKER_DEBUG_ALL
+                    BLINKER_ERR_LOG(BLINKER_F("server connection failed"));
+            // #endif
+                    // return BLINKER_CMD_FALSE;
 
-        //             // connet_times++;
-        //             ::delay(1000);
-        //         }
-        //         else {
-        //             BLINKER_LOG_ALL(BLINKER_F("connection succeed"));
-        //             // return true;
-        //             cl_connected = true;
+                    // connet_times++;
+                    ::delay(1000);
+                }
+                else {
+                    BLINKER_LOG_ALL(BLINKER_F("connection succeed"));
+                    // return true;
+                    cl_connected = true;
 
-        //             break;
-        //         }
+                    // break;
+                }
 
-        //         // if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
-        //     }
+                // if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
+            // }
 
-        //     String url;
-        //     // String client_msg;
+            String url;
+            // String client_msg;
 
-        //     switch (_type) {
-        //         case BLINKER_CMD_SMS_NUMBER :
-        //             url = BLINKER_F("/api/v1/user/device/sms");
-        //             client_s.print(postServer(url, host, httpsPort, msg));
-        //             break;
-        //         case BLINKER_CMD_PUSH_NUMBER :
-        //             url = BLINKER_F("/api/v1/user/device/push");
-        //             client_s.print(postServer(url, host, httpsPort, msg));
-        //             break;
-        //         case BLINKER_CMD_WECHAT_NUMBER :
-        //             url = BLINKER_F("/api/v1/user/device/wxMsg/");
-        //             client_s.print(postServer(url, host, httpsPort, msg));
-        //             // return BLINKER_CMD_FALSE;
-        //             break;
-        //         case BLINKER_CMD_WEATHER_NUMBER :
-        //             url = BLINKER_F("/api/v1");
-        //             url += msg;
-        //             client_s.print(getServer(url, host, httpsPort));
-        //             break;
-        //         case BLINKER_CMD_AQI_NUMBER :
-        //             url = BLINKER_F("/api/v1");
-        //             url += msg;
-        //             client_s.print(getServer(url, host, httpsPort));
-        //             break;
-        //         case BLINKER_CMD_BRIDGE_NUMBER :
-        //             url = BLINKER_F("/api/v1/user/device");
-        //             url += msg;
-        //             client_s.print(getServer(url, host, httpsPort));
-        //             break;
-        //         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-        //             case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
-        //                 url = BLINKER_F("/api/v1/user/device/userconfig");
-        //                 client_s.print(postServer(url, host, httpsPort, msg));
-        //                 break;
-        //             case BLINKER_CMD_CONFIG_GET_NUMBER :
-        //                 url = BLINKER_F("/api/v1/user/device");
-        //                 url += msg;
-        //                 client_s.print(getServer(url, host, httpsPort));
-        //                 break;
-        //             case BLINKER_CMD_CONFIG_DELETE_NUMBER :
-        //                 url = BLINKER_F("/api/v1/user/device");
-        //                 url += msg;
-        //                 client_s.print(getServer(url, host, httpsPort));
-        //                 break;
-        //             case BLINKER_CMD_DATA_STORAGE_NUMBER :
-        //                 url = BLINKER_F("/api/v1/user/device/cloudStorage");
-        //                 client_s.print(postServer(url, host, httpsPort, msg));
-        //                 break;
-        //             case BLINKER_CMD_DATA_GET_NUMBER :
-        //                 url = BLINKER_F("/api/v1/user/device");
-        //                 url += msg;
-        //                 client_s.print(getServer(url, host, httpsPort));
-        //                 break;
-        //             case BLINKER_CMD_DATA_DELETE_NUMBER :
-        //                 url = BLINKER_F("/api/v1/user/device");
-        //                 url += msg;
-        //                 client_s.print(getServer(url, host, httpsPort));
-        //                 break;
-        //             case BLINKER_CMD_AUTO_PULL_NUMBER :
-        //                 url = BLINKER_F("/api/v1/user/device");
-        //                 url += msg;
-        //                 client_s.print(getServer(url, host, httpsPort));
-        //                 break;
-        //             case BLINKER_CMD_OTA_NUMBER :
-        //                 url = BLINKER_F("/api/v1/user/device");
-        //                 url += msg;
-        //                 client_s.print(getServer(url, host, httpsPort));
-        //                 break;
-        //             case BLINKER_CMD_OTA_STATUS_NUMBER :
-        //                 url = BLINKER_F("/api/v1/user/device/ota/upgrade_status");
-        //                 // url += msg;
-        //                 client_s.print(postServer(url, host, httpsPort, msg));
-        //                 break;
-        //         #endif
-        //         default :
-        //             return BLINKER_CMD_FALSE;
-        //     }
+            switch (_type) {
+                case BLINKER_CMD_SMS_NUMBER :
+                    url = BLINKER_F("/api/v1/user/device/sms");
+                    client_s.print(postServer(url, host, httpsPort, msg));
+                    break;
+                case BLINKER_CMD_PUSH_NUMBER :
+                    url = BLINKER_F("/api/v1/user/device/push");
+                    client_s.print(postServer(url, host, httpsPort, msg));
+                    break;
+                case BLINKER_CMD_WECHAT_NUMBER :
+                    url = BLINKER_F("/api/v1/user/device/wxMsg/");
+                    client_s.print(postServer(url, host, httpsPort, msg));
+                    // return BLINKER_CMD_FALSE;
+                    break;
+                case BLINKER_CMD_WEATHER_NUMBER :
+                    url = BLINKER_F("/api/v1");
+                    url += msg;
+                    client_s.print(getServer(url, host, httpsPort));
+                    break;
+                case BLINKER_CMD_AQI_NUMBER :
+                    url = BLINKER_F("/api/v1");
+                    url += msg;
+                    client_s.print(getServer(url, host, httpsPort));
+                    break;
+                case BLINKER_CMD_BRIDGE_NUMBER :
+                    url = BLINKER_F("/api/v1/user/device");
+                    url += msg;
+                    client_s.print(getServer(url, host, httpsPort));
+                    break;
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                    case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device/userconfig");
+                        client_s.print(postServer(url, host, httpsPort, msg));
+                        break;
+                    case BLINKER_CMD_CONFIG_GET_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device/cloudStorage/");
+                        client_s.print(postServer(url, host, httpsPort, msg));
+                        break;
+                    case BLINKER_CMD_DATA_GET_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_DATA_DELETE_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_AUTO_PULL_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_OTA_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                    case BLINKER_CMD_OTA_STATUS_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device/ota/upgrade_status");
+                        // url += msg;
+                        client_s.print(postServer(url, host, httpsPort, msg));
+                        break;
+                    case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                        url = BLINKER_F("/api/v1/user/device");
+                        url += msg;
+                        client_s.print(getServer(url, host, httpsPort));
+                        break;
+                #endif
+                default :
+                    return BLINKER_CMD_FALSE;
+            }
 
-        //     unsigned long timeout = millis();
-        //     while (client_s.available() == 0)
-        //     {
-        //         if (millis() - timeout > 5000)
-        //         {
-        //             BLINKER_LOG_ALL(BLINKER_F(">>> Client Timeout !"));
-        //             client_s.stop();
-        //             return BLINKER_CMD_FALSE;
-        //         }
-        //     }
+            unsigned long timeout = millis();
+            while (client_s.available() == 0)
+            {
+                if (millis() - timeout > 5000)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F(">>> Client Timeout !"));
+                    client_s.stop();
+                    return BLINKER_CMD_FALSE;
+                }
+            }
 
-        //     // Read all the lines of the reply from server and print them to Serial
-        //     String _dataGet;
-        //     String lastGet;
-        //     String lengthOfJson;
-        //     while (client_s.available())
-        //     {
-        //         // String line = client_s.readStringUntil('\r');
-        //         _dataGet = client_s.readStringUntil('\n');
+            // Read all the lines of the reply from server and print them to Serial
+            String _dataGet;
+            String lastGet;
+            String lengthOfJson;
+            while (client_s.available())
+            {
+                // String line = client_s.readStringUntil('\r');
+                _dataGet = client_s.readStringUntil('\n');
 
-        //         if (_dataGet.startsWith("Content-Length: "))
-        //         {
-        //             int addr_start = _dataGet.indexOf(' ');
-        //             int addr_end = _dataGet.indexOf('\0', addr_start + 1);
-        //             lengthOfJson = _dataGet.substring(addr_start + 1, addr_end);
-        //         }
+                if (_dataGet.startsWith("Content-Length: "))
+                {
+                    int addr_start = _dataGet.indexOf(' ');
+                    int addr_end = _dataGet.indexOf('\0', addr_start + 1);
+                    lengthOfJson = _dataGet.substring(addr_start + 1, addr_end);
+                }
 
-        //         if (_dataGet == "\r")
-        //         {
-        //             BLINKER_LOG_ALL(BLINKER_F("headers received"));
-        //             break;
-        //         }
-        //     }
+                if (_dataGet == "\r")
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("headers received"));
+                    break;
+                }
+            }
 
-        //     for(int i=0;i<lengthOfJson.toInt();i++)
-        //     {
-        //         lastGet += (char)client_s.read();
-        //     }
+            for(int i=0;i<lengthOfJson.toInt();i++)
+            {
+                lastGet += (char)client_s.read();
+            }
 
-        //     _dataGet = lastGet;
+            _dataGet = lastGet;
 
-        //     BLINKER_LOG_ALL(BLINKER_F("_dataGet: "), _dataGet);
+            BLINKER_LOG_ALL(BLINKER_F("_dataGet: "), _dataGet);
 
-        //     client_s.stop();
-        //     client_s.flush();
+            client_s.stop();
+            client_s.flush();
 
-        //     // client_mqtt.setInsecure();
+            // client_mqtt.setInsecure();
 
-        //     DynamicJsonBuffer jsonBuffer;
-        //     JsonObject& data_rp = jsonBuffer.parseObject(_dataGet);
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& data_rp = jsonBuffer.parseObject(_dataGet);
 
-        //     if (data_rp.success())
-        //     {
-        //         uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
-        //         if (msg_code != 1000)
-        //         {
-        //             String _detail = data_rp[BLINKER_CMD_DETAIL];
-        //             BLINKER_ERR_LOG(_detail);
-        //         }
-        //         else
-        //         {
-        //             // String _dataGet_ = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
-        //             if (_type == BLINKER_CMD_BRIDGE_NUMBER)
-        //                 _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
-        //             else if (_type == BLINKER_CMD_OTA_NUMBER)
-        //                 _dataGet = data_rp[BLINKER_CMD_DETAIL].as<String>();
-        //             else
-        //                 _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
-        //         }
-        //     }
+            if (data_rp.success())
+            {
+                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                if (msg_code != 1000)
+                {
+                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                    BLINKER_ERR_LOG(_detail);
+                }
+                else
+                {
+                    // String _dataGet_ = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                    if (_type == BLINKER_CMD_BRIDGE_NUMBER)
+                        _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
+                    else if (_type == BLINKER_CMD_OTA_NUMBER || _type == BLINKER_CMD_FRESH_SHARERS_NUMBER)
+                        _dataGet = data_rp[BLINKER_CMD_DETAIL].as<String>();
+                    else
+                        _dataGet = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
+                }
+            }
 
-        //     BLINKER_LOG_ALL(BLINKER_F("_dataGet: "), _dataGet);
+            BLINKER_LOG_ALL(BLINKER_F("_dataGet: "), _dataGet);
 
-        //     switch (_type)
-        //     {
-        //         case BLINKER_CMD_SMS_NUMBER :
-        //             _smsTime = millis();
-        //             break;
-        //         case BLINKER_CMD_PUSH_NUMBER :
-        //             _pushTime = millis();
-        //             break;
-        //         case BLINKER_CMD_WECHAT_NUMBER :
-        //             _wechatTime = millis();
-        //             break;
-        //             // return BLINKER_CMD_FALSE;
-        //         case BLINKER_CMD_WEATHER_NUMBER :
-        //             _weatherTime = millis();
-        //             break;
-        //         case BLINKER_CMD_AQI_NUMBER :
-        //             _aqiTime = millis();
-        //             break;
-        //         case BLINKER_CMD_BRIDGE_NUMBER :
-        //             break;
-        //         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-        //             case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
-        //                 _cUpdateTime = millis();
-        //                 break;
-        //             case BLINKER_CMD_CONFIG_GET_NUMBER :
-        //                 _cGetTime = millis();
-        //                 break;
-        //             case BLINKER_CMD_CONFIG_DELETE_NUMBER :
-        //                 _cDelTime = millis();
-        //                 break;
-        //             case BLINKER_CMD_DATA_STORAGE_NUMBER :
-        //                 _dUpdateTime = millis();
-        //                 break;
-        //             case BLINKER_CMD_DATA_GET_NUMBER :
-        //                 _dGetTime = millis();
-        //                 break;
-        //             case BLINKER_CMD_DATA_DELETE_NUMBER :
-        //                 _dDelTime = millis();
-        //                 break;
-        //             case BLINKER_CMD_AUTO_PULL_NUMBER :
-        //                 _autoPullTime = millis();
-        //                 break;
-        //             case BLINKER_CMD_OTA_NUMBER :
-        //                 break;
-        //             case BLINKER_CMD_OTA_STATUS_NUMBER :
-        //                 break;
-        //         #endif
-        //         default :
-        //             return BLINKER_CMD_FALSE;
-        //     }
+            switch (_type)
+            {
+                case BLINKER_CMD_SMS_NUMBER :
+                    _smsTime = millis();
+                    break;
+                case BLINKER_CMD_PUSH_NUMBER :
+                    _pushTime = millis();
+                    break;
+                case BLINKER_CMD_WECHAT_NUMBER :
+                    _wechatTime = millis();
+                    break;
+                    // return BLINKER_CMD_FALSE;
+                case BLINKER_CMD_WEATHER_NUMBER :
+                    _weatherTime = millis();
+                    break;
+                case BLINKER_CMD_AQI_NUMBER :
+                    _aqiTime = millis();
+                    break;
+                case BLINKER_CMD_BRIDGE_NUMBER :
+                    break;
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                    case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                        _cUpdateTime = millis();
+                        break;
+                    case BLINKER_CMD_CONFIG_GET_NUMBER :
+                        _cGetTime = millis();
+                        break;
+                    case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                        _cDelTime = millis();
+                        break;
+                    case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                        _dUpdateTime = millis();
+                        break;
+                    case BLINKER_CMD_DATA_GET_NUMBER :
+                        _dGetTime = millis();
+                        break;
+                    case BLINKER_CMD_DATA_DELETE_NUMBER :
+                        _dDelTime = millis();
+                        break;
+                    case BLINKER_CMD_AUTO_PULL_NUMBER :
+                        _autoPullTime = millis();
+                        break;
+                    case BLINKER_CMD_OTA_NUMBER :
+                        break;
+                    case BLINKER_CMD_OTA_STATUS_NUMBER :
+                        break;
+                    case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                        break;
+                #endif
+                default :
+                    return BLINKER_CMD_FALSE;
+            }
 
-        //     return _dataGet;
-        // #elif defined(ESP32)
+            return _dataGet;
+        #elif defined(ESP32)
             #ifndef BLINKER_LAN_DEBUG
                 String host = BLINKER_F("https://iotdev.clz.me");
             #elif defined(BLINKER_LAN_DEBUG)
@@ -5961,15 +5968,15 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             //     "-----END CERTIFICATE-----\n";
         // #endif
 
-        #if defined(ESP8266)
-            extern BearSSL::WiFiClientSecure client_mqtt;
-            client_mqtt.stop();
+        // #if defined(ESP8266)
+        //     extern BearSSL::WiFiClientSecure client_mqtt;
+        //     client_mqtt.stop();
 
-            std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+        //     std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
 
-            // client_s->setFingerprint(fingerprint);
-            client_s->setInsecure();
-        #endif
+        //     // client_s->setFingerprint(fingerprint);
+        //     client_s->setInsecure();
+        // #endif
 
             HTTPClient http;
 
@@ -6318,7 +6325,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 http.end();
                 return BLINKER_CMD_FALSE;
             }
-        // #endif
+        #endif
     }
 #endif
 
