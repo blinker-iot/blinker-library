@@ -2370,21 +2370,21 @@ float BlinkerApi::gps(b_gps_t axis)
 
         if (blinkerServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE)
         {
-            for (uint8_t _num = 0; _num < data_dataCount; _num++)
-            {
-                delete _Data[_num];
-            }
-            data_dataCount = 0;
+            // for (uint8_t _num = 0; _num < data_dataCount; _num++)
+            // {
+            //     delete _Data[_num];
+            // }
+            // data_dataCount = 0;
 
             return false;
         }
         else
         {
-            for (uint8_t _num = 0; _num < data_dataCount; _num++)
-            {
-                delete _Data[_num];
-            }
-            data_dataCount = 0;
+            // for (uint8_t _num = 0; _num < data_dataCount; _num++)
+            // {
+            //     delete _Data[_num];
+            // }
+            // data_dataCount = 0;
 
             return true;
         }

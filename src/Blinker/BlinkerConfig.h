@@ -504,7 +504,7 @@
 
 #define BLINKER_MAX_BLINKER_DATA_SIZE   8
 
-#define BLINKER_MAX_DATA_COUNT          24
+#define BLINKER_MAX_DATA_COUNT          6
 
 #if defined(BLINKER_ESP_AT)
 

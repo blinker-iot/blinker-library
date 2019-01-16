@@ -201,7 +201,7 @@ class BlinkerWidgets_joy
             {
                 // data = (char*)malloc((256)*sizeof(char));
                 // memcpy(data,"\0",128);
-                for(uint8_t num = 0; num < 12; num++)
+                for(uint8_t num = 0; num < BLINKER_MAX_DATA_COUNT; num++)
                 {
                     time_data[num] = 0;
                     memcpy(data[num], "\0", 10);
@@ -220,7 +220,7 @@ class BlinkerWidgets_joy
 
                 latest_time = now_time;
 
-                if (dataCount == 12)
+                if (dataCount == BLINKER_MAX_DATA_COUNT)
                 {
                     for (uint8_t num = 0; num < dataCount - 1; num++) {
                         time_data[num] = time_data[num + 1];
@@ -312,8 +312,13 @@ class BlinkerWidgets_joy
                     {
                         _data_ += ",";
                     }
+
+                    time_data[num] = latest_time;
+                    memcpy(data[num], "\0", 10);
                 }
                 _data_ += BLINKER_F("]");//}
+
+                dataCount = 0;
 
                 // DynamicJsonBuffer jsonDataBuffer;
                 // JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
@@ -344,8 +349,8 @@ class BlinkerWidgets_joy
             time_t  latest_time = 0;
             String _dname;
             // char * data;
-            time_t  time_data[12];
-            char    data[12][10];
+            time_t  time_data[BLINKER_MAX_DATA_COUNT];
+            char    data[BLINKER_MAX_DATA_COUNT][10];
     };
 #endif
 
