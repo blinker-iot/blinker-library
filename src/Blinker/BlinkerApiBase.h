@@ -200,7 +200,12 @@ class BlinkerWidgets_joy
                 // : _dname(NULL)
             {
                 // data = (char*)malloc((256)*sizeof(char));
-                memcpy(data,"\0",128);
+                // memcpy(data,"\0",128);
+                for(uint8_t num = 0; num < 12; num++)
+                {
+                    time_data[num] = 0;
+                    memcpy(data[num], "\0", 10);
+                }
             }
 
             void name(const String & name) { _dname = name; }
@@ -208,76 +213,106 @@ class BlinkerWidgets_joy
             String getName() { return _dname; }
 
             bool saveData(const String & _data, time_t now_time, uint32_t _limit) {
-                if (now_time - latest_time < _limit) return false;
+                if (dataCount > 0)
+                {
+                    if (now_time - latest_time < _limit) return false;
+                }
 
                 latest_time = now_time;
 
-                String _data_;
-
-                if (strlen(data)) _data_ = STRING_format(data);
-
-                if (dataCount == 6) {
-                    _data_ += BLINKER_F(",[");
-                    _data_ += STRING_format(now_time);
-                    _data_ += BLINKER_F(",");
-                    _data_ += _data;
-                    _data_ += BLINKER_F("]");
-
-                    _data_ = "{\"data\":[" + STRING_format(_data_);
-                    _data_ += BLINKER_F("]}");
-
-                    DynamicJsonBuffer jsonDataBuffer;
-                    JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
-
-                    for (uint8_t num = 0; num < dataCount; num++) {
-                        dataArray["data"][num][0] = dataArray["data"][num+1][0];
-                        dataArray["data"][num][1] = dataArray["data"][num+1][1];
+                if (dataCount == 12)
+                {
+                    for (uint8_t num = 0; num < dataCount - 1; num++) {
+                        time_data[num] = time_data[num + 1];
+                        strcpy(data[num], data[num+1]);
                     }
-                    
-                    _data_ = BLINKER_F("");
-                    for (uint8_t num = 0; num < dataCount; num++)
-                    {
-                        String data_get = dataArray["data"][num];
-
-                        _data_ += data_get;
-
-                        if (num != dataCount - 1) _data_ += BLINKER_F(",");
-                    }
-
-                    if (_data_.length() < 128)
-                    {
-                        strcpy(data, _data_.c_str());
-                    }
+                    time_data[dataCount] = now_time;
+                    strcpy(data[dataCount], _data.c_str());
                 }
                 else
                 {
-                    if (_data_.length())
-                    {
-                        _data_ += BLINKER_F(",");
-                    }
-
-                    _data_ += BLINKER_F("[");
-                    _data_ += STRING_format(now_time);
-                    _data_ += BLINKER_F(",");
-                    _data_ += _data;
-                    _data_ += BLINKER_F("]");
-
-                    if (_data_.length() < 128) {
-                        strcpy(data, _data_.c_str());
-                        dataCount++;
-                    }
+                    time_data[dataCount] = now_time;
+                    strcpy(data[dataCount], _data.c_str());
+                    dataCount++;
                 }
-                BLINKER_LOG_ALL(BLINKER_F("saveData: "), data);
+
+                // String _data_;
+
+                // if (strlen(data)) _data_ = STRING_format(data);
+
+                // if (dataCount == 6) {
+                //     _data_ += BLINKER_F(",[");
+                //     _data_ += STRING_format(now_time);
+                //     _data_ += BLINKER_F(",");
+                //     _data_ += _data;
+                //     _data_ += BLINKER_F("]");
+
+                //     _data_ = "{\"data\":[" + STRING_format(_data_);
+                //     _data_ += BLINKER_F("]}");
+
+                //     DynamicJsonBuffer jsonDataBuffer;
+                //     JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
+
+                //     for (uint8_t num = 0; num < dataCount; num++) {
+                //         dataArray["data"][num][0] = dataArray["data"][num+1][0];
+                //         dataArray["data"][num][1] = dataArray["data"][num+1][1];
+                //     }
+                    
+                //     _data_ = BLINKER_F("");
+                //     for (uint8_t num = 0; num < dataCount; num++)
+                //     {
+                //         String data_get = dataArray["data"][num];
+
+                //         _data_ += data_get;
+
+                //         if (num != dataCount - 1) _data_ += BLINKER_F(",");
+                //     }
+
+                //     if (_data_.length() < 128)
+                //     {
+                //         strcpy(data, _data_.c_str());
+                //     }
+                // }
+                // else
+                // {
+                //     if (_data_.length())
+                //     {
+                //         _data_ += BLINKER_F(",");
+                //     }
+
+                //     _data_ += BLINKER_F("[");
+                //     _data_ += STRING_format(now_time);
+                //     _data_ += BLINKER_F(",");
+                //     _data_ += _data;
+                //     _data_ += BLINKER_F("]");
+
+                //     if (_data_.length() < 128) {
+                //         strcpy(data, _data_.c_str());
+                //         dataCount++;
+                //     }
+                // }
+                BLINKER_LOG_ALL(BLINKER_F("saveData: "), _data);
                 BLINKER_LOG_ALL(BLINKER_F("saveData dataCount: "), dataCount);
 
                 return true;
             }
 
             String getData() {
-                BLINKER_LOG_ALL(BLINKER_F("getData data: "), data);
+                // BLINKER_LOG_ALL(BLINKER_F("getData data: "), data);
                 
                 String _data_ = BLINKER_F("[");//{\"data\":
-                _data_ += STRING_format(data);
+                // _data_ += STRING_format(data);
+                for (uint8_t num = 0; num < dataCount; num--) {
+                    _data_ += "[";
+                    _data_ += String(time_data[num]);
+                    _data_ += ",";
+                    _data_ += data[num];
+                    _data_ += "]";
+                    if (num + 1 < dataCount)
+                    {
+                        _data_ += ",";
+                    }
+                }
                 _data_ += BLINKER_F("]");//}
 
                 // DynamicJsonBuffer jsonDataBuffer;
@@ -309,7 +344,8 @@ class BlinkerWidgets_joy
             time_t  latest_time = 0;
             String _dname;
             // char * data;
-            char data[128];
+            time_t  time_data[12];
+            char    data[12][10];
     };
 #endif
 

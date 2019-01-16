@@ -2286,6 +2286,10 @@ float BlinkerApi::gps(b_gps_t axis)
         BLINKER_LOG_ALL(BLINKER_F("dataStorage num: "), num);
         BLINKER_LOG_ALL(BLINKER_F("dataStorage count: "), data_dataCount);
 
+        String data_msg = String(msg);
+
+        if (data_msg.length() > 10) return;
+
         if( num == BLINKER_OBJECT_NOT_AVAIL )
         {
             if (data_dataCount == BLINKER_MAX_BLINKER_DATA_SIZE)
@@ -2296,7 +2300,7 @@ float BlinkerApi::gps(b_gps_t axis)
             _Data[data_dataCount]->name(_name);
             // _Data[data_dataCount]->saveData(time(), _msg);
             // if 
-            _Data[data_dataCount]->saveData(_msg, now_time, BLINKER_DATA_FREQ_TIME);
+            _Data[data_dataCount]->saveData(data_msg, now_time, BLINKER_DATA_FREQ_TIME);
             data_dataCount++;
             // {
             //     dataUpdate();
@@ -2308,7 +2312,7 @@ float BlinkerApi::gps(b_gps_t axis)
         else {
             // _Data[num]->saveData(time(), _msg);
             // if 
-            _Data[num]->saveData(_msg, now_time, BLINKER_DATA_FREQ_TIME);
+            _Data[num]->saveData(data_msg, now_time, BLINKER_DATA_FREQ_TIME);
             // {
             //     dataUpdate();
             // }
