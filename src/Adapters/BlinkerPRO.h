@@ -1207,7 +1207,7 @@ int BlinkerPRO::connectServer() {
 
     client_s.setInsecure();
 
-    while (1) {
+    // while (1) {
         bool cl_connected = false;
         if (!client_s.connect(host, httpsPort)) {
             BLINKER_ERR_LOG(BLINKER_F("server connection failed"));
@@ -1219,11 +1219,11 @@ int BlinkerPRO::connectServer() {
             BLINKER_LOG_ALL(BLINKER_F("connection succeed"));
             cl_connected = true;
 
-            break;
+            // break;
         }
 
         // if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
-    }
+    // }
 
     String client_msg;
 
