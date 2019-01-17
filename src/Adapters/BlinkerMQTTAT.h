@@ -1757,7 +1757,8 @@ int BlinkerMQTTAT::connectServer() {
 
     String client_msg;
 
-    String url_iot = BLINKER_F("/api/v1/user/device/register?deviceType=");
+    String url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
+    url_iot += _authKey;
 
     if (_aliType == ALI_LIGHT) {
         url_iot += BLINKER_F("&aliType=light");
