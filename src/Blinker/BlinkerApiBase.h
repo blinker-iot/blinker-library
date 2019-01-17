@@ -302,7 +302,7 @@ class BlinkerWidgets_joy
                 
                 String _data_ = BLINKER_F("[");//{\"data\":
                 // _data_ += STRING_format(data);
-                for (uint8_t num = 0; num < dataCount; num--) {
+                for (uint8_t num = 0; num < dataCount; num++) {
                     _data_ += "[";
                     _data_ += String(time_data[num]);
                     _data_ += ",";

@@ -1199,10 +1199,10 @@ int BlinkerPRO::connectServer() {
     // client_s.stop();
     ::delay(100);
 
-    // bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
-    // if (mfln) {
-    //     client_s.setBufferSizes(1024, 1024);
-    // }
+    bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
+    if (mfln) {
+        client_s.setBufferSizes(1024, 1024);
+    }
     // client_s.setFingerprint(fingerprint.c_str());
 
     client_s.setInsecure();
