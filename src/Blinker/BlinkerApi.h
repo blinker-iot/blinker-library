@@ -1298,7 +1298,7 @@ void BlinkerApi::run()
             }
         }
 
-        if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * 1 * 1000)
+        if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * 5 * 1000)
         {
             if (data_dataCount && _isInit)
             {
@@ -2370,21 +2370,21 @@ float BlinkerApi::gps(b_gps_t axis)
 
         if (blinkerServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE)
         {
-            for (uint8_t _num = 0; _num < data_dataCount; _num++)
-            {
-                delete _Data[_num];
-            }
-            data_dataCount = 0;
+            // for (uint8_t _num = 0; _num < data_dataCount; _num++)
+            // {
+            //     delete _Data[_num];
+            // }
+            // data_dataCount = 0;
 
             return false;
         }
         else
         {
-            for (uint8_t _num = 0; _num < data_dataCount; _num++)
-            {
-                delete _Data[_num];
-            }
-            data_dataCount = 0;
+            // for (uint8_t _num = 0; _num < data_dataCount; _num++)
+            // {
+            //     delete _Data[_num];
+            // }
+            // data_dataCount = 0;
 
             return true;
         }
@@ -5687,10 +5687,10 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
             ::delay(100);
 
-            // bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
-            // if (mfln) {
-            //     client_s.setBufferSizes(1024, 1024);
-            // }
+            bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
+            if (mfln) {
+                client_s.setBufferSizes(1024, 1024);
+            }
 
             // client_s.setFingerprint(fingerprint.c_str());
 
