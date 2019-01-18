@@ -2567,14 +2567,14 @@ float BlinkerApi::gps(b_gps_t axis)
     char * BlinkerApi::bridgeKey(uint8_t num)
     {
         if (num) return _Bridge[num - 1]->getKey();
-        else return NULL;
+        else return "";
     }
 
 
     char * BlinkerApi::bridgeName(uint8_t num)
     {
         if (num) return _Bridge[num - 1]->getName();
-        else return NULL;
+        else return "false";
     }
 
 
@@ -3007,27 +3007,27 @@ void BlinkerApi::attachSwitch(blinker_callback_with_string_arg_t _func)
 char * BlinkerApi::widgetName_str(uint8_t num)
 {
     if (num) return _Widgets_str[num - 1]->getName();
-    else return NULL;
+    else return "";
 }
 
 #if defined(BLINKER_BLE)
     char * BlinkerApi::widgetName_joy(uint8_t num)
     {
         if (num) return _Widgets_joy[num - 1]->getName();
-        else return NULL;
+        else return "";
     }
 #endif
 
 char * BlinkerApi::widgetName_rgb(uint8_t num)
 {
     if (num) return _Widgets_rgb[num - 1]->getName();
-    else return NULL;
+    else return "";
 }
 
 char * BlinkerApi::widgetName_int(uint8_t num)
 {
     if (num) return _Widgets_int[num - 1]->getName();
-    else return NULL;
+    else return "";
 }
 
 #if defined(BLINKER_ARDUINOJSON)

@@ -157,7 +157,7 @@ class BlinkerWidgets_joy
             char * getName()
             {
                 if (_register) return bName;
-                else return NULL;
+                else return "false";
             }
             void name(const String & name)
             {
