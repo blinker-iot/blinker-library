@@ -49,7 +49,12 @@ BlinkerBridge BridgeDevice1(BRIDGE_1);
 
 void bridge1Read(const String & data)
 {
-    BLINKER_LOG("BridgeDevice1 readString: ", data);
+    BLINKER_LOG("BridgeDevice1 readString: ", data);    
+}
+
+void dataRead(const String & data)
+{
+    BLINKER_LOG("Blinker readString: ", data);
 
     // must print Json data
     BridgeDevice1.print("{\"hello\":\"bridge\"}");
@@ -63,6 +68,7 @@ void setup() {
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(auth, ssid, pswd);
+    Blinker.attachData(dataRead);
 
     BridgeDevice1.attach(bridge1Read);
 }
