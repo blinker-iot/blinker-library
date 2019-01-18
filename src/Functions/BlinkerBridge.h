@@ -22,6 +22,7 @@ class BlinkerBridge
         template <typename T1>
         void print(T1 n1)
         {
+            BLINKER_LOG_ALL(BLINKER_F("Bridge to: "), bNum, BLINKER_F(", data: "), n1);
             if (strcmp(Blinker.bridgeName(bNum), BLINKER_CMD_FALSE) != 0)
             {
                 Blinker.bridgePrint(Blinker.bridgeName(bNum), STRING_format(n1));

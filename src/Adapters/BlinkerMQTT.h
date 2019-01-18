@@ -559,7 +559,7 @@ void BlinkerMQTT::subscribe()
 char * BlinkerMQTT::lastRead()
 {
     if (isFresh_MQTT) return msgBuf_MQTT;
-    else return NULL;
+    else return "";
 }
 
 void BlinkerMQTT::flush()
