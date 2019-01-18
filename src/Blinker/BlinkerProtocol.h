@@ -64,8 +64,8 @@ class BlinkerProtocol
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
-            char * deviceName() { if (isInit) return conn->deviceName(); else return NULL; }
-            char * authKey()    { if (isInit) return conn->authKey(); else return NULL;  }
+            char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
+            char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }
             int mConnected()    { return isInit ? conn->mConnected() : false; }
             int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
@@ -126,7 +126,7 @@ class BlinkerProtocol
         #endif
         void checkFormat();
         void checkAutoFormat();
-        char* dataParse()       { if (canParse) return conn->lastRead(); else return NULL; }
+        char* dataParse()       { if (canParse) return conn->lastRead(); else return ""; }
         char* lastRead()        { return conn->lastRead(); }
         void isParsed()         { flush(); }
         int parseState()        { return canParse; }
