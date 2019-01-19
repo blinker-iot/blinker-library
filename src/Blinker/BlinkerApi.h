@@ -1298,14 +1298,14 @@ void BlinkerApi::run()
             }
         }
 
-        if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * 5 * 1000)
-        {
-            if (data_dataCount && _isInit)
-            {
-                dataUpdate();
-                _autoUpdateTime = millis();
-            }            
-        }
+        // if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * 5 * 1000)
+        // {
+        //     if (data_dataCount && _isInit)
+        //     {
+        //         dataUpdate();
+        //         _autoUpdateTime = millis();
+        //     }            
+        // }
     #endif
 
     BProto::checkAutoFormat();
@@ -1551,7 +1551,9 @@ void BlinkerApi::printNumArray(char * _name, const String & data)
     {
         if (_Widgets_num[num]->state())
         {
+            #if defined(ESP8266) || defined(ESP32)
             dataStorage(_name, data);
+            #endif
         }
     }
 }
