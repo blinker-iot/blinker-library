@@ -1187,7 +1187,9 @@ int BlinkerPRO::connectServer() {
 
     // WiFiClientSecure client_s;
 
-    BearSSL::WiFiClientSecure client_s;
+    BearSSL::WiFiClientSecure *client_s;
+
+    client_s = new BearSSL::WiFiClientSecure();
 
     client_mqtt.stop();
     
@@ -1199,17 +1201,17 @@ int BlinkerPRO::connectServer() {
     // client_s.stop();
     ::delay(100);
 
-    bool mfln = client_s.probeMaxFragmentLength(host, httpsPort, 1024);
+    bool mfln = client_s->probeMaxFragmentLength(host, httpsPort, 1024);
     if (mfln) {
-        client_s.setBufferSizes(1024, 1024);
+        client_s->setBufferSizes(1024, 1024);
     }
     // client_s.setFingerprint(fingerprint.c_str());
 
-    client_s.setInsecure();
+    client_s->setInsecure();
 
     // while (1) {
         bool cl_connected = false;
-        if (!client_s.connect(host, httpsPort)) {
+        if (!client_s->connect(host, httpsPort)) {
             BLINKER_ERR_LOG(BLINKER_F("server connection failed"));
             // connet_times++;
 
@@ -1264,15 +1266,15 @@ int BlinkerPRO::connectServer() {
     client_msg += STRING_format(httpsPort);
     client_msg += BLINKER_F("\r\nConnection: close\r\n\r\n");
 
-    client_s.print(client_msg);
+    client_s->print(client_msg);
     
     BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
 
     unsigned long timeout = millis();
-    while (client_s.available() == 0) {
+    while (client_s->available() == 0) {
         if (millis() - timeout > 5000) {
             BLINKER_LOG_ALL(BLINKER_F(">>> Client Timeout !"));
-            client_s.stop();
+            client_s->stop();
             return false;
         }
     }
@@ -1280,9 +1282,9 @@ int BlinkerPRO::connectServer() {
     String _dataGet;
     String lastGet;
     String lengthOfJson;
-    while (client_s.available()) {
+    while (client_s->available()) {
         // String line = client_s.readStringUntil('\r');
-        _dataGet = client_s.readStringUntil('\n');
+        _dataGet = client_s->readStringUntil('\n');
 
         if (_dataGet.startsWith("Content-Length: ")){
             int addr_start = _dataGet.indexOf(' ');
@@ -1298,13 +1300,15 @@ int BlinkerPRO::connectServer() {
     }
 
     for(int i=0;i<lengthOfJson.toInt();i++){
-        lastGet += (char)client_s.read();
+        lastGet += (char)client_s->read();
     }
 
     // BLINKER_LOG_FreeHeap();
 
-    client_s.stop();
-    client_s.flush();
+    client_s->stop();
+    client_s->flush();
+
+    free(client_s);
 
     // BLINKER_LOG_FreeHeap();
 
