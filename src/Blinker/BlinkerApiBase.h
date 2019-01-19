@@ -220,14 +220,16 @@ class BlinkerWidgets_joy
 
                 latest_time = now_time;
 
-                if (dataCount == BLINKER_MAX_DATA_COUNT)
+                if (dataCount >= BLINKER_MAX_DATA_COUNT)
                 {
+                    dataCount = BLINKER_MAX_DATA_COUNT;
+
                     for (uint8_t num = 0; num < dataCount - 1; num++) {
                         time_data[num] = time_data[num + 1];
                         strcpy(data[num], data[num+1]);
                     }
-                    time_data[dataCount] = now_time;
-                    strcpy(data[dataCount], _data.c_str());
+                    time_data[dataCount - 1] = now_time;
+                    strcpy(data[dataCount - 1], _data.c_str());
                 }
                 else
                 {

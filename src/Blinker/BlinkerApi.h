@@ -1971,7 +1971,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 localtime_r(&now_ntp, &timeinfo);
             #endif
 
-            return now_ntp - 8*60*60;
+            return now_ntp - _timezone*60*60;
         }
         return millis();
     }
