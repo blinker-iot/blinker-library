@@ -1300,7 +1300,7 @@ void BlinkerApi::run()
 
         if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * BLINKER_MAX_DATA_COUNT * 1000)
         {
-            if (data_dataCount && _isInit)
+            if (data_dataCount && _isInit && ESP.getFreeHeap() > 4000)
             {
                 dataUpdate();
                 _autoUpdateTime = millis();
@@ -1971,7 +1971,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 localtime_r(&now_ntp, &timeinfo);
             #endif
 
-            return now_ntp - _timezone*60*60;
+            return now_ntp - (int)_timezone*60*60;
         }
         return millis();
     }
@@ -2284,6 +2284,8 @@ float BlinkerApi::gps(b_gps_t axis)
         int8_t num = checkNum(_name, _Data, data_dataCount);
 
         uint32_t now_time = time() - second();
+
+        BLINKER_LOG_ALL(BLINKER_F("time: "), time(), BLINKER_F(",second: "), second());
 
         BLINKER_LOG_ALL(BLINKER_F("dataStorage num: "), num);
         BLINKER_LOG_ALL(BLINKER_F("dataStorage count: "), data_dataCount);
@@ -3639,7 +3641,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             #endif
 
             BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
-            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp - 8*60*60);
+            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp - (int)_timezone*60*60);
 
             _isNTPInit = true;
         }
