@@ -5559,6 +5559,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
     String BlinkerApi::blinkerServer(uint8_t _type, const String & msg, bool state)
     {
+        if (ESP.getFreeHeap() < 4000) return BLINKER_CMD_FALSE;
+        
         switch (_type)
         {
             case BLINKER_CMD_SMS_NUMBER :

@@ -251,6 +251,10 @@ int BlinkerPRO::connect()
         ::delay(10);
     #endif
 
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (ESP.getFreeHeap() < 5500) return false;
+
     if ((ret = mqtt_PRO->connect()) != 0)
     {
         BLINKER_LOG(mqtt_PRO->connectErrorString(ret));
@@ -1206,7 +1210,7 @@ int BlinkerPRO::connectServer() {
         client_s->setBufferSizes(1024, 1024);
     }
     // client_s.setFingerprint(fingerprint.c_str());
-
+    
     client_s->setInsecure();
 
     // while (1) {
