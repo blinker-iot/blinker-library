@@ -1717,143 +1717,50 @@ int BlinkerMQTTAT::connectServer() {
     String host = BLINKER_F("iotdev.clz.me");
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
-    BearSSL::WiFiClientSecure *client_s;
+    // BearSSL::WiFiClientSecure *client_s;
 
-    client_s = new BearSSL::WiFiClientSecure();
-
-    client_mqtt.stop();
-    
-    BLINKER_LOG_ALL(BLINKER_F("connecting to "), host);
-
-    // BLINKER_LOG_FreeHeap();
-    
-    uint8_t connet_times = 0;
-    // client_s.stop();
-    ::delay(100);
-
-    bool mfln = client_s->probeMaxFragmentLength(host, httpsPort, 1024);
-    if (mfln) {
-        client_s->setBufferSizes(1024, 1024);
-    }
-    // client_s.setFingerprint(fingerprint.c_str());
-
-    client_s->setInsecure();
-
-    // while (1) {
-        bool cl_connected = false;
-        if (!client_s->connect(host, httpsPort)) {
-            BLINKER_ERR_LOG(BLINKER_F("server connection failed"));
-            // connet_times++;
-
-            ::delay(1000);
-        }
-        else {
-            BLINKER_LOG_ALL(BLINKER_F("connection succeed"));
-            cl_connected = true;
-
-            // break;
-        }
-
-        // if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
-    // }
-
-    String client_msg;
-
-    String url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
-    url_iot += _authKey;
-
-    if (_aliType == ALI_LIGHT) {
-        url_iot += BLINKER_F("&aliType=light");
-    }
-    else if (_aliType == ALI_OUTLET) {
-        url_iot += BLINKER_F("&aliType=outlet");
-    }
-    else if (_aliType == ALI_SENSOR) {
-        url_iot += BLINKER_F("&aliType=sensor");
-    }
-
-    if (_duerType == DUER_LIGHT) {
-        url_iot += BLINKER_F("&duerType=LIGHT");
-    }
-    else if (_duerType == DUER_OUTLET) {
-        url_iot += BLINKER_F("&duerType=SOCKET");
-    }
-    else if (_duerType == DUER_SENSOR) {
-        url_iot += BLINKER_F("&duerType=AIR_MONITOR");
-    }
-
-    BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host, url_iot);
-    
-    client_msg = BLINKER_F("GET ");
-    client_msg += url_iot;
-    client_msg += BLINKER_F(" HTTP/1.1\r\nHost: ");
-    client_msg += host;
-    client_msg += BLINKER_F(":");
-    client_msg += STRING_format(httpsPort);
-    client_msg += BLINKER_F("\r\nConnection: close\r\n\r\n");
-
-    client_s->print(client_msg);
-    
-    BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
-
-    unsigned long timeout = millis();
-    while (client_s->available() == 0) {
-        if (millis() - timeout > 5000) {
-            BLINKER_LOG_ALL(BLINKER_F(">>> Client Timeout !"));
-            client_s->stop();
-            return false;
-        }
-    }
-
-    String _dataGet;
-    String lastGet;
-    String lengthOfJson;
-    while (client_s->available()) {
-        // String line = client_s.readStringUntil('\r');
-        _dataGet = client_s->readStringUntil('\n');
-
-        if (_dataGet.startsWith("Content-Length: ")){
-            int addr_start = _dataGet.indexOf(' ');
-            int addr_end = _dataGet.indexOf('\0', addr_start + 1);
-            lengthOfJson = _dataGet.substring(addr_start + 1, addr_end);
-        }
-
-        if (_dataGet == "\r") {
-            BLINKER_LOG_ALL(BLINKER_F("headers received"));
-            
-            break;
-        }
-    }
-
-    for(int i=0;i<lengthOfJson.toInt();i++){
-        lastGet += (char)client_s->read();
-    }
-
-    // BLINKER_LOG_FreeHeap();
-
-    client_s->stop();
-    client_s->flush();
-
-    free(client_s);
-
-    // BLINKER_LOG_FreeHeap();
-
-    _dataGet = lastGet;
-    
-    BLINKER_LOG_ALL(BLINKER_F("_dataGet: "), _dataGet);
-
-    String payload = _dataGet;
+    // client_s = new BearSSL::WiFiClientSecure();
 
     // client_mqtt.stop();
+    
+    // BLINKER_LOG_ALL(BLINKER_F("connecting to "), host);
 
-    // std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+    // // BLINKER_LOG_FreeHeap();
+    
+    // uint8_t connet_times = 0;
+    // // client_s.stop();
+    // ::delay(100);
 
-    // // client_s->setFingerprint(fingerprint);
+    // bool mfln = client_s->probeMaxFragmentLength(host, httpsPort, 1024);
+    // if (mfln) {
+    //     client_s->setBufferSizes(1024, 1024);
+    // }
+    // // client_s.setFingerprint(fingerprint.c_str());
+
     // client_s->setInsecure();
+
+    // // while (1) {
+    //     bool cl_connected = false;
+    //     if (!client_s->connect(host, httpsPort)) {
+    //         BLINKER_ERR_LOG(BLINKER_F("server connection failed"));
+    //         // connet_times++;
+
+    //         ::delay(1000);
+    //     }
+    //     else {
+    //         BLINKER_LOG_ALL(BLINKER_F("connection succeed"));
+    //         cl_connected = true;
+
+    //         // break;
+    //     }
+
+    //     // if (connet_times >= 4 && !cl_connected)  return BLINKER_CMD_FALSE;
+    // // }
+
+    // String client_msg;
 
     // String url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
     // url_iot += _authKey;
-    // // url_iot += _aliType;
 
     // if (_aliType == ALI_LIGHT) {
     //     url_iot += BLINKER_F("&aliType=light");
@@ -1875,44 +1782,139 @@ int BlinkerMQTTAT::connectServer() {
     //     url_iot += BLINKER_F("&duerType=AIR_MONITOR");
     // }
 
-    // url_iot = "https://" + host + url_iot;
+    // BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host, url_iot);
+    
+    // client_msg = BLINKER_F("GET ");
+    // client_msg += url_iot;
+    // client_msg += BLINKER_F(" HTTP/1.1\r\nHost: ");
+    // client_msg += host;
+    // client_msg += BLINKER_F(":");
+    // client_msg += STRING_format(httpsPort);
+    // client_msg += BLINKER_F("\r\nConnection: close\r\n\r\n");
 
-    // BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... url_iot: "), url_iot);
+    // client_s->print(client_msg);
+    
+    // BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
 
-    // BLINKER_LOG_FreeHeap_ALL();
+    // unsigned long timeout = millis();
+    // while (client_s->available() == 0) {
+    //     if (millis() - timeout > 5000) {
+    //         BLINKER_LOG_ALL(BLINKER_F(">>> Client Timeout !"));
+    //         client_s->stop();
+    //         return false;
+    //     }
+    // }
 
-    // HTTPClient http;
+    // String _dataGet;
+    // String lastGet;
+    // String lengthOfJson;
+    // while (client_s->available()) {
+    //     // String line = client_s.readStringUntil('\r');
+    //     _dataGet = client_s->readStringUntil('\n');
 
-    // String payload;
-
-    // if (http.begin(*client_s, url_iot)) {  // HTTPS
-
-    //     // Serial.print("[HTTPS] GET...\n");
-    //     // start connection and send HTTP header
-    //     int httpCode = http.GET();
-
-    //     // httpCode will be negative on error
-    //     if (httpCode > 0) {
-    //         // HTTP header has been send and Server response header has been handled
-            
-    //         BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... code: "), httpCode);
-
-    //         // file found at server
-    //         if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
-    //             payload = http.getString();
-    //             // Serial.println(payload);
-    //         }
-    //     } else {
-    //         BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
-    //         payload = http.getString();
-    //         BLINKER_LOG(payload);
+    //     if (_dataGet.startsWith("Content-Length: ")){
+    //         int addr_start = _dataGet.indexOf(' ');
+    //         int addr_end = _dataGet.indexOf('\0', addr_start + 1);
+    //         lengthOfJson = _dataGet.substring(addr_start + 1, addr_end);
     //     }
 
-    //     http.end();
-    // } else {
-    //     // Serial.printf("[HTTPS] Unable to connect\n");
-    //     BLINKER_ERR_LOG_ALL("[HTTPS] Unable to connect\n");
+    //     if (_dataGet == "\r") {
+    //         BLINKER_LOG_ALL(BLINKER_F("headers received"));
+            
+    //         break;
+    //     }
     // }
+
+    // for(int i=0;i<lengthOfJson.toInt();i++){
+    //     lastGet += (char)client_s->read();
+    // }
+
+    // // BLINKER_LOG_FreeHeap();
+
+    // client_s->stop();
+    // client_s->flush();
+
+    // free(client_s);
+
+    // // BLINKER_LOG_FreeHeap();
+
+    // _dataGet = lastGet;
+    
+    // BLINKER_LOG_ALL(BLINKER_F("_dataGet: "), _dataGet);
+
+    // String payload = _dataGet;
+
+
+
+    client_mqtt.stop();
+
+    std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+
+    // client_s->setFingerprint(fingerprint);
+    client_s->setInsecure();
+
+    String url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
+    url_iot += _authKey;
+    // url_iot += _aliType;
+
+    if (_aliType == ALI_LIGHT) {
+        url_iot += BLINKER_F("&aliType=light");
+    }
+    else if (_aliType == ALI_OUTLET) {
+        url_iot += BLINKER_F("&aliType=outlet");
+    }
+    else if (_aliType == ALI_SENSOR) {
+        url_iot += BLINKER_F("&aliType=sensor");
+    }
+
+    if (_duerType == DUER_LIGHT) {
+        url_iot += BLINKER_F("&duerType=LIGHT");
+    }
+    else if (_duerType == DUER_OUTLET) {
+        url_iot += BLINKER_F("&duerType=SOCKET");
+    }
+    else if (_duerType == DUER_SENSOR) {
+        url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+    }
+
+    url_iot = "https://" + host + url_iot;
+
+    BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... url_iot: "), url_iot);
+
+    BLINKER_LOG_FreeHeap_ALL();
+
+    HTTPClient http;
+
+    String payload;
+
+    if (http.begin(*client_s, url_iot)) {  // HTTPS
+
+        // Serial.print("[HTTPS] GET...\n");
+        // start connection and send HTTP header
+        int httpCode = http.GET();
+
+        // httpCode will be negative on error
+        if (httpCode > 0) {
+            // HTTP header has been send and Server response header has been handled
+            
+            BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... code: "), httpCode);
+
+            // file found at server
+            if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+                payload = http.getString();
+                // Serial.println(payload);
+            }
+        } else {
+            BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
+            payload = http.getString();
+            BLINKER_LOG(payload);
+        }
+
+        http.end();
+    } else {
+        // Serial.printf("[HTTPS] Unable to connect\n");
+        BLINKER_ERR_LOG_ALL("[HTTPS] Unable to connect\n");
+    }
 
 #elif defined(ESP32)
     String host = BLINKER_F("https://iotdev.clz.me");
