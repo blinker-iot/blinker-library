@@ -384,7 +384,7 @@ class BlinkerApi : public BlinkerProtocol
 
             #if defined(BLINKER_NO_BUTTON)
                 void attachNoButtonReset(blinker_callback_t newFunction)
-                { _noButtonResetFunc = newFunction;}
+                { _noButtonResetFunc = newFunction; }
             #endif
 
             void setType(const char* _type);
@@ -895,7 +895,7 @@ void BlinkerApi::needInit()
             _reset_countdown = millis();
             if (_power_count > 3)
             {
-                _noButtonResetFunc();
+                if (_noButtonResetFunc) _noButtonResetFunc();
             }
         #endif
 
@@ -941,6 +941,11 @@ void BlinkerApi::run()
             {
                 if (millis() - _reset_countdown > 5000)
                 {
+                    EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
+                    EEPROM.commit();
+                    EEPROM.end();
+
                     reset();
                 }                
             }            
