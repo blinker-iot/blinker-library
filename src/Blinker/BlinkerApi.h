@@ -382,6 +382,11 @@ class BlinkerApi : public BlinkerProtocol
                 uint16_t pressedTime();
             #endif
 
+            #if defined(BLINKER_NO_BUTTON)
+                void attachNoButtonReset(blinker_callback_t newFunction)
+                { _noButtonResetFunc = newFunction;}
+            #endif
+
             void setType(const char* _type);
             const char* type() { return _deviceType; }
             void reset();
@@ -469,6 +474,12 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t        _register_fresh = 0;
             uint32_t        _initTime;
             uint8_t         _proStatus = PRO_WLAN_CONNECTING;
+
+            #if defined(BLINKER_NO_BUTTON)
+                bool            _isCheckPower = false;
+                uint8_t         _power_count = 0;
+                uint32_t        _reset_countdown = 0;
+            #endif
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
@@ -667,6 +678,7 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_t _longPressStartFunc;
             blinker_callback_t _longPressStopFunc;
             blinker_callback_t _duringLongPressFunc;
+            blinker_callback_t _noButtonResetFunc;
 
             // These variables that hold information across the upcoming tick calls.
             // They are initialized once on program start and are updated every time the tick function is called.
@@ -869,6 +881,24 @@ void BlinkerApi::needInit()
 #if defined(BLINKER_PRO)
     void BlinkerApi::begin(const char* _type)
     {
+        #if defined(BLINKER_NO_BUTTON)
+            
+            EEPROM.begin(BLINKER_EEP_SIZE);
+            EEPROM.get(BLINKER_EEP_ADDR_POWER_ON_COUNT, _power_count);
+            _power_count += 1;
+            EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, _power_count);
+            EEPROM.commit();
+            EEPROM.end();
+
+            BLINKER_LOG(BLINKER_F("_power_count: "), _power_count);
+
+            _reset_countdown = millis();
+            if (_power_count > 3)
+            {
+                _noButtonResetFunc();
+            }
+        #endif
+
         begin();
 
         BLINKER_LOG(BLINKER_F(
@@ -895,6 +925,26 @@ void BlinkerApi::needInit()
 void BlinkerApi::run()
 {
     #if defined(BLINKER_PRO)
+        #if defined(BLINKER_NO_BUTTON)
+            if (millis() > 5000 && !_isCheckPower)
+                {
+                    _isCheckPower = true;
+                    BLINKER_LOG_ALL("erase power count");
+
+                    EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
+                    EEPROM.commit();
+                    EEPROM.end();
+            }
+
+            if (_power_count > 3)
+            {
+                if (millis() - _reset_countdown > 5000)
+                {
+                    reset();
+                }                
+            }            
+        #endif
 
         if (!wlanRun())
         {
