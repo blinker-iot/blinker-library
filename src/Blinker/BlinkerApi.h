@@ -1357,7 +1357,7 @@ void BlinkerApi::run()
 
         if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * BLINKER_MAX_DATA_COUNT * 1000)
         {
-            if (data_dataCount && _isInit && ESP.getFreeHeap() > 4000)
+            if (data_dataCount && _isInit)// && ESP.getFreeHeap() > 4000)
             {
                 dataUpdate();
                 _autoUpdateTime = millis();
@@ -5618,7 +5618,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
     String BlinkerApi::blinkerServer(uint8_t _type, const String & msg, bool state)
     {
-        if (ESP.getFreeHeap() < 4000) return BLINKER_CMD_FALSE;
+        // if (ESP.getFreeHeap() < 4000) return BLINKER_CMD_FALSE;
         
         switch (_type)
         {

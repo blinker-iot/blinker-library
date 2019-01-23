@@ -253,12 +253,12 @@ int BlinkerPRO::connect()
 
     BLINKER_LOG_FreeHeap_ALL();
 
-    if (ESP.getFreeHeap() < 25000) 
-    {
-        client_mqtt.stop();
-        this->latestTime = millis();
-        return false;
-    }
+    // if (ESP.getFreeHeap() < 25000) 
+    // {
+    //     client_mqtt.stop();
+    //     this->latestTime = millis();
+    //     return false;
+    // }
 
     if ((ret = mqtt_PRO->connect()) != 0)
     {
