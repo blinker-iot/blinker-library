@@ -5,6 +5,7 @@ Debug/
 .vs/
 *.sln
 .vscode/
+*.build/
 src/BlinkerSimpleSerialBLE.h
 src/BlinkerSimpleESP8266_WS.h
 src/BlinkerSimpleESP8266_PRO.h
@@ -14,3 +15,4 @@ src/BlinkerSimpleESP32_PRO.h
 src/BlinkerSimpleESP32_MQTT.h
 src/BlinkerSimpleESP32_BLE.h
 src/Adapters/BlinkerArduinoWS.h
+rtos/build/

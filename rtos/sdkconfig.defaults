@@ -1,0 +1,5 @@
+#
+# Override some defaults so wolfSSL is enabled
+# by default in this example
+#
+CONFIG_SSL_USING_WOLFSSL=y
