@@ -51,10 +51,12 @@
 
 #include "esp_system.h"
 
+#include "cJSON.h"
+
 /* Constants that aren't configurable in menuconfig */
-#define WEB_SERVER "www.howsmyssl.com"
+#define WEB_SERVER "iotdev.clz.me"
 #define WEB_PORT 443
-#define WEB_URL "https://www.howsmyssl.com/a/check"
+#define WEB_URL "https://iotdev.clz.me/api/v1/user/device/diy/auth?authKey=bc5a991c7ec4"
 
 #define REQUEST "GET " WEB_URL " HTTP/1.0\r\n" \
     "Host: "WEB_SERVER"\r\n" \
@@ -70,6 +72,7 @@
 const char send_data[] = REQUEST;
 const int32_t send_bytes = sizeof(send_data);
 char recv_data[1024] = {0};
+char http_data[1024] = {0};
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
@@ -203,15 +206,15 @@ void wifi_init_sta()
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    // wifi_config_t wifi_config = {
-    //     .sta = {
-    //         .ssid = EXAMPLE_ESP_WIFI_SSID,
-    //         .password = EXAMPLE_ESP_WIFI_PASS
-    //     },
-    // };
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = "mostfun",
+            .password = "18038083873"
+        },
+    };
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-    // ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
@@ -252,6 +255,7 @@ static void get_time()
 }
 
 static void wolfssl_client(void* pv)
+// static void wolfssl_client()
 {
     int32_t ret = 0;
 
@@ -386,9 +390,38 @@ static void wolfssl_client(void* pv)
             for (int i = 0; i < ret; i++) {
                 printf("%c", recv_data[i]);
             }
+
+            printf("\n%d\n", ret);
+
+            // strcpy(http_data, strrchr(recv_data, "\n"));
+            // printf("%s\n", strrchr(recv_data, "\n"));
+
+            // for (int i = 0; i < strlen(http_data); i++) {
+            //     printf("%c", http_data[i]);
+            // }
+
+            int num_r = 0;
+
+            for (num_r = ret; num_r > 0; num_r--) {
+                // printf("%c", recv_data[i]);
+                if (recv_data[num_r - 1] == '\n')
+                    break;
+            }
+
+            // for (int i = num_r ; i < ret; i++) {
+            //     printf("%c", recv_data[i]);
+            // }
+
+            memcpy(http_data, recv_data + num_r, (ret - num_r));
+            // if (strcmp(recv_data, "\r\n") == 0)
+            // {
+            //     printf("\nget new line\n");
+            // }
         } while (1);
 
-        printf("heap:%d\n", esp_get_free_heap_size());
+        printf("heap: %d\n", esp_get_free_heap_size());
+
+        printf("http_data: %s\n", http_data);
 
 failed5:
         wolfSSL_shutdown(ssl);
@@ -401,7 +434,36 @@ failed2:
 failed1:
         wolfSSL_Cleanup();
 
-        for (int countdown = 10; countdown >= 0; countdown--) {
+        // strcpy(http_data, "{\"detail\":\"asd\"}");
+
+        // const cJSON *pDetail = NULL;
+
+        cJSON *pJsonRoot = cJSON_Parse(http_data);
+        
+        if (pJsonRoot) {
+            printf("is Json!\n");
+
+            cJSON *pDetail = cJSON_GetObjectItem(pJsonRoot, "detail");
+            
+            if (cJSON_IsString(pDetail) && (pDetail->valuestring != NULL))
+            {
+                printf("detail: %s\n", pDetail->valuestring);
+            }
+            else
+            {
+                printf("not String!\n");
+
+                printf("detail: %s\n", cJSON_Print(pDetail));
+            }
+        }
+        else {
+            printf("not Json!\n");
+        }
+
+        cJSON_Delete(pJsonRoot);
+
+
+        for (int countdown = 60; countdown >= 0; countdown--) {
             printf("%d...\n", countdown);
             vTaskDelay(1000 / portTICK_RATE_MS);
         }
@@ -416,6 +478,8 @@ void app_main()
     // initialise_wifi();
 
     wifi_init_sta();
+
+    // wolfssl_client();
 
     xTaskCreate(wolfssl_client,
                 WOLFSSL_DEMO_THREAD_NAME,
