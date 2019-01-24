@@ -89,6 +89,7 @@ class BlinkerMQTTAT : public BlinkerStream
         int  needFreshShare() {
             if (_needCheckShare)
             {
+                BLINKER_LOG_ALL(BLINKER_F("needFreshShare"));
                 _needCheckShare = false;
                 return true;
             }
@@ -750,20 +751,32 @@ void BlinkerMQTTAT::subscribe()
 
                             BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
                             BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+
+                            _needCheckShare = false;
+
+                            break;
                         }
-                    }
-                }
-                else
-                {
-                    // dataGet = String((char *)iotSub_MQTT_AT->lastread);
-                    root.printTo(dataGet);
-                    
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                        else
+                        {
+                            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
                                         check is from bridge/share device, \
                                         data: "), dataGet);
 
-                    _needCheckShare = true;
+                            _needCheckShare = true;
+                        } 
+                    }
                 }
+                // else
+                // {
+                    // dataGet = String((char *)iotSub_MQTT_AT->lastread);
+                //     root.printTo(dataGet);
+                    
+                //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                //                         check is from bridge/share device, \
+                //                         data: "), dataGet);
+
+                //     _needCheckShare = true;
+                // }
                 
                 // return;
 
