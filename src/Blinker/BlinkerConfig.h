@@ -154,6 +154,10 @@
 
 #define BLINKER_CMD_BUTTON_RELEASED     "pressup"
 
+#define BLINKER_CMD_BUTTON_PRESS        "press"
+
+#define BLINKER_CMD_BUTTON_PRESSUP      "pressup"
+
 #define BLINKER_CMD_NEWLINE             "\n"
 
 #define BLINKER_CMD_INTERSPACE          " "
