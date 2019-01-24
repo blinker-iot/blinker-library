@@ -72,7 +72,7 @@ class BlinkerProtocol
             int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
             void freshAlive() { if (isInit) conn->freshAlive(); }
             void sharers(const String & data) { if (isInit) conn->sharers(data); }
-            int needFreshShare() { if (isInit) conn->needFreshShare(); }
+            int needFreshShare() { if (isInit) return conn->needFreshShare(); else return false; }
         #endif
 
         #if defined(BLINKER_PRO)

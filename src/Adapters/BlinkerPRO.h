@@ -77,6 +77,7 @@ class BlinkerPRO : public BlinkerStream
         int  needFreshShare() {
             if (_needCheckShare)
             {
+                BLINKER_LOG_ALL(BLINKER_F("needFreshShare"));
                 _needCheckShare = false;
                 return true;
             }
@@ -480,24 +481,36 @@ void BlinkerPRO::subscribe()
 
                             BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
                             BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+
+                            _needCheckShare = false;
+
+                            break;
                         }
+                        else
+                        {
+                            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid,"
+                                        "check is from bridge/share device," 
+                                        "data: "), dataGet);
+
+                            _needCheckShare = true;
+                        }                        
                     }
                 }
-                else
-                {
-                    // dataGet = String((char *)iotSub_PRO->lastread);
-                    root.printTo(dataGet);
-                    
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
-                                        check is from bridge/share device, \
-                                        data: "), dataGet);
                 
-                    // return;
+                // {
+                    // dataGet = String((char *)iotSub_PRO->lastread);
+                root.printTo(dataGet);
+                    
+                    // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                    //                     check is from bridge/share device, \
+                    //                     data: "), dataGet);
+                
+                    // // return;
 
-                    // isBavail = true;
+                    // // isBavail = true;
 
-                    _needCheckShare = true;
-                }
+                    // _needCheckShare = true;
+                // }
 
                 isAvail_PRO = true;
                 isAlive = true;

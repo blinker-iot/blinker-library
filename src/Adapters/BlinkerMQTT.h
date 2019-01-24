@@ -100,6 +100,7 @@ class BlinkerMQTT : public BlinkerStream
         int  needFreshShare() {
             if (_needCheckShare)
             {
+                BLINKER_LOG_ALL(BLINKER_F("needFreshShare"));
                 _needCheckShare = false;
                 return true;
             }
@@ -532,24 +533,36 @@ void BlinkerMQTT::subscribe()
 
                             BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
                             BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
-                        }
-                    }
-                }
-                else
-                {
-                    // dataGet = String((char *)iotSub_MQTT->lastread);
-                    root.printTo(dataGet);
+                            
+                            _needCheckShare = false;
 
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                            break;
+                        }
+                        else
+                        {
+                            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
                                         check is from bridge/share device, \
                                         data: "), dataGet);
 
-                    // return;
-
-                    // isBavail = true;
-
-                    _needCheckShare = true;
+                            _needCheckShare = true;
+                        }
+                    }
                 }
+                // else
+                // {
+                    // dataGet = String((char *)iotSub_MQTT->lastread);
+                    root.printTo(dataGet);
+
+                //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                //                         check is from bridge/share device, \
+                //                         data: "), dataGet);
+
+                //     // return;
+
+                //     // isBavail = true;
+
+                //     _needCheckShare = true;
+                // }
 
                 isAvail_MQTT = true;
                 isAlive = true;
