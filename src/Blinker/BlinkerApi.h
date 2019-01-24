@@ -1307,6 +1307,22 @@ void BlinkerApi::run()
                         flush();
                     }
                 }
+
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                    defined(BLINKER_AT_MQTT)
+                    if (BProto::needFreshShare())
+                    {
+                        String _shareData = freshSharers();
+                        if (STRING_contains_string(_shareData, "users") == false)
+                        {
+                            _shareData = freshSharers();
+                        }
+                        if (STRING_contains_string(_shareData, "users") == true)
+                        {
+                            BProto::sharers(_shareData);
+                        }
+                    }
+                #endif
             }
             else
             {

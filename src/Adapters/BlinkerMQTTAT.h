@@ -86,6 +86,17 @@ class BlinkerMQTTAT : public BlinkerStream
         void duerType(int _type) { _duerType = _type; }
         void freshAlive() { kaTime = millis(); isAlive = true; }
         void sharers(const String & data);
+        int  needFreshShare() {
+            if (_needCheckShare)
+            {
+                _needCheckShare = false;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
     private :
         bool isMQTTinit = false;
@@ -127,6 +138,7 @@ class BlinkerMQTTAT : public BlinkerStream
         bool*       isHandle;// = &isConnect;
         bool        isAlive = false;
         // bool        isBavail = false;
+        bool        _needCheckShare = false;
         uint32_t    latestTime;
         uint32_t    printTime = 0;
         uint32_t    bPrintTime = 0;
@@ -749,6 +761,8 @@ void BlinkerMQTTAT::subscribe()
                     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
                                         check is from bridge/share device, \
                                         data: "), dataGet);
+
+                    _needCheckShare = true;
                 }
                 
                 // return;
