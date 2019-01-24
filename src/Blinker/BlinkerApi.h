@@ -1101,14 +1101,38 @@ void BlinkerApi::run()
     #if defined(BLINKER_PRO)
         ntpInit();
         checkTimer();
+
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            return;
+        }
     #endif
 
     #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
         checkTimer();
 
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            if ((millis() - _reconTime) >= 10000 || \
+                _reconTime == 0 )
+            {
+                _reconTime = millis();
+                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                WiFi.reconnect();
+            }
+
+            return;
+        }        
+
+        if (!BProto::init()) {
+            ::delay(2000);
+            BLINKER_LOG(BLINKER_F("RETURN"));
+            return;
+        }
+
         if (!_isInit)
         {
-            if (BProto::init() && ntpInit())
+            if (ntpInit())
             {
                 _isInit =true;
                 _disconnectTime = millis();
@@ -1145,30 +1169,14 @@ void BlinkerApi::run()
 
                 BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
             }
+            else
+            {
+                return;
+            }
+            
         }
         else {
             ntpInit();
-        }
-    #endif
-
-    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
-        if (WiFi.status() != WL_CONNECTED && BProto::init())
-        {
-            if ((millis() - _reconTime) >= 10000 || \
-                _reconTime == 0 )
-            {
-                _reconTime = millis();
-                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
-                WiFi.reconnect();
-            }
-
-            return;
-        }
-
-    #elif defined(BLINKER_PRO)
-        if (WiFi.status() != WL_CONNECTED)
-        {
-            return;
         }
     #endif
 

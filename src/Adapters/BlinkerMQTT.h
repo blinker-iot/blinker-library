@@ -93,7 +93,7 @@ class BlinkerMQTT : public BlinkerStream
         //             char *name2, char *type2, char *data2);
         char * deviceName();
         char * authKey() { return _authKey; }
-        int init() { return isMQTTinit; }
+        int init() { if (!isMQTTinit) checkInit(); return isMQTTinit; }
         int reRegister() { return connectServer(); }
         void freshAlive() { kaTime = millis(); isAlive = true; }
         void sharers(const String & data);
