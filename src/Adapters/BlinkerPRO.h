@@ -74,6 +74,18 @@ class BlinkerPRO : public BlinkerStream
         int authCheck();
         void freshAlive() { kaTime = millis(); isAlive = true; }
         void sharers(const String & data);
+        int  needFreshShare() {
+            if (_needCheckShare)
+            {
+                _needCheckShare = false;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+            
 
     private :
         bool isMQTTinit = false;
@@ -101,6 +113,7 @@ class BlinkerPRO : public BlinkerStream
         // bool*       isHandle = &isConnect_PRO;
         bool        isAlive = false;
         bool        isBavail = false;
+        bool        _needCheckShare = false;
         uint32_t    latestTime;
         uint32_t    printTime = 0;
         uint32_t    bPrintTime = 0;
@@ -482,6 +495,8 @@ void BlinkerPRO::subscribe()
                     // return;
 
                     // isBavail = true;
+
+                    _needCheckShare = true;
                 }
 
                 isAvail_PRO = true;

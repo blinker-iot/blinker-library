@@ -42,6 +42,7 @@ class BlinkerStream
             virtual void sharers(const String & data);
             virtual int aligenieAvail() = 0;
             virtual int duerAvail() = 0;
+            virtual int needFreshShare() = 0;
         #endif
 
         // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)

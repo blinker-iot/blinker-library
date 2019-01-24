@@ -97,6 +97,17 @@ class BlinkerMQTT : public BlinkerStream
         int reRegister() { return connectServer(); }
         void freshAlive() { kaTime = millis(); isAlive = true; }
         void sharers(const String & data);
+        int  needFreshShare() {
+            if (_needCheckShare)
+            {
+                _needCheckShare = false;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         bool checkInit();
         void commonBegin(const char* _ssid, const char* _pswd);
@@ -143,6 +154,7 @@ class BlinkerMQTT : public BlinkerStream
         bool*       isHandle;// = &isConnect;
         bool        isAlive = false;
         // bool        isBavail = false;
+        bool        _needCheckShare = false;
         uint32_t    latestTime;
         uint32_t    printTime = 0;
         uint32_t    bPrintTime = 0;
@@ -535,6 +547,8 @@ void BlinkerMQTT::subscribe()
                     // return;
 
                     // isBavail = true;
+
+                    _needCheckShare = true;
                 }
 
                 isAvail_MQTT = true;
