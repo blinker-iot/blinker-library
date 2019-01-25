@@ -416,6 +416,16 @@ static void wolfssl_client()
 
             printf("\n%d\n", ret);
 
+            char _status[4];
+            // for (int i = 9; i < 12; i++) {
+            //     printf("%c", recv_data[i]);
+            // }
+
+            memcpy(_status, recv_data + 9, (12 - 9));
+
+            int status_code = atoi(_status);
+            printf("status_code: %d\n", status_code);
+
             // strcpy(http_data, strrchr(recv_data, "\n"));
             // printf("%s\n", strrchr(recv_data, "\n"));
 
@@ -423,19 +433,27 @@ static void wolfssl_client()
             //     printf("%c", http_data[i]);
             // }
 
-            int num_r = 0;
+            if (status_code == 200)
+            {
+                int num_r = 0;
 
-            for (num_r = ret; num_r > 0; num_r--) {
-                // printf("%c", recv_data[i]);
-                if (recv_data[num_r - 1] == '\n')
-                    break;
+                for (num_r = ret; num_r > 0; num_r--) {
+                    // printf("%c", recv_data[i]);
+                    if (recv_data[num_r - 1] == '\n')
+                        break;
+                }
+
+                // for (int i = num_r ; i < ret; i++) {
+                //     printf("%c", recv_data[i]);
+                // }
+
+                memcpy(http_data, recv_data + num_r, (ret - num_r));
             }
-
-            // for (int i = num_r ; i < ret; i++) {
-            //     printf("%c", recv_data[i]);
-            // }
-
-            memcpy(http_data, recv_data + num_r, (ret - num_r));
+            else
+            {
+                memset(http_data, '\0', 1024)
+            }
+            
             // if (strcmp(recv_data, "\r\n") == 0)
             // {
             //     printf("\nget new line\n");
