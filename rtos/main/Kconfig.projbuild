@@ -20,4 +20,81 @@ config CERT_AUTH
     help
        Enable certificate verification.
 
+config MQTT_BROKER
+    string "MQTT broker"
+    default "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
+    help
+        MQTT broker which you want to login, either IP address or domain name is OK.
+
+config MQTT_PORT
+    int "Default MQTT port"
+    default 1883
+    help
+        MQTT port.
+
+config MQTT_SUB_TOPIC
+    string "MQTT subscribe topic"
+    default "/JgCGbHlndgz/278669B20M25B642205N3CXP/r"
+    help
+        MQTT subscribe topic to MQTT broker.
+
+choice MQTT_SUB_QOS
+    prompt "MQTT Subscribe QoS"
+    default SUB_QOS0
+    help
+        MQTT subcribe QoS level.
+
+config SUB_QOS0
+    bool "QOS0"
+config SUB_QOS1
+    bool "QOS1"
+config SUB_QOS2
+    bool "QOS2"
+endchoice
+
+config DEFAULT_MQTT_SUB_QOS
+    int
+    default 0 if SUB_QOS0
+    default 1 if SUB_QOS1
+    default 2 if SUB_QOS2
+
+config MQTT_PUB_TOPIC
+    string "MQTT publish topic"
+    default "/JgCGbHlndgz/278669B20M25B642205N3CXP/s"
+    help
+        MQTT publish topic to MQTT broker.
+
+choice MQTT_PUB_QOS
+    prompt "MQTT publish QoS"
+    default PUB_QOS0
+    help
+        MQTT publish QoS level.
+
+config PUB_QOS0
+    bool "QOS0"
+config PUB_QOS1
+    bool "QOS1"
+config PUB_QOS2
+    bool "QOS2"
+endchoice
+
+config DEFAULT_MQTT_PUB_QOS
+    int
+    default 0 if PUB_QOS0
+    default 1 if PUB_QOS1
+    default 2 if PUB_QOS2
+
+config MQTT_PUBLISH_INTERVAL
+    int "MQTT publish interval(ms)"
+    default 0
+    help
+        Default MQTT publish message interval.
+
+config MQTT_PAYLOAD_BUFFER
+    int "MQTT payload size(Bytes)"
+    default 1460
+    help
+        1460~2048 is recommended.
+        MQTT payload size.
+
 endmenu

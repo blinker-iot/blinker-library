@@ -53,6 +53,8 @@
 
 #include "cJSON.h"
 
+#include "MQTTClient.h"
+
 /* Constants that aren't configurable in menuconfig */
 #define WEB_SERVER "iotdev.clz.me"
 #define WEB_PORT 443
@@ -68,6 +70,14 @@
 #define WOLFSSL_DEMO_THREAD_PRORIOTY    6
 
 #define WOLFSSL_DEMO_SNTP_SERVERS       "pool.ntp.org"
+
+#define MQTT_CLIENT_THREAD_NAME         "mqtt_client_thread"
+#define MQTT_CLIENT_THREAD_STACK_WORDS  4096
+#define MQTT_CLIENT_THREAD_PRIO         8
+
+#define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
+#define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
+#define BLINKER_MQTT_ALIYUN_PORT        1883
 
 const char send_data[] = REQUEST;
 const int32_t send_bytes = sizeof(send_data);
@@ -85,6 +95,19 @@ static const int ESPTOUCH_DONE_BIT = BIT1;
 static const char *TAG = "sc";
 
 const int WIFI_CONNECTED_BIT = BIT0;
+
+char*       MQTT_HOST_MQTT;
+char*       MQTT_ID_MQTT;
+char*       MQTT_NAME_MQTT;
+char*       MQTT_KEY_MQTT;
+char*       MQTT_PRODUCTINFO_MQTT;
+char*       UUID_MQTT;
+char*       DEVICE_NAME_MQTT;
+char*       BLINKER_PUB_TOPIC_MQTT;
+char*       BLINKER_SUB_TOPIC_MQTT;
+uint16_t    MQTT_PORT_MQTT;
+
+uint8_t isInit = 0;
 
 void smartconfig_example_task(void * parm);
 
@@ -254,8 +277,8 @@ static void get_time()
     }
 }
 
-static void wolfssl_client(void* pv)
-// static void wolfssl_client()
+// static void wolfssl_client(void* pv)
+static void wolfssl_client()
 {
     int32_t ret = 0;
 
@@ -454,16 +477,61 @@ failed1:
                 printf("not String!\n");
 
                 printf("detail: %s\n", cJSON_Print(pDetail));
+
+                cJSON *_userID = cJSON_GetObjectItem(pDetail, "deviceName");
+                cJSON *_userName = cJSON_GetObjectItem(pDetail, "iotId");
+                cJSON *_key = cJSON_GetObjectItem(pDetail, "iotToken");
+                cJSON *_productInfo = cJSON_GetObjectItem(pDetail, "productKey");
+                cJSON *_broker = cJSON_GetObjectItem(pDetail, "broker");
+                cJSON *_uuid = cJSON_GetObjectItem(pDetail, "uuid");
+
+                if (strcmp(BLINKER_MQTT_BORKER_ALIYUN, _broker->valuestring) == 0)
+                {
+                    // printf("deviceName: %s\n", _userID->valuestring);
+                    // printf("deviceName: %d\n", strlen(_userID->valuestring));
+
+                    DEVICE_NAME_MQTT = (char*)malloc((strlen(_userID->valuestring)+1)*sizeof(char));
+                    strcpy(DEVICE_NAME_MQTT, _userID->valuestring);
+                    MQTT_ID_MQTT = (char*)malloc((strlen(_userID->valuestring)+1)*sizeof(char));
+                    strcpy(MQTT_ID_MQTT, _userID->valuestring);
+                    MQTT_NAME_MQTT = (char*)malloc((strlen(_userName->valuestring)+1)*sizeof(char));
+                    strcpy(MQTT_NAME_MQTT, _userName->valuestring);
+                    MQTT_KEY_MQTT = (char*)malloc((strlen(_key->valuestring)+1)*sizeof(char));
+                    strcpy(MQTT_KEY_MQTT, _key->valuestring);
+                    MQTT_PRODUCTINFO_MQTT = (char*)malloc((strlen(_productInfo->valuestring)+1)*sizeof(char));
+                    strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo->valuestring);
+                    MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
+                    strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_ALIYUN_HOST);
+
+                    MQTT_PORT_MQTT = BLINKER_MQTT_ALIYUN_PORT;
+
+                    UUID_MQTT = (char*)malloc((strlen(_uuid->valuestring)+1)*sizeof(char));
+                    strcpy(UUID_MQTT, _uuid->valuestring);
+
+                    printf("DEVICE_NAME_MQTT: %s\n", DEVICE_NAME_MQTT);
+                    printf("MQTT_ID_MQTT: %s\n", MQTT_ID_MQTT);
+                    printf("MQTT_NAME_MQTT: %s\n", MQTT_NAME_MQTT);
+                    printf("MQTT_KEY_MQTT: %s\n", MQTT_KEY_MQTT);
+                    printf("MQTT_PRODUCTINFO_MQTT: %s\n", MQTT_PRODUCTINFO_MQTT);
+                    printf("MQTT_HOST_MQTT: %s\n", MQTT_HOST_MQTT); 
+                    printf("MQTT_PORT_MQTT: %d\n", MQTT_PORT_MQTT);
+                    printf("UUID_MQTT: %s\n", UUID_MQTT);
+
+                    isInit = 1;
+                }
+
+                cJSON_Delete(pJsonRoot);
+
+                break;
             }
         }
         else {
             printf("not Json!\n");
+
+            cJSON_Delete(pJsonRoot);
         }
 
-        cJSON_Delete(pJsonRoot);
-
-
-        for (int countdown = 60; countdown >= 0; countdown--) {
+        for (int countdown = 10; countdown >= 0; countdown--) {
             printf("%d...\n", countdown);
             vTaskDelay(1000 / portTICK_RATE_MS);
         }
@@ -472,8 +540,183 @@ failed1:
     }
 }
 
+static void messageArrived(MessageData *data)
+{
+    ESP_LOGI(TAG, "Message arrived[len:%u]: %.*s", \
+           data->message->payloadlen, data->message->payloadlen, (char *)data->message->payload);
+    ESP_LOGI(TAG, "data from topic: %s", data->topicName->cstring);
+}
+
+static void mqtt_client_thread(void *pvParameters)
+{
+    wolfssl_client();
+
+    while(isInit == 0)
+    {
+        vTaskDelay(1000 / portTICK_RATE_MS);
+    }
+
+    char *payload = NULL;
+    MQTTClient client;
+    Network network;
+    int rc = 0;
+    char clientID[32] = {0};
+    uint32_t count = 0;
+
+    ESP_LOGI(TAG, "ssid:%s passwd:%s sub:%s qos:%u pub:%s qos:%u pubinterval:%u payloadsize:%u",
+             CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD, CONFIG_MQTT_SUB_TOPIC,
+             CONFIG_DEFAULT_MQTT_SUB_QOS, CONFIG_MQTT_PUB_TOPIC, CONFIG_DEFAULT_MQTT_PUB_QOS,
+             CONFIG_MQTT_PUBLISH_INTERVAL, CONFIG_MQTT_PAYLOAD_BUFFER);
+
+    ESP_LOGI(TAG, "ver:%u clientID:%s keepalive:%d username:%s passwd:%s session:%d level:%u",
+             CONFIG_DEFAULT_MQTT_VERSION, CONFIG_MQTT_CLIENT_ID,
+             CONFIG_MQTT_KEEP_ALIVE, CONFIG_MQTT_USERNAME, CONFIG_MQTT_PASSWORD,
+             CONFIG_DEFAULT_MQTT_SESSION, CONFIG_DEFAULT_MQTT_SECURITY);
+
+    ESP_LOGI(TAG, "broker:%s port:%u", CONFIG_MQTT_BROKER, CONFIG_MQTT_PORT);
+
+    ESP_LOGI(TAG, "sendbuf:%u recvbuf:%u sendcycle:%u recvcycle:%u",
+             CONFIG_MQTT_SEND_BUFFER, CONFIG_MQTT_RECV_BUFFER,
+             CONFIG_MQTT_SEND_CYCLE, CONFIG_MQTT_RECV_CYCLE);
+
+    MQTTPacket_connectData connectData = MQTTPacket_connectData_initializer;
+
+    NetworkInit(&network);
+
+    if (MQTTClientInit(&client, &network, 0, NULL, 0, NULL, 0) == false) {
+        ESP_LOGE(TAG, "mqtt init err");
+        vTaskDelete(NULL);
+    }
+
+    payload = malloc(CONFIG_MQTT_PAYLOAD_BUFFER);
+
+    if (!payload) {
+        ESP_LOGE(TAG, "mqtt malloc err");
+    } else {
+        memset(payload, 0x0, CONFIG_MQTT_PAYLOAD_BUFFER);
+    }
+
+    for (;;) {
+        ESP_LOGI(TAG, "wait wifi connect...");
+        xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
+
+        if ((rc = NetworkConnect(&network, CONFIG_MQTT_BROKER, CONFIG_MQTT_PORT)) != 0) {
+            ESP_LOGE(TAG, "Return code from network connect is %d", rc);
+            continue;
+        }
+
+        connectData.MQTTVersion = CONFIG_DEFAULT_MQTT_VERSION;
+
+        // sprintf(clientID, "%s_%u", MQTT_ID_MQTT, esp_random());
+
+        connectData.clientID.cstring = MQTT_ID_MQTT;
+        connectData.keepAliveInterval = CONFIG_MQTT_KEEP_ALIVE;
+
+        connectData.username.cstring = MQTT_NAME_MQTT;
+        connectData.password.cstring = MQTT_KEY_MQTT;
+
+        connectData.cleansession = CONFIG_DEFAULT_MQTT_SESSION;
+
+        ESP_LOGI(TAG, "MQTT Connecting");
+
+        if ((rc = MQTTConnect(&client, &connectData)) != 0) {
+            ESP_LOGE(TAG, "Return code from MQTT connect is %d", rc);
+            network.disconnect(&network);
+            continue;
+        }
+
+        ESP_LOGI(TAG, "MQTT Connected");
+
+        printf("heap:%d\n", esp_get_free_heap_size());
+
+#if defined(MQTT_TASK)
+
+        if ((rc = MQTTStartTask(&client)) != pdPASS) {
+            ESP_LOGE(TAG, "Return code from start tasks is %d", rc);
+        } else {
+            ESP_LOGI(TAG, "Use MQTTStartTask");
+        }
+
+#endif
+
+        if ((rc = MQTTSubscribe(&client, CONFIG_MQTT_SUB_TOPIC, CONFIG_DEFAULT_MQTT_SUB_QOS, messageArrived)) != 0) {
+            ESP_LOGE(TAG, "Return code from MQTT subscribe is %d", rc);
+            network.disconnect(&network);
+            continue;
+        }
+
+        ESP_LOGI(TAG, "MQTT subscribe to topic %s OK", CONFIG_MQTT_SUB_TOPIC);
+
+        for (;;) {
+            if (MQTTIsConnected(&client) == 0)
+            {
+                break;
+            }
+            // MQTTMessage message;
+
+            // message.qos = CONFIG_DEFAULT_MQTT_PUB_QOS;
+            // message.retained = 0;
+            // message.payload = payload;
+            // sprintf(payload, "message number %d", ++count);
+            // message.payloadlen = strlen(payload);
+
+            // if ((rc = MQTTPublish(&client, CONFIG_MQTT_PUB_TOPIC, &message)) != 0) {
+            //     ESP_LOGE(TAG, "Return code from MQTT publish is %d", rc);
+            // } else {
+            //     ESP_LOGI(TAG, "MQTT published topic %s, len:%u heap:%u", CONFIG_MQTT_PUB_TOPIC, message.payloadlen, esp_get_free_heap_size());
+            // }
+
+            // if (rc != 0) {
+            //     break;
+            // }
+
+            vTaskDelay(1000 / portTICK_RATE_MS);
+        }
+
+        network.disconnect(&network);
+    }
+
+    ESP_LOGW(TAG, "mqtt_client_thread going to be deleted");
+    vTaskDelete(NULL);
+    return;
+}
+
+void blinker_run(void* pv)
+{
+    wolfssl_client();
+
+    // while(1)
+    // {
+    //     vTaskDelay(1000 / portTICK_RATE_MS);
+    // }
+    vTaskDelete(NULL);
+
+    // ret = 
+    // xTaskCreate(&mqtt_client_thread,
+    //             MQTT_CLIENT_THREAD_NAME,
+    //             MQTT_CLIENT_THREAD_STACK_WORDS,
+    //             NULL,
+    //             MQTT_CLIENT_THREAD_PRIO,
+    //             NULL);
+
+    // if (ret != pdPASS)  {
+    //     ESP_LOGE(TAG, "mqtt create client thread %s failed", MQTT_CLIENT_THREAD_NAME);
+    // }
+
+    return;
+}
+
 void app_main()
 {
+    esp_err_t ret = nvs_flash_init();
+
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+
+    ESP_ERROR_CHECK(ret);
+
     ESP_ERROR_CHECK( nvs_flash_init() );
     // initialise_wifi();
 
@@ -481,10 +724,21 @@ void app_main()
 
     // wolfssl_client();
 
-    xTaskCreate(wolfssl_client,
-                WOLFSSL_DEMO_THREAD_NAME,
-                WOLFSSL_DEMO_THREAD_STACK_WORDS,
-                NULL,
-                WOLFSSL_DEMO_THREAD_PRORIOTY,
-                NULL);
+    // xTaskCreate(blinker_run,
+    //             WOLFSSL_DEMO_THREAD_NAME,
+    //             WOLFSSL_DEMO_THREAD_STACK_WORDS,
+    //             NULL,
+    //             WOLFSSL_DEMO_THREAD_PRORIOTY,
+    //             NULL);
+
+    ret = xTaskCreate(&mqtt_client_thread,
+                      MQTT_CLIENT_THREAD_NAME,
+                      MQTT_CLIENT_THREAD_STACK_WORDS,
+                      NULL,
+                      MQTT_CLIENT_THREAD_PRIO,
+                      NULL);
+
+    if (ret != pdPASS)  {
+        ESP_LOGE(TAG, "mqtt create client thread %s failed", MQTT_CLIENT_THREAD_NAME);
+    }
 }
