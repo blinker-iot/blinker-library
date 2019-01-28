@@ -1126,7 +1126,7 @@ void BlinkerApi::run()
 
         if (!BProto::init()) {
             ::delay(2000);
-            BLINKER_LOG(BLINKER_F("RETURN"));
+            // BLINKER_LOG(BLINKER_F("RETURN"));
             return;
         }
 
@@ -3210,7 +3210,31 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 }
 
                 BProto::checkState(false);
-                BProto::printNow();
+                if (!BProto::printNow())
+                {
+                    #if defined(BLINKER_BLE)
+                        print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+                    #else
+                        print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+                    #endif
+
+                    if (_summaryFunc)
+                    {
+                        String summary_data = _summaryFunc();
+                        if (summary_data.length())
+                        {
+                            summary_data = summary_data.substring(0, BLINKER_MAX_SUMMARY_DATA_SIZE);
+
+                            BLINKER_LOG_ALL(BLINKER_F("summary_data: "), summary_data);
+
+                            print(BLINKER_CMD_SUMMARY, summary_data);
+                        }
+                    }
+
+                    BProto::checkState(false);
+                    BProto::printNow();
+                }
+                
                 _fresh = true;
 
                 // #if defined(BLINKER_AT_MQTT)
@@ -3460,7 +3484,30 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             }
 
             BProto::checkState(false);
-            BProto::printNow();
+            if (!BProto::printNow())
+            {
+                #if defined(BLINKER_BLE)
+                    print(BLINKER_CMD_STATE, BLINKER_CMD_CONNECTED);
+                #else
+                    print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+                #endif
+
+                if (_summaryFunc)
+                {
+                    String summary_data = _summaryFunc();
+                    if (summary_data.length())
+                    {
+                        summary_data = summary_data.substring(0, BLINKER_MAX_SUMMARY_DATA_SIZE);
+
+                        BLINKER_LOG_ALL(BLINKER_F("summary_data: "), summary_data);
+
+                        print(BLINKER_CMD_SUMMARY, summary_data);
+                    }
+                }
+
+                BProto::checkState(false);
+                BProto::printNow();
+            }
 
             _fresh = true;
 
