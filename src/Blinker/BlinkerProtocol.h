@@ -131,9 +131,9 @@ class BlinkerProtocol
         char* lastRead()        { return conn->lastRead(); }
         void isParsed()         { flush(); }
         int parseState()        { return canParse; }
-        void printNow();
+        int printNow();
         void _timerPrint(const String & n);
-        void _print(char * n, bool needCheckLength = true);
+        int _print(char * n, bool needCheckLength = true);
 
         void autoFormatData(const String & key, const String & jsonValue);
 };
@@ -217,20 +217,23 @@ void BlinkerProtocol::checkAutoFormat()
     }
 }
 
-void BlinkerProtocol::printNow()
+int BlinkerProtocol::printNow()
 {
     if (strlen(_sendBuf) && autoFormat)
     {
+        int8_t print_state = BLINKER_ERROR;
         #if defined(BLINKER_ARDUINOJSON)
-            _print(_sendBuf);
+            if (_print(_sendBuf)) print_state = BLINKER_SUCCESS;
         #else
             strcat(_sendBuf, "}");
-            _print(_sendBuf);
+            if (_print(_sendBuf)) print_state = BLINKER_SUCCESS;
         #endif
 
         free(_sendBuf);
         autoFormat = false;
         BLINKER_LOG_FreeHeap_ALL();
+
+        return print_state;
     }
 }
 
@@ -250,7 +253,7 @@ void BlinkerProtocol::_timerPrint(const String & n)
     }
 }
 
-void BlinkerProtocol::_print(char * n, bool needCheckLength)
+int BlinkerProtocol::_print(char * n, bool needCheckLength)
 {
     BLINKER_LOG_ALL(BLINKER_F("print: "), n);
     
@@ -260,9 +263,13 @@ void BlinkerProtocol::_print(char * n, bool needCheckLength)
         // BLINKER_LOG_FreeHeap_ALL();
         conn->print(n, isCheck);
         if (!isCheck) isCheck = true;
+
+        return true;
     }
     else {
         BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+
+        return false;
     }
 }
 
@@ -325,7 +332,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
             }
         }
 
-        if (strlen(_sendBuf) > BLINKER_MAX_SEND_SIZE)
+        if (_data.length() > BLINKER_MAX_SEND_BUFFER_SIZE)
         {
             BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
             return;
@@ -339,7 +346,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
         BLINKER_LOG_ALL(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
         BLINKER_LOG_ALL(BLINKER_F("data.length(): "), jsonValue.length());
 
-        if ((strlen(_sendBuf) + jsonValue.length()) >= BLINKER_MAX_SEND_SIZE)
+        if ((strlen(_sendBuf) + jsonValue.length()) >= BLINKER_MAX_SEND_BUFFER_SIZE)
         {
             BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
             return;

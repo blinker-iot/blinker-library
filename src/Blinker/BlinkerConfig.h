@@ -54,6 +54,10 @@
 
 #define BLINKER_MDNS_SERVICE_BLINKER    "blinker"
 
+#define BLINKER_ERROR                   0x00
+
+#define BLINKER_SUCCESS                 0x01
+
 #define BLINKER_MSG_FROM_MQTT           0
 
 #define BLINKER_MSG_FROM_WS             1
