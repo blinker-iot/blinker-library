@@ -1,7 +1,7 @@
 #ifndef BLINKER_WIDGETS_H
 #define BLINKER_WIDGETS_H
 
-#if defined(BLINKER_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_GATEWAY)
     #include "Functions/BlinkerBridge.h"
 #endif
 
@@ -29,7 +29,7 @@
 
 #if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \
     defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-    defined(BLINKER_NBIOT)
+    defined(BLINKER_NBIOT) || defined(BLINKER_GATEWAY)
 
     BlinkerSwitch BUILTIN_SWITCH;
 #endif

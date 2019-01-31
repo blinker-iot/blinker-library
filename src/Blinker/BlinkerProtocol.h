@@ -57,13 +57,16 @@ class BlinkerProtocol
         void print(const String & data);
         void print(const String & key, const String & data);
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
+            defined(BLINKER_GATEWAY)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
             // void ping() { if (isInit) conn->ping(); }
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }
@@ -98,7 +101,8 @@ class BlinkerProtocol
         blinker_callback_with_string_arg_t  _availableFunc = NULL;
 
         int checkAvail();
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             bool checkAliAvail()    { return conn->aligenieAvail(); }
             bool checkDuerAvail()   { return conn->duerAvail(); }
         #endif
