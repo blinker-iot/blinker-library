@@ -8,7 +8,8 @@
     #include <EEPROM.h>
 
     #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-        defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+        defined(BLINKER_GATEWAY)
         #include "Blinker/BlinkerAuto.h"
     #endif
 
@@ -31,7 +32,8 @@
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+    defined(BLINKER_GATEWAY)
     #include "Blinker/BlinkerTimer.h"
     #include "Functions/BlinkerTimingTimer.h"
     #include "Functions/BlinkerOTA.h"
@@ -169,7 +171,8 @@ class BlinkerApi : public BlinkerProtocol
         float gps(b_gps_t axis);
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+            defined(BLINKER_GATEWAY)
             void setTimezone(float tz);
             float getTimezone() { return _timezone; }
             int8_t second();
@@ -247,7 +250,7 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
-            defined(BLINKER_MQTT_AT)
+            defined(BLINKER_MQTT_AT) || defined(BLINKER_GATEWAY)
 
             #if defined(BLINKER_ALIGENIE)
                 void attachAliGenieSetPowerState(blinker_callback_with_string_arg_t newFunction)
@@ -423,7 +426,8 @@ class BlinkerApi : public BlinkerProtocol
         bool _needInit = false;
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+            defined(BLINKER_GATEWAY)
             bool        _isInit = false;
             bool        _isAuto = false;
             bool        _isAutoInit = false;
@@ -482,7 +486,8 @@ class BlinkerApi : public BlinkerProtocol
             #endif
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_MQTT_AT) || defined(BLINKER_GATEWAY)
             blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetModeFunc = NULL;
@@ -523,7 +528,8 @@ class BlinkerApi : public BlinkerProtocol
             void getVersion(const JsonObject& data);
             void setSwitch(const JsonObject& data);
 
-            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
                 void bridgeParse(char _bName[], const JsonObject& data);
             #endif
             void strWidgetsParse(char _wName[], const JsonObject& data);
@@ -553,7 +559,8 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+            defined(BLINKER_GATEWAY)
             void beginAuto();
             bool autoTrigged(uint32_t _id);
             bool checkCanOTA();
@@ -611,7 +618,8 @@ class BlinkerApi : public BlinkerProtocol
             String blinkerServer(uint8_t _type, const String & msg, bool state = false);
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_MQTT_AT) || defined(BLINKER_GATEWAY)
             void aliParse(const String & _data);
             void duerParse(const String & _data);
         #endif
@@ -832,7 +840,8 @@ void BlinkerApi::begin()
                     BLINKER_F("=> https://github.com/blinker-iot/blinker-library\n"));
     #endif
 
-    #if defined(BLINKER_OTA_VERSION_CODE) && (defined(BLINKER_MQTT) || defined(BLINKER_MQTT_AT))
+    #if defined(BLINKER_OTA_VERSION_CODE) && (defined(BLINKER_MQTT) || \
+        defined(BLINKER_MQTT_AT)) || defined(BLINKER_GATEWAY)
         if (strlen(BLINKER_OTA_VERSION_CODE) >= BLINKER_OTA_INFO_SIZE)
         {
             while(1)
@@ -846,7 +855,9 @@ void BlinkerApi::begin()
 
 void BlinkerApi::needInit()
 {
-    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+        defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+        defined(BLINKER_GATEWAY)
         String _shareData = freshSharers();
         if (STRING_contains_string(_shareData, "users") == false)
         {
@@ -1108,7 +1119,8 @@ void BlinkerApi::run()
         }
     #endif
 
-    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
+    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
         checkTimer();       
 
         if (!BProto::init()) {
@@ -1197,13 +1209,15 @@ void BlinkerApi::run()
             {
                 BProto::state = CONNECTED;
 
-                #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+                    defined(BLINKER_GATEWAY)
                     _disconnectCount = 0;
                 #endif
             }
             else
             {
-                #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+                    defined(BLINKER_GATEWAY)
                     if (_isInit)
                     {
                         if (_disconnectCount == 0)
@@ -1239,7 +1253,7 @@ void BlinkerApi::run()
                     parse(BProto::dataParse());
                 }
 
-                #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO))
+                #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_GATEWAY))
                     #if defined(BLINKER_ALIGENIE)
                         if (BProto::checkAliAvail())
                         {
@@ -1317,7 +1331,7 @@ void BlinkerApi::run()
                 }
 
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-                    defined(BLINKER_AT_MQTT)
+                    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
                     if (BProto::needFreshShare())
                     {
                         String _shareData = freshSharers();
@@ -1337,7 +1351,8 @@ void BlinkerApi::run()
                 BProto::disconnect();
                 BProto::state = CONNECTING;
 
-                #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+                    defined(BLINKER_GATEWAY)
                     if (_isInit)
                     {
                         if (_disconnectCount == 0)
@@ -1369,7 +1384,8 @@ void BlinkerApi::run()
             break;
     }
 
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
         if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
         {
             if (autoPull()) _isAutoInit = true;
@@ -1423,12 +1439,14 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                 // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
 
                 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-                    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+                    defined(BLINKER_GATEWAY)
                     timerManager(root);
                     // BLINKER_LOG_ALL(BLINKER_F("timerManager"));
                 #endif
 
-                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
                     autoManager(root);
                     otaParse(root);
                     shareParse(root);
@@ -1511,7 +1529,8 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
                         json_parse(_array);
                         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-                            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                            defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+                            defined(BLINKER_GATEWAY)
                             timerManager(_array, true);
                         #endif
 
@@ -1891,7 +1910,8 @@ float BlinkerApi::gps(b_gps_t axis)
 }
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+    defined(BLINKER_GATEWAY)
     void BlinkerApi::setTimezone(float tz)
     {
         _timezone = tz;
@@ -2080,7 +2100,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String _msg = STRING_format(msg);
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -2108,7 +2129,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String _msg = STRING_format(msg);
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -2140,7 +2162,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String _msg = STRING_format(msg);
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -2164,7 +2187,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String _msg = STRING_format(msg);
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -2188,7 +2212,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String _msg = STRING_format(msg);
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -2219,7 +2244,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String data = BLINKER_F("/weather/now?");
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -2242,7 +2268,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String data = BLINKER_F("/weather/aqi?");
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -2871,7 +2898,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String data;
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -2899,7 +2927,8 @@ float BlinkerApi::gps(b_gps_t axis)
         data += msg;
         data += BLINKER_F("\"}");
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
             print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
             print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
             printObject(BLINKER_F("upgradeData"), data);
@@ -3178,7 +3207,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 #endif
 
                 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-                    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+                    defined(BLINKER_GATEWAY)
                     String _timer = taskCount ? "1":"0";
                     _timer += _cdState ? "1":"0";
                     _timer += _lpState ? "1":"0";
@@ -3189,7 +3219,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     // static_cast<Proto*>(this)->printJson(timerSetting());
 
                     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-                        defined(BLINKER_AT_MQTT)
+                        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
                         print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
                     #endif
                 #endif
@@ -3277,7 +3307,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         }
     }
 
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
         void BlinkerApi::bridgeParse(char * _bName, const JsonObject& data)
         {
             // int8_t num = checkNum(_bName, _Bridge, _bridgeCount);
@@ -3657,7 +3688,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+    defined(BLINKER_GATEWAY)
     void BlinkerApi::beginAuto()
     {
         BLINKER_LOG(BLINKER_F("======================================================="));
@@ -5725,7 +5757,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 break;
             case BLINKER_CMD_BRIDGE_NUMBER :
                 break;
-            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+            #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
                 case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                     if (!checkCUPDATE()) {
                         return BLINKER_CMD_FALSE;
@@ -6213,7 +6246,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
                     httpCode = http.GET();
                     break;
-                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         url_iot = host;
                         url_iot += BLINKER_F("/api/v1/user/device/userconfig");
@@ -6415,7 +6449,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
-                        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+                        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
                             case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                                 _cUpdateTime = millis();
                                 break;
@@ -6468,7 +6503,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO)// || defined(BLINKER_MQTT_AT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+    defined(BLINKER_GATEWAY)// || defined(BLINKER_MQTT_AT)
 
     void BlinkerApi::aliParse(const String & _data)
     {

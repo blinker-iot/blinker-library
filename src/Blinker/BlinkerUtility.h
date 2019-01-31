@@ -50,7 +50,8 @@ extern "C" {
 //     ALI_SENSOR
 // };
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT)
+#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
 class BlinkerSharer
 {
     public :

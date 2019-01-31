@@ -2,7 +2,8 @@
 #define BLINKER_AUTO_H
 
 #if (defined(ESP8266) || defined(ESP32)) && \
-    (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT))
+    (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY))
 
 #if ARDUINO >= 100
     #include <Arduino.h>

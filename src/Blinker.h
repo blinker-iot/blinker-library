@@ -176,6 +176,16 @@
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
+#elif defined(BLINKER_GATEWAY)
+
+    #if defined(ESP8266) || defined(ESP32)
+        #include "BlinkerESPGateway.h"
+
+        BlinkerESPGateway    Blinker; 
+    #else
+        #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
+    #endif
+
 #endif
 
 #include "BlinkerWidgets.h"
