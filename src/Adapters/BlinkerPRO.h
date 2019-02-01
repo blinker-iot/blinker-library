@@ -139,6 +139,8 @@ class BlinkerPRO : public BlinkerStream
         bool        isFirst = false;
 
         int isJson(const String & data);
+
+        uint8_t     reconnect_time = 0;
 };
 
 // #if defined(ESP8266)
@@ -284,8 +286,16 @@ int BlinkerPRO::connect()
         if (ret == 4) reRegister();
 
         this->latestTime = millis();
+        reconnect_time += 1;
+        if (reconnect_time >= 12)
+        {
+            reRegister();
+            reconnect_time = 0;
+        }
         return false;
     }
+    
+    reconnect_time = 0;
     
     BLINKER_LOG(BLINKER_F("MQTT Connected!"));
     BLINKER_LOG_FreeHeap();
