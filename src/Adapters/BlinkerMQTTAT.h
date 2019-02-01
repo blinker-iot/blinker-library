@@ -167,6 +167,8 @@ class BlinkerMQTTAT : public BlinkerStream
         bool        isHWS = false;
 
         int isJson(const String & data);
+
+        uint8_t     reconnect_time = 0;
 };
 
 // #if defined(ESP8266)
@@ -450,8 +452,16 @@ int BlinkerMQTTAT::connect()
         BLINKER_LOG(BLINKER_F("Retrying MQTT connection in 5 seconds..."));
 
         this->latestTime = millis();
+        reconnect_time += 1;
+        if (reconnect_time >= 12)
+        {
+            reRegister();
+            reconnect_time = 0;
+        }
         return false;
     }
+    
+    reconnect_time = 0;
     
     BLINKER_LOG(BLINKER_F("MQTT Connected!"));
     BLINKER_LOG_FreeHeap();
