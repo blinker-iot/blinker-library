@@ -184,6 +184,10 @@ stream	KEYWORD2
 debugAll	KEYWORD2
 BLINKER_OTA_VERSION_CODE	KEYWORD2
 
+attachGatewayAvailable	KEYWORD2
+attachGatewayData	KEYWORD2
+attachGatewayPrint	KEYWORD2
+
 #######################################
 # Literals (LITERAL1)
 #######################################

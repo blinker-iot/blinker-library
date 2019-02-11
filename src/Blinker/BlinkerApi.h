@@ -295,6 +295,15 @@ class BlinkerApi : public BlinkerProtocol
             #endif
         #endif
 
+        #if defined(BLINKER_GATEWAY)
+            void attachGatewayAvailable(blinker_callback_return_int_t newFunction)
+            { _gatewayAvail = newFunction; }
+            void attachGatewayData(blinker_callback_return_string_t newFunction)
+            { _gatewayData = newFunction; }
+            void attachGatewayPrint(blinker_callback_with_string_arg_t newFunction)
+            { _gatewayPrint = newFunction; }
+        #endif
+
         // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
         //     void bridgePrint(char * bName, const String & data);
         //     void aligeniePrint(String & _msg);
@@ -507,6 +516,12 @@ class BlinkerApi : public BlinkerProtocol
             // blinker_callback_with_int32_arg_t   _DuerOSSetColorTemperature = NULL;
             // blinker_callback_with_int32_arg_t   _DuerOSSetRelativeColorTemperature = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSQueryFunc = NULL;
+        #endif
+
+        #if defined(BLINKER_GATEWAY)
+            blinker_callback_return_int_t       _gatewayAvail = NULL;
+            blinker_callback_return_string_t    _gatewayData = NULL;
+            blinker_callback_with_string_arg_t  _gatewayPrint = NULL;
         #endif
 
         #if defined(BLINKER_MQTT_AT)

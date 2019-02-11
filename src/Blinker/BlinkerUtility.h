@@ -39,6 +39,7 @@ extern "C" {
     #if defined(BLINKER_PRO)
         typedef bool (*blinker_callback_with_json_arg_t)(const JsonObject & data);
     #endif
+    typedef int (*blinker_callback_return_int_t)(void);
     // typedef void (*callback_with_bool_arg_t)(bool state);
 }
 
