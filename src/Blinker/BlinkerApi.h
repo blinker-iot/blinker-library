@@ -1651,7 +1651,7 @@ void BlinkerApi::printNumArray(char * _name, const String & data)
     {
         if (_Widgets_num[num]->state())
         {
-            #if defined(ESP8266) || defined(ESP32)
+            #if (defined(ESP8266) || defined(ESP32)) && (defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || defined(BLINKER_PRO))
             dataStorage(_name, data);
             #endif
         }
