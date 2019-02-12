@@ -298,8 +298,8 @@ class BlinkerApi : public BlinkerProtocol
         #if defined(BLINKER_GATEWAY)
             void attachGatewayAvailable(blinker_callback_return_int_t newFunction)
             { _gatewayAvail = newFunction; }
-            void attachGatewayData(blinker_callback_return_string_t newFunction)
-            { _gatewayData = newFunction; }
+            void attachGatewayRead(blinker_callback_return_string_t newFunction)
+            { _gatewayRead = newFunction; }
             void attachGatewayPrint(blinker_callback_with_string_arg_t newFunction)
             { _gatewayPrint = newFunction; }
         #endif
@@ -520,7 +520,7 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_GATEWAY)
             blinker_callback_return_int_t       _gatewayAvail = NULL;
-            blinker_callback_return_string_t    _gatewayData = NULL;
+            blinker_callback_return_string_t    _gatewayRead = NULL;
             blinker_callback_with_string_arg_t  _gatewayPrint = NULL;
         #endif
 

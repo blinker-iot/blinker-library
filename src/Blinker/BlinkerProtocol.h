@@ -84,6 +84,29 @@ class BlinkerProtocol
             void begin(const char* _deviceType) { conn->begin(_deviceType); }
         #endif
 
+        #if defined(BLINKER_SUBDEVICE)
+            void attachSubAvailable(blinker_callback_return_int_t func)
+            { if (isInit) conn->attachAvailable(func); }
+            
+            void attachSubRead(blinker_callback_return_string_t func)
+            { if (isInit) conn->attachRead(func); }
+
+            void attachSubPrint(blinker_callback_with_string_arg_t func)
+            { if (isInit) conn->attachPrint(func); }
+
+            void attachSubBegin(blinker_callback_t func)
+            { if (isInit) conn->attachBegin(func); }
+
+            void attachSubConnect(blinker_callback_return_int_t func)
+            { if (isInit) conn->attachConnect(func); }
+
+            void attachSubConnected(blinker_callback_return_int_t func)
+            { if (isInit) conn->attachConnected(func); }
+
+            void attachSubDisconnect(blinker_callback_t func)
+            { if (isInit) conn->attachDisconnect(func); }
+        #endif
+
     private :
 
     protected :

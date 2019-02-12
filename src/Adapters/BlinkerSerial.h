@@ -33,7 +33,7 @@ class BlinkerSerial : public BlinkerStream
         int available();
         void begin(Stream& s, bool state);
         int timedRead();
-        char * lastRead()   { return isFresh ? streamData : NULL; }
+        char * lastRead()   { if (isFresh) return streamData; else return ""; }
         void flush();
         int print(char * data, bool needCheck = true);
         int connect()       { isConnect = true; return connected(); }
