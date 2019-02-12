@@ -11,6 +11,8 @@
 //     #include "Blinker/BlinkerMQTTATBase.h"
 // #endif
 
+#include "Blinker/BlinkerUtility.h"
+
 class BlinkerStream
 {
     public :
@@ -72,6 +74,16 @@ class BlinkerStream
             virtual int deviceRegister() = 0;
             virtual int authCheck() = 0;
             virtual void begin(const char* _deviceType) = 0;
+        #endif
+
+        #if defined(BLINKER_SUBDEVICE)
+            virtual void attachAvailable(blinker_callback_return_int_t func) = 0;
+            virtual void attachRead(blinker_callback_return_string_t func) = 0;
+            virtual void attachPrint(blinker_callback_with_string_arg_t func) = 0;
+            virtual void attachBegin(blinker_callback_t func) = 0;
+            virtual void attachConnect(blinker_callback_return_int_t func) = 0;
+            virtual void attachConnected(blinker_callback_return_int_t func) = 0;
+            virtual void attachDisconnect(blinker_callback_t func) = 0;
         #endif
 };
 
