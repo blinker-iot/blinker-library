@@ -44,7 +44,7 @@
 #endif
 
 #if defined(BLINKER_MQTT_AT)
-    #include "Blinker/BlinkerATMASTER.h"
+    #include "Blinker/BlinkerATMaster.h"
     #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 
