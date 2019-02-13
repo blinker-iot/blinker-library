@@ -453,6 +453,10 @@
 
 #define BLINKER_CMD_SERVERCLIENT        "serverClient"
 
+#define BLINKER_CMD_HELLO               "hello"
+
+#define BLINKER_CMD_WHOIS               "whois"
+
 #define BLINKER_CMD_MODE_READING_NUMBER         0
 
 #define BLINKER_CMD_MODE_MOVIE_NUMBER           1
@@ -708,6 +712,195 @@
 #define BLINKER_CMD_APCONFIG_NUM            2
 
 #if defined(BLINKER_NBIOT)
+/*
+
+>[Success][17:20:49:705]
+COM14 (9600,None,_8,_1,148) Opend 
+>[Tx ->][17:21:06:364][Asc]
+AT+CGATT?
+
+>[Rx <-][17:21:06:548][Asc]
+
++CGATT:1
+
+OK
+
+>[Success][17:21:06:565]
+Success--[AT+CGATT?]
+>[Tx ->][17:21:06:565][Asc]
+AT+MIPLCREATE
+
+>[Rx <-][17:21:06:776][Asc]
+
++CIS ERROR:602
+
+>[Warn][17:21:06:781]
+Fail--[AT+MIPLCREATE]
+>[Tx ->][17:21:10:595][Asc]
+AT+MIPLDELETE=0
+
+>[Rx <-][17:21:11:015][Asc]
+
++MIPLEVENT:0,15
+
+>[Rx <-][17:21:11:291][Asc]
+
+OK
+
+>[Success][17:21:11:315]
+Success--[AT+MIPLDELETE=0]
+>[Tx ->][17:21:16:320][Asc]
+AT+CGATT?
+
+>[Rx <-][17:21:16:513][Asc]
+
++CGATT:1
+
+OK
+
+>[Success][17:21:16:533]
+Success--[AT+CGATT?]
+>[Tx ->][17:21:16:533][Asc]
+AT+MIPLCREATE
+
+>[Rx <-][17:21:16:760][Asc]
+
++MIPLCREATE:0
+
+OK
+
+>[Success][17:21:16:781]
+Success--[AT+MIPLCREATE]
+>[Tx ->][17:21:16:797][Asc]
+AT+MIPLADDOBJ=0,3306,1,1,5,0
+
+>[Rx <-][17:21:17:015][Asc]
+
+OK
+
+>[Success][17:21:17:048]
+Success--[AT+MIPLADDOBJ=0,3306,1,1,5,0]
+>[Tx ->][17:21:17:055][Asc]
+AT+MIPLADDOBJ=0,3303,1,1,6,1
+
+>[Rx <-][17:21:17:260][Asc]
+
+OK
+
+>[Success][17:21:17:294]
+Success--[AT+MIPLADDOBJ=0,3303,1,1,6,1]
+>[Tx ->][17:21:17:301][Asc]
+AT+MIPLOPEN=0,3000
+
+>[Rx <-][17:21:17:490][Asc]
+
+OK
+
+>[Success][17:21:17:526]
+Success--[AT+MIPLOPEN=0,3000]
+>[Rx <-][17:21:18:016][Asc]
+
++MIPLEVENT:0,1
+
+>[Rx <-][17:21:21:031][Asc]
+
++MIPLEVENT:0,2
+
++MIPLEVENT:0,4
+
+>[Rx <-][17:21:24:595][Asc]
+
++MIPLEVENT:0,6
+
++MIPLOBSERVE:0,88436,1,3303,0,-1
+
+>[Tx ->][17:21:25:548][Asc]
+AT+MIPLOBSERVERSP=0,88436,1
+
+>[Rx <-][17:21:25:752][Asc]
+
+OK
+
+>[Success][17:21:25:796]
+Success--[AT+MIPLOBSERVERSP=0,88436,1]
+>[Tx ->][17:21:26:922][Asc]
+AT+MIPLNOTIFY=0,88436,3303,0,5700,4,2,13,1,0
+
+>[Rx <-][17:21:27:158][Asc]
+
+OK
+
+>[Success][17:21:27:189]
+Success--[AT+MIPLNOTIFY=0,88436,3303,0,5700,4,2,13,1,0]
+>[Tx ->][17:21:28:339][Asc]
+AT+MIPLNOTIFY=0,88436,3303,0,5701,1,3,"cel",0,0
+
+>[Rx <-][17:21:28:564][Asc]
+
+OK
+
+>[Success][17:21:28:595]
+Success--[AT+MIPLNOTIFY=0,88436,3303,0,5701,1,3,"cel",0,0]
+>[Rx <-][17:21:29:476][Asc]
+
++MIPLOBSERVE:0,153973,1,3306,0,-1
+
+>[Tx ->][17:21:29:611][Asc]
+AT+MIPLOBSERVERSP=0,153973,1
+
+>[Rx <-][17:21:29:828][Asc]
+
+OK
+
+>[Success][17:21:29:875]
+Success--[AT+MIPLOBSERVERSP=0,153973,1]
+>[Rx <-][17:21:30:796][Asc]
+
++MIPLDISCOVER:0,22902,3303
+
+>[Success][17:21:30:843]
+Success--[AT+MIPLNOTIFY=0,153973,3306,0,5850,5,1,0,1,0]
+>[Tx ->][17:21:32:048][Asc]
+AT+MIPLNOTIFY=0,153973,3306,0,5851,3,2,76,0,0
+
+>[Rx <-][17:21:32:356][Asc]
+
+OK
+
+>[Success][17:21:32:411]
+Success--[AT+MIPLNOTIFY=0,153973,3306,0,5851,3,2,76,0,0]
+>[Tx ->][17:21:32:418][Asc]
+AT+MIPLDISCOVERRSP=0,22902,1,34,"5700;5701;5601;5602;5603;5604;5605"
+
+>[Tx ->][17:21:32:564][Asc]
+AT+MIPLNOTIFY=0,153973,3306,0,5850,5,1,0,1,0
+
+>[Success][17:21:32:564]
+Success--[AT+MIPLNOTIFY=0,153973,3306,0,5850,5,1,0,1,0]
+>[Rx <-][17:21:32:797][Asc]
+
+OK
+
+OK
+
+>[Success][17:21:32:906]
+Success--[AT+MIPLDISCOVERRSP=0,22902,1,34,"5700;5701;5601;5602;5603;5604;5605"]
+>[Rx <-][17:21:33:548][Asc]
+
++MIPLDISCOVER:0,22903,3306
+
+>[Tx ->][17:21:33:922][Asc]
+AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"
+
+>[Rx <-][17:21:34:174][Asc]
+
+OK
+
+>[Success][17:21:34:238]
+Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
+
+*/
+
     // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
     // http://www.mokuai.cn/Down/WH-NB73_at_V2.2.1.pdf
     // http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
@@ -1260,6 +1453,8 @@
     #endif
 
     #define BLINKER_CMD_REGISTER            "register"
+
+    #define BLINKER_DIY_DEVICE              "DiyArduino"
 
     #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
 

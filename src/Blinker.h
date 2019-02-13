@@ -192,6 +192,16 @@
 
     BlinkerSubDevice        Blinker;
 
+#elif defined(BLINKER_NBIOT)
+
+    #ifndef BLINKER_NB73_NBIOT
+    #define BLINKER_NB73_NBIOT
+    #endif
+
+    #include "BlinkerSerialWHNBIoT.h"
+
+    BlinkerSerialWHNBIoT    Blinker;
+
 #else
 
     #error Please set a mode BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT ! Please check your mode setting.

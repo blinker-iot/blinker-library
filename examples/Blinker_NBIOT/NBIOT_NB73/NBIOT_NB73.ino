@@ -34,25 +34,20 @@
  *       https://github.com/blinker-iot/blinker-doc/wiki
  * 
  * *****************************************************************/
+#define BLINKER_NBIOT
 
-// #define BLINKER_PRINT Serial
-// #define BLINKER_NBIOT
+#include <Blinker.h>
 
-// #include <Blinker.h>
-
-// void setup() {
-//     Serial.begin(115200);
+void setup() {
+    Serial.begin(115200);
+    BLINKER_DEBUG.stream(Serial);
     
-//     pinMode(LED_BUILTIN, OUTPUT);
-//     digitalWrite(LED_BUILTIN, HIGH);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
     
-//     Blinker.begin();
-// }
+    Blinker.begin();
+}
 
-// void loop() {
-//     Blinker.run();
-    
-//     if (Blinker.available()) {
-//         BLINKER_LOG("Blinker readString: ", data);
-//     }
-// }
+void loop() {
+    Blinker.run();
+}
