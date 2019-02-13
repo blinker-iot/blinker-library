@@ -38,7 +38,13 @@ class BlinkerSubStream : public BlinkerStream
             return false;
         }
 
-        void begin() { if (_subBegin) _subBegin(); }
+        void begin(const char* auth)
+        {
+            _authKey = (char*)malloc((strlen(auth)+1)*sizeof(char));
+            strcpy(_authKey, auth);
+            BLINKER_LOG_ALL(BLINKER_F("_authKey: "), auth);
+            if (_subBegin) _subBegin();
+        }
 
         char * lastRead()
         {
@@ -152,6 +158,7 @@ class BlinkerSubStream : public BlinkerStream
         void attachDisconnect(blinker_callback_t func) { _subDisconnect = func; }
 
     protected :
+        char*   _authKey;
         bool    isInit;
         int8_t  initStatus = 0;
         char*   streamData;

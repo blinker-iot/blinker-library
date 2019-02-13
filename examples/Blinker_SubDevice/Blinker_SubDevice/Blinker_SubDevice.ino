@@ -39,6 +39,8 @@
 
 #include <Blinker.h>
 
+char auth[] = "Your SubDevice Secret Key";
+
 int subDeviceAvail()
 {
     /*
@@ -56,7 +58,7 @@ String subDeviceRead()
     Your device communication codes here
     eg, use Serial:
 
-    return Serial.readStringUntil("\n");
+    return Serial.readStringUntil('\n');
     */
     String data = "";
     return data;
@@ -68,7 +70,7 @@ void subDevicePrint(const String & data)
     Your device communication codes here
     eg, use Serial:
 
-    return Serial.println(data);
+    Serial.println(data);
     */
     BLINKER_LOG("Blinker subDevicePrint: ", data);
 }
@@ -81,7 +83,7 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
     
-    Blinker.begin();
+    Blinker.begin(auth);
 
     Blinker.attachSubAvailable(subDeviceAvail);
     Blinker.attachSubRead(subDeviceRead);

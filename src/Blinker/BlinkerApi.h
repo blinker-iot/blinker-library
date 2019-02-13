@@ -48,6 +48,11 @@
     #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 
+#if defined (BLINKER_NB73_NBIOT)
+    #include "Blinker/BlinkerATMaster.h"
+    #include "modules/ArduinoJson/ArduinoJson.h"
+#endif
+
 #include "Blinker/BlinkerApiBase.h"
 #include "Blinker/BlinkerProtocol.h"
 
@@ -543,6 +548,10 @@ class BlinkerApi : public BlinkerProtocol
             void getVersion(const JsonObject& data);
             void setSwitch(const JsonObject& data);
 
+            #if defined(BLINKER_SUBDEVICE)
+                void broadCast(const JsonObject& data);
+            #endif
+
             #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                 defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
                 void bridgeParse(char _bName[], const JsonObject& data);
@@ -822,6 +831,12 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         uint32_t debug_time = 0;
+
+        #if defined(BLINKER_SUBDEVICE)
+            uint32_t    broadcastTime = 0;
+            bool        needBroadcast = false;
+            uint8_t     broadcastTimes = 0;
+        #endif
 };
 
 void BlinkerApi::begin()
@@ -1480,6 +1495,10 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
                 ahrs(Yaw, root);
                 gps(LONG, root);
+
+                #if defined(BLINKER_SUBDEVICE)
+                    broadCast(root);
+                #endif
             #else
                 BLINKER_LOG_ALL(BLINKER_F("ndef BLINKER_ARDUINOJSON"));
 
@@ -3321,6 +3340,20 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             _fresh = true;
         }
     }
+
+    #if defined(BLINKER_SUBDEVICE)
+        void BlinkerApi::broadCast(const JsonObject& data)
+        {
+            if (data.containsKey(BLINKER_CMD_HELLO))
+            {
+                if (data[BLINKER_CMD_HELLO] == BLINKER_CMD_WHOIS)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("get device fresh broadCast"));
+                    _fresh = true;
+                }
+            }
+        }
+    #endif
 
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
         defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
