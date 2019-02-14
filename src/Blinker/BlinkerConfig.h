@@ -918,13 +918,13 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_NB_CGATT_FAILED         "+CGATT:0"
 
-    #define BLINKER_CMD_NB_CREATE               "AT+MIPLCREATE"
+    #define BLINKER_CMD_NB_MIPLCREATE           "AT+MIPLCREATE"
     // Create communication kite
-    #define BLINKER_CMD_NB_CREATEREQ            "+MIPLCREATE"
+    #define BLINKER_CMD_MIPLCREATE              "MIPLCREATE"
 
     #define BLINKER_CMD_NB_CREATE_SUCCESSED     "+MIPLCREATE:0"
 
-    #define BLINKER_CMD_NB_DELETE               "AT+MIPLDELETE"
+    #define BLINKER_CMD_NB_MIPLDELETE           "AT+MIPLDELETE"
     
     #define BLINKER_CMD_NB_ADDOBJ               "AT+MIPLADDOBJ"
     // Add object
@@ -945,7 +945,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_NB_CLOSE                "AT+MIPLCLOSE"
     // AT+MIPLCLOSE=<ref>
     // AT+MIPLCLOSE=0
-    #define BLINKER_CMD_NB_EVENTREQ             "+MIPLEVENT"
+    #define BLINKER_CMD_MIPLEVENT               "MIPLEVENT"
     // +MIPLEVENT:<ref>,<eid>
     // +MIPLEVENT:0,11
 

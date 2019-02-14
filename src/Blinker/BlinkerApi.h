@@ -8459,6 +8459,21 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     {
                         if (_masterAT->getParam(0).toInt() == 1)
                         {
+                            ::delay(500);
+                            
+                            run();
+
+                            if (BProto::isAvail)
+                            {
+                                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+                                {
+                                    
+                                }
+                            }
+                            
+                            BProto::print(BLINKER_CMD_NB_MIPLCREATE);
+                            BProto::printNow(); 
+
                             BLINKER_LOG_ALL(BLINKER_F("NB_CGATT_SUCCESS"));
                             nbiot_status = NB_CGATT_SUCCESS;
                         }
@@ -8468,9 +8483,95 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                             nbiot_status = NB_CGATT_FAILED;
                         }
                     }
+                    else
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("NB_CGATT_FAILED"));
+                        nbiot_status = NB_CGATT_FAILED;
+                    }
                         
                     free(_masterAT);
                 }
+                break;
+            case NB_CGATT_FAILED :
+                BProto::print(BLINKER_CMD_NB_RESET);
+                BProto::printNow();
+
+                nbiot_status = NB_INIT;
+                break;
+            case NB_CGATT_SUCCESS :
+                if (BProto::isAvail)
+                {
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(BProto::dataParse()));
+
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_MIPLCREATE)
+                    {
+                        if (_masterAT->getParam(0).toInt() == 0)
+                        {
+                            BProto::print(BLINKER_CMD_MIPLCREATE);
+                            BProto::printNow();
+                            
+                            BLINKER_LOG_ALL(BLINKER_F("NB_MIPLC_SUCCESS"));
+                            nbiot_status = NB_MIPLC_SUCCESS;
+                        }
+                        else
+                        {
+                            BProto::print(BLINKER_CMD_NB_MIPLDELETE);
+                            BProto::printNow();
+
+                            BLINKER_LOG_ALL(BLINKER_F("NB_MIPLC_FAILED"));
+                            nbiot_status = NB_MIPLC_FAILED;
+                        }
+                    }
+                    else
+                    {
+                        BProto::print(BLINKER_CMD_NB_MIPLDELETE);
+                        BProto::printNow();
+
+                        BLINKER_LOG_ALL(BLINKER_F("NB_MIPLC_FAILED"));
+                        nbiot_status = NB_MIPLC_FAILED;
+                    }
+                        
+                    free(_masterAT);
+                }
+                break;
+            case NB_MIPLC_FAILED :
+                if (BProto::isAvail)
+                {
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(BProto::dataParse()));
+
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_MIPLEVENT)
+                    {
+                        if (_masterAT->getParam(0).toInt() == 0)
+                        {                            
+                            BLINKER_LOG_ALL(BLINKER_F("NB_MIPLD_SUCCESS"));
+                            nbiot_status = NB_MIPLD_SUCCESS;
+                        }
+                        else
+                        {
+                            BProto::print(BLINKER_CMD_NB_MIPLDELETE);
+                            BProto::printNow();
+
+                            BLINKER_LOG_ALL(BLINKER_F("NB_MIPLD_FAILED"));
+                            nbiot_status = NB_MIPLC_FAILED;
+                        }
+                    }
+                    else
+                    {
+                        BProto::print(BLINKER_CMD_NB_MIPLDELETE);
+                        BProto::printNow();
+
+                        BLINKER_LOG_ALL(BLINKER_F("NB_MIPLD_FAILED"));
+                        nbiot_status = NB_MIPLC_FAILED;
+                    }
+                        
+                    free(_masterAT);
+                }
+                break;
+            case NB_MIPLC_SUCCESS :
                 break;
             default:
                 break;
