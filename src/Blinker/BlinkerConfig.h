@@ -457,6 +457,8 @@
 
 #define BLINKER_CMD_WHOIS               "whois"
 
+#define BLINKER_CMD_AT                  "AT"
+
 #define BLINKER_CMD_MODE_READING_NUMBER         0
 
 #define BLINKER_CMD_MODE_MOVIE_NUMBER           1
@@ -566,8 +568,6 @@
         #define BLINKER_MAX_PIN_NUM                 40
 
     #endif
-
-    #define BLINKER_CMD_AT                      "AT"
 
     #define BLINKER_CMD_RST                     "RST"
 
@@ -911,6 +911,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_NB_RESET                "AT+NRB"
 
     #define BLINKER_CMD_NB_CGATT                "AT+CGATT?"
+
+    #define BLINKER_CMD_CGATT                   "CGATT"
     // Waiting module attachment network
     #define BLINKER_CMD_NB_CGATT_SUCCESSED      "+CGATT:1"
 

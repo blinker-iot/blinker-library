@@ -81,6 +81,23 @@ enum b_rgb_t {
     BLINKER_BRIGHT
 };
 
+enum b_nbiot_status_t {
+    NB_INIT,
+    NB_INITED,
+    NB_CGATT_SUCCESS,
+    NB_CGATT_FAILED,
+    NB_MIPLC_SUCCESS,
+    NB_MIPLC_FAILED,
+    NB_MIPLD_SUCCESS,
+    NB_MIPLD_FAILED,
+    NB_MIPLADDOBJ,
+    NB_MIPLOPEN,
+    NB_MIPLOPEN_SUCCESS,
+    NB_MIPLOPEN_FAILED,
+    NB_MIPLDISCOVER,
+    NB_MIPLOBSERVE
+};
+
 #if defined(BLINKER_PRO)
     enum BlinkerStatus
     {
@@ -315,12 +332,19 @@ class BlinkerApi : public BlinkerProtocol
         //     void duerPrint(String & _msg);
         // #endif
 
-        #if defined(BLINKER_MQTT_AT)
+        #if defined(BLINKER_MQTT_AT) || defined(BLINKER_NB73_NBIOT)
             // class BlinkerMasterAT *         _masterAT;
             // void atRespOK(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
-            void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
             void atResp();
             void parseATdata();
+        #endif
+
+        #if defined(BLINKER_NB73_NBIOT)
+            // void initCheck(uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
+        #endif
+
+        #if defined(BLINKER_MQTT_AT)
+            void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
             int analogRead();
             void pinMode(uint8_t pin, uint8_t mode);
             void digitalWrite(uint8_t pin, uint8_t val);
@@ -529,7 +553,7 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_with_string_arg_t  _gatewayPrint = NULL;
         #endif
 
-        #if defined(BLINKER_MQTT_AT)
+        #if defined(BLINKER_MQTT_AT) || defined(BLINKER_NB73_NBIOT)
             class BlinkerMasterAT *         _masterAT;
             void atRespOK(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
             // void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
@@ -662,6 +686,9 @@ class BlinkerApi : public BlinkerProtocol
             bool serialAvailable();
             void serialPrint(const String & s);
             void atHeartbeat();
+        #endif
+
+        #if defined(BLINKER_NB73_NBIOT)
         #endif
 
     protected :
@@ -836,6 +863,16 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t    broadcastTime = 0;
             bool        needBroadcast = false;
             uint8_t     broadcastTimes = 0;
+        #endif
+
+        #if defined(BLINKER_NB73_NBIOT)
+            uint32_t    nb_run_time = 0;
+
+            b_nbiot_status_t    nbiot_status = NB_INIT;
+
+            void atInit();
+
+            void nbRun();
         #endif
 };
 
@@ -1220,6 +1257,10 @@ void BlinkerApi::run()
 
             return;
         } 
+    #endif
+
+    #if defined(BLINKER_NB73_NBIOT)
+        nbRun();
     #endif
 
     bool conState = BProto::connected();
@@ -7775,7 +7816,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_MQTT_AT)
+#if defined(BLINKER_MQTT_AT) || defined(BLINKER_NB73_NBIOT)
 
     void BlinkerApi::atRespOK(const String & _data, uint32_t timeout)
     {
@@ -7795,6 +7836,13 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
                     {
                         _isAlive = true;
+
+                        BLINKER_LOG(BLINKER_F("dataParse: "), BProto::dataParse());
+                        BLINKER_LOG(BLINKER_F("strlen: "), strlen(BProto::dataParse()));
+                        BLINKER_LOG(BLINKER_F("strlen: "), strlen(BLINKER_CMD_OK));
+                        BProto::flush();
+
+                        return;
                     }
 
                     BLINKER_LOG(BLINKER_F("dataParse: "), BProto::dataParse());
@@ -7802,14 +7850,56 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     BLINKER_LOG(BLINKER_F("strlen: "), strlen(BLINKER_CMD_OK));
                     BProto::flush();
                 }
-                // ::delay(10);
+                ::delay(10);
             }
 
             _now_time += timeout;
         }
+
+        // return _isAlive;
     }
 
 
+    void BlinkerApi::atResp()
+    {
+        if (strcmp(BProto::dataParse(), BLINKER_CMD_OK) == 0 ||
+            strcmp(BProto::dataParse(), BLINKER_CMD_ERROR) == 0)
+        {
+            _fresh = true;
+            // BProto::flushAll();
+        }
+    }
+
+
+    void BlinkerApi::parseATdata()
+    {
+        uint32_t at_start = millis();
+        // while (!BProto::available())
+        while (!BProto::isAvail)
+        {
+            run();
+            ::delay(1);
+            if (millis() - at_start > BLINKER_AT_MSG_TIMEOUT) break;
+        }
+
+        BLINKER_LOG_ALL(BLINKER_F("parseATdata"));
+
+        _masterAT = new BlinkerMasterAT();
+        _masterAT->update(STRING_format(BProto::dataParse()));
+
+        BLINKER_LOG_ALL(BLINKER_F("getState: "), _masterAT->getState());
+        BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
+        BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
+
+        BProto::flush();
+    }
+#endif
+
+#if defined(BLINKER_NB73_NBIOT)
+    
+#endif
+
+#if defined(BLINKER_MQTT_AT)
     void BlinkerApi::initCheck(const String & _data, uint32_t timeout)
     {
         BProto::connect();
@@ -7890,38 +7980,6 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 free(_masterAT);
             }
         }
-    }
-
-
-    void BlinkerApi::atResp()
-    {
-        if (strcmp(BProto::dataParse(), BLINKER_CMD_OK) == 0 ||
-            strcmp(BProto::dataParse(), BLINKER_CMD_ERROR) == 0)
-        {
-            _fresh = true;
-            // BProto::flushAll();
-        }
-    }
-
-
-    void BlinkerApi::parseATdata()
-    {
-        uint32_t at_start = millis();
-        // while (!BProto::available())
-        while (!BProto::isAvail)
-        {
-            run();
-            if (millis() - at_start > BLINKER_AT_MSG_TIMEOUT) break;
-        }
-
-        _masterAT = new BlinkerMasterAT();
-        _masterAT->update(STRING_format(BProto::dataParse()));
-
-        BLINKER_LOG_ALL(BLINKER_F("getState: "), _masterAT->getState());
-        BLINKER_LOG_ALL(BLINKER_F("reqName: "), _masterAT->reqName());
-        BLINKER_LOG_ALL(BLINKER_F("paramNum: "), _masterAT->paramNum());
-
-        BProto::flush();
     }
 
 
@@ -8349,6 +8407,74 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         } // if
 
         // BLINKER_LOG("_state: ", _state);
+    }
+#endif
+
+#if defined(BLINKER_NB73_NBIOT)
+    void BlinkerApi::atInit()
+    {
+        // initCheck();
+        // atRespOK(BLINKER_CMD_AT);
+    }
+
+    void BlinkerApi::nbRun()
+    {
+        switch (nbiot_status)
+        {
+            case NB_INIT :
+                if (nb_run_time == 0 || millis() - nb_run_time > 5000)
+                {
+                    nb_run_time = millis();
+
+                    BProto::print(BLINKER_CMD_AT);
+                    BProto::printNow();
+                }
+
+                if (BProto::isAvail)
+                {
+                    if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("dataParse: "), BProto::dataParse());
+                        BLINKER_LOG_ALL(BLINKER_F("strlen: "), strlen(BProto::dataParse()));
+                        BLINKER_LOG_ALL(BLINKER_F("strlen: "), strlen(BLINKER_CMD_OK));
+                        BProto::flush();
+
+                        BProto::print(BLINKER_CMD_NB_CGATT);
+                        BProto::printNow();                   
+
+                        nbiot_status = NB_INITED;
+
+                        nb_run_time = millis();
+                    }
+                }
+                break;
+            case NB_INITED :
+                if (BProto::isAvail)
+                {
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(BProto::dataParse()));
+
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_CGATT)
+                    {
+                        if (_masterAT->getParam(0).toInt() == 1)
+                        {
+                            BLINKER_LOG_ALL(BLINKER_F("NB_CGATT_SUCCESS"));
+                            nbiot_status = NB_CGATT_SUCCESS;
+                        }
+                        else
+                        {
+                            BLINKER_LOG_ALL(BLINKER_F("NB_CGATT_FAILED"));
+                            nbiot_status = NB_CGATT_FAILED;
+                        }
+                    }
+                        
+                    free(_masterAT);
+                }
+                break;
+            default:
+                break;
+        }
     }
 #endif
 
