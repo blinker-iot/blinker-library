@@ -15,43 +15,14 @@ typedef BlinkerApi BApi;
 class BlinkerSerialWHNBIoT : public BlinkerApi
 {
     public :
-#if defined(BLINKER_ESP_SMARTCONFIG)
-        void begin( const char* _auth,
-                    uint8_t _rx_pin = 2,
+        void begin( uint8_t _rx_pin = 2,
                     uint8_t _tx_pin = 3,
                     uint32_t _baud = 9600)
         {
             BApi::begin();
             ::delay(100);
             serialBegin(_rx_pin, _tx_pin, _baud);
-            BApi::atInit(_auth);
-            BLINKER_LOG(BLINKER_F("Blinker NBIoT initialized..."));
-        }
-#elif defined(BLINKER_APCONFIG)
-        void begin( const char* _auth,
-                    uint8_t _rx_pin = 2,
-                    uint8_t _tx_pin = 3,
-                    uint32_t _baud = 9600)
-        {
-            BApi::begin();
-            ::delay(100);
-            serialBegin(_rx_pin, _tx_pin, _baud);
-            BApi::atInit(_auth);
-            BLINKER_LOG(BLINKER_F("Blinker NBIoT initialized..."));
-        }
-#endif
-
-        void begin( const char* _auth,
-                    const char* _ssid,
-                    const char* _pswd,
-                    uint8_t _rx_pin = 2,
-                    uint8_t _tx_pin = 3,
-                    uint32_t _baud = 9600)
-        {
-            BApi::begin();
-            ::delay(100);
-            serialBegin(_rx_pin, _tx_pin, _baud);
-            BApi::atInit(_auth, _ssid, _pswd);
+            BApi::atInit();
             BLINKER_LOG(BLINKER_F("Blinker NBIoT initialized..."));
         }
 

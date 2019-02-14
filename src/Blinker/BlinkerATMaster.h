@@ -44,7 +44,7 @@ class BlinkerMasterAT
         String _reqName;
         char _param[4][32];
 
-        bool serialize(String _data) {
+        void serialize(String _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
             
             _reqName = "";
