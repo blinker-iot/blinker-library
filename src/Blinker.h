@@ -202,6 +202,16 @@
 
     BlinkerSerialWHNBIoT    Blinker;
 
+#elif defined(BLINKER_GPRS)
+
+    #ifndef BLINKER_LUAT_GPRS
+    #define BLINKER_LUAT_GPRS
+    #endif
+
+    #include "BlinkerSerialLUATGPRS.h"
+
+    BlinkerSerialLUATGPRS   Blinker;
+    
 #else
 
     #error Please set a mode BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT ! Please check your mode setting.
