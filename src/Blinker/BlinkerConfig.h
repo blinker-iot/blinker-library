@@ -926,23 +926,24 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_NB_MIPLDELETE           "AT+MIPLDELETE"
     
-    #define BLINKER_CMD_NB_ADDOBJ               "AT+MIPLADDOBJ"
+    #define BLINKER_CMD_NB_MIPLADDOBJ           "AT+MIPLADDOBJ"
     // Add object
-    // AT+MIPLADDOBJ = <ref>,               0
-    //                 <objectid>,          3303
-    //                 <instancecount>,     1
-    //                 <instancebitmap>,    1
-    //                 <attributecount>,    6
-    //                 <actioncount>        1
+    // AT+MIPLADDOBJ = <ref>,               0       通信套件编号
+    //                 <objectid>,          3303    IPSO 对象ID
+    //                 <instancecount>,     1       实例个数
+    //                 <instancebitmap>,    1       实例位图
+    //                 <attributecount>,    6       属性个数
+    //                 <actioncount>        1       操作个数
     // AT+MIPLADDOBJ=0,3306,1,1,5,0
     // AT+MIPLADDOBJ=0,3303,1,1,6,1
-    #define BLINKER_CMD_NB_DELOBJ               "AT+MIPLDELOBJ"
+    // 建议使用 Generic Sensor	3300
+    #define BLINKER_CMD_NB_MIPLDELOBJ           "AT+MIPLDELOBJ"
     // AT+MIPLDELOBJ=<ref>,<objectid>
     // AT+MIPLDELOBJ=0,3303
-    #define BLINKER_CMD_NB_OPEN                 "AT+MIPLOPEN"
+    #define BLINKER_CMD_NB_MIPLOPEN             "AT+MIPLOPEN"
     // AT+MIPLOPEN=<ref>,<lifetime>[,<timeout>]
     // AT+MIPLOPEN=0,1200
-    #define BLINKER_CMD_NB_CLOSE                "AT+MIPLCLOSE"
+    #define BLINKER_CMD_NB_MIPLCLOSE            "AT+MIPLCLOSE"
     // AT+MIPLCLOSE=<ref>
     // AT+MIPLCLOSE=0
     #define BLINKER_CMD_MIPLEVENT               "MIPLEVENT"
@@ -998,6 +999,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     // AT+MIPLDISCOVERRSP=0,%d,1,19,"5850;5851;5852;5853"
 
     // 5527 Text RW String
+    #define BLINKER_CMD_MIPLOBSERVE             "MIPLOBSERVE"
+
     #define BLINKER_CMD_NB_OBSERVEREQ           "+MIPLOBSERVE"
     // Resource observation
     // +MIPLOBSERVE:<ref>,<msgid>,<flag>,<objectid>,<instanceid>[,<resourceid>]
@@ -1012,7 +1015,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     // 14 4.05 Method Not Allowed
     // 15 4.06 Not Acceptable
     // AT+MIPLOBSERVERSP=0,88888,1
-    #define BLINKER_CMD_NB_NOTIFY               "AT+MIPLNOTIFY"
+    #define BLINKER_CMD_NB_MIPLNOTIFY           "AT+MIPLNOTIFY"
     // AT+MIPLNOTIFY = <ref>,           0
     //                 <msgid>,         %d
     //                 <objectid>,      3303
