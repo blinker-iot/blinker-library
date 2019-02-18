@@ -904,7 +904,9 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
     // http://www.mokuai.cn/Down/WH-NB73_at_V2.2.1.pdf
     // http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
-    #define BLINKER_NB_HEARTBEAT_TIME           1800UL
+    #define BLINKER_NB_STREAM_TIMEOUT           60000UL
+
+    #define BLINKER_NB_LIFTIME                  1800UL
 
     #define BLINKER_CMD_NB_NB73                 "[WH-NB73]"
     
@@ -943,6 +945,13 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_NB_MIPLOPEN             "AT+MIPLOPEN"
     // AT+MIPLOPEN=<ref>,<lifetime>[,<timeout>]
     // AT+MIPLOPEN=0,1200
+    // lifetime 是设备连接服务器的一个参数，单位为秒，默认为 86400 秒，lifetime 到期
+    // 后，平台就会把设备踢下线，此时设备无法上报数据，只能重新注册。设备必须
+    // lifetime 未过期时通过发送 AT+MILPUPDATE 命令更新 lifetime 以保证设备在线。
+    // 取值范围（15~‭268435455）
+    #define BLINKER_CMD_NB_MIPLUPDATE           "AT+MIPLUPDATE"
+    // AT+MIPLUPDATE=<ref>,<lifetime>,<withObjectFlag>
+    // AT+MIPLUPDATE=0,86400,0
     #define BLINKER_CMD_NB_MIPLCLOSE            "AT+MIPLCLOSE"
     // AT+MIPLCLOSE=<ref>
     // AT+MIPLCLOSE=0

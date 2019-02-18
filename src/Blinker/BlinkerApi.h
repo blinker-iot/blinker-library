@@ -83,9 +83,12 @@ enum b_rgb_t {
 
 enum b_nbiot_status_t {
     NB_INIT,
-    NB_INITED,
+    NB_WAIT_OK,
+    // NB_INITED,
+    NB_CGATT_REQ,
     NB_CGATT_SUCCESS,
     NB_CGATT_FAILED,
+    NB_MIPLC_REQ,
     NB_MIPLC_SUCCESS,
     NB_MIPLC_FAILED,
     NB_MIPLD_SUCCESS,
@@ -95,7 +98,9 @@ enum b_nbiot_status_t {
     NB_MIPLOPEN_SUCCESS,
     NB_MIPLOPEN_FAILED,
     NB_MIPLDISCOVER,
-    NB_MIPLOBSERVE
+    NB_MIPLOBSERVE,
+    NB_FAILED,
+    NB_RESET
 };
 
 #if defined(BLINKER_PRO)
@@ -868,13 +873,17 @@ class BlinkerApi : public BlinkerProtocol
         #if defined(BLINKER_NB73_NBIOT)
             uint32_t    nb_run_time = 0;
 
-            b_nbiot_status_t    nbiot_status = NB_INIT;
-
             uint32_t    nb_msgId = 0;
+
+            uint32_t    nb_online_time = 0;
+
+            b_nbiot_status_t    nbiot_status = NB_INIT;
 
             #define BLINKER_NB_OBJECT_ID    3300
 
             void atInit();
+
+            bool checkOK();
 
             void nbRun();
         #endif
@@ -8421,6 +8430,20 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         // atRespOK(BLINKER_CMD_AT);
     }
 
+    bool BlinkerApi::checkOK()
+    {
+        if (BProto::isAvail)
+        {
+            if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("get response OK"));
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     void BlinkerApi::nbRun()
     {
         switch (nbiot_status)
@@ -8434,24 +8457,37 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     BProto::printNow();
                 }
 
-                if (BProto::isAvail)
+                // if (BProto::isAvail)
+                // {
+                //     if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+                //     {
+                //         BLINKER_LOG_ALL(BLINKER_F("dataParse: "), BProto::dataParse());
+                //         BLINKER_LOG_ALL(BLINKER_F("strlen: "), strlen(BProto::dataParse()));
+                //         BLINKER_LOG_ALL(BLINKER_F("strlen: "), strlen(BLINKER_CMD_OK));
+                //         BProto::flush();
+
+                //         BProto::print(BLINKER_CMD_NB_CGATT);
+                //         BProto::printNow();                   
+
+                //         nbiot_status = NB_INITED;
+
+                //         nb_run_time = millis();
+                //     }
+                // }
+                if (checkOK())
                 {
-                    if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                    {
-                        BLINKER_LOG_ALL(BLINKER_F("dataParse: "), BProto::dataParse());
-                        BLINKER_LOG_ALL(BLINKER_F("strlen: "), strlen(BProto::dataParse()));
-                        BLINKER_LOG_ALL(BLINKER_F("strlen: "), strlen(BLINKER_CMD_OK));
-                        BProto::flush();
+                    BProto::flush();
 
-                        BProto::print(BLINKER_CMD_NB_CGATT);
-                        BProto::printNow();                   
+                    BProto::print(BLINKER_CMD_NB_CGATT);
+                    BProto::printNow();                   
 
-                        nbiot_status = NB_INITED;
+                    nbiot_status = NB_INITED;
 
-                        nb_run_time = millis();
-                    }
+                    nb_run_time = millis();
                 }
                 break;
+            // case NB_WAIT_OK :
+            //     break;
             case NB_INITED :
                 if (BProto::isAvail)
                 {
@@ -8463,16 +8499,13 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     {
                         if (_masterAT->getParam(0).toInt() == 1)
                         {
-                            BProto::print(BLINKER_CMD_NB_MIPLCREATE);
-                            BProto::printNow(); 
-
-                            BLINKER_LOG_ALL(BLINKER_F("NB_CGATT_SUCCESS"));
-                            nbiot_status = NB_CGATT_SUCCESS;
+                            BLINKER_LOG_ALL(BLINKER_F("NB_CGATT_REQ"));
+                            nbiot_status = NB_CGATT_REQ;
                         }
                         else
                         {
                             BLINKER_LOG_ALL(BLINKER_F("NB_CGATT_FAILED"));
-                            nbiot_status = NB_CGATT_FAILED;
+                            nbiot_status = NB_FAILED;
                         }
                     }
                     else if (BProto::dataParse() ==  BLINKER_CMD_OK)
@@ -8482,17 +8515,46 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     else
                     {
                         BLINKER_LOG_ALL(BLINKER_F("NB_CGATT_FAILED"));
-                        nbiot_status = NB_CGATT_FAILED;
+                        nbiot_status = NB_FAILED;
                     }
-                        
+
+                    nb_run_time = millis();
+                    
                     free(_masterAT);
                 }
+                else if (millis() - nb_run_time > BLINKER_NB_STREAM_TIMEOUT)
+                {
+                    nbiot_status = NB_FAILED;
+                }
                 break;
-            case NB_CGATT_FAILED :
+            case NB_CGATT_REQ :
+                if (checkOK())
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("NB_CGATT_SUCCESS"));
+                    nbiot_status = NB_CGATT_SUCCESS;
+                    BProto::print(BLINKER_CMD_NB_MIPLCREATE);
+                    BProto::printNow();
+
+                    nb_run_time = millis();
+                }
+                else if (millis() - nb_run_time > BLINKER_NB_STREAM_TIMEOUT)
+                {
+                    nbiot_status = NB_FAILED;
+                }
+                break;
+            case NB_FAILED :
                 BProto::print(BLINKER_CMD_NB_RESET);
                 BProto::printNow();
 
-                nbiot_status = NB_INIT;
+                nbiot_status = NB_RESET;
+                nb_run_time = millis();
+                break;
+            case NB_RESET :
+                if (millis() - nb_run_time >= 10000)
+                {
+                    nbiot_status = NB_INIT;
+                    nb_run_time = millis();
+                }
                 break;
             case NB_CGATT_SUCCESS :
                 if (BProto::isAvail)
@@ -8505,11 +8567,11 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     {
                         if (_masterAT->getParam(0).toInt() == 0)
                         {
-                            BProto::print(STRING_format(BLINKER_CMD_NB_MIPLADDOBJ) + "=0," + STRING_format(BLINKER_NB_OBJECT_ID) + ",1,1,2,1");
-                            BProto::printNow();
+                            // BProto::print(STRING_format(BLINKER_CMD_NB_MIPLADDOBJ) + "=0," + STRING_format(BLINKER_NB_OBJECT_ID) + ",1,1,2,1");
+                            // BProto::printNow();
                             
-                            BLINKER_LOG_ALL(BLINKER_F("NB_MIPLC_SUCCESS, next NB_MIPLADDOBJ"));
-                            nbiot_status = NB_MIPLADDOBJ;
+                            BLINKER_LOG_ALL(BLINKER_F("NB_MIPLC_REQ, next NB_MIPLADDOBJ"));
+                            nbiot_status = NB_MIPLC_REQ;
                         }
                         else
                         {
@@ -8532,8 +8594,30 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                         BLINKER_LOG_ALL(BLINKER_F("NB_MIPLC_FAILED"));
                         nbiot_status = NB_MIPLC_FAILED;
                     }
+
+                    nb_run_time = millis();
                         
                     free(_masterAT);
+                }
+                
+                else if (millis() - nb_run_time > BLINKER_NB_STREAM_TIMEOUT)
+                {
+                    nbiot_status = NB_FAILED;
+                }
+                break;
+            case NB_MIPLC_REQ :
+                if (checkOK())
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("NB_MIPLC_SUCCESS"));
+                    nbiot_status = NB_MIPLC_SUCCESS;
+                    BProto::print(STRING_format(BLINKER_CMD_NB_MIPLADDOBJ) + "=0," + STRING_format(BLINKER_NB_OBJECT_ID) + ",1,1,2,1");
+                    BProto::printNow();
+
+                    nb_run_time = millis();
+                }
+                else if (millis() - nb_run_time > BLINKER_NB_STREAM_TIMEOUT)
+                {
+                    nbiot_status = NB_FAILED;
                 }
                 break;
             case NB_MIPLC_FAILED :
@@ -8568,8 +8652,14 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                         BLINKER_LOG_ALL(BLINKER_F("NB_MIPLD_FAILED"));
                         nbiot_status = NB_CGATT_FAILED;
                     }
+
+                    nb_run_time = millis();
                     
                     free(_masterAT);
+                }
+                else if (millis() - nb_run_time > BLINKER_NB_STREAM_TIMEOUT)
+                {
+                    nbiot_status = NB_FAILED;
                 }
                 break;
             case NB_MIPLADDOBJ :
@@ -8592,7 +8682,14 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("NB_MIPLOPEN success"));
                         nbiot_status = NB_MIPLOPEN_SUCCESS;
+
+                        nb_run_time = millis();
+                        nb_online_time = millis();
                     }
+                }
+                else if (millis() - nb_run_time > BLINKER_NB_STREAM_TIMEOUT)
+                {
+                    nbiot_status = NB_FAILED;
                 }
                 break;
             case NB_MIPLOPEN_SUCCESS :
@@ -8612,7 +8709,13 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                         nbiot_status = NB_MIPLOBSERVE;
                     }
 
+                    nb_run_time = millis();
+
                     free(_masterAT);
+                }
+                else if (millis() - nb_run_time > BLINKER_NB_STREAM_TIMEOUT)
+                {
+                    nbiot_status = NB_FAILED;
                 }
                 break;
             case NB_MIPLOBSERVE :
