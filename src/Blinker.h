@@ -192,7 +192,7 @@
 
     BlinkerSubDevice        Blinker;
 
-#elif defined(BLINKER_NBIOT)
+#elif defined(BLINKER_NBIOT_WH)
 
     #ifndef BLINKER_NB73_NBIOT
     #define BLINKER_NB73_NBIOT
@@ -202,11 +202,17 @@
 
     BlinkerSerialWHNBIoT    Blinker;
 
-#elif defined(BLINKER_GPRS)
+#elif defined(BLINKER_NBIOT_SIM)
 
-    #ifndef BLINKER_LUAT_GPRS
-    #define BLINKER_LUAT_GPRS
+    #ifndef BLINKER_SIM7020C_NBIOT
+    #define BLINKER_SIM7020C_NBIOT
     #endif
+
+#elif defined(BLINKER_GPRS_AIR202)
+
+    // #ifndef BLINKER_AIR202_GPRS
+    // #define BLINKER_AIR202_GPRS
+    // #endif
 
     #include "BlinkerSerialLUATGPRS.h"
 
