@@ -11,6 +11,9 @@
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
+#include "Functions/BlinkerHTTPAIR202.h"
+
+#include "modules/ArduinoJson/ArduinoJson.h"
 
 #if defined(ESP32)
     #include <HardwareSerial.h>
@@ -22,6 +25,19 @@
     SoftwareSerial *SSerial;
 #endif
 
+char*       MQTT_HOST_GPRS;
+char*       MQTT_ID_GPRS;
+char*       MQTT_NAME_GPRS;
+char*       MQTT_KEY_GPRS;
+char*       MQTT_PRODUCTINFO_GPRS;
+char*       UUID_GPRS;
+char*       AUTHKEY_GPRS;
+char*       MQTT_DEVICEID_GPRS;
+// char*       DEVICE_NAME;
+char*       BLINKER_PUB_TOPIC_GPRS;
+char*       BLINKER_SUB_TOPIC_GPRS;
+uint16_t    MQTT_PORT_GPRS;
+
 class BlinkerSerialGPRS : public BlinkerStream
 {
     public :
@@ -31,7 +47,7 @@ class BlinkerSerialGPRS : public BlinkerStream
 
         int available();
         int timedRead();
-        void begin(Stream& s, bool state);
+        void begin(String imei, Stream& s, bool state);
         char * lastRead() { return isFresh ? streamData : NULL; }
         void flush();
         int aliPrint(const String & s);
@@ -42,16 +58,22 @@ class BlinkerSerialGPRS : public BlinkerStream
         int connected()    { return isConnect; }
         void disconnect()   { isConnect = false; }
 
+        int deviceRegister() { return connectServer(); }
+
     protected :
         Stream* stream;
         char*   streamData;
         bool    isFresh = false;
         bool    isConnect;
         bool    isHWS = false;
+        char*   _imei;
         uint8_t respTimes = 0;
         uint32_t    respTime = 0;
+        bool    isMQTTinit = false;
 
         int checkPrintSpan();
+
+        int connectServer();
 };
 
 int BlinkerSerialGPRS::available()
@@ -116,11 +138,14 @@ int BlinkerSerialGPRS::available()
     }
 }
 
-void BlinkerSerialGPRS::begin(Stream& s, bool state)
+void BlinkerSerialGPRS::begin(String imei, Stream& s, bool state)
 {
     stream = &s;
     stream->setTimeout(BLINKER_STREAM_TIMEOUT);
     isHWS = state;
+
+    _imei = (char*)malloc(imei.length()*sizeof(char));
+    strcpy(_imei, imei.c_str());
 }
 
 int BlinkerSerialGPRS::timedRead()
@@ -247,6 +272,102 @@ int BlinkerSerialGPRS::checkPrintSpan()
     {
         respTimes = 0;
         return true;
+    }
+}
+
+int BlinkerSerialGPRS::connectServer()
+{
+    String host = BLINKER_F("https://iotdev.clz.me");
+    String uri = BLINKER_F("/api/v1/user/device/register?deviceType=");
+    uri += _deviceType;
+    uri += BLINKER_F("&deviceName=");
+    uri += _imei;
+
+    BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + uri);
+
+    BlinkerHTTPAIR202 http(stream, isHWS);
+
+    http.begin(host, uri);
+
+    String payload;
+
+    if (http.GET())
+    {
+        payload = http.getString();
+
+        return true;
+    }
+    else
+    {
+        BLINKER_LOG(BLINKER_F("[HTTP] GET... failed"));
+
+        return false;
+    }
+
+    BLINKER_LOG_ALL(BLINKER_F("reply was:"));
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+    BLINKER_LOG_ALL(payload);
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(payload);
+
+    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
+        !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
+        // while(1) {
+            BLINKER_ERR_LOG(("Please make sure you have register this device!"));
+            // ::delay(60000);
+
+            return false;
+        // }
+    }
+
+    String _userID = root[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
+    String _userName = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTID];
+    String _key = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTTOKEN];
+    String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
+    String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
+    String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
+    String _authKey = root[BLINKER_CMD_DETAIL][BLINKER_CMD_KEY];
+
+    if (isMQTTinit)
+    {
+        free(MQTT_HOST_GPRS);
+        free(MQTT_ID_GPRS);
+        free(MQTT_NAME_GPRS);
+        free(MQTT_KEY_GPRS);
+        free(MQTT_PRODUCTINFO_GPRS);
+        free(UUID_GPRS);
+        free(AUTHKEY_GPRS);
+        free(MQTT_DEVICEID_GPRS);
+        free(BLINKER_PUB_TOPIC_GPRS);
+        free(BLINKER_SUB_TOPIC_GPRS);
+
+        isMQTTinit = false;
+    }
+
+    BLINKER_LOG_ALL(("===================="));
+
+    if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
+        // memcpy(DEVICE_NAME, _userID.c_str(), 12);
+        String _deviceName = _userID.substring(12, 36);
+        MQTT_DEVICEID_PRO = (char*)malloc((_deviceName.length()+1)*sizeof(char));
+        strcpy(MQTT_DEVICEID_PRO, _deviceName.c_str());
+        MQTT_ID_PRO = (char*)malloc((_userID.length()+1)*sizeof(char));
+        strcpy(MQTT_ID_PRO, _userID.c_str());
+        MQTT_NAME_PRO = (char*)malloc((_userName.length()+1)*sizeof(char));
+        strcpy(MQTT_NAME_PRO, _userName.c_str());
+        MQTT_KEY_PRO = (char*)malloc((_key.length()+1)*sizeof(char));
+        strcpy(MQTT_KEY_PRO, _key.c_str());
+        MQTT_PRODUCTINFO_PRO = (char*)malloc((_productInfo.length()+1)*sizeof(char));
+        strcpy(MQTT_PRODUCTINFO_PRO, _productInfo.c_str());
+        MQTT_HOST_PRO = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
+        strcpy(MQTT_HOST_PRO, BLINKER_MQTT_ALIYUN_HOST);
+        AUTHKEY_PRO = (char*)malloc((_authKey.length()+1)*sizeof(char));
+        strcpy(AUTHKEY_PRO, _authKey.c_str());
+        MQTT_PORT_PRO = BLINKER_MQTT_ALIYUN_PORT;
+
+        BLINKER_LOG_ALL(("===================="));
     }
 }
 
