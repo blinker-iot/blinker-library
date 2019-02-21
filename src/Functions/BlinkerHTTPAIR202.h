@@ -213,7 +213,7 @@ class BlinkerHTTPAIR202
             uint32_t http_time = millis();
             air202_http_status_t http_status = http_init;
 
-            BProto::serialPrint(BLINKER_CMD_HTTPINIT_RESQ);
+            stream->println(BLINKER_CMD_HTTPINIT_RESQ);
 
             while(millis() - http_time < _httpTimeout)
             {
@@ -230,7 +230,7 @@ class BlinkerHTTPAIR202
 
             if (http_status != http_init_success) return false;
 
-            BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+            stream->println(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
                                 "=\"CCID\",1");
             http_status = http_para_set;
 
@@ -249,7 +249,7 @@ class BlinkerHTTPAIR202
 
             if (http_status != http_para_set_success) return false;
 
-            BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+            stream->println(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
                                 "=\"URL\",\"" + _host + _url + "\"");
             http_status = http_para_set;
 
@@ -268,7 +268,7 @@ class BlinkerHTTPAIR202
 
             if (http_status != http_para_set_success) return false;
 
-            BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+            stream->println(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
                                 "=\"" + _type + "\",\"" + _application + "\"");
             http_status = http_para_set;
 
@@ -287,7 +287,7 @@ class BlinkerHTTPAIR202
 
             if (http_status != http_para_set_success) return false;
 
-            BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPDATA_RESQ) + \
+            stream->println(STRING_format(BLINKER_CMD_HTTPDATA_RESQ) + \
                                 "=" + _msg.length() + ",10000");
             http_status = http_data_set;
 
@@ -306,7 +306,7 @@ class BlinkerHTTPAIR202
 
             if (http_status != http_data_set_success) return false;
 
-            BProto::serialPrint(_msg);
+            stream->println(_msg);
             http_status = http_data_post;
 
             while(millis() - http_time < _httpTimeout)
@@ -324,7 +324,7 @@ class BlinkerHTTPAIR202
 
             if (http_status != http_data_post_success) return false;
 
-            BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPACTION_RESQ) + \
+            stream->println(STRING_format(BLINKER_CMD_HTTPACTION_RESQ) + \
                                 "=1");
             http_status = http_start;
 
@@ -365,7 +365,7 @@ class BlinkerHTTPAIR202
 
             if (http_status != http_upload_success) return false;
 
-            BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
+            stream->println(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
             http_status = http_read_response;
 
             while(millis() - http_time < _httpTimeout)
@@ -394,7 +394,7 @@ class BlinkerHTTPAIR202
 
             /*TBD read data, httpData*/
 
-            BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPERM_RESQ));
+            stream->println(STRING_format(BLINKER_CMD_HTTPERM_RESQ));
             http_status = http_end;
 
             while(millis() - http_time < _httpTimeout)

@@ -1684,6 +1684,10 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_MCONNECT_RESQ           "AT+MCONNECT"
 
+    #define BLINKER_CMD_CONNECT_OK              "CONNECT OK"
+
+    #define BLINKER_CMD_CONNACK_OK              "CONNACK OK"
+
     #define BLINKER_CMD_CONNACK                 "CONNACK"
 
     #define BLINKER_CMD_MSUB_RESQ               "AT+MSUB"
@@ -1695,6 +1699,10 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_MPUB_RESQ               "AT+MPUB"
 
     #define BLINKER_CMD_MSUB                    "MSUB"
+
+    #define BLINKER_CMD_PUBACK                  "PBACK"
+
+    #define BLINKER_CMD_MQTTSTATU_RESQ          "AT+MQTTSTATU"
 
     #define BLINKER_CMD_HTTPINIT_RESQ           "AT+HTTPINIT"
 
