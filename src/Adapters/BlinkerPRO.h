@@ -37,7 +37,7 @@ char*       MQTT_DEVICEID_PRO;
 // char*       DEVICE_NAME;
 char*       BLINKER_PUB_TOPIC_PRO;
 char*       BLINKER_SUB_TOPIC_PRO;
-uint16_t MQTT_PORT_PRO;
+uint16_t    MQTT_PORT_PRO;
 
 class BlinkerPRO : public BlinkerStream
 {
@@ -657,7 +657,6 @@ int BlinkerPRO::print(char * data, bool needCheck)
         BLINKER_LOG_FreeHeap_ALL();
         
         bool _alive = isAlive;
-        
 
         if (needCheck)
         {

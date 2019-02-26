@@ -49,7 +49,9 @@ class BlinkerSerialNBIoT : public BlinkerStream
         bool    isConnect;
         bool    isHWS = false;
         uint8_t respTimes = 0;
+        uint16_t    dataLen;
         uint32_t    respTime = 0;
+        String      httpData;
 
         int checkPrintSpan();
 };

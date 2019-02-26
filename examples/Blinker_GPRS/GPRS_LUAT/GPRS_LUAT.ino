@@ -34,7 +34,7 @@
  *       https://github.com/blinker-iot/blinker-doc/wiki
  * 
  * *****************************************************************/
-#define BLINKER_NBIOT
+#define BLINKER_GPRS_AIR202
 
 #include <Blinker.h>
 

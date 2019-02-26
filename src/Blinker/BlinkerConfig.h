@@ -711,7 +711,7 @@
 
 #define BLINKER_CMD_APCONFIG_NUM            2
 
-#if defined(BLINKER_NBIOT)
+#if defined(BLINKER_NBIOT_WH)
 /*
 
 >[Success][17:20:49:705]
@@ -904,7 +904,9 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     // http://www.mokuai.cn/Down/WH-NB73_al_onenet_V1.0.0.pdf
     // http://www.mokuai.cn/Down/WH-NB73_at_V2.2.1.pdf
     // http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
-    #define BLINKER_NB_HEARTBEAT_TIME           1800UL
+    #define BLINKER_NB_STREAM_TIMEOUT           60000UL
+
+    #define BLINKER_NB_LIFTIME                  1800UL
 
     #define BLINKER_CMD_NB_NB73                 "[WH-NB73]"
     
@@ -943,6 +945,13 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_NB_MIPLOPEN             "AT+MIPLOPEN"
     // AT+MIPLOPEN=<ref>,<lifetime>[,<timeout>]
     // AT+MIPLOPEN=0,1200
+    // lifetime 是设备连接服务器的一个参数，单位为秒，默认为 86400 秒，lifetime 到期
+    // 后，平台就会把设备踢下线，此时设备无法上报数据，只能重新注册。设备必须
+    // lifetime 未过期时通过发送 AT+MILPUPDATE 命令更新 lifetime 以保证设备在线。
+    // 取值范围（15~‭268435455）
+    #define BLINKER_CMD_NB_MIPLUPDATE           "AT+MIPLUPDATE"
+    // AT+MIPLUPDATE=<ref>,<lifetime>,<withObjectFlag>
+    // AT+MIPLUPDATE=0,86400,0
     #define BLINKER_CMD_NB_MIPLCLOSE            "AT+MIPLCLOSE"
     // AT+MIPLCLOSE=<ref>
     // AT+MIPLCLOSE=0
@@ -1306,7 +1315,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
+    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+    defined(BLINKER_GPRS_AIR202)
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
     #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
@@ -1451,7 +1461,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
-#if defined(BLINKER_PRO)
+#if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2
@@ -1648,6 +1658,76 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_EEP_ADDR_SERIALCFG          2432
 
     #define BLINKER_SERIALCFG_SIZE              4
+
+#endif
+
+#if defined(BLINKER_GPRS_AIR202)
+
+    // http://www.openluat.com/Product/file/rda8955/AirM2M%20%E6%97%A0%E7%BA%BF%E6%A8%A1%E5%9D%97AT%E5%91%BD%E4%BB%A4%E6%89%8B%E5%86%8CV3.90.pdf
+    // http://www.openluat.com/Product/file/rda8955/%E8%BF%9E%E6%8E%A5%E9%98%BF%E9%87%8C%E4%BA%91AT%E6%B5%81%E7%A8%8B%E8%AF%B4%E6%98%8E%EF%BC%88%E4%B8%80%E6%9C%BA%E4%B8%80%E5%AF%86%E8%AE%A4%E8%AF%81%E6%96%B9%E6%A1%88%EF%BC%8CAT_S_TTS%E5%92%8CAT_S%E7%89%88%E6%9C%AC%E4%B8%8D%E6%94%AF%E6%8C%81%EF%BC%8CAT_S_SSL%E5%92%8CAT_S_NOTTS%E7%89%88%E6%9C%AC%E6%94%AF%E6%8C%81%EF%BC%89.pdf
+    
+    #define BLINKER_CMD_AT                      "AT"
+
+    #define BLINKER_CMD_CGMMR_RESQ              "AT+CGMR"
+
+    #define BLINKER_CMD_CGMMR_RESP              "AirM2M_V5664_AT_S_SSL"
+
+    #define BLINKER_CMD_CGATT                   "CGATT"
+
+    #define BLINKER_CMD_CGQTT_RESQ              "AT+CGATT?"
+
+    #define BLINEKR_CMD_SAPBR_RESQ              "AT+SAPBR"
+    // AT+SAPBR=<cmd_type>,<cid>[,<ConParamTag>,<ConParamValue>]
+
+    #define BLINKER_CMD_MCONFIG_RESQ            "AT+MCONFIG"
+
+    #define BLINKER_CMD_SSLMIPSTART             "AT+SSLMIPSTART"
+
+    #define BLINKER_CMD_MCONNECT_RESQ           "AT+MCONNECT"
+
+    #define BLINKER_CMD_CONNECT_OK              "CONNECT OK"
+
+    #define BLINKER_CMD_CONNACK_OK              "CONNACK OK"
+
+    #define BLINKER_CMD_CONNACK                 "CONNACK"
+
+    #define BLINKER_CMD_MSUB_RESQ               "AT+MSUB"
+
+    #define BLINKER_CMD_SUBACK                  "SUBACK"
+
+    #define BLINKER_CMD_MQTTTMSGSET_RESQ        "AT+MQTTMSGSET"
+
+    #define BLINKER_CMD_MPUB_RESQ               "AT+MPUB"
+
+    #define BLINKER_CMD_MSUB                    "MSUB"
+
+    #define BLINKER_CMD_PUBACK                  "PBACK"
+
+    #define BLINKER_CMD_MQTTSTATU_RESQ          "AT+MQTTSTATU"
+
+    #define BLINKER_CMD_HTTPINIT_RESQ           "AT+HTTPINIT"
+
+    #define BLINKER_CMD_HTTPPARA_RESQ           "AT+HTTPPARA"
+
+    #define BLINKER_CMD_HTTPACTION_RESQ         "AT+HTTPACTION"
+
+    #define BLINKER_CMD_HTTPACTION              "HTTPACTION"
+
+    #define BLINKER_CMD_HTTPREAD_RESQ           "AT+HTTPREAD"
+
+    #define BLINKER_CMD_HTTPREAD                "HTTPREAD"
+
+    #define BLINKER_CMD_HTTPERM_RESQ            "AT+HTTPTERM"
+
+    #define BLINKER_CMD_HTTPDATA_RESQ           "AT+HTTPDATA"
+
+    #define BLINKER_CMD_DOWNLOAD                "DOWNLOAD"
+
+    #define BLINEKR_CMD_CGSN_RESQ               "AT+CGSN"
+
+    #define BLINEKR_CMD_CGSN                    "CGSN"
+
+    #define BLINKER_CMD_MDISCONNECT_RESQ        "AT+MDISCONNECT"
 
 #endif
 

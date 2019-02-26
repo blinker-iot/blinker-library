@@ -29,7 +29,7 @@
 
 #if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \
     defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-    defined(BLINKER_NBIOT) || defined(BLINKER_GATEWAY)
+    defined(BLINKER_NBIOT_WH) || defined(BLINKER_GATEWAY)
 
     BlinkerSwitch BUILTIN_SWITCH;
 #endif
