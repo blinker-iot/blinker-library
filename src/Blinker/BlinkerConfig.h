@@ -1315,7 +1315,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
+    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+    defined(BLINKER_GPRS_AIR202)
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
     #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
@@ -1460,7 +1461,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
-#if defined(BLINKER_PRO)
+#if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2
@@ -1673,7 +1674,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_CGATT                   "CGATT"
 
-    #define BLINKER_CMD_CGQTT_RESQ              "AT_CGATT"
+    #define BLINKER_CMD_CGQTT_RESQ              "AT+CGATT?"
 
     #define BLINEKR_CMD_SAPBR_RESQ              "AT+SAPBR"
     // AT+SAPBR=<cmd_type>,<cid>[,<ConParamTag>,<ConParamValue>]
@@ -1725,6 +1726,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINEKR_CMD_CGSN_RESQ               "AT+CGSN"
 
     #define BLINEKR_CMD_CGSN                    "CGSN"
+
+    #define BLINKER_CMD_MDISCONNECT_RESQ        "AT+MDISCONNECT"
 
 #endif
 

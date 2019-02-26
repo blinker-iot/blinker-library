@@ -15,19 +15,21 @@ typedef BlinkerApi BApi;
 class BlinkerSerialLUATGPRS : public BlinkerApi
 {
     public :
-        void begin( uint8_t _rx_pin = 2,
+        void begin( const char* _type = BLINKER_AIR_DETECTOR,
+                    uint8_t _rx_pin = 2,
                     uint8_t _tx_pin = 3,
                     uint32_t _baud = 9600)
         {
-            BApi::begin();
+            serialBegin(_type, _rx_pin, _tx_pin, _baud);
+            // BApi::begin(_type);
             ::delay(100);
-            serialBegin(_rx_pin, _tx_pin, _baud);
-            BApi::atInit();
+            // BApi::atInit();
             BLINKER_LOG(BLINKER_F("Blinker NBIoT initialized..."));
         }
 
     private :
-        void serialBegin(uint8_t ss_rx_pin,
+        void serialBegin(const char* _type,
+                        uint8_t ss_rx_pin,
                         uint8_t ss_tx_pin,
                         uint32_t ss_baud)
         {
@@ -36,12 +38,16 @@ class BlinkerSerialLUATGPRS : public BlinkerApi
                 // BApi::begin();
     #if defined (__AVR_ATmega32U4__)
                 Serial1.begin(ss_baud);
-                Transp.begin(Serial1, true);
+                Transp.init(Serial1, true);
                 transport(Transp);
+
+                BApi::begin(_type, Serial1, true);
     #else
                 Serial.begin(ss_baud);
-                Transp.begin(Serial, true);
+                Transp.init(Serial, true);
                 transport(Transp);
+                
+                BApi::begin(_type, Serial, true);
     #endif
                 // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
                 return;
@@ -50,25 +56,31 @@ class BlinkerSerialLUATGPRS : public BlinkerApi
             else if (ss_rx_pin == 19 && ss_tx_pin == 18){
                 // BApi::begin();
                 Serial1.begin(ss_baud);
-                Transp.begin(Serial1, true);
+                Transp.init(Serial1, true);
                 transport(Transp);
                 // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
+                
+                BApi::begin(_type, Serial, true);
                 return;
             }
             else if (ss_rx_pin == 17 && ss_tx_pin == 16){
                 // BApi::begin();
                 Serial2.begin(ss_baud);
-                Transp.begin(Serial2, true);
+                Transp.init(Serial2, true);
                 transport(Transp);
                 // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
+                
+                BApi::begin(_type, Serial2, true);
                 return;
             }
             else if (ss_rx_pin == 15 && ss_tx_pin == 14){
                 // BApi::begin();
                 Serial3.begin(ss_baud);
-                Transp.begin(Serial3, true);
+                Transp.init(Serial3, true);
                 transport(Transp);
                 // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
+                
+                BApi::begin(_type, Serial3, true);
                 return;
             }
     #endif  
@@ -76,41 +88,51 @@ class BlinkerSerialLUATGPRS : public BlinkerApi
                 // BApi::begin();
                 SSerial = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
                 SSerial->begin(ss_baud);
-                Transp.begin(*SSerial, false);
+                Transp.init(*SSerial, false);
                 transport(Transp);
-                // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
+                // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));                
+                
+                BApi::begin(_type, *SSerial, false);
             }
 #elif defined(ESP8266)
             if (ss_rx_pin == RX && ss_tx_pin == TX) {
                 // BApi::begin();
                 Serial.begin(ss_baud);
-                Transp.begin(Serial, true);
+                Transp.init(Serial, true);
                 transport(Transp);
                 // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
+                
+                BApi::begin(_type, Serial, true);
                 return;
             }
             else {
                 // BApi::begin();
                 SSerial = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
                 SSerial->begin(ss_baud);
-                Transp.begin(*SSerial, false);
+                Transp.init(*SSerial, false);
                 transport(Transp);
                 // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
+                
+                BApi::begin(_type, *SSerial, false);
             }
 #elif defined(ESP32)
             // BApi::begin();
             HSerial = new HardwareSerial(1);
             HSerial->begin(ss_baud, SERIAL_8N1, ss_rx_pin, ss_tx_pin);
-            Transp.begin(*HSerial, true);
+            Transp.init(*HSerial, true);
             transport(Transp);
             // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
+                
+            BApi::begin(_type, *HSerial, true);
 #else
             // BApi::begin();
             SSerial = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
             SSerial->begin(ss_baud);
-            Transp.begin(*SSerial, false);
+            Transp.init(*SSerial, false);
             transport(Transp);
             // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
+                
+            BApi::begin(_type, *SSerial, false);
 #endif
         }
 

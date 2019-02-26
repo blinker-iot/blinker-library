@@ -14,20 +14,31 @@
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
 
-// #if defined(ESP32)
-//     #include <HardwareSerial.h>
+#if defined(ESP32)
+    #include <HardwareSerial.h>
 
-//     HardwareSerial *HSerialMQTT;
-// #else
-//     #include <SoftwareSerial.h>
+    HardwareSerial *HSerial_HTTP;
+#else
+    #include <SoftwareSerial.h>
 
-//     SoftwareSerial *SSerialMQTT;
-// #endif
+    SoftwareSerial *SSerial_HTTP;
+#endif
 
 #define BLINKER_HTTP_AIR202_DEFAULT_TIMEOUT 5000UL
 
 enum air202_http_status_t
 {
+    air202_init,
+    air202_init_success,
+    air202_ver_check,
+    air202_ver_check_success,
+    air202_cgtt,
+    air202_cgtt_resp,
+    air202_cgtt_success,
+    air202_spbar_1,
+    air202_spbar_1_success,
+    air202_spbar_2,
+    air202_spbar_2_success,
     http_init,
     http_init_success,
     http_init_failed,
@@ -56,8 +67,96 @@ enum air202_http_status_t
 class BlinkerHTTPAIR202
 {
     public :
-        BlinkerHTTPAIR202(Stream & s, bool isHardware = false)
-        { stream = s; isHWS = isHardware; }
+        BlinkerHTTPAIR202(Stream& s, bool isHardware = false)
+        { stream = &s; isHWS = isHardware; }
+
+        int checkCGTT()
+        {
+            uint32_t http_time = millis();
+            air202_http_status_t http_status = air202_init;
+
+            stream->println(BLINKER_CMD_AT);
+
+            while(millis() - http_time < _httpTimeout)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_init_success"));
+                        http_status = air202_init_success;
+                        break;
+                    }
+                }
+            }
+
+            if (http_status != air202_init_success) return false;
+
+            stream->println(BLINKER_CMD_CGMMR_RESQ);
+
+            http_status = air202_ver_check;
+
+            while(millis() - http_time < _httpTimeout)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_CGMMR_RESP) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_ver_check_success"));
+                        http_status = air202_ver_check_success;
+                        break;
+                    }
+                }
+            }
+
+            if (http_status != air202_ver_check_success) return false;
+
+            stream->println(BLINKER_CMD_CGQTT_RESQ);
+
+            http_status = air202_cgtt;
+
+            while(millis() - http_time < _httpTimeout)
+            {
+                if (available())
+                {
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(streamData));
+
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_CGATT &&
+                        _masterAT->getParam(0).toInt() == 1)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_resp"));
+                        http_status = air202_cgtt_resp;
+                    }
+
+                    free(_masterAT);
+
+                    break;
+                }
+            }
+
+            if (http_status != air202_cgtt_resp) return false;
+
+            while(millis() - http_time < _httpTimeout)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_success"));
+                        http_status = air202_cgtt_success;
+                        break;
+                    }
+                }
+            }
+
+            if (http_status != air202_cgtt_success) return false;
+
+            // stream->println(BLINKER_CMD_CGQTT_RESQ);
+
+            // http_status = air202_cgtt;
+        }
 
         bool begin(String host, String uri) { _host = host; _uri = uri; }
         void setTimeout(uint16_t timeout)   { _httpTimeout = timeout; }
@@ -103,7 +202,7 @@ class BlinkerHTTPAIR202
             if (http_status != http_para_set_success) return false;
 
             stream->println(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
-                                "=\"URL\",\"" + host + url + "\"");
+                                "=\"URL\",\"" + _host + _uri + "\"");
             http_status = http_para_set;
 
             while(millis() - http_time < _httpTimeout)
@@ -250,7 +349,7 @@ class BlinkerHTTPAIR202
             if (http_status != http_para_set_success) return false;
 
             stream->println(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
-                                "=\"URL\",\"" + _host + _url + "\"");
+                                "=\"URL\",\"" + _host + _uri + "\"");
             http_status = http_para_set;
 
             while(millis() - http_time < _httpTimeout)
@@ -381,7 +480,7 @@ class BlinkerHTTPAIR202
                         BLINKER_LOG_ALL(BLINKER_F("http_read_success, data len: "), _masterAT->getParam(0));
                         http_status = http_read_success;
 
-                        dataLen = _masterAT->getParam(0).toInt();
+                        uint16_t dataLen = _masterAT->getParam(0).toInt();
                     }
 
                     free(_masterAT);
@@ -416,6 +515,9 @@ class BlinkerHTTPAIR202
         }
 
         String getString()
+        {
+            return streamData;//TBD
+        }
 
     protected :
         class BlinkerMasterAT * _masterAT;
@@ -426,16 +528,27 @@ class BlinkerHTTPAIR202
         String  _host;
         String  _uri;
 
-        uint16_t _httpTimeout = BLINKER_HTTP_NBIOT_DEFAULT_TIMEOUT;
+        uint16_t _httpTimeout = BLINKER_HTTP_AIR202_DEFAULT_TIMEOUT;
+
+        int timedRead()
+        {
+            int c;
+            uint32_t _startMillis = millis();
+            do {
+                c = stream->read();
+                if (c >= 0) return c;
+            } while(millis() - _startMillis < 1000);
+            return -1; 
+        }
 
         bool available()
         {
             if (!isHWS)
             {
                 #if defined(__AVR__) || defined(ESP8266)
-                    if (!SSerialBLE->isListening())
+                    if (!SSerial_HTTP->isListening())
                     {
-                        SSerialBLE->listen();
+                        SSerial_HTTP->listen();
                         ::delay(100);
                     }
                 #endif

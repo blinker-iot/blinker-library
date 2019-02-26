@@ -53,6 +53,11 @@
     #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 
+#if defined(BLINKER_GPRS_AIR202)
+    #include "Functions/BlinkerAIR202.H"
+    #include "Functions/BlinkerHTTPAIR202.h"
+#endif
+
 #include "Blinker/BlinkerApiBase.h"
 #include "Blinker/BlinkerProtocol.h"
 
@@ -104,7 +109,7 @@ enum b_nbiot_status_t {
 };
 
 #if defined(BLINKER_PRO)
-    enum BlinkerStatus
+    enum BlinkerStatus_t
     {
         PRO_WLAN_CONNECTING,
         PRO_WLAN_CONNECTED,
@@ -119,6 +124,22 @@ enum b_nbiot_status_t {
         PRO_DEV_CONNECTING,
         PRO_DEV_CONNECTED,
         PRO_DEV_DISCONNECTED
+    };
+#endif
+
+#if defined(BLINKER_GPRS_AIR202)
+    enum BlinkerStatus_t
+    {
+        GPRS_DEV_POWER_CHECK,
+        GPRS_DEV_POWER_ON,
+        GPRS_DEV_AUTHCHECK_FAIL,
+        GPRS_DEV_AUTHCHECK_SUCCESS,
+        GPRS_DEV_REGISTER_FAIL,
+        GPRS_DEV_REGISTER_SUCCESS,
+        GPRS_DEV_INIT_SUCCESS,
+        GPRS_DEV_CONNECTING,
+        GPRS_DEV_CONNECTED,
+        GPRS_DEV_DISCONNECTED
     };
 #endif
 
@@ -520,13 +541,26 @@ class BlinkerApi : public BlinkerProtocol
             bool            _isRegistered = false;
             uint32_t        _register_fresh = 0;
             uint32_t        _initTime;
-            uint8_t         _proStatus = PRO_WLAN_CONNECTING;
+            BlinkerStatus_t _proStatus = PRO_WLAN_CONNECTING;
 
             #if defined(BLINKER_NO_BUTTON)
                 bool            _isCheckPower = false;
                 uint8_t         _power_count = 0;
                 uint32_t        _reset_countdown = 0;
             #endif
+        #endif
+
+        #if defined(BLINKER_GPRS_AIR202)
+            bool            _isConnBegin = false;
+            bool            _getRegister = false;
+            bool            _isInit = false;
+            bool            _isRegistered = false;
+            uint32_t        _register_fresh = 0;
+            uint32_t        _initTime;
+            uint8_t         _registerTimes = 0;
+            BlinkerStatus_t _gprsStatus = GPRS_DEV_POWER_CHECK;
+
+            // String          getIMEI();
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -889,9 +923,22 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_GPRS_AIR202)
-            String getIMEI(uint32_t time_out = 1000);
+            Stream* stream;
+            bool    isHWS = false;
+
+            void begin(const char* _type, Stream& s, bool isHardware = false);
+            void setType(const char* _type)
+            {
+                _deviceType = _type;
+                BLINKER_LOG_ALL(BLINKER_F("API deviceType: "), _type);
+            }
+            const char* type() { return _deviceType; }
+            const char* _deviceType;
+
+            String getIMEI();
+            bool powerCheck();
             bool httpGET(const String & host, const String & uri, uint32_t time_out = 5000);
-            bool ttpPOST(const String & _host, const String & _uri, 
+            bool httpPOST(const String & _host, const String & _uri, 
                         const String & _msg , const String & _type, 
                         const String & _application, uint32_t time_out = 5000);
         #endif
@@ -1018,6 +1065,52 @@ void BlinkerApi::needInit()
         #endif
 
         setType(_type);
+    }
+#endif
+
+#if defined(BLINKER_GPRS_AIR202)
+    void BlinkerApi::begin(const char* _type, Stream& s, bool isHardware)
+    {
+        // #if defined(BLINKER_NO_BUTTON)
+            
+        //     EEPROM.begin(BLINKER_EEP_SIZE);
+        //     EEPROM.get(BLINKER_EEP_ADDR_POWER_ON_COUNT, _power_count);
+        //     _power_count += 1;
+        //     EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, _power_count);
+        //     EEPROM.commit();
+        //     EEPROM.end();
+
+        //     BLINKER_LOG(BLINKER_F("_power_count: "), _power_count);
+
+        //     _reset_countdown = millis();
+        //     if (_power_count > 3)
+        //     {
+        //         if (_noButtonResetFunc) _noButtonResetFunc();
+        //     }
+        // #endif
+
+        begin();
+
+        // BLINKER_LOG(BLINKER_F(
+        //             "\n==========================================================="
+        //             "\n================= Blinker PRO mode init ! ================="
+        //             "\nWarning! EEPROM address 1280-1535 is used for Auto Control!"
+        //             "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
+        //             "\n===========================================================\n"));
+
+        // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+
+        // #if defined(BLINKER_BUTTON)
+        //     #if defined(BLINKER_BUTTON_PULLDOWN)
+        //         buttonInit(false);
+        //     #else
+        //         buttonInit();
+        //     #endif
+        // #endif
+
+        setType(_type);
+
+        stream = &s; isHWS = isHardware;
     }
 #endif
 
@@ -1282,6 +1375,132 @@ void BlinkerApi::run()
 
     #if defined(BLINKER_NB73_NBIOT)
         nbRun();
+    #endif
+
+    #if defined(BLINKER_GPRS_AIR202)
+        if (!powerCheck())
+        {
+            _gprsStatus = GPRS_DEV_POWER_CHECK;
+
+            return;
+        }
+        else
+        {
+            if (!_isConnBegin)
+            {
+                _gprsStatus = GPRS_DEV_POWER_ON;
+
+                BProto::begin(type(), getIMEI());
+                _isConnBegin = true;
+                _initTime = millis();
+
+                BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+
+                // if (authCheck())
+                // {
+                //     _gprsStatus = GPRS_DEV_AUTHCHECK_SUCCESS;
+
+                //     BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
+
+                    _isRegistered = BProto::deviceRegister();
+                    _getRegister = true;
+
+                    if (!_isRegistered)
+                    {
+                        _register_fresh = millis();
+
+                        _gprsStatus = GPRS_DEV_REGISTER_FAIL;
+
+                        _registerTimes++;
+                    }
+                    else
+                    {
+                        _gprsStatus = GPRS_DEV_REGISTER_SUCCESS;
+
+                        _registerTimes = 0;;
+                    }
+                // }
+                // else
+                // {
+                //     _gprsStatus = GPRS_DEV_AUTHCHECK_FAIL;
+
+                //     BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
+                // }
+                
+                BLINKER_LOG_FreeHeap_ALL();
+            }
+        }
+
+        if (!BProto::init())
+        {
+            yield();
+
+            if ((millis() - _initTime) >= 60000 && \
+                !_isRegistered && _registerTimes < 5)
+            {                
+                _isRegistered = BProto::deviceRegister();
+
+                if (!_isRegistered)
+                {
+                    _register_fresh = millis();
+
+                    _gprsStatus = GPRS_DEV_REGISTER_FAIL;
+                }
+                else
+                {
+                    _gprsStatus = GPRS_DEV_REGISTER_SUCCESS;
+                }
+
+                _registerTimes++;
+            }
+        }
+        else
+        {
+            if (!_isInit)
+            {
+                // if (/*ntpInit()*/) TBD
+                {
+                    _isInit = true;
+                    _gprsStatus = GPRS_DEV_INIT_SUCCESS;
+
+                    uint32_t connect_time = millis();
+                    uint32_t time_slot = 0;
+
+                    if (_needInit == false)
+                    {
+                        _needInit = true;
+                        needInit();
+                    }
+
+                    while (time_slot < 30000)
+                    {
+                        time_slot = millis() - connect_time;
+                        BProto::connect();
+                        yield();
+
+                        if (BProto::mConnected())
+                        {
+                            state = CONNECTED;
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (state == CONNECTING && _gprsStatus != GPRS_DEV_CONNECTING) {
+                    _gprsStatus = GPRS_DEV_CONNECTING;
+                }
+                else if (state == CONNECTED && _gprsStatus != GPRS_DEV_CONNECTED) {
+                    if (BProto::mConnected()) _gprsStatus = GPRS_DEV_CONNECTED;
+                }
+                else if (state == DISCONNECTED && _gprsStatus != GPRS_DEV_DISCONNECTED) {
+                    _gprsStatus = GPRS_DEV_DISCONNECTED;
+                }
+            }
+            
+        }
+        
     #endif
 
     bool conState = BProto::connected();
@@ -8741,411 +8960,373 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 #endif
 
 #if defined(BLINKER_GPRS_AIR202)
-    enum air202_http_status_t
+    bool BlinkerApi::powerCheck()
     {
-        http_init,
-        http_init_success,
-        http_init_failed,
-        http_para_set,
-        http_para_set_success,
-        http_para_set_failed,
-        http_start,
-        http_start_success,
-        http_start_failed,
-        http_data_set,
-        http_data_set_success,
-        http_data_set_failed,
-        http_data_post,
-        http_data_post_success,
-        http_data_post_failed,
-        http_upload_success,
-        http_upload_failed,
-        http_read_response,
-        http_read_success,
-        http_read_failed,
-        http_end,
-        http_end_failed,
-        http_end_success
-    };
+        BlinkerAIR202 BLINKER_AIR202;
+        BLINKER_AIR202.setStream(*stream, isHWS);
 
-    String BlinkerApi::getIMEI(uint32_t time_out)
-    {
-        uint32_t http_time = millis();
-
-        BProto::serialPrint(BLINEKR_CMD_CGSN_RESQ);
-
-        String _imei = "";
-
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei);
-                    return _imei;
-                }
-                else
-                {
-                    _imei = BProto::dataParse();
-                }                
-            }
-        }
-
-        return "";
+        return BLINKER_AIR202.powerCheck();
     }
 
-    bool BlinkerApi::httpGET(const String & host, const String & uri, uint32_t time_out)
+    String BlinkerApi::getIMEI()
     {
-        uint32_t http_time = millis();
-        air202_http_status_t http_status = http_init;
+        BlinkerAIR202 BLINKER_AIR202;
+        BLINKER_AIR202.setStream(*stream, isHWS);
 
-        BProto::serialPrint(BLINKER_CMD_HTTPINIT_RESQ);
-
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_init_success"));
-                    http_status = http_init_success;
-                    break;
-                }
-            }
-        }
-
-        if (http_status != http_init_success) return false;
-
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
-                            "=\"CCID\",1");
-        http_status = http_para_set;
-
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 1"));
-                    http_status = http_para_set_success;
-                    break;
-                }
-            }
-        }
-
-        if (http_status != http_para_set_success) return false;
-
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
-                            "=\"URL\",\"" + host + url + "\"");
-        http_status = http_para_set;
-
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 2"));
-                    http_status = http_para_set_success;
-                    break;
-                }
-            }
-        }
-
-        if (http_status != http_para_set_success) return false;
-
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPACTION_RESQ) + \
-                            "=0");
-        http_status = http_start;
-
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_start_success"));
-                    http_status = http_start_success;
-                    break;
-                }
-            }
-        }
-
-        if (http_status != http_start_success) return false;
-
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                _masterAT = new BlinkerMasterAT();
-                _masterAT->update(STRING_format(BProto::dataParse()));
-
-                if (_masterAT->getState() != AT_M_NONE &&
-                    _masterAT->reqName() == BLINKER_CMD_HTTPACTION)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_upload_success"));
-                    http_status = http_upload_success;
-                }
-
-                free(_masterAT);
-
-                break;
-            }
-        }
-
-        if (http_status != http_upload_success) return false;
-
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
-        http_status = http_read_response;
-
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                _masterAT = new BlinkerMasterAT();
-                _masterAT->update(STRING_format(BProto::dataParse()));
-
-                if (_masterAT->getState() != AT_M_NONE &&
-                    _masterAT->reqName() == BLINKER_CMD_HTTPREAD)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_read_success"));
-                    http_status = http_read_success;
-                }
-
-                free(_masterAT);
-
-                break;
-            }
-        }
-
-        if (http_status != http_read_success) return false;
-
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPERM_RESQ));
-        http_status = http_end;
-
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_end_success"));
-                    http_status = http_end_success;
-                    break;
-                }
-            }
-        }
-
-        if (http_status != http_end_success) return false;
-
-        return true;
+        return BLINKER_AIR202.getIMEI();
     }
 
-    bool BlinkerApi::httpPOST(const String & _host, const String & _uri, 
-                            const String & _msg , const String & _type, 
-                            const String & _application, uint32_t time_out)
-    {
-        uint32_t http_time = millis();
-        air202_http_status_t http_status = http_init;
+//     bool BlinkerApi::httpGET(const String & host, const String & uri, uint32_t time_out)
+//     {
+//         uint32_t http_time = millis();
+//         air202_http_status_t http_status = http_init;
 
-        BProto::serialPrint(BLINKER_CMD_HTTPINIT_RESQ);
+//         BProto::serialPrint(BLINKER_CMD_HTTPINIT_RESQ);
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_init_success"));
-                    http_status = http_init_success;
-                    break;
-                }
-            }
-        }
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_init_success"));
+//                     http_status = http_init_success;
+//                     break;
+//                 }
+//             }
+//         }
 
-        if (http_status != http_init_success) return false;
+//         if (http_status != http_init_success) return false;
 
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
-                            "=\"CCID\",1");
-        http_status = http_para_set;
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//                             "=\"CCID\",1");
+//         http_status = http_para_set;
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 1"));
-                    http_status = http_para_set_success;
-                    break;
-                }
-            }
-        }
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 1"));
+//                     http_status = http_para_set_success;
+//                     break;
+//                 }
+//             }
+//         }
 
-        if (http_status != http_para_set_success) return false;
+//         if (http_status != http_para_set_success) return false;
 
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
-                            "=\"URL\",\"" + _host + _url + "\"");
-        http_status = http_para_set;
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//                             "=\"URL\",\"" + host + url + "\"");
+//         http_status = http_para_set;
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 2"));
-                    http_status = http_para_set_success;
-                    break;
-                }
-            }
-        }
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 2"));
+//                     http_status = http_para_set_success;
+//                     break;
+//                 }
+//             }
+//         }
 
-        if (http_status != http_para_set_success) return false;
+//         if (http_status != http_para_set_success) return false;
 
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
-                            "=\"" + _type + "\",\"" + _application + "\"");
-        http_status = http_para_set;
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPACTION_RESQ) + \
+//                             "=0");
+//         http_status = http_start;
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 3"));
-                    http_status = http_para_set_success;
-                    break;
-                }
-            }
-        }
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_start_success"));
+//                     http_status = http_start_success;
+//                     break;
+//                 }
+//             }
+//         }
 
-        if (http_status != http_para_set_success) return false;
+//         if (http_status != http_start_success) return false;
 
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPDATA_RESQ) + \
-                            "=" + _msg.length() + ",10000");
-        http_status = http_data_set;
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 _masterAT = new BlinkerMasterAT();
+//                 _masterAT->update(STRING_format(BProto::dataParse()));
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_DOWNLOAD) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_data_set_success"));
-                    http_status = http_data_set_success;
-                    break;
-                }
-            }
-        }
+//                 if (_masterAT->getState() != AT_M_NONE &&
+//                     _masterAT->reqName() == BLINKER_CMD_HTTPACTION)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_upload_success"));
+//                     http_status = http_upload_success;
+//                 }
 
-        if (http_status != http_data_set_success) return false;
+//                 free(_masterAT);
 
-        BProto::serialPrint(_msg);
-        http_status = http_data_post;
+//                 break;
+//             }
+//         }
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_data_post_success"));
-                    http_status = http_data_post_success;
-                    break;
-                }
-            }
-        }
+//         if (http_status != http_upload_success) return false;
 
-        if (http_status != http_data_post_success) return false;
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
+//         http_status = http_read_response;
 
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPACTION_RESQ) + \
-                            "=1");
-        http_status = http_start;
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 _masterAT = new BlinkerMasterAT();
+//                 _masterAT->update(STRING_format(BProto::dataParse()));
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_start_success"));
-                    http_status = http_start_success;
-                    break;
-                }
-            }
-        }
+//                 if (_masterAT->getState() != AT_M_NONE &&
+//                     _masterAT->reqName() == BLINKER_CMD_HTTPREAD)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_read_success"));
+//                     http_status = http_read_success;
+//                 }
 
-        if (http_status != http_start_success) return false;
+//                 free(_masterAT);
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                _masterAT = new BlinkerMasterAT();
-                _masterAT->update(STRING_format(BProto::dataParse()));
+//                 break;
+//             }
+//         }
 
-                if (_masterAT->getState() != AT_M_NONE &&
-                    _masterAT->reqName() == BLINKER_CMD_HTTPACTION)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_upload_success"));
-                    http_status = http_upload_success;
-                }
+//         if (http_status != http_read_success) return false;
 
-                free(_masterAT);
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPERM_RESQ));
+//         http_status = http_end;
 
-                break;
-            }
-        }
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_end_success"));
+//                     http_status = http_end_success;
+//                     break;
+//                 }
+//             }
+//         }
 
-        if (http_status != http_upload_success) return false;
+//         if (http_status != http_end_success) return false;
 
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
-        http_status = http_read_response;
+//         return true;
+//     }
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                _masterAT = new BlinkerMasterAT();
-                _masterAT->update(STRING_format(BProto::dataParse()));
+//     bool BlinkerApi::httpPOST(const String & _host, const String & _uri, 
+//                             const String & _msg , const String & _type, 
+//                             const String & _application, uint32_t time_out)
+//     {
+//         uint32_t http_time = millis();
+//         air202_http_status_t http_status = http_init;
 
-                if (_masterAT->getState() != AT_M_NONE &&
-                    _masterAT->reqName() == BLINKER_CMD_HTTPREAD)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_read_success"));
-                    http_status = http_read_success;
-                }
+//         BProto::serialPrint(BLINKER_CMD_HTTPINIT_RESQ);
 
-                free(_masterAT);
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_init_success"));
+//                     http_status = http_init_success;
+//                     break;
+//                 }
+//             }
+//         }
 
-                break;
-            }
-        }
+//         if (http_status != http_init_success) return false;
 
-        if (http_status != http_read_success) return false;
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//                             "=\"CCID\",1");
+//         http_status = http_para_set;
 
-        BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPERM_RESQ));
-        http_status = http_end;
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 1"));
+//                     http_status = http_para_set_success;
+//                     break;
+//                 }
+//             }
+//         }
 
-        while(millis() - http_time < time_out)
-        {
-            if (BProto::isAvail)
-            {
-                if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("http_end_success"));
-                    http_status = http_end_success;
-                    break;
-                }
-            }
-        }
+//         if (http_status != http_para_set_success) return false;
 
-        if (http_status != http_end_success) return false;
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//                             "=\"URL\",\"" + _host + _url + "\"");
+//         http_status = http_para_set;
 
-        return true;
-    }
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 2"));
+//                     http_status = http_para_set_success;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         if (http_status != http_para_set_success) return false;
+
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//                             "=\"" + _type + "\",\"" + _application + "\"");
+//         http_status = http_para_set;
+
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 3"));
+//                     http_status = http_para_set_success;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         if (http_status != http_para_set_success) return false;
+
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPDATA_RESQ) + \
+//                             "=" + _msg.length() + ",10000");
+//         http_status = http_data_set;
+
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_DOWNLOAD) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_data_set_success"));
+//                     http_status = http_data_set_success;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         if (http_status != http_data_set_success) return false;
+
+//         BProto::serialPrint(_msg);
+//         http_status = http_data_post;
+
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_data_post_success"));
+//                     http_status = http_data_post_success;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         if (http_status != http_data_post_success) return false;
+
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPACTION_RESQ) + \
+//                             "=1");
+//         http_status = http_start;
+
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_start_success"));
+//                     http_status = http_start_success;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         if (http_status != http_start_success) return false;
+
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 _masterAT = new BlinkerMasterAT();
+//                 _masterAT->update(STRING_format(BProto::dataParse()));
+
+//                 if (_masterAT->getState() != AT_M_NONE &&
+//                     _masterAT->reqName() == BLINKER_CMD_HTTPACTION)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_upload_success"));
+//                     http_status = http_upload_success;
+//                 }
+
+//                 free(_masterAT);
+
+//                 break;
+//             }
+//         }
+
+//         if (http_status != http_upload_success) return false;
+
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
+//         http_status = http_read_response;
+
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 _masterAT = new BlinkerMasterAT();
+//                 _masterAT->update(STRING_format(BProto::dataParse()));
+
+//                 if (_masterAT->getState() != AT_M_NONE &&
+//                     _masterAT->reqName() == BLINKER_CMD_HTTPREAD)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_read_success"));
+//                     http_status = http_read_success;
+//                 }
+
+//                 free(_masterAT);
+
+//                 break;
+//             }
+//         }
+
+//         if (http_status != http_read_success) return false;
+
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPERM_RESQ));
+//         http_status = http_end;
+
+//         while(millis() - http_time < time_out)
+//         {
+//             if (BProto::isAvail)
+//             {
+//                 if (strcmp((BProto::dataParse()), BLINKER_CMD_OK) == 0)
+//                 {
+//                     BLINKER_LOG_ALL(BLINKER_F("http_end_success"));
+//                     http_status = http_end_success;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         if (http_status != http_end_success) return false;
+
+//         return true;
+//     }
 
 #endif
 

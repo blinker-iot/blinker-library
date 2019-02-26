@@ -657,7 +657,6 @@ int BlinkerPRO::print(char * data, bool needCheck)
         BLINKER_LOG_FreeHeap_ALL();
         
         bool _alive = isAlive;
-        
 
         if (needCheck)
         {

@@ -63,25 +63,30 @@ class BlinkerProtocol
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
             // void ping() { if (isInit) conn->ping(); }
+            int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
+            int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
+            void sharers(const String & data) { if (isInit) conn->sharers(data); }
+            int needFreshShare() { if (isInit) return conn->needFreshShare(); else return false; }
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+            defined(BLINKER_GPRS_AIR202)
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }
             int mConnected()    { return isInit ? conn->mConnected() : false; }
-            int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
-            int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
             void freshAlive() { if (isInit) conn->freshAlive(); }
-            void sharers(const String & data) { if (isInit) conn->sharers(data); }
-            int needFreshShare() { if (isInit) return conn->needFreshShare(); else return false; }
         #endif
 
         #if defined(BLINKER_PRO)
             int deviceRegister(){ return conn->deviceRegister(); }
             int authCheck()     { return conn->authCheck(); }
             void begin(const char* _deviceType) { conn->begin(_deviceType); }
+        #elif defined(BLINKER_GPRS_AIR202)
+            int deviceRegister(){ return conn->deviceRegister(); }
+            void begin(const char* _deviceType, String _imei)
+            { conn->begin(_deviceType, _imei); }
         #endif
 
         #if defined(BLINKER_SUBDEVICE)
