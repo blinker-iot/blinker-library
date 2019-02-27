@@ -25,6 +25,22 @@
     SoftwareSerial *SSerial_API;
 #endif
 
+enum air202_status_t
+{
+    air202_sapbar_pdp_resq,
+    air202_sapbar_pdp_success,
+    air202_sapbar_pdp_failed,
+    air202_sapbar_apn_resq,
+    air202_sapbar_apn_success,
+    air202_sapbar_apn_failed,
+    air202_sapbar_save_resq,
+    air202_sapbar_save_success,
+    air202_sapbar_save_failed,
+    air202_sapbar_fresh_resq,
+    air202_sapbar_fresh_success,
+    air202_sapbar_fresh_failed,
+};
+
 class BlinkerAIR202
 {
     public :
@@ -37,6 +53,12 @@ class BlinkerAIR202
 
         bool powerCheck()
         {
+            stream->println(BLINKER_CMD_AT);
+
+            stream->println("ATE0");
+
+            BLINKER_LOG_ALL(BLINKER_F("power check"));
+
             uint32_t dev_time = millis();
 
             stream->println(BLINKER_CMD_AT);
@@ -45,16 +67,107 @@ class BlinkerAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    if (streamData == BLINKER_CMD_OK)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("power on"));
                         
-                        return true;
+                        // SAPBR();
+
+                        return SAPBR();
                     }
                 }
             }
 
             return false;
+        }
+
+        bool SAPBR()
+        {
+            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                            "=3,1,\"CONTYPE\",\"GPRS\"");
+
+            air202_status_t sapbar_status = air202_sapbar_pdp_resq;
+            uint32_t dev_time = millis();
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    if (streamData == BLINKER_CMD_OK)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_pdp_success"));
+
+                        sapbar_status = air202_sapbar_pdp_success;
+                    }
+                }
+            }
+
+            if (sapbar_status != air202_sapbar_pdp_success) return false;
+
+            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                            "=3,1,\"APN\",\"CMNET\"");
+
+            sapbar_status = air202_sapbar_apn_resq;
+            dev_time = millis();
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    if (streamData == BLINKER_CMD_OK)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_apn_success"));
+
+                        sapbar_status = air202_sapbar_apn_success;
+                    }
+                }
+            }
+
+            if (sapbar_status != air202_sapbar_apn_success) return false;
+
+            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                            "=5,1");
+
+            sapbar_status = air202_sapbar_save_resq;
+            dev_time = millis();
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    if (streamData == BLINKER_CMD_OK)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_save_success"));
+
+                        sapbar_status = air202_sapbar_save_success;
+                    }
+                }
+            }
+
+            if (sapbar_status != air202_sapbar_save_success) return false;
+
+            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                            "=1,1");
+
+            sapbar_status = air202_sapbar_fresh_resq;
+            dev_time = millis();
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    if (streamData == BLINKER_CMD_OK)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_fresh_success"));
+
+                        sapbar_status = air202_sapbar_fresh_success;
+                    }
+                }
+            }
+
+            if (sapbar_status != air202_sapbar_fresh_success) return false;
+
+            return true;
         }
 
         String getIMEI()
@@ -78,7 +191,7 @@ class BlinkerAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    if (streamData == BLINKER_CMD_OK)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei);
                         return _imei;
@@ -92,7 +205,7 @@ class BlinkerAIR202
     protected :
         class BlinkerMasterAT * _masterAT;
         Stream* stream;
-        char*   streamData;
+        String  streamData;
         bool    isFresh = false;
         bool    isHWS = false;
 
@@ -109,21 +222,24 @@ class BlinkerAIR202
 
         bool available()
         {
+            yield();
+
             if (!isHWS)
             {
-                #if defined(__AVR__) || defined(ESP8266)
-                    if (!SSerial_API->isListening())
-                    {
-                        SSerial_API->listen();
-                        ::delay(100);
-                    }
-                #endif
+                // #if defined(__AVR__) || defined(ESP8266)
+                //     if (!SSerial_API->isListening())
+                //     {
+                //         SSerial_API->listen();
+                //         ::delay(100);
+                //     }
+                // #endif
             }
 
             if (stream->available())
             {
-                if (isFresh) free(streamData);
-                streamData = (char*)malloc(1*sizeof(char));
+                streamData = "";
+                // if (isFresh) free(streamData);
+                // streamData = (char*)malloc(1*sizeof(char));
                 
                 int16_t dNum = 0;
                 int c_d = timedRead();
@@ -132,15 +248,15 @@ class BlinkerAIR202
                 {
                     if (c_d != '\r')
                     {
-                        streamData[dNum] = (char)c_d;
+                        streamData += (char)c_d;
                         dNum++;
-                        streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
+                        // streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
                     }
 
                     c_d = timedRead();
                 }
                 dNum++;
-                streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
                 streamData[dNum-1] = '\0';
                 stream->flush();
@@ -148,17 +264,17 @@ class BlinkerAIR202
                 BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
                 BLINKER_LOG_FreeHeap_ALL();
                 
-                if (strlen(streamData) < BLINKER_MAX_READ_SIZE)
+                if (streamData.length() < BLINKER_MAX_READ_SIZE)
                 {
-                    if (streamData[strlen(streamData) - 1] == '\r')
-                        streamData[strlen(streamData) - 1] = '\0';
+                    if (streamData[streamData.length() - 1] == '\r')
+                        streamData[streamData.length() - 1] = '\0';
 
                     isFresh = true;
                     return true;
                 }
                 else
                 {
-                    free(streamData);
+                    // free(streamData);
                     return false;
                 }
             }

@@ -65,7 +65,7 @@ class BlinkerMQTTAIR202
         int readSubscription(uint16_t time_out = 100);
 
         char*   lastRead;
-        char*   streamData;
+        String  streamData;
 
     protected :
         class BlinkerMasterAT * _masterAT;
@@ -79,7 +79,7 @@ class BlinkerMQTTAIR202
         const char *    username;
         const char *    password;
         uint32_t        mqtt_time;
-        uint16_t        _mqttTimeout;
+        uint16_t        _mqttTimeout = 5000;
         air202_mqtt_status_t    mqtt_status;
 
         bool streamAvailable();
@@ -98,7 +98,10 @@ class BlinkerMQTTAIR202
 
 int BlinkerMQTTAIR202::connect()
 {
-    stream->print(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
+    stream->println(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
+                "=\"" + clientid + "\",\"" + username + 
+                "\",\"" + password + "\"");
+    BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
                 "=\"" + clientid + "\",\"" + username + 
                 "\",\"" + password + "\"");
 
@@ -109,7 +112,7 @@ int BlinkerMQTTAIR202::connect()
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt init success"));
                 mqtt_status = mqtt_init_success;
@@ -120,7 +123,9 @@ int BlinkerMQTTAIR202::connect()
 
     if (mqtt_status != mqtt_init_success) return false;
 
-    stream->print(STRING_format(BLINKER_CMD_SSLMIPSTART) + 
+    stream->println(STRING_format(BLINKER_CMD_SSLMIPSTART) + 
+                "=\"" + servername + "\"," + STRING_format(portnum));
+    BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_SSLMIPSTART) + 
                 "=\"" + servername + "\"," + STRING_format(portnum));
     mqtt_status = mqtt_set;
     mqtt_time = millis();
@@ -129,7 +134,7 @@ int BlinkerMQTTAIR202::connect()
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt set ok"));
                 mqtt_status = mqtt_set_ok;
@@ -146,7 +151,7 @@ int BlinkerMQTTAIR202::connect()
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_CONNECT_OK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_CONNECT_OK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt set connect ok, can connect now"));
                 mqtt_status = mqtt_set_connect_ok;
@@ -155,7 +160,7 @@ int BlinkerMQTTAIR202::connect()
         }
     }
 
-    stream->print(STRING_format(BLINKER_CMD_MCONNECT_RESQ) +
+    stream->println(STRING_format(BLINKER_CMD_MCONNECT_RESQ) +
                 "=1,300");
     mqtt_status = mqtt_connect;
     mqtt_time = millis();
@@ -164,7 +169,7 @@ int BlinkerMQTTAIR202::connect()
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt set connect, get ok, wait connact"));
                 mqtt_status = mqtt_connect_ok;
@@ -180,7 +185,7 @@ int BlinkerMQTTAIR202::connect()
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_CONNACK_OK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt connacted"));
                 mqtt_status = mqtt_connect_success;
@@ -228,7 +233,7 @@ int BlinkerMQTTAIR202::disconnect()
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_CONNACK_OK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt disconnect"));
                 return true;
@@ -250,7 +255,7 @@ int BlinkerMQTTAIR202::subscribe(const char * topic)
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt set sub ok"));
                 mqtt_status = mqtt_set_sub_ok;
@@ -266,7 +271,7 @@ int BlinkerMQTTAIR202::subscribe(const char * topic)
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_SUBACK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_SUBACK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt set sub success"));
                 mqtt_status = mqtt_set_sub_success;
@@ -291,7 +296,7 @@ int BlinkerMQTTAIR202::publish(const char * topic, const char * msg)
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt set pub ok"));
                 mqtt_status = mqtt_set_pub_ok;
@@ -308,7 +313,7 @@ int BlinkerMQTTAIR202::publish(const char * topic, const char * msg)
     {
         if (streamAvailable())
         {
-            if (strcmp(streamData, BLINKER_CMD_PUBACK) == 0)
+            if (strcmp(streamData.c_str(), BLINKER_CMD_PUBACK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt set pub success"));
                 mqtt_status = mqtt_set_pub_success;
@@ -355,21 +360,24 @@ int BlinkerMQTTAIR202::readSubscription(uint16_t time_out)
 
 bool BlinkerMQTTAIR202::streamAvailable()
 {
+    yield();
+
     if (!isHWS)
     {
-        #if defined(__AVR__) || defined(ESP8266)
-            if (!SSerial_MQTT->isListening())
-            {
-                SSerial_MQTT->listen();
-                ::delay(100);
-            }
-        #endif
+        // #if defined(__AVR__) || defined(ESP8266)
+        //     if (!SSerial_MQTT->isListening())
+        //     {
+        //         SSerial_MQTT->listen();
+        //         ::delay(100);
+        //     }
+        // #endif
     }
 
     if (stream->available())
     {
-        if (isFresh) free(streamData);
-        streamData = (char*)malloc(1*sizeof(char));
+        // if (isFresh) free(streamData);
+        // streamData = (char*)malloc(1*sizeof(char));
+        streamData = "";
         
         int16_t dNum = 0;
         int c_d = timedRead();
@@ -378,15 +386,15 @@ bool BlinkerMQTTAIR202::streamAvailable()
         {
             if (c_d != '\r')
             {
-                streamData[dNum] = (char)c_d;
+                streamData += (char)c_d;
                 dNum++;
-                streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
+                // streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
             }
 
             c_d = timedRead();
         }
         dNum++;
-        streamData = (char*)realloc(streamData, dNum*sizeof(char));
+        // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
         streamData[dNum-1] = '\0';
         stream->flush();
@@ -394,17 +402,17 @@ bool BlinkerMQTTAIR202::streamAvailable()
         BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
         BLINKER_LOG_FreeHeap_ALL();
         
-        if (strlen(streamData) < BLINKER_MAX_READ_SIZE)
+        if (streamData.length() < BLINKER_MAX_READ_SIZE)
         {
-            if (streamData[strlen(streamData) - 1] == '\r')
-                streamData[strlen(streamData) - 1] = '\0';
+            if (streamData[streamData.length() - 1] == '\r')
+                streamData[streamData.length() - 1] = '\0';
 
             isFresh = true;
             return true;
         }
         else
         {
-            free(streamData);
+            // free(streamData);
             return false;
         }
     }

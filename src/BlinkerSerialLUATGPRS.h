@@ -6,8 +6,12 @@
 
 #if defined(ESP32)
     #include <HardwareSerial.h>
+
+    HardwareSerial *HSerial;
 #else
     #include <SoftwareSerial.h>
+
+    SoftwareSerial *SSerial;
 #endif
 
 typedef BlinkerApi BApi;

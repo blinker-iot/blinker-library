@@ -555,6 +555,7 @@ class BlinkerApi : public BlinkerProtocol
             bool            _getRegister = false;
             bool            _isInit = false;
             bool            _isRegistered = false;
+            bool            _isPowerOn = false;
             uint32_t        _register_fresh = 0;
             uint32_t        _initTime;
             uint8_t         _registerTimes = 0;
@@ -1378,9 +1379,11 @@ void BlinkerApi::run()
     #endif
 
     #if defined(BLINKER_GPRS_AIR202)
-        if (!powerCheck())
+        if (!_isPowerOn)
         {
             _gprsStatus = GPRS_DEV_POWER_CHECK;
+
+            _isPowerOn = powerCheck();
 
             return;
         }
