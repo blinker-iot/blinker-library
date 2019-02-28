@@ -223,12 +223,12 @@ void BlinkerSerialGPRS::subscribe()
 {
     if (!isMQTTinit) return;
 
-    if (mqtt_GPRS->readSubscription(10))
+    if (mqtt_GPRS->readSubscription())
     {
-        BLINKER_LOG_ALL(BLINKER_F("Got: "), mqtt_GPRS->streamData);
+        BLINKER_LOG_ALL(BLINKER_F("Got: "), mqtt_GPRS->lastRead);
 
         DynamicJsonBuffer jsonBuffer;
-        JsonObject& root = jsonBuffer.parseObject(String(mqtt_GPRS->streamData));
+        JsonObject& root = jsonBuffer.parseObject(String(mqtt_GPRS->lastRead));
 
         String _uuid = root["fromDevice"];
         String dataGet = root["data"];
@@ -307,7 +307,8 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
 
     data_add = BLINKER_F(",\"fromDevice\":\"");
     strcat(data, data_add.c_str());
-    strcat(data, MQTT_DEVICEID_GPRS);
+    strcat(data, MQTT_ID_GPRS);
+    // strcat(data, MQTT_DEVICEID_GPRS); //PRO
     data_add = BLINKER_F("\",\"toDevice\":\"");
     strcat(data, data_add.c_str());
     // if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
@@ -315,15 +316,19 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
     //     strcat(data, _sharers[_sharerFrom]->uuid());
     // }
     // else
-    {
+    // {
         strcat(data, UUID_GPRS);
-    }
+    // }
     data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
     strcat(data, data_add.c_str());
 
     // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
 
     if (!isJson(STRING_format(data))) return false;
+
+    String msg_data = STRING_format(data);
+
+    msg_data.replace("\"", "\\22");
     
     BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
     BLINKER_LOG_FreeHeap_ALL();
@@ -352,9 +357,9 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
                 return false;
             }
         }
-        if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, data))
+        if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, msg_data.c_str()))
         {
-            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(msg_data);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
             BLINKER_LOG_FreeHeap_ALL();
             
@@ -366,7 +371,7 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
         }
         else
         {
-            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(msg_data);
             BLINKER_LOG_ALL(BLINKER_F("...OK!"));
             BLINKER_LOG_FreeHeap_ALL();
             
@@ -782,6 +787,7 @@ int BlinkerSerialGPRS::connectServer()
 
     this->latestTime = millis();
     isMQTTinit = true;
+    mqtt_GPRS->subscribe(BLINKER_SUB_TOPIC_GPRS);
 
     return true;
 }

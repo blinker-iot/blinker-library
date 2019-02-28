@@ -82,7 +82,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("air202_init_success"));
                         http_status = air202_init_success;
@@ -101,7 +101,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_CGMMR_RESP) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_CGMMR_RESP) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("air202_ver_check_success"));
                         http_status = air202_ver_check_success;
@@ -143,7 +143,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_success"));
                         http_status = air202_cgtt_success;
@@ -173,7 +173,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_init_success"));
                         http_status = http_init_success;
@@ -196,7 +196,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 1"));
                         http_status = http_para_set_success;
@@ -219,7 +219,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 2"));
                         http_status = http_para_set_success;
@@ -242,7 +242,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_start_success"));
                         http_status = http_start_success;
@@ -314,7 +314,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) != 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) != 0)
                     {
                         payload = streamData;
 
@@ -329,7 +329,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         break;
                     }
@@ -345,7 +345,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_end_success"));
                         http_status = http_end_success;
@@ -368,7 +368,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_init_success"));
                         http_status = http_init_success;
@@ -387,7 +387,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 1"));
                         http_status = http_para_set_success;
@@ -408,7 +408,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 2"));
                         http_status = http_para_set_success;
@@ -429,7 +429,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_para_set_success 3"));
                         http_status = http_para_set_success;
@@ -450,7 +450,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_DOWNLOAD) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_DOWNLOAD) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_data_set_success"));
                         http_status = http_data_set_success;
@@ -469,7 +469,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_data_post_success"));
                         http_status = http_data_post_success;
@@ -490,7 +490,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_start_success"));
                         http_status = http_start_success;
@@ -559,7 +559,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) != 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) != 0)
                     {
                         payload = streamData;
                     }
@@ -577,7 +577,7 @@ class BlinkerHTTPAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData.c_str(), BLINKER_CMD_OK) == 0)
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_end_success"));
                         http_status = http_end_success;
@@ -599,7 +599,8 @@ class BlinkerHTTPAIR202
     protected :
         class BlinkerMasterAT * _masterAT;
         Stream* stream;
-        String  streamData;
+        // String  streamData;
+        char    streamData[1024];
         String  payload = "";
         bool    isFresh = false;
         bool    isHWS = false;
@@ -638,7 +639,11 @@ class BlinkerHTTPAIR202
             {
                 // if (isFresh) free(streamData);
                 // streamData = (char*)malloc(1*sizeof(char));
-                streamData = "";
+                // streamData = "";
+
+                memset(streamData, '\0', 1024);
+
+                // streamData = stream->readStringUntil('\n');
                 
                 int16_t dNum = 0;
                 int c_d = timedRead();
@@ -647,7 +652,7 @@ class BlinkerHTTPAIR202
                 {
                     if (c_d != '\r')
                     {
-                        streamData += (char)c_d;
+                        streamData[dNum] = (char)c_d;
                         dNum++;
                         // streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
                     }
@@ -658,15 +663,16 @@ class BlinkerHTTPAIR202
                 // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
                 streamData[dNum-1] = '\0';
+
                 stream->flush();
                 
                 BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
                 BLINKER_LOG_FreeHeap_ALL();
                 
-                if (streamData.length() < BLINKER_MAX_READ_SIZE)
+                if (strlen(streamData) < BLINKER_MAX_READ_SIZE)
                 {
-                    if (streamData[streamData.length()] == '\r')
-                        streamData[streamData.length()] = '\0';
+                    if (streamData[strlen(streamData) - 1] == '\r')
+                        streamData[strlen(streamData) - 1] = '\0';
 
                     isFresh = true;
                     return true;

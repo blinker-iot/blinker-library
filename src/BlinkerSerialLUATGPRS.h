@@ -28,7 +28,7 @@ class BlinkerSerialLUATGPRS : public BlinkerApi
             // BApi::begin(_type);
             ::delay(100);
             // BApi::atInit();
-            BLINKER_LOG(BLINKER_F("Blinker NBIoT initialized..."));
+            BLINKER_LOG(BLINKER_F("Blinker GPRS initialized..."));
         }
 
     private :

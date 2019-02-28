@@ -182,8 +182,12 @@ class BlinkerAIR202
             {
                 if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), streamData);
-                    _imei = streamData;
+                    BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), streamData, 
+                                    BLINKER_F(", length: "), streamData.length());
+                    if (streamData.length() == 15)
+                    {
+                        _imei = streamData;
+                    }
                 }
             }
 
@@ -193,7 +197,8 @@ class BlinkerAIR202
                 {
                     if (streamData == BLINKER_CMD_OK)
                     {
-                        BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei);
+                        BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei,
+                                        BLINKER_F(", length: "), streamData.length());
                         return _imei;
                     }       
                 }
