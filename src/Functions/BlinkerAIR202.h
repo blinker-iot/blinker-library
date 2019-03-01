@@ -251,7 +251,7 @@ class BlinkerAIR202
 
             stream->println(BLINEKR_CMD_CGSN_RESQ);
 
-            String _imei = "";
+            char _imei[16];
 
             while(millis() - dev_time < 1000)
             {
@@ -261,7 +261,7 @@ class BlinkerAIR202
                                     BLINKER_F(", length: "), strlen(streamData));
                     if (strlen(streamData) == 15)
                     {
-                        _imei = streamData;
+                        strcpy(_imei, streamData);
                     }
                 }
             }
@@ -279,7 +279,10 @@ class BlinkerAIR202
                 }
             }
 
-            return "";
+            BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei,
+                            BLINKER_F(", length: "), strlen(streamData));
+
+            return _imei;
         }
 
     protected :
