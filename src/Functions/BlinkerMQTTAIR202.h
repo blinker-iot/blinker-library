@@ -62,7 +62,7 @@ class BlinkerMQTTAIR202
         int disconnect();
         void subscribe(const char * topic);
         int publish(const char * topic, const char * msg);
-        int readSubscription(uint16_t time_out = 100);
+        int readSubscription(uint16_t time_out = 1000);
 
         char*   lastRead;
         const char* subTopic;
@@ -84,6 +84,7 @@ class BlinkerMQTTAIR202
         uint32_t        mqtt_time;
         uint32_t        connect_time;
         uint16_t        _mqttTimeout = 5000;
+        uint32_t        _debug_time;
         air202_mqtt_status_t    mqtt_status;
 
         bool streamAvailable();
@@ -250,128 +251,149 @@ int BlinkerMQTTAIR202::connect()
 
 int BlinkerMQTTAIR202::connected()
 {
-    if (isConnected && millis() - connect_time <= 30000)
-    {
-        while(millis() - mqtt_time < _mqttTimeout)
-        {
-            if (streamAvailable())
-            {
-                BLINKER_LOG_ALL(BLINKER_F("== connected available =="));
+    // if (isConnected && millis() - connect_time <= 30000)
+    // {
+    //     while(millis() - mqtt_time < _mqttTimeout)
+    //     {
+    //         if (millis() - _debug_time >= 2000)
+    //         {
+    //             _debug_time = millis();
+    //             BLINKER_LOG_ALL(BLINKER_F("== connected, readSubscription =="));
+    //         }
 
-                _masterAT = new BlinkerMasterAT();
-                _masterAT->update(STRING_format(streamData));
+    //         if (streamAvailable())
+    //         {
+    //             BLINKER_LOG_ALL(BLINKER_F("== connected available readSubscription =="));
 
-                if (_masterAT->getState() != AT_M_NONE &&
-                    _masterAT->reqName() == BLINKER_CMD_MQTTSTATUS)
-                {
-                    if(_masterAT->getParam(0).toInt() == 1)
-                    {
-                        free(_masterAT);
-                        connect_time = millis();
-                        isConnected = true;
-                        return true;
-                    }
-                    else
-                    {
-                        BLINKER_LOG_ALL("mqtt not connected!");
-                        isConnected = false;
-                        free(_masterAT);
-                        return false;
-                    }
+    //             _masterAT = new BlinkerMasterAT();
+    //             _masterAT->update(STRING_format(streamData));
+
+    //             if (_masterAT->getState() != AT_M_NONE &&
+    //                 _masterAT->reqName() == BLINKER_CMD_MQTTSTATUS)
+    //             {
+    //                 if(_masterAT->getParam(0).toInt() == 1)
+    //                 {
+    //                     free(_masterAT);
+    //                     connect_time = millis();
+    //                     isConnected = true;
+    //                     return true;
+    //                 }
+    //                 else
+    //                 {
+    //                     BLINKER_LOG_ALL("mqtt not connected!");
+    //                     isConnected = false;
+    //                     free(_masterAT);
+    //                     return false;
+    //                 }
                     
-                }
-                else if (_masterAT->getState() != AT_M_NONE &&
-                    _masterAT->reqName() == BLINKER_CMD_MSUB)
-                {
-                    String subData = String(streamData).substring(
-                                    _masterAT->getParam(0).length() +
-                                    _masterAT->getParam(1).length() + 
-                                    10);
+    //             }
+    //             else if (_masterAT->getState() != AT_M_NONE &&
+    //                 _masterAT->reqName() == BLINKER_CMD_MSUB)
+    //             {
+    //                 String subData = String(streamData).substring(
+    //                                 _masterAT->getParam(0).length() +
+    //                                 _masterAT->getParam(1).length() + 
+    //                                 10);
 
-                    BLINKER_LOG_ALL("sub data: ", subData);
+    //                 BLINKER_LOG_ALL("sub data: ", subData);
 
-                    if (isFreshSub) free(lastRead);
-                    lastRead = (char*)malloc((subData.length()+1)*sizeof(char));
-                    strcpy(lastRead, subData.c_str());
+    //                 if (isFreshSub) free(lastRead);
+    //                 lastRead = (char*)malloc((subData.length()+1)*sizeof(char));
+    //                 strcpy(lastRead, subData.c_str());
 
-                    isFreshSub = true;
+    //                 isFreshSub = true;
 
-                    connect_time = millis();
+    //                 connect_time = millis();
 
-                    free(_masterAT);
-                    return true;
-                }
+    //                 free(_masterAT);
+    //                 return true;
+    //             }
 
-                free(_masterAT);
+    //             free(_masterAT);
 
-                BLINKER_LOG_ALL("== free connected at master ==");
-            }
-        }
+    //             BLINKER_LOG_ALL("== free connected at master ==");
+    //         }
+    //     }
         
-        return true;
-    }
-    else
+    //     return true;
+    // }
+    // else
     {
-        streamPrint(STRING_format(BLINKER_CMD_MQTTSTATU_RESQ));
-        mqtt_time = millis();
-        uint8_t status_get = 0;
-
-        while(millis() - mqtt_time < _mqttTimeout)
+        if (isFreshSub)
         {
-            if (streamAvailable())
+            connect_time = millis();
+            return true;
+        }
+
+        if (!isConnected || millis() - connect_time >= 5000)
+        {
+            streamPrint(STRING_format(BLINKER_CMD_MQTTSTATU_RESQ));
+            // connect_time = millis();
+        // }
+            mqtt_time = millis();
+            uint8_t status_get = 0;        
+
+            while(millis() - mqtt_time < _mqttTimeout)
             {
-                BLINKER_LOG_ALL(BLINKER_F("== connected available =="));
-
-                _masterAT = new BlinkerMasterAT();
-                _masterAT->update(STRING_format(streamData));
-
-                if (_masterAT->getState() != AT_M_NONE &&
-                    _masterAT->reqName() == BLINKER_CMD_MQTTSTATUS)
+                if (streamAvailable())
                 {
-                    if(_masterAT->getParam(0).toInt() == 1)
+                    BLINKER_LOG_ALL(BLINKER_F("== connected available =="));
+
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(streamData));
+
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_MQTTSTATUS)
                     {
-                        free(_masterAT);
-                        connect_time = millis();
+                        if(_masterAT->getParam(0).toInt() == 1)
+                        {
+                            free(_masterAT);
+                            connect_time = millis();
+                            isConnected = true;
+                            return true;
+                        }
+                        else
+                        {
+                            BLINKER_LOG_ALL("mqtt not connected!");
+                            isConnected = false;
+                            free(_masterAT);
+                            return false;
+                        }
+                        
+                    }
+                    else if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_MSUB)
+                    {
+                        String subData = String(streamData).substring(
+                                        _masterAT->getParam(0).length() +
+                                        _masterAT->getParam(1).length() + 
+                                        10);
+
+                        BLINKER_LOG_ALL("sub data: ", subData);
+
+                        if (isFreshSub) free(lastRead);
+                        lastRead = (char*)malloc((subData.length()+1)*sizeof(char));
+                        strcpy(lastRead, subData.c_str());
+
+                        isFreshSub = true;
                         isConnected = true;
+                        connect_time = millis();
+
+                        free(_masterAT);
+
+                        BLINKER_LOG_ALL("== free at master, return ==");
                         return true;
                     }
-                    else
-                    {
-                        BLINKER_LOG_ALL("mqtt not connected!");
-                        isConnected = false;
-                        free(_masterAT);
-                        return false;
-                    }
-                    
-                }
-                else if (_masterAT->getState() != AT_M_NONE &&
-                    _masterAT->reqName() == BLINKER_CMD_MSUB)
-                {
-                    String subData = String(streamData).substring(
-                                    _masterAT->getParam(0).length() +
-                                    _masterAT->getParam(1).length() + 
-                                    10);
-
-                    BLINKER_LOG_ALL("sub data: ", subData);
-
-                    if (isFreshSub) free(lastRead);
-                    lastRead = (char*)malloc((subData.length()+1)*sizeof(char));
-                    strcpy(lastRead, subData.c_str());
-
-                    isFreshSub = true;
-
-                    connect_time = millis();
 
                     free(_masterAT);
-                    return true;
+
+                    BLINKER_LOG_ALL("== free connected at master ==");
                 }
-
-                free(_masterAT);
-
-                BLINKER_LOG_ALL("== free connected at master ==");
             }
         }
     }
+
+    return isConnected;
 
     // return status_get;
 }
@@ -484,6 +506,12 @@ int BlinkerMQTTAIR202::publish(const char * topic, const char * msg)
 
 int BlinkerMQTTAIR202::readSubscription(uint16_t time_out)
 {
+    // if (millis() - _debug_time >= 2000)
+    // {
+    //     _debug_time = millis();
+    //     BLINKER_LOG_ALL(BLINKER_F("== readSubscription =="));
+    // }
+
     if (isFreshSub)
     {
         isFreshSub = false;
@@ -491,38 +519,47 @@ int BlinkerMQTTAIR202::readSubscription(uint16_t time_out)
     }
     else
     {
+        // return false;
+    // }
+        mqtt_time = millis();
+    
+        while(millis() - mqtt_time < time_out)
+        {
+            if (streamAvailable())
+            {
+                BLINKER_LOG_ALL(BLINKER_F("readSubscription"));
+
+                _masterAT = new BlinkerMasterAT();
+                _masterAT->update(STRING_format(streamData));
+
+                if (_masterAT->getState() != AT_M_NONE &&
+                    _masterAT->reqName() == BLINKER_CMD_MSUB)
+                {
+                    String subData = String(streamData).substring(
+                                        _masterAT->getParam(0).length() +
+                                        _masterAT->getParam(1).length() + 
+                                        10);
+                    BLINKER_LOG_ALL(BLINKER_F("mqtt sub data: "), subData);
+
+                    if (isFreshSub) free(lastRead);
+                    lastRead = (char*)malloc((subData.length()+1)*sizeof(char));
+                    strcpy(lastRead, subData.c_str());
+
+                    isFreshSub = false;
+                    isConnected = true;
+                    connect_time = millis();
+
+                    free(_masterAT);
+
+                    return true;
+                }
+
+                free(_masterAT);
+            }
+        }
+
         return false;
     }
-    
-    // while(millis() - mqtt_time < time_out)
-    // {
-    //     if (streamAvailable())
-    //     {
-    //         BLINKER_LOG_ALL(BLINKER_F("readSubscription"));
-
-    //         _masterAT = new BlinkerMasterAT();
-    //         _masterAT->update(STRING_format(streamData));
-
-    //         if (_masterAT->getState() != AT_M_NONE &&
-    //             _masterAT->reqName() == BLINKER_CMD_MSUB)
-    //         {
-    //             BLINKER_LOG_ALL(BLINKER_F("mqtt sub data, data: "), _masterAT->getParam(2));
-
-    //             lastRead = (char*)realloc(lastRead, (_masterAT->getParam(2).toInt()+1)*sizeof(char));
-    //             strcpy(lastRead, _masterAT->getParam(2).c_str());
-
-    //             free(_masterAT);
-
-    //             return true;
-    //         }
-
-    //         free(_masterAT);
-
-    //         return false;
-    //     }
-    // }
-
-    // return false;
 }
 
 bool BlinkerMQTTAIR202::streamAvailable()
