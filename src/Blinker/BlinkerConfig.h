@@ -1670,7 +1670,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_CGMMR_RESQ              "AT+CGMR"
 
-    #define BLINKER_CMD_CGMMR_RESP              "AirM2M_V5664_AT_S_SSL"
+    #define BLINKER_CMD_CGMMR_RESP              "AirM2M_V5595_AT_S_SSL"
 
     #define BLINKER_CMD_CGATT                   "CGATT"
 
