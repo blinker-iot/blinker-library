@@ -25,6 +25,22 @@
     SoftwareSerial *SSerial_API;
 #endif
 
+enum air202_status_t
+{
+    air202_sapbar_pdp_resq,
+    air202_sapbar_pdp_success,
+    air202_sapbar_pdp_failed,
+    air202_sapbar_apn_resq,
+    air202_sapbar_apn_success,
+    air202_sapbar_apn_failed,
+    air202_sapbar_save_resq,
+    air202_sapbar_save_success,
+    air202_sapbar_save_failed,
+    air202_sapbar_fresh_resq,
+    air202_sapbar_fresh_success,
+    air202_sapbar_fresh_failed,
+};
+
 class BlinkerAIR202
 {
     public :
@@ -35,11 +51,92 @@ class BlinkerAIR202
         void setStream(Stream& s, bool isHardware = false)
         { stream = &s; isHWS = isHardware; }
 
+        // int checkCGTT()
+        // {
+        //     uint32_t http_time = millis();
+        //     air202_status_t cgtt_status = air202_cgtt_state_ver_check;
+
+        //     stream->println(BLINKER_CMD_CGMMR_RESQ);
+
+        //     cgtt_status = air202_cgtt_state_ver_check;
+
+        //     while(millis() - http_time < 1000)
+        //     {
+        //         if (available())
+        //         {
+        //             if (strcmp(streamData, BLINKER_CMD_CGMMR_RESP) == 0)
+        //             {
+        //                 BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_ver_check_success"));
+        //                 cgtt_status = air202_cgtt_state_ver_check_success;
+        //                 break;
+        //             }
+        //         }
+        //     }
+
+        //     if (cgtt_status != air202_cgtt_state_ver_check_success) return false;
+
+        //     stream->println(BLINKER_CMD_CGQTT_RESQ);
+
+        //     cgtt_status = air202_cgtt_state;
+
+        //     while(millis() - http_time < 1000)
+        //     {
+        //         if (available())
+        //         {
+        //             _masterAT = new BlinkerMasterAT();
+        //             _masterAT->update(STRING_format(streamData));
+
+        //             if (_masterAT->getState() != AT_M_NONE &&
+        //                 _masterAT->reqName() == BLINKER_CMD_CGATT &&
+        //                 _masterAT->getParam(0).toInt() == 1)
+        //             {
+        //                 BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_resp"));
+        //                 cgtt_status = air202_cgtt_state_resp;
+        //             }
+
+        //             free(_masterAT);
+
+        //             break;
+        //         }
+        //     }
+
+        //     if (cgtt_status != air202_cgtt_state_resp) return false;
+
+        //     while(millis() - http_time < 1000)
+        //     {
+        //         if (available())
+        //         {
+        //             if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+        //             {
+        //                 BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_success"));
+        //                 cgtt_status = air202_cgtt_state_success;
+        //                 break;
+        //             }
+        //         }
+        //     }
+
+        //     if (cgtt_status != air202_cgtt_state_success) return false;
+
+        //     return true;
+
+        //     // stream->println(BLINKER_CMD_CGQTT_RESQ);
+
+        //     // cgtt_status = air202_cgtt_state;
+        // }
+
         bool powerCheck()
         {
+            stream->println(BLINKER_CMD_AT);
+
+            stream->println("ATE0");
+
+            BLINKER_LOG_ALL(BLINKER_F("power check"));
+
             uint32_t dev_time = millis();
 
             stream->println(BLINKER_CMD_AT);
+
+            // if (!checkCGTT()) return false;
 
             while(millis() - dev_time < 1000)
             {
@@ -49,12 +146,103 @@ class BlinkerAIR202
                     {
                         BLINKER_LOG_ALL(BLINKER_F("power on"));
                         
-                        return true;
+                        // SAPBR();
+
+                        return SAPBR();
                     }
                 }
             }
 
             return false;
+        }
+
+        bool SAPBR()
+        {
+            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                            "=3,1,\"CONTYPE\",\"GPRS\"");
+
+            air202_status_t sapbar_status = air202_sapbar_pdp_resq;
+            uint32_t dev_time = millis();
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_pdp_success"));
+
+                        sapbar_status = air202_sapbar_pdp_success;
+                    }
+                }
+            }
+
+            if (sapbar_status != air202_sapbar_pdp_success) return false;
+
+            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                            "=3,1,\"APN\",\"CMNET\"");
+
+            sapbar_status = air202_sapbar_apn_resq;
+            dev_time = millis();
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_apn_success"));
+
+                        sapbar_status = air202_sapbar_apn_success;
+                    }
+                }
+            }
+
+            if (sapbar_status != air202_sapbar_apn_success) return false;
+
+            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                            "=5,1");
+
+            sapbar_status = air202_sapbar_save_resq;
+            dev_time = millis();
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_save_success"));
+
+                        sapbar_status = air202_sapbar_save_success;
+                    }
+                }
+            }
+
+            if (sapbar_status != air202_sapbar_save_success) return false;
+
+            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                            "=1,1");
+
+            sapbar_status = air202_sapbar_fresh_resq;
+            dev_time = millis();
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_fresh_success"));
+
+                        sapbar_status = air202_sapbar_fresh_success;
+                    }
+                }
+            }
+
+            if (sapbar_status != air202_sapbar_fresh_success) return false;
+
+            return true;
         }
 
         String getIMEI()
@@ -69,8 +257,12 @@ class BlinkerAIR202
             {
                 if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), streamData);
-                    _imei = streamData;
+                    BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), streamData, 
+                                    BLINKER_F(", length: "), strlen(streamData));
+                    if (strlen(streamData) == 15)
+                    {
+                        _imei = streamData;
+                    }
                 }
             }
 
@@ -80,7 +272,8 @@ class BlinkerAIR202
                 {
                     if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     {
-                        BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei);
+                        BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei,
+                                        BLINKER_F(", length: "), strlen(streamData));
                         return _imei;
                     }       
                 }
@@ -92,7 +285,7 @@ class BlinkerAIR202
     protected :
         class BlinkerMasterAT * _masterAT;
         Stream* stream;
-        char*   streamData;
+        char    streamData[128];
         bool    isFresh = false;
         bool    isHWS = false;
 
@@ -109,21 +302,25 @@ class BlinkerAIR202
 
         bool available()
         {
+            yield();
+
             if (!isHWS)
             {
-                #if defined(__AVR__) || defined(ESP8266)
-                    if (!SSerial_API->isListening())
-                    {
-                        SSerial_API->listen();
-                        ::delay(100);
-                    }
-                #endif
+                // #if defined(__AVR__) || defined(ESP8266)
+                //     if (!SSerial_API->isListening())
+                //     {
+                //         SSerial_API->listen();
+                //         ::delay(100);
+                //     }
+                // #endif
             }
 
             if (stream->available())
             {
-                if (isFresh) free(streamData);
-                streamData = (char*)malloc(1*sizeof(char));
+                // streamData = "";
+                memset(streamData, '\0', 128);
+                // if (isFresh) free(streamData);
+                // streamData = (char*)malloc(1*sizeof(char));
                 
                 int16_t dNum = 0;
                 int c_d = timedRead();
@@ -134,13 +331,13 @@ class BlinkerAIR202
                     {
                         streamData[dNum] = (char)c_d;
                         dNum++;
-                        streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
+                        // streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
                     }
 
                     c_d = timedRead();
                 }
                 dNum++;
-                streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
                 streamData[dNum-1] = '\0';
                 stream->flush();
@@ -158,7 +355,7 @@ class BlinkerAIR202
                 }
                 else
                 {
-                    free(streamData);
+                    // free(streamData);
                     return false;
                 }
             }

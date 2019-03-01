@@ -16,15 +16,15 @@
 #include "modules/ArduinoJson/ArduinoJson.h"
 #include "Functions/BlinkerMQTTAIR202.h"
 
-#if defined(ESP32)
-    #include <HardwareSerial.h>
+// #if defined(ESP32)
+//     #include <HardwareSerial.h>
 
-    HardwareSerial *HSerial;
-#else
-    #include <SoftwareSerial.h>
+//     HardwareSerial *HSerial;
+// #else
+//     #include <SoftwareSerial.h>
 
-    SoftwareSerial *SSerial;
-#endif
+//     SoftwareSerial *SSerial;
+// #endif
 
 char*       MQTT_HOST_GPRS;
 char*       MQTT_ID_GPRS;
@@ -34,7 +34,7 @@ char*       MQTT_PRODUCTINFO_GPRS;
 char*       UUID_GPRS;
 char*       AUTHKEY_GPRS;
 char*       MQTT_DEVICEID_GPRS;
-// char*       DEVICE_NAME;
+char*       DEVICE_NAME_GPRS;
 char*       BLINKER_PUB_TOPIC_GPRS;
 char*       BLINKER_SUB_TOPIC_GPRS;
 uint16_t    MQTT_PORT_GPRS;
@@ -223,12 +223,12 @@ void BlinkerSerialGPRS::subscribe()
 {
     if (!isMQTTinit) return;
 
-    if (mqtt_GPRS->readSubscription(10))
+    if (mqtt_GPRS->readSubscription())
     {
-        BLINKER_LOG_ALL(BLINKER_F("Got: "), mqtt_GPRS->streamData);
+        BLINKER_LOG_ALL(BLINKER_F("Got: "), mqtt_GPRS->lastRead);
 
         DynamicJsonBuffer jsonBuffer;
-        JsonObject& root = jsonBuffer.parseObject(String(mqtt_GPRS->streamData));
+        JsonObject& root = jsonBuffer.parseObject(String(mqtt_GPRS->lastRead));
 
         String _uuid = root["fromDevice"];
         String dataGet = root["data"];
@@ -307,7 +307,8 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
 
     data_add = BLINKER_F(",\"fromDevice\":\"");
     strcat(data, data_add.c_str());
-    strcat(data, MQTT_DEVICEID_GPRS);
+    strcat(data, MQTT_ID_GPRS);
+    // strcat(data, MQTT_DEVICEID_GPRS); //PRO
     data_add = BLINKER_F("\",\"toDevice\":\"");
     strcat(data, data_add.c_str());
     // if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
@@ -315,15 +316,19 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
     //     strcat(data, _sharers[_sharerFrom]->uuid());
     // }
     // else
-    {
+    // {
         strcat(data, UUID_GPRS);
-    }
+    // }
     data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
     strcat(data, data_add.c_str());
 
     // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
 
     if (!isJson(STRING_format(data))) return false;
+
+    String msg_data = STRING_format(data);
+
+    msg_data.replace("\"", "\\22");
     
     BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
     BLINKER_LOG_FreeHeap_ALL();
@@ -352,9 +357,9 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
                 return false;
             }
         }
-        if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, data))
+        if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, msg_data.c_str()))
         {
-            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(msg_data);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
             BLINKER_LOG_FreeHeap_ALL();
             
@@ -366,7 +371,7 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
         }
         else
         {
-            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(msg_data);
             BLINKER_LOG_ALL(BLINKER_F("...OK!"));
             BLINKER_LOG_FreeHeap_ALL();
             
@@ -522,10 +527,13 @@ int BlinkerSerialGPRS::checkPrintSpan()
 int BlinkerSerialGPRS::connectServer()
 {
     String host = BLINKER_F("https://iotdev.clz.me");
-    String uri = BLINKER_F("/api/v1/user/device/register?deviceType=");
+    String uri = "";
+    // uri += BLINKER_F("/api/v1/user/device/register?deviceType=");
+    // uri += _deviceType;
+    // uri += BLINKER_F("&deviceName=");
+    // uri += imei;
+    uri += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
     uri += _deviceType;
-    uri += BLINKER_F("&deviceName=");
-    uri += imei;
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + uri);
 
@@ -537,9 +545,11 @@ int BlinkerSerialGPRS::connectServer()
 
     if (http.GET())
     {
+        BLINKER_LOG(BLINKER_F("[HTTP] GET... success"));
+
         payload = http.getString();
 
-        return true;
+        // return true;
     }
     else
     {
@@ -572,7 +582,6 @@ int BlinkerSerialGPRS::connectServer()
     String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
-    String _authKey = root[BLINKER_CMD_DETAIL][BLINKER_CMD_KEY];
 
     if (isMQTTinit)
     {
@@ -582,22 +591,19 @@ int BlinkerSerialGPRS::connectServer()
         free(MQTT_KEY_GPRS);
         free(MQTT_PRODUCTINFO_GPRS);
         free(UUID_GPRS);
-        free(AUTHKEY_GPRS);
-        free(MQTT_DEVICEID_GPRS);
+        free(DEVICE_NAME_GPRS);
         free(BLINKER_PUB_TOPIC_GPRS);
         free(BLINKER_SUB_TOPIC_GPRS);
         free(mqtt_GPRS);
+        // free(iotSub_GPRS);
 
         isMQTTinit = false;
     }
 
-    BLINKER_LOG_ALL(("===================="));
-
-    // if (_broker == "BLINKER_MQTT_BORKER_ALIYUN") {
-        // memcpy(DEVICE_NAME, _userID.c_str(), 12);
-        String _deviceName = _userID.substring(12, 36);
-        MQTT_DEVICEID_GPRS = (char*)malloc((_deviceName.length()+1)*sizeof(char));
-        strcpy(MQTT_DEVICEID_GPRS, _deviceName.c_str());
+    if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
+        // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
+        DEVICE_NAME_GPRS = (char*)malloc((_userID.length()+1)*sizeof(char));
+        strcpy(DEVICE_NAME_GPRS, _userID.c_str());
         MQTT_ID_GPRS = (char*)malloc((_userID.length()+1)*sizeof(char));
         strcpy(MQTT_ID_GPRS, _userID.c_str());
         MQTT_NAME_GPRS = (char*)malloc((_userName.length()+1)*sizeof(char));
@@ -608,52 +614,15 @@ int BlinkerSerialGPRS::connectServer()
         strcpy(MQTT_PRODUCTINFO_GPRS, _productInfo.c_str());
         MQTT_HOST_GPRS = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
         strcpy(MQTT_HOST_GPRS, BLINKER_MQTT_ALIYUN_HOST);
-        AUTHKEY_GPRS = (char*)malloc((_authKey.length()+1)*sizeof(char));
-        strcpy(AUTHKEY_GPRS, _authKey.c_str());
         MQTT_PORT_GPRS = BLINKER_MQTT_ALIYUN_PORT;
-
-        BLINKER_LOG_ALL(("===================="));
-    // }
+    }
 
     UUID_GPRS = (char*)malloc((_uuid.length()+1)*sizeof(char));
     strcpy(UUID_GPRS, _uuid.c_str());
 
-    char uuid_eeprom[BLINKER_AUUID_SIZE];
-
-    BLINKER_LOG_ALL(("==========AUTH CHECK=========="));
-
-    // if (!isFirst)
-    // {
-    //     char _authCheck;
-    //     EEPROM.begin(BLINKER_EEP_SIZE);
-    //     EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
-    //     if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
-    //         // strcpy(UUID_PRO, _uuid.c_str());
-
-    //         strcpy(uuid_eeprom, _uuid.c_str());
-    //         EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
-    //         EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
-
-    //         BLINKER_LOG_ALL(BLINKER_F("===================="));
-    //         BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
-    //         BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
-    //         isNew = true;
-    //     }
-    //     EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
-    //     if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
-    //         EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
-    //         isAuth = true;
-    //     }
-    //     EEPROM.commit();
-    //     EEPROM.end();
-
-    //     isFirst = true;
-    // }
-    
     BLINKER_LOG_ALL(BLINKER_F("===================="));
-    BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME: "), imei);
+    BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME_GPRS: "), DEVICE_NAME_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("MQTT_PRODUCTINFO_GPRS: "), MQTT_PRODUCTINFO_GPRS);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_DEVICEID_GPRS: "), MQTT_DEVICEID_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("MQTT_ID_GPRS: "), MQTT_ID_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("MQTT_NAME_GPRS: "), MQTT_NAME_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("MQTT_KEY_GPRS: "), MQTT_KEY_GPRS);
@@ -661,32 +630,155 @@ int BlinkerSerialGPRS::connectServer()
     BLINKER_LOG_ALL(BLINKER_F("HOST: "), MQTT_HOST_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("PORT: "), MQTT_PORT_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("UUID_GPRS: "), UUID_GPRS);
-    BLINKER_LOG_ALL(BLINKER_F("AUTHKEY_GPRS: "), AUTHKEY_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("===================="));
 
-    // if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
+    if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         String PUB_TOPIC_STR = BLINKER_F("/");
         PUB_TOPIC_STR += MQTT_PRODUCTINFO_GPRS;
         PUB_TOPIC_STR += BLINKER_F("/");
-        PUB_TOPIC_STR += MQTT_DEVICEID_GPRS;
+        PUB_TOPIC_STR += MQTT_ID_GPRS;
         PUB_TOPIC_STR += BLINKER_F("/s");
 
         BLINKER_PUB_TOPIC_GPRS = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
+        // memcpy(BLINKER_PUB_TOPIC_GPRS, PUB_TOPIC_STR.c_str(), str_len);
         strcpy(BLINKER_PUB_TOPIC_GPRS, PUB_TOPIC_STR.c_str());
-        
+
         BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_GPRS: "), BLINKER_PUB_TOPIC_GPRS);
-        
+
         String SUB_TOPIC_STR = BLINKER_F("/");
         SUB_TOPIC_STR += MQTT_PRODUCTINFO_GPRS;
         SUB_TOPIC_STR += BLINKER_F("/");
-        SUB_TOPIC_STR += MQTT_DEVICEID_GPRS;
+        SUB_TOPIC_STR += MQTT_ID_GPRS;
         SUB_TOPIC_STR += BLINKER_F("/r");
-        
+
         BLINKER_SUB_TOPIC_GPRS = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
+        // memcpy(BLINKER_SUB_TOPIC_GPRS, SUB_TOPIC_STR.c_str(), str_len);
         strcpy(BLINKER_SUB_TOPIC_GPRS, SUB_TOPIC_STR.c_str());
-        
+
         BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_GPRS: "), BLINKER_SUB_TOPIC_GPRS);
+    }
+
+    // String _userID = root[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
+    // String _userName = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTID];
+    // String _key = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTTOKEN];
+    // String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
+    // String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
+    // String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
+    // String _authKey = root[BLINKER_CMD_DETAIL][BLINKER_CMD_KEY];
+
+    // if (isMQTTinit)
+    // {
+    //     free(MQTT_HOST_GPRS);
+    //     free(MQTT_ID_GPRS);
+    //     free(MQTT_NAME_GPRS);
+    //     free(MQTT_KEY_GPRS);
+    //     free(MQTT_PRODUCTINFO_GPRS);
+    //     free(UUID_GPRS);
+    //     free(AUTHKEY_GPRS);
+    //     free(MQTT_DEVICEID_GPRS);
+    //     free(BLINKER_PUB_TOPIC_GPRS);
+    //     free(BLINKER_SUB_TOPIC_GPRS);
+    //     free(mqtt_GPRS);
+
+    //     isMQTTinit = false;
     // }
+
+    // BLINKER_LOG_ALL(("===================="));
+
+    // // if (_broker == "BLINKER_MQTT_BORKER_ALIYUN") {
+    //     // memcpy(DEVICE_NAME, _userID.c_str(), 12);
+    //     String _deviceName = _userID.substring(12, 36);
+    //     MQTT_DEVICEID_GPRS = (char*)malloc((_deviceName.length()+1)*sizeof(char));
+    //     strcpy(MQTT_DEVICEID_GPRS, _deviceName.c_str());
+    //     MQTT_ID_GPRS = (char*)malloc((_userID.length()+1)*sizeof(char));
+    //     strcpy(MQTT_ID_GPRS, _userID.c_str());
+    //     MQTT_NAME_GPRS = (char*)malloc((_userName.length()+1)*sizeof(char));
+    //     strcpy(MQTT_NAME_GPRS, _userName.c_str());
+    //     MQTT_KEY_GPRS = (char*)malloc((_key.length()+1)*sizeof(char));
+    //     strcpy(MQTT_KEY_GPRS, _key.c_str());
+    //     MQTT_PRODUCTINFO_GPRS = (char*)malloc((_productInfo.length()+1)*sizeof(char));
+    //     strcpy(MQTT_PRODUCTINFO_GPRS, _productInfo.c_str());
+    //     MQTT_HOST_GPRS = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
+    //     strcpy(MQTT_HOST_GPRS, BLINKER_MQTT_ALIYUN_HOST);
+    //     AUTHKEY_GPRS = (char*)malloc((_authKey.length()+1)*sizeof(char));
+    //     strcpy(AUTHKEY_GPRS, _authKey.c_str());
+    //     MQTT_PORT_GPRS = BLINKER_MQTT_ALIYUN_PORT;
+
+    //     BLINKER_LOG_ALL(("===================="));
+    // // }
+
+    // UUID_GPRS = (char*)malloc((_uuid.length()+1)*sizeof(char));
+    // strcpy(UUID_GPRS, _uuid.c_str());
+
+    // char uuid_eeprom[BLINKER_AUUID_SIZE];
+
+    // BLINKER_LOG_ALL(("==========AUTH CHECK=========="));
+
+    // // if (!isFirst)
+    // // {
+    // //     char _authCheck;
+    // //     EEPROM.begin(BLINKER_EEP_SIZE);
+    // //     EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+    // //     if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
+    // //         // strcpy(UUID_PRO, _uuid.c_str());
+
+    // //         strcpy(uuid_eeprom, _uuid.c_str());
+    // //         EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+    // //         EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+
+    // //         BLINKER_LOG_ALL(BLINKER_F("===================="));
+    // //         BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
+    // //         BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
+    // //         isNew = true;
+    // //     }
+    // //     EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+    // //     if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
+    // //         EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
+    // //         isAuth = true;
+    // //     }
+    // //     EEPROM.commit();
+    // //     EEPROM.end();
+
+    // //     isFirst = true;
+    // // }
+    
+    // BLINKER_LOG_ALL(BLINKER_F("===================="));
+    // BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME: "), imei);
+    // BLINKER_LOG_ALL(BLINKER_F("MQTT_PRODUCTINFO_GPRS: "), MQTT_PRODUCTINFO_GPRS);
+    // BLINKER_LOG_ALL(BLINKER_F("MQTT_DEVICEID_GPRS: "), MQTT_DEVICEID_GPRS);
+    // BLINKER_LOG_ALL(BLINKER_F("MQTT_ID_GPRS: "), MQTT_ID_GPRS);
+    // BLINKER_LOG_ALL(BLINKER_F("MQTT_NAME_GPRS: "), MQTT_NAME_GPRS);
+    // BLINKER_LOG_ALL(BLINKER_F("MQTT_KEY_GPRS: "), MQTT_KEY_GPRS);
+    // BLINKER_LOG_ALL(BLINKER_F("MQTT_BROKER: "), _broker);
+    // BLINKER_LOG_ALL(BLINKER_F("HOST: "), MQTT_HOST_GPRS);
+    // BLINKER_LOG_ALL(BLINKER_F("PORT: "), MQTT_PORT_GPRS);
+    // BLINKER_LOG_ALL(BLINKER_F("UUID_GPRS: "), UUID_GPRS);
+    // BLINKER_LOG_ALL(BLINKER_F("AUTHKEY_GPRS: "), AUTHKEY_GPRS);
+    // BLINKER_LOG_ALL(BLINKER_F("===================="));
+
+    // // if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
+    //     String PUB_TOPIC_STR = BLINKER_F("/");
+    //     PUB_TOPIC_STR += MQTT_PRODUCTINFO_GPRS;
+    //     PUB_TOPIC_STR += BLINKER_F("/");
+    //     PUB_TOPIC_STR += MQTT_DEVICEID_GPRS;
+    //     PUB_TOPIC_STR += BLINKER_F("/s");
+
+    //     BLINKER_PUB_TOPIC_GPRS = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
+    //     strcpy(BLINKER_PUB_TOPIC_GPRS, PUB_TOPIC_STR.c_str());
+        
+    //     BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_GPRS: "), BLINKER_PUB_TOPIC_GPRS);
+        
+    //     String SUB_TOPIC_STR = BLINKER_F("/");
+    //     SUB_TOPIC_STR += MQTT_PRODUCTINFO_GPRS;
+    //     SUB_TOPIC_STR += BLINKER_F("/");
+    //     SUB_TOPIC_STR += MQTT_DEVICEID_GPRS;
+    //     SUB_TOPIC_STR += BLINKER_F("/r");
+        
+    //     BLINKER_SUB_TOPIC_GPRS = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
+    //     strcpy(BLINKER_SUB_TOPIC_GPRS, SUB_TOPIC_STR.c_str());
+        
+    //     BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_GPRS: "), BLINKER_SUB_TOPIC_GPRS);
+    // // }
 
     // if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         mqtt_GPRS = new BlinkerMQTTAIR202(*stream, isHWS, MQTT_HOST_GPRS, MQTT_PORT_GPRS, 
@@ -695,6 +787,7 @@ int BlinkerSerialGPRS::connectServer()
 
     this->latestTime = millis();
     isMQTTinit = true;
+    mqtt_GPRS->subscribe(BLINKER_SUB_TOPIC_GPRS);
 
     return true;
 }

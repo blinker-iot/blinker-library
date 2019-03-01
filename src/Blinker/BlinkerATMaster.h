@@ -12,6 +12,8 @@ enum blinker_at_m_state_t {
     AT_M_ERR
 };
 
+#define BLINKER_MAX_AT_MASTER_PARAM_NUM 6
+
 class BlinkerMasterAT
 {
     public :
@@ -41,13 +43,14 @@ class BlinkerMasterAT
         blinker_at_m_state_t _isReq;
         uint8_t _paramNum;
         // String _data;
-        String _reqName;
-        char _param[4][32];
+        char _reqName[32];
+        char _param[BLINKER_MAX_AT_MASTER_PARAM_NUM][32];
 
         void serialize(String _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
             
-            _reqName = "";
+            // _reqName = "";
+            memset(_reqName, '\0', 32);
             _isReq = AT_M_NONE;
             int addr_start = _data.indexOf("+");
             int addr_end = 0;
@@ -64,7 +67,7 @@ class BlinkerMasterAT
                     return;
                 }
                 else {
-                    _reqName = _data.substring(addr_start + 1, addr_end);
+                    strcpy(_reqName, _data.substring(addr_start + 1, addr_end).c_str());
                     
                     BLINKER_LOG_ALL(BLINKER_F("serialize _reqName: "), _reqName);
                 }
@@ -78,7 +81,7 @@ class BlinkerMasterAT
 
                 addr_start = 0;
 
-                for (_paramNum = 0; _paramNum < 11; _paramNum++) {
+                for (_paramNum = 0; _paramNum < BLINKER_MAX_AT_MASTER_PARAM_NUM; _paramNum++) {
                     addr_start += addr_end;
                     addr_start += 1;
                     serData = _data.substring(addr_start, dataLen);
@@ -104,6 +107,7 @@ class BlinkerMasterAT
                             _isReq = AT_M_RESP;
                             BLINKER_LOG_ALL(BLINKER_F("_param0["), _paramNum, \
                                         BLINKER_F("]: "), _param[_paramNum]);
+
                             return;
                         }
 
@@ -120,6 +124,7 @@ class BlinkerMasterAT
                         
                         _paramNum++;
                         _isReq = AT_M_RESP;
+
                         return;
                     }
                     else {
