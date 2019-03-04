@@ -66,7 +66,7 @@ class BlinkerSerialGPRS : public BlinkerStream
         // int aliPrint(const String & data);
         // int duerPrint(const String & data);
         void begin(const char* _deviceType, String _imei);
-        void init(Stream& s, bool state);
+        void initStream(Stream& s, bool state, blinker_callback_t func);
         char * deviceName();
         char * authKey() { return AUTHKEY_GPRS; }
         int init() { return isMQTTinit; }
@@ -107,6 +107,7 @@ class BlinkerSerialGPRS : public BlinkerStream
         int isJson(const String & data);
 
         uint8_t     reconnect_time = 0;
+        blinker_callback_t listenFunc = NULL;
 };
 
 int BlinkerSerialGPRS::connect()
@@ -465,7 +466,7 @@ void BlinkerSerialGPRS::begin(const char* _type, String _imei)
     strcpy(imei, _imei.c_str());
 }
 
-void BlinkerSerialGPRS::init(Stream& s, bool state)
+void BlinkerSerialGPRS::initStream(Stream& s, bool state, blinker_callback_t func)
 {
     // _deviceType = _type;
     
@@ -474,6 +475,8 @@ void BlinkerSerialGPRS::init(Stream& s, bool state)
     stream = &s;
     stream->setTimeout(BLINKER_STREAM_TIMEOUT);
     isHWS = state;
+
+    listenFunc = func;
 
     // _imei = (char*)malloc(imei.length()*sizeof(char));
     // strcpy(_imei, imei.c_str());
@@ -537,7 +540,7 @@ int BlinkerSerialGPRS::connectServer()
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + uri);
 
-    BlinkerHTTPAIR202 http(*stream, isHWS);
+    BlinkerHTTPAIR202 http(*stream, isHWS, listenFunc);
 
     http.begin(host, uri);
 
@@ -782,7 +785,7 @@ int BlinkerSerialGPRS::connectServer()
 
     // if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         mqtt_GPRS = new BlinkerMQTTAIR202(*stream, isHWS, MQTT_HOST_GPRS, MQTT_PORT_GPRS, 
-                                        MQTT_ID_GPRS, MQTT_NAME_GPRS, MQTT_KEY_GPRS);
+                                        MQTT_ID_GPRS, MQTT_NAME_GPRS, MQTT_KEY_GPRS, listenFunc);
     // }
 
     this->latestTime = millis();

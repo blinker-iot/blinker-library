@@ -1707,6 +1707,16 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_MQTTSTATUS              "MQTTSTATU "
 
+    #define BLINKER_CMD_MIPCLOSE_RESQ           "AT+MIPCLOSE"
+
+    #define BLINKER_CMD_CIPSHUT_RESQ            "AT+CIPSHUT"
+
+    #define BLINKER_CMD_CSTT_RESQ               "AT+CSTT"
+
+    #define BLINKER_CMD_CMNET                   "CMNET"
+
+    #define BLINKER_CMD_CIICR_RESQ              "AT+CIICR"
+
     #define BLINKER_CMD_HTTPINIT_RESQ           "AT+HTTPINIT"
 
     #define BLINKER_CMD_HTTPPARA_RESQ           "AT+HTTPPARA"
@@ -1726,6 +1736,10 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_DOWNLOAD                "DOWNLOAD"
 
     #define BLINEKR_CMD_CGSN_RESQ               "AT+CGSN"
+
+    #define BLINKER_CMD_ICCID_RESQ              "AT+ICCID"
+
+    #define BLINKER_CMD_ICCID                   "ICCID"
 
     #define BLINEKR_CMD_CGSN                    "CGSN"
 

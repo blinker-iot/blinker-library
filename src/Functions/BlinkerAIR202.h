@@ -27,6 +27,11 @@
 
 enum air202_status_t
 {
+    air202_cgtt_state_ver_check,
+    air202_cgtt_state_ver_check_success,
+    air202_cgtt_state,
+    air202_cgtt_state_resp,
+    air202_cgtt_state_success,
     air202_sapbar_pdp_resq,
     air202_sapbar_pdp_success,
     air202_sapbar_pdp_failed,
@@ -48,95 +53,94 @@ class BlinkerAIR202
             isHWS(false)
         {}
 
-        void setStream(Stream& s, bool isHardware = false)
-        { stream = &s; isHWS = isHardware; }
+        void setStream(Stream& s, bool isHardware, blinker_callback_t _func)
+        { stream = &s; isHWS = isHardware; listenFunc = _func; }
 
-        // int checkCGTT()
-        // {
-        //     uint32_t http_time = millis();
-        //     air202_status_t cgtt_status = air202_cgtt_state_ver_check;
+        int checkCGTT()
+        {
+            uint32_t http_time = millis();
+            air202_status_t cgtt_status = air202_cgtt_state_ver_check;
 
-        //     stream->println(BLINKER_CMD_CGMMR_RESQ);
+            stream->println(BLINKER_CMD_CGMMR_RESQ);
 
-        //     cgtt_status = air202_cgtt_state_ver_check;
+            cgtt_status = air202_cgtt_state_ver_check;
 
-        //     while(millis() - http_time < 1000)
-        //     {
-        //         if (available())
-        //         {
-        //             if (strcmp(streamData, BLINKER_CMD_CGMMR_RESP) == 0)
-        //             {
-        //                 BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_ver_check_success"));
-        //                 cgtt_status = air202_cgtt_state_ver_check_success;
-        //                 break;
-        //             }
-        //         }
-        //     }
+            while(millis() - http_time < 1000)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_CGMMR_RESP) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_ver_check_success"));
+                        cgtt_status = air202_cgtt_state_ver_check_success;
+                        break;
+                    }
+                }
+            }
 
-        //     if (cgtt_status != air202_cgtt_state_ver_check_success) return false;
+            if (cgtt_status != air202_cgtt_state_ver_check_success) return false;
 
-        //     stream->println(BLINKER_CMD_CGQTT_RESQ);
+            stream->println(BLINKER_CMD_CGQTT_RESQ);
+            cgtt_status = air202_cgtt_state;
+            http_time = millis();
 
-        //     cgtt_status = air202_cgtt_state;
+            while(millis() - http_time < 1000)
+            {
+                if (available())
+                {
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(streamData));
 
-        //     while(millis() - http_time < 1000)
-        //     {
-        //         if (available())
-        //         {
-        //             _masterAT = new BlinkerMasterAT();
-        //             _masterAT->update(STRING_format(streamData));
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_CGATT &&
+                        _masterAT->getParam(0).toInt() == 1)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_resp"));
+                        cgtt_status = air202_cgtt_state_resp;
+                        break;
+                    }
 
-        //             if (_masterAT->getState() != AT_M_NONE &&
-        //                 _masterAT->reqName() == BLINKER_CMD_CGATT &&
-        //                 _masterAT->getParam(0).toInt() == 1)
-        //             {
-        //                 BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_resp"));
-        //                 cgtt_status = air202_cgtt_state_resp;
-        //             }
+                    free(_masterAT);
+                }
+            }
 
-        //             free(_masterAT);
+            if (cgtt_status != air202_cgtt_state_resp) return false;
+            // http_time = millis();
 
-        //             break;
-        //         }
-        //     }
+            // while(millis() - http_time < 1000)
+            // {
+            //     if (available())
+            //     {
+            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            //         {
+            //             BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_success"));
+            //             cgtt_status = air202_cgtt_state_success;
+            //             break;
+            //         }
+            //     }
+            // }
 
-        //     if (cgtt_status != air202_cgtt_state_resp) return false;
+            // if (cgtt_status != air202_cgtt_state_success) return false;
 
-        //     while(millis() - http_time < 1000)
-        //     {
-        //         if (available())
-        //         {
-        //             if (strcmp(streamData, BLINKER_CMD_OK) == 0)
-        //             {
-        //                 BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_success"));
-        //                 cgtt_status = air202_cgtt_state_success;
-        //                 break;
-        //             }
-        //         }
-        //     }
+            BLINKER_LOG_ALL(BLINKER_F("check CGTT success"));
 
-        //     if (cgtt_status != air202_cgtt_state_success) return false;
+            return true;
 
-        //     return true;
+            // stream->println(BLINKER_CMD_CGQTT_RESQ);
 
-        //     // stream->println(BLINKER_CMD_CGQTT_RESQ);
-
-        //     // cgtt_status = air202_cgtt_state;
-        // }
+            // cgtt_status = air202_cgtt_state;
+        }
 
         bool powerCheck()
         {
             stream->println(BLINKER_CMD_AT);
-
             stream->println("ATE0");
 
+            if (!checkCGTT()) return false;
+            
             BLINKER_LOG_ALL(BLINKER_F("power check"));
-
-            uint32_t dev_time = millis();
-
             stream->println(BLINKER_CMD_AT);
-
-            // if (!checkCGTT()) return false;
+            uint32_t dev_time = millis();
 
             while(millis() - dev_time < 1000)
             {
@@ -266,6 +270,8 @@ class BlinkerAIR202
                 }
             }
 
+            dev_time = millis();
+
             while(millis() - dev_time < 1000)
             {
                 if (available())
@@ -285,8 +291,65 @@ class BlinkerAIR202
             return _imei;
         }
 
+        String getICCID()
+        {
+            uint32_t dev_time = millis();
+
+            stream->println(BLINKER_CMD_ICCID_RESQ);
+
+            char _iccid[21];
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(streamData));
+
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_ICCID)
+                    {
+                        String get_iccid = _masterAT->getParam(0);
+
+                        if (_masterAT->getParam(0).length() == 20)
+                        {
+                            strcpy(_iccid, _masterAT->getParam(0).c_str());
+                            free(_masterAT);
+
+                            BLINKER_LOG_ALL(BLINKER_F("get ICCID: "), _iccid,
+                            BLINKER_F(", length: "), strlen(_iccid));
+                            break;
+                        }                        
+                    }
+
+                    free(_masterAT);
+                }
+            }
+
+            dev_time = millis();
+
+            while(millis() - dev_time < 1000)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("get ICCID: "), _iccid,
+                                        BLINKER_F(", length: "), strlen(streamData));
+                        return _iccid;
+                    }       
+                }
+            }
+
+            BLINKER_LOG_ALL(BLINKER_F("get ICCID: "), _iccid,
+                            BLINKER_F(", length: "), strlen(streamData));
+
+            return _iccid;
+        }
+
     protected :
         class BlinkerMasterAT * _masterAT;
+        blinker_callback_t listenFunc = NULL;
         Stream* stream;
         char    streamData[128];
         bool    isFresh = false;

@@ -68,8 +68,8 @@ enum air202_http_status_t
 class BlinkerHTTPAIR202
 {
     public :
-        BlinkerHTTPAIR202(Stream& s, bool isHardware = false)
-        { stream = &s; isHWS = isHardware; }
+        BlinkerHTTPAIR202(Stream& s, bool isHardware, blinker_callback_t func)
+        { stream = &s; isHWS = isHardware; listenFunc = func; }
 
         int checkCGTT()
         {
@@ -255,7 +255,7 @@ class BlinkerHTTPAIR202
 
             http_time = millis();
 
-            while(millis() - http_time < _httpTimeout*2)
+            while(millis() - http_time < _httpTimeout*4)
             {
                 if (available())
                 {
@@ -607,6 +607,8 @@ class BlinkerHTTPAIR202
         String  _host;
         String  _uri;
 
+        blinker_callback_t listenFunc = NULL;
+
         uint16_t _httpTimeout = BLINKER_HTTP_AIR202_DEFAULT_TIMEOUT;
 
         int timedRead()
@@ -633,6 +635,7 @@ class BlinkerHTTPAIR202
                 //         ::delay(100);
                 //     }
                 // #endif
+                if (listenFunc) listenFunc();
             }
 
             if (stream->available())

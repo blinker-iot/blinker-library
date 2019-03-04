@@ -49,12 +49,12 @@ class BlinkerMQTTAIR202
         BlinkerMQTTAIR202(Stream& s, bool isHardware, 
                     const char * server, uint16_t port, 
                     const char * cid, const char * user, 
-                    const char * pass)
+                    const char * pass, blinker_callback_t func)
         {
             stream = &s; isHWS = isHardware;
             servername = server; portnum = port;
             clientid = cid; username = user;
-            password = pass;
+            password = pass; listenFunc = func;
         }
         
         int connect();
@@ -70,6 +70,7 @@ class BlinkerMQTTAIR202
 
     protected :
         class BlinkerMasterAT * _masterAT;
+        blinker_callback_t      listenFunc = NULL;
         Stream* stream;
         // char*   streamData;
         bool    isFresh = false;
@@ -109,6 +110,49 @@ class BlinkerMQTTAIR202
 
 int BlinkerMQTTAIR202::connect()
 {
+    streamPrint(STRING_format(BLINKER_CMD_CSTT_RESQ) +
+                "=\"" + BLINKER_CMD_CMNET + "\"");
+    // BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
+    //             "=\"" + clientid + "\",\"" + username + 
+    //             "\",\"" + password + "\"");
+
+    mqtt_status = mqtt_init;
+    mqtt_time = millis();
+
+    while(millis() - mqtt_time < _mqttTimeout)
+    {
+        if (streamAvailable())
+        {
+            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("mqtt cstt success"));
+                // mqtt_status = mqtt_init_success;
+                break;
+            }
+        }
+    }
+
+    streamPrint(STRING_format(BLINKER_CMD_CIICR_RESQ));
+    // BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
+    //             "=\"" + clientid + "\",\"" + username + 
+    //             "\",\"" + password + "\"");
+
+    mqtt_status = mqtt_init;
+    mqtt_time = millis();
+
+    while(millis() - mqtt_time < _mqttTimeout)
+    {
+        if (streamAvailable())
+        {
+            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("mqtt ciicr success"));
+                // mqtt_status = mqtt_init_success;
+                break;
+            }
+        }
+    }
+
     streamPrint(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
                 "=\"" + clientid + "\",\"" + username + 
                 "\",\"" + password + "\"");
@@ -412,7 +456,42 @@ int BlinkerMQTTAIR202::disconnect()
             if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("mqtt disconnect"));
+                // return true;
+                break;
+            }
+        }
+    }
+
+    streamPrint(STRING_format(BLINKER_CMD_MIPCLOSE_RESQ));
+    mqtt_time = millis();
+
+    while(millis() - mqtt_time < _mqttTimeout)
+    {
+        if (streamAvailable())
+        {
+            BLINKER_LOG_ALL(BLINKER_F("== disconnect available =="));
+            if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("mqtt disconnect"));
+                // return true;
+                break;
+            }
+        }
+    }
+
+    streamPrint(STRING_format(BLINKER_CMD_CIPSHUT_RESQ));
+    mqtt_time = millis();
+
+    while(millis() - mqtt_time < _mqttTimeout)
+    {
+        if (streamAvailable())
+        {
+            BLINKER_LOG_ALL(BLINKER_F("== disconnect available =="));
+            if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("mqtt disconnect"));
                 return true;
+                // break;
             }
         }
     }
@@ -575,6 +654,8 @@ bool BlinkerMQTTAIR202::streamAvailable()
         //         ::delay(100);
         //     }
         // #endif
+
+        // if (listenFunc) listenFunc();
     }
 
     if (stream->available())
