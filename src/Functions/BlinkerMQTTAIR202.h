@@ -655,7 +655,7 @@ bool BlinkerMQTTAIR202::streamAvailable()
         //     }
         // #endif
 
-        // if (listenFunc) listenFunc();
+        if (listenFunc) listenFunc();
     }
 
     if (stream->available())

@@ -1441,7 +1441,7 @@ void BlinkerApi::run()
         {
             yield();
 
-            if ((millis() - _initTime) >= 60000 && \
+            if ((millis() - _initTime) >= 30000 && \
                 !_isRegistered && _registerTimes < 5)
             {                
                 _isRegistered = BProto::deviceRegister();
@@ -8979,7 +8979,9 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         BlinkerAIR202 BLINKER_AIR202;
         BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
         
-        BLINKER_AIR202.getICCID();
+        // BLINKER_AIR202.getICCID();
+        // BLINKER_AIR202.getAMGSMLOC();// TBD
+        // BLINKER_AIR202.powerCheck();
 
         return BLINKER_AIR202.getIMEI();
     }

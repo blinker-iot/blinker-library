@@ -1745,6 +1745,10 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_MDISCONNECT_RESQ        "AT+MDISCONNECT"
 
+    #define BLINKER_CMD_AMGSMLOC_RESQ           "AT+AMGSMLOC"
+
+    #define BLINKER_CMD_AMGSMLOC                "AMGSMLOC"
+
 #endif
 
 #endif

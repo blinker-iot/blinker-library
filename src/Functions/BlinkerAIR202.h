@@ -25,6 +25,8 @@
     SoftwareSerial *SSerial_API;
 #endif
 
+#include <time.h>
+
 enum air202_status_t
 {
     air202_cgtt_state_ver_check,
@@ -56,16 +58,209 @@ class BlinkerAIR202
         void setStream(Stream& s, bool isHardware, blinker_callback_t _func)
         { stream = &s; isHWS = isHardware; listenFunc = _func; }
 
+        void setTimezone(float tz)  { _timezone = tz; }
+        String lang()                { return _LANG; }
+        String lat()                 { return _LAT; }
+        int16_t year()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_year + 1900;
+            }
+            return -1;
+        }
+
+        int8_t  month()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_mon + 1;
+            }
+            return -1;
+        }
+
+        int8_t  mday()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_mday;
+            }
+            return -1;
+        }
+
+        int8_t  wday()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_wday;
+            }
+            return -1;
+        }
+
+        int8_t  hour()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_hour;
+            }
+            return -1;
+        }
+
+        int8_t  minute()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_min;
+            }
+            return -1;
+        }
+
+        int8_t  second()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_sec;
+            }
+            return -1;
+        }
+
+        time_t  time()
+        {
+            if (_ntpTime)
+            {
+                return _ntpTime - _timezone * 3600;
+            }
+            return millis();
+        }
+
+        int32_t dtime()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
+            }
+            return -1;
+        }
+
+        void getAMGSMLOC()
+        {
+            uint32_t os_time = millis();
+            streamPrint(BLINKER_CMD_AMGSMLOC_RESQ);
+
+            while(millis() - os_time < _airTimeout * 10)
+            {
+                if (available())
+                {
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(streamData));
+
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_AMGSMLOC &&
+                        _masterAT->getParam(0) == " 0")
+                    {
+                        strcpy(_LANG, _masterAT->getParam(1).c_str());
+                        strcpy(_LAT, _masterAT->getParam(2).c_str());
+
+                        BLINKER_LOG_ALL(BLINKER_F("LANG.: "), _LANG);
+                        BLINKER_LOG_ALL(BLINKER_F("LAT.: "), _LAT);
+
+                        struct tm timeinfo;
+
+                        timeinfo.tm_year = _masterAT->getParam(3).substring(0, 4).toInt() - 1900;
+                        timeinfo.tm_mon  = _masterAT->getParam(3).substring(5, 7).toInt() - 1;
+                        timeinfo.tm_mday = _masterAT->getParam(3).substring(8, 10).toInt();
+
+                        BLINKER_LOG_ALL(BLINKER_F("year: "), timeinfo.tm_year);
+                        BLINKER_LOG_ALL(BLINKER_F("mon: "), timeinfo.tm_mon);
+                        BLINKER_LOG_ALL(BLINKER_F("mday: "), timeinfo.tm_mday);
+
+                        timeinfo.tm_hour = _masterAT->getParam(4).substring(0, 2).toInt();
+                        timeinfo.tm_min  = _masterAT->getParam(4).substring(3, 5).toInt();
+                        timeinfo.tm_sec  = _masterAT->getParam(4).substring(6, 8).toInt();
+
+                        BLINKER_LOG_ALL(BLINKER_F("hour: "), timeinfo.tm_hour);
+                        BLINKER_LOG_ALL(BLINKER_F("mins: "), timeinfo.tm_min);
+                        BLINKER_LOG_ALL(BLINKER_F("secs: "), timeinfo.tm_sec);
+
+                        _ntpTime = mktime(&timeinfo);// - _timezone * 3600;
+
+                        BLINKER_LOG_ALL(BLINKER_F("_ntpTime: "), _ntpTime);
+
+                        free(_masterAT);
+                        break;
+                    }
+
+                    free(_masterAT);
+                }
+            }
+        }
+
         int checkCGTT()
         {
             uint32_t http_time = millis();
             air202_status_t cgtt_status = air202_cgtt_state_ver_check;
 
-            stream->println(BLINKER_CMD_CGMMR_RESQ);
+            streamPrint(BLINKER_CMD_CGMMR_RESQ);
 
             cgtt_status = air202_cgtt_state_ver_check;
 
-            while(millis() - http_time < 1000)
+            while(millis() - http_time < _airTimeout)
             {
                 if (available())
                 {
@@ -80,11 +275,11 @@ class BlinkerAIR202
 
             if (cgtt_status != air202_cgtt_state_ver_check_success) return false;
 
-            stream->println(BLINKER_CMD_CGQTT_RESQ);
+            streamPrint(BLINKER_CMD_CGQTT_RESQ);
             cgtt_status = air202_cgtt_state;
             http_time = millis();
 
-            while(millis() - http_time < 1000)
+            while(millis() - http_time < _airTimeout)
             {
                 if (available())
                 {
@@ -107,7 +302,7 @@ class BlinkerAIR202
             if (cgtt_status != air202_cgtt_state_resp) return false;
             // http_time = millis();
 
-            // while(millis() - http_time < 1000)
+            // while(millis() - http_time < _airTimeout)
             // {
             //     if (available())
             //     {
@@ -133,16 +328,16 @@ class BlinkerAIR202
 
         bool powerCheck()
         {
-            stream->println(BLINKER_CMD_AT);
-            stream->println("ATE0");
+            streamPrint(BLINKER_CMD_AT);
+            streamPrint("ATE0");
 
             if (!checkCGTT()) return false;
             
             BLINKER_LOG_ALL(BLINKER_F("power check"));
-            stream->println(BLINKER_CMD_AT);
+            streamPrint(BLINKER_CMD_AT);
             uint32_t dev_time = millis();
 
-            while(millis() - dev_time < 1000)
+            while(millis() - dev_time < _airTimeout)
             {
                 if (available())
                 {
@@ -162,13 +357,13 @@ class BlinkerAIR202
 
         bool SAPBR()
         {
-            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
-                            "=3,1,\"CONTYPE\",\"GPRS\"");
+            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                        "=3,1,\"CONTYPE\",\"GPRS\"");
 
             air202_status_t sapbar_status = air202_sapbar_pdp_resq;
             uint32_t dev_time = millis();
 
-            while(millis() - dev_time < 1000)
+            while(millis() - dev_time < _airTimeout)
             {
                 if (available())
                 {
@@ -177,19 +372,20 @@ class BlinkerAIR202
                         BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_pdp_success"));
 
                         sapbar_status = air202_sapbar_pdp_success;
+                        break;
                     }
                 }
             }
 
             if (sapbar_status != air202_sapbar_pdp_success) return false;
 
-            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
-                            "=3,1,\"APN\",\"CMNET\"");
+            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+                        "=3,1,\"APN\",\"CMNET\"");
 
             sapbar_status = air202_sapbar_apn_resq;
             dev_time = millis();
 
-            while(millis() - dev_time < 1000)
+            while(millis() - dev_time < _airTimeout)
             {
                 if (available())
                 {
@@ -198,19 +394,19 @@ class BlinkerAIR202
                         BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_apn_success"));
 
                         sapbar_status = air202_sapbar_apn_success;
+                        break;
                     }
                 }
             }
 
             if (sapbar_status != air202_sapbar_apn_success) return false;
 
-            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
-                            "=5,1");
+            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + "=5,1");
 
             sapbar_status = air202_sapbar_save_resq;
             dev_time = millis();
 
-            while(millis() - dev_time < 1000)
+            while(millis() - dev_time < _airTimeout)
             {
                 if (available())
                 {
@@ -219,19 +415,19 @@ class BlinkerAIR202
                         BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_save_success"));
 
                         sapbar_status = air202_sapbar_save_success;
+                        break;
                     }
                 }
             }
 
             if (sapbar_status != air202_sapbar_save_success) return false;
 
-            stream->println(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
-                            "=1,1");
+            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + "=1,1");
 
             sapbar_status = air202_sapbar_fresh_resq;
             dev_time = millis();
 
-            while(millis() - dev_time < 1000)
+            while(millis() - dev_time < _airTimeout)
             {
                 if (available())
                 {
@@ -240,6 +436,7 @@ class BlinkerAIR202
                         BLINKER_LOG_ALL(BLINKER_F("air202_sapbar_fresh_success"));
 
                         sapbar_status = air202_sapbar_fresh_success;
+                        break;
                     }
                 }
             }
@@ -253,11 +450,11 @@ class BlinkerAIR202
         {
             uint32_t dev_time = millis();
 
-            stream->println(BLINEKR_CMD_CGSN_RESQ);
+            streamPrint(BLINEKR_CMD_CGSN_RESQ);
 
             char _imei[16];
 
-            while(millis() - dev_time < 1000)
+            while(millis() - dev_time < _airTimeout)
             {
                 if (available())
                 {
@@ -272,7 +469,7 @@ class BlinkerAIR202
 
             dev_time = millis();
 
-            while(millis() - dev_time < 1000)
+            while(millis() - dev_time < _airTimeout)
             {
                 if (available())
                 {
@@ -295,11 +492,11 @@ class BlinkerAIR202
         {
             uint32_t dev_time = millis();
 
-            stream->println(BLINKER_CMD_ICCID_RESQ);
+            streamPrint(BLINKER_CMD_ICCID_RESQ);
 
             char _iccid[21];
 
-            while(millis() - dev_time < 1000)
+            while(millis() - dev_time < _airTimeout)
             {
                 if (available())
                 {
@@ -328,7 +525,7 @@ class BlinkerAIR202
 
             dev_time = millis();
 
-            while(millis() - dev_time < 1000)
+            while(millis() - dev_time < _airTimeout)
             {
                 if (available())
                 {
@@ -354,6 +551,26 @@ class BlinkerAIR202
         char    streamData[128];
         bool    isFresh = false;
         bool    isHWS = false;
+        uint16_t    _airTimeout = 1000;
+
+        time_t  _ntpTime = 0;
+
+        float   _timezone = 8.0;
+
+        char    _LANG[14];
+        char    _LAT[14];
+        // int16_t _year = -1;
+        // int8_t  _mon  = -1;
+        // int8_t  _mday = -1;
+        // int16_t _hour = -1;
+        // int8_t  _mins = -1;
+        // int8_t  _secs = -1;
+
+        void streamPrint(const String & s)
+        {
+            stream->println(s);
+            BLINKER_LOG_ALL(s);
+        }
 
         int timedRead()
         {
@@ -379,6 +596,8 @@ class BlinkerAIR202
                 //         ::delay(100);
                 //     }
                 // #endif
+
+                if (listenFunc) listenFunc();
             }
 
             if (stream->available())
