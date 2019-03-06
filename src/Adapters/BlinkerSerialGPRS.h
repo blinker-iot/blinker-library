@@ -300,18 +300,21 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
         data[c_num+7] = data[c_num-1];
     }
 
-    String data_add = BLINKER_F("{\"data\":");
+    // String data_add = BLINKER_F("{\"data\":");
+    char data_add[20] = "{\"data\":";
     for(uint16_t c_num = 0; c_num < 8; c_num++)
     {
         data[c_num] = data_add[c_num];
     }
 
-    data_add = BLINKER_F(",\"fromDevice\":\"");
-    strcat(data, data_add.c_str());
+    // data_add = BLINKER_F(",\"fromDevice\":\"");
+    // strcat(data, data_add.c_str());
+    strcat(data, ",\"fromDevice\":\"");
     strcat(data, MQTT_ID_GPRS);
     // strcat(data, MQTT_DEVICEID_GPRS); //PRO
-    data_add = BLINKER_F("\",\"toDevice\":\"");
-    strcat(data, data_add.c_str());
+    // data_add = BLINKER_F("\",\"toDevice\":\"");
+    // strcat(data, data_add.c_str());
+    strcat(data, "\",\"toDevice\":\"");
     // if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
     // {
     //     strcat(data, _sharers[_sharerFrom]->uuid());
@@ -320,20 +323,41 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
     // {
         strcat(data, UUID_GPRS);
     // }
-    data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
+    // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
 
     // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
-    strcat(data, data_add.c_str());
+    // strcat(data, data_add.c_str());
+    strcat(data, "\",\"deviceType\":\"OwnApp\"}");
 
-    data_add = STRING_format(data);
+    // data_add = STRING_format(data);
 
-    if (!isJson(data_add)) return false;
+    if (!isJson(STRING_format(data))) return false;
 
-    data_add.replace("\"", "\\22");
-    strcpy(data, data_add.c_str());
+    // data_add.replace("\"", "\\22");
+    // strcpy(data, data_add.c_str());
+    uint16_t d_data_len;
+
+    for (uint16_t d_num = 0; d_num < 1024; d_num++)
+    {
+        if (data[d_num] == '\"')
+        {
+            data[d_num] = '\\';
+            d_data_len = strlen(data);
+
+            // BLINKER_LOG_ALL(BLINKER_F("d_num: "), d_num,
+            //                 BLINKER_F(", d_data_len: "), d_data_len);
+
+            for(uint16_t c_num = d_data_len; c_num > d_num; c_num--)
+            {
+                data[c_num + 2] = data[c_num];
+            }
+            data[d_num + 1] = '2';
+            data[d_num + 2] = '2';
+        }
+    }
 
     // #if defined(ESP8266)
-        data_add = "";
+        // data_add = "";
     // #endif
 
     // if (!isJson(STRING_format(data)) return false;
