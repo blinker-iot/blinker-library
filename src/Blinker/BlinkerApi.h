@@ -926,8 +926,9 @@ class BlinkerApi : public BlinkerProtocol
         #if defined(BLINKER_GPRS_AIR202)
             Stream* stream;
             bool    isHWS = false;
+            blinker_callback_t listenFunc = NULL;
 
-            void begin(const char* _type, Stream& s, bool isHardware = false);
+            void begin(const char* _type, Stream& s, bool isHardware, blinker_callback_t _func);
             void setType(const char* _type)
             {
                 _deviceType = _type;
@@ -1070,7 +1071,8 @@ void BlinkerApi::needInit()
 #endif
 
 #if defined(BLINKER_GPRS_AIR202)
-    void BlinkerApi::begin(const char* _type, Stream& s, bool isHardware)
+    void BlinkerApi::begin(const char* _type, Stream& s,
+                        bool isHardware, blinker_callback_t _func)
     {
         // #if defined(BLINKER_NO_BUTTON)
             
@@ -1112,6 +1114,7 @@ void BlinkerApi::needInit()
         setType(_type);
 
         stream = &s; isHWS = isHardware;
+        listenFunc = _func;
     }
 #endif
 
@@ -1438,8 +1441,8 @@ void BlinkerApi::run()
         {
             yield();
 
-            if ((millis() - _initTime) >= 60000 && \
-                !_isRegistered && _registerTimes < 5)
+            if ((millis() - _initTime) >= 15000)// && \
+                // !_isRegistered && _registerTimes < 6)
             {                
                 _isRegistered = BProto::deviceRegister();
 
@@ -8966,7 +8969,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     bool BlinkerApi::powerCheck()
     {
         BlinkerAIR202 BLINKER_AIR202;
-        BLINKER_AIR202.setStream(*stream, isHWS);
+        BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
 
         return BLINKER_AIR202.powerCheck();
     }
@@ -8974,7 +8977,11 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     String BlinkerApi::getIMEI()
     {
         BlinkerAIR202 BLINKER_AIR202;
-        BLINKER_AIR202.setStream(*stream, isHWS);
+        BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+        
+        // BLINKER_AIR202.getICCID();
+        // BLINKER_AIR202.getAMGSMLOC();// TBD
+        // BLINKER_AIR202.powerCheck();
 
         return BLINKER_AIR202.getIMEI();
     }

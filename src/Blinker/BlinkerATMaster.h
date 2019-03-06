@@ -46,7 +46,7 @@ class BlinkerMasterAT
         char _reqName[32];
         char _param[BLINKER_MAX_AT_MASTER_PARAM_NUM][32];
 
-        void serialize(String _data) {
+        void serialize(const String & _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
             
             // _reqName = "";
@@ -102,13 +102,28 @@ class BlinkerMasterAT
 
                         if (addr_end != -1) {
                             // _param[_paramNum] = serData.substring(0, addr_end);
-                            strcpy(_param[_paramNum], serData.substring(0, addr_end).c_str());
-                            _paramNum++;
-                            _isReq = AT_M_RESP;
-                            BLINKER_LOG_ALL(BLINKER_F("_param0["), _paramNum, \
-                                        BLINKER_F("]: "), _param[_paramNum]);
+                            if (addr_end != 0)
+                            {
+                                strcpy(_param[_paramNum], serData.substring(0, addr_end).c_str());
+                                _isReq = AT_M_RESP;
+                                BLINKER_LOG_ALL(BLINKER_F("_param0["), _paramNum, \
+                                            BLINKER_F("]: "), _param[_paramNum],
+                                            BLINKER_F(", addr_end: "), addr_end);
+                                _paramNum++;
+                                return;
+                            }
+                            else if (addr_end == 0 && serData.length() > 0)
+                            {
+                                serData = serData.substring(1, serData.length());
 
-                            return;
+                                strcpy(_param[_paramNum], serData.substring(0, serData.length()).c_str());
+                                _isReq = AT_M_RESP;
+                                BLINKER_LOG_ALL(BLINKER_F("_param0["), _paramNum, \
+                                            BLINKER_F("]: "), _param[_paramNum],
+                                            BLINKER_F(", addr_end: "), addr_end);
+                                _paramNum++;
+                                return;
+                            }
                         }
 
                         // _param[_paramNum] = serData;

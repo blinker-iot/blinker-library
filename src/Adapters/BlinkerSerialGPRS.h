@@ -66,7 +66,7 @@ class BlinkerSerialGPRS : public BlinkerStream
         // int aliPrint(const String & data);
         // int duerPrint(const String & data);
         void begin(const char* _deviceType, String _imei);
-        void init(Stream& s, bool state);
+        void initStream(Stream& s, bool state, blinker_callback_t func);
         char * deviceName();
         char * authKey() { return AUTHKEY_GPRS; }
         int init() { return isMQTTinit; }
@@ -107,6 +107,7 @@ class BlinkerSerialGPRS : public BlinkerStream
         int isJson(const String & data);
 
         uint8_t     reconnect_time = 0;
+        blinker_callback_t listenFunc = NULL;
 };
 
 int BlinkerSerialGPRS::connect()
@@ -299,18 +300,21 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
         data[c_num+7] = data[c_num-1];
     }
 
-    String data_add = BLINKER_F("{\"data\":");
+    // String data_add = BLINKER_F("{\"data\":");
+    char data_add[20] = "{\"data\":";
     for(uint16_t c_num = 0; c_num < 8; c_num++)
     {
         data[c_num] = data_add[c_num];
     }
 
-    data_add = BLINKER_F(",\"fromDevice\":\"");
-    strcat(data, data_add.c_str());
+    // data_add = BLINKER_F(",\"fromDevice\":\"");
+    // strcat(data, data_add.c_str());
+    strcat(data, ",\"fromDevice\":\"");
     strcat(data, MQTT_ID_GPRS);
     // strcat(data, MQTT_DEVICEID_GPRS); //PRO
-    data_add = BLINKER_F("\",\"toDevice\":\"");
-    strcat(data, data_add.c_str());
+    // data_add = BLINKER_F("\",\"toDevice\":\"");
+    // strcat(data, data_add.c_str());
+    strcat(data, "\",\"toDevice\":\"");
     // if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
     // {
     //     strcat(data, _sharers[_sharerFrom]->uuid());
@@ -319,16 +323,50 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
     // {
         strcat(data, UUID_GPRS);
     // }
-    data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
-    strcat(data, data_add.c_str());
+    // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
 
     // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+    // strcat(data, data_add.c_str());
+    strcat(data, "\",\"deviceType\":\"OwnApp\"}");
+
+    // data_add = STRING_format(data);
 
     if (!isJson(STRING_format(data))) return false;
 
-    String msg_data = STRING_format(data);
+    // data_add.replace("\"", "\\22");
+    // strcpy(data, data_add.c_str());
+    uint16_t d_data_len;
 
-    msg_data.replace("\"", "\\22");
+    for (uint16_t d_num = 0; d_num < 1024; d_num++)
+    {
+        if (data[d_num] == '\"')
+        {
+            data[d_num] = '\\';
+            d_data_len = strlen(data);
+
+            // BLINKER_LOG_ALL(BLINKER_F("d_num: "), d_num,
+            //                 BLINKER_F(", d_data_len: "), d_data_len);
+
+            for(uint16_t c_num = d_data_len; c_num > d_num; c_num--)
+            {
+                data[c_num + 2] = data[c_num];
+            }
+            data[d_num + 1] = '2';
+            data[d_num + 2] = '2';
+        }
+    }
+
+    // #if defined(ESP8266)
+        // data_add = "";
+    // #endif
+
+    // if (!isJson(STRING_format(data)) return false;
+
+    // strcpy(data, STRING_format(data).replace("\"", "\\22").c_str());
+
+    // String msg_data = STRING_format(data);
+
+    // msg_data.replace("\"", "\\22");
     
     BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
     BLINKER_LOG_FreeHeap_ALL();
@@ -357,9 +395,10 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
                 return false;
             }
         }
-        if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, msg_data.c_str()))
+        // if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, msg_data.c_str()))
+        if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, data))
         {
-            BLINKER_LOG_ALL(msg_data);
+            BLINKER_LOG_ALL(data);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
             BLINKER_LOG_FreeHeap_ALL();
             
@@ -371,7 +410,7 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
         }
         else
         {
-            BLINKER_LOG_ALL(msg_data);
+            BLINKER_LOG_ALL(data);
             BLINKER_LOG_ALL(BLINKER_F("...OK!"));
             BLINKER_LOG_FreeHeap_ALL();
             
@@ -465,7 +504,7 @@ void BlinkerSerialGPRS::begin(const char* _type, String _imei)
     strcpy(imei, _imei.c_str());
 }
 
-void BlinkerSerialGPRS::init(Stream& s, bool state)
+void BlinkerSerialGPRS::initStream(Stream& s, bool state, blinker_callback_t func)
 {
     // _deviceType = _type;
     
@@ -474,6 +513,8 @@ void BlinkerSerialGPRS::init(Stream& s, bool state)
     stream = &s;
     stream->setTimeout(BLINKER_STREAM_TIMEOUT);
     isHWS = state;
+
+    listenFunc = func;
 
     // _imei = (char*)malloc(imei.length()*sizeof(char));
     // strcpy(_imei, imei.c_str());
@@ -537,7 +578,7 @@ int BlinkerSerialGPRS::connectServer()
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + uri);
 
-    BlinkerHTTPAIR202 http(*stream, isHWS);
+    BlinkerHTTPAIR202 http(*stream, isHWS, listenFunc);
 
     http.begin(host, uri);
 
@@ -782,7 +823,7 @@ int BlinkerSerialGPRS::connectServer()
 
     // if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         mqtt_GPRS = new BlinkerMQTTAIR202(*stream, isHWS, MQTT_HOST_GPRS, MQTT_PORT_GPRS, 
-                                        MQTT_ID_GPRS, MQTT_NAME_GPRS, MQTT_KEY_GPRS);
+                                        MQTT_ID_GPRS, MQTT_NAME_GPRS, MQTT_KEY_GPRS, listenFunc);
     // }
 
     this->latestTime = millis();
@@ -805,14 +846,13 @@ int BlinkerSerialGPRS::isJson(const String & data)
     BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
 
     DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
+    JsonObject& root = jsonBuffer.parseObject(data);
 
     if (!root.success())
     {
         BLINKER_ERR_LOG("Print data is not Json! ", data);
         return false;
     }
-
     return true;
 }
 
