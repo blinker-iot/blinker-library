@@ -323,12 +323,22 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
     data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
 
     // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+    strcat(data, data_add.c_str());
 
-    if (!isJson(STRING_format(data_add))) return false;    
+    data_add = STRING_format(data);
+
+    if (!isJson(data_add)) return false;
 
     data_add.replace("\"", "\\22");
+    strcpy(data, data_add.c_str());
 
-    strcat(data, data_add.c_str());
+    // #if defined(ESP8266)
+        data_add = "";
+    // #endif
+
+    // if (!isJson(STRING_format(data)) return false;
+
+    // strcpy(data, STRING_format(data).replace("\"", "\\22").c_str());
 
     // String msg_data = STRING_format(data);
 
@@ -812,14 +822,13 @@ int BlinkerSerialGPRS::isJson(const String & data)
     BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
 
     DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
+    JsonObject& root = jsonBuffer.parseObject(data);
 
     if (!root.success())
     {
         BLINKER_ERR_LOG("Print data is not Json! ", data);
         return false;
     }
-
     return true;
 }
 

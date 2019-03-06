@@ -92,8 +92,8 @@ class BlinkerMQTTAIR202
 
         void streamPrint(const String & s)
         {
-            stream->println(s);
             BLINKER_LOG_ALL(s);
+            stream->println(s);
         }
 
         int timedRead()
@@ -686,6 +686,8 @@ bool BlinkerMQTTAIR202::streamAvailable()
 
         // streamData = stream->readStringUntil('\n');
         // streamData[streamData.length()-1] = '\0';
+
+        // BLINKER_LOG_ALL(BLINKER_F("handleSerial TEST: "), stream->readStringUntil('\n'));
 
         stream->flush();
         

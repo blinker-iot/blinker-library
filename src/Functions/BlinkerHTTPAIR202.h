@@ -94,8 +94,9 @@ class BlinkerHTTPAIR202
 
         void streamPrint(const String & s)
         {
-            stream->println(s);
+            stream->flush();
             BLINKER_LOG_ALL(s);
+            stream->println(s);
         }
 
         int checkCGTT()
@@ -190,91 +191,91 @@ class BlinkerHTTPAIR202
         void setTimeout(uint16_t timeout)   { _httpTimeout = timeout; }
         bool GET()
         {
-            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
-                        "=3,1,\"CONTYPE\",\"GPRS\"");
+            // streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+            //             "=3,1,\"CONTYPE\",\"GPRS\"");
 
-            air202_status_sap_t sapbar_status = air202_sap_sapbar_pdp_resq;
-            uint32_t dev_time = millis();
+            // air202_status_sap_t sapbar_status = air202_sap_sapbar_pdp_resq;
+            // uint32_t dev_time = millis();
 
-            while(millis() - dev_time < _httpTimeout)
-            {
-                if (available())
-                {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
-                    {
-                        BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_pdp_success"));
+            // while(millis() - dev_time < _httpTimeout)
+            // {
+            //     if (available())
+            //     {
+            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            //         {
+            //             BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_pdp_success"));
 
-                        sapbar_status = air202_sap_sapbar_pdp_success;
-                        break;
-                    }
-                }
-            }
+            //             sapbar_status = air202_sap_sapbar_pdp_success;
+            //             break;
+            //         }
+            //     }
+            // }
 
-            if (sapbar_status != air202_sap_sapbar_pdp_success) return false;
+            // if (sapbar_status != air202_sap_sapbar_pdp_success) return false;
 
-            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
-                        "=3,1,\"APN\",\"CMNET\"");
+            // streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+            //             "=3,1,\"APN\",\"CMNET\"");
 
-            sapbar_status = air202_sap_sapbar_apn_resq;
-            dev_time = millis();
+            // sapbar_status = air202_sap_sapbar_apn_resq;
+            // dev_time = millis();
 
-            while(millis() - dev_time < _httpTimeout)
-            {
-                if (available())
-                {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
-                    {
-                        BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_apn_success"));
+            // while(millis() - dev_time < _httpTimeout)
+            // {
+            //     if (available())
+            //     {
+            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            //         {
+            //             BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_apn_success"));
 
-                        sapbar_status = air202_sap_sapbar_apn_success;
-                        break;
-                    }
-                }
-            }
+            //             sapbar_status = air202_sap_sapbar_apn_success;
+            //             break;
+            //         }
+            //     }
+            // }
 
-            if (sapbar_status != air202_sap_sapbar_apn_success) return false;
+            // if (sapbar_status != air202_sap_sapbar_apn_success) return false;
 
-            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + "=5,1");
+            // streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + "=5,1");
 
-            sapbar_status = air202_sap_sapbar_save_resq;
-            dev_time = millis();
+            // sapbar_status = air202_sap_sapbar_save_resq;
+            // dev_time = millis();
 
-            while(millis() - dev_time < _httpTimeout)
-            {
-                if (available())
-                {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
-                    {
-                        BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_save_success"));
+            // while(millis() - dev_time < _httpTimeout)
+            // {
+            //     if (available())
+            //     {
+            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            //         {
+            //             BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_save_success"));
 
-                        sapbar_status = air202_sap_sapbar_save_success;
-                        break;
-                    }
-                }
-            }
+            //             sapbar_status = air202_sap_sapbar_save_success;
+            //             break;
+            //         }
+            //     }
+            // }
 
-            if (sapbar_status != air202_sap_sapbar_save_success) return false;
+            // if (sapbar_status != air202_sap_sapbar_save_success) return false;
 
-            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + "=1,1");
+            // streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + "=1,1");
 
-            sapbar_status = air202_sap_sapbar_fresh_resq;
-            dev_time = millis();
+            // sapbar_status = air202_sap_sapbar_fresh_resq;
+            // dev_time = millis();
 
-            while(millis() - dev_time < _httpTimeout*4)
-            {
-                if (available())
-                {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
-                    {
-                        BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_fresh_success"));
+            // while(millis() - dev_time < _httpTimeout*4)
+            // {
+            //     if (available())
+            //     {
+            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            //         {
+            //             BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_fresh_success"));
 
-                        sapbar_status = air202_sap_sapbar_fresh_success;
-                        break;
-                    }
-                }
-            }
+            //             sapbar_status = air202_sap_sapbar_fresh_success;
+            //             break;
+            //         }
+            //     }
+            // }
 
-            if (sapbar_status != air202_sap_sapbar_fresh_success) return false;
+            // if (sapbar_status != air202_sap_sapbar_fresh_success) return false;
 
             streamPrint(BLINKER_CMD_HTTPINIT_RESQ);
             uint32_t http_time = millis();
@@ -321,7 +322,7 @@ class BlinkerHTTPAIR202
             http_status = http_para_set;
             http_time = millis();
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout*2)
             {
                 if (available())
                 {
@@ -333,6 +334,8 @@ class BlinkerHTTPAIR202
                     }
                 }
             }
+
+            // http_status = http_para_set_success;// TBD
 
             if (http_status != http_para_set_success) return false;
 
@@ -353,53 +356,14 @@ class BlinkerHTTPAIR202
                     }
                     else if (strcmp(streamData, BLINKER_CMD_ERROR) == 0)
                     {
-                        streamPrint(STRING_format(BLINKER_CMD_HTTPERM_RESQ) + "=0");
-                        http_time = millis();
-                        while(millis() - http_time < _httpTimeout)
-                        {
-                            if (available())
-                            {
-                                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
-                                {
-                                    BLINKER_LOG_ALL(BLINKER_F("http_start_success"));
-                                    http_status = http_start_success;
-                                    break;
-                                }
-                            }
-                        }
-                    //     // break;
+                        streamPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
+                        ::delay(500);
 
-                    //     uint32_t mqtt_time = millis();
-                    //     uint8_t status_get = 0;
+                        streamPrint(STRING_format(BLINKER_CMD_HTTPERM_RESQ));
+                        ::delay(500);
 
-                    //     streamPrint(STRING_format(BLINKER_CMD_MIPCLOSE_RESQ));
-                    //     mqtt_time = millis();
-
-                    //     while(millis() - mqtt_time < _httpTimeout)
-                    //     {
-                    //         if (available())
-                    //         {
-                    //             if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
-                    //             {
-                    //                 break;
-                    //             }
-                    //         }
-                    //     }
-
-                    //     streamPrint(STRING_format(BLINKER_CMD_CIPSHUT_RESQ));
-                    //     mqtt_time = millis();
-
-                    //     while(millis() - mqtt_time < _httpTimeout)
-                    //     {
-                    //         if (available())
-                    //         {
-                    //             if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
-                    //             {
-                    //                 break;
-                    //             }
-                    //         }
-                    //     }
-                    }                    
+                        break;
+                    }
                 }
             }
 
@@ -407,7 +371,7 @@ class BlinkerHTTPAIR202
 
             http_time = millis();
 
-            while(millis() - http_time < _httpTimeout*4)
+            while(millis() - http_time < _httpTimeout*2)
             {
                 if (available())
                 {
@@ -429,7 +393,7 @@ class BlinkerHTTPAIR202
                 }
             }
 
-            if (http_status != http_upload_success) return false;
+            // if (http_status != http_upload_success) return false;
 
             streamPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
             http_status = http_read_response;
@@ -662,6 +626,8 @@ class BlinkerHTTPAIR202
                     {
                         BLINKER_LOG_ALL(BLINKER_F("http_upload_success"));
                         http_status = http_upload_success;
+                        free(_masterAT);
+                        break;
                     }
 
                     free(_masterAT);
@@ -670,7 +636,7 @@ class BlinkerHTTPAIR202
                 }
             }
 
-            if (http_status != http_upload_success) return false;
+            // if (http_status != http_upload_success) return false;
 
             streamPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
             
@@ -814,6 +780,10 @@ class BlinkerHTTPAIR202
                 // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
                 streamData[dNum-1] = '\0';
+
+                // strcpy(streamData, stream->readStringUntil('\n').c_str());
+                // int16_t dNum = strlen(streamData);
+                // streamData[dNum-1] = '\0';
 
                 stream->flush();
                 
