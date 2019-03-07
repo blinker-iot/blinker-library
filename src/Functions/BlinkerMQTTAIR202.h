@@ -66,7 +66,8 @@ class BlinkerMQTTAIR202
 
         char*   lastRead;
         const char* subTopic;
-        char    streamData[1024];
+        // char    streamData[1024];
+        char*       streamData;
 
     protected :
         class BlinkerMasterAT * _masterAT;
@@ -660,44 +661,53 @@ bool BlinkerMQTTAIR202::streamAvailable()
 
     if (stream->available())
     {
-        // if (isFresh) free(streamData);
-        // streamData = (char*)malloc(1*sizeof(char));
+        if (isFresh) free(streamData);
+        streamData = (char*)malloc(1*sizeof(char));
         // streamData = "";
-        memset(streamData, '\0', 1024);
+        // memset(streamData, '\0', 1024);
+
+        // strcpy(streamData, stream->readStringUntil('\n').c_str());
+
+        // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData);
+
+        // int16_t dNum = strlen(streamData);
         
         int16_t dNum = 0;
         int c_d = timedRead();
         while (dNum < BLINKER_MAX_READ_SIZE && 
             c_d >=0 && c_d != '\n')
         {
-            if (c_d != '\r')
+            // if (c_d != '\r')
             {
                 streamData[dNum] = (char)c_d;
                 dNum++;
-                // streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
+                streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
             }
 
             c_d = timedRead();
         }
-        dNum++;
+        // dNum++;
         // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
-        streamData[dNum-1] = '\0';
+        // streamData[dNum-1] = '\0';
 
         // streamData = stream->readStringUntil('\n');
         // streamData[streamData.length()-1] = '\0';
 
         // BLINKER_LOG_ALL(BLINKER_F("handleSerial TEST: "), stream->readStringUntil('\n'));
 
-        stream->flush();
+        // stream->flush();
         
-        BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
-        BLINKER_LOG_FreeHeap_ALL();
+        // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+        //                 BLINKER_F(" , dNum: "), dNum);
+        // BLINKER_LOG_FreeHeap_ALL();
         
-        if (strlen(streamData) < BLINKER_MAX_READ_SIZE)
+        if (dNum < BLINKER_MAX_READ_SIZE && dNum > 0)
         {
-            if (streamData[strlen(streamData) - 1] == '\r')
-                streamData[strlen(streamData) - 1] = '\0';
+            // if (streamData[strlen(streamData) - 1] == '\r')
+            streamData[dNum - 1] = '\0';
+            BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+                            BLINKER_F(" , dNum: "), dNum);
 
             isFresh = true;
             return true;

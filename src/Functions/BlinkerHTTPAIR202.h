@@ -14,15 +14,15 @@
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
 
-#if defined(ESP32)
-    #include <HardwareSerial.h>
+// #if defined(ESP32)
+//     #include <HardwareSerial.h>
 
-    HardwareSerial *HSerial_HTTP;
-#else
-    #include <SoftwareSerial.h>
+//     HardwareSerial *HSerial_HTTP;
+// #else
+//     #include <SoftwareSerial.h>
 
-    SoftwareSerial *SSerial_HTTP;
-#endif
+//     SoftwareSerial *SSerial_HTTP;
+// #endif
 
 #define BLINKER_HTTP_AIR202_DEFAULT_TIMEOUT 5000UL
 
@@ -94,7 +94,7 @@ class BlinkerHTTPAIR202
 
         void streamPrint(const String & s)
         {
-            stream->flush();
+            // stream->flush();
             BLINKER_LOG_ALL(s);
             stream->println(s);
         }
@@ -714,7 +714,8 @@ class BlinkerHTTPAIR202
         class BlinkerMasterAT * _masterAT;
         Stream* stream;
         // String  streamData;
-        char    streamData[1024];
+        // char    streamData[1024];
+        char*   streamData;
         String  payload = "";
         bool    isFresh = false;
         bool    isHWS = false;
@@ -754,53 +755,62 @@ class BlinkerHTTPAIR202
 
             if (stream->available())
             {
-                // if (isFresh) free(streamData);
-                // streamData = (char*)malloc(1*sizeof(char));
+                if (isFresh) free(streamData);
+                streamData = (char*)malloc(1*sizeof(char));
                 // streamData = "";
 
-                memset(streamData, '\0', 1024);
+                // memset(streamData, '\0', 1024);
 
-                // streamData = stream->readStringUntil('\n');
+                // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), stream->readString());
+
+                // strcpy(streamData, stream->readStringUntil('\n').c_str());
+
+                // int16_t dNum = strlen(streamData);
+
+                // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData,
+                //                 BLINKER_F(", dNum: "), dNum);
                 
                 int16_t dNum = 0;
                 int c_d = timedRead();
                 while (dNum < BLINKER_MAX_READ_SIZE && 
                     c_d >=0 && c_d != '\n')
                 {
-                    if (c_d != '\r')
+                    // if (c_d != '\r')
                     {
                         streamData[dNum] = (char)c_d;
                         dNum++;
-                        // streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
+                        streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
                     }
 
                     c_d = timedRead();
                 }
-                dNum++;
-                // streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                // dNum++;
+                // // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
-                streamData[dNum-1] = '\0';
+                // streamData[dNum-1] = '\0';
 
                 // strcpy(streamData, stream->readStringUntil('\n').c_str());
                 // int16_t dNum = strlen(streamData);
                 // streamData[dNum-1] = '\0';
 
-                stream->flush();
+                // stream->flush();
                 
-                BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
-                BLINKER_LOG_FreeHeap_ALL();
+                // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+                //                 BLINKER_F(" , dNum: "), dNum);
+                // BLINKER_LOG_FreeHeap_ALL();
                 
-                if (strlen(streamData) < BLINKER_MAX_READ_SIZE)
+                if (dNum < BLINKER_MAX_READ_SIZE && dNum > 0)
                 {
-                    if (streamData[strlen(streamData) - 1] == '\r')
-                        streamData[strlen(streamData) - 1] = '\0';
+                    // if (streamData[dNum - 1] == '\r')
+                    streamData[dNum - 1] = '\0';
+                    BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+                                    BLINKER_F(" , dNum: "), dNum);
 
                     isFresh = true;
                     return true;
                 }
                 else
                 {
-                    // free(streamData);
                     return false;
                 }
             }

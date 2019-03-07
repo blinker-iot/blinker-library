@@ -1751,4 +1751,38 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
+#if defined(BLINKER_NBIOT_SIM7020)
+    // http://www.simcom.com/upload/file/1547183713.pdf HTTP
+    // http://www.simcom.com/upload/file/1547183663.pdf MQTT
+    // http://www.simcom.com/upload/file/1547177595.pdf AT
+
+    #define BLINKER_CMD_AT                      "AT"
+
+    #define BLINKER_CMD_CPIN_RESQ               "AT+CPIN?"
+
+    #define BLINKER_CMD_CPIN                    "CPIN"
+
+    #define BLINKER_CMD_READY                   "READY"
+
+    #define BLINKER_CMD_CSQ_RESQ                "AT+CSQ?"
+
+    #define BLINKER_CMD_CSQ                     "CSQ"
+
+    #define BLINKER_CMD_CGREG_RESQ              "AT+CGREG?"
+
+    #define BLINKER_CMD_CGREG                   "CGREG"
+
+    #define BLINKER_CMD_CGACT_RESQ              "AT+CGACT?"
+
+    #define BLINKER_CMD_CGACT                   "CGACT"
+
+    #define BLINKER_CMD_COPS_RESQ               "AT+COPS?"
+
+    #define BLINKER_CMD_COPS                    "COPS"
+
+    #define BLINKER_CMD_CGCONTRDP_RESQ          "AT+CGCONTRDP"
+
+    #define BLINKER_CMD_CGCONTRDP               "CGCONTRDP"
+#endif
+
 #endif

@@ -91,7 +91,7 @@ int BlinkerSerial::available()
         stream->flush();
         
         BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
-        BLINKER_LOG_FreeHeap_ALL();
+        // BLINKER_LOG_FreeHeap_ALL();
         
         if (strlen(streamData) < BLINKER_MAX_READ_SIZE)
         {
