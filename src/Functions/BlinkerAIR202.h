@@ -32,18 +32,18 @@ enum air202_status_t
     air202_cgtt_state_ver_check,
     air202_cgtt_state_ver_check_success,
     air202_cgtt_state,
-    air202_cgtt_state_resp,
+    air202_cgtt_state_req,
     air202_cgtt_state_success,
-    air202_sapbar_pdp_resq,
+    air202_sapbar_pdp_req,
     air202_sapbar_pdp_success,
     air202_sapbar_pdp_failed,
-    air202_sapbar_apn_resq,
+    air202_sapbar_apn_req,
     air202_sapbar_apn_success,
     air202_sapbar_apn_failed,
-    air202_sapbar_save_resq,
+    air202_sapbar_save_req,
     air202_sapbar_save_success,
     air202_sapbar_save_failed,
-    air202_sapbar_fresh_resq,
+    air202_sapbar_fresh_req,
     air202_sapbar_fresh_success,
     air202_sapbar_fresh_failed,
 };
@@ -54,6 +54,8 @@ class BlinkerAIR202
         BlinkerAIR202() :
             isHWS(false)
         {}
+
+        ~BlinkerAIR202() { flush(); }
 
         void setStream(Stream& s, bool isHardware, blinker_callback_t _func)
         { stream = &s; isHWS = isHardware; listenFunc = _func; }
@@ -201,7 +203,7 @@ class BlinkerAIR202
         void getAMGSMLOC()
         {
             uint32_t os_time = millis();
-            streamPrint(BLINKER_CMD_AMGSMLOC_RESQ);
+            streamPrint(BLINKER_CMD_AMGSMLOC_REQ);
 
             while(millis() - os_time < _airTimeout * 10)
             {
@@ -256,7 +258,7 @@ class BlinkerAIR202
             uint32_t http_time = millis();
             air202_status_t cgtt_status = air202_cgtt_state_ver_check;
 
-            streamPrint(BLINKER_CMD_CGMMR_RESQ);
+            streamPrint(BLINKER_CMD_CGMMR_REQ);
 
             cgtt_status = air202_cgtt_state_ver_check;
 
@@ -275,7 +277,7 @@ class BlinkerAIR202
 
             if (cgtt_status != air202_cgtt_state_ver_check_success) return false;
 
-            streamPrint(BLINKER_CMD_CGQTT_RESQ);
+            streamPrint(BLINKER_CMD_CGQTT_REQ);
             cgtt_status = air202_cgtt_state;
             http_time = millis();
 
@@ -290,8 +292,8 @@ class BlinkerAIR202
                         _masterAT->reqName() == BLINKER_CMD_CGATT &&
                         _masterAT->getParam(0).toInt() == 1)
                     {
-                        BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_resp"));
-                        cgtt_status = air202_cgtt_state_resp;
+                        BLINKER_LOG_ALL(BLINKER_F("air202_cgtt_state_req"));
+                        cgtt_status = air202_cgtt_state_req;
                         free(_masterAT);
                         break;
                     }
@@ -300,7 +302,7 @@ class BlinkerAIR202
                 }
             }
 
-            if (cgtt_status != air202_cgtt_state_resp) return false;
+            if (cgtt_status != air202_cgtt_state_req) return false;
             // http_time = millis();
 
             // while(millis() - http_time < _airTimeout)
@@ -322,7 +324,7 @@ class BlinkerAIR202
 
             return true;
 
-            // stream->println(BLINKER_CMD_CGQTT_RESQ);
+            // stream->println(BLINKER_CMD_CGQTT_REQ);
 
             // cgtt_status = air202_cgtt_state;
         }
@@ -358,10 +360,10 @@ class BlinkerAIR202
 
         bool SAPBR()
         {
-            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_REQ) + \
                         "=3,1,\"CONTYPE\",\"GPRS\"");
 
-            air202_status_t sapbar_status = air202_sapbar_pdp_resq;
+            air202_status_t sapbar_status = air202_sapbar_pdp_req;
             uint32_t dev_time = millis();
 
             while(millis() - dev_time < _airTimeout)
@@ -380,10 +382,10 @@ class BlinkerAIR202
 
             if (sapbar_status != air202_sapbar_pdp_success) return false;
 
-            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + \
+            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_REQ) + \
                         "=3,1,\"APN\",\"CMNET\"");
 
-            sapbar_status = air202_sapbar_apn_resq;
+            sapbar_status = air202_sapbar_apn_req;
             dev_time = millis();
 
             while(millis() - dev_time < _airTimeout)
@@ -402,9 +404,9 @@ class BlinkerAIR202
 
             if (sapbar_status != air202_sapbar_apn_success) return false;
 
-            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + "=5,1");
+            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_REQ) + "=5,1");
 
-            sapbar_status = air202_sapbar_save_resq;
+            sapbar_status = air202_sapbar_save_req;
             dev_time = millis();
 
             while(millis() - dev_time < _airTimeout)
@@ -423,9 +425,9 @@ class BlinkerAIR202
 
             if (sapbar_status != air202_sapbar_save_success) return false;
 
-            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_RESQ) + "=1,1");
+            streamPrint(STRING_format(BLINEKR_CMD_SAPBR_REQ) + "=1,1");
 
-            sapbar_status = air202_sapbar_fresh_resq;
+            sapbar_status = air202_sapbar_fresh_req;
             dev_time = millis();
 
             while(millis() - dev_time < _airTimeout)
@@ -451,7 +453,7 @@ class BlinkerAIR202
         {
             uint32_t dev_time = millis();
 
-            streamPrint(BLINEKR_CMD_CGSN_RESQ);
+            streamPrint(BLINEKR_CMD_CGSN_REQ);
 
             char _imei[16];
 
@@ -493,7 +495,7 @@ class BlinkerAIR202
         {
             uint32_t dev_time = millis();
 
-            streamPrint(BLINKER_CMD_ICCID_RESQ);
+            streamPrint(BLINKER_CMD_ICCID_REQ);
 
             char _iccid[21];
 
@@ -543,6 +545,11 @@ class BlinkerAIR202
                             BLINKER_F(", length: "), strlen(streamData));
 
             return _iccid;
+        }
+
+        void flush()
+        {
+            if (isFresh) free(streamData);
         }
 
     protected :

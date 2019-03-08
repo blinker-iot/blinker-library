@@ -1668,22 +1668,22 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     
     #define BLINKER_CMD_AT                      "AT"
 
-    #define BLINKER_CMD_CGMMR_RESQ              "AT+CGMR"
+    #define BLINKER_CMD_CGMMR_REQ               "AT+CGMR"
 
     #define BLINKER_CMD_CGMMR_RESP              "AirM2M_V5595_AT_S_SSL"
 
     #define BLINKER_CMD_CGATT                   "CGATT"
 
-    #define BLINKER_CMD_CGQTT_RESQ              "AT+CGATT?"
+    #define BLINKER_CMD_CGQTT_REQ               "AT+CGATT?"
 
-    #define BLINEKR_CMD_SAPBR_RESQ              "AT+SAPBR"
+    #define BLINEKR_CMD_SAPBR_REQ               "AT+SAPBR"
     // AT+SAPBR=<cmd_type>,<cid>[,<ConParamTag>,<ConParamValue>]
 
-    #define BLINKER_CMD_MCONFIG_RESQ            "AT+MCONFIG"
+    #define BLINKER_CMD_MCONFIG_REQ             "AT+MCONFIG"
 
     #define BLINKER_CMD_SSLMIPSTART             "AT+SSLMIPSTART"
 
-    #define BLINKER_CMD_MCONNECT_RESQ           "AT+MCONNECT"
+    #define BLINKER_CMD_MCONNECT_REQ            "AT+MCONNECT"
 
     #define BLINKER_CMD_CONNECT_OK              "CONNECT OK"
 
@@ -1691,61 +1691,61 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_CONNACK                 "CONNACK"
 
-    #define BLINKER_CMD_MSUB_RESQ               "AT+MSUB"
+    #define BLINKER_CMD_MSUB_REQ                "AT+MSUB"
 
     #define BLINKER_CMD_SUBACK                  "SUBACK"
 
-    #define BLINKER_CMD_MQTTTMSGSET_RESQ        "AT+MQTTMSGSET"
+    #define BLINKER_CMD_MQTTTMSGSET_REQ         "AT+MQTTMSGSET"
 
-    #define BLINKER_CMD_MPUB_RESQ               "AT+MPUB"
+    #define BLINKER_CMD_MPUB_REQ                "AT+MPUB"
 
     #define BLINKER_CMD_MSUB                    "MSUB"
 
     #define BLINKER_CMD_PUBACK                  "PBACK"
 
-    #define BLINKER_CMD_MQTTSTATU_RESQ          "AT+MQTTSTATU"
+    #define BLINKER_CMD_MQTTSTATU_REQ           "AT+MQTTSTATU"
 
     #define BLINKER_CMD_MQTTSTATUS              "MQTTSTATU "
 
-    #define BLINKER_CMD_MIPCLOSE_RESQ           "AT+MIPCLOSE"
+    #define BLINKER_CMD_MIPCLOSE_REQ            "AT+MIPCLOSE"
 
-    #define BLINKER_CMD_CIPSHUT_RESQ            "AT+CIPSHUT"
+    #define BLINKER_CMD_CIPSHUT_REQ             "AT+CIPSHUT"
 
-    #define BLINKER_CMD_CSTT_RESQ               "AT+CSTT"
+    #define BLINKER_CMD_CSTT_REQ                "AT+CSTT"
 
     #define BLINKER_CMD_CMNET                   "CMNET"
 
-    #define BLINKER_CMD_CIICR_RESQ              "AT+CIICR"
+    #define BLINKER_CMD_CIICR_REQ               "AT+CIICR"
 
-    #define BLINKER_CMD_HTTPINIT_RESQ           "AT+HTTPINIT"
+    #define BLINKER_CMD_HTTPINIT_REQ            "AT+HTTPINIT"
 
-    #define BLINKER_CMD_HTTPPARA_RESQ           "AT+HTTPPARA"
+    #define BLINKER_CMD_HTTPPARA_REQ            "AT+HTTPPARA"
 
-    #define BLINKER_CMD_HTTPACTION_RESQ         "AT+HTTPACTION"
+    #define BLINKER_CMD_HTTPACTION_REQ          "AT+HTTPACTION"
 
     #define BLINKER_CMD_HTTPACTION              "HTTPACTION"
 
-    #define BLINKER_CMD_HTTPREAD_RESQ           "AT+HTTPREAD"
+    #define BLINKER_CMD_HTTPREAD_REQ            "AT+HTTPREAD"
 
     #define BLINKER_CMD_HTTPREAD                "HTTPREAD"
 
-    #define BLINKER_CMD_HTTPERM_RESQ            "AT+HTTPTERM"
+    #define BLINKER_CMD_HTTPERM_REQ             "AT+HTTPTERM"
 
-    #define BLINKER_CMD_HTTPDATA_RESQ           "AT+HTTPDATA"
+    #define BLINKER_CMD_HTTPDATA_REQ            "AT+HTTPDATA"
 
     #define BLINKER_CMD_DOWNLOAD                "DOWNLOAD"
 
-    #define BLINEKR_CMD_CGSN_RESQ               "AT+CGSN"
+    #define BLINEKR_CMD_CGSN_REQ                "AT+CGSN"
 
-    #define BLINKER_CMD_ICCID_RESQ              "AT+ICCID"
+    #define BLINKER_CMD_ICCID_REQ               "AT+ICCID"
 
     #define BLINKER_CMD_ICCID                   "ICCID"
 
     #define BLINEKR_CMD_CGSN                    "CGSN"
 
-    #define BLINKER_CMD_MDISCONNECT_RESQ        "AT+MDISCONNECT"
+    #define BLINKER_CMD_MDISCONNECT_REQ         "AT+MDISCONNECT"
 
-    #define BLINKER_CMD_AMGSMLOC_RESQ           "AT+AMGSMLOC"
+    #define BLINKER_CMD_AMGSMLOC_REQ            "AT+AMGSMLOC"
 
     #define BLINKER_CMD_AMGSMLOC                "AMGSMLOC"
 
@@ -1758,31 +1758,57 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_AT                      "AT"
 
-    #define BLINKER_CMD_CPIN_RESQ               "AT+CPIN?"
+    #define BLINKER_CMD_CPIN_REQ                "AT+CPIN?"
 
     #define BLINKER_CMD_CPIN                    "CPIN"
 
     #define BLINKER_CMD_READY                   "READY"
 
-    #define BLINKER_CMD_CSQ_RESQ                "AT+CSQ?"
+    #define BLINKER_CMD_CSQ_REQ                 "AT+CSQ?"
 
     #define BLINKER_CMD_CSQ                     "CSQ"
 
-    #define BLINKER_CMD_CGREG_RESQ              "AT+CGREG?"
+    #define BLINKER_CMD_CGREG_REQ               "AT+CGREG?"
 
     #define BLINKER_CMD_CGREG                   "CGREG"
 
-    #define BLINKER_CMD_CGACT_RESQ              "AT+CGACT?"
+    #define BLINKER_CMD_CGACT_REQ               "AT+CGACT?"
 
     #define BLINKER_CMD_CGACT                   "CGACT"
 
-    #define BLINKER_CMD_COPS_RESQ               "AT+COPS?"
+    #define BLINKER_CMD_COPS_REQ                "AT+COPS?"
 
     #define BLINKER_CMD_COPS                    "COPS"
 
-    #define BLINKER_CMD_CGCONTRDP_RESQ          "AT+CGCONTRDP"
+    #define BLINKER_CMD_CGCONTRDP_REQ           "AT+CGCONTRDP"
 
     #define BLINKER_CMD_CGCONTRDP               "CGCONTRDP"
+
+    #define BLINKER_CMD_GSN_REQ                 "AT+GSN"
+
+    #define BLINKER_CMD_CCID_REQ                "AT+CCID"
+
+    #define BLINKER_CMD_CSNTPSTART_REQ          "AT+CSNTPSTART"
+
+    #define BLINKER_CMD_CSNTPSTOP_REQ           "AT+CSNTPSTOP"
+
+    #define BLINKER_CMD_CSNTP                   "CSNTP"
+
+    #define BLINKER_CMD_CHTTPCREATE_REQ         "AT+CHTTPCREATE"
+
+    #define BLINKER_CMD_CHTTPCREATE             "CHTTPCREATE"
+
+    #define BLINEKR_CMD_CHTTPCON_REQ            "AT+CHTTPCON"
+
+    #define BLINKER_CMD_CHTTPSEND_REQ           "AT+CHTTPSEND"
+
+    #define BLINKER_CMD_CHTTPNMIH               "CHTTPNMIH"
+
+    #define BLINKER_CMD_CHTTPNMIC               "CHTTPNMIC"
+
+    #define BLINKER_CMD_CHTTPDISCON_REQ         "AT+CHTTPDISCON"
+
+    #define BLINKER_CMD_CHTTPDISTROY_REQ        "AT+CHTTPDISTROY"
 #endif
 
 #endif
