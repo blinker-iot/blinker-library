@@ -111,9 +111,9 @@ class BlinkerMQTTAIR202
 
 int BlinkerMQTTAIR202::connect()
 {
-    streamPrint(STRING_format(BLINKER_CMD_CSTT_RESQ) +
+    streamPrint(STRING_format(BLINKER_CMD_CSTT_REQ) +
                 "=\"" + BLINKER_CMD_CMNET + "\"");
-    // BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
+    // BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_MCONFIG_REQ) +
     //             "=\"" + clientid + "\",\"" + username + 
     //             "\",\"" + password + "\"");
 
@@ -133,8 +133,8 @@ int BlinkerMQTTAIR202::connect()
         }
     }
 
-    streamPrint(STRING_format(BLINKER_CMD_CIICR_RESQ));
-    // BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
+    streamPrint(STRING_format(BLINKER_CMD_CIICR_REQ));
+    // BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_MCONFIG_REQ) +
     //             "=\"" + clientid + "\",\"" + username + 
     //             "\",\"" + password + "\"");
 
@@ -154,10 +154,10 @@ int BlinkerMQTTAIR202::connect()
         }
     }
 
-    streamPrint(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
+    streamPrint(STRING_format(BLINKER_CMD_MCONFIG_REQ) +
                 "=\"" + clientid + "\",\"" + username + 
                 "\",\"" + password + "\"");
-    // BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_MCONFIG_RESQ) +
+    // BLINKER_LOG_ALL(STRING_format(BLINKER_CMD_MCONFIG_REQ) +
     //             "=\"" + clientid + "\",\"" + username + 
     //             "\",\"" + password + "\"");
 
@@ -216,7 +216,7 @@ int BlinkerMQTTAIR202::connect()
         }
     }
 
-    streamPrint(STRING_format(BLINKER_CMD_MCONNECT_RESQ) +
+    streamPrint(STRING_format(BLINKER_CMD_MCONNECT_REQ) +
                 "=1,300");
     mqtt_status = mqtt_connect;
     mqtt_time = millis();
@@ -255,7 +255,7 @@ int BlinkerMQTTAIR202::connect()
     isConnected = true;
 
     // return true;
-    streamPrint(STRING_format(BLINKER_CMD_MSUB_RESQ) +
+    streamPrint(STRING_format(BLINKER_CMD_MSUB_REQ) +
                 "=\"" + subTopic + "\",0");
     mqtt_status = mqtt_set_sub_topic;
     mqtt_time = millis();
@@ -372,7 +372,7 @@ int BlinkerMQTTAIR202::connected()
 
         if (!isConnected || millis() - connect_time >= 5000)
         {
-            streamPrint(STRING_format(BLINKER_CMD_MQTTSTATU_RESQ));
+            streamPrint(STRING_format(BLINKER_CMD_MQTTSTATU_REQ));
             // connect_time = millis();
         // }
             mqtt_time = millis();
@@ -445,7 +445,7 @@ int BlinkerMQTTAIR202::connected()
 
 int BlinkerMQTTAIR202::disconnect()
 {
-    streamPrint(STRING_format(BLINKER_CMD_MDISCONNECT_RESQ));
+    streamPrint(STRING_format(BLINKER_CMD_MDISCONNECT_REQ));
     mqtt_time = millis();
     uint8_t status_get = 0;
 
@@ -463,7 +463,7 @@ int BlinkerMQTTAIR202::disconnect()
         }
     }
 
-    streamPrint(STRING_format(BLINKER_CMD_MIPCLOSE_RESQ));
+    streamPrint(STRING_format(BLINKER_CMD_MIPCLOSE_REQ));
     mqtt_time = millis();
 
     while(millis() - mqtt_time < _mqttTimeout)
@@ -480,7 +480,7 @@ int BlinkerMQTTAIR202::disconnect()
         }
     }
 
-    streamPrint(STRING_format(BLINKER_CMD_CIPSHUT_RESQ));
+    streamPrint(STRING_format(BLINKER_CMD_CIPSHUT_REQ));
     mqtt_time = millis();
 
     while(millis() - mqtt_time < _mqttTimeout)
@@ -503,7 +503,7 @@ int BlinkerMQTTAIR202::disconnect()
 void BlinkerMQTTAIR202::subscribe(const char * topic)
 {
     subTopic = topic;
-    // streamPrint(STRING_format(BLINKER_CMD_MPUB_RESQ) +
+    // streamPrint(STRING_format(BLINKER_CMD_MPUB_REQ) +
     //             "=\"" + topic + "\",0");
     // mqtt_status = mqtt_set_sub_topic;
     // mqtt_time = millis();
@@ -544,7 +544,7 @@ void BlinkerMQTTAIR202::subscribe(const char * topic)
 
 int BlinkerMQTTAIR202::publish(const char * topic, const char * msg)
 {
-    streamPrint(STRING_format(BLINKER_CMD_MPUB_RESQ) +
+    streamPrint(STRING_format(BLINKER_CMD_MPUB_REQ) +
                 "=\"" + topic + "\",0,0,\"" + msg + "\"");
     mqtt_status = mqtt_set_pub;
     mqtt_time = millis();

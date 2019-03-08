@@ -15,19 +15,21 @@
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
 
+#include <time.h>
+
 enum sim7020_status_t
 {
-    sim7020_cpin_resq,
+    sim7020_cpin_REQ,
     sim7020_cpin_success,
-    sim7020_csq_resq,
+    sim7020_csq_REQ,
     sim7020_csq_success,
-    sim7020_cgreg_resq,
+    sim7020_cgreg_REQ,
     sim7020_cgreg_success,
-    sim7020_cgact_resq,
+    sim7020_cgact_REQ,
     sim7020_cgact_success,
-    sim7020_cops_resq,
+    sim7020_cops_REQ,
     sim7020_cops_success,
-    sim7020_cgcontrdp_resq,
+    sim7020_cgcontrdp_REQ,
     sim7020_cgcontrdp_success,
 };
 
@@ -38,15 +40,201 @@ class BlinkerSIM7020
             isHWS(false)
         {}
 
+        ~BlinkerSIM7020() { flush(); }
+
         void setStream(Stream& s, bool isHardware, blinker_callback_t _func)
         { stream = &s; isHWS = isHardware; listenFunc = _func; }
+
+        int16_t year()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_year + 1900;
+            }
+            return -1;
+        }
+
+        int8_t  month()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_mon + 1;
+            }
+            return -1;
+        }
+
+        int8_t  mday()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_mday;
+            }
+            return -1;
+        }
+
+        int8_t  wday()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_wday;
+            }
+            return -1;
+        }
+
+        int8_t  hour()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_hour;
+            }
+            return -1;
+        }
+
+        int8_t  minute()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_min;
+            }
+            return -1;
+        }
+
+        int8_t  second()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_sec;
+            }
+            return -1;
+        }
+
+        time_t  time()
+        {
+            if (_ntpTime)
+            {
+                return _ntpTime - _timezone * 3600;
+            }
+            return millis();
+        }
+
+        int32_t dtime()
+        {
+            if (_ntpTime)
+            {
+                struct tm timeinfo;
+                #if defined(ESP8266) || defined(__AVR__)
+                    gmtime_r(&_ntpTime, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&_ntpTime, &timeinfo);
+                #endif
+                
+                return timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
+            }
+            return -1;
+        }
+
+        void getSNTP(char _url[] = "120.25.108.11")
+        {
+            uint32_t os_time = millis();
+            streamPrint(STRING_format(BLINKER_CMD_CSNTPSTART_REQ) + \
+                        "=" + STRING_format(_url));
+
+            while(millis() - os_time < _simTimeout * 10)
+            {
+                if (available())
+                {
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(streamData));
+
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_CSNTP)
+                    {
+                        struct tm timeinfo;
+
+                        timeinfo.tm_year = _masterAT->getParam(0).substring(1, 4).toInt() + 100;
+                        timeinfo.tm_mon  = _masterAT->getParam(0).substring(5, 7).toInt() - 1;
+                        timeinfo.tm_mday = _masterAT->getParam(0).substring(8, 10).toInt();
+
+                        BLINKER_LOG_ALL(BLINKER_F("year: "), timeinfo.tm_year);
+                        BLINKER_LOG_ALL(BLINKER_F("mon: "), timeinfo.tm_mon);
+                        BLINKER_LOG_ALL(BLINKER_F("mday: "), timeinfo.tm_mday);
+
+                        timeinfo.tm_hour = _masterAT->getParam(1).substring(0, 2).toInt();
+                        timeinfo.tm_min  = _masterAT->getParam(1).substring(3, 5).toInt();
+                        timeinfo.tm_sec  = _masterAT->getParam(1).substring(6, 8).toInt();
+
+                        BLINKER_LOG_ALL(BLINKER_F("hour: "), timeinfo.tm_hour);
+                        BLINKER_LOG_ALL(BLINKER_F("mins: "), timeinfo.tm_min);
+                        BLINKER_LOG_ALL(BLINKER_F("secs: "), timeinfo.tm_sec);
+
+                        _ntpTime = mktime(&timeinfo) + _timezone * 3600;
+
+                        BLINKER_LOG_ALL(BLINKER_F("_ntpTime: "), _ntpTime);
+
+                        free(_masterAT);
+                        break;
+                    }
+
+                    free(_masterAT);
+                }
+            }
+        }
 
         int checkPDN()
         {
             uint32_t sim_time = millis();
-            sim7020_status_t pdn_status = sim7020_cpin_resq;
+            sim7020_status_t pdn_status = sim7020_cpin_REQ;
 
-            streamPrint(BLINKER_CMD_CPIN_RESQ);
+            streamPrint(BLINKER_CMD_CPIN_REQ);
 
             while(millis() - sim_time < _simTimeout)
             {
@@ -70,7 +258,7 @@ class BlinkerSIM7020
 
             if (pdn_status != sim7020_cpin_success) return false;
 
-            streamPrint(BLINKER_CMD_CSQ_RESQ);
+            streamPrint(BLINKER_CMD_CSQ_REQ);
             sim_time = millis();
 
             while(millis() - sim_time < _simTimeout)
@@ -95,7 +283,7 @@ class BlinkerSIM7020
 
             if (pdn_status != sim7020_csq_success) return false;
 
-            streamPrint(BLINKER_CMD_CGREG_RESQ);
+            streamPrint(BLINKER_CMD_CGREG_REQ);
             sim_time = millis();
 
             while(millis() - sim_time < _simTimeout)
@@ -120,7 +308,7 @@ class BlinkerSIM7020
 
             if (pdn_status != sim7020_cgact_success) return false;
 
-            streamPrint(BLINKER_CMD_COPS_RESQ);
+            streamPrint(BLINKER_CMD_COPS_REQ);
             sim_time = millis();
 
             while(millis() - sim_time < _simTimeout)
@@ -145,7 +333,7 @@ class BlinkerSIM7020
 
             if (pdn_status != sim7020_cops_success) return false;
 
-            streamPrint(BLINKER_CMD_CGCONTRDP_RESQ);
+            streamPrint(BLINKER_CMD_CGCONTRDP_REQ);
             sim_time = millis();
 
             while(millis() - sim_time < _simTimeout)
@@ -169,6 +357,90 @@ class BlinkerSIM7020
             }
 
             return true;
+        }
+
+        String getIMEI()
+        {
+            uint32_t dev_time = millis();
+
+            streamPrint(BLINEKR_CMD_GSN_REQ);
+
+            char _imei[16];
+
+            while(millis() - dev_time < _simTimeout)
+            {
+                if (available())
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), streamData, 
+                                    BLINKER_F(", length: "), strlen(streamData));
+                    if (strlen(streamData) == 15)
+                    {
+                        strcpy(_imei, streamData);
+                    }
+                }
+            }
+
+            dev_time = millis();
+
+            while(millis() - dev_time < _simTimeout)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei,
+                                        BLINKER_F(", length: "), strlen(streamData));
+                        return _imei;
+                    }       
+                }
+            }
+
+            BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei,
+                            BLINKER_F(", length: "), strlen(streamData));
+
+            return _imei;
+        }
+
+        String getICCID()
+        {
+            uint32_t dev_time = millis();
+
+            streamPrint(BLINKER_CMD_CCID_REQ);
+
+            char _iccid[21];
+
+            while(millis() - dev_time < _simTimeout)
+            {
+                if (available())
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("get ICCID: "), streamData, 
+                                    BLINKER_F(", length: "), strlen(streamData));
+                    if (strlen(streamData) == 20)
+                    {
+                        strcpy(_iccid, streamData);
+                    }
+                }
+            }
+
+            dev_time = millis();
+
+            while(millis() - dev_time < _simTimeout)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("get ICCID: "), _iccid,
+                                        BLINKER_F(", length: "), strlen(streamData));
+                        return _iccid;
+                    }       
+                }
+            }
+
+            BLINKER_LOG_ALL(BLINKER_F("get ICCID: "), _iccid,
+                            BLINKER_F(", length: "), strlen(streamData));
+
+            return _iccid;
         }
 
         bool powerCheck()
@@ -200,6 +472,11 @@ class BlinkerSIM7020
             return false;
         }
 
+        void flush()
+        {
+            if (isFresh) free(streamData);
+        }
+
     protected :
         class BlinkerMasterAT * _masterAT;
         blinker_callback_t listenFunc = NULL;
@@ -209,6 +486,10 @@ class BlinkerSIM7020
         bool    isFresh = false;
         bool    isHWS = false;
         uint16_t    _simTimeout = 1000;
+
+        time_t  _ntpTime = 0;
+
+        float   _timezone = 8.0;
 
         void streamPrint(const String & s)
         {

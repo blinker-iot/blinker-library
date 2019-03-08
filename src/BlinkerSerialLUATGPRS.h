@@ -1,7 +1,7 @@
 #ifndef BLINKER_SERIAL_LUAT_GPRS_H
 #define BLINKER_SERIAL_LUAT_GPRS_H
 
-#include "Adapters/BlinkerSerialGPRS.h"
+#include "Adapters/BlinkerSerialAIR202.h"
 #include "Blinker/BlinkerApi.h"
 
 #if defined(ESP32)
@@ -154,7 +154,7 @@ class BlinkerSerialLUATGPRS : public BlinkerApi
         }
 
     private :
-        BlinkerSerialGPRS Transp;
+        BlinkerSerialAIR202 Transp;
 };
 
 #endif

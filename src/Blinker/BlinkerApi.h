@@ -4155,7 +4155,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         //         ntp1.c_str(), ntp2.c_str(), ntp3.c_str());
 
         configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", \
-                    "210.72.145.44", "time.pool.aliyun.com");
+                    "120.25.108.11", "time.pool.aliyun.com");
     }
 
 
@@ -8991,7 +8991,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 //         uint32_t http_time = millis();
 //         air202_http_status_t http_status = http_init;
 
-//         BProto::serialPrint(BLINKER_CMD_HTTPINIT_RESQ);
+//         BProto::serialPrint(BLINKER_CMD_HTTPINIT_REQ);
 
 //         while(millis() - http_time < time_out)
 //         {
@@ -9008,7 +9008,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_init_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + \
 //                             "=\"CCID\",1");
 //         http_status = http_para_set;
 
@@ -9027,7 +9027,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_para_set_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + \
 //                             "=\"URL\",\"" + host + url + "\"");
 //         http_status = http_para_set;
 
@@ -9046,7 +9046,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_para_set_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPACTION_RESQ) + \
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPACTION_REQ) + \
 //                             "=0");
 //         http_status = http_start;
 
@@ -9087,7 +9087,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_upload_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPREAD_REQ));
 //         http_status = http_read_response;
 
 //         while(millis() - http_time < time_out)
@@ -9112,7 +9112,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_read_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPERM_RESQ));
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPERM_REQ));
 //         http_status = http_end;
 
 //         while(millis() - http_time < time_out)
@@ -9140,7 +9140,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 //         uint32_t http_time = millis();
 //         air202_http_status_t http_status = http_init;
 
-//         BProto::serialPrint(BLINKER_CMD_HTTPINIT_RESQ);
+//         BProto::serialPrint(BLINKER_CMD_HTTPINIT_REQ);
 
 //         while(millis() - http_time < time_out)
 //         {
@@ -9157,7 +9157,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_init_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + \
 //                             "=\"CCID\",1");
 //         http_status = http_para_set;
 
@@ -9176,7 +9176,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_para_set_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + \
 //                             "=\"URL\",\"" + _host + _url + "\"");
 //         http_status = http_para_set;
 
@@ -9195,7 +9195,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_para_set_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_RESQ) + \
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + \
 //                             "=\"" + _type + "\",\"" + _application + "\"");
 //         http_status = http_para_set;
 
@@ -9214,7 +9214,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_para_set_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPDATA_RESQ) + \
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPDATA_REQ) + \
 //                             "=" + _msg.length() + ",10000");
 //         http_status = http_data_set;
 
@@ -9251,7 +9251,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_data_post_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPACTION_RESQ) + \
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPACTION_REQ) + \
 //                             "=1");
 //         http_status = http_start;
 
@@ -9292,7 +9292,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_upload_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPREAD_RESQ));
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPREAD_REQ));
 //         http_status = http_read_response;
 
 //         while(millis() - http_time < time_out)
@@ -9317,7 +9317,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 //         if (http_status != http_read_success) return false;
 
-//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPERM_RESQ));
+//         BProto::serialPrint(STRING_format(BLINKER_CMD_HTTPERM_REQ));
 //         http_status = http_end;
 
 //         while(millis() - http_time < time_out)

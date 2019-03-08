@@ -1,0 +1,6 @@
+#ifndef BLINKER_SERIAL_SIM_NBIOT_H
+#define BLINKER_SERIAL_SIM_NBIOT_H
+
+
+
+#endif
