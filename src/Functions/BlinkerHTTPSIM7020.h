@@ -97,8 +97,8 @@ class BlinkerHTTPSIM7020
             {
                 if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("http_init_success"));
-                    http_status = http_init_success;
+                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_creat_success"));
+                    http_status = sim7020_http_creat_success;
                     break;
                 }
             }
@@ -275,8 +275,8 @@ class BlinkerHTTPSIM7020
             {
                 if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("http_init_success"));
-                    http_status = http_init_success;
+                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_creat_success"));
+                    http_status = sim7020_http_creat_success;
                     break;
                 }
             }
@@ -303,7 +303,7 @@ class BlinkerHTTPSIM7020
                         "=0,1,\"" + _uri + ",4163636570743a202a2f2a0d0a436f6e6" + \
                         "e656374696f6e3a204b6565702d416c6976650d0a557365722d41" + \
                         "67656e743a2053494d434f4d5f4d4f44554c450d0a,\"" + \
-                        _type + "\"," + encode(_msg.c_str()));
+                        _type + "\"," + encode(_msg));
             http_time = millis();
             http_status = sim7020_http_send_req;
 
@@ -464,6 +464,19 @@ class BlinkerHTTPSIM7020
         char ecode_data(uint8_t d_test)
         {
             return c_hex[d_test];
+        }
+
+        String encode(String data)
+        {
+            char _d[1024] = {'\0'};
+
+            for(uint16_t num = 0; num < data.length(); num++)
+            {
+                _d[num*2] = (ecode_data((uint8_t)data[num] >> 4));
+                _d[num*2+1] = (ecode_data((uint8_t)data[num] & 0x0F));
+            }
+
+            return _d;
         }
 
         String encode(char data[])

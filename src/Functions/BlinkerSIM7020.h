@@ -454,7 +454,7 @@ class BlinkerSIM7020
             streamPrint(BLINKER_CMD_AT);
             uint32_t dev_time = millis();
 
-            while(millis() - dev_time < _airTimeout)
+            while(millis() - dev_time < _simTimeout)
             {
                 if (available())
                 {

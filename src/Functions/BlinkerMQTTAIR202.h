@@ -13,15 +13,15 @@
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
 
-#if defined(ESP32)
-    #include <HardwareSerial.h>
+// #if defined(ESP32)
+//     #include <HardwareSerial.h>
 
-    HardwareSerial *HSerial_MQTT;
-#else
-    #include <SoftwareSerial.h>
+//     HardwareSerial *HSerial_MQTT;
+// #else
+//     #include <SoftwareSerial.h>
 
-    SoftwareSerial *SSerial_MQTT;
-#endif
+//     SoftwareSerial *SSerial_MQTT;
+// #endif
 
 #define BLINKER_MQTT_AIR202_DEFAULT_TIMEOUT 5000UL
 
@@ -56,6 +56,8 @@ class BlinkerMQTTAIR202
             clientid = cid; username = user;
             password = pass; listenFunc = func;
         }
+
+        ~BlinkerMQTTAIR202() { flush(); }
         
         int connect();
         int connected();
@@ -69,6 +71,15 @@ class BlinkerMQTTAIR202
         // char    streamData[1024];
         char*       streamData;
 
+        void flush()
+        {
+            if(isFresh) free(streamData);
+            if(isRead) free(lastRead);
+
+            isFresh = false;
+            isRead = false;
+        }
+
     protected :
         class BlinkerMasterAT * _masterAT;
         blinker_callback_t      listenFunc = NULL;
@@ -78,6 +89,7 @@ class BlinkerMQTTAIR202
         bool    isHWS = false;
         bool    isConnected = false;
         bool    isFreshSub = false;
+        bool    isRead = false;
         const char *    servername;
         uint16_t        portnum;
         const char *    clientid;
@@ -416,12 +428,13 @@ int BlinkerMQTTAIR202::connected()
 
                         BLINKER_LOG_ALL("sub data: ", subData);
 
-                        if (isFreshSub) free(lastRead);
+                        if (isRead) free(lastRead);
                         lastRead = (char*)malloc((subData.length()+1)*sizeof(char));
                         strcpy(lastRead, subData.c_str());
 
                         isFreshSub = true;
                         isConnected = true;
+                        isRead = true;
                         connect_time = millis();
 
                         free(_masterAT);
@@ -621,12 +634,13 @@ int BlinkerMQTTAIR202::readSubscription(uint16_t time_out)
                                         10);
                     BLINKER_LOG_ALL(BLINKER_F("mqtt sub data: "), subData);
 
-                    if (isFreshSub) free(lastRead);
+                    if (isRead) free(lastRead);
                     lastRead = (char*)malloc((subData.length()+1)*sizeof(char));
                     strcpy(lastRead, subData.c_str());
 
                     isFreshSub = false;
                     isConnected = true;
+                    isRead = true;
                     connect_time = millis();
 
                     free(_masterAT);

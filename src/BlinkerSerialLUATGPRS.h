@@ -42,7 +42,7 @@ class BlinkerSerialLUATGPRS : public BlinkerApi
             ::delay(100);
             // BApi::atInit();
             BLINKER_LOG(BLINKER_F("Blinker GPRS initialized..."));
-        }        
+        }
 
     private :
         void serialBegin(const char* _type,

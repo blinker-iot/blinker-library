@@ -41,7 +41,7 @@ class BlinkerStream
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-            defined(BLINKER_GPRS_AIR202)
+            defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
             virtual char * deviceName() = 0;
             virtual char * authKey() = 0;
             virtual int init() = 0;           
@@ -75,7 +75,7 @@ class BlinkerStream
             virtual int deviceRegister() = 0;
             virtual int authCheck() = 0;
             virtual void begin(const char* _deviceType) = 0;
-        #elif defined(BLINKER_GPRS_AIR202)
+        #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
             virtual int deviceRegister() = 0;
             virtual void begin(const char* _type, String _imei) = 0;
         #endif

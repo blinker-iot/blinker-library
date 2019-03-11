@@ -1316,7 +1316,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-    defined(BLINKER_GPRS_AIR202)
+    defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
     #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
@@ -1461,7 +1461,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
-#if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202)
+#if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2
@@ -1776,6 +1776,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_CGACT                   "CGACT"
 
+    #define BLINEKR_CMD_GSN_REQ                 "AT+GSN"
+
     #define BLINKER_CMD_COPS_REQ                "AT+COPS?"
 
     #define BLINKER_CMD_COPS                    "COPS"
@@ -1809,6 +1811,32 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_CHTTPDISCON_REQ         "AT+CHTTPDISCON"
 
     #define BLINKER_CMD_CHTTPDISTROY_REQ        "AT+CHTTPDISTROY"
+
+    #define BLINKER_CMD_CMQNEW_REQ              "AT+CMQNEW"
+
+    #define BLINKER_CMD_CMQNEW                  "CMQNEW"
+
+    #define BLINKER_CMD_CMQCON_REQ              "AT+CMQCON"
+
+    #define BLINKER_CMD_CMQSUB_REQ              "AT+CMQSUB"
+
+    #define BLINKER_CMD_CMQPUB_REQ              "AT+CMQPUB"
+
+    #define BLINKER_CMD_CMQPUB                  "CMQPUB"
+
+    #define BLINKER_CMD_CMQDISCON_RESQ          "AT+CMQDISCON"
+
+    #define BLINKER_CMD_CMQDISCON               "CMQDISCON"
+
+    // AT+CMQNEW="public.iot-as-mqtt.cn-shanghai.aliyuncs.com","1883",12000,1024  
+    // +CMQNEW: 0
+    // OK
+    // AT+CMQCON=0,3,"278669B20M25B642205N3CXP",600,0,0,"SFETga2UxKxN8jiqnNQg00105d5400","0ceed0bac52d4968b298e004be3dd496"  
+    // OK
+    // AT+CMQSUB=0,"/JgCGbHlndgz/278669B20M25B642205N3CXP/r",0
+    // OK
+    // +CMQPUB: 0,"/JgCGbHlndgz/278669B20M25B642205N3CXP/r",0,0,0,6,"313233"
+
 #endif
 
 #endif
