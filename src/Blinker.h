@@ -202,11 +202,15 @@
 
     BlinkerSerialWHNBIoT    Blinker;
 
-#elif defined(BLINKER_NBIOT_SIM)
+#elif defined(BLINKER_NBIOT_SIM7020)
 
-    #ifndef BLINKER_SIM7020C_NBIOT
-    #define BLINKER_SIM7020C_NBIOT
-    #endif
+    // #ifndef BLINKER_SIM7020C_NBIOT
+    // #define BLINKER_SIM7020C_NBIOT
+    // #endif
+
+    #include "BlinkerSerialSIMNBIoT.h"
+
+    BlinkerSerialSIMNBIoT   Blinker;
 
 #elif defined(BLINKER_GPRS_AIR202)
 

@@ -55,7 +55,7 @@ class BlinkerSerialAIR202 : public BlinkerStream
         void ping();
         int available();
         void subscribe();
-        int timedRead();
+        // int timedRead();
         char * lastRead() { if (isFresh_GPRS) return msgBuf_GPRS; return ""; }
         void flush();
         // int print(const String & s, bool needCheck = true);
@@ -268,16 +268,16 @@ void BlinkerSerialAIR202::flush()
     }
 }
 
-int BlinkerSerialAIR202::timedRead()
-{
-    int c;
-    uint32_t _startMillis = millis();
-    do {
-        c = stream->read();
-        if (c >= 0) return c;
-    } while(millis() - _startMillis < 1000);
-    return -1; 
-}
+// int BlinkerSerialAIR202::timedRead()
+// {
+//     int c;
+//     uint32_t _startMillis = millis();
+//     do {
+//         c = stream->read();
+//         if (c >= 0) return c;
+//     } while(millis() - _startMillis < 1000);
+//     return -1; 
+// }
 
 // void BlinkerSerialAIR202::flush()
 // {
@@ -521,7 +521,6 @@ void BlinkerSerialAIR202::initStream(Stream& s, bool state, blinker_callback_t f
 }
 
 char * BlinkerSerialAIR202::deviceName() { return MQTT_DEVICEID_GPRS;/*MQTT_ID_PRO;*/ }
-
 
 void BlinkerSerialAIR202::checkKA()
 {

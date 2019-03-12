@@ -71,7 +71,7 @@ class BlinkerProtocol
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-            defined(BLINKER_GPRS_AIR202)
+            defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }
@@ -83,7 +83,7 @@ class BlinkerProtocol
             int deviceRegister(){ return conn->deviceRegister(); }
             int authCheck()     { return conn->authCheck(); }
             void begin(const char* _deviceType) { conn->begin(_deviceType); }
-        #elif defined(BLINKER_GPRS_AIR202)
+        #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
             int deviceRegister(){ return conn->deviceRegister(); }
             void begin(const char* _deviceType, String _imei)
             { conn->begin(_deviceType, _imei); }
