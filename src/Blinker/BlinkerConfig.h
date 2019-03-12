@@ -1764,7 +1764,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_READY                   "READY"
 
-    #define BLINKER_CMD_CSQ_REQ                 "AT+CSQ?"
+    #define BLINKER_CMD_CSQ_REQ                 "AT+CSQ"
 
     #define BLINKER_CMD_CSQ                     "CSQ"
 
@@ -1810,7 +1810,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_CHTTPDISCON_REQ         "AT+CHTTPDISCON"
 
-    #define BLINKER_CMD_CHTTPDISTROY_REQ        "AT+CHTTPDISTROY"
+    #define BLINKER_CMD_CHTTPDESTROY_REQ        "AT+CHTTPDESTROY"
 
     #define BLINKER_CMD_CMQNEW_REQ              "AT+CMQNEW"
 

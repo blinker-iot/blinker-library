@@ -65,11 +65,12 @@ class BlinkerHTTPSIM7020
         bool GET()
         {
             streamPrint(STRING_format(BLINKER_CMD_CHTTPCREATE_REQ) + \
-                        "=" + _host);
+                        "=\"" + _host + "/\"");
+            uint8_t  h_id = 0;
             uint32_t http_time = millis();
             sim7020_http_status_t http_status = sim7020_http_creat_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 4)
             {
                 if (available())
                 {
@@ -79,69 +80,208 @@ class BlinkerHTTPSIM7020
                     if (_masterAT->getState() != AT_M_NONE &&
                         _masterAT->reqName() == BLINKER_CMD_CHTTPCREATE)
                     {
-                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_creat_resp"));
+                        h_id = _masterAT->getParam(0).toInt();
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_creat_resp, h_id: "), h_id);
                         http_status = sim7020_http_creat_resp;
                         free(_masterAT);
                         break;
                     }
 
                     free(_masterAT);
+
+                    // if (strcmp(streamData, BLINKER_CMD_ERROR) == 0)
+                    // {
+                    //     BLINKER_LOG_ALL(BLINKER_F("sim7020_http_creat_failed"));
+                    //     // http_status = sim7020_http_creat_success;
+                    //     streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) + "=0");
+                    //     streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) + "=0");
+                    //     // break;
+                    // }
                 }
             }
 
-            if (http_status != sim7020_http_creat_resp) return false;
+            if (http_status != sim7020_http_creat_resp)
+            {
+                for (uint8_t id_num = 0; id_num < 5; id_num++)
+                {
+                    streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) + 
+                                "=" + STRING_format(id_num));
+                    http_time = millis();
+                    while(millis() - http_time < _httpTimeout * 2)
+                    {
+                        if (available())
+                        {
+                            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) + 
+                                "=" + STRING_format(id_num));
+                    http_time = millis();
+                    while(millis() - http_time < _httpTimeout * 2)
+                    {
+                        if (available())
+                        {
+                            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
 
             http_time = millis();
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_creat_success"));
-                    http_status = sim7020_http_creat_success;
-                    break;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_creat_success"));
+                        http_status = sim7020_http_creat_success;
+                        break;
+                    }
                 }
             }
 
-            if (http_status != sim7020_http_creat_success) return false;
+            if (http_status != sim7020_http_creat_success)
+            {
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                return false;
+            }
 
-            streamPrint(STRING_format(BLINEKR_CMD_CHTTPCON_REQ) + "=0");
+            streamPrint(STRING_format(BLINEKR_CMD_CHTTPCON_REQ) +
+                        "=" + STRING_format(h_id));
             http_time = millis();
             http_status = sim7020_http_con_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_con_success"));
-                    http_status = sim7020_http_con_success;
-                    break;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_con_success"));
+                        http_status = sim7020_http_con_success;
+                        break;
+                    }
                 }
             }
 
-            if (http_status != sim7020_http_con_success) return false;
+            if (http_status != sim7020_http_con_success)
+            {
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                return false;
+            }
 
             streamPrint(STRING_format(BLINKER_CMD_CHTTPSEND_REQ) + \
-                        "=0,0,\"" + _uri + "\"");
+                        "=" + STRING_format(h_id) + ",0,\"" + _uri + "\"");
             http_time = millis();
             http_status = sim7020_http_send_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_send_success"));
-                    http_status = sim7020_http_send_success;
-                    break;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_send_success"));
+                        http_status = sim7020_http_send_success;
+                        break;
+                    }
                 }
             }
 
-            if (http_status != sim7020_http_send_success) return false;
+            if (http_status != sim7020_http_send_success)
+            {
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                return false;
+            }
 
             http_time = millis();
             http_status = sim7020_http_nmih_wait;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 4)
             {
                 if (available())
                 {
@@ -161,20 +301,49 @@ class BlinkerHTTPSIM7020
                 }
             }
 
-            if (http_status != sim7020_http_nmih_success) return false;
+            if (http_status != sim7020_http_nmih_success)
+            {
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                return false;
+            }
 
             http_time = millis();
             http_status = sim7020_http_nmih_wait;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 4)
             {
-                if (available())
+                if (available(BLINKER_CMD_CHTTPNMIC))
                 {
                     _masterAT = new BlinkerMasterAT();
                     _masterAT->update(STRING_format(streamData));
 
                     if (_masterAT->getState() != AT_M_NONE &&
-                        _masterAT->reqName() == BLINKER_CMD_CHTTPNMIH)
+                        _masterAT->reqName() == BLINKER_CMD_CHTTPNMIC)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("sim7020_http_nmic_success"));
                         http_status = sim7020_http_nmic_success;
@@ -205,35 +374,101 @@ class BlinkerHTTPSIM7020
                 }
             }
 
-            if (http_status != sim7020_http_nmih_success) return false;
+            if (http_status != sim7020_http_nmic_success)
+            {
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                return false;
+            }
 
-            streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) + "=0");
+            streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) +
+                        "=" + STRING_format(h_id));
             http_time = millis();
             http_status = sim7020_http_discon_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_discon_success"));
-                    http_status = sim7020_http_discon_success;
-                    break;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_discon_success"));
+                        http_status = sim7020_http_discon_success;
+                        break;
+                    }
                 }
             }
 
-            if (http_status != sim7020_http_discon_success) return false;
+            if (http_status != sim7020_http_discon_success)
+            {
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDISCON_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) +
+                            "=" + STRING_format(h_id));
+                http_time = millis();
+                while(millis() - http_time < _httpTimeout * 2)
+                {
+                    if (available())
+                    {
+                        if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                return false;
+            }
 
-            streamPrint(STRING_format(BLINKER_CMD_CHTTPDISTROY_REQ) + "=0");
+            streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) +
+                        "=" + STRING_format(h_id));
             http_time = millis();
             http_status = sim7020_http_destroy_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_destroy_success"));
-                    http_status = sim7020_http_destroy_success;
-                    return true;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_destroy_success"));
+                        http_status = sim7020_http_destroy_success;
+                        return true;
+                    }
                 }
             }
 
@@ -243,11 +478,11 @@ class BlinkerHTTPSIM7020
         bool POST(String _msg, String _type, String _application)
         {
             streamPrint(STRING_format(BLINKER_CMD_CHTTPCREATE_REQ) + \
-                        "=" + _host);
+                        "=\"" + _host + "/\"");
             uint32_t http_time = millis();
             sim7020_http_status_t http_status = sim7020_http_creat_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
                 if (available())
                 {
@@ -271,13 +506,16 @@ class BlinkerHTTPSIM7020
 
             http_time = millis();
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_creat_success"));
-                    http_status = sim7020_http_creat_success;
-                    break;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_creat_success"));
+                        http_status = sim7020_http_creat_success;
+                        break;
+                    }
                 }
             }
 
@@ -287,13 +525,16 @@ class BlinkerHTTPSIM7020
             http_time = millis();
             http_status = sim7020_http_con_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_con_success"));
-                    http_status = sim7020_http_con_success;
-                    break;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_con_success"));
+                        http_status = sim7020_http_con_success;
+                        break;
+                    }
                 }
             }
 
@@ -307,13 +548,16 @@ class BlinkerHTTPSIM7020
             http_time = millis();
             http_status = sim7020_http_send_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_send_success"));
-                    http_status = sim7020_http_send_success;
-                    break;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_send_success"));
+                        http_status = sim7020_http_send_success;
+                        break;
+                    }
                 }
             }
 
@@ -322,7 +566,7 @@ class BlinkerHTTPSIM7020
             http_time = millis();
             http_status = sim7020_http_nmih_wait;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
                 if (available())
                 {
@@ -347,7 +591,7 @@ class BlinkerHTTPSIM7020
             http_time = millis();
             http_status = sim7020_http_nmih_wait;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
                 if (available())
                 {
@@ -392,29 +636,35 @@ class BlinkerHTTPSIM7020
             http_time = millis();
             http_status = sim7020_http_discon_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_discon_success"));
-                    http_status = sim7020_http_discon_success;
-                    break;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_discon_success"));
+                        http_status = sim7020_http_discon_success;
+                        break;
+                    }
                 }
             }
 
             if (http_status != sim7020_http_discon_success) return false;
 
-            streamPrint(STRING_format(BLINKER_CMD_CHTTPDISTROY_REQ) + "=0");
+            streamPrint(STRING_format(BLINKER_CMD_CHTTPDESTROY_REQ) + "=0");
             http_time = millis();
             http_status = sim7020_http_destroy_req;
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout * 2)
             {
-                if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                if (available())
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("sim7020_http_destroy_success"));
-                    http_status = sim7020_http_destroy_success;
-                    return true;
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_destroy_success"));
+                        http_status = sim7020_http_destroy_success;
+                        return true;
+                    }
                 }
             }
 
@@ -438,6 +688,7 @@ class BlinkerHTTPSIM7020
         // String  streamData;
         // char    streamData[1024];
         char*   streamData;
+        // char    streamBuffer[2048] = { '\0' };
         char*   payload;
         bool    isFreshPayload = false;
         bool    isFresh = false;
@@ -508,6 +759,43 @@ class BlinkerHTTPSIM7020
                 if (c >= 0) return c;
             } while(millis() - _startMillis < 1000);
             return -1; 
+        }
+
+        bool available(const char *str)
+        {
+            uint32_t http_time = millis();
+            char _data[1024];// = { '\0' };
+            memset(_data, '\0', 1024);
+
+            BLINKER_LOG_ALL(BLINKER_F("available str: "), str);
+            while(millis() - http_time < _httpTimeout * 4)
+            {
+                if (stream->available())
+                {
+                    // if (isFresh) free(streamData);
+                    // streamData = (char*)malloc(1*sizeof(char));
+                    // isFresh = true;
+                    // if (strspn(streamData, str)) return true;
+                    // // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), stream->readStringUntil('\n'));
+                    
+                    strcpy(_data, stream->readStringUntil('\n').c_str());
+                    BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
+                    if (strstr(_data, str))
+                    {
+                        _data[strlen(_data) - 1] = '\0';
+                        if (isFresh) free(streamData);
+                        streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
+                        strcpy(streamData, _data);
+                        isFresh = true;
+                        return true;
+                    }
+                    BLINKER_LOG_ALL(BLINKER_F("strstr(_data, str): "), strstr(_data, str));
+                    memset(_data, '\0', 1024);
+                }
+                yield();
+            }
+
+            return false;
         }
 
         bool available()

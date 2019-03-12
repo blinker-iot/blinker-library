@@ -93,7 +93,7 @@ class BlinkerMQTTSIM7020
         uint32_t        _debug_time;
         sim7020_mqtt_status_t    mqtt_status;
 
-        char c_hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        char c_hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
         int8_t dcode_data(char d_test)
         {
@@ -160,7 +160,7 @@ int BlinkerMQTTSIM7020::connect()
 {
     streamPrint(STRING_format(BLINKER_CMD_CMQNEW_REQ) + \
                 "=\"" + servername + "\",\"" + STRING_format(portnum) + \
-                "\",120000,1024");
+                "\",12000,1024");
 
     mqtt_status = sim7020_mqtt_init;
     mqtt_time = millis();
@@ -283,7 +283,7 @@ int BlinkerMQTTSIM7020::publish(const char * topic, const char * msg)
 {
     streamPrint(STRING_format(BLINKER_CMD_CMQPUB_REQ) +
                 "=0,\"" + topic + "\",0,0,0," + 
-                STRING_format(strlen(msg)*2) + "\"" +
+                STRING_format(strlen(msg)*2) + ",\"" +
                 encode(msg) + "\"");
     mqtt_time = millis();
 
@@ -332,6 +332,12 @@ int BlinkerMQTTSIM7020::readSubscription(uint16_t time_out)
                                         _masterAT->getParam(4).length() + 
                                         _masterAT->getParam(5).length() + 
                                         15, strlen(streamData) - 1);
+                    // BLINKER_LOG_ALL(BLINKER_F("leng 0: "), _masterAT->getParam(0).length());
+                    // BLINKER_LOG_ALL(BLINKER_F("leng 1: "), _masterAT->getParam(1).length());
+                    // BLINKER_LOG_ALL(BLINKER_F("leng 2: "), _masterAT->getParam(2).length());
+                    // BLINKER_LOG_ALL(BLINKER_F("leng 3: "), _masterAT->getParam(3).length());
+                    // BLINKER_LOG_ALL(BLINKER_F("leng 4: "), _masterAT->getParam(4).length());
+                    // BLINKER_LOG_ALL(BLINKER_F("leng 5: "), _masterAT->getParam(5).length());
                     BLINKER_LOG_ALL(BLINKER_F("mqtt sub data: "), subData);
 
                     if (isRead) free(lastRead);

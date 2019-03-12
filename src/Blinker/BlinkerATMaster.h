@@ -44,7 +44,7 @@ class BlinkerMasterAT
         uint8_t _paramNum;
         // String _data;
         char _reqName[32];
-        char _param[BLINKER_MAX_AT_MASTER_PARAM_NUM][32];
+        char _param[BLINKER_MAX_AT_MASTER_PARAM_NUM][48];
 
         void serialize(const String & _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);

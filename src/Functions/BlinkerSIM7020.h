@@ -294,7 +294,7 @@ class BlinkerSIM7020
                     _masterAT->update(STRING_format(streamData));
 
                     if (_masterAT->getState() != AT_M_NONE &&
-                        _masterAT->reqName() == BLINKER_CMD_CGACT &&
+                        _masterAT->reqName() == BLINKER_CMD_CGREG &&
                         _masterAT->getParam(1).toInt() == 1)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("sim7020_cgact_success"));
@@ -345,12 +345,12 @@ class BlinkerSIM7020
 
                     if (_masterAT->getState() != AT_M_NONE &&
                         _masterAT->reqName() == BLINKER_CMD_CGCONTRDP &&
-                        _masterAT->getParam(3).toInt() == 9)
+                        _masterAT->getParam(2).toInt() == 5)
                     {
-                        BLINKER_LOG_ALL(BLINKER_F("sim7020_cops_success"));
-                        pdn_status = sim7020_cops_success;
+                        BLINKER_LOG_ALL(BLINKER_F("sim7020_contrdp_success"));
+                        // pdn_status = sim7020_cops_success;
                         free(_masterAT);
-                        break;
+                        return true;
                     }
                     free(_masterAT);
                 }
