@@ -241,8 +241,9 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
-            defined(BLINKER_GATEWAY)
+            defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020)
             void setTimezone(float tz);
+
             float getTimezone() { return _timezone; }
             int8_t second();
             int8_t minute();
@@ -255,6 +256,7 @@ class BlinkerApi : public BlinkerProtocol
             time_t  time();
             int32_t dtime();
 
+            #ifndef BLINKER_NBIOT_SIM7020
             template<typename T>
             bool sms(const T& msg);
             template<typename T>
@@ -313,7 +315,8 @@ class BlinkerApi : public BlinkerProtocol
             bool updateOTAStatus(int8_t status, const String & msg);
             void otaStatus(int8_t status, const String & msg);
 
-            String freshSharers();
+            String freshSharers(); // NBIOT TODO
+            #endif
 
         #endif
 
@@ -512,7 +515,7 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
-            defined(BLINKER_GATEWAY)
+            defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020)
             bool        _isInit = false;
             bool        _isAuto = false;
             bool        _isAutoInit = false;
@@ -545,6 +548,7 @@ class BlinkerApi : public BlinkerProtocol
 
             uint32_t    _autoUpdateTime = 0;
 
+            #ifndef BLINKER_NBIOT_SIM7020
             char                            _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
             char                            _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
             char                            _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
@@ -553,6 +557,7 @@ class BlinkerApi : public BlinkerProtocol
             class BlinkerData *             _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
             class BlinkerAUTO *             _AUTO[2];
             BlinkerOTA                      _OTA;
+            #endif
         #endif
 
         #if defined(BLINKER_PRO)
@@ -588,7 +593,7 @@ class BlinkerApi : public BlinkerProtocol
         #if defined(BLINKER_NBIOT_SIM7020)
             bool            _isConnBegin = false;
             bool            _getRegister = false;
-            bool            _isInit = false;
+            // bool            _isInit = false;
             bool            _isRegistered = false;
             bool            _isPowerOn = false;
             uint32_t        _register_fresh = 0;
@@ -679,9 +684,127 @@ class BlinkerApi : public BlinkerProtocol
             void json_parse(char _data[]);
         #endif
 
+        #if defined(BLINKER_NBIOT_SIM7020)
+            bool ntpInit()
+            {
+                if (!_isNTPInit)
+                {
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return false;
+
+                    struct tm timeinfo;
+
+                    #if defined(ESP8266) || defined(__AVR__)
+                        gmtime_r(&BLINKER_SIM7020._ntpTime, &timeinfo);
+                    #elif defined(ESP32)
+                        localtime_r(&BLINKER_SIM7020._ntpTime, &timeinfo);
+                    #endif
+
+                    BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
+                    BLINKER_LOG_ALL(BLINKER_F("NTP time: "), BLINKER_SIM7020._ntpTime - (int)(_timezone*3600));
+
+                    _isNTPInit = true;
+
+                    return true;
+                }
+                return true;
+            }
+
+            String blinkerServer(uint8_t _type, const String & msg, bool state = false)
+            {
+                switch (_type)
+                {
+                    case BLINKER_CMD_SMS_NUMBER :
+                        if (!checkSMS()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+
+                        if ((!state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE) ||
+                            (state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE + 15)) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
+                    case BLINKER_CMD_PUSH_NUMBER :
+                        if (!checkPUSH()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
+                    case BLINKER_CMD_WECHAT_NUMBER :
+                        if (!checkWECHAT()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
+                    case BLINKER_CMD_WEATHER_NUMBER :
+                        if (!checkWEATHER()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
+                    case BLINKER_CMD_AQI_NUMBER :
+                        if (!checkAQI()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
+                    case BLINKER_CMD_BRIDGE_NUMBER :
+                        break;
+                    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
+                        case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                            if (!checkCUPDATE()) {
+                                return BLINKER_CMD_FALSE;
+                            }
+                            break;
+                        case BLINKER_CMD_CONFIG_GET_NUMBER :
+                            if (!checkCGET()) {
+                                return BLINKER_CMD_FALSE;
+                            }
+                            break;
+                        case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                            if (!checkCDEL()) {
+                                return BLINKER_CMD_FALSE;
+                            }
+                            break;
+                        case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                            // if (!checkDataUpdata()) {
+                            //     return BLINKER_CMD_FALSE;
+                            // }
+                            break;
+                        case BLINKER_CMD_DATA_GET_NUMBER :
+                            if (!checkDataGet()) {
+                                return BLINKER_CMD_FALSE;
+                            }
+                            break;
+                        case BLINKER_CMD_DATA_DELETE_NUMBER :
+                            if (!checkDataDel()) {
+                                return BLINKER_CMD_FALSE;
+                            }
+                            break;
+                        case BLINKER_CMD_AUTO_PULL_NUMBER :
+                            if (!checkAutoPull()) {
+                                return BLINKER_CMD_FALSE;
+                            }
+                            break;
+                        case BLINKER_CMD_OTA_NUMBER :
+                            break;
+                        case BLINKER_CMD_OTA_STATUS_NUMBER :
+                            break;
+                        case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                            break;
+                    #endif
+                    default :
+                        return BLINKER_CMD_FALSE;
+                }
+
+                BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
+            }
+        #endif
+
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
-            defined(BLINKER_GATEWAY)
+            defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020)
+
+            #ifndef BLINKER_NBIOT_SIM7020
+            
             void beginAuto();
             bool autoTrigged(uint32_t _id);
             bool checkCanOTA();
@@ -713,18 +836,25 @@ class BlinkerApi : public BlinkerProtocol
             String getTimingCfg(uint8_t task);
             bool timerManager(const JsonObject& data, bool _noSet = false);
             bool checkTimer();
+            
+            #endif
+
             bool checkSMS();
             bool checkPUSH();
             bool checkWECHAT();
             bool checkWEATHER();
             bool checkAQI();
-
+            
+            #ifndef BLINKER_NBIOT_SIM7020
+            
             void autoStart();
             bool autoManager(const JsonObject& data);
             void otaParse(const JsonObject& data);
             void shareParse(const JsonObject& data);
             void numParse(const JsonObject& data);
 
+            #endif
+            
             bool checkCUPDATE();
             bool checkCGET();
             bool checkCDEL();
@@ -732,11 +862,16 @@ class BlinkerApi : public BlinkerProtocol
             bool checkDataGet();
             bool checkDataDel();
             bool checkAutoPull();
+            
+            #ifndef BLINKER_NBIOT_SIM7020
+            
             String bridgeQuery(char * key);
 
             String postServer(const String & url, const String & host, int port, const String & msg);
             String getServer(const String & url, const String & host, int port);
             String blinkerServer(uint8_t _type, const String & msg, bool state = false);
+
+            #endif
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -1027,7 +1162,7 @@ void BlinkerApi::needInit()
 {
     #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
         defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
-        defined(BLINKER_GATEWAY)
+        defined(BLINKER_GATEWAY)// || defined(BLINKER_NBIOT_SIM7020)
         String _shareData = freshSharers();
         if (STRING_contains_string(_shareData, "users") == false)
         {
@@ -1038,7 +1173,9 @@ void BlinkerApi::needInit()
             BProto::sharers(_shareData);
         }
 
+        // #ifndef BLINKER_NBIOT_SIM7020
         loadTiming();
+        // #endif
 
         ::delay(100);
 
@@ -1497,7 +1634,7 @@ void BlinkerApi::run()
         {
             if (!_isInit)
             {
-                // if (/*ntpInit()*/) TBD
+                // if (ntpInit()) //TBD
                 {
                     _isInit = true;
                     _gprsStatus = GPRS_DEV_INIT_SUCCESS;
@@ -1625,7 +1762,7 @@ void BlinkerApi::run()
         {
             if (!_isInit)
             {
-                // if (/*ntpInit()*/) TBD
+                if (ntpInit()) //TBD
                 {
                     _isInit = true;
                     _nbiotStatus = NBIOT_DEV_INIT_SUCCESS;
@@ -2392,7 +2529,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
-    defined(BLINKER_GATEWAY)
+    defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020)
     void BlinkerApi::setTimezone(float tz)
     {
         _timezone = tz;
@@ -2403,9 +2540,18 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            time_t now_ntp = ::time(nullptr);
+            #ifndef BLINKER_NBIOT_SIM7020
+                time_t now_ntp = ::time(nullptr);
+            #else
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                time_t now_ntp = BLINKER_SIM7020._ntpTime;
+            #endif
+
             struct tm timeinfo;
-            #if defined(ESP8266)
+
+            #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&now_ntp, &timeinfo);
             #elif defined(ESP32)
                 localtime_r(&now_ntp, &timeinfo);
@@ -2438,8 +2584,17 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            time_t now_ntp = ::time(nullptr);
+            #ifndef BLINKER_NBIOT_SIM7020
+                time_t now_ntp = ::time(nullptr);
+            #else
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                time_t now_ntp = BLINKER_SIM7020._ntpTime;
+            #endif
+
             struct tm timeinfo;
+
             #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
             #elif defined(ESP32)
@@ -2456,8 +2611,17 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            time_t now_ntp = ::time(nullptr);
+            #ifndef BLINKER_NBIOT_SIM7020
+                time_t now_ntp = ::time(nullptr);
+            #else
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                time_t now_ntp = BLINKER_SIM7020._ntpTime;
+            #endif
+
             struct tm timeinfo;
+
             #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
             #elif defined(ESP32)
@@ -2474,8 +2638,17 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            time_t now_ntp = ::time(nullptr);
+            #ifndef BLINKER_NBIOT_SIM7020
+                time_t now_ntp = ::time(nullptr);
+            #else
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                time_t now_ntp = BLINKER_SIM7020._ntpTime;
+            #endif
+
             struct tm timeinfo;
+
             #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
             #elif defined(ESP32)
@@ -2490,9 +2663,19 @@ float BlinkerApi::gps(b_gps_t axis)
 
     int8_t BlinkerApi::month()
     {
-        if (_isNTPInit) {
-            time_t now_ntp = ::time(nullptr);
+        if (_isNTPInit)
+        {
+            #ifndef BLINKER_NBIOT_SIM7020
+                time_t now_ntp = ::time(nullptr);
+            #else
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                time_t now_ntp = BLINKER_SIM7020._ntpTime;
+            #endif
+
             struct tm timeinfo;
+
             #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
             #elif defined(ESP32)
@@ -2509,8 +2692,17 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            time_t now_ntp = ::time(nullptr);
+            #ifndef BLINKER_NBIOT_SIM7020
+                time_t now_ntp = ::time(nullptr);
+            #else
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                time_t now_ntp = BLINKER_SIM7020._ntpTime;
+            #endif
+
             struct tm timeinfo;
+
             #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
             #elif defined(ESP32)
@@ -2527,8 +2719,17 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            time_t now_ntp = ::time(nullptr);
+            #ifndef BLINKER_NBIOT_SIM7020
+                time_t now_ntp = ::time(nullptr);
+            #else
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                time_t now_ntp = BLINKER_SIM7020._ntpTime;
+            #endif
+
             struct tm timeinfo;
+
             #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
             #elif defined(ESP32)
@@ -2545,8 +2746,17 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            time_t now_ntp = ::time(nullptr);
+            #ifndef BLINKER_NBIOT_SIM7020
+                time_t now_ntp = ::time(nullptr);
+            #else
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                time_t now_ntp = BLINKER_SIM7020._ntpTime;
+            #endif
+
             struct tm timeinfo;
+
             #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
             #elif defined(ESP32)
@@ -2563,8 +2773,17 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            time_t now_ntp = ::time(nullptr);
+            #ifndef BLINKER_NBIOT_SIM7020
+                time_t now_ntp = ::time(nullptr);
+            #else
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                time_t now_ntp = BLINKER_SIM7020._ntpTime;
+            #endif
+
             struct tm timeinfo;
+
             #if defined(ESP8266)
                 gmtime_r(&now_ntp, &timeinfo);
             #elif defined(ESP32)
@@ -2575,6 +2794,8 @@ float BlinkerApi::gps(b_gps_t axis)
         }
         return -1;
     }
+
+    #ifndef BLINKER_NBIOT_SIM7020
 
     template<typename T>
     bool BlinkerApi::sms(const T& msg)
@@ -3427,6 +3648,8 @@ float BlinkerApi::gps(b_gps_t axis)
 
         return blinkerServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
     }
+
+    #endif
 #endif
 
 void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_string_arg_t _func)
@@ -4184,7 +4407,10 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
-    defined(BLINKER_GATEWAY)
+    defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020)
+
+    #ifndef BLINKER_NBIOT_SIM7020
+
     void BlinkerApi::beginAuto()
     {
         BLINKER_LOG(BLINKER_F("======================================================="));
@@ -4296,11 +4522,12 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             #endif
 
             BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
-            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp - (int)_timezone*60*60);
+            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp - (int)(_timezone*3600));
 
             _isNTPInit = true;
-        }
 
+            return true;
+        }
         return true;
     }
 
@@ -5692,6 +5919,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         return false;
     }
 
+    #endif
 
     bool BlinkerApi::checkSMS()
     {
@@ -5732,6 +5960,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         else return false;
     }
 
+    #ifndef BLINKER_NBIOT_SIM7020
 
     void BlinkerApi::autoStart()
     {
@@ -6102,6 +6331,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         }
     }
 
+    #endif
+
     bool BlinkerApi::checkCUPDATE()
     {
         if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
@@ -6157,6 +6388,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         else return false;
     }
 
+    #ifndef BLINKER_NBIOT_SIM7020
 
     String BlinkerApi::bridgeQuery(char * key)
     {
@@ -6996,6 +7228,9 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             }
         // #endif
     }
+
+    #endif
+    
 #endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \

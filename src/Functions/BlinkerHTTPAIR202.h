@@ -433,7 +433,14 @@ class BlinkerHTTPAIR202
                 {
                     if (strcmp(streamData, BLINKER_CMD_OK) != 0)
                     {
-                        payload = streamData;
+                        // payload = streamData;
+
+                        if (isFreshPayload) free(payload);
+
+                        isFreshPayload = true;
+                        // char data_buff[1024] = { '\0' };
+                        payload = (char*)malloc((strlen(streamData) + 1)*sizeof(char));
+                        strcpy(payload, streamData);
 
                         BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
                     }
@@ -677,7 +684,13 @@ class BlinkerHTTPAIR202
                 {
                     if (strcmp(streamData, BLINKER_CMD_OK) != 0)
                     {
-                        payload = streamData;
+                        // payload = streamData;
+                        if (isFreshPayload) free(payload);
+
+                        isFreshPayload = true;
+                        char data_buff[1024] = { '\0' };
+                        payload = (char*)malloc((strlen(streamData) + 1)*sizeof(char));
+                        strcpy(payload, streamData);
                     }
                 }
             }
@@ -714,7 +727,7 @@ class BlinkerHTTPAIR202
 
         void flush()
         {
-            // if (isFreshPayload) free(payload); 
+            if (isFreshPayload) free(payload); 
             if (isFresh) free(streamData);
         }
 
@@ -724,7 +737,9 @@ class BlinkerHTTPAIR202
         // String  streamData;
         // char    streamData[1024];
         char*   streamData;
-        String  payload = "";
+        // String  payload = "";
+        char*   payload;
+        bool    isFreshPayload = false;
         bool    isFresh = false;
         bool    isHWS = false;
         String  _host;

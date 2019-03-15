@@ -37,6 +37,29 @@ class BlinkerSerialSIMNBIoT : public BlinkerApi
                     uint8_t _tx_pin = 3,
                     uint32_t _baud = 9600)
         {
+            #if defined(BLINKER_ALIGENIE_LIGHT)
+                String _aliType = BLINKER_F("&aliType=light");
+            #elif defined(BLINKER_ALIGENIE_OUTLET)
+                String _aliType = BLINKER_F("&aliType=outlet");
+            #elif defined(BLINKER_ALIGENIE_SENSOR)
+                String _aliType = BLINKER_F("&aliType=sensor");
+            #else
+                String _aliType = BLINKER_F("");
+            #endif
+
+            #if defined(BLINKER_DUEROS_LIGHT)
+                String _duerType = BLINKER_F("&duerType=LIGHT");
+            #elif defined(BLINKER_DUEROS_OUTLET)
+                String _duerType = BLINKER_F("&duerType=SOCKET");
+            #elif defined(BLINKER_DUEROS_SENSOR)
+                String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
+            #else
+                String _duerType = BLINKER_F("");
+            #endif
+            
+            Transp.aliType(_aliType);
+            Transp.duerType(_duerType);
+
             serialBegin(_type, _rx_pin, _tx_pin, _baud);
             // BApi::begin(_type);
             ::delay(100);
