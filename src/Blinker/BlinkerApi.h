@@ -8931,6 +8931,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             {
                 _getRegister = true;
 
+                _register_fresh = millis();
+
                 BLINKER_LOG_ALL(BLINKER_F("getRegister!"));
 
                 print(BLINKER_CMD_MESSAGE, "success");
