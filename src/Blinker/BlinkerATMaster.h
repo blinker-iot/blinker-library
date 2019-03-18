@@ -14,6 +14,8 @@ enum blinker_at_m_state_t {
 
 #define BLINKER_MAX_AT_MASTER_PARAM_NUM 6
 
+#define BLINKER_MAX_AT_MASTER_DATA_SIZE 48
+
 class BlinkerMasterAT
 {
     public :
@@ -44,7 +46,7 @@ class BlinkerMasterAT
         uint8_t _paramNum;
         // String _data;
         char _reqName[32];
-        char _param[BLINKER_MAX_AT_MASTER_PARAM_NUM][48];
+        char _param[BLINKER_MAX_AT_MASTER_PARAM_NUM][BLINKER_MAX_AT_MASTER_DATA_SIZE];
 
         void serialize(const String & _data) {
             BLINKER_LOG_ALL(BLINKER_F("serialize _data: "), _data);
@@ -104,7 +106,10 @@ class BlinkerMasterAT
                             // _param[_paramNum] = serData.substring(0, addr_end);
                             if (addr_end != 0)
                             {
-                                strcpy(_param[_paramNum], serData.substring(0, addr_end).c_str());
+                                if (serData.substring(0, addr_end).length() < BLINKER_MAX_AT_MASTER_DATA_SIZE)
+                                {
+                                    strcpy(_param[_paramNum], serData.substring(0, addr_end).c_str());
+                                }
                                 _isReq = AT_M_RESP;
                                 BLINKER_LOG_ALL(BLINKER_F("_param0["), _paramNum, \
                                             BLINKER_F("]: "), _param[_paramNum],
@@ -116,7 +121,10 @@ class BlinkerMasterAT
                             {
                                 serData = serData.substring(1, serData.length());
 
-                                strcpy(_param[_paramNum], serData.substring(0, serData.length()).c_str());
+                                if (serData.substring(0, serData.length()).length() < BLINKER_MAX_AT_MASTER_DATA_SIZE)
+                                {
+                                    strcpy(_param[_paramNum], serData.substring(0, serData.length()).c_str());
+                                }
                                 _isReq = AT_M_RESP;
                                 BLINKER_LOG_ALL(BLINKER_F("_param0["), _paramNum, \
                                             BLINKER_F("]: "), _param[_paramNum],
@@ -127,7 +135,10 @@ class BlinkerMasterAT
                         }
 
                         // _param[_paramNum] = serData;
-                        strcpy(_param[_paramNum], serData.c_str());
+                        if (serData.length() < BLINKER_MAX_AT_MASTER_DATA_SIZE)
+                        {
+                            strcpy(_param[_paramNum], serData.c_str());
+                        }
                         
                         // BLINKER_LOG_ALL(BLINKER_F("serialize serData: "), serData);
                         
@@ -144,7 +155,10 @@ class BlinkerMasterAT
                     }
                     else {
                         // _param[_paramNum] = serData.substring(0, addr_end);
-                        strcpy(_param[_paramNum], serData.substring(0, addr_end).c_str());
+                        if (serData.substring(0, addr_end).length() < BLINKER_MAX_AT_MASTER_DATA_SIZE)
+                        {
+                            strcpy(_param[_paramNum], serData.substring(0, addr_end).c_str());
+                        }
                     }
                     BLINKER_LOG_ALL(BLINKER_F("_param["), _paramNum, \
                                     BLINKER_F("]: "), _param[_paramNum]);

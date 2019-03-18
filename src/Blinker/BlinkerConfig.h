@@ -1277,7 +1277,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
-    defined(BLINKER_GATEWAY)
+    defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020)
     #define BLINKER_CMD_SMS_NUMBER              1
 
     #define BLINKER_CMD_PUSH_NUMBER             2

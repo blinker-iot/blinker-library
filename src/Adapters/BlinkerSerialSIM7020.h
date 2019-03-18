@@ -44,19 +44,22 @@ class BlinkerSerialSIM7020 : public BlinkerStream
         void disconnect();
         void ping();
         int available();
+        int aligenieAvail();
+        int duerAvail();
         void subscribe();
         int timedRead();
         char * lastRead() { if (isFresh_NBIoT) return msgBuf_NBIoT; return ""; }
         void flush();
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
-        // int bPrint(char * name, const String & data);
-        // int aliPrint(const String & s);
-        // int duerPrint(const String & s);
-        // int aliPrint(const String & data);
-        // int duerPrint(const String & data);
+        int bPrint(char * name, const String & data);
+        int aliPrint(const String & data);
+        int duerPrint(const String & data);
+        void aliType(const String & type);
+        void duerType(const String & type);
         void begin(const char* _deviceType, String _imei);
         void initStream(Stream& s, bool state, blinker_callback_t func);
+        int autoPrint(uint32_t id);
         char * deviceName();
         char * authKey() { return AUTHKEY_NBIoT; }
         int init() { return isMQTTinit; }
@@ -64,16 +67,37 @@ class BlinkerSerialSIM7020 : public BlinkerStream
         int deviceRegister() { return connectServer(); }
         // int authCheck();
         void freshAlive() { kaTime = millis(); isAlive = true; }
-        // int  needFreshShare();
+        void sharers(const String & data);
+        int  needFreshShare() {
+            if (_needCheckShare)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("needFreshShare"));
+                _needCheckShare = false;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
     private :
         bool        isMQTTinit = false;
 
         int connectServer();
         void checkKA();
+        int checkAliKA();
+        int checkDuerKA();
         int checkCanPrint();
+        int checkCanBprint();
         int checkPrintSpan();
+        int checkAliPrintSpan();
+        int checkDuerPrintSpan();
+
     protected :
+        BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
+        uint8_t     _sharerCount = 0;
+        uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
         Stream*     stream;
         // char*       streamData;
         char*       msgBuf_NBIoT;
@@ -82,17 +106,37 @@ class BlinkerSerialSIM7020 : public BlinkerStream
         bool        isConnect;
         bool        isHWS = false;
         char*       imei;
-        uint8_t     respTimes = 0;
-        uint32_t    respTime = 0;
+        // uint8_t     respTimes = 0;
+        // uint32_t    respTime = 0;
         bool        isAvail_NBIoT = false;
         uint8_t     dataFrom_NBIoT = BLINKER_MSG_FROM_MQTT;
 
         // uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
-        const char* _deviceType;
+        const char* _deviceType;//_authKey
+        char*       _aliType;
+        char*       _duerType;
         bool        isAlive = false;
-        uint32_t    kaTime = 0;
+        // bool        isBavail = false;
+        bool        _needCheckShare = false;
         uint32_t    latestTime;
         uint32_t    printTime = 0;
+        uint32_t    bPrintTime = 0;
+        uint32_t    kaTime = 0;
+        uint32_t    linkTime = 0;
+        uint8_t     respTimes = 0;
+        uint32_t    respTime = 0;
+        uint8_t     respAliTimes = 0;
+        uint32_t    respAliTime = 0;
+        uint8_t     respDuerTimes = 0;
+        uint32_t    respDuerTime = 0;
+
+        uint32_t    aliKaTime = 0;
+        bool        isAliAlive = false;
+        bool        isAliAvail = false;
+        uint32_t    duerKaTime = 0;
+        bool        isDuerAlive = false;
+        bool        isDuerAvail = false;
+        char*       mqtt_broker;
 
         int isJson(const String & data);
 
@@ -210,6 +254,34 @@ int BlinkerSerialSIM7020::available()
     }
 }
 
+int BlinkerSerialSIM7020::aligenieAvail()
+{
+    if (!isMQTTinit) return false;
+
+    if (isAliAvail)
+    {
+        isAliAvail = false;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+int BlinkerSerialSIM7020::duerAvail()
+{
+    if (!isMQTTinit) return false;
+
+    if (isDuerAvail)
+    {
+        isDuerAvail = false;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 void BlinkerSerialSIM7020::subscribe()
 {
     if (!isMQTTinit) return;
@@ -235,8 +307,67 @@ void BlinkerSerialSIM7020::subscribe()
             isAvail_NBIoT = true;
             isAlive = true;
 
-            // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+            _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
         }
+        else if (_uuid == BLINKER_CMD_ALIGENIE)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("form AliGenie"));
+
+            aliKaTime = millis();
+            isAliAlive = true;
+            isAliAvail = true;
+        }
+        else if (_uuid == BLINKER_CMD_DUEROS)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
+
+            duerKaTime = millis();
+            isDuerAlive = true;
+            isDuerAvail = true;
+        }
+        else if (_uuid == BLINKER_CMD_SERVERCLIENT)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("form Sever"));
+
+            isAvail_NBIoT = true;
+            isAlive = true;
+
+            _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+        }
+        else
+            {
+                if (_sharerCount)
+                {
+                    for (uint8_t num = 0; num < _sharerCount; num++)
+                    {
+                        if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+                        {
+                            _sharerFrom = num;
+
+                            kaTime = millis();
+
+                            BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+                            BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+                            
+                            _needCheckShare = false;
+
+                            break;
+                        }
+                        else
+                        {
+                            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                                        check is from bridge/share device, \
+                                        data: "), dataGet);
+
+                            _needCheckShare = true;
+                        }
+                    }
+                }
+                root.printTo(dataGet);
+
+                isAvail_NBIoT = true;
+                isAlive = true;
+            }
 
         if (isFresh_NBIoT) free(msgBuf_NBIoT);
         msgBuf_NBIoT = (char*)malloc((dataGet.length()+1)*sizeof(char));
@@ -254,12 +385,14 @@ void BlinkerSerialSIM7020::flush()
     if (isFresh_NBIoT)
     {
         free(msgBuf_NBIoT); isFresh_NBIoT = false; isAvail_NBIoT = false;
-        // isAliAvail = false; //isBavail = false;
+        isAliAvail = false; //isBavail = false;
     }
 }
 
 int BlinkerSerialSIM7020::print(char * data, bool needCheck)
 {
+    if (!isMQTTinit) return false;
+
     BLINKER_LOG_ALL(BLINKER_F("data: "), data);
 
     uint16_t num = strlen(data);
@@ -286,17 +419,17 @@ int BlinkerSerialSIM7020::print(char * data, bool needCheck)
     // data_add = BLINKER_F("\",\"toDevice\":\"");
     // strcat(data, data_add.c_str());
     strcat(data, "\",\"toDevice\":\"");
-    // if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
-    // {
-    //     strcat(data, _sharers[_sharerFrom]->uuid());
-    // }
-    // else
-    // {
+    if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
+    {
+        strcat(data, _sharers[_sharerFrom]->uuid());
+    }
+    else
+    {
         strcat(data, UUID_NBIoT);
-    // }
+    }
     // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
 
-    // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+    _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
     // strcat(data, data_add.c_str());
     strcat(data, "\",\"deviceType\":\"OwnApp\"}");
 
@@ -370,6 +503,257 @@ int BlinkerSerialSIM7020::print(char * data, bool needCheck)
     }
 }
 
+int BlinkerSerialSIM7020::bPrint(char * name, const String & data)
+{
+    if (!isMQTTinit) return false;
+
+    char data_add[1024] = { '\0' };
+
+    strcpy(data_add, "{\"data\":");
+    strcat(data_add, data.c_str());
+    strcat(data_add, ",\"fromDevice\":\"");
+    strcat(data_add, MQTT_ID_NBIoT);
+    strcat(data_add, ",\"toDevice\":\"");
+    strcat(data_add, name);
+    strcat(data_add, "\",\"deviceType\":\"DiyBridge\"}");
+    // String data_add = BLINKER_F("{\"data\":");
+
+    // data_add += data;
+    // data_add += BLINKER_F(",\"fromDevice\":\"");
+    // data_add += MQTT_ID_MQTT;
+    // data_add += BLINKER_F("\",\"toDevice\":\"");
+    // data_add += name;
+    // data_add += BLINKER_F("\",\"deviceType\":\"DiyBridge\"}");
+
+    if (!isJson(STRING_format(data_add))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Bridge Publish..."));
+
+    // bool _alive = isAlive;
+    // bool state = STRING_contains_string(data, BLINKER_CMD_NOTICE);
+
+    // if (!state) {
+    //     state = (STRING_contains_string(data, BLINKER_CMD_STATE)
+    //         && STRING_contains_string(data, BLINKER_CMD_ONLINE));
+    // }
+
+    if (mqtt_NBIoT->connected()) {
+        // if (!state) {
+        if (!checkCanBprint()) {
+            // if (!_alive) {
+            //     isAlive = false;
+            // }
+            return false;
+        }
+        // }
+
+        // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
+
+        // if (! iotPub.publish(payload.c_str())) {
+
+        // String bPubTopic = BLINKER_F("");
+        // char bPubTopic[60] = { '\0' };
+
+        // if (strcmp(mqtt_broker, BLINKER_MQTT_BORKER_ONENET) == 0)
+        // {
+        //     // bPubTopic = MQTT_PRODUCTINFO_MQTT;
+        //     // bPubTopic += BLINKER_F("/");
+        //     // bPubTopic += name;
+        //     // bPubTopic += BLINKER_F("/r");
+        // }
+        // else
+        // {
+            // strcpy(bPubTopic, BLINKER_PUB_TOPIC_MQTT);
+            // bPubTopic = BLINKER_PUB_TOPIC_MQTT;
+        // }
+
+        if (! mqtt_NBIoT->publish(BLINKER_PUB_TOPIC_NBIoT, data_add))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+
+            // if (!_alive) {
+            //     isAlive = false;
+            // }
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+
+            bPrintTime = millis();
+
+            // if (!_alive) {
+            //     isAlive = false;
+            // }
+
+            this->latestTime = millis();
+
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        // isAlive = false;
+        return false;
+    }
+    // }
+}
+
+int BlinkerSerialSIM7020::aliPrint(const String & data)
+{
+    if (!isMQTTinit) return false;
+
+    char data_add[1024] = { '\0' };
+
+    strcpy(data_add, "{\"data\":");
+    strcat(data_add, data.c_str());
+    strcat(data_add, ",\"fromDevice\":\"");
+    strcat(data_add, MQTT_ID_NBIoT);
+    strcat(data_add, "\",\"toDevice\":\"AliGenie_r\"");
+    strcat(data_add, "\",\"deviceType\":\"vAssistant\"}");
+
+    // String data_add = BLINKER_F("{\"data\":");
+
+    // data_add += data;
+    // data_add += BLINKER_F(",\"fromDevice\":\"");
+    // data_add += MQTT_ID_MQTT;
+    // data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+    // data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+    if (!isJson(STRING_format(data_add))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT AliGenie Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (mqtt_NBIoT->connected())
+    {
+        if (!checkAliKA())
+        {
+            return false;
+        }
+
+        if (!checkAliPrintSpan())
+        {
+            respAliTime = millis();
+            return false;
+        }
+        respAliTime = millis();
+
+        if (! mqtt_NBIoT->publish(BLINKER_PUB_TOPIC_NBIoT, data_add))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+
+            isAliAlive = false;
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+
+            isAliAlive = false;
+
+            this->latestTime = millis();
+
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
+int BlinkerSerialSIM7020::duerPrint(const String & data)
+{
+    if (!isMQTTinit) return false;
+
+    char data_add[1024] = { '\0' };
+
+    strcpy(data_add, "{\"data\":");
+    strcat(data_add, data.c_str());
+    strcat(data_add, ",\"fromDevice\":\"");
+    strcat(data_add, MQTT_ID_NBIoT);
+    strcat(data_add, "\",\"toDevice\":\"DuerOS_r\"");
+    strcat(data_add, "\",\"deviceType\":\"vAssistant\"}");
+
+    // String data_add = BLINKER_F("{\"data\":");
+
+    // data_add += data;
+    // data_add += BLINKER_F(",\"fromDevice\":\"");
+    // data_add += MQTT_ID_MQTT;
+    // data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+    // data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+    if (!isJson(STRING_format(data_add))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT DuerOS Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (mqtt_NBIoT->connected())
+    {
+        if (!checkDuerKA())
+        {
+            return false;
+        }
+
+        if (!checkDuerPrintSpan())
+        {
+            respDuerTime = millis();
+            return false;
+        }
+        respDuerTime = millis();
+
+        if (! mqtt_NBIoT->publish(BLINKER_PUB_TOPIC_NBIoT, data_add))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+
+            isDuerAlive = false;
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+
+            isDuerAlive = false;
+
+            this->latestTime = millis();
+
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
+void BlinkerSerialSIM7020::aliType(const String & type)
+{
+    _aliType = (char*)malloc((type.length()+1)*sizeof(char));
+    strcpy(_aliType, type.c_str());
+    BLINKER_LOG_ALL(BLINKER_F("_aliType: "), _aliType);
+}
+
+void BlinkerSerialSIM7020::duerType(const String & type)
+{
+    _duerType = (char*)malloc((type.length()+1)*sizeof(char));
+    strcpy(_duerType, type.c_str());
+    BLINKER_LOG_ALL(BLINKER_F("_duerType: "), _duerType);
+}
+
 void BlinkerSerialSIM7020::begin(const char* _type, String _imei)
 {
     _deviceType = _type;
@@ -400,47 +784,103 @@ void BlinkerSerialSIM7020::initStream(Stream& s, bool state, blinker_callback_t 
     // strcpy(_imei, imei.c_str());
 }
 
-char * BlinkerSerialSIM7020::deviceName() { return MQTT_DEVICEID_NBIoT;/*MQTT_ID_PRO;*/ }
-
-void BlinkerSerialSIM7020::checkKA()
+int BlinkerSerialSIM7020::autoPrint(uint32_t id)
 {
-    if (millis() - kaTime >= BLINKER_MQTT_KEEPALIVE)
-        isAlive = false;
-}
+    String payload = BLINKER_F("{\"data\":{\"set\":{");
+    payload += BLINKER_F("\"trigged\":true,\"autoData\":{");
+    payload += BLINKER_F("\"autoId\":");
+    payload += STRING_format(id);
+    payload += BLINKER_F("}}}");
+    payload += BLINKER_F(",\"fromDevice\":\"");
+    payload += STRING_format(MQTT_ID_NBIoT);
+    payload += BLINKER_F("\",\"toDevice\":\"autoManager\"}");
+        // "\",\"deviceType\":\"" + "type" + "\"}";
 
-int BlinkerSerialSIM7020::checkCanPrint() {
-    if ((millis() - printTime >= BLINKER_PRO_MSG_LIMIT && isAlive) || printTime == 0) {
-        return true;
-    }
-    else {
-        BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
-        
-        checkKA();
+    BLINKER_LOG_ALL(BLINKER_F("autoPrint..."));
 
-        return false;
-    }
-}
-
-int BlinkerSerialSIM7020::checkPrintSpan()
-{
-    if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT)
+    if (mqtt_NBIoT->connected())
     {
-        if (respTimes > BLINKER_PRINT_MSG_LIMIT)
+        if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || \
+            linkTime == 0)
         {
-            BLINKER_ERR_LOG(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
-            
-            return false;
+            // linkTime = millis();
+
+            // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
+
+            // if (! iotPub.publish(payload.c_str())) {
+
+            if (! mqtt_NBIoT->publish(BLINKER_PUB_TOPIC_NBIoT, payload.c_str()))
+            {
+                BLINKER_LOG_ALL(payload);
+                BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+
+                return false;
+            }
+            else
+            {
+                BLINKER_LOG_ALL(payload);
+                BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+
+                linkTime = millis();
+
+                this->latestTime = millis();
+
+                return true;
+            }
         }
         else
         {
-            respTimes++;
-            return true;
+            BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT "), linkTime);
+
+            return false;
         }
     }
     else
     {
-        respTimes = 0;
-        return true;
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
+char * BlinkerSerialSIM7020::deviceName() { return MQTT_DEVICEID_NBIoT;/*MQTT_ID_PRO;*/ }
+
+void BlinkerSerialSIM7020::sharers(const String & data)
+{
+    BLINKER_LOG_ALL(BLINKER_F("sharers data: "), data);
+
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(data);
+
+    if (!root.success()) return;
+
+    String user_name = "";
+
+    if (_sharerCount)
+    {
+        for (uint8_t num = _sharerCount; num > 0; num--)
+        {
+            delete _sharers[num - 1];
+        }
+    }
+
+    _sharerCount = 0;
+
+    for (uint8_t num = 0; num < BLINKER_MQTT_MAX_SHARERS_NUM; num++)
+    {
+        user_name = root["users"][num].as<String>();
+
+        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
+
+            _sharerCount++;
+
+            _sharers[num] = new BlinkerSharer(user_name);
+        }
+        else
+        {
+            break;
+        }
     }
 }
 
@@ -454,6 +894,8 @@ int BlinkerSerialSIM7020::connectServer()
     // uri += imei;
     uri += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
     uri += _deviceType;
+    uri += _aliType;
+    uri += _duerType;
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + uri);
 
@@ -588,6 +1030,119 @@ int BlinkerSerialSIM7020::connectServer()
     mqtt_NBIoT->subscribe(BLINKER_SUB_TOPIC_NBIoT);
 
     return true;
+}
+
+void BlinkerSerialSIM7020::checkKA()
+{
+    if (millis() - kaTime >= BLINKER_MQTT_KEEPALIVE)
+        isAlive = false;
+}
+
+int BlinkerSerialSIM7020::checkAliKA() {
+    if (millis() - aliKaTime >= 10000)
+        return false;
+    else
+        return true;
+}
+
+int BlinkerSerialSIM7020::checkDuerKA() {
+    if (millis() - duerKaTime >= 10000)
+        return false;
+    else
+        return true;
+}
+
+int BlinkerSerialSIM7020::checkCanPrint() {
+    if ((millis() - printTime >= BLINKER_PRO_MSG_LIMIT && isAlive) || printTime == 0) {
+        return true;
+    }
+    else {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
+        
+        checkKA();
+
+        return false;
+    }
+}
+
+int BlinkerSerialSIM7020::checkCanBprint() {
+    if ((millis() - bPrintTime >= BLINKER_BRIDGE_MSG_LIMIT) || bPrintTime == 0) {
+        return true;
+    }
+    else {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
+
+        return false;
+    }
+}
+
+int BlinkerSerialSIM7020::checkPrintSpan()
+{
+    if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT)
+    {
+        if (respTimes > BLINKER_PRINT_MSG_LIMIT)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
+            
+            return false;
+        }
+        else
+        {
+            respTimes++;
+            return true;
+        }
+    }
+    else
+    {
+        respTimes = 0;
+        return true;
+    }
+}
+
+int BlinkerSerialSIM7020::checkAliPrintSpan()
+{
+    if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2)
+    {
+        if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("ALIGENIE NOT ALIVE OR MSG LIMIT"));
+
+            return false;
+        }
+        else
+        {
+            respAliTimes++;
+            return true;
+        }
+    }
+    else
+    {
+        respAliTimes = 0;
+        return true;
+    }
+}
+
+int BlinkerSerialSIM7020::checkDuerPrintSpan()
+{
+    if (millis() - respDuerTime < BLINKER_PRINT_MSG_LIMIT/2)
+    {
+        if (respDuerTimes > BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+
+            return false;
+        }
+        else
+        {
+            respDuerTimes++;
+            return true;
+        }
+    }
+    else
+    {
+        respDuerTimes = 0;
+        return true;
+    }
 }
 
 int BlinkerSerialSIM7020::isJson(const String & data)

@@ -679,17 +679,19 @@ int BlinkerMQTT::print(char * data, bool needCheck)
             data[c_num+7] = data[c_num-1];
         }
 
-        String data_add = BLINKER_F("{\"data\":");
+        char data_add[20] = "{\"data\":";
         for(uint8_t c_num = 0; c_num < 8; c_num++)
         {
             data[c_num] = data_add[c_num];
         }
 
-        data_add = BLINKER_F(",\"fromDevice\":\"");
-        strcat(data, data_add.c_str());
+        // data_add = BLINKER_F(",\"fromDevice\":\"");
+        // strcat(data, data_add.c_str());
+        strcat(data, ",\"fromDevice\":\"");
         strcat(data, MQTT_ID_MQTT);
-        data_add = BLINKER_F("\",\"toDevice\":\"");
-        strcat(data, data_add.c_str());
+        // data_add = BLINKER_F("\",\"toDevice\":\"");
+        // strcat(data, data_add.c_str());
+        strcat(data, "\",\"toDevice\":\"");
         if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
         {
             strcat(data, _sharers[_sharerFrom]->uuid());
@@ -698,8 +700,10 @@ int BlinkerMQTT::print(char * data, bool needCheck)
         {
             strcat(data, UUID_MQTT);
         }
-        data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
-        strcat(data, data_add.c_str());
+        // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
+        // strcat(data, data_add.c_str());
+
+        strcat(data, "\",\"deviceType\":\"OwnApp\"}");
 
         _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
 
@@ -853,21 +857,21 @@ int BlinkerMQTT::bPrint(char * name, const String & data)
 
         // if (! iotPub.publish(payload.c_str())) {
 
-        String bPubTopic = BLINKER_F("");
+        // String bPubTopic = BLINKER_F("");
 
-        if (strcmp(mqtt_broker, BLINKER_MQTT_BORKER_ONENET) == 0)
-        {
-            bPubTopic = MQTT_PRODUCTINFO_MQTT;
-            bPubTopic += BLINKER_F("/");
-            bPubTopic += name;
-            bPubTopic += BLINKER_F("/r");
-        }
-        else
-        {
-            bPubTopic = BLINKER_PUB_TOPIC_MQTT;
-        }
+        // if (strcmp(mqtt_broker, BLINKER_MQTT_BORKER_ONENET) == 0)
+        // {
+        //     bPubTopic = MQTT_PRODUCTINFO_MQTT;
+        //     bPubTopic += BLINKER_F("/");
+        //     bPubTopic += name;
+        //     bPubTopic += BLINKER_F("/r");
+        // }
+        // else
+        // {
+        //     bPubTopic = BLINKER_PUB_TOPIC_MQTT;
+        // }
 
-        if (! mqtt_MQTT->publish(bPubTopic.c_str(), data_add.c_str()))
+        if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data_add.c_str()))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1797,8 +1801,8 @@ int BlinkerMQTT::connectServer() {
     // if (!isMQTTinit)
     iotSub_MQTT = new Adafruit_MQTT_Subscribe(mqtt_MQTT, BLINKER_SUB_TOPIC_MQTT);
 
-    mqtt_broker = (char*)malloc((_broker.length()+1)*sizeof(char));
-    strcpy(mqtt_broker, _broker.c_str());
+    // mqtt_broker = (char*)malloc((_broker.length()+1)*sizeof(char));
+    // strcpy(mqtt_broker, _broker.c_str());
     // mqtt_broker = _broker;
 
     // mDNSInit(MQTT_ID_MQTT);
