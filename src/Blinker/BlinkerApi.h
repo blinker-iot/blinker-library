@@ -8945,6 +8945,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             }
             BProto::printNow();
         }
+
+        _fresh = true;
     }
 
 
