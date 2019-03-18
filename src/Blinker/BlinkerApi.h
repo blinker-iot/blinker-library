@@ -796,6 +796,262 @@ class BlinkerApi : public BlinkerProtocol
                 }
 
                 BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
+
+                #ifndef BLINKER_LAN_DEBUG
+                    String host = BLINKER_F("https://iotdev.clz.me");
+                    const int httpsPort = 443;
+                #elif defined(BLINKER_LAN_DEBUG)
+                    String host = BLINKER_F("http://192.168.1.121:9090");
+                    const int httpsPort = 9090;
+                #endif
+
+                BlinkerHTTPSIM7020 http(*stream, isHWS, listenFunc);
+
+                String url_iot;
+
+                int httpCode;
+
+                // if (_type == BLINKER_CMD_SMS_NUMBER) {
+                //     url_iot = String(host) + "/api/v1/user/device/sms";
+                // }
+                String conType = BLINKER_F("Content-Type");
+                String application = BLINKER_F("application/json;charset=utf-8");
+
+                BLINKER_LOG_ALL(BLINKER_F("blinker server begin"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                switch (_type) {
+                    case BLINKER_CMD_SMS_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/sms");
+                        
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_PUSH_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/push");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                        // return BLINKER_CMD_FALSE;
+                    case BLINKER_CMD_WECHAT_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/wxMsg/");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                        // return BLINKER_CMD_FALSE;
+                    case BLINKER_CMD_WEATHER_NUMBER :
+                        url_iot = BLINKER_F("/api/v1");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_AQI_NUMBER :
+                        url_iot = BLINKER_F("/api/v1");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_BRIDGE_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/userconfig");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_CONFIG_GET_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_DATA_GET_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_DATA_DELETE_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_AUTO_PULL_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_OTA_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_OTA_STATUS_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/ota/upgrade_status");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    default :
+                        return BLINKER_CMD_FALSE;
+                }
+
+                BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
+
+                BLINKER_LOG_ALL(BLINKER_F("HTTPS payload: "), msg);
+
+                if (httpCode)
+                {
+                    BLINKER_LOG(BLINKER_F("[HTTP] ... success"));
+
+                    String payload = http.getString();
+
+                    BLINKER_LOG_ALL(payload);
+
+                    DynamicJsonBuffer jsonBuffer;
+                    JsonObject& data_rp = jsonBuffer.parseObject(payload);
+
+                    if (data_rp.success())
+                    {
+                        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                        if (msg_code != 1000)
+                        {
+                            String _detail = data_rp[BLINKER_CMD_DETAIL];
+                            BLINKER_ERR_LOG(_detail);
+                        }
+                        else
+                        {
+                            // String _payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
+                            // payload = _payload;
+
+                            if (_type == BLINKER_CMD_BRIDGE_NUMBER)
+                                payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
+                            else if (_type == BLINKER_CMD_OTA_NUMBER || _type == BLINKER_CMD_FRESH_SHARERS_NUMBER)
+                                payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
+                            else
+                                payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
+                        }
+                    }
+
+                    BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
+
+                    switch (_type) {
+                        case BLINKER_CMD_SMS_NUMBER :
+                            _smsTime = millis();
+                            break;
+                        case BLINKER_CMD_PUSH_NUMBER :
+                            _pushTime = millis();
+                            break;
+                        case BLINKER_CMD_WECHAT_NUMBER :
+                            _wechatTime = millis();
+                            break;
+                            // return BLINKER_CMD_FALSE;
+                        case BLINKER_CMD_WEATHER_NUMBER :
+                            _weatherTime = millis();
+                            break;
+                        case BLINKER_CMD_AQI_NUMBER :
+                            _aqiTime = millis();
+                            break;
+                        case BLINKER_CMD_BRIDGE_NUMBER :
+                            break;
+                        case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                            _cUpdateTime = millis();
+                            break;
+                        case BLINKER_CMD_CONFIG_GET_NUMBER :
+                            _cGetTime = millis();
+                            break;
+                        case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                            _cDelTime = millis();
+                            break;
+                        case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                            _dUpdateTime = millis();
+                            break;
+                        case BLINKER_CMD_DATA_GET_NUMBER :
+                            _dGetTime = millis();
+                            break;
+                        case BLINKER_CMD_DATA_DELETE_NUMBER :
+                            _dDelTime = millis();
+                            break;
+                        case BLINKER_CMD_AUTO_PULL_NUMBER :
+                            _autoPullTime = millis();
+                            break;
+                        case BLINKER_CMD_OTA_NUMBER :
+                            break;
+                        case BLINKER_CMD_OTA_STATUS_NUMBER :
+                            break;
+                        case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                            break;
+                        default :
+                            return BLINKER_CMD_FALSE;
+                    }
+
+                    return payload;
+                }
+                else
+                {
+                    BLINKER_LOG(BLINKER_F("[HTTP] ... failed"));
+
+                    return BLINKER_CMD_FALSE;
+                }
             }
         #endif
 
@@ -863,12 +1119,12 @@ class BlinkerApi : public BlinkerProtocol
             bool checkDataDel();
             bool checkAutoPull();
             
-            #ifndef BLINKER_NBIOT_SIM7020
-            
             String bridgeQuery(char * key);
 
-            String postServer(const String & url, const String & host, int port, const String & msg);
-            String getServer(const String & url, const String & host, int port);
+            #ifndef BLINKER_NBIOT_SIM7020
+            
+            // String postServer(const String & url, const String & host, int port, const String & msg);
+            // String getServer(const String & url, const String & host, int port);
             String blinkerServer(uint8_t _type, const String & msg, bool state = false);
 
             #endif
@@ -6388,8 +6644,6 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         else return false;
     }
 
-    #ifndef BLINKER_NBIOT_SIM7020
-
     String BlinkerApi::bridgeQuery(char * key)
     {
         String data = BLINKER_F("/query?");
@@ -6401,49 +6655,51 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         return blinkerServer(BLINKER_CMD_BRIDGE_NUMBER, data);
     }
 
-    String BlinkerApi::postServer(const String & url, const String & host, int port, const String & msg)
-    {
+    #ifndef BLINKER_NBIOT_SIM7020
 
-        String client_msg;
+    // String BlinkerApi::postServer(const String & url, const String & host, int port, const String & msg)
+    // {
 
-        client_msg = BLINKER_F("POST ");
-        client_msg += url;
-        client_msg += BLINKER_F(" HTTP/1.1\r\nHost: ");
-        client_msg += host;
-        client_msg += BLINKER_F(":");
-        client_msg += STRING_format(port);
-        client_msg += BLINKER_F("\r\nContent-Type: application/json;charset=utf-8\r\nContent-Length: ");
-        client_msg += STRING_format(msg.length());
-        client_msg += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
-        client_msg += msg;
-        client_msg += BLINKER_F("\r\n");
+    //     String client_msg;
 
-        // client_s.print(client_msg);
+    //     client_msg = BLINKER_F("POST ");
+    //     client_msg += url;
+    //     client_msg += BLINKER_F(" HTTP/1.1\r\nHost: ");
+    //     client_msg += host;
+    //     client_msg += BLINKER_F(":");
+    //     client_msg += STRING_format(port);
+    //     client_msg += BLINKER_F("\r\nContent-Type: application/json;charset=utf-8\r\nContent-Length: ");
+    //     client_msg += STRING_format(msg.length());
+    //     client_msg += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
+    //     client_msg += msg;
+    //     client_msg += BLINKER_F("\r\n");
 
-        BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
+    //     // client_s.print(client_msg);
 
-        return client_msg;
-    }
+    //     BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
+
+    //     return client_msg;
+    // }
 
 
-    String BlinkerApi::getServer(const String & url, const String & host, int port)
-    {
-        String client_msg;
+    // String BlinkerApi::getServer(const String & url, const String & host, int port)
+    // {
+    //     String client_msg;
 
-        client_msg = BLINKER_F("GET ");
-        client_msg += url;
-        client_msg += BLINKER_F(" HTTP/1.1\r\nHost: ");
-        client_msg += host;
-        client_msg += BLINKER_F(":");
-        client_msg += STRING_format(port);
-        client_msg += BLINKER_F("\r\nConnection: close\r\n\r\n");
+    //     client_msg = BLINKER_F("GET ");
+    //     client_msg += url;
+    //     client_msg += BLINKER_F(" HTTP/1.1\r\nHost: ");
+    //     client_msg += host;
+    //     client_msg += BLINKER_F(":");
+    //     client_msg += STRING_format(port);
+    //     client_msg += BLINKER_F("\r\nConnection: close\r\n\r\n");
 
-        // client_s.print(client_msg);
+    //     // client_s.print(client_msg);
 
-        BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
+    //     BLINKER_LOG_ALL(BLINKER_F("client_msg: "), client_msg);
 
-        return client_msg;
-    }
+    //     return client_msg;
+    // }
 
 
     String BlinkerApi::blinkerServer(uint8_t _type, const String & msg, bool state)
@@ -7121,7 +7377,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
             BLINKER_LOG_ALL(BLINKER_F("HTTPS payload: "), msg);
 
-            if (httpCode > 0) {
+            if (httpCode > 0)
+            {
                 BLINKER_LOG_ALL(BLINKER_F("[HTTP] status... code: "), httpCode);
 
                 String payload;
@@ -8945,6 +9202,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             }
             BProto::printNow();
         }
+
+        _fresh = true;
     }
 
 
