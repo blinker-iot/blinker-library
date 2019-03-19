@@ -25,6 +25,7 @@
 // #endif
 
 #define BLINKER_HTTP_SIM7020_DEFAULT_TIMEOUT 5000UL
+#define BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE 1024
 
 enum sim7020_http_status_t
 {
@@ -1047,66 +1048,77 @@ class BlinkerHTTPSIM7020
                 if (listenFunc) listenFunc();
             }
 
+            char _data[BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
+            memset(_data, '\0', BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE);
+
             if (stream->available())
             {
+                strcpy(_data, stream->readStringUntil('\n').c_str());
+                BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
+                _data[strlen(_data) - 1] = '\0';
                 if (isFresh) free(streamData);
-                streamData = (char*)malloc(1*sizeof(char));
-                // streamData = "";
+                streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
+                strcpy(streamData, _data);
+                isFresh = true;
+                return true;
+                // if (isFresh) free(streamData);
+                // streamData = (char*)malloc(1*sizeof(char));
+                // // streamData = "";
 
-                // memset(streamData, '\0', 1024);
+                // // memset(streamData, '\0', 1024);
 
-                // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), stream->readString());
+                // // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), stream->readString());
 
-                // strcpy(streamData, stream->readStringUntil('\n').c_str());
+                // // strcpy(streamData, stream->readStringUntil('\n').c_str());
 
-                // int16_t dNum = strlen(streamData);
+                // // int16_t dNum = strlen(streamData);
 
-                // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData,
-                //                 BLINKER_F(", dNum: "), dNum);
+                // // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData,
+                // //                 BLINKER_F(", dNum: "), dNum);
                 
-                int16_t dNum = 0;
-                int c_d = timedRead();
-                while (dNum < BLINKER_MAX_READ_SIZE && 
-                    c_d >=0 && c_d != '\n')
-                {
-                    // if (c_d != '\r')
-                    {
-                        streamData[dNum] = (char)c_d;
-                        dNum++;
-                        streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
-                    }
+                // int16_t dNum = 0;
+                // int c_d = timedRead();
+                // while (dNum < BLINKER_MAX_READ_SIZE && 
+                //     c_d >=0 && c_d != '\n')
+                // {
+                //     // if (c_d != '\r')
+                //     {
+                //         streamData[dNum] = (char)c_d;
+                //         dNum++;
+                //         streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
+                //     }
 
-                    c_d = timedRead();
-                }
-                // dNum++;
-                // // streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                //     c_d = timedRead();
+                // }
+                // // dNum++;
+                // // // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
-                // streamData[dNum-1] = '\0';
+                // // streamData[dNum-1] = '\0';
 
-                // strcpy(streamData, stream->readStringUntil('\n').c_str());
-                // int16_t dNum = strlen(streamData);
-                // streamData[dNum-1] = '\0';
+                // // strcpy(streamData, stream->readStringUntil('\n').c_str());
+                // // int16_t dNum = strlen(streamData);
+                // // streamData[dNum-1] = '\0';
 
-                // stream->flush();
+                // // stream->flush();
                 
-                // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
-                //                 BLINKER_F(" , dNum: "), dNum);
-                BLINKER_LOG_FreeHeap_ALL();
+                // // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+                // //                 BLINKER_F(" , dNum: "), dNum);
+                // BLINKER_LOG_FreeHeap_ALL();
                 
-                if (dNum < BLINKER_MAX_READ_SIZE && dNum > 0)
-                {
-                    // if (streamData[dNum - 1] == '\r')
-                    streamData[dNum - 1] = '\0';
-                    BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
-                                    BLINKER_F(" , dNum: "), dNum);
+                // if (dNum < BLINKER_MAX_READ_SIZE && dNum > 0)
+                // {
+                //     // if (streamData[dNum - 1] == '\r')
+                //     streamData[dNum - 1] = '\0';
+                //     BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+                //                     BLINKER_F(" , dNum: "), dNum);
 
-                    isFresh = true;
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                //     isFresh = true;
+                //     return true;
+                // }
+                // else
+                // {
+                //     return false;
+                // }
             }
             else
             {

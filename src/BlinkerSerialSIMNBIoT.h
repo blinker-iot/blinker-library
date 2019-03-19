@@ -1,6 +1,10 @@
 #ifndef BLINKER_SERIAL_SIM_NBIOT_H
 #define BLINKER_SERIAL_SIM_NBIOT_H
 
+#ifndef BLINKER_ARDUINOJSON
+    #define BLINKER_ARDUINOJSON
+#endif
+
 #include "Adapters/BlinkerSerialSIM7020.h"
 #include "Blinker/BlinkerApi.h"
 

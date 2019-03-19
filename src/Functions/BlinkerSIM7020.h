@@ -17,6 +17,8 @@
 
 #include <time.h>
 
+#define BLINKER_SIM7020_DATA_BUFFER_SIZE 1024
+
 enum sim7020_status_t
 {
     sim7020_cpin_REQ,
@@ -540,60 +542,71 @@ class BlinkerSIM7020
                 if (listenFunc) listenFunc();
             }
 
+            char _data[BLINKER_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
+            memset(_data, '\0', BLINKER_SIM7020_DATA_BUFFER_SIZE);
+
             if (stream->available())
             {
-                // streamData = "";
-                // memset(streamData, '\0', 128);
+                strcpy(_data, stream->readStringUntil('\n').c_str());
+                BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
+                _data[strlen(_data) - 1] = '\0';
                 if (isFresh) free(streamData);
-                streamData = (char*)malloc(1*sizeof(char));
+                streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
+                strcpy(streamData, _data);
+                isFresh = true;
+                return true;
+//                 // streamData = "";
+//                 // memset(streamData, '\0', 128);
+//                 if (isFresh) free(streamData);
+//                 streamData = (char*)malloc(1*sizeof(char));
 
-                // strcpy(streamData, stream->readStringUntil('\n').c_str());
+//                 // strcpy(streamData, stream->readStringUntil('\n').c_str());
 
-                // int16_t dNum = strlen(streamData);
+//                 // int16_t dNum = strlen(streamData);
 
-                // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData,
-                //                 BLINKER_F(", dNum: "), dNum);
-                // // stream->readString();
+//                 // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData,
+//                 //                 BLINKER_F(", dNum: "), dNum);
+//                 // // stream->readString();
                 
-                int16_t dNum = 0;
-                int c_d = timedRead();
-                while (dNum < BLINKER_MAX_READ_SIZE && 
-                    c_d >=0 && c_d != '\n')
-                {
-                    // if (c_d != '\r')
-                    {
-                        streamData[dNum] = (char)c_d;
-                        dNum++;
-                        streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
-                    }
+//                 int16_t dNum = 0;
+//                 int c_d = timedRead();
+//                 while (dNum < BLINKER_MAX_READ_SIZE && 
+//                     c_d >=0 && c_d != '\n')
+//                 {
+//                     // if (c_d != '\r')
+//                     {
+//                         streamData[dNum] = (char)c_d;
+//                         dNum++;
+//                         streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
+//                     }
 
-                    c_d = timedRead();
-                }
-                // dNum++;
-                // // // streamData = (char*)realloc(streamData, dNum*sizeof(char));
+//                     c_d = timedRead();
+//                 }
+//                 // dNum++;
+//                 // // // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
-                // streamData[dNum-1] = '\0';
-                // stream->flush();
-// 7b2264657461696c223a207b2262726f6b6572223a2022616c6979756e222c20226465766963654e616d65223a20223237383636394232304d3235423634323230354e33435850222c2022696f744964223a20225346455467613255784b784e386a69716e4e516730303130356435343030222c2022696f74546f6b656e223a20226331353530643464346334623432666338376431343639373333363166353539222c202270726f647563744b6579223a20224a67434762486c6e64677a222c202275756964223a20223733633762356134623266323231633061373264376234313238653430323337227d2c20226d657373616765223a20313030307d
+//                 // streamData[dNum-1] = '\0';
+//                 // stream->flush();
+// // 7b2264657461696c223a207b2262726f6b6572223a2022616c6979756e222c20226465766963654e616d65223a20223237383636394232304d3235423634323230354e33435850222c2022696f744964223a20225346455467613255784b784e386a69716e4e516730303130356435343030222c2022696f74546f6b656e223a20226331353530643464346334623432666338376431343639373333363166353539222c202270726f647563744b6579223a20224a67434762486c6e64677a222c202275756964223a20223733633762356134623266323231633061373264376234313238653430323337227d2c20226d657373616765223a20313030307d
 
-                // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
-                //                 BLINKER_F(" , dNum: "), dNum);
-                BLINKER_LOG_FreeHeap_ALL();
+//                 // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+//                 //                 BLINKER_F(" , dNum: "), dNum);
+//                 BLINKER_LOG_FreeHeap_ALL();
                 
-                if (dNum < BLINKER_MAX_READ_SIZE && dNum > 0)
-                {
-                    // if (streamData[dNum - 1] == '\r')
-                    streamData[dNum - 1] = '\0';
-                    BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
-                                    BLINKER_F(" , dNum: "), dNum);
+//                 if (dNum < BLINKER_MAX_READ_SIZE && dNum > 0)
+//                 {
+//                     // if (streamData[dNum - 1] == '\r')
+//                     streamData[dNum - 1] = '\0';
+//                     BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+//                                     BLINKER_F(" , dNum: "), dNum);
 
-                    isFresh = true;
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+//                     isFresh = true;
+//                     return true;
+//                 }
+//                 else
+//                 {
+//                     return false;
+//                 }
             }
             else
             {
