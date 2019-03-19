@@ -766,6 +766,9 @@ void BlinkerSerialSIM7020::begin(const char* _type, String _imei)
 
     imei = (char*)malloc((_imei.length() + 1)*sizeof(char));
     strcpy(imei, _imei.c_str());
+
+    AUTHKEY_NBIoT = (char*)malloc((strlen(_deviceType) + 1)*sizeof(char));
+    strcpy(AUTHKEY_NBIoT, _deviceType);
 }
 
 void BlinkerSerialSIM7020::initStream(Stream& s, bool state, blinker_callback_t func)
@@ -842,7 +845,11 @@ int BlinkerSerialSIM7020::autoPrint(uint32_t id)
     }
 }
 
-char * BlinkerSerialSIM7020::deviceName() { return MQTT_DEVICEID_NBIoT;/*MQTT_ID_PRO;*/ }
+char * BlinkerSerialSIM7020::deviceName()
+{
+    BLINKER_LOG_ALL(BLINKER_F("BlinkerSerialSIM7020::deviceName: "), MQTT_ID_NBIoT);
+    return MQTT_ID_NBIoT;/*MQTT_ID_PRO;*/
+}
 
 void BlinkerSerialSIM7020::sharers(const String & data)
 {

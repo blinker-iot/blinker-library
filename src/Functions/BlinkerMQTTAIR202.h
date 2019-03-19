@@ -24,6 +24,7 @@
 // #endif
 
 #define BLINKER_MQTT_AIR202_DEFAULT_TIMEOUT 5000UL
+#define BLINKER_MQTT_AIR202_DATA_BUFFER_SIZE 1024
 
 enum air202_mqtt_status_t
 {
@@ -673,64 +674,75 @@ bool BlinkerMQTTAIR202::streamAvailable()
         if (listenFunc) listenFunc();
     }
 
+    char _data[BLINKER_MQTT_AIR202_DATA_BUFFER_SIZE];// = { '\0' };
+    memset(_data, '\0', BLINKER_MQTT_AIR202_DATA_BUFFER_SIZE);
+
     if (stream->available())
     {
+        strcpy(_data, stream->readStringUntil('\n').c_str());
+        BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
+        _data[strlen(_data) - 1] = '\0';
         if (isFresh) free(streamData);
-        streamData = (char*)malloc(1*sizeof(char));
-        // streamData = "";
-        // memset(streamData, '\0', 1024);
+        streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
+        strcpy(streamData, _data);
+        isFresh = true;
+        return true;
+        // if (isFresh) free(streamData);
+        // streamData = (char*)malloc(1*sizeof(char));
+        // // streamData = "";
+        // // memset(streamData, '\0', 1024);
 
-        // strcpy(streamData, stream->readStringUntil('\n').c_str());
+        // // strcpy(streamData, stream->readStringUntil('\n').c_str());
 
-        // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData);
+        // // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData);
 
-        // int16_t dNum = strlen(streamData);
+        // // int16_t dNum = strlen(streamData);
         
-        int16_t dNum = 0;
-        int c_d = timedRead();
-        while (dNum < BLINKER_MAX_READ_SIZE && 
-            c_d >=0 && c_d != '\n')
-        {
-            // if (c_d != '\r')
-            {
-                streamData[dNum] = (char)c_d;
-                dNum++;
-                streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
-            }
+        // int16_t dNum = 0;
+        // int c_d = timedRead();
+        // while (dNum < BLINKER_MAX_READ_SIZE && 
+        //     c_d >=0 && c_d != '\n')
+        // {
+        //     // if (c_d != '\r')
+        //     {
+        //         streamData[dNum] = (char)c_d;
+        //         dNum++;
+        //         streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
+        //     }
 
-            c_d = timedRead();
-        }
-        // dNum++;
-        // streamData = (char*)realloc(streamData, dNum*sizeof(char));
+        //     c_d = timedRead();
+        // }
+        // // dNum++;
+        // // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
-        // streamData[dNum-1] = '\0';
+        // // streamData[dNum-1] = '\0';
 
-        // streamData = stream->readStringUntil('\n');
-        // streamData[streamData.length()-1] = '\0';
+        // // streamData = stream->readStringUntil('\n');
+        // // streamData[streamData.length()-1] = '\0';
 
-        // BLINKER_LOG_ALL(BLINKER_F("handleSerial TEST: "), stream->readStringUntil('\n'));
+        // // BLINKER_LOG_ALL(BLINKER_F("handleSerial TEST: "), stream->readStringUntil('\n'));
 
-        // stream->flush();
+        // // stream->flush();
         
-        // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
-        //                 BLINKER_F(" , dNum: "), dNum);
-        // BLINKER_LOG_FreeHeap_ALL();
+        // // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+        // //                 BLINKER_F(" , dNum: "), dNum);
+        // // BLINKER_LOG_FreeHeap_ALL();
         
-        if (dNum < BLINKER_MAX_READ_SIZE && dNum > 0)
-        {
-            // if (streamData[strlen(streamData) - 1] == '\r')
-            streamData[dNum - 1] = '\0';
-            BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
-                            BLINKER_F(" , dNum: "), dNum);
+        // if (dNum < BLINKER_MAX_READ_SIZE && dNum > 0)
+        // {
+        //     // if (streamData[strlen(streamData) - 1] == '\r')
+        //     streamData[dNum - 1] = '\0';
+        //     BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+        //                     BLINKER_F(" , dNum: "), dNum);
 
-            isFresh = true;
-            return true;
-        }
-        else
-        {
-            // free(streamData);
-            return false;
-        }
+        //     isFresh = true;
+        //     return true;
+        // }
+        // else
+        // {
+        //     // free(streamData);
+        //     return false;
+        // }
     }
     else
     {
