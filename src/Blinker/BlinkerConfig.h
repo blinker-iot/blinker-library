@@ -1471,6 +1471,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_DIY_DEVICE              "DiyArduino"
 
+    #define BLINKER_AIR_STATION             "AirStation"
+
     #define BLINKER_AIR_DETECTOR            "OwnAirdetector"
 
     #define BLINKER_SMART_PLUGIN            "OwnPlug"
