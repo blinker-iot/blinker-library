@@ -16,6 +16,8 @@
     #if defined(BLINKER_PRO)
         #include "Functions/BlinkerWlan.h"
     #endif
+#else
+    #include "Functions/BlinkerTicker.h"
 #endif
 
 #if defined(ESP8266)
@@ -309,9 +311,11 @@ class BlinkerApi : public BlinkerProtocol
             void bridgeInit();
 
             void bridgePrint(char * bName, const String & data);
+            #endif
             void aligeniePrint(String & _msg);
             void duerPrint(String & _msg);
 
+            #ifndef BLINKER_NBIOT_SIM7020
             void loadOTA();
             void ota();
             String checkOTA();
@@ -3677,6 +3681,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         BProto::bPrint(bName, data);
     }
+    #endif
 
     void BlinkerApi::aligeniePrint(String & _msg)
     {
@@ -3718,7 +3723,8 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
-
+    #ifndef BLINKER_NBIOT_SIM7020
+            
     void BlinkerApi::loadOTA()
     {
         // if (_OTA.loadOTACheck())
