@@ -59,150 +59,152 @@ class BlinkerAIR202
 
         ~BlinkerAIR202() { flush(); }
 
+        time_t  _ntpTime = 0;
+
         void setStream(Stream& s, bool isHardware, blinker_callback_t _func)
         { stream = &s; isHWS = isHardware; listenFunc = _func; }
 
         void setTimezone(float tz)  { _timezone = tz; }
         String lang()                { return _LANG; }
         String lat()                 { return _LAT; }
-        int16_t year()
-        {
-            if (_ntpTime)
-            {
-                struct tm timeinfo;
-                #if defined(ESP8266) || defined(__AVR__)
-                    gmtime_r(&_ntpTime, &timeinfo);
-                #elif defined(ESP32)
-                    localtime_r(&_ntpTime, &timeinfo);
-                #endif
+        // int16_t year()
+        // {
+        //     if (_ntpTime)
+        //     {
+        //         struct tm timeinfo;
+        //         #if defined(ESP8266) || defined(__AVR__)
+        //             gmtime_r(&_ntpTime, &timeinfo);
+        //         #elif defined(ESP32)
+        //             localtime_r(&_ntpTime, &timeinfo);
+        //         #endif
                 
-                return timeinfo.tm_year + 1900;
-            }
-            return -1;
-        }
+        //         return timeinfo.tm_year + 1900;
+        //     }
+        //     return -1;
+        // }
 
-        int8_t  month()
-        {
-            if (_ntpTime)
-            {
-                struct tm timeinfo;
-                #if defined(ESP8266) || defined(__AVR__)
-                    gmtime_r(&_ntpTime, &timeinfo);
-                #elif defined(ESP32)
-                    localtime_r(&_ntpTime, &timeinfo);
-                #endif
+        // int8_t  month()
+        // {
+        //     if (_ntpTime)
+        //     {
+        //         struct tm timeinfo;
+        //         #if defined(ESP8266) || defined(__AVR__)
+        //             gmtime_r(&_ntpTime, &timeinfo);
+        //         #elif defined(ESP32)
+        //             localtime_r(&_ntpTime, &timeinfo);
+        //         #endif
                 
-                return timeinfo.tm_mon + 1;
-            }
-            return -1;
-        }
+        //         return timeinfo.tm_mon + 1;
+        //     }
+        //     return -1;
+        // }
 
-        int8_t  mday()
-        {
-            if (_ntpTime)
-            {
-                struct tm timeinfo;
-                #if defined(ESP8266) || defined(__AVR__)
-                    gmtime_r(&_ntpTime, &timeinfo);
-                #elif defined(ESP32)
-                    localtime_r(&_ntpTime, &timeinfo);
-                #endif
+        // int8_t  mday()
+        // {
+        //     if (_ntpTime)
+        //     {
+        //         struct tm timeinfo;
+        //         #if defined(ESP8266) || defined(__AVR__)
+        //             gmtime_r(&_ntpTime, &timeinfo);
+        //         #elif defined(ESP32)
+        //             localtime_r(&_ntpTime, &timeinfo);
+        //         #endif
                 
-                return timeinfo.tm_mday;
-            }
-            return -1;
-        }
+        //         return timeinfo.tm_mday;
+        //     }
+        //     return -1;
+        // }
 
-        int8_t  wday()
-        {
-            if (_ntpTime)
-            {
-                struct tm timeinfo;
-                #if defined(ESP8266) || defined(__AVR__)
-                    gmtime_r(&_ntpTime, &timeinfo);
-                #elif defined(ESP32)
-                    localtime_r(&_ntpTime, &timeinfo);
-                #endif
+        // int8_t  wday()
+        // {
+        //     if (_ntpTime)
+        //     {
+        //         struct tm timeinfo;
+        //         #if defined(ESP8266) || defined(__AVR__)
+        //             gmtime_r(&_ntpTime, &timeinfo);
+        //         #elif defined(ESP32)
+        //             localtime_r(&_ntpTime, &timeinfo);
+        //         #endif
                 
-                return timeinfo.tm_wday;
-            }
-            return -1;
-        }
+        //         return timeinfo.tm_wday;
+        //     }
+        //     return -1;
+        // }
 
-        int8_t  hour()
-        {
-            if (_ntpTime)
-            {
-                struct tm timeinfo;
-                #if defined(ESP8266) || defined(__AVR__)
-                    gmtime_r(&_ntpTime, &timeinfo);
-                #elif defined(ESP32)
-                    localtime_r(&_ntpTime, &timeinfo);
-                #endif
+        // int8_t  hour()
+        // {
+        //     if (_ntpTime)
+        //     {
+        //         struct tm timeinfo;
+        //         #if defined(ESP8266) || defined(__AVR__)
+        //             gmtime_r(&_ntpTime, &timeinfo);
+        //         #elif defined(ESP32)
+        //             localtime_r(&_ntpTime, &timeinfo);
+        //         #endif
                 
-                return timeinfo.tm_hour;
-            }
-            return -1;
-        }
+        //         return timeinfo.tm_hour;
+        //     }
+        //     return -1;
+        // }
 
-        int8_t  minute()
-        {
-            if (_ntpTime)
-            {
-                struct tm timeinfo;
-                #if defined(ESP8266) || defined(__AVR__)
-                    gmtime_r(&_ntpTime, &timeinfo);
-                #elif defined(ESP32)
-                    localtime_r(&_ntpTime, &timeinfo);
-                #endif
+        // int8_t  minute()
+        // {
+        //     if (_ntpTime)
+        //     {
+        //         struct tm timeinfo;
+        //         #if defined(ESP8266) || defined(__AVR__)
+        //             gmtime_r(&_ntpTime, &timeinfo);
+        //         #elif defined(ESP32)
+        //             localtime_r(&_ntpTime, &timeinfo);
+        //         #endif
                 
-                return timeinfo.tm_min;
-            }
-            return -1;
-        }
+        //         return timeinfo.tm_min;
+        //     }
+        //     return -1;
+        // }
 
-        int8_t  second()
-        {
-            if (_ntpTime)
-            {
-                struct tm timeinfo;
-                #if defined(ESP8266) || defined(__AVR__)
-                    gmtime_r(&_ntpTime, &timeinfo);
-                #elif defined(ESP32)
-                    localtime_r(&_ntpTime, &timeinfo);
-                #endif
+        // int8_t  second()
+        // {
+        //     if (_ntpTime)
+        //     {
+        //         struct tm timeinfo;
+        //         #if defined(ESP8266) || defined(__AVR__)
+        //             gmtime_r(&_ntpTime, &timeinfo);
+        //         #elif defined(ESP32)
+        //             localtime_r(&_ntpTime, &timeinfo);
+        //         #endif
                 
-                return timeinfo.tm_sec;
-            }
-            return -1;
-        }
+        //         return timeinfo.tm_sec;
+        //     }
+        //     return -1;
+        // }
 
-        time_t  time()
-        {
-            if (_ntpTime)
-            {
-                return _ntpTime - _timezone * 3600;
-            }
-            return millis();
-        }
+        // time_t  time()
+        // {
+        //     if (_ntpTime)
+        //     {
+        //         return _ntpTime - _timezone * 3600;
+        //     }
+        //     return millis();
+        // }
 
-        int32_t dtime()
-        {
-            if (_ntpTime)
-            {
-                struct tm timeinfo;
-                #if defined(ESP8266) || defined(__AVR__)
-                    gmtime_r(&_ntpTime, &timeinfo);
-                #elif defined(ESP32)
-                    localtime_r(&_ntpTime, &timeinfo);
-                #endif
+        // int32_t dtime()
+        // {
+        //     if (_ntpTime)
+        //     {
+        //         struct tm timeinfo;
+        //         #if defined(ESP8266) || defined(__AVR__)
+        //             gmtime_r(&_ntpTime, &timeinfo);
+        //         #elif defined(ESP32)
+        //             localtime_r(&_ntpTime, &timeinfo);
+        //         #endif
                 
-                return timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
-            }
-            return -1;
-        }
+        //         return timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
+        //     }
+        //     return -1;
+        // }
 
-        void getAMGSMLOC()
+        bool getAMGSMLOC()
         {
             uint32_t os_time = millis();
             streamPrint(BLINKER_CMD_AMGSMLOC_REQ);
@@ -247,12 +249,13 @@ class BlinkerAIR202
                         BLINKER_LOG_ALL(BLINKER_F("_ntpTime: "), _ntpTime);
 
                         free(_masterAT);
-                        break;
+                        return true;
                     }
 
                     free(_masterAT);
                 }
             }
+            return false;
         }
 
         int checkCGTT()
@@ -564,7 +567,7 @@ class BlinkerAIR202
         bool    isHWS = false;
         uint16_t    _airTimeout = 1000;
 
-        time_t  _ntpTime = 0;
+        // time_t  _ntpTime = 0;
 
         float   _timezone = 8.0;
 

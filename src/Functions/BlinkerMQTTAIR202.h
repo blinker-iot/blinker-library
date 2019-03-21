@@ -632,7 +632,7 @@ int BlinkerMQTTAIR202::readSubscription(uint16_t time_out)
                     String subData = String(streamData).substring(
                                         _masterAT->getParam(0).length() +
                                         _masterAT->getParam(1).length() + 
-                                        10);
+                                        8);
                     BLINKER_LOG_ALL(BLINKER_F("mqtt sub data: "), subData);
 
                     if (isRead) free(lastRead);
