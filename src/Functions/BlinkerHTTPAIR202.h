@@ -194,92 +194,58 @@ class BlinkerHTTPAIR202
         void setTimeout(uint16_t timeout)   { _httpTimeout = timeout; }
         bool GET()
         {
-            // streamPrint(STRING_format(BLINEKR_CMD_SAPBR_REQ) + \
-            //             "=3,1,\"CONTYPE\",\"GPRS\"");
+            // streamPrint(STRING_format(BLINKER_CMD_MDISCONNECT_REQ));
+            // uint32_t mqtt_time = millis();
+            // uint8_t status_get = 0;
 
-            // air202_status_sap_t sapbar_status = air202_sap_sapbar_pdp_REQ;
-            // uint32_t dev_time = millis();
-
-            // while(millis() - dev_time < _httpTimeout)
+            // while(millis() - mqtt_time < _httpTimeout)
             // {
             //     if (available())
             //     {
-            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            //         BLINKER_LOG_ALL(BLINKER_F("== disconnect available =="));
+            //         if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
             //         {
-            //             BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_pdp_success"));
-
-            //             sapbar_status = air202_sap_sapbar_pdp_success;
+            //             BLINKER_LOG_ALL(BLINKER_F("mqtt disconnect"));
+            //             // return true;
             //             break;
             //         }
             //     }
             // }
 
-            // if (sapbar_status != air202_sap_sapbar_pdp_success) return false;
+            // streamPrint(STRING_format(BLINKER_CMD_MIPCLOSE_REQ));
+            // mqtt_time = millis();
 
-            // streamPrint(STRING_format(BLINEKR_CMD_SAPBR_REQ) + \
-            //             "=3,1,\"APN\",\"CMNET\"");
-
-            // sapbar_status = air202_sap_sapbar_apn_REQ;
-            // dev_time = millis();
-
-            // while(millis() - dev_time < _httpTimeout)
+            // while(millis() - mqtt_time < _httpTimeout)
             // {
             //     if (available())
             //     {
-            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            //         BLINKER_LOG_ALL(BLINKER_F("== disconnect available =="));
+            //         if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
             //         {
-            //             BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_apn_success"));
-
-            //             sapbar_status = air202_sap_sapbar_apn_success;
+            //             BLINKER_LOG_ALL(BLINKER_F("mqtt disconnect"));
+            //             // return true;
             //             break;
             //         }
             //     }
             // }
 
-            // if (sapbar_status != air202_sap_sapbar_apn_success) return false;
+            // streamPrint(STRING_format(BLINKER_CMD_CIPSHUT_REQ));
+            // mqtt_time = millis();
 
-            // streamPrint(STRING_format(BLINEKR_CMD_SAPBR_REQ) + "=5,1");
-
-            // sapbar_status = air202_sap_sapbar_save_REQ;
-            // dev_time = millis();
-
-            // while(millis() - dev_time < _httpTimeout)
+            // while(millis() - mqtt_time < _httpTimeout)
             // {
             //     if (available())
             //     {
-            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            //         BLINKER_LOG_ALL(BLINKER_F("== disconnect available =="));
+            //         if (strcmp(streamData, BLINKER_CMD_CONNACK_OK) == 0)
             //         {
-            //             BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_save_success"));
-
-            //             sapbar_status = air202_sap_sapbar_save_success;
-            //             break;
+            //             BLINKER_LOG_ALL(BLINKER_F("mqtt disconnect"));
+            //             return true;
+            //             // break;
             //         }
             //     }
             // }
-
-            // if (sapbar_status != air202_sap_sapbar_save_success) return false;
-
-            // streamPrint(STRING_format(BLINEKR_CMD_SAPBR_REQ) + "=1,1");
-
-            // sapbar_status = air202_sap_sapbar_fresh_REQ;
-            // dev_time = millis();
-
-            // while(millis() - dev_time < _httpTimeout*4)
-            // {
-            //     if (available())
-            //     {
-            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
-            //         {
-            //             BLINKER_LOG_ALL(BLINKER_F("air202_sap_sapbar_fresh_success"));
-
-            //             sapbar_status = air202_sap_sapbar_fresh_success;
-            //             break;
-            //         }
-            //     }
-            // }
-
-            // if (sapbar_status != air202_sap_sapbar_fresh_success) return false;
-
+            
             streamPrint(BLINKER_CMD_HTTPINIT_REQ);
             uint32_t http_time = millis();
             air202_http_status_t http_status = air202_http_init;
@@ -483,6 +449,8 @@ class BlinkerHTTPAIR202
 
         bool POST(String _msg, String _type, String _application)
         {
+            
+            
             uint32_t http_time = millis();
             air202_http_status_t http_status = air202_http_init;
 
@@ -503,7 +471,7 @@ class BlinkerHTTPAIR202
 
             if (http_status != air202_http_init_success) return false;
 
-            streamPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + "=\"CCID\",1");
+            streamPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + "=\"CID\",1");
             http_status = air202_http_para_set;
 
             while(millis() - http_time < _httpTimeout)
@@ -542,26 +510,26 @@ class BlinkerHTTPAIR202
 
             if (http_status != air202_http_para_set_success) return false;
 
-            streamPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + \
-                        "=\"" + _type + "\",\"" + _application + "\"");
+            // streamPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + \
+            //             "=\"" + _type + "\",\"" + _application + "\"");
             
-            http_status = air202_http_para_set;
-            http_time = millis();
+            // http_status = air202_http_para_set;
+            // http_time = millis();
 
-            while(millis() - http_time < _httpTimeout)
-            {
-                if (available())
-                {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
-                    {
-                        BLINKER_LOG_ALL(BLINKER_F("air202_http_para_set_success 3"));
-                        http_status = air202_http_para_set_success;
-                        break;
-                    }
-                }
-            }
+            // while(millis() - http_time < _httpTimeout)
+            // {
+            //     if (available())
+            //     {
+            //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            //         {
+            //             BLINKER_LOG_ALL(BLINKER_F("air202_http_para_set_success 3"));
+            //             http_status = air202_http_para_set_success;
+            //             break;
+            //         }
+            //     }
+            // }
 
-            if (http_status != air202_http_para_set_success) return false;
+            // if (http_status != air202_http_para_set_success) return false;
 
             streamPrint(STRING_format(BLINKER_CMD_HTTPDATA_REQ) + \
                         "=" + _msg.length() + ",10000");

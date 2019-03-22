@@ -3644,7 +3644,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-            defined(BLINKER_NBIOT_SIM7020)
+            defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202)
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
