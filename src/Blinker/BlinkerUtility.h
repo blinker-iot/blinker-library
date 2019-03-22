@@ -53,7 +53,7 @@ extern "C" {
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-    defined(BLINKER_NBIOT_SIM7020)
+    defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202)
 class BlinkerSharer
 {
     public :

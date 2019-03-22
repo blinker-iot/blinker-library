@@ -59,7 +59,8 @@ class BlinkerProtocol
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
-            defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020)
+            defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
+            defined(BLINKER_GPRS_AIR202)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
             // void ping() { if (isInit) conn->ping(); }

@@ -335,39 +335,39 @@ void BlinkerSerialSIM7020::subscribe()
             _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
         }
         else
+        {
+            if (_sharerCount)
             {
-                if (_sharerCount)
+                for (uint8_t num = 0; num < _sharerCount; num++)
                 {
-                    for (uint8_t num = 0; num < _sharerCount; num++)
+                    if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
                     {
-                        if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
-                        {
-                            _sharerFrom = num;
+                        _sharerFrom = num;
 
-                            kaTime = millis();
+                        kaTime = millis();
 
-                            BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
-                            BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
-                            
-                            _needCheckShare = false;
+                        BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+                        BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+                        
+                        _needCheckShare = false;
 
-                            break;
-                        }
-                        else
-                        {
-                            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
-                                        check is from bridge/share device, \
-                                        data: "), dataGet);
+                        break;
+                    }
+                    else
+                    {
+                        BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                                    check is from bridge/share device, \
+                                    data: "), dataGet);
 
-                            _needCheckShare = true;
-                        }
+                        _needCheckShare = true;
                     }
                 }
-                root.printTo(dataGet);
-
-                isAvail_NBIoT = true;
-                isAlive = true;
             }
+            root.printTo(dataGet);
+
+            isAvail_NBIoT = true;
+            isAlive = true;
+        }
 
         if (isFresh_NBIoT) free(msgBuf_NBIoT);
         msgBuf_NBIoT = (char*)malloc((dataGet.length()+1)*sizeof(char));

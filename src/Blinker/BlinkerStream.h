@@ -27,7 +27,8 @@ class BlinkerStream
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
-            defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020)
+            defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
+            defined(BLINKER_GPRS_AIR202)
             virtual int aliPrint(const String & data) = 0;
             virtual int duerPrint(const String & data) = 0; 
             // virtual void ping() = 0;
