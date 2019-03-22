@@ -31,7 +31,7 @@ class BlinkerBLE : public BlinkerStream, public BLEServerCallbacks, public BLECh
         int  read();
         int  timedRead();
         char * lastRead();// { return _isFresh ? BLEBuf : ""; }
-        void flush();        
+        void flush();
         // bool print(String s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
         int connect()      { return deviceConnected; }
