@@ -204,7 +204,7 @@ class BlinkerAIR202
         //     return -1;
         // }
 
-        bool getAMGSMLOC()
+        bool getAMGSMLOC(float tz = 8.0)
         {
             uint32_t os_time = millis();
             streamPrint(BLINKER_CMD_AMGSMLOC_REQ);
