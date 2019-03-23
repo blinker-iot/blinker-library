@@ -2114,7 +2114,11 @@ void BlinkerApi::run()
 
         if (!BProto::init()) {
             ::delay(2000);
-            // BLINKER_LOG(BLINKER_F("RETURN"));
+            BLINKER_LOG_ALL(BLINKER_F("RETURN"));
+
+            #if defined(BLINKER_AT_MQTT)
+                BProto::connect();
+            #endif
             return;
         }
 
