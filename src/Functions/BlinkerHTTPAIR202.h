@@ -530,7 +530,9 @@ class BlinkerHTTPAIR202
             // }
 
             // if (http_status != air202_http_para_set_success) return false;
+            // _msg.replace("\"", "\\22");
 
+            // _msg = "\"" + _msg + "\"";
             streamPrint(STRING_format(BLINKER_CMD_HTTPDATA_REQ) + \
                         "=" + _msg.length() + ",10000");
             
@@ -592,7 +594,7 @@ class BlinkerHTTPAIR202
             if (http_status != air202_http_start_success) return false;
             http_time = millis();
 
-            while(millis() - http_time < _httpTimeout)
+            while(millis() - http_time < _httpTimeout*2)
             {
                 if (available())
                 {
@@ -610,11 +612,11 @@ class BlinkerHTTPAIR202
 
                     free(_masterAT);
 
-                    break;
+                    // break;
                 }
             }
 
-            // if (http_status != air202_http_upload_success) return false;
+            if (http_status != air202_http_upload_success) return false;
 
             streamPrint(STRING_format(BLINKER_CMD_HTTPREAD_REQ));
             
@@ -633,13 +635,13 @@ class BlinkerHTTPAIR202
                     {
                         BLINKER_LOG_ALL(BLINKER_F("air202_http_read_success, data len: "), _masterAT->getParam(0));
                         http_status = air202_http_read_success;
-
-                        uint16_t dataLen = _masterAT->getParam(0).toInt();
+                        free(_masterAT);
+                        break;
                     }
 
                     free(_masterAT);
 
-                    break;
+                    // break;
                 }
             }
 
@@ -660,11 +662,24 @@ class BlinkerHTTPAIR202
                         char data_buff[1024] = { '\0' };
                         payload = (char*)malloc((strlen(streamData) + 1)*sizeof(char));
                         strcpy(payload, streamData);
+
+                        BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
                     }
                 }
             }
 
-            /*TBD read data, httpData*/
+            http_time = millis();
+
+            while(millis() - http_time < _httpTimeout)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        break;
+                    }
+                }
+            }
 
             streamPrint(STRING_format(BLINKER_CMD_HTTPERM_REQ));
             
