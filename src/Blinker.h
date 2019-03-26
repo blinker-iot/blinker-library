@@ -212,6 +212,12 @@
 
     BlinkerSerialSIMNBIoT   Blinker;
 
+#elif defined(BLINKER_PRO_SIM7020)
+
+    #include "BlinkerSIMPRO.h"
+
+    BlinkerSIMPRO   Blinker;
+
 #elif defined(BLINKER_GPRS_AIR202)
 
     // #ifndef BLINKER_AIR202_GPRS

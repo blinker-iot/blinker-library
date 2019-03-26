@@ -1278,7 +1278,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
     defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
-    defined(BLINKER_GPRS_AIR202)
+    defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020)
     #define BLINKER_CMD_SMS_NUMBER              1
 
     #define BLINKER_CMD_PUSH_NUMBER             2
@@ -1317,7 +1317,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-    defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
+    defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
+    defined(BLINKER_PRO_SIM7020)
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
     #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
@@ -1462,7 +1463,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
-#if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
+#if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202) || \
+    defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2
@@ -1754,7 +1756,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
-#if defined(BLINKER_NBIOT_SIM7020)
+#if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
     // http://www.simcom.com/upload/file/1547183713.pdf HTTP
     // http://www.simcom.com/upload/file/1547183663.pdf MQTT
     // http://www.simcom.com/upload/file/1547177595.pdf AT

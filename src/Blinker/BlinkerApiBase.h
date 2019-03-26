@@ -140,7 +140,8 @@ class BlinkerWidgets_joy
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-    defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202)
+    defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
+    defined(BLINKER_PRO_SIM7020)
     class BlinkerBridge_key
     {
         public :
