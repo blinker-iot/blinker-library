@@ -4,7 +4,7 @@
 #if ((defined(ESP8266) || defined(ESP32)) && \
     (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
      defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY))) || \
-    defined(BLINKER_NBIOT_SIM7020) 
+    defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
 
 #if ARDUINO >= 100
     #include <Arduino.h>
