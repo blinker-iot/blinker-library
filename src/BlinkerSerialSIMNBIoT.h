@@ -104,7 +104,7 @@ class BlinkerSerialSIMNBIoT : public BlinkerApi
                 transport(Transp);
                 // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));
                 
-                BApi::begin(_type, Serial, true, listening);
+                BApi::begin(_type, Serial1, true, listening);
                 return;
             }
             else if (ss_rx_pin == 17 && ss_tx_pin == 16){
