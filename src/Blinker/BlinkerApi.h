@@ -464,7 +464,7 @@ class BlinkerApi : public BlinkerProtocol
         char * widgetName_rgb(uint8_t num);
         char * widgetName_int(uint8_t num);
 
-        #if defined(BLINKER_PRO)
+        #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020)
             void attachParse(blinker_callback_with_json_arg_t newFunction)
             { _parseFunc = newFunction; }
             void attachClick(blinker_callback_t newFunction)
@@ -491,6 +491,7 @@ class BlinkerApi : public BlinkerProtocol
                 { _noButtonResetFunc = newFunction; }
             #endif
 
+            #if !defined(BLINKER_PRO_SIM7020)
             void setType(const char* _type);
             const char* type() { return _deviceType; }
             void reset();
@@ -500,6 +501,7 @@ class BlinkerApi : public BlinkerProtocol
             bool init()                         { return _isInit; }
             bool registered()                   { return BProto::authCheck(); }
             uint8_t status()                    { return _proStatus; }
+            #endif
         #endif
 
     private :
@@ -580,7 +582,7 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_PRO)
             bool            _isConnBegin = false;
-            bool            _getRegister = false;
+            bool            _getRegister = true;//false;
             // bool            _isInit = false;
             bool            _isRegistered = false;
             uint32_t        _register_fresh = 0;
@@ -1555,12 +1557,14 @@ class BlinkerApi : public BlinkerProtocol
             void atInit(const char* _auth, const char* _ssid, const char* _pswd);
         #endif
 
-        #if defined(BLINKER_PRO)
+        #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020)
+            #if !defined(BLINKER_PRO_SIM7020)
             bool beginPro() { return wlanRun(); }
             void begin(const char* _type);
 
             const char* _deviceType;
             BlinkerWlan Bwlan;
+            #endif
 
             blinker_callback_with_json_arg_t    _parseFunc = NULL;
 
@@ -1595,6 +1599,7 @@ class BlinkerApi : public BlinkerProtocol
             unsigned long _startTime; // will be set in state 1
             unsigned long _stopTime; // will be set in state 2
 
+            #if !defined(BLINKER_PRO_SIM7020)
             bool wlanRun()
             {
                 #if defined(BLINKER_BUTTON)
@@ -1604,6 +1609,7 @@ class BlinkerApi : public BlinkerProtocol
             }
 
             uint8_t wlanStatus() { return Bwlan.status(); }
+            #endif
 
             bool isPressed = false;
 
@@ -1660,8 +1666,9 @@ class BlinkerApi : public BlinkerProtocol
                     // if (_resetFunc) {
                     //     _resetFunc();
                     // }
-
+                    #if !defined(BLINKER_PRO_SIM7020)
                     reset();
+                    #endif
                 #endif
             } // longPressStop
 

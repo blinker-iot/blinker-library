@@ -50,7 +50,10 @@ class BlinkerHTTPSIM7020
 {
     public :
         BlinkerHTTPSIM7020(Stream& s, bool isHardware, blinker_callback_t func)
-        { stream = &s; isHWS = isHardware; listenFunc = func; }
+        {
+            stream = &s; isHWS = isHardware; listenFunc = func; 
+            streamData = (char*)malloc(BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
+        }
 
         ~BlinkerHTTPSIM7020() { flush(); }
 
@@ -329,43 +332,54 @@ class BlinkerHTTPSIM7020
 
             while(millis() - http_time < _httpTimeout * 4)
             {
-                if (available(BLINKER_CMD_CHTTPNMIC))
+                if (available())
                 {
-                    _masterAT = new BlinkerMasterAT();
-                    _masterAT->update(STRING_format(streamData));
-
-                    if (_masterAT->getState() != AT_M_NONE &&
-                        _masterAT->reqName() == BLINKER_CMD_CHTTPNMIC)
+                    if (strstr(streamData, BLINKER_CMD_CHTTPNMIC)) 
                     {
-                        BLINKER_LOG_ALL(BLINKER_F("sim7020_http_nmic_success"));
-                        http_status = sim7020_http_nmic_success;
+                        _masterAT = new BlinkerMasterAT();
+                        _masterAT->update(STRING_format(streamData));
 
-                        if (strlen(strrchr(streamData, ',')) < 1024)
+                        if (_masterAT->getState() != AT_M_NONE &&
+                            _masterAT->reqName() == BLINKER_CMD_CHTTPNMIC)
                         {
-                            if (isFreshPayload) free(payload);
+                            BLINKER_LOG_ALL(BLINKER_F("sim7020_http_nmic_success"));
+                            http_status = sim7020_http_nmic_success;
 
-                            isFreshPayload = true;
-                            char data_buff[1024] = { '\0' };
-
-                            memcpy(data_buff,strrchr(streamData, ',')+1, strlen(strrchr(streamData, ',')));
-
-                            payload = (char*)malloc((strlen(data_buff)/2 + 1)*sizeof(char));
-
-                            memset(payload, '\0', (strlen(data_buff)/2 + 1));
-
-                            // memcpy(payload,strrchr(streamData, ',')+1, strlen(strrchr(streamData, ',')));
-
-                            for(uint16_t num = 0; num < strlen(data_buff)/2; num++)
+                            if (strlen(strrchr(streamData, ',')) < 1024)
                             {
-                                payload[num] = (char)(dcode_data(data_buff[num*2])<< 4 | dcode_data(data_buff[num*2+1]));
+                                if (isFreshPayload) free(payload);
+
+                                isFreshPayload = true;
+                                char data_buff[1024] = { '\0' };
+
+                                memcpy(data_buff,strrchr(streamData, ',')+1, strlen(strrchr(streamData, ',')));
+
+                                payload = (char*)malloc((strlen(data_buff)/2 + 1)*sizeof(char));
+
+                                memset(payload, '\0', (strlen(data_buff)/2 + 1));
+
+                                // memcpy(payload,strrchr(streamData, ',')+1, strlen(strrchr(streamData, ',')));
+
+                                for(uint16_t num = 0; num < strlen(data_buff)/2; num++)
+                                {
+                                    payload[num] = (char)(dcode_data(data_buff[num*2])<< 4 | dcode_data(data_buff[num*2+1]));
+                                }
+
+                                BLINKER_LOG_ALL(BLINKER_F("data_buff: "), data_buff);
+                                BLINKER_LOG_ALL(BLINKER_F("data_buff num: "), strlen(data_buff)/2);
+                                BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
+
+                                free(_masterAT);
+                                break;
+                            }
+                            else
+                            {
+                                free(_masterAT);
                             }
                         }
 
                         free(_masterAT);
-                        break;
                     }
-
-                    free(_masterAT);
                 }
             }
 
@@ -1015,7 +1029,7 @@ class BlinkerHTTPSIM7020
                     // // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), stream->readStringUntil('\n'));
                     
                     strcpy(_data, stream->readStringUntil('\n').c_str());
-                    BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
+                    BLINKER_LOG_ALL(BLINKER_F("handleSerial rs available(const char *str): "), _data);
                     if (strstr(_data, str))
                     {
                         _data[strlen(_data) - 1] = '\0';
@@ -1050,69 +1064,78 @@ class BlinkerHTTPSIM7020
                 if (listenFunc) listenFunc();
             }
 
-            char _data[BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
-            memset(_data, '\0', BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE);
+            // char _data[BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
+            // memset(_data, '\0', BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE);
 
             if (stream->available())
             {
-                strcpy(_data, stream->readStringUntil('\n').c_str());
+                // strcpy(_data, stream->readStringUntil('\n').c_str());
+                String _data = stream->readStringUntil('\n');
                 BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
-                _data[strlen(_data) - 1] = '\0';
-                if (isFresh) free(streamData);
-                streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
-                strcpy(streamData, _data);
+                // _data[strlen(_data) - 1] = '\0';
+                // if (isFresh) memset(streamData, '\0', BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE);//free(streamData);
+                // else streamData = (char*)malloc(BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
+                strcpy(streamData, _data.c_str());
+                streamData[_data.length() - 1] = '\0';
                 isFresh = true;
                 return true;
-                // if (isFresh) free(streamData);
-                // streamData = (char*)malloc(1*sizeof(char));
-                // // streamData = "";
 
-                // // memset(streamData, '\0', 1024);
+                // if (isFresh)
+                // {
+                //     memset(streamData, '\0', BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE);//free(streamData);
+                // }
+                // else
+                // {
+                //     streamData = (char*)malloc(BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
+                    // memset(streamData, '\0', BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE);
+                // }
+                // streamData = "";
 
-                // // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), stream->readString());
+                // memset(streamData, '\0', 1024);
 
-                // // strcpy(streamData, stream->readStringUntil('\n').c_str());
+                // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), stream->readString());
 
-                // // int16_t dNum = strlen(streamData);
+                // strcpy(streamData, stream->readStringUntil('\n').c_str());
 
-                // // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData,
-                // //                 BLINKER_F(", dNum: "), dNum);
+                // int16_t dNum = strlen(streamData);
+
+                // BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), streamData,
+                //                 BLINKER_F(", dNum: "), dNum);
                 
                 // int16_t dNum = 0;
                 // int c_d = timedRead();
-                // while (dNum < BLINKER_MAX_READ_SIZE && 
-                //     c_d >=0 && c_d != '\n')
+                // while (dNum < BLINKER_MAX_READ_SIZE && c_d >=0 && c_d != '\n')
                 // {
                 //     // if (c_d != '\r')
-                //     {
-                //         streamData[dNum] = (char)c_d;
-                //         dNum++;
-                //         streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
-                //     }
+                //     // {
+                //     streamData[dNum] = (char)c_d;
+                //     dNum++;
+                //         // streamData = (char*)realloc(streamData, (dNum+1)*sizeof(char));
+                //     // }
 
                 //     c_d = timedRead();
                 // }
-                // // dNum++;
-                // // // streamData = (char*)realloc(streamData, dNum*sizeof(char));
+                // // // dNum++;
+                // // // // streamData = (char*)realloc(streamData, dNum*sizeof(char));
 
-                // // streamData[dNum-1] = '\0';
+                // // // streamData[dNum-1] = '\0';
 
-                // // strcpy(streamData, stream->readStringUntil('\n').c_str());
-                // // int16_t dNum = strlen(streamData);
-                // // streamData[dNum-1] = '\0';
+                // // // strcpy(streamData, stream->readStringUntil('\n').c_str());
+                // // // int16_t dNum = strlen(streamData);
+                // // // streamData[dNum-1] = '\0';
 
-                // // stream->flush();
+                // // // stream->flush();
                 
-                // // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
-                // //                 BLINKER_F(" , dNum: "), dNum);
-                // BLINKER_LOG_FreeHeap_ALL();
+                // // // BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
+                // // //                 BLINKER_F(" , dNum: "), dNum);
+                // // // BLINKER_LOG_FreeHeap_ALL();
                 
                 // if (dNum < BLINKER_MAX_READ_SIZE && dNum > 0)
                 // {
                 //     // if (streamData[dNum - 1] == '\r')
                 //     streamData[dNum - 1] = '\0';
-                //     BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData,
-                //                     BLINKER_F(" , dNum: "), dNum);
+                //     BLINKER_LOG_ALL(BLINKER_F("handleSerial: "), streamData);
+                //     BLINKER_LOG_ALL(BLINKER_F("dNum: "), dNum);
 
                 //     isFresh = true;
                 //     return true;
