@@ -670,14 +670,14 @@ int BlinkerMQTT::print(char * data, bool needCheck)
         //     // payload += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         // }
 
-        uint8_t num = strlen(data);
+        uint16_t num = strlen(data);
 
-        data[num+8] = '\0';
-
-        for(uint8_t c_num = num; c_num > 0; c_num--)
+        for(uint16_t c_num = num; c_num > 0; c_num--)
         {
             data[c_num+7] = data[c_num-1];
         }
+
+        data[num+8] = '\0';
 
         char data_add[20] = "{\"data\":";
         for(uint8_t c_num = 0; c_num < 8; c_num++)

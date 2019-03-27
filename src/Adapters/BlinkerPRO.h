@@ -616,18 +616,17 @@ int BlinkerPRO::print(char * data, bool needCheck)
         //     // payload += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         // }
 
-        BLINKER_LOG_ALL(BLINKER_F("data: "), data);
-
         uint16_t num = strlen(data);
-
-        data[num+8] = '\0';
 
         for(uint16_t c_num = num; c_num > 0; c_num--)
         {
             data[c_num+7] = data[c_num-1];
         }
 
+        data[num+8] = '\0';
+
         String data_add = BLINKER_F("{\"data\":");
+        
         for(uint16_t c_num = 0; c_num < 8; c_num++)
         {
             data[c_num] = data_add[c_num];
