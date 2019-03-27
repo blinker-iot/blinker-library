@@ -301,6 +301,7 @@ int BlinkerProtocol::_print(char * n, bool needCheckLength)
         !needCheckLength)
     {
         // BLINKER_LOG_FreeHeap_ALL();
+        BLINKER_LOG_ALL(BLINKER_F("Proto print..."));
         conn->print(n, isCheck);
         if (!isCheck) isCheck = true;
 
