@@ -964,12 +964,25 @@ int BlinkerProAIR202::connectServer()
 {
     String host = BLINKER_F("https://iotdev.clz.me");
     String uri = "";
-    // uri += BLINKER_F("/api/v1/user/device/register?deviceType=");
-    // uri += _deviceType;
-    // uri += BLINKER_F("&deviceName=");
-    // uri += imei;
-    uri += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
+    uri += BLINKER_F("/api/v1/user/device/register?deviceType=");
     uri += _deviceType;
+    uri += BLINKER_F("&deviceName=");
+    // uri += imei;
+    if (_deviceType != BLINKER_AIR_STATION)
+    {
+        // url_iot += macDeviceName();
+        uri += imei;
+    }
+    else
+    {
+        // uri += "TESTA69BA016"; // 1
+        // uri += "TEST656A2782"; // 2
+        // uri += "TESTD1C4B294"; // 3
+        // uri += "TEST687991DC"; // 4
+        uri += "TEST872B3982"; // 5
+    }
+    // uri += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
+    // uri += _deviceType;
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + uri);
 
@@ -1150,35 +1163,40 @@ int BlinkerProAIR202::connectServer()
 
     // char uuid_eeprom[BLINKER_AUUID_SIZE];
 
-    // BLINKER_LOG_ALL(("==========AUTH CHECK=========="));
+    BLINKER_LOG_ALL(("==========AUTH CHECK=========="));
 
-    // // if (!isFirst)
-    // // {
-    // //     char _authCheck;
-    // //     EEPROM.begin(BLINKER_EEP_SIZE);
-    // //     EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
-    // //     if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
-    // //         // strcpy(UUID_PRO, _uuid.c_str());
+    if (!isFirst)
+    {
+        char _authCheck;
 
-    // //         strcpy(uuid_eeprom, _uuid.c_str());
-    // //         EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
-    // //         EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+        #if defined(ESP8266) || defined(ESP32)
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        #endif
+        EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+        if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
+            // strcpy(UUID_PRO, _uuid.c_str());
 
-    // //         BLINKER_LOG_ALL(BLINKER_F("===================="));
-    // //         BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
-    // //         BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
-    // //         isNew = true;
-    // //     }
-    // //     EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
-    // //     if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
-    // //         EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
-    // //         isAuth = true;
-    // //     }
-    // //     EEPROM.commit();
-    // //     EEPROM.end();
+            strcpy(uuid_eeprom, _uuid.c_str());
+            EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+            EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
 
-    // //     isFirst = true;
-    // // }
+            BLINKER_LOG_ALL(BLINKER_F("===================="));
+            BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
+            BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
+            isNew = true;
+        }
+        EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+        if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
+            EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
+            isAuth = true;
+        }
+        #if defined(ESP8266) || defined(ESP32)
+        EEPROM.commit();
+        EEPROM.end();
+        #endif
+
+        isFirst = true;
+    }
     
     // BLINKER_LOG_ALL(BLINKER_F("===================="));
     // BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME: "), imei);
