@@ -227,6 +227,12 @@
     #include "BlinkerSerialLUATGPRS.h"
 
     BlinkerSerialLUATGPRS   Blinker;
+
+#elif defined(BLINKER_PRO_AIR202)
+
+    #include "BlinkerLUATPRO.h"
+
+    BlinkerLUATPRO  Blinker;
     
 #else
 

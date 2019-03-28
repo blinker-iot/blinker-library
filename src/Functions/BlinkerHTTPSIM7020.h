@@ -52,7 +52,7 @@ class BlinkerHTTPSIM7020
         BlinkerHTTPSIM7020(Stream& s, bool isHardware, blinker_callback_t func)
         {
             stream = &s; isHWS = isHardware; listenFunc = func; 
-            streamData = (char*)malloc(BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
+            // streamData = (char*)malloc(BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
         }
 
         ~BlinkerHTTPSIM7020() { flush(); }
@@ -1066,6 +1066,8 @@ class BlinkerHTTPSIM7020
 
             // char _data[BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
             // memset(_data, '\0', BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE);
+
+            if (!isFresh) streamData = (char*)malloc(BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
 
             if (stream->available())
             {

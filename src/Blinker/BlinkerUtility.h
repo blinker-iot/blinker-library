@@ -36,7 +36,8 @@ extern "C" {
     typedef void (*blinker_callback_with_rgb_arg_t)(uint8_t r_data, uint8_t g_data, uint8_t b_data, uint8_t bright_data);
     typedef void (*blinker_callback_with_joy_arg_t)(uint8_t x_data, uint8_t y_data);
     typedef String (*blinker_callback_return_string_t)(void);
-    #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020)
+    #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
+        defined(BLINKER_PRO_AIR202)
         typedef bool (*blinker_callback_with_json_arg_t)(const JsonObject & data);
     #endif
     typedef int (*blinker_callback_return_int_t)(void);
@@ -54,7 +55,7 @@ extern "C" {
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
     defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
-    defined(BLINKER_PRO_SIM7020)
+    defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
 class BlinkerSharer
 {
     public :

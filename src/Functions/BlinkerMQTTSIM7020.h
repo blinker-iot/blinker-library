@@ -48,6 +48,7 @@ class BlinkerMQTTSIM7020
             servername = server; portnum = port;
             clientid = cid; username = user;
             password = pass; listenFunc = func;
+            // streamData = (char*)malloc(BLINKER_HTTP_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
         }
 
         ~BlinkerMQTTSIM7020() { flush(); }
@@ -141,7 +142,7 @@ class BlinkerMQTTSIM7020
 
         void streamPrint(const String & s)
         {
-            BLINKER_LOG_ALL(s);
+            BLINKER_LOG_ALL(BLINKER_F("SIM MQTT: "), s);
             stream->println(s);
         }
 
@@ -397,17 +398,20 @@ bool BlinkerMQTTSIM7020::streamAvailable()
         if (listenFunc) listenFunc();
     }
 
-    char _data[BLINKER_MQTT_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
-    memset(_data, '\0', BLINKER_MQTT_SIM7020_DATA_BUFFER_SIZE);
+    // char _data[BLINKER_MQTT_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
+    // memset(_data, '\0', BLINKER_MQTT_SIM7020_DATA_BUFFER_SIZE);
+    if (!isFresh) streamData = (char*)malloc(BLINKER_MQTT_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
 
     if (stream->available())
     {
-        strcpy(_data, stream->readStringUntil('\n').c_str());
+        // strcpy(_data, stream->readStringUntil('\n').c_str());
+        String _data = stream->readStringUntil('\n');
         BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
-        _data[strlen(_data) - 1] = '\0';
-        if (isFresh) free(streamData);
-        streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
-        strcpy(streamData, _data);
+        // _data[strlen(_data) - 1] = '\0';
+        // if (isFresh) free(streamData);
+        // streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
+        strcpy(streamData, _data.c_str());
+        streamData[_data.length() - 1] = '\0';
         isFresh = true;
         return true;
         // if (isFresh) free(streamData);
