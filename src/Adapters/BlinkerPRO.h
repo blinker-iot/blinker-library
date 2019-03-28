@@ -1574,9 +1574,11 @@ int BlinkerPRO::connectServer() {
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         // memcpy(DEVICE_NAME, _userID.c_str(), 12);
-        String _deviceName = _userID.substring(12, 36);
-        MQTT_DEVICEID_PRO = (char*)malloc((_deviceName.length()+1)*sizeof(char));
-        strcpy(MQTT_DEVICEID_PRO, _deviceName.c_str());
+        // String _deviceName = _userID.substring(12, 36);
+        // MQTT_DEVICEID_PRO = (char*)malloc((_deviceName.length()+1)*sizeof(char));
+        // String _deviceName = _userID.substring(12, 36);
+        MQTT_DEVICEID_PRO = (char*)malloc((_userID.length()+1)*sizeof(char));
+        strcpy(MQTT_DEVICEID_PRO, _userID.c_str());
         MQTT_ID_PRO = (char*)malloc((_userID.length()+1)*sizeof(char));
         strcpy(MQTT_ID_PRO, _userID.c_str());
         MQTT_NAME_PRO = (char*)malloc((_userName.length()+1)*sizeof(char));

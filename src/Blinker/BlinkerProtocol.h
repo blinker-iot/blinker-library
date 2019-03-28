@@ -375,7 +375,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
 
         if (_data.length() > BLINKER_MAX_SEND_BUFFER_SIZE)
         {
-            BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
+            BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT: "), BLINKER_MAX_SEND_BUFFER_SIZE);
             return;
         }
 
