@@ -99,25 +99,35 @@
 
 #ifndef BLINKER_MAX_SEND_SIZE
     #if defined(ESP8266) || defined(ESP32)
-        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+            defined(BLINKER_GATEWAY) || defined(BLINKER_PRO_SIM7020)
             #define BLINKER_MAX_SEND_SIZE       512
         #else
             #define BLINKER_MAX_SEND_SIZE       512
         #endif
     #else
-        #define BLINKER_MAX_SEND_SIZE       128
+        #if defined(BLINKER_PRO_SIM7020)
+            #define BLINKER_MAX_SEND_SIZE       512
+        #else
+            #define BLINKER_MAX_SEND_SIZE       128
+        #endif
     #endif
 #endif
 
 #ifndef BLINKER_MAX_SEND_BUFFER_SIZE
     #if defined(ESP8266) || defined(ESP32)
-        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+            defined(BLINKER_GATEWAY) || defined(BLINKER_PRO_SIM7020)
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE - 128
         #else
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
         #endif
     #else
-        #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
+        #if defined(BLINKER_PRO_SIM7020)
+            #define BLINKER_MAX_SEND_BUFFER_SIZE       512
+        #else
+            #define BLINKER_MAX_SEND_BUFFER_SIZE       128
+        #endif
     #endif
 #endif
 
