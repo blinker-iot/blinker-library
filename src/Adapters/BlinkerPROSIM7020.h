@@ -907,20 +907,26 @@ int BlinkerProSIM7020::authCheck()
     
     BLINKER_LOG_ALL(BLINKER_F("authCheck start"));
     
-    // EEPROM.begin(BLINKER_EEP_SIZE);
+    #if defined(ESP8266) || defined(ESP32)
+    EEPROM.begin(BLINKER_EEP_SIZE);
+    #endif
     EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
     if (_authCheck == BLINKER_AUTH_CHECK_DATA)
     {
-        // EEPROM.commit();
-        // EEPROM.end();
+        #if defined(ESP8266) || defined(ESP32)
+        EEPROM.commit();
+        EEPROM.end();
+        #endif
         isAuth = true;
         
         BLINKER_LOG_ALL(BLINKER_F("authCheck end"));
         
         return true;
     }
-    // EEPROM.commit();
-    // EEPROM.end();
+    #if defined(ESP8266) || defined(ESP32)
+    EEPROM.commit();
+    EEPROM.end();
+    #endif
     
     BLINKER_LOG_ALL(BLINKER_F("authCheck end"));
     
@@ -1051,7 +1057,10 @@ int BlinkerProSIM7020::connectServer()
     if (!isFirst)
     {
         char _authCheck;
-        // EEPROM.begin(BLINKER_EEP_SIZE);
+
+        #if defined(ESP8266) || defined(ESP32)
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        #endif
         EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
         if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
             // strcpy(UUID_PRO, _uuid.c_str());
@@ -1070,8 +1079,10 @@ int BlinkerProSIM7020::connectServer()
             EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
             isAuth = true;
         }
-        // EEPROM.commit();
-        // EEPROM.end();
+        #if defined(ESP8266) || defined(ESP32)
+        EEPROM.commit();
+        EEPROM.end();
+        #endif
 
         isFirst = true;
     }
