@@ -100,13 +100,14 @@
 #ifndef BLINKER_MAX_SEND_SIZE
     #if defined(ESP8266) || defined(ESP32)
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-            defined(BLINKER_GATEWAY) || defined(BLINKER_PRO_SIM7020)
+            defined(BLINKER_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
+            defined(BLINKER_PRO_AIR202)
             #define BLINKER_MAX_SEND_SIZE       512
         #else
             #define BLINKER_MAX_SEND_SIZE       512
         #endif
     #else
-        #if defined(BLINKER_PRO_SIM7020)
+        #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
             #define BLINKER_MAX_SEND_SIZE       512
         #else
             #define BLINKER_MAX_SEND_SIZE       128
@@ -117,13 +118,14 @@
 #ifndef BLINKER_MAX_SEND_BUFFER_SIZE
     #if defined(ESP8266) || defined(ESP32)
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-            defined(BLINKER_GATEWAY) || defined(BLINKER_PRO_SIM7020)
+            defined(BLINKER_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
+            defined(BLINKER_PRO_AIR202)
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE - 128
         #else
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
         #endif
     #else
-        #if defined(BLINKER_PRO_SIM7020)
+        #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
             #define BLINKER_MAX_SEND_BUFFER_SIZE       512
         #else
             #define BLINKER_MAX_SEND_BUFFER_SIZE       128
@@ -1288,7 +1290,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
     defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
-    defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020)
+    defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
+    defined(BLINKER_PRO_AIR202)
     #define BLINKER_CMD_SMS_NUMBER              1
 
     #define BLINKER_CMD_PUSH_NUMBER             2
@@ -1328,7 +1331,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-    defined(BLINKER_PRO_SIM7020)
+    defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
     #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
@@ -1474,7 +1477,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #endif
 
 #if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202) || \
-    defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+    defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
+    defined(BLINKER_PRO_AIR202)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2
@@ -1676,7 +1680,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
-#if defined(BLINKER_GPRS_AIR202)
+#if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
 
     // http://www.openluat.com/Product/file/rda8955/AirM2M%20%E6%97%A0%E7%BA%BF%E6%A8%A1%E5%9D%97AT%E5%91%BD%E4%BB%A4%E6%89%8B%E5%86%8CV3.90.pdf
     // http://www.openluat.com/Product/file/rda8955/%E8%BF%9E%E6%8E%A5%E9%98%BF%E9%87%8C%E4%BA%91AT%E6%B5%81%E7%A8%8B%E8%AF%B4%E6%98%8E%EF%BC%88%E4%B8%80%E6%9C%BA%E4%B8%80%E5%AF%86%E8%AE%A4%E8%AF%81%E6%96%B9%E6%A1%88%EF%BC%8CAT_S_TTS%E5%92%8CAT_S%E7%89%88%E6%9C%AC%E4%B8%8D%E6%94%AF%E6%8C%81%EF%BC%8CAT_S_SSL%E5%92%8CAT_S_NOTTS%E7%89%88%E6%9C%AC%E6%94%AF%E6%8C%81%EF%BC%89.pdf
@@ -1766,7 +1770,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
-#if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+#if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
+    defined(BLINKER_PRO_AIR202)
     // http://www.simcom.com/upload/file/1547183713.pdf HTTP
     // http://www.simcom.com/upload/file/1547183663.pdf MQTT
     // http://www.simcom.com/upload/file/1547177595.pdf AT
@@ -1842,6 +1847,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_CMQDISCON_RESQ          "AT+CMQDISCON"
 
     #define BLINKER_CMD_CMQDISCON               "CMQDISCON"
+
+    #define BLINKER_CMD_CRESET_RESQ             "AT+CRESET"
 
     // AT+CMQNEW="public.iot-as-mqtt.cn-shanghai.aliyuncs.com","1883",12000,1024  
     // +CMQNEW: 0
