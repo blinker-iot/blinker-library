@@ -1031,6 +1031,7 @@ int BlinkerProAIR202::connectServer()
     String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
+    String _authKey = root[BLINKER_CMD_DETAIL][BLINKER_CMD_KEY];
 
     if (isMQTTinit)
     {
@@ -1064,6 +1065,8 @@ int BlinkerProAIR202::connectServer()
         strcpy(MQTT_PRODUCTINFO_GPRS, _productInfo.c_str());
         MQTT_HOST_GPRS = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
         strcpy(MQTT_HOST_GPRS, BLINKER_MQTT_ALIYUN_HOST);
+        AUTHKEY_GPRS = (char*)malloc((_authKey.length()+1)*sizeof(char));
+        strcpy(AUTHKEY_GPRS, _authKey.c_str());
         MQTT_PORT_GPRS = BLINKER_MQTT_ALIYUN_PORT;
     }
 
@@ -1081,6 +1084,7 @@ int BlinkerProAIR202::connectServer()
     BLINKER_LOG_ALL(BLINKER_F("HOST: "), MQTT_HOST_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("PORT: "), MQTT_PORT_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("UUID_GPRS: "), UUID_GPRS);
+    BLINKER_LOG_ALL(BLINKER_F("AUTHKEY_GPRS: "), AUTHKEY_GPRS);
     BLINKER_LOG_ALL(BLINKER_F("===================="));
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
@@ -1161,7 +1165,7 @@ int BlinkerProAIR202::connectServer()
     // UUID_GPRS = (char*)malloc((_uuid.length()+1)*sizeof(char));
     // strcpy(UUID_GPRS, _uuid.c_str());
 
-    // char uuid_eeprom[BLINKER_AUUID_SIZE];
+    char uuid_eeprom[BLINKER_AUUID_SIZE];
 
     BLINKER_LOG_ALL(("==========AUTH CHECK=========="));
 
