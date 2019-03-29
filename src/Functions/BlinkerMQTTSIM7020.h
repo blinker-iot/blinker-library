@@ -400,7 +400,7 @@ bool BlinkerMQTTSIM7020::streamAvailable()
 
     // char _data[BLINKER_MQTT_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
     // memset(_data, '\0', BLINKER_MQTT_SIM7020_DATA_BUFFER_SIZE);
-    if (!isFresh) streamData = (char*)malloc(BLINKER_MQTT_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
+    // if (!isFresh) streamData = (char*)malloc(BLINKER_MQTT_SIM7020_DATA_BUFFER_SIZE*sizeof(char));
 
     if (stream->available())
     {
@@ -408,10 +408,10 @@ bool BlinkerMQTTSIM7020::streamAvailable()
         String _data = stream->readStringUntil('\n');
         BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
         // _data[strlen(_data) - 1] = '\0';
-        // if (isFresh) free(streamData);
-        // streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
+        if (isFresh) free(streamData);
+        streamData = (char*)malloc((_data.length() + 1)*sizeof(char));
         strcpy(streamData, _data.c_str());
-        streamData[_data.length() - 1] = '\0';
+        if (_data.length() > 0) streamData[_data.length() - 1] = '\0';
         isFresh = true;
         return true;
         // if (isFresh) free(streamData);

@@ -46,7 +46,7 @@
  * Learn more:https://blinker.app/
  */
 
-#define BLINKER_PRO
+#define BLINKER_PRO_SIM7020
 // #define BLINKER_BUTTON
 // #define BLINKER_BUTTON_PIN D7
 
@@ -75,55 +75,9 @@ bool dataParse(const JsonObject & data)
  * 
  * Every 30s will get a heartbeat command from app 
  */
-String direc_set(uint8_t dir)
-{
-    switch (dir)
-    {
-        case 0:
-            return "东";
-        case 1:
-            return "西";
-        case 2:
-            return "南";
-        case 3:
-            return "北";
-        case 4:
-            return "东南";
-        case 5:
-            return "东北";
-        case 6:    
-            return "西南";
-        case 7:
-            return "西北";
-        default:
-            return "东";
-    }
-}
-
 void heartbeat()
 {
     // Blinker.print("hello", "blinker");
-    float so2 = random(0, 30) / 2.0;
-    float no2 = random(0, 120) / 2.0;
-    float co = random(0, 10) / 2.0;
-    float o3 = random(0, 180) / 2.0;
-    float pm10 = random(0, 200) / 2.0;
-    float pm25 = random(0, 160) / 2.0;
-
-    Blinker.print("aqi", so2/60.0 + no2/40.0 + co/4.0 + o3/160.0 + pm10/70.0 + pm25/35.0);
-    Blinker.print("temp", random(15, 30));
-    Blinker.print("humi", random(50, 80));
-    Blinker.print("pressure", random(800, 1000));
-    Blinker.print("speed", random(0, 20));
-    Blinker.print("direction", direc_set(random(0, 7)));
-    Blinker.print("lux", random(0, 60));
-    Blinker.print("so2", so2);
-    Blinker.print("no2", no2);
-    Blinker.print("co", co);
-    Blinker.print("o3", o3);
-    Blinker.print("pm10", pm10);
-    Blinker.print("pm2_5", pm25);
-
     BLINKER_LOG("heartbeat!");
 }
 
@@ -181,7 +135,7 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-    Blinker.begin(BLINKER_AIR_STATION);
+    Blinker.begin();
     Blinker.attachData(dataRead);
     Blinker.attachParse(dataParse);
     Blinker.attachHeartbeat(heartbeat);

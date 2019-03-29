@@ -263,7 +263,11 @@ class BlinkerHTTPAIR202
                 }
             }
 
-            if (http_status != air202_http_init_success) return false;
+            if (http_status != air202_http_init_success) 
+            {
+                BLINKER_LOG_ALL(BLINKER_F("air202_http_init_failed"));
+                return false;
+            }
 
             streamPrint(STRING_format(BLINKER_CMD_HTTPPARA_REQ) + "=\"CID\",1");
             
@@ -763,18 +767,19 @@ class BlinkerHTTPAIR202
             // char _data[BLINKER_HTTP_AIR202_DATA_BUFFER_SIZE];// = { '\0' };
             // memset(_data, '\0', BLINKER_HTTP_AIR202_DATA_BUFFER_SIZE);
 
-            if (!isFresh) streamData = (char*)malloc(BLINKER_HTTP_AIR202_DATA_BUFFER_SIZE*sizeof(char));
+            // if (!isFresh) streamData = (char*)malloc(BLINKER_HTTP_AIR202_DATA_BUFFER_SIZE*sizeof(char));
+            // else memset(streamData, '\0', BLINKER_HTTP_AIR202_DATA_BUFFER_SIZE);
 
             if (stream->available())
             {
                 // strcpy(_data, stream->readStringUntil('\n').c_str());
                 String _data = stream->readStringUntil('\n');
-                BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
+                BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data, BLINKER_F(", len: "), _data.length());
                 // _data[strlen(_data) - 1] = '\0';
-                // if (isFresh) free(streamData);
-                // streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
+                if (isFresh) free(streamData);
+                streamData = (char*)malloc((_data.length() + 1)*sizeof(char));
                 strcpy(streamData, _data.c_str());
-                streamData[_data.length() - 1] = '\0';
+                if (_data.length() > 0) streamData[_data.length() - 1] = '\0';
                 isFresh = true;
                 return true;
                 // if (isFresh) free(streamData);
