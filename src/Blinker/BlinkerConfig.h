@@ -367,6 +367,8 @@
 
 #define BLINKER_CMD_POWERSTATE          "pState"
 
+#define BLINKER_CMD_NUM                 "num"
+
 #define BLINKER_CMD_BRIGHTNESS          "bright"
 
 #define BLINKER_CMD_UPBRIGHTNESS        "upBright"

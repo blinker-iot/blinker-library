@@ -9,6 +9,11 @@ class BLINKERALIGENIE
     public :
         BLINKERALIGENIE() {}
 
+        void attachPowerState(blinker_callback_with_string_uint8_arg_t newFunction)
+        {
+            Blinker.attachAliGenieSetPowerState(newFunction);
+        }
+
         void attachPowerState(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachAliGenieSetPowerState(newFunction);

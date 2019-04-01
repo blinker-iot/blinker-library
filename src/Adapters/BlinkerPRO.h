@@ -1375,7 +1375,19 @@ int BlinkerPRO::connectServer() {
     String url_iot = BLINKER_F("/api/v1/user/device/register?deviceType=");
     url_iot += _deviceType;
     url_iot += BLINKER_F("&deviceName=");
-    url_iot += macDeviceName();
+    if (_deviceType != BLINKER_AIR_STATION)
+    {
+        url_iot += macDeviceName();
+    }
+    else
+    {
+        // url_iot += "TESTA69BA016"; // 1
+        // url_iot += "TEST656A2782"; // 2
+        // url_iot += "TESTD1C4B294"; // 3
+        url_iot += "TEST687991DC"; // 4
+        // url_iot += "TEST872B3982"; // 5
+    }
+    
 
     if (_deviceType == BLINKER_SMART_LAMP) {
         url_iot += BLINKER_F("&aliType=light");
@@ -1464,7 +1476,18 @@ int BlinkerPRO::connectServer() {
     url_iot += BLINKER_F("/api/v1/user/device/register?deviceType=");
     url_iot += _deviceType;
     url_iot += BLINKER_F("&deviceName=");
-    url_iot += macDeviceName();
+    if (_deviceType != BLINKER_AIR_STATION)
+    {
+        url_iot += macDeviceName();
+    }
+    else
+    {
+        // url_iot += "TESTA69BA016"; // 1
+        // url_iot += "TEST656A2782"; // 2
+        url_iot += "TESTD1C4B294"; // 3
+        // url_iot += "TEST687991DC"; // 4
+        // url_iot += "TEST872B3982"; // 5
+    }
 
     if (_deviceType == BLINKER_SMART_LAMP) {
         url_iot += BLINKER_F("&aliType=light");

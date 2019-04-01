@@ -516,6 +516,8 @@ void BlinkerSerialGPRS::initStream(Stream& s, bool state, blinker_callback_t fun
 
     listenFunc = func;
 
+    // streamPrint(BLINKER_CMD_CRESET_RESQ);
+
     // _imei = (char*)malloc(imei.length()*sizeof(char));
     // strcpy(_imei, imei.c_str());
 }

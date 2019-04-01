@@ -34,21 +34,51 @@
         #if defined(BLINKER_ALIGENIE_OUTLET)
             #undef BLINKER_ALIGENIE_OUTLET
         #endif
+        
+        #if defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            #undef BLINKER_ALIGENIE_MULTI_OUTLET
+        #endif
+
         #if defined(BLINKER_ALIGENIE_SWITCH)
             #undef BLINKER_ALIGENIE_SWITCH
         #endif
+
         #if defined(BLINKER_ALIGENIE_SENSOR)
             #undef BLINKER_ALIGENIE_SENSOR
         #endif
 
         #define BLINKER_ALIGENIE
     #elif defined(BLINKER_ALIGENIE_OUTLET)
+        #if defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            #undef BLINKER_ALIGENIE_MULTI_OUTLET
+        #endif
+
         #if defined(BLINKER_ALIGENIE_LIGHT)
             #undef BLINKER_ALIGENIE_LIGHT
         #endif
+
         #if defined(BLINKER_ALIGENIE_SWITCH)
             #undef BLINKER_ALIGENIE_SWITCH
         #endif
+
+        #if defined(BLINKER_ALIGENIE_SENSOR)
+            #undef BLINKER_ALIGENIE_SENSOR
+        #endif
+
+        #define BLINKER_ALIGENIE
+    #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+        #if defined(BLINKER_ALIGENIE_OUTLET)
+            #undef BLINKER_ALIGENIE_OUTLET
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            #undef BLINKER_ALIGENIE_LIGHT
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_SWITCH)
+            #undef BLINKER_ALIGENIE_SWITCH
+        #endif
+
         #if defined(BLINKER_ALIGENIE_SENSOR)
             #undef BLINKER_ALIGENIE_SENSOR
         #endif
@@ -58,9 +88,15 @@
         #if defined(BLINKER_ALIGENIE_LIGHT)
             #undef BLINKER_ALIGENIE_LIGHT
         #endif
+
         #if defined(BLINKER_ALIGENIE_OUTLET)
             #undef BLINKER_ALIGENIE_OUTLET
         #endif
+
+        #if defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            #undef BLINKER_ALIGENIE_MULTI_OUTLET
+        #endif
+
         #if defined(BLINKER_ALIGENIE_SENSOR)
             #undef BLINKER_ALIGENIE_SENSOR
         #endif
@@ -70,9 +106,15 @@
         #if defined(BLINKER_ALIGENIE_LIGHT)
             #undef BLINKER_ALIGENIE_LIGHT
         #endif
+
         #if defined(BLINKER_ALIGENIE_OUTLET)
             #undef BLINKER_ALIGENIE_OUTLET
         #endif
+
+        #if defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            #undef BLINKER_ALIGENIE_MULTI_OUTLET
+        #endif
+
         #if defined(BLINKER_ALIGENIE_SWITCH)
             #undef BLINKER_ALIGENIE_SWITCH
         #endif
@@ -84,9 +126,11 @@
         #if defined(BLINKER_DUEROS_OUTLET)
             #undef BLINKER_DUEROS_OUTLET
         #endif
+
         #if defined(BLINKER_DUEROS_SWITCH)
             #undef BLINKER_DUEROS_SWITCH
         #endif
+
         #if defined(BLINKER_DUEROS_SENSOR)
             #undef BLINKER_DUEROS_SENSOR
         #endif
@@ -96,9 +140,11 @@
         #if defined(BLINKER_DUEROS_LIGHT)
             #undef BLINKER_DUEROS_LIGHT
         #endif
+
         #if defined(BLINKER_DUEROS_SWITCH)
             #undef BLINKER_DUEROS_SWITCH
         #endif
+
         #if defined(BLINKER_DUEROS_SENSOR)
             #undef BLINKER_DUEROS_SENSOR
         #endif
@@ -108,9 +154,11 @@
         #if defined(BLINKER_DUEROS_LIGHT)
             #undef BLINKER_DUEROS_LIGHT
         #endif
+
         #if defined(BLINKER_DUEROS_SWITCH)
             #undef BLINKER_DUEROS_SWITCH
         #endif
+
         #if defined(BLINKER_DUEROS_OUTLET)
             #undef BLINKER_DUEROS_OUTLET
         #endif

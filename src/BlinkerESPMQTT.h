@@ -33,6 +33,8 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _aliType = BLINKER_F("&aliType=light");
             #elif defined(BLINKER_ALIGENIE_OUTLET)
                 String _aliType = BLINKER_F("&aliType=outlet");
+            #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+                String _aliType = BLINKER_F("&aliType=multi_outlet");
             #elif defined(BLINKER_ALIGENIE_SENSOR)
                 String _aliType = BLINKER_F("&aliType=sensor");
             #else
@@ -86,6 +88,8 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _aliType = BLINKER_F("&aliType=light");
             #elif defined(BLINKER_ALIGENIE_OUTLET)
                 String _aliType = BLINKER_F("&aliType=outlet");
+            #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+                String _aliType = BLINKER_F("&aliType=multi_outlet");
             #elif defined(BLINKER_ALIGENIE_SENSOR)
                 String _aliType = BLINKER_F("&aliType=sensor");
             #else
