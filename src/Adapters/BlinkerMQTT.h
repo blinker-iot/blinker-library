@@ -1442,6 +1442,8 @@ int BlinkerMQTT::connectServer() {
 
     String payload;
 
+    BLINKER_LOG_ALL(BLINKER_F("[HTTP] begin: "), url_iot);
+
     if (http.begin(*client_s, url_iot)) {  // HTTPS
 
         // Serial.print("[HTTPS] GET...\n");

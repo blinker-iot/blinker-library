@@ -9,6 +9,11 @@ class BLINKERDUEROS
     public :
         BLINKERDUEROS() {}
 
+        void attachPowerState(blinker_callback_with_string_uint8_arg_t newFunction)
+        {
+            Blinker.attachDuerOSSetPowerState(newFunction);
+        }
+
         void attachPowerState(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachDuerOSSetPowerState(newFunction);
@@ -42,6 +47,34 @@ class BLINKERDUEROS
         void attachQuery(blinker_callback_with_int32_arg_t newFunction)
         {
             Blinker.attachDuerOSQuery(newFunction);
+        }
+
+        void powerState(const String & state, uint8_t num)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_POWERSTATE);
+            payload += BLINKER_F("\":\"");
+            payload += state;
+            if (num != 0)
+            {
+                payload += BLINKER_F("\",\"num\":");
+                payload += STRING_format(num);
+            }
+            else
+            {
+                payload += BLINKER_F("\"");
+            }
+
+            // Blinker.DuerOSPrint(payload);
+
+            if (_fresh >> 0 & 0x01) {
+                free(aState);
+            }
+
+            aState = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aState, payload.c_str());
+
+            _fresh |= 0x01 << 0;
         }
 
         void powerState(const String & state)

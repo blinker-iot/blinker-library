@@ -100,6 +100,7 @@ class BlinkerSerialSIMNBIoT : public BlinkerApi
             else if (ss_rx_pin == 19 && ss_tx_pin == 18){
                 // BApi::begin();
                 Serial1.begin(ss_baud);
+                Serial1.println("test!!!");
                 Transp.initStream(Serial1, true, listening);
                 transport(Transp);
                 // BLINKER_LOG(BLINKER_F("SerialMQTT initialized..."));

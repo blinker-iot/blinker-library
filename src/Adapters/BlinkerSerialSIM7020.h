@@ -783,6 +783,10 @@ void BlinkerSerialSIM7020::initStream(Stream& s, bool state, blinker_callback_t 
 
     listenFunc = func;
 
+    // streamPrint(BLINKER_CMD_AT);
+    // ::delay(200);
+    // streamPrint(BLINKER_CMD_CRESET_RESQ);
+
     // _imei = (char*)malloc(imei.length()*sizeof(char));
     // strcpy(_imei, imei.c_str());
 }

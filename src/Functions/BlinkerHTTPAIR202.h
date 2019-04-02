@@ -7,7 +7,7 @@
     #include <WProgram.h>
 #endif
 
-// #include "Adapters/BlinkerSerialMQTT.h"
+// #include "Adapters/BlinkerSerialM                                         QTT.h"
 #include "Blinker/BlinkerATMaster.h"
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"

@@ -339,6 +339,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
 
             #if defined(BLINKER_ALIGENIE)
+                void attachAliGenieSetPowerState(blinker_callback_with_string_uint8_arg_t newFunction)
+                { _AliGeniePowerStateFunc_m = newFunction; }
                 void attachAliGenieSetPowerState(blinker_callback_with_string_arg_t newFunction)
                 { _AliGeniePowerStateFunc = newFunction; }
                 void attachAliGenieSetColor(blinker_callback_with_string_arg_t newFunction)
@@ -360,6 +362,8 @@ class BlinkerApi : public BlinkerProtocol
             #endif
 
             #if defined(BLINKER_DUEROS)
+                void attachDuerOSSetPowerState(blinker_callback_with_string_uint8_arg_t newFunction)
+                { _DuerOSPowerStateFunc_m = newFunction; }
                 void attachDuerOSSetPowerState(blinker_callback_with_string_arg_t newFunction)
                 { _DuerOSPowerStateFunc = newFunction; }
                 void attachDuerOSSetColor(blinker_callback_with_int32_arg_t newFunction)
@@ -629,6 +633,7 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_MQTT_AT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202)
+            blinker_callback_with_string_uint8_arg_t _AliGeniePowerStateFunc_m = NULL;
             blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetModeFunc = NULL;
@@ -639,6 +644,8 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_with_int32_arg_t   _AliGenieSetRelativeColorTemperature = NULL;
             blinker_callback_with_int32_arg_t   _AliGenieQueryFunc = NULL;
 
+            
+            blinker_callback_with_string_uint8_arg_t _DuerOSPowerStateFunc_m = NULL;
             blinker_callback_with_string_arg_t  _DuerOSPowerStateFunc = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSSetColorFunc = NULL;
             blinker_callback_with_string_arg_t  _DuerOSSetModeFunc = NULL;
@@ -8059,8 +8066,10 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
             if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
+                uint8_t setNum = rootSet[BLINKER_CMD_NUM];
 
                 if (_AliGeniePowerStateFunc) _AliGeniePowerStateFunc(setValue);
+                if (_AliGeniePowerStateFunc_m) _AliGeniePowerStateFunc_m(setValue, setNum);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
@@ -8164,8 +8173,10 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
             if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
+                uint8_t setNum = rootSet[BLINKER_CMD_NUM];
 
                 if (_DuerOSPowerStateFunc) _DuerOSPowerStateFunc(setValue);
+                if (_DuerOSPowerStateFunc_m) _DuerOSPowerStateFunc_m(setValue, setNum);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
