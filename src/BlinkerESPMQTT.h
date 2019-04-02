@@ -45,6 +45,8 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _duerType = BLINKER_F("&duerType=LIGHT");
             #elif defined(BLINKER_DUEROS_OUTLET)
                 String _duerType = BLINKER_F("&duerType=SOCKET");
+            #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+                String _duerType = BLINKER_F("&duerType=MULTI_SOCKET");
             #elif defined(BLINKER_DUEROS_SENSOR)
                 String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
             #else
@@ -100,6 +102,8 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _duerType = BLINKER_F("&duerType=LIGHT");
             #elif defined(BLINKER_DUEROS_OUTLET)
                 String _duerType = BLINKER_F("&duerType=SOCKET");
+            #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+                String _duerType = BLINKER_F("&duerType=MULTI_SOCKET");
             #elif defined(BLINKER_DUEROS_SENSOR)
                 String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
             #else

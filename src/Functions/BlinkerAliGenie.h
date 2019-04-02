@@ -59,6 +59,34 @@ class BLINKERALIGENIE
             Blinker.attachAliGenieQuery(newFunction);
         }
 
+        void powerState(const String & state, uint8_t num)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_POWERSTATE);
+            payload += BLINKER_F("\":\"");
+            payload += state;
+            if (num != 0)
+            {
+                payload += BLINKER_F("\",\"num\":");
+                payload += STRING_format(num);
+            }
+            else
+            {
+                payload += BLINKER_F("\"");
+            }            
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 0 & 0x01) {
+                free(aState);
+            }
+
+            aState = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aState, payload.c_str());
+
+            _fresh |= 0x01 << 0;
+        }
+
         void powerState(const String & state)
         {
             String payload = BLINKER_F("\"");

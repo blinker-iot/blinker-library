@@ -127,6 +127,10 @@
             #undef BLINKER_DUEROS_OUTLET
         #endif
 
+        #if defined(BLINKER_DUEROS_MULTI_OUTLET)
+            #undef BLINKER_DUEROS_MULTI_OUTLET
+        #endif
+
         #if defined(BLINKER_DUEROS_SWITCH)
             #undef BLINKER_DUEROS_SWITCH
         #endif
@@ -137,6 +141,28 @@
 
         #define BLINKER_DUEROS
     #elif defined(BLINKER_DUEROS_OUTLET)
+        #if defined(BLINKER_DUEROS_MULTI_OUTLET)
+            #undef BLINKER_DUEROS_MULTI_OUTLET
+        #endif
+
+        #if defined(BLINKER_DUEROS_LIGHT)
+            #undef BLINKER_DUEROS_LIGHT
+        #endif
+
+        #if defined(BLINKER_DUEROS_SWITCH)
+            #undef BLINKER_DUEROS_SWITCH
+        #endif
+
+        #if defined(BLINKER_DUEROS_SENSOR)
+            #undef BLINKER_DUEROS_SENSOR
+        #endif
+
+        #define BLINKER_DUEROS
+    #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+        #if defined(BLINKER_DUEROS_OUTLET)
+            #undef BLINKER_DUEROS_OUTLET
+        #endif
+
         #if defined(BLINKER_DUEROS_LIGHT)
             #undef BLINKER_DUEROS_LIGHT
         #endif
@@ -161,6 +187,10 @@
 
         #if defined(BLINKER_DUEROS_OUTLET)
             #undef BLINKER_DUEROS_OUTLET
+        #endif
+
+        #if defined(BLINKER_DUEROS_MULTI_OUTLET)
+            #undef BLINKER_DUEROS_MULTI_OUTLET
         #endif
 
         #define BLINKER_DUEROS
