@@ -442,6 +442,12 @@ class BlinkerApi : public BlinkerProtocol
             void duerPrint(String & _msg);
         #endif
 
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+            void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60)
+            { _dataStorageFunc = newFunction; _autoStorageTime = _time; _autoDataTime = millis(); }
+        #endif
         void attachData(blinker_callback_with_string_arg_t newFunction)
         { _availableFunc = newFunction; }
         void attachHeartbeat(blinker_callback_t newFunction)
@@ -655,6 +661,10 @@ class BlinkerApi : public BlinkerProtocol
             // blinker_callback_with_int32_arg_t   _DuerOSSetColorTemperature = NULL;
             // blinker_callback_with_int32_arg_t   _DuerOSSetRelativeColorTemperature = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSQueryFunc = NULL;
+
+            blinker_callback_t                  _dataStorageFunc = NULL;
+            uint32_t                            _autoStorageTime = 60;
+            uint32_t                            _autoDataTime = 0;
         #endif
 
         #if defined(BLINKER_GATEWAY)
@@ -2691,6 +2701,15 @@ void BlinkerApi::run()
                 _autoUpdateTime = millis();
             }            
         }
+
+        if (_dataStorageFunc)
+        {
+            if (millis() - _autoDataTime >= _autoStorageTime * 1000)
+            {
+                _dataStorageFunc();
+                _autoDataTime += _autoStorageTime * 1000;
+            }
+        }
     #endif
 
     BProto::checkAutoFormat();
@@ -3953,6 +3972,10 @@ float BlinkerApi::gps(b_gps_t axis)
         }
         else
         {
+            for (uint8_t _num = 0; _num < data_dataCount; _num++)
+            {
+                _Data[_num]->flush();
+            }
             // for (uint8_t _num = 0; _num < data_dataCount; _num++)
             // {
             //     delete _Data[_num];

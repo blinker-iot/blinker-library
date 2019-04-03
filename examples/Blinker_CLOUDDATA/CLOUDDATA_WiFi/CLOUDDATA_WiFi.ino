@@ -52,10 +52,11 @@ void dataRead(const String & data)
     Blinker.vibrate();        
     Blinker.print("millis", BlinkerTime);
 
-    Blinker.dataUpdate();
-
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    
+}
+
+void dataStorage()
+{
     Blinker.dataStorage("data1", random(0,120));
     Blinker.dataStorage("data2", random(0,120)/2.0);
 }
@@ -70,6 +71,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
+    Blinker.attachDataStorage(dataStorage);
 }
 
 void loop()

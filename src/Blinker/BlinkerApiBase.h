@@ -318,12 +318,12 @@ class BlinkerWidgets_joy
                         _data_ += ",";
                     }
 
-                    time_data[num] = latest_time;
-                    memcpy(data[num], "\0", 10);
+                    // time_data[num] = latest_time;
+                    // memcpy(data[num], "\0", 10);
                 }
                 _data_ += BLINKER_F("]");//}
 
-                dataCount = 0;
+                // dataCount = 0;
 
                 // DynamicJsonBuffer jsonDataBuffer;
                 // JsonObject& dataArray = jsonDataBuffer.parseObject(_data_);
@@ -348,6 +348,16 @@ class BlinkerWidgets_joy
             }
 
             bool checkName(const String & name) { return ((_dname == name) ? true : false); }
+
+            void flush()
+            {
+                for (uint8_t num = 0; num < dataCount; num++) {
+                    time_data[num] = latest_time;
+                    memcpy(data[num], "\0", 10);
+                }
+
+                dataCount = 0;
+            }
 
         private :
             uint8_t dataCount = 0;

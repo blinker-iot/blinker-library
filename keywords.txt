@@ -33,6 +33,7 @@ readString	KEYWORD2
 print	KEYWORD2
 delay	KEYWORD2
 notify	KEYWORD2
+attachDataStorage	KEYWORD2
 attachHeartbeat	KEYWORD2
 attachParse	KEYWORD2
 attachClick	KEYWORD2
