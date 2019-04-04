@@ -14,7 +14,7 @@
         #include "Blinker/BlinkerAuto.h"
     #endif
 
-    #if defined(BLINKER_PRO)
+    #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
         #include "Functions/BlinkerWlan.h"
     #endif
 #else
@@ -142,8 +142,8 @@ enum b_nbiot_status_t {
         AUTO_WLAN_CONNECTING,
         AUTO_WLAN_CONNECTED,
         // PRO_WLAN_DISCONNECTED,
-        // AUTO_WLAN_SMARTCONFIG_BEGIN,
-        // AUTO_WLAN_SMARTCONFIG_DONE,
+        AUTO_WLAN_SMARTCONFIG_BEGIN,
+        AUTO_WLAN_SMARTCONFIG_DONE,
         AUTO_DEV_AUTHCHECK_FAIL,
         AUTO_DEV_AUTHCHECK_SUCCESS,
         AUTO_DEV_REGISTER_FAIL,
@@ -498,7 +498,7 @@ class BlinkerApi : public BlinkerProtocol
         char * widgetName_int(uint8_t num);
 
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
-            defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
             void attachParse(blinker_callback_with_json_arg_t newFunction)
             { _parseFunc = newFunction; }
             void attachClick(blinker_callback_t newFunction)
@@ -528,13 +528,18 @@ class BlinkerApi : public BlinkerProtocol
             #if !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
             void setType(const char* _type);
             const char* type() { return _deviceType; }
+            const char* key() { return _vipKey; }
             void reset();
             void tick();
             void checkRegister(const JsonObject& data);
 
             bool init()                         { return _isInit; }
             bool registered()                   { return BProto::authCheck(); }
+            #if defined(BLINKER_PRO)
             uint8_t status()                    { return _proStatus; }
+            #elif defined(BLINKER_MQTT_AUTO)
+            uint8_t status()                    { return _mqttAutoStatue; }
+            #endif
             #endif
         #endif
 
@@ -615,14 +620,18 @@ class BlinkerApi : public BlinkerProtocol
             #endif
         #endif
 
-        #if defined(BLINKER_PRO)
+        #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
             bool            _isConnBegin = false;
             bool            _getRegister = true;//false;
             // bool            _isInit = false;
             bool            _isRegistered = false;
             uint32_t        _register_fresh = 0;
             uint32_t        _initTime;
-            BlinkerStatus_t _proStatus = PRO_WLAN_CONNECTING;
+            #if defined(BLINKER_PRO)
+                BlinkerStatus_t _proStatus = PRO_WLAN_CONNECTING;
+            #elif defined(BLINKER_MQTT_AUTO)
+                BlinkerStatus_t _mqttAutoStatue = AUTO_WLAN_CONNECTING;
+            #endif
 
             #if defined(BLINKER_NO_BUTTON)
                 bool            _isCheckPower = false;
@@ -1604,12 +1613,14 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
-            defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
             #if !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
             bool beginPro() { return wlanRun(); }
             void begin(const char* _type);
+            void begin(const char* _key, const char* _type);
 
             const char* _deviceType;
+            const char* _vipKey;
             BlinkerWlan Bwlan;
             #endif
 
@@ -1799,6 +1810,7 @@ class BlinkerApi : public BlinkerProtocol
                 _deviceType = _type;
                 BLINKER_LOG_ALL(BLINKER_F("API deviceType: "), _type);
             }
+
             const char* type() { return _deviceType; }
             const char* _deviceType;
 
@@ -1900,7 +1912,7 @@ void BlinkerApi::needInit()
     #endif
 }
 
-#if defined(BLINKER_PRO)
+#if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
     void BlinkerApi::begin(const char* _type)
     {
         #if defined(BLINKER_NO_BUTTON)
@@ -1941,6 +1953,12 @@ void BlinkerApi::needInit()
         #endif
 
         setType(_type);
+    }
+
+    void BlinkerApi::begin(const char* _key, const char* _type)
+    {
+        _vipKey = _key;
+        begin(_type);
     }
 #endif
 
@@ -2170,9 +2188,131 @@ void BlinkerApi::run()
     #endif
 
     #if defined(BLINKER_MQTT_AUTO)
+        if (!wlanRun())
+        {
+            uint8_t wl_status = wlanStatus();
+
+            if (wl_status == BWL_SMARTCONFIG_BEGIN) {
+                _mqttAutoStatue= AUTO_WLAN_SMARTCONFIG_BEGIN;
+            }
+            else if (wl_status == BWL_SMARTCONFIG_DONE) {
+                _mqttAutoStatue = AUTO_WLAN_SMARTCONFIG_DONE;
+            }
+            else {
+                _mqttAutoStatue = AUTO_WLAN_CONNECTING;
+            }
+            return;
+        }
+        else
+        {
+            if (!_isConnBegin)
+            {
+                _mqttAutoStatue = AUTO_WLAN_CONNECTED;
+
+                // if (checkCanOTA()) loadOTA();
+
+                BProto::begin(key(), type());
+                _isConnBegin = true;
+                _initTime = millis();
+
+                BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+
+                // loadOTA();
+
+                if (BProto::authCheck())
+                {
+                    _mqttAutoStatue = AUTO_DEV_AUTHCHECK_SUCCESS;
+
+                    BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
+
+                    _isRegistered = BProto::deviceRegister();
+                    _getRegister = true;
+
+                    if (!_isRegistered)
+                    {
+                        _register_fresh = millis();
+
+                        _mqttAutoStatue = AUTO_DEV_REGISTER_FAIL;
+                    }
+                    else
+                    {
+                        _mqttAutoStatue = AUTO_DEV_REGISTER_SUCCESS;
+                    }
+                }
+                else
+                {
+                    _mqttAutoStatue = AUTO_DEV_AUTHCHECK_FAIL;
+
+                    BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
+                }
+
+                BLINKER_LOG_FreeHeap_ALL();
+            }
+        }
+
+        if (!BProto::init())
+        {
+            yield();
+
+            if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
+                !_getRegister)
+            {
+                reset();
+            }
+        }
+        else
+        {
+            if (!_isInit)
+            {
+                if (ntpInit())
+                {
+                    _isInit = true;
+                    // strcpy(_authKey, conn.authKey());
+                    // strcpy(_deviceName, conn.deviceName());
+                    _mqttAutoStatue = AUTO_DEV_INIT_SUCCESS;
+
+                    uint32_t connect_time = millis();
+                    uint32_t time_slot = 0;
+
+                    if (checkCanOTA()) loadOTA();
+
+                    if (_needInit == false)
+                    {
+                        _needInit = true;
+                        needInit();
+                    }
+
+                    while (time_slot < 30000)
+                    {
+                        time_slot = millis() - connect_time;
+                        BProto::connect();
+                        yield();
+
+                        if (BProto::mConnected())
+                        {
+                            state = CONNECTED;
+                            break;
+                        }
+                    }
+                    // BProto::sharers(freshSharers());
+                }
+            }
+            else
+            {
+                if (state == CONNECTING && _mqttAutoStatue != AUTO_DEV_CONNECTING) {
+                    _mqttAutoStatue = AUTO_DEV_CONNECTING;
+                }
+                else if (state == CONNECTED && _mqttAutoStatue != AUTO_DEV_CONNECTED) {
+                    if (BProto::mConnected()) _mqttAutoStatue = AUTO_DEV_CONNECTED;
+                }
+                else if (state == DISCONNECTED && _mqttAutoStatue != AUTO_DEV_DISCONNECTED) {
+                    _mqttAutoStatue = AUTO_DEV_DISCONNECTED;
+                }
+            }
+        }
     #endif
 
-    #if defined(BLINKER_PRO)
+    #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
         ntpInit();
         checkTimer();
 
@@ -2183,13 +2323,12 @@ void BlinkerApi::run()
     #endif
 
     #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-        defined(BLINKER_MQTT_AUTO)
+        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
         checkTimer();       
 
         if (!BProto::init()) {
             ::delay(2000);
-            BLINKER_LOG_ALL(BLINKER_F("RETURN"));
+            // BLINKER_LOG_ALL(BLINKER_F("RETURN"));
 
             #if defined(BLINKER_AT_MQTT)
                 BProto::connect();
@@ -2771,7 +2910,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     return;
                 }
 
-                #if defined(BLINKER_PRO)
+                #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
                     checkRegister(root);
                 #endif
 
@@ -2835,7 +2974,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
             }
             else
             {
-                #if defined(BLINKER_PRO)
+                #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
                     if (_parseFunc) {
                         if(_parseFunc(root)) {
                             _fresh = true;
@@ -2878,7 +3017,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                             timerManager(_array, true);
                         #endif
 
-                        #if defined(BLINKER_PRO)
+                        #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
                             if (_parseFunc) {
                                 if(_parseFunc(_array)) {
                                     // _fresh = true;
@@ -2901,7 +3040,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
                 json_parse(root);
 
-                #if defined(BLINKER_PRO)
+                #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
                     if (_parseFunc) {
                         if(_parseFunc(root)) {
                             // _fresh = true;
@@ -9754,7 +9893,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_PRO)
+#if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
     #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
 
         uint16_t BlinkerApi::pressedTime()

@@ -3,8 +3,6 @@
 
 #if defined(ESP8266) || defined(ESP32)
 
-#define BLINKER_MQTT_AUTO
-
 #if defined(ESP8266)
     #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
@@ -15,7 +13,7 @@
     #include <HTTPClient.h>
 #endif
 
-// #include <EEPROM.h>
+#include <EEPROM.h>
 
 #include "modules/WebSockets/WebSocketsServer.h"
 #include "modules/mqtt/Adafruit_MQTT.h"
@@ -28,39 +26,18 @@
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
 
-enum b_config_t {
-    COMM,
-    SMART,
-    APCFG
-};
-
-enum b_configStatus_t {
-    SMART_BEGIN,
-    SMART_DONE,
-    SMART_TIMEOUT,
-    APCFG_BEGIN,
-    APCFG_DONE,
-    APCFG_TIMEOUT
-};
-
-
-// static WiFiServer *_apServer;
-// static WiFiClient _apClient;
-
-// class BlinkerSharer
-// {
-//     public :
-//         BlinkerSharer(const String & _uuid)
-//         {
-//             name = (char*)malloc((_uuid.length()+1)*sizeof(char));
-//             strcpy(name, _uuid.c_str());
-//         }
-
-//         char * uuid() { return name; }
-
-//     private :
-//         char * name;
-// };
+char*       MQTT_HOST_AUTO;
+char*       MQTT_ID_AUTO;
+char*       MQTT_NAME_AUTO;
+char*       MQTT_KEY_AUTO;
+char*       MQTT_PRODUCTINFO_AUTO;
+char*       UUID_AUTO;
+char*       AUTHKEY_AUTO;
+char*       MQTT_DEVICEID_AUTO;
+// char*       DEVICE_NAME;
+char*       BLINKER_PUB_TOPIC_AUTO;
+char*       BLINKER_SUB_TOPIC_AUTO;
+uint16_t    MQTT_PORT_AUTO;
 
 class BlinkerMQTTAUTO : public BlinkerStream
 {
@@ -86,17 +63,17 @@ class BlinkerMQTTAUTO : public BlinkerStream
         void aliType(const String & type);
         void duerType(const String & type);
         void begin(const char* auth, const char* type);
-        bool begin();
+        // bool begin();
         int autoPrint(uint32_t id);
         // bool autoPrint(char *name, char *type, char *data);
         // bool autoPrint(char *name1, char *type1, char *data1,
         //             char *name2, char *type2, char *data2);
         char * deviceName();
-        char * authKey() { return _authKey; }
-        char * vipKey() { return _vipKey; }
-        char * deviceType() { return _deviceType; }
-        int init() { if (!isMQTTinit) checkInit(); return isMQTTinit; }
+        char * authKey() { return AUTHKEY_AUTO; }
+        int init() { return isMQTTinit; }
         int reRegister() { return connectServer(); }
+        int deviceRegister() { return connectServer(); }
+        int authCheck();
         void freshAlive() { kaTime = millis(); isAlive = true; }
         void sharers(const String & data);
         int  needFreshShare() {
@@ -112,19 +89,6 @@ class BlinkerMQTTAUTO : public BlinkerStream
             }
         }
 
-        bool checkInit();
-        void commonBegin(const char* _ssid, const char* _pswd);
-        void smartconfigBegin();
-        void apconfigBegin();
-        bool autoInit();
-        void smartconfig();
-        #if defined(BLINKER_APCONFIG)
-        void softAPinit();
-        void checkAPCFG();
-        bool parseUrl(String data);
-        #endif
-        void connectWiFi(String _ssid, String _pswd);
-        void connectWiFi(const char* _ssid, const char* _pswd);
 
     private :
         bool isMQTTinit = false;
@@ -139,26 +103,22 @@ class BlinkerMQTTAUTO : public BlinkerStream
         int checkPrintSpan();
         int checkAliPrintSpan();
         int checkDuerPrintSpan();
+        int pubHello();
 
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
         uint8_t     _sharerCount = 0;
         uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
-        bool        _isWiFiInit = false;
-        bool        _isBegin = false;
-        b_config_t  _configType = COMM;
-        b_configStatus_t _configStatus = SMART_BEGIN;
-        uint32_t    _connectTime = 0;
-        // const char* _authKey;
-        char*       _authKey;
-        char*       _vipKey;
         char*       _deviceType;
+        // const char* _authKey;
+        // char*       _authKey;
+        char*       _vipKey;
         char*       _aliType;
         char*       _duerType;
         // char        _authKey[BLINKER_AUTHKEY_SIZE];
         bool*       isHandle;// = &isConnect;
         bool        isAlive = false;
-        // bool        isBavail = false;
+        bool        isBavail = false;
         bool        _needCheckShare = false;
         uint32_t    latestTime;
         uint32_t    printTime = 0;
@@ -178,54 +138,52 @@ class BlinkerMQTTAUTO : public BlinkerStream
         uint32_t    duerKaTime = 0;
         bool        isDuerAlive = false;
         bool        isDuerAvail = false;
-        char*       mqtt_broker;
+        // char*       mqtt_broker;
+
+        bool        isNew = false;
+        bool        isAuth = false;
+        bool        isFirst = false;
 
         int isJson(const String & data);
-
-        #if defined(BLINKER_APCONFIG)
-        WiFiServer *_apServer;
-        WiFiClient _apClient;
-        #endif
 
         uint8_t     reconnect_time = 0;
 
         bool        _isAuthKey = false;
 };
 
-char*       MQTT_HOST_MQTT;
-char*       MQTT_ID_MQTT;
-char*       MQTT_NAME_MQTT;
-char*       MQTT_KEY_MQTT;
-char*       MQTT_PRODUCTINFO_MQTT;
-char*       UUID_MQTT;
-char*       DEVICE_NAME_MQTT;
-char*       BLINKER_PUB_TOPIC_MQTT;
-char*       BLINKER_SUB_TOPIC_MQTT;
-uint16_t    MQTT_PORT_MQTT;
+// #if defined(ESP8266)
+//     extern BearSSL::WiFiClientSecure   client_mqtt;
+//     // WiFiClientSecure            client_mqtt;
+// #elif defined(ESP32)
+//     extern WiFiClientSecure            client_s;
+// #endif
+
+// extern WiFiClient              client;
+
 
 #if defined(ESP8266)
     BearSSL::WiFiClientSecure   client_mqtt;
-    // WiFiClientSecure         client_mqtt;
+    // WiFiClientSecure            client_mqtt;
 #elif defined(ESP32)
-    WiFiClientSecure     client_s;
+    WiFiClientSecure            client_s;
 #endif
 
-WiFiClient               client;
-Adafruit_MQTT_Client*    mqtt_MQTT;
+WiFiClient              client;
+Adafruit_MQTT_Client*       mqtt_AUTO;
 // Adafruit_MQTT_Publish   *iotPub;
-Adafruit_MQTT_Subscribe* iotSub_MQTT;
+Adafruit_MQTT_Subscribe*    iotSub_AUTO;
 
 #define WS_SERVERPORT       81
-WebSocketsServer webSocket_MQTT = WebSocketsServer(WS_SERVERPORT);
+WebSocketsServer webSocket_AUTO = WebSocketsServer(WS_SERVERPORT);
 
-char*    msgBuf_MQTT;
-bool     isFresh_MQTT = false;
-bool     isConnect_MQTT = false;
-bool     isAvail_MQTT = false;
-uint8_t  ws_num_MQTT = 0;
-uint8_t  dataFrom_MQTT = BLINKER_MSG_FROM_MQTT;
+char*   msgBuf_AUTO;
+bool    isFresh_AUTO = false;
+bool    isConnect_AUTO = false;
+bool    isAvail_AUTO = false;
+uint8_t ws_num_AUTO = 0;
+uint8_t dataFrom_AUTO = BLINKER_MSG_FROM_MQTT;
 
-void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
+void webSocketEvent_AUTO(uint8_t num, WStype_t type, \
                     uint8_t * payload, size_t length)
 {
 
@@ -234,22 +192,22 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
         case WStype_DISCONNECTED:
             BLINKER_LOG_ALL(BLINKER_F("Disconnected! "), num);
 
-            isConnect_MQTT = false;
+            isConnect_AUTO = false;
             break;
         case WStype_CONNECTED:
             {
-                IPAddress ip = webSocket_MQTT.remoteIP(num);
+                IPAddress ip = webSocket_AUTO.remoteIP(num);
 
                 BLINKER_LOG_ALL(BLINKER_F("num: "), num, \
                                 BLINKER_F(", Connected from: "), ip,
                                 BLINKER_F(", url: "), (char *)payload);
 
                 // send message to client
-                webSocket_MQTT.sendTXT(num, "{\"state\":\"connected\"}\n");
+                webSocket_AUTO.sendTXT(num, "{\"state\":\"connected\"}\n");
 
-                ws_num_MQTT = num;
+                ws_num_AUTO = num;
 
-                isConnect_MQTT = true;
+                isConnect_AUTO = true;
             }
             break;
         case WStype_TEXT:
@@ -258,16 +216,16 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
                             BLINKER_F(", length: "), length);
 
             if (length < BLINKER_MAX_READ_SIZE) {
-                if (isFresh_MQTT) free(msgBuf_MQTT);
-                msgBuf_MQTT = (char*)malloc((length+1)*sizeof(char));
-                strcpy(msgBuf_MQTT, (char*)payload);
-                isAvail_MQTT = true;
-                isFresh_MQTT = true;
+                if (isFresh_AUTO) free(msgBuf_AUTO);
+                msgBuf_AUTO = (char*)malloc((length+1)*sizeof(char));
+                strcpy(msgBuf_AUTO, (char*)payload);
+                isAvail_AUTO = true;
+                isFresh_AUTO = true;
             }
 
-            dataFrom_MQTT = BLINKER_MSG_FROM_WS;
+            dataFrom_AUTO = BLINKER_MSG_FROM_WS;
 
-            ws_num_MQTT = num;
+            ws_num_AUTO = num;
 
             // send message to client
             // webSocket_MQTT.sendTXT(num, "message here");
@@ -287,17 +245,15 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
     }
 }
 
-BlinkerMQTTAUTO::BlinkerMQTTAUTO() { isHandle = &isConnect_MQTT; }
+BlinkerMQTTAUTO::BlinkerMQTTAUTO() { isHandle = &isConnect_AUTO; }
 
 int BlinkerMQTTAUTO::connect()
 {
-    if (!checkInit()) return false;
-
     int8_t ret;
 
-    webSocket_MQTT.loop();
+    webSocket_AUTO.loop();
 
-    if (mqtt_MQTT->connected())
+    if (mqtt_AUTO->connected())
     {
         return true;
     }
@@ -312,18 +268,14 @@ int BlinkerMQTTAUTO::connect()
 
     BLINKER_LOG(BLINKER_F("Connecting to MQTT... "));
 
-    // BLINKER_LOG_ALL(BLINKER_F("MQTT_ID_MQTT: "), MQTT_ID_MQTT);
-    // BLINKER_LOG_ALL(BLINKER_F("MQTT_NAME_MQTT: "), MQTT_NAME_MQTT);
-    // BLINKER_LOG_ALL(BLINKER_F("MQTT_KEY_MQTT: "), MQTT_KEY_MQTT);
-
     #if defined(ESP8266)
         client_mqtt.setInsecure();
         ::delay(10);
     #endif
 
-    if ((ret = mqtt_MQTT->connect()) != 0)
+    if ((ret = mqtt_AUTO->connect()) != 0)
     {
-        BLINKER_LOG(mqtt_MQTT->connectErrorString(ret));
+        BLINKER_LOG(mqtt_AUTO->connectErrorString(ret));
         BLINKER_LOG(BLINKER_F("Retrying MQTT connection in "), \
                     BLINKER_MQTT_CONNECT_TIMESLOT/1000, \
                     BLINKER_F(" seconds..."));
@@ -345,12 +297,11 @@ int BlinkerMQTTAUTO::connect()
     BLINKER_LOG(BLINKER_F("MQTT Connected!"));
     BLINKER_LOG_FreeHeap();
 
-    if (!isMQTTinit)
+    if (isNew)
     {
-        isMQTTinit = true;
-
-        mqtt_MQTT->subscribeTopic(BLINKER_SUB_TOPIC_MQTT);
-        BLINKER_LOG_ALL(BLINKER_F("MQTT subscribe: "), BLINKER_SUB_TOPIC_MQTT);
+        if (pubHello()) {
+            isNew = false;
+        }
     }
 
     this->latestTime = millis();
@@ -360,42 +311,36 @@ int BlinkerMQTTAUTO::connect()
 
 int BlinkerMQTTAUTO::connected()
 {
-    if (!checkInit()) return false;
-
     if (!isMQTTinit)
     {
         return *isHandle;
     }
 
-    return mqtt_MQTT->connected() || *isHandle;
+    return mqtt_AUTO->connected() || *isHandle;
 }
 
 int BlinkerMQTTAUTO::mConnected()
 {
-    if (!checkInit()) return false;
-
     if (!isMQTTinit) return false;
-    else return mqtt_MQTT->connected();
+    else return mqtt_AUTO->connected();
 }
 
 void BlinkerMQTTAUTO::disconnect()
 {
-    if (!checkInit()) return;
+    if (isMQTTinit) mqtt_AUTO->disconnect();
 
-    mqtt_MQTT->disconnect();
-
-    if (*isHandle) webSocket_MQTT.disconnect();
+    if (*isHandle) webSocket_AUTO.disconnect();
 }
 
 void BlinkerMQTTAUTO::ping()
 {
-    if (!checkInit()) return;
-
-    BLINKER_LOG(BLINKER_F("MQTT Ping!"));
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Ping!"));
 
     BLINKER_LOG_FreeHeap_ALL();
 
-    if (!mqtt_MQTT->ping())
+    if (!isMQTTinit) return;
+
+    if (!mqtt_AUTO ->ping())
     {
         disconnect();
         // delay(100);
@@ -410,26 +355,26 @@ void BlinkerMQTTAUTO::ping()
 
 int BlinkerMQTTAUTO::available()
 {
-    if (!checkInit()) return false;
+    webSocket_AUTO.loop();
 
-    webSocket_MQTT.loop();
+    if (isMQTTinit) {
+        checkKA();
 
-    checkKA();
-
-    // if (!mqtt_MQTT->connected() || 
-    //     (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
-    if ((millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
-    {
-        ping();
+        // if (!mqtt_PRO->connected() || \
+        //     (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
+        if ((millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
+        {
+            ping();
+        }
+        else
+        {
+            subscribe();
+        }
     }
-    else
-    {
-        subscribe();
-    }
 
-    if (isAvail_MQTT)
+    if (isAvail_AUTO)
     {
-        isAvail_MQTT = false;
+        isAvail_AUTO = false;
         return true;
     }
     else {
@@ -439,8 +384,6 @@ int BlinkerMQTTAUTO::available()
 
 int BlinkerMQTTAUTO::aligenieAvail()
 {
-    if (!checkInit()) return false;
-
     if (isAliAvail)
     {
         isAliAvail = false;
@@ -453,8 +396,6 @@ int BlinkerMQTTAUTO::aligenieAvail()
 
 int BlinkerMQTTAUTO::duerAvail()
 {
-    if (!checkInit()) return false;
-
     if (isDuerAvail)
     {
         isDuerAvail = false;
@@ -480,19 +421,17 @@ int BlinkerMQTTAUTO::duerAvail()
 
 void BlinkerMQTTAUTO::subscribe()
 {
-    if (!checkInit()) return;
-
     if (!isMQTTinit) return;
 
     Adafruit_MQTT_Subscribe *subscription;
-    while ((subscription = mqtt_MQTT->readSubscription(10)))
+    while ((subscription = mqtt_AUTO->readSubscription(10)))
     {
-        if (subscription == iotSub_MQTT)
+        if (subscription == iotSub_AUTO)
         {
-            BLINKER_LOG_ALL(BLINKER_F("Got: "), (char *)iotSub_MQTT->lastread);
+            BLINKER_LOG_ALL(BLINKER_F("Got: "), (char *)iotSub_AUTO->lastread);
 
             DynamicJsonBuffer jsonBuffer;
-            JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_MQTT->lastread));
+            JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_AUTO->lastread));
 
             String _uuid = root["fromDevice"];
             String dataGet = root["data"];
@@ -500,12 +439,12 @@ void BlinkerMQTTAUTO::subscribe()
             BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
             BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
 
-            if (strcmp(_uuid.c_str(), UUID_MQTT) == 0)
+            if (strcmp(_uuid.c_str(), UUID_AUTO) == 0)
             {
                 BLINKER_LOG_ALL(BLINKER_F("Authority uuid"));
 
                 kaTime = millis();
-                isAvail_MQTT = true;
+                isAvail_AUTO = true;
                 isAlive = true;
 
                 _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
@@ -530,7 +469,7 @@ void BlinkerMQTTAUTO::subscribe()
             {
                 BLINKER_LOG_ALL(BLINKER_F("form Sever"));
 
-                isAvail_MQTT = true;
+                isAvail_AUTO = true;
                 isAlive = true;
 
                 _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
@@ -567,7 +506,7 @@ void BlinkerMQTTAUTO::subscribe()
                 // else
                 // {
                     // dataGet = String((char *)iotSub_MQTT->lastread);
-                    root.printTo(dataGet);
+                root.printTo(dataGet);
 
                 //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
                 //                         check is from bridge/share device, \
@@ -580,46 +519,44 @@ void BlinkerMQTTAUTO::subscribe()
                 //     _needCheckShare = true;
                 // }
 
-                isAvail_MQTT = true;
+                isAvail_AUTO = true;
                 isAlive = true;
             }
 
             // memset(msgBuf_MQTT, 0, BLINKER_MAX_READ_SIZE);
             // memcpy(msgBuf_MQTT, dataGet.c_str(), dataGet.length());
 
-            if (isFresh_MQTT) free(msgBuf_MQTT);
-            msgBuf_MQTT = (char*)malloc((dataGet.length()+1)*sizeof(char));
-            strcpy(msgBuf_MQTT, dataGet.c_str());
-            isFresh_MQTT = true;
+            if (isFresh_AUTO) free(msgBuf_AUTO);
+            msgBuf_AUTO = (char*)malloc((dataGet.length()+1)*sizeof(char));
+            strcpy(msgBuf_AUTO, dataGet.c_str());
+            isFresh_AUTO = true;
 
             this->latestTime = millis();
 
-            dataFrom_MQTT = BLINKER_MSG_FROM_MQTT;
+            dataFrom_AUTO = BLINKER_MSG_FROM_MQTT;
         }
     }
 }
 
 char * BlinkerMQTTAUTO::lastRead()
 {
-    if (isFresh_MQTT) return msgBuf_MQTT;
+    if (isFresh_AUTO) return msgBuf_AUTO;
     else return "";
 }
 
 void BlinkerMQTTAUTO::flush()
 {
-    if (isFresh_MQTT)
+    if (isFresh_AUTO)
     {
-        free(msgBuf_MQTT); isFresh_MQTT = false; isAvail_MQTT = false;
+        free(msgBuf_AUTO); isFresh_AUTO = false; isAvail_AUTO = false;
         isAliAvail = false; //isBavail = false;
     }
 }
 
 int BlinkerMQTTAUTO::print(char * data, bool needCheck)
 {
-    if (!checkInit()) return false;
-
     // BLINKER_LOG_FreeHeap();
-    if (*isHandle && dataFrom_MQTT == BLINKER_MSG_FROM_WS)
+    if (*isHandle && dataFrom_AUTO == BLINKER_MSG_FROM_WS)
     {
         if (needCheck)
         {
@@ -638,7 +575,7 @@ int BlinkerMQTTAUTO::print(char * data, bool needCheck)
 
         strcat(data, BLINKER_CMD_NEWLINE);
 
-        webSocket_MQTT.sendTXT(ws_num_MQTT, data);
+        webSocket_AUTO.sendTXT(ws_num_AUTO, data);
 
         return true;
     }
@@ -694,7 +631,7 @@ int BlinkerMQTTAUTO::print(char * data, bool needCheck)
         // data_add = BLINKER_F(",\"fromDevice\":\"");
         // strcat(data, data_add.c_str());
         strcat(data, ",\"fromDevice\":\"");
-        strcat(data, MQTT_ID_MQTT);
+        strcat(data, MQTT_ID_AUTO);
         // data_add = BLINKER_F("\",\"toDevice\":\"");
         // strcat(data, data_add.c_str());
         strcat(data, "\",\"toDevice\":\"");
@@ -704,7 +641,7 @@ int BlinkerMQTTAUTO::print(char * data, bool needCheck)
         }
         else
         {
-            strcat(data, UUID_MQTT);
+            strcat(data, UUID_AUTO);
         }
         // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         // strcat(data, data_add.c_str());
@@ -720,7 +657,6 @@ int BlinkerMQTTAUTO::print(char * data, bool needCheck)
 
         bool _alive = isAlive;
 
-
         if (needCheck)
         {
             if (!checkPrintSpan())
@@ -730,7 +666,7 @@ int BlinkerMQTTAUTO::print(char * data, bool needCheck)
             respTime = millis();
         }
 
-        if (mqtt_MQTT->connected())
+        if (mqtt_AUTO->connected())
         {
             if (needCheck)
             {
@@ -744,7 +680,7 @@ int BlinkerMQTTAUTO::print(char * data, bool needCheck)
                 }
             }
 
-            if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data))
+            if (! mqtt_AUTO->publish(BLINKER_PUB_TOPIC_AUTO, data))
             {
                 BLINKER_LOG_ALL(data);
                 BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -785,8 +721,6 @@ int BlinkerMQTTAUTO::print(char * data, bool needCheck)
 
 int BlinkerMQTTAUTO::bPrint(char * name, const String & data)
 {
-    if (!checkInit()) return false;
-
     // String payload;
     // if (STRING_contains_string(data, BLINKER_CMD_NEWLINE))
     // {
@@ -823,7 +757,7 @@ int BlinkerMQTTAUTO::bPrint(char * name, const String & data)
 
     data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_ID_MQTT;
+    data_add += MQTT_DEVICEID_AUTO;
     data_add += BLINKER_F("\",\"toDevice\":\"");
     data_add += name;
     data_add += BLINKER_F("\",\"deviceType\":\"DiyBridge\"}");
@@ -849,7 +783,7 @@ int BlinkerMQTTAUTO::bPrint(char * name, const String & data)
     //         && STRING_contains_string(data, BLINKER_CMD_ONLINE));
     // }
 
-    if (mqtt_MQTT->connected()) {
+    if (mqtt_AUTO->connected()) {
         // if (!state) {
         if (!checkCanBprint()) {
             // if (!_alive) {
@@ -877,7 +811,7 @@ int BlinkerMQTTAUTO::bPrint(char * name, const String & data)
         //     bPubTopic = BLINKER_PUB_TOPIC_MQTT;
         // }
 
-        if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data_add.c_str()))
+        if (! mqtt_AUTO->publish(BLINKER_PUB_TOPIC_AUTO, data_add.c_str()))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -914,13 +848,11 @@ int BlinkerMQTTAUTO::bPrint(char * name, const String & data)
 
 int BlinkerMQTTAUTO::aliPrint(const String & data)
 {
-    if (!checkInit()) return false;
-
     String data_add = BLINKER_F("{\"data\":");
 
     data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_ID_MQTT;
+    data_add += MQTT_DEVICEID_AUTO;
     data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
@@ -929,7 +861,7 @@ int BlinkerMQTTAUTO::aliPrint(const String & data)
     BLINKER_LOG_ALL(BLINKER_F("MQTT AliGenie Publish..."));
     BLINKER_LOG_FreeHeap_ALL();
 
-    if (mqtt_MQTT->connected())
+    if (mqtt_AUTO->connected())
     {
         if (!checkAliKA())
         {
@@ -943,7 +875,7 @@ int BlinkerMQTTAUTO::aliPrint(const String & data)
         }
         respAliTime = millis();
 
-        if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data_add.c_str()))
+        if (! mqtt_AUTO->publish(BLINKER_PUB_TOPIC_AUTO, data_add.c_str()))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -974,13 +906,11 @@ int BlinkerMQTTAUTO::aliPrint(const String & data)
 
 int BlinkerMQTTAUTO::duerPrint(const String & data)
 {
-    if (!checkInit()) return false;
-
     String data_add = BLINKER_F("{\"data\":");
 
     data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_ID_MQTT;
+    data_add += MQTT_DEVICEID_AUTO;
     data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
@@ -989,7 +919,7 @@ int BlinkerMQTTAUTO::duerPrint(const String & data)
     BLINKER_LOG_ALL(BLINKER_F("MQTT DuerOS Publish..."));
     BLINKER_LOG_FreeHeap_ALL();
 
-    if (mqtt_MQTT->connected())
+    if (mqtt_AUTO->connected())
     {
         if (!checkDuerKA())
         {
@@ -1003,7 +933,7 @@ int BlinkerMQTTAUTO::duerPrint(const String & data)
         }
         respDuerTime = millis();
 
-        if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data_add.c_str()))
+        if (! mqtt_AUTO->publish(BLINKER_PUB_TOPIC_AUTO, data_add.c_str()))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1057,66 +987,8 @@ void BlinkerMQTTAUTO::begin(const char* auth, const char* type) {
 
     BLINKER_LOG_ALL(BLINKER_F("_vipKey: "), auth);
     BLINKER_LOG_ALL(BLINKER_F("_deviceType: "), type);
-}
 
-bool BlinkerMQTTAUTO::begin() {
-    // if (connectServer()) {
-    //     mDNSInit();
-    //     isMQTTinit = true;
-    // }
-    // else {
-    // uint32_t re_time = millis();
-
-    if (isMQTTinit) return true;
-    // bool isConnect_MQTT = true;
-    // while(1)
-    // {
-    //     re_time = millis();
-        // ::delay(10000);
-        // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
-        // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
-        // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
-    if (_connectTime == 0 || (millis() - _connectTime) >= 10000)
-    {
-        _connectTime = millis();
-        if (connectServer()) {
-            mDNSInit();
-            isMQTTinit = true;
-            return true;
-        }
-        else {
-            isMQTTinit = false;
-            // ::delay(10000);
-            // BLINKER_ERR_LOG("init error, ", _connectTime);
-            // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
-            // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
-            // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
-            return false;
-        }
-    }
-
-    // BLINKER_ERR_LOG("init error1, ", _connectTime);
-    // ::delay(1000);
-    return false;
-        // delay(10000);
-        // while ((millis() - re_time) < 10000)
-        // {
-        //     if (WiFi.status() != WL_CONNECTED && isConnect_MQTT)
-        //     {
-        //         isConnect_MQTT = false;
-        //         WiFi.begin();
-        //         WiFi.reconnect();
-        //     }
-        //     else if (WiFi.status() == WL_CONNECTED && !isConnect_MQTT)
-        //     {
-        //         isConnect_MQTT = true;
-        //     }
-        //     // ::delay(10);
-        //     yield();
-        //     // WiFi.status();
-        // }
-    // }
-    // }
+    mDNSInit();
 }
 
 int BlinkerMQTTAUTO::autoPrint(uint32_t id)
@@ -1127,13 +999,13 @@ int BlinkerMQTTAUTO::autoPrint(uint32_t id)
     payload += STRING_format(id);
     payload += BLINKER_F("}}}");
     payload += BLINKER_F(",\"fromDevice\":\"");
-    payload += STRING_format(MQTT_ID_MQTT);
+    payload += STRING_format(MQTT_DEVICEID_AUTO);
     payload += BLINKER_F("\",\"toDevice\":\"autoManager\"}");
         // "\",\"deviceType\":\"" + "type" + "\"}";
 
     BLINKER_LOG_ALL(BLINKER_F("autoPrint..."));
 
-    if (mqtt_MQTT->connected())
+    if (mqtt_AUTO->connected())
     {
         if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || \
             linkTime == 0)
@@ -1144,7 +1016,7 @@ int BlinkerMQTTAUTO::autoPrint(uint32_t id)
 
             // if (! iotPub.publish(payload.c_str())) {
 
-            if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, payload.c_str()))
+            if (! mqtt_AUTO->publish(BLINKER_PUB_TOPIC_AUTO, payload.c_str()))
             {
                 BLINKER_LOG_ALL(payload);
                 BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1266,7 +1138,7 @@ int BlinkerMQTTAUTO::autoPrint(uint32_t id)
 //     }
 // }
 
-char * BlinkerMQTTAUTO::deviceName() { return DEVICE_NAME_MQTT;/*MQTT_ID_MQTT;*/ }
+char * BlinkerMQTTAUTO::deviceName() { return MQTT_DEVICEID_AUTO;/*MQTT_ID_MQTT;*/ }
 
 void BlinkerMQTTAUTO::sharers(const String & data)
 {
@@ -1308,12 +1180,44 @@ void BlinkerMQTTAUTO::sharers(const String & data)
     }
 }
 
-int BlinkerMQTTAUTO::connectServer() {
-    if (!_isAuthKey)
+int BlinkerMQTTAUTO::authCheck()
+{
+    uint8_t _authCheck;
+    
+    BLINKER_LOG_ALL(BLINKER_F("authCheck start"));
+    
+    EEPROM.begin(BLINKER_EEP_SIZE);
+    EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+    if (_authCheck == BLINKER_AUTH_CHECK_DATA)
     {
-        const int httpsPort = 443;
+        EEPROM.commit();
+        EEPROM.end();
+        isAuth = true;
+        
+        BLINKER_LOG_ALL(BLINKER_F("authCheck end"));
+        
+        return true;
+    }
+    EEPROM.commit();
+    EEPROM.end();
+    
+    BLINKER_LOG_ALL(BLINKER_F("authCheck end"));
+    
+    return false;
+}
+
+int BlinkerMQTTAUTO::connectServer()
+{
+    const int httpsPort = 443;
     #if defined(ESP8266)
         String host = BLINKER_F("iotdev.clz.me");
+    #elif defined(ESP32)
+        String host = BLINKER_F("https://iotdev.clz.me");
+    #endif
+    if (!_isAuthKey)
+    {
+    #if defined(ESP8266)
+        // String host = BLINKER_F("iotdev.clz.me");
         String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
     // WiFiClientSecure client_s;
@@ -1487,7 +1391,7 @@ int BlinkerMQTTAUTO::connectServer() {
         }
 
     #elif defined(ESP32)
-        String host = BLINKER_F("https://iotdev.clz.me");
+        // String host = BLINKER_F("https://iotdev.clz.me");
         // const char* ca =
         //     "-----BEGIN CERTIFICATE-----\n"
         //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n"
@@ -1591,13 +1495,13 @@ int BlinkerMQTTAUTO::connectServer() {
             // }
         }
 
-        String _getAuthKey = = root[BLINKER_CMD_DETAIL][BLINKER_CMD_AUTHKEY];
+        String _getAuthKey = root[BLINKER_CMD_DETAIL][BLINKER_CMD_AUTHKEY];
 
-        _authKey = (char*)malloc((_getAuthKey.length()+1)*sizeof(char));
-        strcpy(_authKey, _getAuthKey.c_str());
+        AUTHKEY_AUTO = (char*)malloc((_getAuthKey.length()+1)*sizeof(char));
+        strcpy(AUTHKEY_AUTO, _getAuthKey.c_str());
 
         BLINKER_LOG_ALL(BLINKER_F("===================="));
-        BLINKER_LOG_ALL(BLINKER_F("_authKey: "), _authKey);
+        BLINKER_LOG_ALL(BLINKER_F("AUTHKEY_AUTO: "), AUTHKEY_AUTO);
         BLINKER_LOG_ALL(BLINKER_F("===================="));
 
         _isAuthKey = true;
@@ -1607,21 +1511,21 @@ int BlinkerMQTTAUTO::connectServer() {
 #if defined(ESP8266)
     // client_mqtt.stop();
 
-    // std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+    std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
 
     // client_s->setFingerprint(fingerprint);
     client_s->setInsecure();
 
-    url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
-    url_iot += _authKey;
-    url_iot += _aliType;
-    url_iot += _duerType;
+    String url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
+    url_iot += AUTHKEY_AUTO;
+    // url_iot += _aliType;
+    // url_iot += _duerType;
 
     url_iot = "https://" + host + url_iot;
 
-    // HTTPClient http;
+    HTTPClient http;
 
-    payload = "";
+    String payload = "";
 
     BLINKER_LOG_ALL(BLINKER_F("[HTTP] begin: "), url_iot);
 
@@ -1654,13 +1558,13 @@ int BlinkerMQTTAUTO::connectServer() {
     }
 
 #elif defined(ESP32)
-    // HTTPClient http;
+    HTTPClient http;
 
     url_iot = host;
     url_iot += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
-    url_iot += _authKey;
-    url_iot += _aliType;
-    url_iot += _duerType;
+    url_iot += AUTHKEY_AUTO;
+    // url_iot += _aliType;
+    // url_iot += _duerType;
 
 // #if defined(BLINKER_ALIGENIE_LIGHT)
 //     url_iot += BLINKER_F("&aliType=light");
@@ -1681,7 +1585,7 @@ int BlinkerMQTTAUTO::connectServer() {
 // #endif
     int httpCode = http.GET();
 
-    payload = "";
+    String payload = "";
 
     if (httpCode > 0) {
       // HTTP header has been send and Server response header has been handled
@@ -1703,8 +1607,12 @@ int BlinkerMQTTAUTO::connectServer() {
     http.end();
 #endif    
 
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(payload);
+
     if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
-        !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
+        !STRING_contains_string(payload, BLINKER_CMD_IOTID))
+    {
         // while(1) {
             BLINKER_ERR_LOG(BLINKER_F("Maybe you have put in the wrong AuthKey!"));
             BLINKER_ERR_LOG(BLINKER_F("Or maybe your request is too frequently!"));
@@ -1730,183 +1638,198 @@ int BlinkerMQTTAUTO::connectServer() {
 
     if (isMQTTinit)
     {
-        free(MQTT_HOST_MQTT);
-        free(MQTT_ID_MQTT);
-        free(MQTT_NAME_MQTT);
-        free(MQTT_KEY_MQTT);
-        free(MQTT_PRODUCTINFO_MQTT);
-        free(UUID_MQTT);
-        free(DEVICE_NAME_MQTT);
-        free(BLINKER_PUB_TOPIC_MQTT);
-        free(BLINKER_SUB_TOPIC_MQTT);
-        free(mqtt_MQTT);
-        free(iotSub_MQTT);
+        free(MQTT_HOST_AUTO);
+        free(MQTT_ID_AUTO);
+        free(MQTT_NAME_AUTO);
+        free(MQTT_KEY_AUTO);
+        free(MQTT_PRODUCTINFO_AUTO);
+        free(UUID_AUTO);
+        // free(AUTHKEY_AUTO);
+        free(MQTT_DEVICEID_AUTO);
+        free(BLINKER_PUB_TOPIC_AUTO);
+        free(BLINKER_SUB_TOPIC_AUTO);
+        free(mqtt_AUTO);
+        free(iotSub_AUTO);
 
         isMQTTinit = false;
     }
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
-        // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
-        DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
-        strcpy(DEVICE_NAME_MQTT, _userID.c_str());
-        MQTT_ID_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
-        strcpy(MQTT_ID_MQTT, _userID.c_str());
-        MQTT_NAME_MQTT = (char*)malloc((_userName.length()+1)*sizeof(char));
-        strcpy(MQTT_NAME_MQTT, _userName.c_str());
-        MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
-        strcpy(MQTT_KEY_MQTT, _key.c_str());
-        MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
-        strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
-        MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
-        strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_ALIYUN_HOST);
-        MQTT_PORT_MQTT = BLINKER_MQTT_ALIYUN_PORT;
+        // memcpy(DEVICE_NAME, _userID.c_str(), 12);
+        // String _deviceName = _userID.substring(12, 36);
+        // MQTT_DEVICEID_PRO = (char*)malloc((_deviceName.length()+1)*sizeof(char));
+        // String _deviceName = _userID.substring(12, 36);
+        MQTT_DEVICEID_AUTO = (char*)malloc((_userID.length()+1)*sizeof(char));
+        strcpy(MQTT_DEVICEID_AUTO, _userID.c_str());
+        MQTT_ID_AUTO = (char*)malloc((_userID.length()+1)*sizeof(char));
+        strcpy(MQTT_ID_AUTO, _userID.c_str());
+        MQTT_NAME_AUTO = (char*)malloc((_userName.length()+1)*sizeof(char));
+        strcpy(MQTT_NAME_AUTO, _userName.c_str());
+        MQTT_KEY_AUTO = (char*)malloc((_key.length()+1)*sizeof(char));
+        strcpy(MQTT_KEY_AUTO, _key.c_str());
+        MQTT_PRODUCTINFO_AUTO = (char*)malloc((_productInfo.length()+1)*sizeof(char));
+        strcpy(MQTT_PRODUCTINFO_AUTO, _productInfo.c_str());
+        MQTT_HOST_AUTO = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
+        strcpy(MQTT_HOST_AUTO, BLINKER_MQTT_ALIYUN_HOST);
+        // AUTHKEY_AUTO = (char*)malloc((_authKey.length()+1)*sizeof(char));
+        // strcpy(AUTHKEY_AUTO, _authKey.c_str());
+        MQTT_PORT_AUTO = BLINKER_MQTT_ALIYUN_PORT;
+
+        BLINKER_LOG_ALL(("===================="));
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
         // String id2name = _userID.subString(10, _userID.length());
         // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
-        DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
-        strcpy(DEVICE_NAME_MQTT, _userID.c_str());
-        String IDtest = _productInfo + _userID;
-        MQTT_ID_MQTT = (char*)malloc((IDtest.length()+1)*sizeof(char));
-        strcpy(MQTT_ID_MQTT, IDtest.c_str());
-        String NAMEtest = IDtest + ";" + _userName;
-        MQTT_NAME_MQTT = (char*)malloc((NAMEtest.length()+1)*sizeof(char));
-        strcpy(MQTT_NAME_MQTT, NAMEtest.c_str());
-        MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
-        strcpy(MQTT_KEY_MQTT, _key.c_str());
-        MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
-        strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
-        MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_QCLOUD_HOST)+1)*sizeof(char));
-        strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_QCLOUD_HOST);
-        MQTT_PORT_MQTT = BLINKER_MQTT_QCLOUD_PORT;
+        // DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
+        // strcpy(DEVICE_NAME_MQTT, _userID.c_str());
+        // String IDtest = _productInfo + _userID;
+        // MQTT_ID_MQTT = (char*)malloc((IDtest.length()+1)*sizeof(char));
+        // strcpy(MQTT_ID_MQTT, IDtest.c_str());
+        // String NAMEtest = IDtest + ";" + _userName;
+        // MQTT_NAME_MQTT = (char*)malloc((NAMEtest.length()+1)*sizeof(char));
+        // strcpy(MQTT_NAME_MQTT, NAMEtest.c_str());
+        // MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
+        // strcpy(MQTT_KEY_MQTT, _key.c_str());
+        // MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
+        // strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
+        // MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_QCLOUD_HOST)+1)*sizeof(char));
+        // strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_QCLOUD_HOST);
+        // MQTT_PORT_MQTT = BLINKER_MQTT_QCLOUD_PORT;
     }
     else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
         // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
-        DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
-        strcpy(DEVICE_NAME_MQTT, _userID.c_str());
-        MQTT_ID_MQTT = (char*)malloc((_userName.length()+1)*sizeof(char));
-        strcpy(MQTT_ID_MQTT, _userName.c_str());
-        MQTT_NAME_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
-        strcpy(MQTT_NAME_MQTT, _productInfo.c_str());
-        MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
-        strcpy(MQTT_KEY_MQTT, _key.c_str());
-        MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
-        strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
-        MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_ONENET_HOST)+1)*sizeof(char));
-        strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_ONENET_HOST);
-        MQTT_PORT_MQTT = BLINKER_MQTT_ONENET_PORT;
+        // DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
+        // strcpy(DEVICE_NAME_MQTT, _userID.c_str());
+        // MQTT_ID_MQTT = (char*)malloc((_userName.length()+1)*sizeof(char));
+        // strcpy(MQTT_ID_MQTT, _userName.c_str());
+        // MQTT_NAME_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
+        // strcpy(MQTT_NAME_MQTT, _productInfo.c_str());
+        // MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
+        // strcpy(MQTT_KEY_MQTT, _key.c_str());
+        // MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
+        // strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
+        // MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_ONENET_HOST)+1)*sizeof(char));
+        // strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_ONENET_HOST);
+        // MQTT_PORT_MQTT = BLINKER_MQTT_ONENET_PORT;
     }
-    UUID_MQTT = (char*)malloc((_uuid.length()+1)*sizeof(char));
-    strcpy(UUID_MQTT, _uuid.c_str());
+    UUID_AUTO = (char*)malloc((_uuid.length()+1)*sizeof(char));
+    strcpy(UUID_AUTO, _uuid.c_str());
 
-    // char uuid_eeprom[BLINKER_AUUID_SIZE];
+    char uuid_eeprom[BLINKER_AUUID_SIZE];
 
-    // // BLINKER_LOG_ALL(("===================="));
+    BLINKER_LOG_ALL(("==========AUTH CHECK=========="));
 
-    // char _authCheck;
-    // EEPROM.begin(BLINKER_EEP_SIZE);
-    // EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
-    // if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
-    //     // strcpy(UUID_MQTT, _uuid.c_str());
+    if (!isFirst)
+    {
+        char _authCheck;
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+        if (strcmp(uuid_eeprom, _uuid.c_str()) != 0) {
+            // strcpy(UUID_PRO, _uuid.c_str());
 
-    //     strcpy(uuid_eeprom, _uuid.c_str());
-    //     EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
-    //     EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+            strcpy(uuid_eeprom, _uuid.c_str());
+            EEPROM.put(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
+            EEPROM.get(BLINKER_EEP_ADDR_AUUID, uuid_eeprom);
 
-    //     BLINKER_LOG_ALL(BLINKER_F("===================="));
-    //     BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
-    //     BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
-    //     // isNew = true;
-    // }
-    // EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
-    // // if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
-    // //     EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
-    // //     isAuth = true;
-    // // }
-    // EEPROM.commit();
-    // EEPROM.end();
+            BLINKER_LOG_ALL(BLINKER_F("===================="));
+            BLINKER_LOG_ALL(BLINKER_F("uuid_eeprom: "), uuid_eeprom);
+            BLINKER_LOG_ALL(BLINKER_F("_uuid: "), _uuid);
+            isNew = true;
+        }
+        EEPROM.get(BLINKER_EEP_ADDR_AUTH_CHECK, _authCheck);
+        if (_authCheck != BLINKER_AUTH_CHECK_DATA) {
+            EEPROM.put(BLINKER_EEP_ADDR_AUTH_CHECK, BLINKER_AUTH_CHECK_DATA);
+            isAuth = true;
+        }
+        EEPROM.commit();
+        EEPROM.end();
+
+        isFirst = true;
+    }
 
     BLINKER_LOG_ALL(BLINKER_F("===================="));
-    BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME_MQTT: "), DEVICE_NAME_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_PRODUCTINFO_MQTT: "), MQTT_PRODUCTINFO_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_ID_MQTT: "), MQTT_ID_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_NAME_MQTT: "), MQTT_NAME_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_KEY_MQTT: "), MQTT_KEY_MQTT);
+    BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME: "), macDeviceName());
+    BLINKER_LOG_ALL(BLINKER_F("MQTT_PRODUCTINFO_AUTO: "), MQTT_PRODUCTINFO_AUTO);
+    BLINKER_LOG_ALL(BLINKER_F("MQTT_DEVICEID_AUTO: "), MQTT_DEVICEID_AUTO);
+    BLINKER_LOG_ALL(BLINKER_F("MQTT_ID_AUTO: "), MQTT_ID_AUTO);
+    BLINKER_LOG_ALL(BLINKER_F("MQTT_NAME_AUTO: "), MQTT_NAME_AUTO);
+    BLINKER_LOG_ALL(BLINKER_F("MQTT_KEY_AUTO: "), MQTT_KEY_AUTO);
     BLINKER_LOG_ALL(BLINKER_F("MQTT_BROKER: "), _broker);
-    BLINKER_LOG_ALL(BLINKER_F("HOST: "), MQTT_HOST_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("PORT: "), MQTT_PORT_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("UUID_MQTT: "), UUID_MQTT);
+    BLINKER_LOG_ALL(BLINKER_F("HOST: "), MQTT_HOST_AUTO);
+    BLINKER_LOG_ALL(BLINKER_F("PORT: "), MQTT_PORT_AUTO);
+    BLINKER_LOG_ALL(BLINKER_F("UUID_AUTO: "), UUID_AUTO);
+    BLINKER_LOG_ALL(BLINKER_F("AUTHKEY_AUTO: "), AUTHKEY_AUTO);
     BLINKER_LOG_ALL(BLINKER_F("===================="));
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         String PUB_TOPIC_STR = BLINKER_F("/");
-        PUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
+        PUB_TOPIC_STR += MQTT_PRODUCTINFO_AUTO;
         PUB_TOPIC_STR += BLINKER_F("/");
-        PUB_TOPIC_STR += MQTT_ID_MQTT;
+        PUB_TOPIC_STR += MQTT_DEVICEID_AUTO;
         PUB_TOPIC_STR += BLINKER_F("/s");
 
-        BLINKER_PUB_TOPIC_MQTT = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
+        BLINKER_PUB_TOPIC_AUTO = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
         // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
+        strcpy(BLINKER_PUB_TOPIC_AUTO, PUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
+        BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_AUTO: "), BLINKER_PUB_TOPIC_AUTO);
 
         String SUB_TOPIC_STR = BLINKER_F("/");
-        SUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
+        SUB_TOPIC_STR += MQTT_PRODUCTINFO_AUTO;
         SUB_TOPIC_STR += BLINKER_F("/");
-        SUB_TOPIC_STR += MQTT_ID_MQTT;
+        SUB_TOPIC_STR += MQTT_DEVICEID_AUTO;
         SUB_TOPIC_STR += BLINKER_F("/r");
 
-        BLINKER_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
+        BLINKER_SUB_TOPIC_AUTO = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
         // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
+        strcpy(BLINKER_SUB_TOPIC_AUTO, SUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
+        BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_AUTO: "), BLINKER_SUB_TOPIC_AUTO);
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
-        String PUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
-        PUB_TOPIC_STR += BLINKER_F("/");
-        PUB_TOPIC_STR += _userID;
-        PUB_TOPIC_STR += BLINKER_F("/s");
+        // String PUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
+        // PUB_TOPIC_STR += BLINKER_F("/");
+        // PUB_TOPIC_STR += _userID;
+        // PUB_TOPIC_STR += BLINKER_F("/s");
 
-        BLINKER_PUB_TOPIC_MQTT = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
+        // BLINKER_PUB_TOPIC_MQTT = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
+        // // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
+        // strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
+        // BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
 
-        String SUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
-        SUB_TOPIC_STR += BLINKER_F("/");
-        SUB_TOPIC_STR += _userID;
-        SUB_TOPIC_STR += BLINKER_F("/r");
+        // String SUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
+        // SUB_TOPIC_STR += BLINKER_F("/");
+        // SUB_TOPIC_STR += _userID;
+        // SUB_TOPIC_STR += BLINKER_F("/r");
 
-        BLINKER_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
+        // BLINKER_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
+        // // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
+        // strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
+        // BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
     }
     else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
-        // uint8_t str_len;
-        String PUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
-        PUB_TOPIC_STR += BLINKER_F("/onenet_rule/r");
-        // str_len = PUB_TOPIC_STR.length() + 1;
-        BLINKER_PUB_TOPIC_MQTT = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
+        // // uint8_t str_len;
+        // String PUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
+        // PUB_TOPIC_STR += BLINKER_F("/onenet_rule/r");
+        // // str_len = PUB_TOPIC_STR.length() + 1;
+        // BLINKER_PUB_TOPIC_MQTT = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
+        // // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
+        // strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
+        // BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
 
-        String SUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
-        SUB_TOPIC_STR += BLINKER_F("/");
-        SUB_TOPIC_STR += _userID;
-        SUB_TOPIC_STR += BLINKER_F("/r");
+        // String SUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
+        // SUB_TOPIC_STR += BLINKER_F("/");
+        // SUB_TOPIC_STR += _userID;
+        // SUB_TOPIC_STR += BLINKER_F("/r");
 
-        BLINKER_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
+        // BLINKER_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
+        // // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
+        // strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
+        // BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
     }
 
     // BLINKER_LOG_FreeHeap();
@@ -1918,30 +1841,30 @@ int BlinkerMQTTAUTO::connectServer() {
             //     client_mqtt.setBufferSizes(1024, 1024);
             // }
             // client_mqtt.setInsecure();
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+            mqtt_AUTO = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_AUTO, MQTT_PORT_AUTO, MQTT_ID_AUTO, MQTT_NAME_AUTO, MQTT_KEY_AUTO);
         #elif defined(ESP32)
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+            mqtt_AUTO = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_AUTO, MQTT_PORT_AUTO, MQTT_ID_AUTO, MQTT_NAME_AUTO, MQTT_KEY_AUTO);
         #endif
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
-        #if defined(ESP8266)
-            // bool mfln = client_mqtt.probeMaxFragmentLength(MQTT_HOST_MQTT, MQTT_PORT_MQTT, 4096);
-            // if (mfln) {
-            //     client_mqtt.setBufferSizes(1024, 1024);
-            // }
-            // client_mqtt.setInsecure();
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
-        #elif defined(ESP32)
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
-        #endif
+        // #if defined(ESP8266)
+        //     // bool mfln = client_mqtt.probeMaxFragmentLength(MQTT_HOST_MQTT, MQTT_PORT_MQTT, 4096);
+        //     // if (mfln) {
+        //     //     client_mqtt.setBufferSizes(1024, 1024);
+        //     // }
+        //     // client_mqtt.setInsecure();
+        //     mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+        // #elif defined(ESP32)
+        //     mqtt_MQTT = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+        // #endif
     }
     else if (_broker == BLINKER_MQTT_BORKER_ONENET) {
-        mqtt_MQTT = new Adafruit_MQTT_Client(&client, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+        // mqtt_MQTT = new Adafruit_MQTT_Client(&client, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
     }
 
     // iotPub = new Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
     // if (!isMQTTinit)
-    iotSub_MQTT = new Adafruit_MQTT_Subscribe(mqtt_MQTT, BLINKER_SUB_TOPIC_MQTT);
+    iotSub_AUTO = new Adafruit_MQTT_Subscribe(mqtt_AUTO, BLINKER_SUB_TOPIC_AUTO);
 
     // mqtt_broker = (char*)malloc((_broker.length()+1)*sizeof(char));
     // strcpy(mqtt_broker, _broker.c_str());
@@ -1950,7 +1873,7 @@ int BlinkerMQTTAUTO::connectServer() {
     // mDNSInit(MQTT_ID_MQTT);
     this->latestTime = millis() - BLINKER_MQTT_CONNECT_TIMESLOT;
     // if (!isMQTTinit)
-    mqtt_MQTT->subscribe(iotSub_MQTT);
+    mqtt_AUTO->subscribe(iotSub_AUTO);
 
     #if defined(ESP8266)
         // client_s->stop();
@@ -1967,9 +1890,9 @@ int BlinkerMQTTAUTO::connectServer() {
 void BlinkerMQTTAUTO::mDNSInit()
 {
 #if defined(ESP8266)
-    if (!MDNS.begin(DEVICE_NAME_MQTT, WiFi.localIP())) {
+    if (!MDNS.begin(macDeviceName().c_str(), WiFi.localIP())) {
 #elif defined(ESP32)
-    if (!MDNS.begin(DEVICE_NAME_MQTT)) {
+    if (!MDNS.begin(macDeviceName().c_str())) {
 #endif
         while(1) {
             ::delay(100);
@@ -1978,13 +1901,15 @@ void BlinkerMQTTAUTO::mDNSInit()
 
     BLINKER_LOG(BLINKER_F("mDNS responder started"));
 
-    MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
-    MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", String(DEVICE_NAME_MQTT));
+    String _service = STRING_format(BLINKER_MDNS_SERVICE_BLINKER) + _deviceType;
+            
+    MDNS.addService(_service.c_str(), "tcp", WS_SERVERPORT);
+    MDNS.addServiceTxt(_service.c_str(), "tcp", "deviceName", macDeviceName());
 
-    webSocket_MQTT.begin();
-    webSocket_MQTT.onEvent(webSocketEvent_MQTT);
+    webSocket_AUTO.begin();
+    webSocket_AUTO.onEvent(webSocketEvent_AUTO);
     BLINKER_LOG(BLINKER_F("webSocket_MQTT server started"));
-    BLINKER_LOG(BLINKER_F("ws://"), DEVICE_NAME_MQTT, BLINKER_F(".local:"), WS_SERVERPORT);
+    BLINKER_LOG(BLINKER_F("ws://"), macDeviceName(), BLINKER_F(".local:"), WS_SERVERPORT);
 }
 
 void BlinkerMQTTAUTO::checkKA() {
@@ -2094,6 +2019,15 @@ int BlinkerMQTTAUTO::checkDuerPrintSpan()
     }
 }
 
+int BlinkerMQTTAUTO::pubHello()
+{
+    char stateJsonStr[256] = ("{\"message\":\"Registration successful\"}");
+    
+    BLINKER_LOG_ALL(BLINKER_F("PUB hello: "), stateJsonStr);
+    
+    return print(stateJsonStr, false);
+}
+
 int BlinkerMQTTAUTO::isJson(const String & data)
 {
     BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
@@ -2108,506 +2042,6 @@ int BlinkerMQTTAUTO::isJson(const String & data)
     }
 
     return true;
-}
-
-bool BlinkerMQTTAUTO::checkInit()
-{
-    if (!_isWiFiInit)
-    {
-        switch (_configType)
-        {
-            case COMM :
-                _connectTime = millis();
-                // BLINKER_LOG(BLINKER_F("checkInit..."));
-                if (WiFi.status() != WL_CONNECTED) {
-                    ::delay(500);
-
-                    if (millis() - _connectTime > BLINKER_CONNECT_TIMEOUT_MS && WiFi.status() != WL_CONNECTED) {
-                        // _connectTime = millis();
-                        BLINKER_LOG(BLINKER_F("WiFi connect timeout, please check ssid and pswd!"));
-                        BLINKER_LOG(BLINKER_F("Retring WiFi connect again!"));
-                        return false;
-                    }
-
-                    // BLINKER_LOG(BLINKER_F("checkInit..."));
-
-                    return false;
-                }
-                BLINKER_LOG(BLINKER_F("WiFi Connected."));
-                BLINKER_LOG(BLINKER_F("IP Address: "));
-                BLINKER_LOG(WiFi.localIP());
-                _isWiFiInit = true;
-                _connectTime = 0;
-
-                // begin();
-
-                return false;
-            case SMART :
-                switch (_configStatus)
-                {
-                    case SMART_BEGIN :
-                        if (WiFi.smartConfigDone())
-                        {
-                            BLINKER_LOG(BLINKER_F("SmartConfig received."));
-                            _connectTime = millis();
-
-                            #if defined(ESP8266)
-                                BLINKER_LOG(BLINKER_F("SSID: "), WiFi.SSID(), BLINKER_F(" PSWD: "), WiFi.psk());
-                            #endif
-
-                            _configStatus = SMART_DONE;
-                        }
-                        else return false;
-                    case SMART_DONE :
-                        if (WiFi.status() != WL_CONNECTED)
-                        {
-                            if (millis() - _connectTime > 15000)
-                            {
-                                BLINKER_LOG(BLINKER_F("SmartConfig timeout."));
-                                WiFi.stopSmartConfig();
-                                _configStatus = SMART_TIMEOUT;
-                            }
-                            return false;
-                        }
-                        else if (WiFi.status() == WL_CONNECTED)
-                        {
-                            // WiFi.stopSmartConfig();
-
-                            BLINKER_LOG(BLINKER_F("WiFi Connected."));
-                            BLINKER_LOG(BLINKER_F("IP Address: "));
-                            BLINKER_LOG(WiFi.localIP());
-                            _isWiFiInit = true;
-                            _connectTime = 0;
-
-                            // begin();
-                            
-                            return false;
-                        }
-                        // return false;
-                    case SMART_TIMEOUT :
-                        WiFi.beginSmartConfig();
-                        _configStatus = SMART_BEGIN;
-                        BLINKER_LOG(BLINKER_F("Waiting for SmartConfig."));
-                        return false;
-                    default :
-                        return false;
-                }
-            case APCFG :
-                #if defined(BLINKER_APCONFIG)
-                switch (_configStatus)
-                {
-                    case APCFG_BEGIN :
-                        checkAPCFG();
-                        return false;
-                    case APCFG_DONE :
-                        if (WiFi.status() != WL_CONNECTED)
-                        {
-                            if (millis() - _connectTime > 15000)
-                            {
-                                BLINKER_LOG(BLINKER_F("APConfig timeout."));
-                                _configStatus = APCFG_TIMEOUT;
-                            }
-                            return false;
-                        }
-                        else if (WiFi.status() == WL_CONNECTED)
-                        {
-                            BLINKER_LOG(BLINKER_F("WiFi Connected."));
-                            BLINKER_LOG(BLINKER_F("IP Address: "));
-                            BLINKER_LOG(WiFi.localIP());
-                            _isWiFiInit = true;
-                            _connectTime = 0;
-
-                            // begin();
-                            
-                            return false;
-                        }
-                        // return false;
-                    case APCFG_TIMEOUT :
-                        softAPinit();
-                        return false;
-                    default :
-                        return false;
-                }                
-                #endif
-            default :
-                return false;
-        }
-    }
-
-    if (!_isBegin)
-    {
-        _isBegin = begin();
-        return _isBegin;
-    }
-    return true;
-}
-
-void BlinkerMQTTAUTO::commonBegin(const char* _ssid, const char* _pswd)
-{
-    _configType = COMM;
-
-    connectWiFi(_ssid, _pswd);
-
-    #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
-    #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
-    #endif
-}
-
-void BlinkerMQTTAUTO::smartconfigBegin()
-{
-    _configType = SMART;
-
-    if (!autoInit()) smartconfig();
-    else _configStatus = SMART_DONE;
-
-    #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
-    #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
-    #endif
-}
-
-void BlinkerMQTTAUTO::apconfigBegin()
-{
-    #if defined(BLINKER_APCONFIG)
-    _configType = APCFG;
-
-    if (!autoInit()) softAPinit();
-    else _configStatus = APCFG_DONE;
-
-    #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
-    #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
-    #endif
-    #endif
-}
-
-bool BlinkerMQTTAUTO::autoInit()
-{
-    WiFi.mode(WIFI_STA);
-    String _hostname = BLINKER_F("DiyArduino_");
-    _hostname += macDeviceName();
-
-    #if defined(ESP8266)
-        WiFi.hostname(_hostname.c_str());
-    #elif defined(ESP32)
-        WiFi.setHostname(_hostname.c_str());
-    #endif
-
-    WiFi.begin();
-    ::delay(500);
-
-    BLINKER_LOG(BLINKER_F("Waiting for WiFi "),
-                BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
-                BLINKER_F("s, will enter SMARTCONFIG or "),
-                BLINKER_F("APCONFIG while WiFi not connect!"));
-
-    uint8_t _times = 0;
-    while (WiFi.status() != WL_CONNECTED) {
-        ::delay(500);
-        if (_times > BLINKER_WIFI_AUTO_INIT_TIMEOUT / 500) break;
-        _times++;
-    }
-
-    if (WiFi.status() != WL_CONNECTED) return false;
-    else {
-        // BLINKER_LOG(BLINKER_F("WiFi Connected."));
-        // BLINKER_LOG(BLINKER_F("IP Address: "));
-        // BLINKER_LOG(WiFi.localIP());
-        // _isWiFiInit = true;
-
-        // begin();
-
-        return true;
-    }
-}
-
-void BlinkerMQTTAUTO::smartconfig()
-{
-    WiFi.mode(WIFI_STA);
-    String _hostname = BLINKER_F("DiyArduino_");
-    _hostname += macDeviceName();
-
-    #if defined(ESP8266)
-        WiFi.hostname(_hostname.c_str());
-    #elif defined(ESP32)
-        WiFi.setHostname(_hostname.c_str());
-    #endif
-
-    WiFi.beginSmartConfig();
-
-    _configStatus = SMART_BEGIN;
-
-    BLINKER_LOG(BLINKER_F("Waiting for SmartConfig."));
-    // while (!WiFi.smartConfigDone()) {
-    //     ::delay(500);
-    // }
-
-    // BLINKER_LOG(BLINKER_F("SmartConfig received."));
-
-    // BLINKER_LOG(BLINKER_F("Waiting for WiFi"));
-    // while (WiFi.status() != WL_CONNECTED) {
-    //     ::delay(500);
-    // }
-
-    // BLINKER_LOG(BLINKER_F("WiFi Connected."));
-
-    // BLINKER_LOG(BLINKER_F("IP Address: "));
-    // BLINKER_LOG(WiFi.localIP());
-}
-#if defined(BLINKER_APCONFIG)
-void BlinkerMQTTAUTO::softAPinit()
-{
-    // WiFiServer _apServer(80);
-    // WiFiClient _apClient;
-    IPAddress apIP(192, 168, 4, 1);
-    #if defined(ESP8266)
-        IPAddress netMsk(255, 255, 255, 0);
-    #endif
-
-    _apServer = new WiFiServer(80);
-
-    WiFi.mode(WIFI_AP);
-    String softAP_ssid = BLINKER_F("DiyArduino_");
-    softAP_ssid += macDeviceName();
-
-    #if defined(ESP8266)
-        WiFi.hostname(softAP_ssid.c_str());
-        WiFi.softAPConfig(apIP, apIP, netMsk);
-    #elif defined(ESP32)
-        WiFi.setHostname(softAP_ssid.c_str());
-        WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-    #endif
-
-    WiFi.softAP(softAP_ssid.c_str(), ("12345678"));
-    delay(100);
-
-    _apServer->begin();
-    BLINKER_LOG(BLINKER_F("AP IP address: "), WiFi.softAPIP());
-    BLINKER_LOG(BLINKER_F("HTTP _apServer started"));
-    BLINKER_LOG(BLINKER_F("URL: http://"), WiFi.softAPIP());
-
-    _configStatus = APCFG_BEGIN;
-
-    BLINKER_LOG(BLINKER_F("Wait for APConfig"));
-
-    // while(WiFi.status() != WL_CONNECTED)
-    // {
-    //     // serverClient();
-    //     _apClient = _apServer->available();
-    //     // if (_apClient.status() == CLOSED)
-    //     if (!_apClient.connected())
-    //     {
-    //         _apClient.stop();
-    //         BLINKER_LOG(BLINKER_F("Connection closed on _apClient"));
-    //     }
-    //     else
-    //     {
-    //         if (_apClient.available())
-    //         {
-    //             String data = _apClient.readStringUntil('\r');
-
-    //             // data = data.substring(4, data.length() - 9);
-    //             _apClient.flush();
-
-    //             BLINKER_LOG(BLINKER_F("clientData: "), data);
-
-    //             if (STRING_contains_string(data, "ssid") && 
-    //                 STRING_contains_string(data, "pswd"))
-    //             {
-    //                 String msg = BLINKER_F("{\"hello\":\"world\"}");
-
-    //                 String s= BLINKER_F("HTTP/1.1 200 OK\r\n");
-    //                 s += BLINKER_F("Content-Type: application/json;");
-    //                 s += BLINKER_F("charset=utf-8\r\n");
-    //                 s += BLINKER_F("Content-Length: ");
-    //                 s += String(msg.length());
-    //                 s += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
-    //                 s += msg;
-    //                 s += BLINKER_F("\r\n");
-
-    //                 _apClient.print(s);
-
-    //                 _apClient.stop();
-
-    //                 parseUrl(data);
-    //             }
-    //         }
-    //     }
-    //     ::delay(10);
-    // }
-}
-
-void BlinkerMQTTAUTO::checkAPCFG()
-{
-    if(WiFi.status() != WL_CONNECTED)
-    {
-        // serverClient();
-        _apClient = _apServer->available();
-        // if (_apClient.status() == CLOSED)
-        if (!_apClient.connected())
-        {
-            _apClient.stop();
-            BLINKER_LOG(BLINKER_F("Connection closed on _apClient"));
-        }
-        else
-        {
-            if (_apClient.available())
-            {
-                String data = _apClient.readStringUntil('\r');
-
-                // data = data.substring(4, data.length() - 9);
-                _apClient.flush();
-
-                BLINKER_LOG(BLINKER_F("clientData: "), data);
-
-                if (STRING_contains_string(data, "ssid") && \
-                    STRING_contains_string(data, "pswd"))
-                {
-                    String msg = BLINKER_F("{\"hello\":\"world\"}");
-
-                    String s= BLINKER_F("HTTP/1.1 200 OK\r\n");
-                    s += BLINKER_F("Content-Type: application/json;");
-                    s += BLINKER_F("charset=utf-8\r\n");
-                    s += BLINKER_F("Content-Length: ");
-                    s += String(msg.length());
-                    s += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
-                    s += msg;
-                    s += BLINKER_F("\r\n");
-
-                    _apClient.print(s);
-
-                    _apClient.stop();
-
-                    parseUrl(data);
-                }
-            }
-        }
-        ::delay(10);
-    }
-}
-
-// void BlinkerMQTTAUTO::serverClient()
-// {
-//     if (!_apClient)
-//     {
-//         _apClient = _apServer->available();
-//     }
-//     else
-//     {
-//         // if (_apClient.status() == CLOSED)
-//         if (!_apClient.connected())
-//         {
-//             _apClient.stop();
-//             BLINKER_LOG(BLINKER_F("Connection closed on _apClient"));
-//         }
-//         else
-//         {
-//             if (_apClient.available())
-//             {
-//                 String data = _apClient.readStringUntil('\r');
-
-//                 // data = data.substring(4, data.length() - 9);
-//                 _apClient.flush();
-
-//                 BLINKER_LOG(BLINKER_F("clientData: "), data);
-
-//                 if (STRING_contains_string(data, "ssid") &&
-//                     STRING_contains_string(data, "pswd"))
-//                 {
-//                     String msg = BLINKER_F("{\"hello\":\"world\"}");
-
-//                     String s= BLINKER_F("HTTP/1.1 200 OK\r\n");
-//                     s += BLINKER_F("Content-Type: application/json;");
-//                     s += BLINKER_F("charset=utf-8\r\n");
-//                     s += BLINKER_F("Content-Length: ");
-//                     s += String(msg.length());
-//                     s += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
-//                     s += msg;
-//                     s += BLINKER_F("\r\n");
-
-//                     _apClient.print(s);
-
-//                     _apClient.stop();
-
-//                     parseUrl(data);
-//                 }
-//             }
-//         }
-//     }
-// }
-
-bool BlinkerMQTTAUTO::parseUrl(String data)
-{
-    BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& wifi_data = jsonBuffer.parseObject(data);
-
-    if (!wifi_data.success()) {
-        return false;
-    }
-
-    String _ssid = wifi_data["ssid"];
-    String _pswd = wifi_data["pswd"];
-
-    BLINKER_LOG(BLINKER_F("ssid: "), _ssid);
-    BLINKER_LOG(BLINKER_F("pswd: "), _pswd);
-
-    free(_apServer);
-
-    connectWiFi(_ssid, _pswd);
-
-    _configStatus = APCFG_DONE;
-    _connectTime = millis();
-    return true;
-}
-#endif
-void BlinkerMQTTAUTO::connectWiFi(String _ssid, String _pswd)
-{
-    connectWiFi(_ssid.c_str(), _pswd.c_str());
-}
-
-void BlinkerMQTTAUTO::connectWiFi(const char* _ssid, const char* _pswd)
-{
-    uint32_t _connectTime = millis();
-
-    BLINKER_LOG(BLINKER_F("Connecting to "), _ssid);
-
-    WiFi.mode(WIFI_STA);
-    String _hostname = BLINKER_F("DiyArduinoMQTT_");
-    _hostname += macDeviceName();
-
-    #if defined(ESP8266)
-        WiFi.hostname(_hostname.c_str());
-    #elif defined(ESP32)
-        WiFi.setHostname(_hostname.c_str());
-    #endif
-
-    if (_pswd && strlen(_pswd)) {
-        WiFi.begin(_ssid, _pswd);
-    }
-    else {
-        WiFi.begin(_ssid);
-    }
-
-    // while (WiFi.status() != WL_CONNECTED) {
-    //     ::delay(50);
-
-    //     if (millis() - _connectTime > BLINKER_CONNECT_TIMEOUT_MS && WiFi.status() != WL_CONNECTED) {
-    //         _connectTime = millis();
-    //         BLINKER_LOG(BLINKER_F("WiFi connect timeout, please check ssid and pswd!"));
-    //         BLINKER_LOG(BLINKER_F("Retring WiFi connect again!"));
-    //     }
-    // }
-    // BLINKER_LOG(BLINKER_F("Connected"));
-
-    // IPAddress myip = WiFi.localIP();
-    // BLINKER_LOG(BLINKER_F("Your IP is: "), myip);
-
-    // _isWiFiInit = true;
 }
 
 #endif

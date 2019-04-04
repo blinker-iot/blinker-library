@@ -35,7 +35,7 @@
  * 
  * *****************************************************************/
 
-#define BLINKER_AUTO_WIFI
+#define BLINKER_WIFI_AUTO
 
 #include <Blinker.h>
 

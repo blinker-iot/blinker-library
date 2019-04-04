@@ -530,7 +530,7 @@
     #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
         defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO)
         #define BLINKER_MAX_BRIDGE_SIZE             4
-    #elif defined(BLINKER_PRO)
+    #elif defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
         #define BLINKER_MAX_BRIDGE_SIZE             16
     #endif
 #endif
@@ -1485,7 +1485,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202) || \
     defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
-    defined(BLINKER_PRO_AIR202)
+    defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2

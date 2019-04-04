@@ -269,13 +269,6 @@ int BlinkerPRO::connect()
 
     BLINKER_LOG_FreeHeap_ALL();
 
-    // if (ESP.getFreeHeap() < 25000) 
-    // {
-    //     client_mqtt.stop();
-    //     this->latestTime = millis();
-    //     return false;
-    // }
-
     if ((ret = mqtt_PRO->connect()) != 0)
     {
         BLINKER_LOG(mqtt_PRO->connectErrorString(ret));
@@ -797,7 +790,7 @@ int BlinkerPRO::bPrint(char * name, const String & data)
 
         // if (! iotPub.publish(payload.c_str())) {
 
-        String bPubTopic = BLINKER_F("");
+        // String bPubTopic = BLINKER_F("");
 
         // if (mqtt_broker == BLINKER_MQTT_BORKER_ONENET)
         // {

@@ -312,13 +312,17 @@
 
     BlinkerLUATPRO  Blinker;
 
-#elif defined(BLINKER_AUTO_WIFI)
+#elif defined(BLINKER_WIFI_AUTO)
+
+    #define BLINKER_MQTT_AUTO
 
     #if !defined(BLINKER_ESP_SMARTCONFIG) && !defined(BLINKER_APCONFIG)
         #define BLINKER_ESP_SMARTCONFIG
     #endif
 
-    #include
+    #include "BlinkerESPMQTTAUTO.h"
+
+    BlinkerESPMQTTAUTO  Blinker;
     
 #else
 
