@@ -29,22 +29,25 @@ class BlinkerStream
             defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
             defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
-            defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
             virtual int aliPrint(const String & data) = 0;
             virtual int duerPrint(const String & data) = 0; 
             // virtual void ping() = 0;
+            #if !defined(BLINKER_AT_MQTT) && !defined(BLINKER_MQTT_AT)
             virtual int bPrint(char * name, const String & data) = 0;
             virtual int autoPrint(uint32_t id) = 0;
             virtual void sharers(const String & data);
             virtual int aligenieAvail() = 0;
             virtual int duerAvail() = 0;
             virtual int needFreshShare() = 0;
+            #endif
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_MQTT_AUTO)
             virtual char * deviceName() = 0;
             virtual char * authKey() = 0;
             virtual int init() = 0;           
@@ -74,10 +77,14 @@ class BlinkerStream
             virtual void connectWiFi(const char* _ssid, const char* _pswd) = 0;
         #endif
 
-        #if defined(BLINKER_PRO)
+        #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
             virtual int deviceRegister() = 0;
             virtual int authCheck() = 0;
+            #if defined(BLINKER_PRO)
             virtual void begin(const char* _deviceType) = 0;
+            #elif defined(BLINKER_MQTT_AUTO)
+            virtual void begin(const char* auth, const char* type) = 0;
+            #endif
         #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
             virtual int deviceRegister() = 0;

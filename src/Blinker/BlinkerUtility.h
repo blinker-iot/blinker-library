@@ -21,7 +21,7 @@
 
 #define FIND_KEY_VALUE_FAILED               -1000
 
-#if defined(BLINKER_ARDUINOJSON) || defined(BLINKER_PRO)
+#if defined(BLINKER_ARDUINOJSON) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
     #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 
@@ -38,7 +38,7 @@ extern "C" {
     typedef void (*blinker_callback_with_joy_arg_t)(uint8_t x_data, uint8_t y_data);
     typedef String (*blinker_callback_return_string_t)(void);
     #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
-        defined(BLINKER_PRO_AIR202)
+        defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
         typedef bool (*blinker_callback_with_json_arg_t)(const JsonObject & data);
     #endif
     typedef int (*blinker_callback_return_int_t)(void);
@@ -56,7 +56,8 @@ extern "C" {
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
     defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
-    defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+    defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+    defined(BLINKER_MQTT_AUTO)
 class BlinkerSharer
 {
     public :
