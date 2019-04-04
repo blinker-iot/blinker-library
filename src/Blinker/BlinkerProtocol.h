@@ -61,7 +61,7 @@ class BlinkerProtocol
             defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
             defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
-            defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
             // void ping() { if (isInit) conn->ping(); }
@@ -74,12 +74,17 @@ class BlinkerProtocol
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_MQTT_AUTO)
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }
             int mConnected()    { return isInit ? conn->mConnected() : false; }
             void freshAlive() { if (isInit) conn->freshAlive(); }
+        #endif
+
+        #if defined(BLINKER_MQTT_AUTO)
+            bool checkInit()    { return isInit ? conn->checkInit() : false;}
         #endif
 
         #if defined(BLINKER_PRO)
@@ -139,7 +144,8 @@ class BlinkerProtocol
         int checkAvail();
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_MQTT_AUTO)
             bool checkAliAvail()    { return conn->aligenieAvail(); }
             bool checkDuerAvail()   { return conn->duerAvail(); }
         #endif

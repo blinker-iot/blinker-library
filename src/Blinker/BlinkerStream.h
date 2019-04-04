@@ -29,7 +29,7 @@ class BlinkerStream
             defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
             defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
-            defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
             virtual int aliPrint(const String & data) = 0;
             virtual int duerPrint(const String & data) = 0; 
             // virtual void ping() = 0;
@@ -44,12 +44,17 @@ class BlinkerStream
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_MQTT_AUTO)
             virtual char * deviceName() = 0;
             virtual char * authKey() = 0;
             virtual int init() = 0;           
             virtual int mConnected() = 0;
             virtual void freshAlive() = 0;
+        #endif
+
+        #if defined(BLINKER_MQTT_AUTO)
+            virtual bool checkInit() = 0;
         #endif
 
         // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)

@@ -311,6 +311,14 @@
     #include "BlinkerLUATPRO.h"
 
     BlinkerLUATPRO  Blinker;
+
+#elif defined(BLINKER_AUTO_WIFI)
+
+    #if !defined(BLINKER_ESP_SMARTCONFIG) && !defined(BLINKER_APCONFIG)
+        #define BLINKER_ESP_SMARTCONFIG
+    #endif
+
+    #include
     
 #else
 
