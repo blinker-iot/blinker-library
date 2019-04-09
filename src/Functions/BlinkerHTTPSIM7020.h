@@ -1075,7 +1075,14 @@ class BlinkerHTTPSIM7020
                 String _data = stream->readStringUntil('\n');
                 BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
                 // _data[strlen(_data) - 1] = '\0';
-                if (isFresh) free(streamData);
+                if (isFresh) 
+                {
+                    free(streamData);
+                    isFresh = false;
+                }
+
+                if (_data.length() <= 1) return false;
+                
                 streamData = (char*)malloc((_data.length() + 1)*sizeof(char));
                 strcpy(streamData, _data.c_str());
                 if (_data.length() > 0) streamData[_data.length() - 1] = '\0';

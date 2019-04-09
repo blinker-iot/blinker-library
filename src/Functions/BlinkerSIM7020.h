@@ -542,12 +542,13 @@ class BlinkerSIM7020
                 if (listenFunc) listenFunc();
             }
 
-            char _data[BLINKER_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
-            memset(_data, '\0', BLINKER_SIM7020_DATA_BUFFER_SIZE);
+            // char _data[BLINKER_SIM7020_DATA_BUFFER_SIZE];// = { '\0' };
+            // memset(_data, '\0', BLINKER_SIM7020_DATA_BUFFER_SIZE);
 
             if (stream->available())
             {
-                strcpy(_data, stream->readStringUntil('\n').c_str());
+                // strcpy(_data, stream->readStringUntil('\n').c_str());
+                String _data = stream->readStringUntil('\n');
                 BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
                 // _data[strlen(_data) - 1] = '\0';
                 if (isFresh) 
@@ -556,11 +557,11 @@ class BlinkerSIM7020
                     isFresh = false;
                 }
 
-                if (strlen(_data) <= 1) return false;
+                if (_data.length() <= 1) return false;
                 
-                streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
-                strcpy(streamData, _data);
-                if (strlen(_data) > 0) streamData[strlen(_data) - 1] = '\0';
+                streamData = (char*)malloc((_data.length() + 1)*sizeof(char));
+                strcpy(streamData, _data.c_str());
+                if (_data.length() > 0) streamData[_data.length() - 1] = '\0';
                 isFresh = true;
                 return true;
 //                 // streamData = "";
