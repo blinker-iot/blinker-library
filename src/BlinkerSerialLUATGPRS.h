@@ -1,6 +1,10 @@
 #ifndef BLINKER_SERIAL_LUAT_GPRS_H
 #define BLINKER_SERIAL_LUAT_GPRS_H
 
+#ifndef BLINKER_ARDUINOJSON
+    #define BLINKER_ARDUINOJSON
+#endif
+
 #include "Adapters/BlinkerSerialAIR202.h"
 #include "Blinker/BlinkerApi.h"
 

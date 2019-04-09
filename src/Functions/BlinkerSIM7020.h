@@ -549,10 +549,18 @@ class BlinkerSIM7020
             {
                 strcpy(_data, stream->readStringUntil('\n').c_str());
                 BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
-                _data[strlen(_data) - 1] = '\0';
-                if (isFresh) free(streamData);
+                // _data[strlen(_data) - 1] = '\0';
+                if (isFresh) 
+                {
+                    free(streamData);
+                    isFresh = false;
+                }
+
+                if (strlen(_data) <= 1) return false;
+                
                 streamData = (char*)malloc((strlen(_data) + 1)*sizeof(char));
                 strcpy(streamData, _data);
+                if (strlen(_data) > 0) streamData[strlen(_data) - 1] = '\0';
                 isFresh = true;
                 return true;
 //                 // streamData = "";
