@@ -108,7 +108,8 @@
             #define BLINKER_MAX_SEND_SIZE       512
         #endif
     #else
-        #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+        #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202)
             #define BLINKER_MAX_SEND_SIZE       512
         #else
             #define BLINKER_MAX_SEND_SIZE       128
@@ -126,7 +127,8 @@
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
         #endif
     #else
-        #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+        #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202)
             #define BLINKER_MAX_SEND_BUFFER_SIZE       512
         #else
             #define BLINKER_MAX_SEND_BUFFER_SIZE       128

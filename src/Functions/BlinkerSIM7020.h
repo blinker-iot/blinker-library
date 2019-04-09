@@ -310,7 +310,7 @@ class BlinkerSIM7020
 
                     if (_masterAT->getState() != AT_M_NONE &&
                         _masterAT->reqName() == BLINKER_CMD_CGREG &&
-                        _masterAT->getParam(1).toInt() == 1)
+                        _masterAT->getParam(0).toInt() == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("sim7020_cgact_success"));
                         pdn_status = sim7020_cgact_success;
