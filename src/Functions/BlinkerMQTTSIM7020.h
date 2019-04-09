@@ -319,6 +319,7 @@ int BlinkerMQTTSIM7020::readSubscription(uint16_t time_out)
             if (streamAvailable())
             {
                 BLINKER_LOG_ALL(BLINKER_F("readSubscription"));
+                BLINKER_LOG_FreeHeap_ALL();
 
                 _masterAT = new BlinkerMasterAT();
                 _masterAT->update(STRING_format(streamData));
@@ -407,8 +408,19 @@ bool BlinkerMQTTSIM7020::streamAvailable()
         // strcpy(_data, stream->readStringUntil('\n').c_str());
         String _data = stream->readStringUntil('\n');
         BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
+        BLINKER_LOG_ALL("len: ", _data.length());
         // _data[strlen(_data) - 1] = '\0';
-        if (isFresh) free(streamData);
+
+        // stream->flush();
+        
+        if (isFresh) 
+        {
+            free(streamData);
+            isFresh = false;
+        }
+
+        if (_data.length() <= 1) return false;
+        
         streamData = (char*)malloc((_data.length() + 1)*sizeof(char));
         strcpy(streamData, _data.c_str());
         if (_data.length() > 0) streamData[_data.length() - 1] = '\0';
