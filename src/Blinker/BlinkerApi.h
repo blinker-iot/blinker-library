@@ -466,7 +466,7 @@ class BlinkerApi : public BlinkerProtocol
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
             void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60)
             { _dataStorageFunc = newFunction; _autoStorageTime = _time; _autoDataTime = millis(); }
         #endif
@@ -669,7 +669,8 @@ class BlinkerApi : public BlinkerProtocol
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_MQTT_AT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
-            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
+            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
+            defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
             blinker_callback_with_string_uint8_arg_t _AliGeniePowerStateFunc_m = NULL;
             blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
