@@ -1569,6 +1569,9 @@ class BlinkerApi : public BlinkerProtocol
             String blinkerServer(uint8_t _type, const String & msg, bool state = false);
 
             #endif
+
+            uint32_t ntpFreshTime = 0;
+            time_t ntpGetTime = 0;
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -2867,15 +2870,6 @@ void BlinkerApi::run()
                 if (autoPull()) _isAutoInit = true;
             }
         }
-
-        if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * BLINKER_MAX_DATA_COUNT * 1000)
-        {
-            if (data_dataCount && _isInit)// && ESP.getFreeHeap() > 4000)
-            {
-                dataUpdate();
-                _autoUpdateTime = millis();
-            }            
-        }
         #endif
 
         if (_dataStorageFunc)
@@ -2885,6 +2879,14 @@ void BlinkerApi::run()
                 _dataStorageFunc();
                 _autoDataTime += _autoStorageTime * 1000;
             }
+        }
+
+        if (millis() - _autoUpdateTime >= _autoStorageTime * BLINKER_MAX_DATA_COUNT * 1000 / 2)
+        {
+            if (data_dataCount && _isInit)// && ESP.getFreeHeap() > 4000)
+            {
+                if (dataUpdate()) _autoUpdateTime = millis();
+            }            
         }
     #endif
 
@@ -3415,27 +3417,49 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
+
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                ntpFreshTime = millis();
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+            }            
 
             struct tm timeinfo;
 
             #if defined(ESP8266) || defined(__AVR__)
-                gmtime_r(&now_ntp, &timeinfo);
+                gmtime_r(&ntpGetTime, &timeinfo);
             #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
+                localtime_r(&ntpGetTime, &timeinfo);
             #endif
 
             return timeinfo.tm_sec;
@@ -3446,27 +3470,50 @@ float BlinkerApi::gps(b_gps_t axis)
 
     int8_t BlinkerApi::minute()
     {
-        if (_isNTPInit) {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+        if (_isNTPInit)
+        {
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
+
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                ntpFreshTime = millis();
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+            }
 
             struct tm timeinfo;
             #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
+                gmtime_r(&ntpGetTime, &timeinfo);
             #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
+                localtime_r(&ntpGetTime, &timeinfo);
             #endif
 
             return timeinfo.tm_min;
@@ -3479,27 +3526,49 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
+
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                ntpFreshTime = millis();
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+            }
 
             struct tm timeinfo;
 
             #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
+                gmtime_r(&ntpGetTime, &timeinfo);
             #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
+                localtime_r(&ntpGetTime, &timeinfo);
             #endif
 
             return timeinfo.tm_hour;
@@ -3512,27 +3581,49 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
+
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                ntpFreshTime = millis();
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+            }
 
             struct tm timeinfo;
 
             #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
+                gmtime_r(&ntpGetTime, &timeinfo);
             #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
+                localtime_r(&ntpGetTime, &timeinfo);
             #endif
 
             return timeinfo.tm_mday;
@@ -3545,27 +3636,49 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
+
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                ntpFreshTime = millis();
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+            }
 
             struct tm timeinfo;
 
             #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
+                gmtime_r(&ntpGetTime, &timeinfo);
             #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
+                localtime_r(&ntpGetTime, &timeinfo);
             #endif
 
             return timeinfo.tm_wday;
@@ -3578,27 +3691,49 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
+
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                ntpFreshTime = millis();
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+            }       
 
             struct tm timeinfo;
 
             #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
+                gmtime_r(&ntpGetTime, &timeinfo);
             #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
+                localtime_r(&ntpGetTime, &timeinfo);
             #endif
 
             return timeinfo.tm_mon + 1;
@@ -3611,27 +3746,49 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
+
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                ntpFreshTime = millis();
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+            }           
 
             struct tm timeinfo;
 
             #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
+                gmtime_r(&ntpGetTime, &timeinfo);
             #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
+                localtime_r(&ntpGetTime, &timeinfo);
             #endif
 
             return timeinfo.tm_year + 1900;
@@ -3644,27 +3801,49 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
+
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                ntpFreshTime = millis();
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+            }    
 
             struct tm timeinfo;
 
             #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
+                gmtime_r(&ntpGetTime, &timeinfo);
             #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
+                localtime_r(&ntpGetTime, &timeinfo);
             #endif
 
             return timeinfo.tm_yday + 1;
@@ -3677,30 +3856,55 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
 
-            struct tm timeinfo;
+                struct tm timeinfo;
 
-            #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
-            #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
-            #endif
+                #if defined(ESP8266)
+                    gmtime_r(&now_ntp, &timeinfo);
+                #elif defined(ESP32)
+                    localtime_r(&now_ntp, &timeinfo);
+                #endif
 
-            return now_ntp - (int)_timezone*60*60;
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                
+                ntpFreshTime = millis();
+
+                return ntpGetTime - (int)_timezone*3600;
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+                return ntpGetTime - (int)_timezone*3600;
+            }
+            
         }
         return millis();
     }
@@ -3710,27 +3914,49 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-                time_t now_ntp = ::time(nullptr);
-            #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-                BlinkerSIM7020 BLINKER_SIM7020;
-                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
-                time_t now_ntp = BLINKER_SIM7020._ntpTime;
-            #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-                BlinkerAIR202 BLINKER_AIR202;
-                BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
-                if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
-                time_t now_ntp = BLINKER_AIR202._ntpTime;
-            #endif
+            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    time_t now_ntp = ::time(nullptr);
+                #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+                    BlinkerSIM7020 BLINKER_SIM7020;
+                    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_SIM7020._ntpTime;
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
+                    time_t now_ntp = BLINKER_AIR202._ntpTime;
+                #endif
+
+                if (now_ntp > ntpGetTime)
+                {
+                    ntpGetTime = now_ntp;// - (int)_timezone*3600;
+                }
+                else
+                {
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                }
+                ntpFreshTime = millis();
+            }
+            else
+            {
+                #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    ntpGetTime = ::time(nullptr);
+                #else
+                    ntpGetTime += (millis() - ntpFreshTime) / 1000;
+                #endif
+            }      
 
             struct tm timeinfo;
 
             #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
+                gmtime_r(&ntpGetTime, &timeinfo);
             #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
+                localtime_r(&ntpGetTime, &timeinfo);
             #endif
 
             return timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;

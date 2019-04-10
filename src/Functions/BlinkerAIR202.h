@@ -228,14 +228,14 @@ class BlinkerAIR202
 
                         struct tm timeinfo;
 
-                        timeinfo.tm_year = _masterAT->getParam(3).substring(0, 4).toInt() - 1900;
+                        timeinfo.tm_year = _masterAT->getParam(3).substring(0, 4).toInt() - 1870;
                         timeinfo.tm_mon  = _masterAT->getParam(3).substring(5, 7).toInt() - 1;
-                        timeinfo.tm_mday = _masterAT->getParam(3).substring(8, 10).toInt();
+                        timeinfo.tm_mday = _masterAT->getParam(3).substring(8, 10).toInt() - 1;
 
                         BLINKER_LOG_ALL(BLINKER_F("year: "), timeinfo.tm_year);
                         BLINKER_LOG_ALL(BLINKER_F("mon: "), timeinfo.tm_mon);
                         BLINKER_LOG_ALL(BLINKER_F("mday: "), timeinfo.tm_mday);
-
+                        
                         timeinfo.tm_hour = _masterAT->getParam(4).substring(0, 2).toInt();
                         timeinfo.tm_min  = _masterAT->getParam(4).substring(3, 5).toInt();
                         timeinfo.tm_sec  = _masterAT->getParam(4).substring(6, 8).toInt();
@@ -244,7 +244,8 @@ class BlinkerAIR202
                         BLINKER_LOG_ALL(BLINKER_F("mins: "), timeinfo.tm_min);
                         BLINKER_LOG_ALL(BLINKER_F("secs: "), timeinfo.tm_sec);
 
-                        _ntpTime = mktime(&timeinfo);// - _timezone * 3600;
+                        _ntpTime = mktime(&timeinfo);
+                        // _ntpTime -= _timezone * 3600;
 
                         BLINKER_LOG_ALL(BLINKER_F("_ntpTime: "), _ntpTime);
 
