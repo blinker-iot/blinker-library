@@ -2855,7 +2855,10 @@ void BlinkerApi::run()
 
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
         defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+        defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
         defined(BLINKER_MQTT_AUTO)
+
+        #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
         if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
         {
             if (autoPull()) _isAutoInit = true;
@@ -2873,6 +2876,7 @@ void BlinkerApi::run()
                 _autoUpdateTime = millis();
             }            
         }
+        #endif
 
         if (_dataStorageFunc)
         {
