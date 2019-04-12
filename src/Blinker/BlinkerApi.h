@@ -467,8 +467,15 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
-            void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60)
-            { _dataStorageFunc = newFunction; _autoStorageTime = _time; _autoDataTime = millis(); }
+            void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = 2)
+            {
+                _dataStorageFunc = newFunction;
+                if (_time < 60) _time = 60;
+                _autoStorageTime = _time;
+                _autoDataTime = millis();
+                if (d_times > BLINKER_MAX_DATA_COUNT || d_times == 0) d_times = 2;
+                _dataTimes = d_times;
+            }
         #endif
         void attachData(blinker_callback_with_string_arg_t newFunction)
         { _availableFunc = newFunction; }
@@ -697,6 +704,7 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_t                  _dataStorageFunc = NULL;
             uint32_t                            _autoStorageTime = 60;
             uint32_t                            _autoDataTime = 0;
+            uint8_t                             _dataTimes = 2;
         #endif
 
         #if defined(BLINKER_GATEWAY)
@@ -2881,7 +2889,7 @@ void BlinkerApi::run()
             }
         }
 
-        if (millis() - _autoUpdateTime >= _autoStorageTime * BLINKER_MAX_DATA_COUNT * 1000 / 2)
+        if (millis() - _autoUpdateTime >= _autoStorageTime * _dataTimes * 1000)
         {
             if (data_dataCount && _isInit)// && ESP.getFreeHeap() > 4000)
             {
