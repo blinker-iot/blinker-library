@@ -354,7 +354,7 @@
 
 #define BLINKER_CMD_ICON                "ico"
 
-#define BLINKER_CMD_COLOR               "col"
+#define BLINKER_CMD_COLOR               "clr"
 
 #define BLINKER_CMD_TITLE               "tit"
 
