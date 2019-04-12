@@ -212,6 +212,14 @@
         BlinkerSerialESPMQTT      Blinker;  
     #endif
 
+// #elif defined(BLINKER_WIFI_LOWPOWER)
+
+//     #if defined(ESP8266) || defined(ESP32)
+//         #include "BlinkerESPMQTTLP.h"
+
+//         BlinkerESPMQTTLP    Blinker;
+//     #endif
+
 #elif defined(BLINKER_PRO)
 
     #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) || \
