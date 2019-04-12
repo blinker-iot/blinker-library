@@ -466,7 +466,8 @@ class BlinkerApi : public BlinkerProtocol
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
+            defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
+            defined(BLINKER_MQTT_AUTO)
             void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = 2)
             {
                 _dataStorageFunc = newFunction;
@@ -476,7 +477,15 @@ class BlinkerApi : public BlinkerProtocol
                 if (d_times > BLINKER_MAX_DATA_COUNT || d_times == 0) d_times = 2;
                 _dataTimes = d_times;
             }
+
+            #if defined(BLINKER_LOWPOWER)
+                void attachLowPower(blinker_callback_t newFunction, uint32_t _time)
+                {
+                    _LowPowerFunc = newFunction;
+                }
+            #endif
         #endif
+
         void attachData(blinker_callback_with_string_arg_t newFunction)
         { _availableFunc = newFunction; }
         void attachHeartbeat(blinker_callback_t newFunction)
@@ -705,6 +714,10 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t                            _autoStorageTime = 60;
             uint32_t                            _autoDataTime = 0;
             uint8_t                             _dataTimes = 2;
+
+            #if defined(BLINKER_LOWPOWER)
+            blinker_callback_t                  _LowPowerFunc = NULL;
+            #endif
         #endif
 
         #if defined(BLINKER_GATEWAY)
