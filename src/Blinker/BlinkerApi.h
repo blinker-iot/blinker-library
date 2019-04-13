@@ -468,6 +468,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_MQTT_AUTO)
+
+            // #if !defined(BLINKER_AT_MQTT)
             void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = 2)
             {
                 _dataStorageFunc = newFunction;
@@ -477,6 +479,7 @@ class BlinkerApi : public BlinkerProtocol
                 if (d_times > BLINKER_MAX_DATA_COUNT || d_times == 0) d_times = 2;
                 _dataTimes = d_times;
             }
+            // #endif
 
             #if defined(BLINKER_LOWPOWER)
                 void attachLowPower(blinker_callback_t newFunction, uint32_t _time)
@@ -682,7 +685,7 @@ class BlinkerApi : public BlinkerProtocol
             BlinkerStatus_t _nbiotStatus = NBIOT_DEV_POWER_CHECK;
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) ||\
             defined(BLINKER_MQTT_AT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
@@ -710,10 +713,12 @@ class BlinkerApi : public BlinkerProtocol
             // blinker_callback_with_int32_arg_t   _DuerOSSetRelativeColorTemperature = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSQueryFunc = NULL;
 
+            // #if !defined(BLINKER_AT_MQTT)
             blinker_callback_t                  _dataStorageFunc = NULL;
             uint32_t                            _autoStorageTime = 60;
             uint32_t                            _autoDataTime = 0;
             uint8_t                             _dataTimes = 2;
+            // #endif
 
             #if defined(BLINKER_LOWPOWER)
             blinker_callback_t                  _LowPowerFunc = NULL;
@@ -2893,6 +2898,7 @@ void BlinkerApi::run()
         }
         #endif
 
+        // #if !defined(BLINKER_AT_MQTT)
         if (_dataStorageFunc)
         {
             if (millis() - _autoDataTime >= _autoStorageTime * 1000)
@@ -2909,6 +2915,7 @@ void BlinkerApi::run()
                 if (dataUpdate()) _autoUpdateTime = millis();
             }            
         }
+        // #endif
     #endif
 
     BProto::checkAutoFormat();

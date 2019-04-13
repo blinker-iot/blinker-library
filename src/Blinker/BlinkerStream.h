@@ -33,14 +33,14 @@ class BlinkerStream
             virtual int aliPrint(const String & data) = 0;
             virtual int duerPrint(const String & data) = 0; 
             // virtual void ping() = 0;
-            #if !defined(BLINKER_AT_MQTT) && !defined(BLINKER_MQTT_AT)
+            // #if !defined(BLINKER_AT_MQTT) && !defined(BLINKER_MQTT_AT)
             virtual int bPrint(char * name, const String & data) = 0;
             virtual int autoPrint(uint32_t id) = 0;
+            // #endif
             virtual void sharers(const String & data);
             virtual int aligenieAvail() = 0;
             virtual int duerAvail() = 0;
             virtual int needFreshShare() = 0;
-            #endif
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
