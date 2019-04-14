@@ -297,14 +297,14 @@ class BlinkerApi : public BlinkerProtocol
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-            void loadTimer();
-            void deleteTimer();
-            void deleteCountdown();
-            void deleteLoop();
-            void deleteTiming();
-            bool countdownState()   { return _cdState; }
-            bool loopState()        { return _lpState; }
-            bool timingState()      { return taskCount ? true : false; }
+                void loadTimer();
+                void deleteTimer();
+                void deleteCountdown();
+                void deleteLoop();
+                void deleteTiming();
+                bool countdownState()   { return _cdState; }
+                bool loopState()        { return _lpState; }
+                bool timingState()      { return taskCount ? true : false; }
             #endif
             
             template<typename T>
@@ -323,33 +323,40 @@ class BlinkerApi : public BlinkerProtocol
             // bool bridge(char _name[]);
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-            bool autoPull();
-            void autoInit()         { autoStart(); }
-            void autoInput(const String & key, const String & state);
-            void autoInput(const String & key, float data);
-            void autoRun();
+                bool autoPull();
+                void autoInit()         { autoStart(); }
+                void autoInput(const String & key, const String & state);
+                void autoInput(const String & key, float data);
+                void autoRun();
 
-            void freshAttachBridge(char _key[], blinker_callback_with_string_arg_t _func);
-            uint8_t attachBridge(char _key[], blinker_callback_with_string_arg_t _func);
-            char * bridgeKey(uint8_t num);
-            char * bridgeName(uint8_t num);
-            void bridgeInit();
+                void freshAttachBridge(char _key[], blinker_callback_with_string_arg_t _func);
+                uint8_t attachBridge(char _key[], blinker_callback_with_string_arg_t _func);
+                char * bridgeKey(uint8_t num);
+                char * bridgeName(uint8_t num);
+                void bridgeInit();
 
-            void bridgePrint(char * bName, const String & data);
+                void bridgePrint(char * bName, const String & data);
             #endif
             void aligeniePrint(String & _msg);
             void duerPrint(String & _msg);
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-            void loadOTA();
-            void ota();
-            String checkOTA();
-            bool updateOTAStatus(int8_t status, const String & msg);
-            void otaStatus(int8_t status, const String & msg);
+                void loadOTA();
+                void ota();
+                String checkOTA();
+                bool updateOTAStatus(int8_t status, const String & msg);
+                void otaStatus(int8_t status, const String & msg);
             #endif
 
             String freshSharers(); // NBIOT TODO
+
+            #if defined(BLINKER_LOWPOWER)
+                int32_t comFreqGet();
+                bool comFreqUpdate();
+                String comDataGet();
+                bool comDateUpdate();
+            #endif
 
         #endif
 
@@ -485,6 +492,7 @@ class BlinkerApi : public BlinkerProtocol
                 void attachLowPower(blinker_callback_t newFunction, uint32_t _time)
                 {
                     _LowPowerFunc = newFunction;
+                    _LowPowerFreq = _time;
                 }
             #endif
         #endif
@@ -722,6 +730,8 @@ class BlinkerApi : public BlinkerProtocol
 
             #if defined(BLINKER_LOWPOWER)
             blinker_callback_t                  _LowPowerFunc = NULL;
+            uint32_t                            _LowPowerFreq = 10;
+            char*                               _LowPowerData;
             #endif
         #endif
 
@@ -889,6 +899,14 @@ class BlinkerApi : public BlinkerProtocol
                         break;
                     case BLINKER_CMD_FRESH_SHARERS_NUMBER :
                         break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                        break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                        break;
                     default :
                         return BLINKER_CMD_FALSE;
                 }
@@ -1047,6 +1065,38 @@ class BlinkerApi : public BlinkerProtocol
 
                         httpCode = http.GET();
                         break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/lowpower/data/update");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
                     default :
                         return BLINKER_CMD_FALSE;
                 }
@@ -1082,6 +1132,8 @@ class BlinkerApi : public BlinkerProtocol
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
                             else if (_type == BLINKER_CMD_OTA_NUMBER || _type == BLINKER_CMD_FRESH_SHARERS_NUMBER)
                                 payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
+                            else if (_type == BLINKER_CMD_LOWPOWER_FREQ_GET_NUM)
+                                payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_FREQ].as<String>();
                             else
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
                         }
@@ -1134,6 +1186,14 @@ class BlinkerApi : public BlinkerProtocol
                         case BLINKER_CMD_OTA_STATUS_NUMBER :
                             break;
                         case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                            break;
+                        case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                            break;
+                        case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                            break;
+                        case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                            break;
+                        case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
                             break;
                         default :
                             return BLINKER_CMD_FALSE;
@@ -1253,6 +1313,14 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_OTA_STATUS_NUMBER :
                         break;
                     case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                        break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                        break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
                         break;
                     default :
                         return BLINKER_CMD_FALSE;
@@ -1415,6 +1483,38 @@ class BlinkerApi : public BlinkerProtocol
 
                         httpCode = http.GET();
                         break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/lowpower/data/update");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
                     default :
                         return BLINKER_CMD_FALSE;
                 }
@@ -1451,6 +1551,8 @@ class BlinkerApi : public BlinkerProtocol
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
                             else if (_type == BLINKER_CMD_OTA_NUMBER || _type == BLINKER_CMD_FRESH_SHARERS_NUMBER)
                                 payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
+                            else if (_type == BLINKER_CMD_LOWPOWER_FREQ_GET_NUM)
+                                payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_FREQ].as<String>();
                             else
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
                         }
@@ -1504,6 +1606,14 @@ class BlinkerApi : public BlinkerProtocol
                             break;
                         case BLINKER_CMD_FRESH_SHARERS_NUMBER :
                             break;
+                        case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                            break;
+                        case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                            break;
+                        case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                            break;
+                        case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                            break;
                         default :
                             return BLINKER_CMD_FALSE;
                     }
@@ -1528,37 +1638,37 @@ class BlinkerApi : public BlinkerProtocol
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
             
-            void beginAuto();
-            bool autoTrigged(uint32_t _id);
-            bool checkCanOTA();
+                void beginAuto();
+                bool autoTrigged(uint32_t _id);
+                bool checkCanOTA();
 
-            void freshNTP();
-            bool ntpInit();
-            void ntpConfig();
+                void freshNTP();
+                bool ntpInit();
+                void ntpConfig();
 
-            void saveCountDown(uint32_t _data, char _action[]);
-            void saveLoop(uint32_t _data, char _action1[], char _action2[]);
-            void loadCountdown();
-            void loadLoop();
-            void loadTiming();
-            void checkOverlapping(uint8_t checkDays, uint16_t checkMins);
-            void freshTiming(uint8_t wDay, uint16_t nowMins);
-            void deleteTiming(uint8_t taskDel);
-            void addTimingTask(uint8_t taskSet, uint32_t timerData, const String & action);
+                void saveCountDown(uint32_t _data, char _action[]);
+                void saveLoop(uint32_t _data, char _action1[], char _action2[]);
+                void loadCountdown();
+                void loadLoop();
+                void loadTiming();
+                void checkOverlapping(uint8_t checkDays, uint16_t checkMins);
+                void freshTiming(uint8_t wDay, uint16_t nowMins);
+                void deleteTiming(uint8_t taskDel);
+                void addTimingTask(uint8_t taskSet, uint32_t timerData, const String & action);
 
-            // #if defined(ESP32)
-            //     uint8_t isErase;
-            // #endif
+                // #if defined(ESP32)
+                //     uint8_t isErase;
+                // #endif
 
-            void checkTimerErase();
+                void checkTimerErase();
 
-            String timerSetting();
-            String countdownConfig();
-            String loopConfig();
-            String timingConfig();
-            String getTimingCfg(uint8_t task);
-            bool timerManager(const JsonObject& data, bool _noSet = false);
-            bool checkTimer();
+                String timerSetting();
+                String countdownConfig();
+                String loopConfig();
+                String timingConfig();
+                String getTimingCfg(uint8_t task);
+                bool timerManager(const JsonObject& data, bool _noSet = false);
+                bool checkTimer();
             
             #endif
 
@@ -1572,9 +1682,9 @@ class BlinkerApi : public BlinkerProtocol
             bool autoManager(const JsonObject& data);
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-            void otaParse(const JsonObject& data);
-            void shareParse(const JsonObject& data);
-            void numParse(const JsonObject& data);
+                void otaParse(const JsonObject& data);
+                void shareParse(const JsonObject& data);
+                void numParse(const JsonObject& data);
             #endif
             
             bool checkCUPDATE();
@@ -1590,9 +1700,9 @@ class BlinkerApi : public BlinkerProtocol
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
             
-            // String postServer(const String & url, const String & host, int port, const String & msg);
-            // String getServer(const String & url, const String & host, int port);
-            String blinkerServer(uint8_t _type, const String & msg, bool state = false);
+                // String postServer(const String & url, const String & host, int port, const String & msg);
+                // String getServer(const String & url, const String & host, int port);
+                String blinkerServer(uint8_t _type, const String & msg, bool state = false);
 
             #endif
 
@@ -4880,6 +4990,59 @@ float BlinkerApi::gps(b_gps_t axis)
         return blinkerServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
     }
 
+    #if defined(BLINKER_LOWPOWER)
+        int32_t BlinkerApi::comFreqGet()
+        {
+            String data = BLINKER_F("/user/device/lowpower/get?");
+            data += BLINKER_F("deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+
+            int32_t _freq = blinkerServer(BLINKER_CMD_LOWPOWER_FREQ_GET_NUM, data).toInt();
+
+            if (_freq) return _freq;
+            else return -1;
+        }
+
+        bool BlinkerApi::comFreqUpdate()
+        {
+            String data = BLINKER_F("/user/device/lowpower/modify?");
+            data += BLINKER_F("deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+            data += BLINKER_F("&freq=");
+            data += STRING_format(_LowPowerFreq);
+
+            return blinkerServer(BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER, data) == BLINKER_CMD_FALSE;
+        }
+
+        String BlinkerApi::comDataGet()
+        {
+            String data = BLINKER_F("/user/device/lowpower/data/get?");
+            data += BLINKER_F("deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+
+            return blinkerServer(BLINKER_CMD_LOWPOWER_DATA_GET_NUM, data);
+        }
+
+        bool BlinkerApi::comDateUpdate()
+        {
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\",\"data\":\"");
+            data += BProto::_sendBuf;
+            data += BLINKER_F("\"}");
+
+            return blinkerServer(BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER, data) == BLINKER_CMD_FALSE;
+        }
+    #endif
+
 #endif
 
 void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_string_arg_t _func)
@@ -7768,6 +7931,14 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                     break;
                 case BLINKER_CMD_FRESH_SHARERS_NUMBER :
                     break;
+                case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                    break;
+                case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                    break;
+                case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                    break;
+                case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                    break;
             #endif
             default :
                 return BLINKER_CMD_FALSE;
@@ -8347,6 +8518,58 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
                         httpCode = http.GET();
                         break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device/lowpower/data/update");
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        http.addHeader(conType, application);
+                        httpCode = http.POST(msg);
+                        break;
                 #endif
                 default :
                     return BLINKER_CMD_FALSE;
@@ -8393,6 +8616,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
                             else if (_type == BLINKER_CMD_OTA_NUMBER || _type == BLINKER_CMD_FRESH_SHARERS_NUMBER)
                                 payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
+                            else if (_type == BLINKER_CMD_LOWPOWER_FREQ_GET_NUM)
+                                payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_FREQ].as<String>();
                             else
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
                         }
@@ -8448,6 +8673,14 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                             case BLINKER_CMD_OTA_STATUS_NUMBER :
                                 break;
                             case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                                break;
+                            case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                                break;
+                            case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                                break;
+                            case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                                break;
+                            case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
                                 break;
                         #endif
                         default :
