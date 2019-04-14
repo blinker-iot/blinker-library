@@ -65,12 +65,12 @@ class BlinkerProtocol
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
             // void ping() { if (isInit) conn->ping(); }
-            // #if !defined(BLINKER_AT_MQTT) && !defined(BLINKER_MQTT_AT)
+            #if !defined(BLINKER_MQTT_AT)
             int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
             int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
-            // #endif
             void sharers(const String & data) { if (isInit) conn->sharers(data); }
             int needFreshShare() { if (isInit) return conn->needFreshShare(); else return false; }
+            #endif
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
