@@ -184,6 +184,8 @@
 
 #define BLINKER_CMD_DATA                "data"
 
+#define BLINKER_CMD_FREQ                "freq"
+
 #define BLINKER_CMD_GET                 "get"
 
 #define BLINKER_CMD_SET                 "set"
@@ -1331,6 +1333,14 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_OTA_STATUS_NUMBER       15
 
     #define BLINKER_CMD_FRESH_SHARERS_NUMBER    16
+
+    #define BLINKER_CMD_LOWPOWER_FREQ_GET_NUM   17
+
+    #define BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER 18
+
+    #define BLINKER_CMD_LOWPOWER_DATA_GET_NUM   19
+
+    #define BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER 20
 
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 
