@@ -2037,7 +2037,7 @@ void BlinkerApi::needInit()
 
         // BProto::ping();
         // BProto::disconnect();
-        BProto::connect();
+        // BProto::connect();
     #endif
 
     #if defined(BLINKER_AT_MQTT)
@@ -2294,6 +2294,10 @@ void BlinkerApi::run()
                     {
                         _needInit = true;
                         needInit();
+
+                        #if defined(BLINKER_LOWPOWER)
+                            break;
+                        #endif
                     }
 
                     while (time_slot < 30000)
@@ -2420,6 +2424,10 @@ void BlinkerApi::run()
                     {
                         _needInit = true;
                         needInit();
+
+                        #if defined(BLINKER_LOWPOWER)
+                            break;
+                        #endif
                     }
 
                     while (time_slot < 30000)
@@ -2494,6 +2502,10 @@ void BlinkerApi::run()
                 {
                     _needInit = true;
                     needInit();
+
+                    #if defined(BLINKER_LOWPOWER)
+                        return;
+                    #endif
                 }
 
                 while (time_slot < 30000)
@@ -2638,6 +2650,10 @@ void BlinkerApi::run()
                     {
                         _needInit = true;
                         needInit();
+
+                        #if defined(BLINKER_LOWPOWER)
+                            return;
+                        #endif
                     }
 
                     while (time_slot < 30000)
@@ -2766,6 +2782,10 @@ void BlinkerApi::run()
                     {
                         _needInit = true;
                         needInit();
+
+                        #if defined(BLINKER_LOWPOWER)
+                            return;
+                        #endif
                     }
 
                     while (time_slot < 30000)
@@ -2796,6 +2816,13 @@ void BlinkerApi::run()
             }
             
         }
+    #endif
+
+    #if defined(BLINKER_LOWPOWER)
+        BLINKER_LOG_ALL(BLINKER_F("LOW POWER"));
+        if (_LowPowerFunc) _LowPowerFunc();
+        ::delay(60000); // sleep func TBD
+        return;
     #endif
 
     bool conState = BProto::connected();
