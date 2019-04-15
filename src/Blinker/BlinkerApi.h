@@ -2038,6 +2038,14 @@ void BlinkerApi::needInit()
         // BProto::ping();
         // BProto::disconnect();
         // BProto::connect();
+
+        #if defined(BLINKER_LOWPOWER)
+            int32_t _freq_get = comFreqGet();
+
+            if (_freq_get < 1) _freq_get = comFreqGet();
+
+            if (_freq_get >= 1) _LowPowerFreq = _freq_get;
+        #endif
     #endif
 
     #if defined(BLINKER_AT_MQTT)
@@ -2377,10 +2385,14 @@ void BlinkerApi::run()
                         _register_fresh = millis();
 
                         _mqttAutoStatue = AUTO_DEV_REGISTER_FAIL;
+
+                        BLINKER_LOG_ALL(BLINKER_F("AUTO_DEV_REGISTER_FAIL"));
                     }
                     else
                     {
                         _mqttAutoStatue = AUTO_DEV_REGISTER_SUCCESS;
+
+                        BLINKER_LOG_ALL(BLINKER_F("AUTO_DEV_REGISTER_SUCCESS"));
                     }
                 }
                 else
@@ -2401,13 +2413,15 @@ void BlinkerApi::run()
             if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
                 !_getRegister)
             {
+                BLINKER_LOG_ALL(BLINKER_F("NOW RESET!!!"));
                 reset();
             }
         }
-        else
+        else// (BProto::init())
         {
             if (!_isInit)
             {
+                BLINKER_LOG_ALL(BLINKER_F("ntpInit"));
                 if (ntpInit())
                 {
                     _isInit = true;
@@ -2417,6 +2431,8 @@ void BlinkerApi::run()
 
                     uint32_t connect_time = millis();
                     uint32_t time_slot = 0;
+
+                    BLINKER_LOG_ALL(BLINKER_F("checkCanOTA"));
 
                     if (checkCanOTA()) loadOTA();
 
@@ -2472,7 +2488,7 @@ void BlinkerApi::run()
 
     #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
         defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
-        checkTimer();       
+        checkTimer();
 
         if (!BProto::init()) {
             ::delay(2000);
@@ -2820,6 +2836,7 @@ void BlinkerApi::run()
 
     #if defined(BLINKER_LOWPOWER)
         BLINKER_LOG_ALL(BLINKER_F("LOW POWER"));
+
         if (_LowPowerFunc) _LowPowerFunc();
         ::delay(60000); // sleep func TBD
         return;
@@ -2834,6 +2851,8 @@ void BlinkerApi::run()
 
     //     debug_time = millis();
     // }
+
+    // BLINKER_LOG_ALL(BLINKER_F("conState: "), conState);
 
     switch (BProto::state)
     {
