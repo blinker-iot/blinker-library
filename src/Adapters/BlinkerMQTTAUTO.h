@@ -1564,7 +1564,7 @@ int BlinkerMQTTAUTO::connectServer()
 #elif defined(ESP32)
     HTTPClient http;
 
-    url_iot = host;
+    String url_iot = host;
     url_iot += BLINKER_F("/api/v1/user/device/vip/auth?authKey=");
     url_iot += AUTHKEY_AUTO;
     // url_iot += _aliType;
