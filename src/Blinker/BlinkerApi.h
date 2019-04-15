@@ -731,7 +731,7 @@ class BlinkerApi : public BlinkerProtocol
             #if defined(BLINKER_LOWPOWER)
             blinker_callback_t                  _LowPowerFunc = NULL;
             uint32_t                            _LowPowerFreq = 10;
-            char*                               _LowPowerData;
+            // char*                               _LowPowerData;
             #endif
         #endif
 
@@ -2837,7 +2837,30 @@ void BlinkerApi::run()
     #if defined(BLINKER_LOWPOWER)
         BLINKER_LOG_ALL(BLINKER_F("LOW POWER"));
 
+        char _lp_data_get[1024];
+        strcpy(_lp_data_get, comDataGet().c_str());
+        if (_lp_data_get == BLINKER_CMD_FALSE) strcpy(_lp_data_get, "");
+        else
+        {
+            flush();
+            parse(_lp_data_get);
+
+            if (!_fresh)
+            {
+                if (BProto::_availableFunc)
+                {
+                    BProto::_availableFunc(_lp_data_get);
+                    flush();
+                }
+            }
+        }
+        
         if (_LowPowerFunc) _LowPowerFunc();
+
+        if (strlen(BProto::_sendBuf))
+        {
+            if (!comDateUpdate()) comDateUpdate();
+        }
         ::delay(60000); // sleep func TBD
         return;
     #endif
