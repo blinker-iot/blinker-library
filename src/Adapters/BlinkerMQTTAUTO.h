@@ -253,6 +253,10 @@ int BlinkerMQTTAUTO::connect()
 
     webSocket_AUTO.loop();
 
+    if (!isMQTTinit) {
+        return *isHandle;
+    }
+
     if (mqtt_AUTO->connected())
     {
         return true;
@@ -340,7 +344,7 @@ void BlinkerMQTTAUTO::ping()
 
     if (!isMQTTinit) return;
 
-    if (!mqtt_AUTO ->ping())
+    if (!mqtt_AUTO->ping())
     {
         disconnect();
         // delay(100);
@@ -1516,7 +1520,7 @@ int BlinkerMQTTAUTO::connectServer()
     // client_s->setFingerprint(fingerprint);
     client_s->setInsecure();
 
-    String url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
+    String url_iot = BLINKER_F("/api/v1/user/device/vip/auth?authKey=");
     url_iot += AUTHKEY_AUTO;
     // url_iot += _aliType;
     // url_iot += _duerType;
@@ -1561,7 +1565,7 @@ int BlinkerMQTTAUTO::connectServer()
     HTTPClient http;
 
     url_iot = host;
-    url_iot += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
+    url_iot += BLINKER_F("/api/v1/user/device/vip/auth?authKey=");
     url_iot += AUTHKEY_AUTO;
     // url_iot += _aliType;
     // url_iot += _duerType;
@@ -1605,7 +1609,12 @@ int BlinkerMQTTAUTO::connectServer()
     }
 
     http.end();
-#endif    
+#endif
+
+    BLINKER_LOG_ALL(BLINKER_F("reply was:"));
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+    BLINKER_LOG_ALL(payload);
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
 
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(payload);
@@ -1874,6 +1883,7 @@ int BlinkerMQTTAUTO::connectServer()
     this->latestTime = millis() - BLINKER_MQTT_CONNECT_TIMESLOT;
     // if (!isMQTTinit)
     mqtt_AUTO->subscribe(iotSub_AUTO);
+    isMQTTinit = true;
 
     #if defined(ESP8266)
         // client_s->stop();
