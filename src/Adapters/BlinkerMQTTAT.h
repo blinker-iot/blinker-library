@@ -889,6 +889,8 @@ int BlinkerMQTTAT::print(char * data, bool needCheck)
             data[c_num+7] = data[c_num-1];
         }
 
+        data[num+8] = '\0';
+
         String data_add = BLINKER_F("{\"data\":");
         for(uint8_t c_num = 0; c_num < 8; c_num++)
         {
@@ -994,26 +996,36 @@ int BlinkerMQTTAT::mqttPrint(const String & data) {
         return false;
     }
 
-    String _dType = print_data["toDeviceAT"];
-
-    BLINKER_LOG_ALL(("mqttPrint _dType: "), _dType);
-
-    print_data.remove("toDeviceAT");
-    String _data_;
-    print_data.printTo(_data_);
-
-    if (_dType == "AliGenie")
+    if (print_data.containsKey("toDeviceAT"))
     {
-        return aliPrint(_data_);
-    }
-    else if (_dType == "DuerOS")
-    {
-        return duerPrint(_data_);
+
+        String _dType = print_data["toDeviceAT"];
+
+        BLINKER_LOG_ALL(("mqttPrint _dType: "), _dType);
+
+        print_data.remove("toDeviceAT");
+        String _data_;
+        print_data.printTo(_data_);
+
+        if (_dType == "AliGenie")
+        {
+            return aliPrint(_data_);
+        }
+        else if (_dType == "DuerOS")
+        {
+            return duerPrint(_data_);
+        }
+        else
+        {
+            char data_print[512];
+            strcpy(data_print, _data_.c_str());
+            return print(data_print);
+        }        
     }
     else
     {
-        char data_print[256];
-        strcpy(data_print, _data_.c_str());
+        char data_print[512];
+        strcpy(data_print, data.c_str());
         return print(data_print);
     }
 
