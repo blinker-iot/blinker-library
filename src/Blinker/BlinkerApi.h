@@ -4099,7 +4099,11 @@ float BlinkerApi::gps(b_gps_t axis)
                 
                 ntpFreshTime = millis();
 
-                return ntpGetTime - (int)_timezone*3600;
+                #if defined(ESP32)
+                    return ntpGetTime;
+                #else
+                    return ntpGetTime - (int)_timezone*3600;
+                #endif
             }
             else
             {
@@ -4109,7 +4113,12 @@ float BlinkerApi::gps(b_gps_t axis)
                 #else
                     ntpGetTime += (millis() - ntpFreshTime) / 1000;
                 #endif
-                return ntpGetTime - (int)_timezone*3600;
+
+                #if defined(ESP32)
+                    return ntpGetTime;
+                #else
+                    return ntpGetTime - (int)_timezone*3600;
+                #endif
             }
             
         }
@@ -5989,7 +5998,11 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             #endif
 
             BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
-            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp - (int)(_timezone*3600));
+            #if defined(ESP8266)
+                BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp - (int)(_timezone*3600));
+            #elif defined(ESP32)
+                BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp);
+            #endif
 
             _isNTPInit = true;
 
