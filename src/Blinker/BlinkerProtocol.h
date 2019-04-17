@@ -61,7 +61,8 @@ class BlinkerProtocol
             defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
             defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
-            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
+            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
+            defined(BLINKER_PRO_ESP)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
             // void ping() { if (isInit) conn->ping(); }
@@ -77,7 +78,7 @@ class BlinkerProtocol
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }
@@ -85,12 +86,13 @@ class BlinkerProtocol
             void freshAlive() { if (isInit) conn->freshAlive(); }
         #endif
 
-        #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO)
+        #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
+            defined(BLINKER_PRO_ESP)
             int deviceRegister(){ return conn->deviceRegister(); }
             int authCheck()     { return conn->authCheck(); }
             #if defined(BLINKER_PRO)
             void begin(const char* _deviceType) { conn->begin(_deviceType); }
-            #elif defined(BLINKER_MQTT_AUTO)
+            #elif defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
             void begin(const char* _key, const char* _type) { conn->begin(_key, _type); }
             #endif
         #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
@@ -147,7 +149,7 @@ class BlinkerProtocol
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
             bool checkAliAvail()    { return conn->aligenieAvail(); }
             bool checkDuerAvail()   { return conn->duerAvail(); }
         #endif

@@ -204,6 +204,69 @@ class BlinkerAIR202
         //     return -1;
         // }
 
+        bool getNTP(float tz = 8.0)
+        {
+            streamPrint(BLINKER_CMD_CNTP_REQ);
+            uint32_t os_time = millis();
+
+            while(millis() - os_time < _airTimeout)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            streamPrint(BLINKER_CMD_CCLK_REQ);
+            os_time = millis();
+
+            while(millis() - os_time < _airTimeout * 10)
+            {
+                if (available())
+                {
+                    _masterAT = new BlinkerMasterAT();
+                    _masterAT->update(STRING_format(streamData));
+
+                    if (_masterAT->getState() != AT_M_NONE &&
+                        _masterAT->reqName() == BLINKER_CMD_CCLK)
+                    {
+                        struct tm timeinfo;
+
+                        timeinfo.tm_year = _masterAT->getParam(0).substring(2, 4).toInt() + 130;
+                        timeinfo.tm_mon  = _masterAT->getParam(0).substring(5, 7).toInt() - 1;
+                        timeinfo.tm_mday = _masterAT->getParam(0).substring(8, 10).toInt() - 1;
+
+                        BLINKER_LOG_ALL(BLINKER_F("year: "), timeinfo.tm_year);
+                        BLINKER_LOG_ALL(BLINKER_F("mon: "), timeinfo.tm_mon);
+                        BLINKER_LOG_ALL(BLINKER_F("mday: "), timeinfo.tm_mday);
+                        
+                        timeinfo.tm_hour = _masterAT->getParam(1).substring(0, 2).toInt();
+                        timeinfo.tm_min  = _masterAT->getParam(1).substring(3, 5).toInt();
+                        timeinfo.tm_sec  = _masterAT->getParam(1).substring(6, 8).toInt();
+
+                        BLINKER_LOG_ALL(BLINKER_F("hour: "), timeinfo.tm_hour);
+                        BLINKER_LOG_ALL(BLINKER_F("mins: "), timeinfo.tm_min);
+                        BLINKER_LOG_ALL(BLINKER_F("secs: "), timeinfo.tm_sec);
+
+                        _ntpTime = mktime(&timeinfo);
+                        // _ntpTime -= _timezone * 3600;
+
+                        BLINKER_LOG_ALL(BLINKER_F("==_ntpTime: "), _ntpTime);
+                        BLINKER_LOG_ALL(BLINKER_F("==Current time: "), asctime(&timeinfo));
+
+                        free(_masterAT);
+                        return true;
+                    }
+
+                    free(_masterAT);
+                }
+            }
+            return false;
+        }
+
         bool getAMGSMLOC(float tz = 8.0)
         {
             uint32_t os_time = millis();

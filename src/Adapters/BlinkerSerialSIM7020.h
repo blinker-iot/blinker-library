@@ -11,6 +11,7 @@
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
+#include "Functions/BlinkerSIM7020.h"
 #include "Functions/BlinkerHTTPSIM7020.h"
 
 #include "modules/ArduinoJson/ArduinoJson.h"
@@ -224,6 +225,16 @@ void BlinkerSerialSIM7020::ping()
     else
     {
         this->latestTime = millis();
+    }
+
+    BlinkerSIM7020 BLINKER_SIM7020;
+    BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);  
+
+    if (BLINKER_SIM7020.isReboot())
+    {
+        BLINKER_SIM7020.powerCheck();
+
+        disconnect();
     }
 }
 
