@@ -196,7 +196,7 @@
         #define BLINKER_DUEROS
     #endif
 
-    #if defined(ESP8266) || defined(ESP32)
+    #if (defined(ESP8266) || defined(ESP32)) && !defined(BLINKER_MQTT_AT)
         #include "BlinkerESPMQTT.h"
 
         BlinkerESPMQTT      Blinker;     
