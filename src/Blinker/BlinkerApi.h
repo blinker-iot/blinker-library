@@ -10156,6 +10156,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
         bool _isInit = false;
         while (!_isInit) {
+            ::delay(1);
             run();
 
             // if (BProto::available())
