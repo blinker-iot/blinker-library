@@ -334,8 +334,9 @@ class BlinkerSIM7020
                     _masterAT->update(STRING_format(streamData));
 
                     if (_masterAT->getState() != AT_M_NONE &&
-                        _masterAT->reqName() == BLINKER_CMD_COPS &&
-                        _masterAT->getParam(3).toInt() == 9)
+                        _masterAT->reqName() == BLINKER_CMD_COPS)
+                        //  &&
+                        // _masterAT->getParam(3).toInt() == 9)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("sim7020_cops_success"));
                         pdn_status = sim7020_cops_success;
@@ -481,6 +482,34 @@ class BlinkerSIM7020
 
                         return true;
                     }
+                }
+            }
+
+            return false;
+        }
+
+        bool isReboot()
+        {
+            streamPrint(BLINKER_CMD_AT);
+            uint32_t dev_time = millis();
+
+            while(millis() - dev_time < _simTimeout)
+            {
+                if (available())
+                {
+                    if (strcmp(streamData, BLINKER_CMD_AT) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("device reboot"));
+                        
+                        // SAPBR();
+
+                        return true;
+                    }
+                    // else if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    // {
+                    //     BLINKER_LOG_ALL(BLINKER_F("device not reboot"));
+                    //     return false;
+                    // }                    
                 }
             }
 
