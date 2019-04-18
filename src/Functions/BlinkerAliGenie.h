@@ -110,7 +110,7 @@ class BLINKERALIGENIE
         void color(const String & clr)
         {
             String payload = BLINKER_F("\"");
-            payload += STRING_format(BLINKER_CMD_COLOR);
+            payload += STRING_format(BLINKER_CMD_COLOR_);
             payload += BLINKER_F("\":\"");
             payload += clr;
             payload += BLINKER_F("\"");
