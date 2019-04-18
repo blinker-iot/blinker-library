@@ -358,6 +358,8 @@
 
 #define BLINKER_CMD_COLOR               "clr"
 
+#define BLINKER_CMD_COLOR_              "col"
+
 #define BLINKER_CMD_TITLE               "tit"
 
 #define BLINKER_CMD_CONTENT             "con"
