@@ -230,7 +230,7 @@ class BlinkerSIM7020
                         BLINKER_LOG_ALL(BLINKER_F("mins: "), timeinfo.tm_min);
                         BLINKER_LOG_ALL(BLINKER_F("secs: "), timeinfo.tm_sec);
 
-                        _ntpTime = mktime(&timeinfo) + _timezone * 3600;
+                        _ntpTime = mk_gmtime(&timeinfo) + _timezone * 3600;
 
                         BLINKER_LOG_ALL(BLINKER_F("_ntpTime: "), _ntpTime);
 
