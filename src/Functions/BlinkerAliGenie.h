@@ -113,6 +113,11 @@ class BLINKERALIGENIE
             payload += STRING_format(BLINKER_CMD_COLOR_);
             payload += BLINKER_F("\":\"");
             payload += clr;
+            payload += BLINKER_F("\",");
+            payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_COLOR);
+            payload += BLINKER_F("\":\"");
+            payload += clr;
             payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);

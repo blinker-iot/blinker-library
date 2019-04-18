@@ -100,9 +100,14 @@ class BLINKERDUEROS
         void color(int32_t clr)
         {
             String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_COLOR_);
+            payload += BLINKER_F("\":\"");
+            payload += clr;
+            payload += BLINKER_F("\",");
+            payload = BLINKER_F("\"");
             payload += STRING_format(BLINKER_CMD_COLOR);
             payload += BLINKER_F("\":\"");
-            payload += STRING_format(clr);
+            payload += clr;
             payload += BLINKER_F("\"");
 
             // Blinker.DuerOSPrint(payload);
