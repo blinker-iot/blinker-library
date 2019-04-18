@@ -8853,6 +8853,9 @@ char * BlinkerApi::widgetName_int(uint8_t num)
             else if (value == BLINKER_CMD_POWERSTATE) {
                 if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
             }
+            else if (value == BLINKER_CMD_COLOR) {
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
+            }
             else if (value == BLINKER_CMD_COLOR_) {
                 if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
             }
@@ -8894,6 +8897,11 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
                 if (_AliGeniePowerStateFunc) _AliGeniePowerStateFunc(setValue);
                 if (_AliGeniePowerStateFunc_m) _AliGeniePowerStateFunc_m(setValue, setNum);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
+                String setValue = rootSet[BLINKER_CMD_COLOR];
+
+                if (_AliGenieSetColorFunc) _AliGenieSetColorFunc(setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR_)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR_];
@@ -9067,6 +9075,9 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 else if (value == BLINKER_CMD_POWERSTATE) {
                     if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
                 }
+                else if (value == BLINKER_CMD_COLOR) {
+                    if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
+                }
                 else if (value == BLINKER_CMD_COLOR_) {
                     if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
                 }
@@ -9094,6 +9105,10 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 if (STRING_find_string_value(_data, value, BLINKER_CMD_POWERSTATE))
                 {
                     if (_AliGeniePowerStateFunc) _AliGeniePowerStateFunc(value);
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLOR))
+                {
+                    if (_AliGenieSetColorFunc) _AliGenieSetColorFunc(value);
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLOR_))
                 {
