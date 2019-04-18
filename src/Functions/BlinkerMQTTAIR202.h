@@ -383,7 +383,7 @@ int BlinkerMQTTAIR202::connected()
             return true;
         }
 
-        if (!isConnected || millis() - connect_time >= 5000)
+        if (!isConnected || millis() - connect_time >= 15000)
         {
             streamPrint(STRING_format(BLINKER_CMD_MQTTSTATU_REQ));
             // connect_time = millis();

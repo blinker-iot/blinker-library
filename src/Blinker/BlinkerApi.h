@@ -480,13 +480,13 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
 
             // #if !defined(BLINKER_AT_MQTT)
-            void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = 2)
+            void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = BLINKER_DATA_UPDATE_COUNT)
             {
                 _dataStorageFunc = newFunction;
                 if (_time < 60) _time = 60;
                 _autoStorageTime = _time;
                 _autoDataTime = millis();
-                if (d_times > BLINKER_MAX_DATA_COUNT || d_times == 0) d_times = 2;
+                if (d_times > BLINKER_MAX_DATA_COUNT || d_times == 0) d_times = BLINKER_DATA_UPDATE_COUNT;
                 _dataTimes = d_times;
             }
             // #endif
@@ -732,7 +732,7 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_t                  _dataStorageFunc = NULL;
             uint32_t                            _autoStorageTime = 60;
             uint32_t                            _autoDataTime = 0;
-            uint8_t                             _dataTimes = 2;
+            uint8_t                             _dataTimes = BLINKER_DATA_UPDATE_COUNT;
             // #endif
 
             #if defined(BLINKER_LOWPOWER)
