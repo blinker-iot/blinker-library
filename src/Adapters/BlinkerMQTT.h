@@ -677,7 +677,7 @@ int BlinkerMQTT::print(char * data, bool needCheck)
             data[c_num+7] = data[c_num-1];
         }
 
-        data[num+8] = '\0';
+        data[num+8] = '\0';        
 
         char data_add[20] = "{\"data\":";
         for(uint8_t c_num = 0; c_num < 8; c_num++)
@@ -692,6 +692,7 @@ int BlinkerMQTT::print(char * data, bool needCheck)
         // data_add = BLINKER_F("\",\"toDevice\":\"");
         // strcat(data, data_add.c_str());
         strcat(data, "\",\"toDevice\":\"");
+        
         if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
         {
             strcat(data, _sharers[_sharerFrom]->uuid());
