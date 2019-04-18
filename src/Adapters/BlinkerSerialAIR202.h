@@ -11,6 +11,7 @@
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
+#include "Functions/BlinkerAIR202.h"
 #include "Functions/BlinkerHTTPAIR202.h"
 
 #include "modules/ArduinoJson/ArduinoJson.h"
@@ -224,6 +225,16 @@ void BlinkerSerialAIR202::ping()
     else
     {
         this->latestTime = millis();
+    }
+
+    BlinkerAIR202 BLINKER_AIR202;
+    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);  
+
+    if (BLINKER_AIR202.isReboot())
+    {
+        BLINKER_AIR202.powerCheck();
+
+        disconnect();
     }
 }
 
