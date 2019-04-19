@@ -546,6 +546,8 @@
 
 #define BLINKER_MAX_DATA_COUNT          4
 
+#define BLINKER_DATA_UPDATE_COUNT       2
+
 #if defined(BLINKER_ESP_AT)
 
     #define BLINKER_ESP_AT_VERSION              "0.1.0"

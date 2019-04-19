@@ -340,11 +340,15 @@ class BlinkerHTTPAIR202
                 }
             }
 
-            if (http_status != air202_http_start_success) return false;
+            if (http_status != air202_http_start_success) 
+            {
+                streamPrint(STRING_format(BLINKER_CMD_HTTPERM_REQ));
+                return false;
+            }
 
             http_time = millis();
 
-            while(millis() - http_time < _httpTimeout*2)
+            while(millis() - http_time < _httpTimeout*10)
             {
                 if (available())
                 {
@@ -595,7 +599,11 @@ class BlinkerHTTPAIR202
                 }
             }
 
-            if (http_status != air202_http_start_success) return false;
+            if (http_status != air202_http_start_success) 
+            {
+                streamPrint(STRING_format(BLINKER_CMD_HTTPERM_REQ));
+                return false;
+            }
             http_time = millis();
 
             while(millis() - http_time < _httpTimeout*2)
@@ -620,7 +628,11 @@ class BlinkerHTTPAIR202
                 }
             }
 
-            if (http_status != air202_http_upload_success) return false;
+            if (http_status != air202_http_upload_success) 
+            {
+                streamPrint(STRING_format(BLINKER_CMD_HTTPERM_REQ));
+                return false;
+            }
 
             streamPrint(STRING_format(BLINKER_CMD_HTTPREAD_REQ));
             
