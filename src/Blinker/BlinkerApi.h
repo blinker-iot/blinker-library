@@ -61,6 +61,7 @@
 #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
     #include "Functions/BlinkerAIR202.H"
     #include "Functions/BlinkerHTTPAIR202.h"
+    #include "modules/base64/Base64.h"
 #endif
 
 #if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
@@ -732,7 +733,7 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_t                  _dataStorageFunc = NULL;
             uint32_t                            _autoStorageTime = 60;
             uint32_t                            _autoDataTime = 0;
-            uint8_t                             _dataTimes = BLINKER_DATA_UPDATE_COUNT;
+            uint8_t                             _dataTimes = BLINKER_MAX_DATA_COUNT;
             // #endif
 
             #if defined(BLINKER_LOWPOWER)
@@ -1018,12 +1019,14 @@ class BlinkerApi : public BlinkerProtocol
                         httpCode = http.GET();
                         break;
                     case BLINKER_CMD_DATA_STORAGE_NUMBER :
-                        url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/");
+                        url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/?");
+                        url_iot += msg;
 
                         http.begin(host, url_iot);
 
                         // http.addHeader(conType, application);
-                        httpCode = http.POST(msg, conType, application);
+                        // httpCode = http.POST(msg, conType, application);
+                        httpCode = http.GET();
                         break;
                     case BLINKER_CMD_DATA_GET_NUMBER :
                         url_iot = BLINKER_F("/api/v1/user/device");
@@ -3648,9 +3651,13 @@ float BlinkerApi::gps(b_gps_t axis)
     int8_t BlinkerApi::second()
     {
         if (_isNTPInit)
-        {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+        {            
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
+                BLINKER_LOG_ALL("(millis() - ntpFreshTime): ", (millis() - ntpFreshTime));
+                BLINKER_LOG_ALL("ntpGetTime: ", ntpGetTime);
+                BLINKER_LOG_ALL((ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000));
+                
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
                     time_t now_ntp = ::time(nullptr);
@@ -3705,7 +3712,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
@@ -3760,7 +3767,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
@@ -3816,7 +3823,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
@@ -3872,7 +3879,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
@@ -3928,7 +3935,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
@@ -3984,7 +3991,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
@@ -4040,7 +4047,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
@@ -4096,8 +4103,12 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
+                BLINKER_LOG_ALL("(millis() - ntpFreshTime): ", (millis() - ntpFreshTime));
+                BLINKER_LOG_ALL("ntpGetTime: ", ntpGetTime);
+                BLINKER_LOG_ALL((ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000));
+                
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
                     time_t now_ntp = ::time(nullptr);
@@ -4164,7 +4175,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            if (ntpGetTime == 0 || millis() - ntpFreshTime >= 10 * 60 * 1000)
+            if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
@@ -4588,33 +4599,69 @@ float BlinkerApi::gps(b_gps_t axis)
             return false;
         }
 
-        String data = BLINKER_F("{\"deviceName\":\"");
-        data += BProto::deviceName();
-        data += BLINKER_F("\",\"key\":\"");
-        data += BProto::authKey();
-        data += BLINKER_F("\",\"data\":{");
-        // String _sdata;
+        #if defined(BLINKER_GPRS_AIR202)
+            String data = BLINKER_F("deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+            data += BLINKER_F("&data=");
 
-        BLINKER_LOG_FreeHeap_ALL();
+            String _data_ = "{";
 
-        // uint32_t now_time = time() - second();
+            for (uint8_t _num = 0; _num < data_dataCount; _num++) {
+                _data_ += BLINKER_F("\"");
+                _data_ += _Data[_num]->getName();
+                _data_ += BLINKER_F("\":");
+                _data_ += _Data[_num]->getData();
+                if (_num < data_dataCount - 1) {
+                    _data_ += BLINKER_F(",");
+                }
 
-        for (uint8_t _num = 0; _num < data_dataCount; _num++) {
-            data += BLINKER_F("\"");
-            data += _Data[_num]->getName();
-            data += BLINKER_F("\":");
-            data += _Data[_num]->getData();
-            if (_num < data_dataCount - 1) {
-                data += BLINKER_F(",");
+                BLINKER_LOG_ALL(BLINKER_F("num: "), _num, \
+                        BLINKER_F(" name: "), _Data[_num]->getName());
+
+                BLINKER_LOG_FreeHeap_ALL();
             }
 
-            BLINKER_LOG_ALL(BLINKER_F("num: "), _num, \
-                    BLINKER_F(" name: "), _Data[_num]->getName());
+            _data_ += "}";
+
+            int encodedLen = base64_enc_len(_data_.length());
+            char encoded[encodedLen];
+            base64_encode(encoded, _data_.c_str(), _data_.length());
+            BLINKER_LOG_ALL(BLINKER_F("encoded: "), encoded);
+
+            data += encoded;
+
+            // data += BLINKER_F("");
+        #else
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\",\"data\":{");
+            // String _sdata;
 
             BLINKER_LOG_FreeHeap_ALL();
-        }
 
-        data += BLINKER_F("}}");
+            // uint32_t now_time = time() - second();
+
+            for (uint8_t _num = 0; _num < data_dataCount; _num++) {
+                data += BLINKER_F("\"");
+                data += _Data[_num]->getName();
+                data += BLINKER_F("\":");
+                data += _Data[_num]->getData();
+                if (_num < data_dataCount - 1) {
+                    data += BLINKER_F(",");
+                }
+
+                BLINKER_LOG_ALL(BLINKER_F("num: "), _num, \
+                        BLINKER_F(" name: "), _Data[_num]->getName());
+
+                BLINKER_LOG_FreeHeap_ALL();
+            }
+
+            data += BLINKER_F("}}");
+        #endif
 
         BLINKER_LOG_ALL(BLINKER_F("dataUpdate: "), data);
 
