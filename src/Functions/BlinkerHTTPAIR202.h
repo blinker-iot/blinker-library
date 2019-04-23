@@ -305,12 +305,23 @@ class BlinkerHTTPAIR202
                         http_status = air202_http_para_set_success;
                         break;
                     }
+                    else if (strcmp(streamData, BLINKER_CMD_ERROR) == 0)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("air202_http_para_set_failed 2"));
+                        // streamPrint("AT+CPOWD");
+                        break;
+                    }
                 }
             }
 
             // http_status = air202_http_para_set_success;// TBD
 
-            if (http_status != air202_http_para_set_success) return false;
+            if (http_status != air202_http_para_set_success) 
+            {
+                // streamPrint(STRING_format(BLINKER_CMD_HTTPERM_REQ));
+                // streamPrint("AT+CPOWD");
+                return false;
+            }
 
             streamPrint(STRING_format(BLINKER_CMD_HTTPACTION_REQ) + "=0");
             
