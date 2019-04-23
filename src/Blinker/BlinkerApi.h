@@ -1027,21 +1027,21 @@ class BlinkerApi : public BlinkerProtocol
                         httpCode = http.GET();
                         break;
                     case BLINKER_CMD_DATA_STORAGE_NUMBER :
-                        url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/?");
-                        url_iot += msg;
-
-                        http.begin(host, url_iot);
-
-                        powerCheck();
-                        
-                        httpCode = http.GET();
-
-                        // url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/");
+                        // url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/?");
+                        // url_iot += msg;
 
                         // http.begin(host, url_iot);
 
-                        // // http.addHeader(conType, application);
-                        // httpCode = http.POST(msg, conType, application);
+                        // powerCheck();
+                        
+                        // httpCode = http.GET();
+
+                        url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
                         break;
                     case BLINKER_CMD_DATA_GET_NUMBER :
                         url_iot = BLINKER_F("/api/v1/user/device");
@@ -4621,41 +4621,41 @@ float BlinkerApi::gps(b_gps_t axis)
             return false;
         }
 
-        #if defined(BLINKER_GPRS_AIR202)
-            String data = BLINKER_F("deviceName=");
-            data += BProto::deviceName();
-            data += BLINKER_F("&key=");
-            data += BProto::authKey();
-            data += BLINKER_F("&data=");
+        // #if defined(BLINKER_GPRS_AIR202)
+        //     String data = BLINKER_F("deviceName=");
+        //     data += BProto::deviceName();
+        //     data += BLINKER_F("&key=");
+        //     data += BProto::authKey();
+        //     data += BLINKER_F("&data=");
 
-            String _data_ = "{";
+        //     String _data_ = "{";
 
-            for (uint8_t _num = 0; _num < data_dataCount; _num++) {
-                _data_ += BLINKER_F("\"");
-                _data_ += _Data[_num]->getName();
-                _data_ += BLINKER_F("\":");
-                _data_ += _Data[_num]->getData();
-                if (_num < data_dataCount - 1) {
-                    _data_ += BLINKER_F(",");
-                }
+        //     for (uint8_t _num = 0; _num < data_dataCount; _num++) {
+        //         _data_ += BLINKER_F("\"");
+        //         _data_ += _Data[_num]->getName();
+        //         _data_ += BLINKER_F("\":");
+        //         _data_ += _Data[_num]->getData();
+        //         if (_num < data_dataCount - 1) {
+        //             _data_ += BLINKER_F(",");
+        //         }
 
-                BLINKER_LOG_ALL(BLINKER_F("num: "), _num, \
-                        BLINKER_F(" name: "), _Data[_num]->getName());
+        //         BLINKER_LOG_ALL(BLINKER_F("num: "), _num, \
+        //                 BLINKER_F(" name: "), _Data[_num]->getName());
 
-                BLINKER_LOG_FreeHeap_ALL();
-            }
+        //         BLINKER_LOG_FreeHeap_ALL();
+        //     }
 
-            _data_ += "}";
+        //     _data_ += "}";
 
-            int encodedLen = base64_enc_len(_data_.length());
-            char encoded[encodedLen];
-            base64_encode(encoded, _data_.c_str(), _data_.length());
-            BLINKER_LOG_ALL(BLINKER_F("encoded: "), encoded);
+        //     int encodedLen = base64_enc_len(_data_.length());
+        //     char encoded[encodedLen];
+        //     base64_encode(encoded, _data_.c_str(), _data_.length());
+        //     BLINKER_LOG_ALL(BLINKER_F("encoded: "), encoded);
 
-            data += encoded;
+        //     data += encoded;
 
-            // data += BLINKER_F("");
-        #else
+        //     // data += BLINKER_F("");
+        // #else
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -4683,7 +4683,7 @@ float BlinkerApi::gps(b_gps_t axis)
             }
 
             data += BLINKER_F("}}");
-        #endif
+        // #endif
 
         BLINKER_LOG_ALL(BLINKER_F("dataUpdate: "), data);
 
