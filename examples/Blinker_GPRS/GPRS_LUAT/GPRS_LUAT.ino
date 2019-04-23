@@ -58,6 +58,9 @@ void dataRead(const String & data)
     Number1.print(counter);
 }
 
+void air202Reset()
+{}
+
 void setup() {
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
@@ -68,6 +71,7 @@ void setup() {
     
     Blinker.begin(auth);
     Blinker.attachData(dataRead);
+    Blinker.attachAir202Reset(air202Reset);
 
     Button1.attach(button1_callback);
 }

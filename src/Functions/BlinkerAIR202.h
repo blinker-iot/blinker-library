@@ -641,6 +641,7 @@ class BlinkerAIR202
                         BLINKER_LOG_ALL(BLINKER_F("device reboot"));
                         
                         // SAPBR();
+                        streamPrint("ATE0");
 
                         return true;
                     }
@@ -651,6 +652,7 @@ class BlinkerAIR202
                     // }                    
                 }
             }
+            streamPrint("ATE0");
 
             return false;
         }
