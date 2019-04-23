@@ -1,5 +1,9 @@
 #include "Base64.h"
-#include <avr/pgmspace.h>
+#if (defined(__AVR__))
+    #include <avr/pgmspace.h>
+#elif defined(ESP8266) || defined(ESP32)
+    #include <pgmspace.h>
+#endif
 const char PROGMEM b64_alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		"abcdefghijklmnopqrstuvwxyz"
 		"0123456789+/";
