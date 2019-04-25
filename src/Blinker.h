@@ -361,6 +361,12 @@
     #include "BlinkerESPMQTTAUTO.h"
 
     BlinkerESPMQTTAUTO  Blinker;
+
+#elif defined(BLINKER_LOWPOWER_AIR202)
+    
+    #include "BlinkerLowPowerGPRS.h"
+
+    BlinkerLowPowerGPRS Blinker;
     
 #else
 
