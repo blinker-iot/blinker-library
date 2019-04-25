@@ -112,6 +112,7 @@ class BlinkerMQTTAT : public BlinkerStream
         int checkPrintSpan();
         int checkAliPrintSpan();
         int checkDuerPrintSpan();
+        int checkPrintLimit();
 
     protected :
         bool        _isBegin = false;
@@ -169,6 +170,9 @@ class BlinkerMQTTAT : public BlinkerStream
         int isJson(const String & data);
 
         uint8_t     reconnect_time = 0;
+
+        uint32_t    _print_time = 0;
+        uint8_t     _print_times = 0;
 };
 
 // #if defined(ESP8266)
@@ -944,6 +948,15 @@ int BlinkerMQTTAT::print(char * data, bool needCheck)
                     }
                     return false;
                 }
+
+                if (!checkPrintLimit())
+                {
+                    return false;
+                }
+
+                _print_times++;
+
+                BLINKER_LOG_ALL(BLINKER_F("_print_times: "), _print_times);
             }
 
             if (! mqtt_MQTT_AT->publish(BLINKER_PUB_TOPIC_MQTT_AT, data))
@@ -2430,6 +2443,25 @@ int BlinkerMQTTAT::checkDuerPrintSpan()
     else
     {
         respDuerTimes = 0;
+        return true;
+    }
+}
+
+int BlinkerMQTTAT::checkPrintLimit()
+{
+    if ((millis() - _print_time) < 60000)
+    {
+        if (_print_times < 10) return true;
+        else 
+        {
+            BLINKER_ERR_LOG(BLINKER_F("MQTT MSG LIMIT"));
+            return false;
+        }
+    }
+    else
+    {
+        _print_time = millis();
+        _print_times = 0;
         return true;
     }
 }

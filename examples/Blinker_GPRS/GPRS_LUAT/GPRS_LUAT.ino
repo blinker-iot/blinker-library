@@ -38,6 +38,8 @@
 
 #include <Blinker.h>
 
+#define BLINKER_AIR202_RESET_PIN 4
+
 char auth[] = "Your Device Secret Key";
 
 BlinkerButton Button1("btn-abc");
@@ -59,7 +61,11 @@ void dataRead(const String & data)
 }
 
 void air202Reset()
-{}
+{
+    digitalWrite(BLINKER_AIR202_RESET_PIN, LOW);
+    delay(10);
+    digitalWrite(BLINKER_AIR202_RESET_PIN, HIGH);
+}
 
 void setup() {
     Serial.begin(115200);
@@ -68,9 +74,15 @@ void setup() {
     
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
+
+    pinMode(BLINKER_AIR202_RESET_PIN, OUTPUT);
+    digitalWrite(BLINKER_AIR202_RESET_PIN, LOW);
+    delay(10);
+    digitalWrite(BLINKER_AIR202_RESET_PIN, HIGH);
     
-    Blinker.begin(auth);
+    Blinker.begin(auth, 5, 4);
     Blinker.attachData(dataRead);
+    Blinker.attachHeartbeat(heartbeat);
     Blinker.attachAir202Reset(air202Reset);
 
     Button1.attach(button1_callback);
