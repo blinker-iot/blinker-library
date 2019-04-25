@@ -413,7 +413,9 @@ int BlinkerMQTT::available()
     webSocket_MQTT.loop();
 
     checkKA();
-
+#if defined(ESP8266)
+    MDNS.update();
+#endif
     // if (!mqtt_MQTT->connected() || 
     //     (millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
     if ((millis() - this->latestTime) > BLINKER_MQTT_PING_TIMEOUT)
