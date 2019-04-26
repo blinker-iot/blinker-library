@@ -58,7 +58,8 @@
     #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 
-#if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+#if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+    defined(BLINKER_LOWPOWER_AIR202)
     #include "Functions/BlinkerAIR202.H"
     #include "Functions/BlinkerHTTPAIR202.h"
     #include "modules/base64/Base64.h"
