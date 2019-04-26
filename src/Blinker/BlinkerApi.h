@@ -271,7 +271,7 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
 
             void setTimezone(float tz);
 
@@ -301,7 +301,8 @@ class BlinkerApi : public BlinkerProtocol
             String aqi(const String & _city = BLINKER_CMD_DEFAULT);
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_LOWPOWER_AIR202))
                 void loadTimer();
                 void deleteTimer();
                 void deleteCountdown();
@@ -327,7 +328,8 @@ class BlinkerApi : public BlinkerProtocol
 
             // bool bridge(char _name[]);
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_LOWPOWER_AIR202))
                 bool autoPull();
                 void autoInit()         { autoStart(); }
                 void autoInput(const String & key, const String & state);
@@ -342,11 +344,15 @@ class BlinkerApi : public BlinkerProtocol
 
                 void bridgePrint(char * bName, const String & data);
             #endif
+
+            #if !defined(BLINKER_LOWPOWER_AIR202)
             void aligeniePrint(String & _msg);
             void duerPrint(String & _msg);
+            #endif
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_LOWPOWER_AIR202))
                 void loadOTA();
                 void ota();
                 String checkOTA();
@@ -354,9 +360,11 @@ class BlinkerApi : public BlinkerProtocol
                 void otaStatus(int8_t status, const String & msg);
             #endif
 
+            #if !defined(BLINKER_LOWPOWER_AIR202)
             String freshSharers(); // NBIOT TODO
+            #endif
 
-            #if defined(BLINKER_LOWPOWER)
+            #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
                 int32_t comFreqGet();
                 bool comFreqUpdate();
                 String comDataGet();
@@ -479,7 +487,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
 
             // #if !defined(BLINKER_AT_MQTT)
             void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = BLINKER_DATA_UPDATE_COUNT)
@@ -493,7 +502,7 @@ class BlinkerApi : public BlinkerProtocol
             }
             // #endif
 
-            #if defined(BLINKER_LOWPOWER)
+            #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
                 void attachLowPower(blinker_callback_t newFunction, uint32_t _time)
                 {
                     _LowPowerFunc = newFunction;
@@ -576,7 +585,8 @@ class BlinkerApi : public BlinkerProtocol
             #endif
         #endif
 
-        #if defined(BLINKER_PRO_AIR202) || defined(BLINKER_GPRS_AIR202)
+        #if defined(BLINKER_PRO_AIR202) || defined(BLINKER_GPRS_AIR202) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             void attachAir202Reset(blinker_callback_t newFunction)
             { _resetAIRFunc = newFunction; }
         #endif
@@ -610,7 +620,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             bool        _isInit = false;
             bool        _isAuto = false;
             bool        _isAutoInit = false;
@@ -644,18 +655,22 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t    _autoUpdateTime = 0;
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-            char                            _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
-            char                            _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
-            char                            _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
-            class BlinkerTimingTimer *      timingTask[BLINKER_TIMING_TIMER_SIZE];
-            class BlinkerBridge_key *       _Bridge[BLINKER_MAX_BRIDGE_SIZE];
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_LOWPOWER_AIR202))
+                char                            _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
+                char                            _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
+                char                            _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
+                class BlinkerTimingTimer *      timingTask[BLINKER_TIMING_TIMER_SIZE];
+                class BlinkerBridge_key *       _Bridge[BLINKER_MAX_BRIDGE_SIZE];
             #endif
+
             class BlinkerData *             _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
+
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
-            class BlinkerAUTO *             _AUTO[2];
-            BlinkerOTA                      _OTA;
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_LOWPOWER_AIR202))
+                class BlinkerAUTO *             _AUTO[2];
+                BlinkerOTA                      _OTA;
             #endif
         #endif
 
@@ -697,6 +712,16 @@ class BlinkerApi : public BlinkerProtocol
             // String          getIMEI();
         #endif
 
+        #if defined(BLINKER_LOWPOWER_AIR202)
+            const char*     _vipKey;
+            bool            _isConnBegin = false;
+            bool            _getRegister = false;
+            // bool            _isInit = false;
+            bool            _isRegistered = false;
+            bool            _isPowerOn = false;
+            blinker_callback_t _resetAIRFunc = NULL;
+        #endif
+
         #if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
             bool            _isConnBegin = false;
             bool            _getRegister = false;
@@ -714,7 +739,7 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
             blinker_callback_with_string_uint8_arg_t _AliGeniePowerStateFunc_m = NULL;
             blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
@@ -745,7 +770,7 @@ class BlinkerApi : public BlinkerProtocol
             uint8_t                             _dataTimes = BLINKER_MAX_DATA_COUNT;
             // #endif
 
-            #if defined(BLINKER_LOWPOWER)
+            #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
             blinker_callback_t                  _LowPowerFunc = NULL;
             uint32_t                            _LowPowerFreq = 10;
             // char*                               _LowPowerData;
@@ -812,7 +837,8 @@ class BlinkerApi : public BlinkerProtocol
             void json_parse(char _data[]);
         #endif
 
-        #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+        #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             bool ntpInit()
             {
                 if (!_isNTPInit)
@@ -1661,10 +1687,11 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_LOWPOWER_AIR202))
 
                 void beginAuto();
                 bool autoTrigged(uint32_t _id);
@@ -1706,10 +1733,14 @@ class BlinkerApi : public BlinkerProtocol
             bool checkWEATHER();
             bool checkAQI();
 
+            #if !defined(BLINKER_LOWPOWER_AIR202)
             void autoStart();
             bool autoManager(const JsonObject& data);
+            #endif
+
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_LOWPOWER_AIR202))
                 void otaParse(const JsonObject& data);
                 void shareParse(const JsonObject& data);
                 void numParse(const JsonObject& data);
@@ -1723,10 +1754,13 @@ class BlinkerApi : public BlinkerProtocol
             bool checkDataDel();
             bool checkAutoPull();
 
+            #if !defined(BLINKER_LOWPOWER_AIR202)
             String bridgeQuery(char * key);
+            #endif
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_LOWPOWER_AIR202))
 
                 // String postServer(const String & url, const String & host, int port, const String & msg);
                 // String getServer(const String & url, const String & host, int port);
@@ -1968,7 +2002,8 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             Stream* stream;
             bool    isHWS = false;
             blinker_callback_t listenFunc = NULL;
@@ -1989,6 +2024,11 @@ class BlinkerApi : public BlinkerProtocol
             bool httpPOST(const String & _host, const String & _uri,
                         const String & _msg , const String & _type,
                         const String & _application, uint32_t time_out = 5000);
+        #endif
+
+        #if defined(BLINKER_LOWPOWER_AIR202)
+            void begin(const char* _key, const char* _type, Stream& s,
+                        bool isHardware, blinker_callback_t _func);
         #endif
 };
 
@@ -2044,22 +2084,25 @@ void BlinkerApi::needInit()
         defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
         defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
         defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-        defined(BLINKER_PRO_ESP)
+        defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
         BLINKER_LOG_ALL(BLINKER_F("==== needInit ===="));
-        String _shareData = freshSharers();
-        if (STRING_contains_string(_shareData, "users") == false)
-        {
-            _shareData = freshSharers();
-        }
-        if (STRING_contains_string(_shareData, "users") == true)
-        {
-            BProto::sharers(_shareData);
-        }
+        #if !defined(BLINKER_LOWPOWER_AIR202)
+            String _shareData = freshSharers();
+            if (STRING_contains_string(_shareData, "users") == false)
+            {
+                _shareData = freshSharers();
+            }
+            if (STRING_contains_string(_shareData, "users") == true)
+            {
+                BProto::sharers(_shareData);
+            }
+        #endif
 
         // push("Hello blinker!");
 
         #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-            !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+            !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+            !defined(BLINKER_LOWPOWER_AIR202))
             loadTiming();
         #endif
 
@@ -2069,7 +2112,7 @@ void BlinkerApi::needInit()
         // BProto::disconnect();
         // BProto::connect();
 
-        #if defined(BLINKER_LOWPOWER)
+        #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
             int32_t _freq_get = comFreqGet();
 
             if (_freq_get < 1) _freq_get = comFreqGet();
@@ -2146,42 +2189,21 @@ void BlinkerApi::needInit()
     void BlinkerApi::begin(const char* _type, Stream& s,
                         bool isHardware, blinker_callback_t _func)
     {
-        // #if defined(BLINKER_NO_BUTTON)
-
-        //     EEPROM.begin(BLINKER_EEP_SIZE);
-        //     EEPROM.get(BLINKER_EEP_ADDR_POWER_ON_COUNT, _power_count);
-        //     _power_count += 1;
-        //     EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, _power_count);
-        //     EEPROM.commit();
-        //     EEPROM.end();
-
-        //     BLINKER_LOG(BLINKER_F("_power_count: "), _power_count);
-
-        //     _reset_countdown = millis();
-        //     if (_power_count > 3)
-        //     {
-        //         if (_noButtonResetFunc) _noButtonResetFunc();
-        //     }
-        // #endif
-
         begin();
 
-        // BLINKER_LOG(BLINKER_F(
-        //             "\n==========================================================="
-        //             "\n================= Blinker PRO mode init ! ================="
-        //             "\nWarning! EEPROM address 1280-1535 is used for Auto Control!"
-        //             "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
-        //             "\n===========================================================\n"));
+        setType(_type);
 
-        // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+        stream = &s; isHWS = isHardware;
+        listenFunc = _func;
+    }
+#endif
 
-        // #if defined(BLINKER_BUTTON)
-        //     #if defined(BLINKER_BUTTON_PULLDOWN)
-        //         buttonInit(false);
-        //     #else
-        //         buttonInit();
-        //     #endif
-        // #endif
+#if defined(BLINKER_LOWPOWER_AIR202)
+    void BlinkerApi::begin(const char* _key, const char* _type, Stream& s,
+                        bool isHardware, blinker_callback_t _func)
+    {
+        _vipKey = _key;
+        begin();
 
         setType(_type);
 
@@ -2192,282 +2214,364 @@ void BlinkerApi::needInit()
 
 void BlinkerApi::run()
 {
-    #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
-        #if defined(BLINKER_NO_BUTTON)
-            if (millis() > 5000 && !_isCheckPower)
+    #if defined(BLINKER_LOWPOWER_AIR202)
+        ::delay(10);
+    #else
+        #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
+            #if defined(BLINKER_NO_BUTTON)
+                if (millis() > 5000 && !_isCheckPower)
+                    {
+                        _isCheckPower = true;
+                        BLINKER_LOG_ALL("erase power count");
+
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
+                        EEPROM.commit();
+                        EEPROM.end();
+                }
+
+                if (_power_count > 3)
                 {
-                    _isCheckPower = true;
-                    BLINKER_LOG_ALL("erase power count");
+                    if (millis() - _reset_countdown > 5000)
+                    {
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
+                        EEPROM.commit();
+                        EEPROM.end();
 
-                    EEPROM.begin(BLINKER_EEP_SIZE);
-                    EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
-                    EEPROM.commit();
-                    EEPROM.end();
-            }
+                        reset();
+                    }
+                }
+            #endif
 
-            if (_power_count > 3)
+            if (!wlanRun())
             {
-                if (millis() - _reset_countdown > 5000)
-                {
-                    EEPROM.begin(BLINKER_EEP_SIZE);
-                    EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
-                    EEPROM.commit();
-                    EEPROM.end();
+                uint8_t wl_status = wlanStatus();
 
-                    reset();
+                if (wl_status == BWL_SMARTCONFIG_BEGIN) {
+                    _proStatus = PRO_WLAN_SMARTCONFIG_BEGIN;
+                }
+                else if (wl_status == BWL_SMARTCONFIG_DONE) {
+                    _proStatus = PRO_WLAN_SMARTCONFIG_DONE;
+                }
+                else {
+                    _proStatus = PRO_WLAN_CONNECTING;
+                }
+                return;
+            }
+            else
+            {
+                if (!_isConnBegin)
+                {
+                    _proStatus = PRO_WLAN_CONNECTED;
+
+                    // if (checkCanOTA()) loadOTA();
+
+                    #if defined(BLINKER_PRO)
+                    BProto::begin(type());
+                    #elif defined(BLINKER_PRO_ESP)
+                    BProto::begin(key(), type());
+                    #endif
+                    _isConnBegin = true;
+                    _initTime = millis();
+
+                    BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+
+                    // loadOTA();
+
+                    if (BProto::authCheck())
+                    {
+                        _proStatus = PRO_DEV_AUTHCHECK_SUCCESS;
+
+                        BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
+
+                        _isRegistered = BProto::deviceRegister();
+                        _getRegister = true;
+
+                        if (!_isRegistered)
+                        {
+                            _register_fresh = millis();
+
+                            _proStatus = PRO_DEV_REGISTER_FAIL;
+                        }
+                        else
+                        {
+                            _proStatus = PRO_DEV_REGISTER_SUCCESS;
+                        }
+                    }
+                    else
+                    {
+                        _proStatus = PRO_DEV_AUTHCHECK_FAIL;
+
+                        BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
+                    }
+
+                    BLINKER_LOG_FreeHeap_ALL();
                 }
             }
-        #endif
 
-        if (!wlanRun())
-        {
-            uint8_t wl_status = wlanStatus();
-
-            if (wl_status == BWL_SMARTCONFIG_BEGIN) {
-                _proStatus = PRO_WLAN_SMARTCONFIG_BEGIN;
-            }
-            else if (wl_status == BWL_SMARTCONFIG_DONE) {
-                _proStatus = PRO_WLAN_SMARTCONFIG_DONE;
-            }
-            else {
-                _proStatus = PRO_WLAN_CONNECTING;
-            }
-            return;
-        }
-        else
-        {
-            if (!_isConnBegin)
+            if (_getRegister)
             {
-                _proStatus = PRO_WLAN_CONNECTED;
-
-                // if (checkCanOTA()) loadOTA();
-
-                #if defined(BLINKER_PRO)
-                BProto::begin(type());
-                #elif defined(BLINKER_PRO_ESP)
-                BProto::begin(key(), type());
-                #endif
-                _isConnBegin = true;
-                _initTime = millis();
-
-                BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
-
-                // loadOTA();
-
-                if (BProto::authCheck())
+                if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
+                    _register_fresh == 0))
                 {
-                    _proStatus = PRO_DEV_AUTHCHECK_SUCCESS;
-
-                    BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
+                    BLINKER_LOG_ALL(BLINKER_F("conn deviceRegister"));
 
                     _isRegistered = BProto::deviceRegister();
-                    _getRegister = true;
 
                     if (!_isRegistered)
                     {
                         _register_fresh = millis();
-
                         _proStatus = PRO_DEV_REGISTER_FAIL;
                     }
                     else
                     {
+                        _isRegistered = true;
                         _proStatus = PRO_DEV_REGISTER_SUCCESS;
                     }
                 }
-                else
-                {
-                    _proStatus = PRO_DEV_AUTHCHECK_FAIL;
-
-                    BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
-                }
-
-                BLINKER_LOG_FreeHeap_ALL();
             }
-        }
 
-        if (_getRegister)
-        {
-            if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
-                _register_fresh == 0))
+            if (!BProto::init())
             {
-                BLINKER_LOG_ALL(BLINKER_F("conn deviceRegister"));
+                yield();
 
-                _isRegistered = BProto::deviceRegister();
-
-                if (!_isRegistered)
+                if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
+                    !_getRegister)
                 {
-                    _register_fresh = millis();
-                    _proStatus = PRO_DEV_REGISTER_FAIL;
-                }
-                else
-                {
-                    _isRegistered = true;
-                    _proStatus = PRO_DEV_REGISTER_SUCCESS;
-                }
-            }
-        }
-
-        if (!BProto::init())
-        {
-            yield();
-
-            if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
-                !_getRegister)
-            {
-                reset();
-            }
-        }
-        else
-        {
-            if (!_isInit)
-            {
-                if (ntpInit())
-                {
-                    _isInit = true;
-                    // strcpy(_authKey, conn.authKey());
-                    // strcpy(_deviceName, conn.deviceName());
-                    _proStatus = PRO_DEV_INIT_SUCCESS;
-
-                    uint32_t connect_time = millis();
-                    uint32_t time_slot = 0;
-
-                    if (checkCanOTA()) loadOTA();
-
-                    if (_needInit == false)
-                    {
-                        _needInit = true;
-                        needInit();
-
-                        #if defined(BLINKER_LOWPOWER)
-                            break;
-                        #endif
-                    }
-
-                    while (time_slot < 30000)
-                    {
-                        time_slot = millis() - connect_time;
-                        BProto::connect();
-                        yield();
-
-                        if (BProto::mConnected())
-                        {
-                            state = CONNECTED;
-                            break;
-                        }
-                    }
-                    // BProto::sharers(freshSharers());
+                    reset();
                 }
             }
             else
             {
-                if (state == CONNECTING && _proStatus != PRO_DEV_CONNECTING) {
-                    _proStatus = PRO_DEV_CONNECTING;
-                }
-                else if (state == CONNECTED && _proStatus != PRO_DEV_CONNECTED) {
-                    if (BProto::mConnected()) _proStatus = PRO_DEV_CONNECTED;
-                }
-                else if (state == DISCONNECTED && _proStatus != PRO_DEV_DISCONNECTED) {
-                    _proStatus = PRO_DEV_DISCONNECTED;
-                }
-            }
-        }
-
-    #endif
-
-    #if defined(BLINKER_MQTT_AUTO)
-        if (!wlanRun())
-        {
-            uint8_t wl_status = wlanStatus();
-
-            if (wl_status == BWL_SMARTCONFIG_BEGIN) {
-                _mqttAutoStatue= AUTO_WLAN_SMARTCONFIG_BEGIN;
-            }
-            else if (wl_status == BWL_SMARTCONFIG_DONE) {
-                _mqttAutoStatue = AUTO_WLAN_SMARTCONFIG_DONE;
-            }
-            else {
-                _mqttAutoStatue = AUTO_WLAN_CONNECTING;
-            }
-            return;
-        }
-        else
-        {
-            if (!_isConnBegin)
-            {
-                _mqttAutoStatue = AUTO_WLAN_CONNECTED;
-
-                // if (checkCanOTA()) loadOTA();
-
-                BProto::begin(key(), type());
-                _isConnBegin = true;
-                _initTime = millis();
-
-                BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
-
-                // loadOTA();
-
-                if (BProto::authCheck())
+                if (!_isInit)
                 {
-                    _mqttAutoStatue = AUTO_DEV_AUTHCHECK_SUCCESS;
-
-                    BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
-
-                    _isRegistered = BProto::deviceRegister();
-                    _getRegister = true;
-
-                    if (!_isRegistered)
+                    if (ntpInit())
                     {
-                        _register_fresh = millis();
+                        _isInit = true;
+                        // strcpy(_authKey, conn.authKey());
+                        // strcpy(_deviceName, conn.deviceName());
+                        _proStatus = PRO_DEV_INIT_SUCCESS;
 
-                        _mqttAutoStatue = AUTO_DEV_REGISTER_FAIL;
+                        uint32_t connect_time = millis();
+                        uint32_t time_slot = 0;
 
-                        BLINKER_LOG_ALL(BLINKER_F("AUTO_DEV_REGISTER_FAIL"));
+                        if (checkCanOTA()) loadOTA();
+
+                        if (_needInit == false)
+                        {
+                            _needInit = true;
+                            needInit();
+
+                            #if defined(BLINKER_LOWPOWER)
+                                break;
+                            #endif
+                        }
+
+                        while (time_slot < 30000)
+                        {
+                            time_slot = millis() - connect_time;
+                            BProto::connect();
+                            yield();
+
+                            if (BProto::mConnected())
+                            {
+                                state = CONNECTED;
+                                break;
+                            }
+                        }
+                        // BProto::sharers(freshSharers());
+                    }
+                }
+                else
+                {
+                    if (state == CONNECTING && _proStatus != PRO_DEV_CONNECTING) {
+                        _proStatus = PRO_DEV_CONNECTING;
+                    }
+                    else if (state == CONNECTED && _proStatus != PRO_DEV_CONNECTED) {
+                        if (BProto::mConnected()) _proStatus = PRO_DEV_CONNECTED;
+                    }
+                    else if (state == DISCONNECTED && _proStatus != PRO_DEV_DISCONNECTED) {
+                        _proStatus = PRO_DEV_DISCONNECTED;
+                    }
+                }
+            }
+
+        #endif
+
+        #if defined(BLINKER_MQTT_AUTO)
+            if (!wlanRun())
+            {
+                uint8_t wl_status = wlanStatus();
+
+                if (wl_status == BWL_SMARTCONFIG_BEGIN) {
+                    _mqttAutoStatue= AUTO_WLAN_SMARTCONFIG_BEGIN;
+                }
+                else if (wl_status == BWL_SMARTCONFIG_DONE) {
+                    _mqttAutoStatue = AUTO_WLAN_SMARTCONFIG_DONE;
+                }
+                else {
+                    _mqttAutoStatue = AUTO_WLAN_CONNECTING;
+                }
+                return;
+            }
+            else
+            {
+                if (!_isConnBegin)
+                {
+                    _mqttAutoStatue = AUTO_WLAN_CONNECTED;
+
+                    // if (checkCanOTA()) loadOTA();
+
+                    BProto::begin(key(), type());
+                    _isConnBegin = true;
+                    _initTime = millis();
+
+                    BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+
+                    // loadOTA();
+
+                    if (BProto::authCheck())
+                    {
+                        _mqttAutoStatue = AUTO_DEV_AUTHCHECK_SUCCESS;
+
+                        BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
+
+                        _isRegistered = BProto::deviceRegister();
+                        _getRegister = true;
+
+                        if (!_isRegistered)
+                        {
+                            _register_fresh = millis();
+
+                            _mqttAutoStatue = AUTO_DEV_REGISTER_FAIL;
+
+                            BLINKER_LOG_ALL(BLINKER_F("AUTO_DEV_REGISTER_FAIL"));
+                        }
+                        else
+                        {
+                            _mqttAutoStatue = AUTO_DEV_REGISTER_SUCCESS;
+
+                            BLINKER_LOG_ALL(BLINKER_F("AUTO_DEV_REGISTER_SUCCESS"));
+                        }
                     }
                     else
                     {
-                        _mqttAutoStatue = AUTO_DEV_REGISTER_SUCCESS;
+                        _mqttAutoStatue = AUTO_DEV_AUTHCHECK_FAIL;
 
-                        BLINKER_LOG_ALL(BLINKER_F("AUTO_DEV_REGISTER_SUCCESS"));
+                        BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
+                    }
+
+                    BLINKER_LOG_FreeHeap_ALL();
+                }
+            }
+
+            if (!BProto::init())
+            {
+                yield();
+
+                if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
+                    !_getRegister)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("NOW RESET!!!"));
+                    reset();
+                }
+            }
+            else// (BProto::init())
+            {
+                if (!_isInit)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("ntpInit"));
+                    if (ntpInit())
+                    {
+                        _isInit = true;
+                        // strcpy(_authKey, conn.authKey());
+                        // strcpy(_deviceName, conn.deviceName());
+                        _mqttAutoStatue = AUTO_DEV_INIT_SUCCESS;
+
+                        uint32_t connect_time = millis();
+                        uint32_t time_slot = 0;
+
+                        BLINKER_LOG_ALL(BLINKER_F("checkCanOTA"));
+
+                        if (checkCanOTA()) loadOTA();
+
+                        if (_needInit == false)
+                        {
+                            _needInit = true;
+                            needInit();
+
+                            #if defined(BLINKER_LOWPOWER)
+                                break;
+                            #endif
+                        }
+
+                        while (time_slot < 30000)
+                        {
+                            time_slot = millis() - connect_time;
+                            BProto::connect();
+                            yield();
+
+                            if (BProto::mConnected())
+                            {
+                                state = CONNECTED;
+                                break;
+                            }
+                        }
+                        // BProto::sharers(freshSharers());
                     }
                 }
                 else
                 {
-                    _mqttAutoStatue = AUTO_DEV_AUTHCHECK_FAIL;
-
-                    BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
+                    if (state == CONNECTING && _mqttAutoStatue != AUTO_DEV_CONNECTING) {
+                        _mqttAutoStatue = AUTO_DEV_CONNECTING;
+                    }
+                    else if (state == CONNECTED && _mqttAutoStatue != AUTO_DEV_CONNECTED) {
+                        if (BProto::mConnected()) _mqttAutoStatue = AUTO_DEV_CONNECTED;
+                    }
+                    else if (state == DISCONNECTED && _mqttAutoStatue != AUTO_DEV_DISCONNECTED) {
+                        _mqttAutoStatue = AUTO_DEV_DISCONNECTED;
+                    }
                 }
-
-                BLINKER_LOG_FreeHeap_ALL();
             }
-        }
+        #endif
 
-        if (!BProto::init())
-        {
-            yield();
+        #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
+            defined(BLINKER_PRO_ESP)
+            ntpInit();
+            checkTimer();
 
-            if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
-                !_getRegister)
+            if (WiFi.status() != WL_CONNECTED)
             {
-                BLINKER_LOG_ALL(BLINKER_F("NOW RESET!!!"));
-                reset();
+                return;
             }
-        }
-        else// (BProto::init())
-        {
+        #endif
+
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
+            checkTimer();
+
+            if (!BProto::init()) {
+                ::delay(2000);
+                // BLINKER_LOG_ALL(BLINKER_F("RETURN"));
+
+                #if defined(BLINKER_AT_MQTT)
+                    BProto::connect();
+                #endif
+                return;
+            }
+
             if (!_isInit)
             {
-                BLINKER_LOG_ALL(BLINKER_F("ntpInit"));
                 if (ntpInit())
                 {
-                    _isInit = true;
-                    // strcpy(_authKey, conn.authKey());
-                    // strcpy(_deviceName, conn.deviceName());
-                    _mqttAutoStatue = AUTO_DEV_INIT_SUCCESS;
+                    _isInit =true;
+                    _disconnectTime = millis();
 
                     uint32_t connect_time = millis();
                     uint32_t time_slot = 0;
 
-                    BLINKER_LOG_ALL(BLINKER_F("checkCanOTA"));
+                    bridgeInit();
 
                     if (checkCanOTA()) loadOTA();
 
@@ -2477,7 +2581,7 @@ void BlinkerApi::run()
                         needInit();
 
                         #if defined(BLINKER_LOWPOWER)
-                            break;
+                            return;
                         #endif
                     }
 
@@ -2493,657 +2597,582 @@ void BlinkerApi::run()
                             break;
                         }
                     }
+
+                    BLINKER_LOG_ALL(BLINKER_F("millis: "), millis(),
+                                    BLINKER_F(", connect_time: "), connect_time);
                     // BProto::sharers(freshSharers());
+
+                    BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
                 }
-            }
-            else
-            {
-                if (state == CONNECTING && _mqttAutoStatue != AUTO_DEV_CONNECTING) {
-                    _mqttAutoStatue = AUTO_DEV_CONNECTING;
-                }
-                else if (state == CONNECTED && _mqttAutoStatue != AUTO_DEV_CONNECTED) {
-                    if (BProto::mConnected()) _mqttAutoStatue = AUTO_DEV_CONNECTED;
-                }
-                else if (state == DISCONNECTED && _mqttAutoStatue != AUTO_DEV_DISCONNECTED) {
-                    _mqttAutoStatue = AUTO_DEV_DISCONNECTED;
-                }
-            }
-        }
-    #endif
-
-    #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-        defined(BLINKER_PRO_ESP)
-        ntpInit();
-        checkTimer();
-
-        if (WiFi.status() != WL_CONNECTED)
-        {
-            return;
-        }
-    #endif
-
-    #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY)
-        checkTimer();
-
-        if (!BProto::init()) {
-            ::delay(2000);
-            // BLINKER_LOG_ALL(BLINKER_F("RETURN"));
-
-            #if defined(BLINKER_AT_MQTT)
-                BProto::connect();
-            #endif
-            return;
-        }
-
-        if (!_isInit)
-        {
-            if (ntpInit())
-            {
-                _isInit =true;
-                _disconnectTime = millis();
-
-                uint32_t connect_time = millis();
-                uint32_t time_slot = 0;
-
-                bridgeInit();
-
-                if (checkCanOTA()) loadOTA();
-
-                if (_needInit == false)
+                else
                 {
-                    _needInit = true;
-                    needInit();
-
-                    #if defined(BLINKER_LOWPOWER)
-                        return;
-                    #endif
+                    return;
                 }
 
-                while (time_slot < 30000)
-                {
-                    time_slot = millis() - connect_time;
-                    BProto::connect();
-                    yield();
-
-                    if (BProto::mConnected())
-                    {
-                        state = CONNECTED;
-                        break;
-                    }
-                }
-
-                BLINKER_LOG_ALL(BLINKER_F("millis: "), millis(),
-                                BLINKER_F(", connect_time: "), connect_time);
-                // BProto::sharers(freshSharers());
-
-                BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
             }
-            else
+            else {
+                ntpInit();
+            }
+
+            if (WiFi.status() != WL_CONNECTED)
             {
+                if ((millis() - _reconTime) >= 10000 || \
+                    _reconTime == 0 )
+                {
+                    _reconTime = millis();
+                    BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                    WiFi.reconnect();
+                }
+
                 return;
             }
+        #endif
 
-        }
-        else {
-            ntpInit();
-        }
+        #if defined(BLINKER_NB73_NBIOT)
+            nbRun();
+        #endif
 
-        if (WiFi.status() != WL_CONNECTED)
-        {
-            if ((millis() - _reconTime) >= 10000 || \
-                _reconTime == 0 )
+        #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+            if (!_isPowerOn)
             {
-                _reconTime = millis();
-                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
-                WiFi.reconnect();
+                _gprsStatus = GPRS_DEV_POWER_CHECK;
+
+                _isPowerOn = powerCheck();
+
+                return;
+            }
+            else
+            {
+                if (!_isConnBegin)
+                {
+                    _gprsStatus = GPRS_DEV_POWER_ON;
+
+                    BProto::begin(type(), getIMEI());
+                    _isConnBegin = true;
+                    _initTime = millis();
+
+                    BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+
+                    // if (authCheck())
+                    // {
+                    //     _gprsStatus = GPRS_DEV_AUTHCHECK_SUCCESS;
+
+                    //     BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
+
+                        _isRegistered = BProto::deviceRegister();
+                        _getRegister = true;
+
+                        if (!_isRegistered)
+                        {
+                            _register_fresh = millis();
+
+                            _gprsStatus = GPRS_DEV_REGISTER_FAIL;
+
+                            _registerTimes++;
+                        }
+                        else
+                        {
+                            _gprsStatus = GPRS_DEV_REGISTER_SUCCESS;
+
+                            _registerTimes = 0;;
+                        }
+                    // }
+                    // else
+                    // {
+                    //     _gprsStatus = GPRS_DEV_AUTHCHECK_FAIL;
+
+                    //     BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
+                    // }
+
+                    BLINKER_LOG_FreeHeap_ALL();
+                }
             }
 
-            return;
-        }
-    #endif
-
-    #if defined(BLINKER_NB73_NBIOT)
-        nbRun();
-    #endif
-
-    #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
-        if (!_isPowerOn)
-        {
-            _gprsStatus = GPRS_DEV_POWER_CHECK;
-
-            _isPowerOn = powerCheck();
-
-            return;
-        }
-        else
-        {
-            if (!_isConnBegin)
+            if (!BProto::init())
             {
-                _gprsStatus = GPRS_DEV_POWER_ON;
+                yield();
 
-                BProto::begin(type(), getIMEI());
-                _isConnBegin = true;
-                _initTime = millis();
-
-                BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
-
-                // if (authCheck())
-                // {
-                //     _gprsStatus = GPRS_DEV_AUTHCHECK_SUCCESS;
-
-                //     BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
-
+                if ((millis() - _initTime) >= 15000)// && \
+                    // !_isRegistered && _registerTimes < 6)
+                {
                     _isRegistered = BProto::deviceRegister();
-                    _getRegister = true;
 
                     if (!_isRegistered)
                     {
                         _register_fresh = millis();
 
                         _gprsStatus = GPRS_DEV_REGISTER_FAIL;
-
-                        _registerTimes++;
                     }
                     else
                     {
                         _gprsStatus = GPRS_DEV_REGISTER_SUCCESS;
-
-                        _registerTimes = 0;;
-                    }
-                // }
-                // else
-                // {
-                //     _gprsStatus = GPRS_DEV_AUTHCHECK_FAIL;
-
-                //     BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
-                // }
-
-                BLINKER_LOG_FreeHeap_ALL();
-            }
-        }
-
-        if (!BProto::init())
-        {
-            yield();
-
-            if ((millis() - _initTime) >= 15000)// && \
-                // !_isRegistered && _registerTimes < 6)
-            {
-                _isRegistered = BProto::deviceRegister();
-
-                if (!_isRegistered)
-                {
-                    _register_fresh = millis();
-
-                    _gprsStatus = GPRS_DEV_REGISTER_FAIL;
-                }
-                else
-                {
-                    _gprsStatus = GPRS_DEV_REGISTER_SUCCESS;
-                }
-
-                _registerTimes++;
-            }
-        }
-        else
-        {
-            if (!_isInit)
-            {
-                if (ntpInit()) //TBD
-                {
-                    _isInit = true;
-                    _gprsStatus = GPRS_DEV_INIT_SUCCESS;
-
-                    uint32_t connect_time = millis();
-                    uint32_t time_slot = 0;
-
-                    if (_needInit == false)
-                    {
-                        _needInit = true;
-                        needInit();
-
-                        #if defined(BLINKER_LOWPOWER)
-                            return;
-                        #endif
                     }
 
-                    while (time_slot < 30000)
-                    {
-                        time_slot = millis() - connect_time;
-                        BProto::connect();
-                        yield();
-
-                        if (BProto::mConnected())
-                        {
-                            state = CONNECTED;
-                            break;
-                        }
-                    }
+                    _registerTimes++;
                 }
             }
             else
             {
-                if (state == CONNECTING && _gprsStatus != GPRS_DEV_CONNECTING) {
-                    _gprsStatus = GPRS_DEV_CONNECTING;
+                if (!_isInit)
+                {
+                    if (ntpInit()) //TBD
+                    {
+                        _isInit = true;
+                        _gprsStatus = GPRS_DEV_INIT_SUCCESS;
+
+                        uint32_t connect_time = millis();
+                        uint32_t time_slot = 0;
+
+                        if (_needInit == false)
+                        {
+                            _needInit = true;
+                            needInit();
+
+                            #if defined(BLINKER_LOWPOWER)
+                                return;
+                            #endif
+                        }
+
+                        while (time_slot < 30000)
+                        {
+                            time_slot = millis() - connect_time;
+                            BProto::connect();
+                            yield();
+
+                            if (BProto::mConnected())
+                            {
+                                state = CONNECTED;
+                                break;
+                            }
+                        }
+                    }
                 }
-                else if (state == CONNECTED && _gprsStatus != GPRS_DEV_CONNECTED) {
-                    if (BProto::mConnected()) _gprsStatus = GPRS_DEV_CONNECTED;
+                else
+                {
+                    if (state == CONNECTING && _gprsStatus != GPRS_DEV_CONNECTING) {
+                        _gprsStatus = GPRS_DEV_CONNECTING;
+                    }
+                    else if (state == CONNECTED && _gprsStatus != GPRS_DEV_CONNECTED) {
+                        if (BProto::mConnected()) _gprsStatus = GPRS_DEV_CONNECTED;
+                    }
+                    else if (state == DISCONNECTED && _gprsStatus != GPRS_DEV_DISCONNECTED) {
+                        _gprsStatus = GPRS_DEV_DISCONNECTED;
+                    }
                 }
-                else if (state == DISCONNECTED && _gprsStatus != GPRS_DEV_DISCONNECTED) {
-                    _gprsStatus = GPRS_DEV_DISCONNECTED;
+
+            }
+
+        #endif
+
+        #if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+            if (!_isPowerOn)
+            {
+                _nbiotStatus = NBIOT_DEV_POWER_CHECK;
+
+                _isPowerOn = powerCheck();
+
+                return;
+            }
+            else
+            {
+                if (!_isConnBegin)
+                {
+                    _nbiotStatus = NBIOT_DEV_POWER_ON;
+
+                    BProto::begin(type(), getIMEI());
+                    _isConnBegin = true;
+                    _initTime = millis();
+
+                    BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+
+                    // if (authCheck())
+                    // {
+                    //     _nbiotStatus = NBIOT_DEV_AUTHCHECK_SUCCESS;
+
+                    //     BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
+
+                        _isRegistered = BProto::deviceRegister();
+                        _getRegister = true;
+
+                        if (!_isRegistered)
+                        {
+                            _register_fresh = millis();
+
+                            _nbiotStatus = NBIOT_DEV_REGISTER_FAIL;
+
+                            _registerTimes++;
+                        }
+                        else
+                        {
+                            _nbiotStatus = NBIOT_DEV_REGISTER_SUCCESS;
+
+                            _registerTimes = 0;;
+                        }
+                    // }
+                    // else
+                    // {
+                    //     _nbiotStatus = NBIOT_DEV_AUTHCHECK_FAIL;
+
+                    //     BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
+                    // }
+
+                    BLINKER_LOG_FreeHeap_ALL();
                 }
             }
 
-        }
-
-    #endif
-
-    #if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
-        if (!_isPowerOn)
-        {
-            _nbiotStatus = NBIOT_DEV_POWER_CHECK;
-
-            _isPowerOn = powerCheck();
-
-            return;
-        }
-        else
-        {
-            if (!_isConnBegin)
+            if (!BProto::init())
             {
-                _nbiotStatus = NBIOT_DEV_POWER_ON;
+                yield();
 
-                BProto::begin(type(), getIMEI());
-                _isConnBegin = true;
-                _initTime = millis();
-
-                BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
-
-                // if (authCheck())
-                // {
-                //     _nbiotStatus = NBIOT_DEV_AUTHCHECK_SUCCESS;
-
-                //     BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
-
+                if ((millis() - _initTime) >= 15000)// && \
+                    // !_isRegistered && _registerTimes < 6)
+                {
                     _isRegistered = BProto::deviceRegister();
-                    _getRegister = true;
 
                     if (!_isRegistered)
                     {
                         _register_fresh = millis();
 
                         _nbiotStatus = NBIOT_DEV_REGISTER_FAIL;
-
-                        _registerTimes++;
                     }
                     else
                     {
                         _nbiotStatus = NBIOT_DEV_REGISTER_SUCCESS;
-
-                        _registerTimes = 0;;
                     }
-                // }
-                // else
-                // {
-                //     _nbiotStatus = NBIOT_DEV_AUTHCHECK_FAIL;
 
-                //     BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
-                // }
-
-                BLINKER_LOG_FreeHeap_ALL();
+                    _registerTimes++;
+                }
             }
-        }
-
-        if (!BProto::init())
-        {
-            yield();
-
-            if ((millis() - _initTime) >= 15000)// && \
-                // !_isRegistered && _registerTimes < 6)
+            else
             {
-                _isRegistered = BProto::deviceRegister();
-
-                if (!_isRegistered)
+                if (!_isInit)
                 {
-                    _register_fresh = millis();
+                    if (ntpInit()) //TBD
+                    {
+                        _isInit = true;
+                        _nbiotStatus = NBIOT_DEV_INIT_SUCCESS;
 
-                    _nbiotStatus = NBIOT_DEV_REGISTER_FAIL;
+                        uint32_t connect_time = millis();
+                        uint32_t time_slot = 0;
+
+                        if (_needInit == false)
+                        {
+                            _needInit = true;
+                            needInit();
+
+                            #if defined(BLINKER_LOWPOWER)
+                                return;
+                            #endif
+                        }
+
+                        while (time_slot < 30000)
+                        {
+                            time_slot = millis() - connect_time;
+                            BProto::connect();
+                            yield();
+
+                            if (BProto::mConnected())
+                            {
+                                state = CONNECTED;
+                                break;
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                    _nbiotStatus = NBIOT_DEV_REGISTER_SUCCESS;
-                }
-
-                _registerTimes++;
-            }
-        }
-        else
-        {
-            if (!_isInit)
-            {
-                if (ntpInit()) //TBD
-                {
-                    _isInit = true;
-                    _nbiotStatus = NBIOT_DEV_INIT_SUCCESS;
-
-                    uint32_t connect_time = millis();
-                    uint32_t time_slot = 0;
-
-                    if (_needInit == false)
-                    {
-                        _needInit = true;
-                        needInit();
-
-                        #if defined(BLINKER_LOWPOWER)
-                            return;
-                        #endif
+                    if (state == CONNECTING && _nbiotStatus != NBIOT_DEV_CONNECTING) {
+                        _nbiotStatus = NBIOT_DEV_CONNECTING;
                     }
-
-                    while (time_slot < 30000)
-                    {
-                        time_slot = millis() - connect_time;
-                        BProto::connect();
-                        yield();
-
-                        if (BProto::mConnected())
-                        {
-                            state = CONNECTED;
-                            break;
-                        }
+                    else if (state == CONNECTED && _nbiotStatus != NBIOT_DEV_CONNECTED) {
+                        if (BProto::mConnected()) _nbiotStatus = NBIOT_DEV_CONNECTED;
+                    }
+                    else if (state == DISCONNECTED && _nbiotStatus != NBIOT_DEV_DISCONNECTED) {
+                        _nbiotStatus = NBIOT_DEV_DISCONNECTED;
                     }
                 }
+
             }
+        #endif
+
+        #if defined(BLINKER_LOWPOWER)
+            BLINKER_LOG_ALL(BLINKER_F("LOW POWER"));
+
+            char _lp_data_get[1024];
+            strcpy(_lp_data_get, comDataGet().c_str());
+            if (_lp_data_get == BLINKER_CMD_FALSE) strcpy(_lp_data_get, "");
             else
             {
-                if (state == CONNECTING && _nbiotStatus != NBIOT_DEV_CONNECTING) {
-                    _nbiotStatus = NBIOT_DEV_CONNECTING;
-                }
-                else if (state == CONNECTED && _nbiotStatus != NBIOT_DEV_CONNECTED) {
-                    if (BProto::mConnected()) _nbiotStatus = NBIOT_DEV_CONNECTED;
-                }
-                else if (state == DISCONNECTED && _nbiotStatus != NBIOT_DEV_DISCONNECTED) {
-                    _nbiotStatus = NBIOT_DEV_DISCONNECTED;
-                }
-            }
+                flush();
+                parse(_lp_data_get);
 
-        }
-    #endif
-
-    #if defined(BLINKER_LOWPOWER)
-        BLINKER_LOG_ALL(BLINKER_F("LOW POWER"));
-
-        char _lp_data_get[1024];
-        strcpy(_lp_data_get, comDataGet().c_str());
-        if (_lp_data_get == BLINKER_CMD_FALSE) strcpy(_lp_data_get, "");
-        else
-        {
-            flush();
-            parse(_lp_data_get);
-
-            if (!_fresh)
-            {
-                if (BProto::_availableFunc)
+                if (!_fresh)
                 {
-                    BProto::_availableFunc(_lp_data_get);
-                    flush();
-                }
-            }
-        }
-
-        if (_LowPowerFunc) _LowPowerFunc();
-
-        if (strlen(BProto::_sendBuf))
-        {
-            if (!comDateUpdate()) comDateUpdate();
-        }
-        ::delay(60000); // sleep func TBD
-        return;
-    #endif
-
-    bool conState = BProto::connected();
-
-    // if (millis() - debug_time >= 2000)
-    // {
-    //     BLINKER_LOG_ALL("BProto::state: ", BProto::state);
-    //     BLINKER_LOG_ALL("BProto::connected: ", BProto::connected());
-
-    //     debug_time = millis();
-    // }
-
-    // BLINKER_LOG_ALL(BLINKER_F("conState: "), conState);
-
-    switch (BProto::state)
-    {
-        case CONNECTING :
-            if (BProto::connect())
-            {
-                BProto::state = CONNECTED;
-
-                #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-                    defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO)
-                    _disconnectCount = 0;
-                #endif
-            }
-            else
-            {
-                #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-                    defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO)
-                    if (_isInit)
-                    {
-                        if (_disconnectCount == 0)
-                        {
-                            _disconnectCount++;
-                            _disconnectTime = millis();
-                            _disFreshTime = millis();
-                        }
-                        else
-                        {
-                            // if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
-                            if ((millis() - _disFreshTime) >= BLINKER_MQTT_CONNECT_TIMESLOT)
-                            {
-                                _disFreshTime = millis();
-                                _disconnectCount++;
-
-                                if (_disconnectCount > 12) _disconnectCount = 12;
-
-                                BLINKER_LOG_ALL(BLINKER_F("_disFreshTime: "), _disFreshTime);
-                                BLINKER_LOG_ALL(BLINKER_F("_disconnectCount: "), _disconnectCount);
-                            }
-                        }
-                    }
-                #endif
-            }
-            break;
-        case CONNECTED :
-            if (conState)
-            {
-                BProto::checkAvail();
-                if (BProto::isAvail)
-                {
-                    parse(BProto::dataParse());
-                }
-
-                #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-                    defined(BLINKER_GATEWAY)) || defined(BLINKER_MQTT_AUTO) || \
-                    defined(BLINKER_PRO_ESP)
-                    #if defined(BLINKER_ALIGENIE)
-                        if (BProto::checkAliAvail())
-                        {
-                            aliParse(BProto::lastRead());
-                        }
-                    #endif
-
-                    #if defined(BLINKER_DUEROS)
-                        if (BProto::checkDuerAvail())
-                        {
-                            duerParse(BProto::lastRead());
-                        }
-                    #endif
-                #endif
-
-                #if defined(BLINKER_MQTT_AT)
-                    #if defined(BLINKER_ALIGENIE)
-                        if (isAvail)
-                        {
-                            aliParse(BProto::lastRead());
-
-                            if (STRING_contains_string(BProto::lastRead(), "AliGenie"))
-                            {
-                                flush();
-                            }
-
-                        }
-                    #endif
-
-                    #if defined(BLINKER_DUEROS)
-                        if (isAvail)
-                        {
-                            duerParse(BProto::lastRead());
-
-                            if (STRING_contains_string(BProto::lastRead(), "DuerOS"))
-                            {
-                                flush();
-                            }
-                        }
-                    #endif
-                #endif
-
-                #if defined(BLINKER_AT_MQTT)
-                    if (isAvail)
-                    {
-                        // BLINKER_LOG_ALL("isAvail");
-                        BProto::serialPrint(BProto::lastRead());
-                    }
-
-                    if (serialAvailable())
-                    {
-                        BProto::mqttPrint(BProto::serialLastRead());
-                    }
-
-                    if (BProto::checkAliAvail())
-                    {
-                        BProto::serialPrint(BProto::lastRead());
-                    }
-
-                    if (BProto::checkDuerAvail())
-                    {
-                        BProto::serialPrint(BProto::lastRead());
-                    }
-                #endif
-
-                if (BProto::availState)
-                {
-                    BProto::availState = false;
-
                     if (BProto::_availableFunc)
                     {
-                        BProto::_availableFunc(BProto::lastRead());
+                        BProto::_availableFunc(_lp_data_get);
                         flush();
                     }
                 }
-
-                #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-                    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-                    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
-                    if (BProto::needFreshShare())
-                    {
-                        String _shareData = freshSharers();
-                        if (STRING_contains_string(_shareData, "users") == false)
-                        {
-                            _shareData = freshSharers();
-                        }
-                        if (STRING_contains_string(_shareData, "users") == true)
-                        {
-                            BProto::sharers(_shareData);
-                        }
-                    }
-                #endif
             }
-            else
+
+            if (_LowPowerFunc) _LowPowerFunc();
+
+            if (strlen(BProto::_sendBuf))
             {
-                BProto::disconnect();
-                BProto::state = CONNECTING;
-
-                #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-                    defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO)
-                    if (_isInit)
-                    {
-                        if (_disconnectCount == 0)
-                        {
-                            _disconnectCount++;
-                            _disconnectTime = millis();
-                            _disFreshTime = millis();
-                        }
-                        else
-                        {
-                            if ((millis() - _disFreshTime) >= 5000)
-                            {
-                                _disFreshTime = millis();
-                                _disconnectCount++;
-
-                                if (_disconnectCount > 12) _disconnectCount = 12;
-
-                                BLINKER_LOG_ALL(BLINKER_F("_disFreshTime: "), _disFreshTime);
-                                BLINKER_LOG_ALL(BLINKER_F("_disconnectCount: "), _disconnectCount);
-                            }
-                        }
-                    }
-                #endif
+                if (!comDateUpdate()) comDateUpdate();
             }
-            break;
-        case DISCONNECTED :
-            BProto::disconnect();
-            BProto::state = CONNECTING;
-            break;
-    }
-
-    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
-        defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-        defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
-
-        #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
-        if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
-        {
-            if (autoPull()) _isAutoInit = true;
-            else
-            {
-                if (autoPull()) _isAutoInit = true;
-            }
-        }
+            ::delay(60000); // sleep func TBD
+            return;
         #endif
 
-        // #if !defined(BLINKER_AT_MQTT)
-        if (_dataStorageFunc)
-        {
-            if (millis() - _autoDataTime >= _autoStorageTime * 1000)
-            {
-                _dataStorageFunc();
-                _autoDataTime += _autoStorageTime * 1000;
-            }
-        }
+        bool conState = BProto::connected();
 
-        if (millis() - _autoUpdateTime >= _autoStorageTime * _dataTimes * 1000)
+        // if (millis() - debug_time >= 2000)
+        // {
+        //     BLINKER_LOG_ALL("BProto::state: ", BProto::state);
+        //     BLINKER_LOG_ALL("BProto::connected: ", BProto::connected());
+
+        //     debug_time = millis();
+        // }
+
+        // BLINKER_LOG_ALL(BLINKER_F("conState: "), conState);
+
+        switch (BProto::state)
         {
-            if (data_dataCount && _isInit)// && ESP.getFreeHeap() > 4000)
-            {
-                // if (dataUpdate()) _autoUpdateTime = millis();
-                if (dataUpdate()) _autoUpdateTime = millis();
+            case CONNECTING :
+                if (BProto::connect())
+                {
+                    BProto::state = CONNECTED;
+
+                    #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+                        defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO)
+                        _disconnectCount = 0;
+                    #endif
+                }
                 else
                 {
-                    #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020)
-                        BLINKER_LOG_ALL("need reset!");
-                        if (_resetAIRFunc) _resetAIRFunc();
+                    #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+                        defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO)
+                        if (_isInit)
+                        {
+                            if (_disconnectCount == 0)
+                            {
+                                _disconnectCount++;
+                                _disconnectTime = millis();
+                                _disFreshTime = millis();
+                            }
+                            else
+                            {
+                                // if ((millis() > _disFreshTime) && (millis() - _disFreshTime) >= 5000) {
+                                if ((millis() - _disFreshTime) >= BLINKER_MQTT_CONNECT_TIMESLOT)
+                                {
+                                    _disFreshTime = millis();
+                                    _disconnectCount++;
+
+                                    if (_disconnectCount > 12) _disconnectCount = 12;
+
+                                    BLINKER_LOG_ALL(BLINKER_F("_disFreshTime: "), _disFreshTime);
+                                    BLINKER_LOG_ALL(BLINKER_F("_disconnectCount: "), _disconnectCount);
+                                }
+                            }
+                        }
                     #endif
-                    _autoUpdateTime = millis() - 60000;
+                }
+                break;
+            case CONNECTED :
+                if (conState)
+                {
+                    BProto::checkAvail();
+                    if (BProto::isAvail)
+                    {
+                        parse(BProto::dataParse());
+                    }
+
+                    #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                        defined(BLINKER_GATEWAY)) || defined(BLINKER_MQTT_AUTO) || \
+                        defined(BLINKER_PRO_ESP)
+                        #if defined(BLINKER_ALIGENIE)
+                            if (BProto::checkAliAvail())
+                            {
+                                aliParse(BProto::lastRead());
+                            }
+                        #endif
+
+                        #if defined(BLINKER_DUEROS)
+                            if (BProto::checkDuerAvail())
+                            {
+                                duerParse(BProto::lastRead());
+                            }
+                        #endif
+                    #endif
+
+                    #if defined(BLINKER_MQTT_AT)
+                        #if defined(BLINKER_ALIGENIE)
+                            if (isAvail)
+                            {
+                                aliParse(BProto::lastRead());
+
+                                if (STRING_contains_string(BProto::lastRead(), "AliGenie"))
+                                {
+                                    flush();
+                                }
+
+                            }
+                        #endif
+
+                        #if defined(BLINKER_DUEROS)
+                            if (isAvail)
+                            {
+                                duerParse(BProto::lastRead());
+
+                                if (STRING_contains_string(BProto::lastRead(), "DuerOS"))
+                                {
+                                    flush();
+                                }
+                            }
+                        #endif
+                    #endif
+
+                    #if defined(BLINKER_AT_MQTT)
+                        if (isAvail)
+                        {
+                            // BLINKER_LOG_ALL("isAvail");
+                            BProto::serialPrint(BProto::lastRead());
+                        }
+
+                        if (serialAvailable())
+                        {
+                            BProto::mqttPrint(BProto::serialLastRead());
+                        }
+
+                        if (BProto::checkAliAvail())
+                        {
+                            BProto::serialPrint(BProto::lastRead());
+                        }
+
+                        if (BProto::checkDuerAvail())
+                        {
+                            BProto::serialPrint(BProto::lastRead());
+                        }
+                    #endif
+
+                    if (BProto::availState)
+                    {
+                        BProto::availState = false;
+
+                        if (BProto::_availableFunc)
+                        {
+                            BProto::_availableFunc(BProto::lastRead());
+                            flush();
+                        }
+                    }
+
+                    #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+                        defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+                        defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+                        if (BProto::needFreshShare())
+                        {
+                            String _shareData = freshSharers();
+                            if (STRING_contains_string(_shareData, "users") == false)
+                            {
+                                _shareData = freshSharers();
+                            }
+                            if (STRING_contains_string(_shareData, "users") == true)
+                            {
+                                BProto::sharers(_shareData);
+                            }
+                        }
+                    #endif
+                }
+                else
+                {
+                    BProto::disconnect();
+                    BProto::state = CONNECTING;
+
+                    #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+                        defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO)
+                        if (_isInit)
+                        {
+                            if (_disconnectCount == 0)
+                            {
+                                _disconnectCount++;
+                                _disconnectTime = millis();
+                                _disFreshTime = millis();
+                            }
+                            else
+                            {
+                                if ((millis() - _disFreshTime) >= 5000)
+                                {
+                                    _disFreshTime = millis();
+                                    _disconnectCount++;
+
+                                    if (_disconnectCount > 12) _disconnectCount = 12;
+
+                                    BLINKER_LOG_ALL(BLINKER_F("_disFreshTime: "), _disFreshTime);
+                                    BLINKER_LOG_ALL(BLINKER_F("_disconnectCount: "), _disconnectCount);
+                                }
+                            }
+                        }
+                    #endif
+                }
+                break;
+            case DISCONNECTED :
+                BProto::disconnect();
+                BProto::state = CONNECTING;
+                break;
+        }
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+            defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
+
+            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
+                !defined(BLINKER_LOWPOWER_AIR202)
+                if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
+                {
+                    if (autoPull()) _isAutoInit = true;
+                    else
+                    {
+                        if (autoPull()) _isAutoInit = true;
+                    }
+                }
+            #endif
+
+            // #if !defined(BLINKER_AT_MQTT)
+            if (_dataStorageFunc)
+            {
+                if (millis() - _autoDataTime >= _autoStorageTime * 1000)
+                {
+                    _dataStorageFunc();
+                    _autoDataTime += _autoStorageTime * 1000;
                 }
             }
-        }
-        // #endif
-    #endif
 
-    BProto::checkAutoFormat();
+            if (millis() - _autoUpdateTime >= _autoStorageTime * _dataTimes * 1000)
+            {
+                if (data_dataCount && _isInit)// && ESP.getFreeHeap() > 4000)
+                {
+                    // if (dataUpdate()) _autoUpdateTime = millis();
+                    if (dataUpdate()) _autoUpdateTime = millis();
+                    else
+                    {
+                        #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
+                            defined(BLINKER_LOWPOWER_AIR202)
+                            BLINKER_LOG_ALL("need reset!");
+                            if (_resetAIRFunc) _resetAIRFunc();
+                        #endif
+                        _autoUpdateTime = millis() - 60000;
+                    }
+                }
+            }
+            // #endif
+        #endif
+
+        BProto::checkAutoFormat();
+    #endif
 }
 
 void BlinkerApi::parse(char _data[], bool ex_data)
@@ -3666,7 +3695,7 @@ float BlinkerApi::gps(b_gps_t axis)
     defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
     void BlinkerApi::setTimezone(float tz)
     {
         _timezone = tz;
@@ -3686,14 +3715,16 @@ float BlinkerApi::gps(b_gps_t axis)
                 BLINKER_LOG_ALL((ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000));
 
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -3716,7 +3747,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
@@ -3746,14 +3778,16 @@ float BlinkerApi::gps(b_gps_t axis)
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -3776,7 +3810,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
@@ -3805,14 +3840,16 @@ float BlinkerApi::gps(b_gps_t axis)
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -3835,7 +3872,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
@@ -3865,14 +3903,16 @@ float BlinkerApi::gps(b_gps_t axis)
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -3895,7 +3935,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
@@ -3924,14 +3965,16 @@ float BlinkerApi::gps(b_gps_t axis)
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -3954,7 +3997,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
@@ -3984,14 +4028,16 @@ float BlinkerApi::gps(b_gps_t axis)
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -4014,7 +4060,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
@@ -4044,14 +4091,16 @@ float BlinkerApi::gps(b_gps_t axis)
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -4074,7 +4123,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
@@ -4104,14 +4154,16 @@ float BlinkerApi::gps(b_gps_t axis)
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -4134,7 +4186,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
@@ -4168,14 +4221,16 @@ float BlinkerApi::gps(b_gps_t axis)
                 BLINKER_LOG_ALL((ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000));
 
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -4214,7 +4269,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     BLINKER_LOG_ALL("ntpGetTime: ", ntpGetTime);
@@ -4243,14 +4299,16 @@ float BlinkerApi::gps(b_gps_t axis)
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     time_t now_ntp = ::time(nullptr);
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
                     if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
-                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+                #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+                    defined(BLINKER_LOWPOWER_AIR202)
                     BlinkerAIR202 BLINKER_AIR202;
                     BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
                     // if (!BLINKER_AIR202.getAMGSMLOC(_timezone)) return -1;
@@ -4273,7 +4331,8 @@ float BlinkerApi::gps(b_gps_t axis)
             else
             {
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                    !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
@@ -4302,7 +4361,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -4334,7 +4394,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -4370,7 +4431,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -4398,7 +4460,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -4426,7 +4489,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -4461,7 +4525,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -4488,7 +4553,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -4508,7 +4574,8 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+        !defined(BLINKER_LOWPOWER_AIR202))
     void BlinkerApi::loadTimer()
     {
         BLINKER_LOG(BLINKER_F(
@@ -4833,7 +4900,8 @@ float BlinkerApi::gps(b_gps_t axis)
 
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+        !defined(BLINKER_LOWPOWER_AIR202))
     bool BlinkerApi::autoPull()
     {
         String data = BLINKER_F("/auto/pull?deviceName=");
@@ -5019,7 +5087,8 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+        !defined(BLINKER_LOWPOWER_AIR202))
 
     void BlinkerApi::loadOTA()
     {
@@ -6037,10 +6106,11 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+        !defined(BLINKER_LOWPOWER_AIR202))
 
     void BlinkerApi::beginAuto()
     {
@@ -7597,7 +7667,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+        !defined(BLINKER_LOWPOWER_AIR202))
     void BlinkerApi::autoStart()
     {
         uint8_t checkData;
@@ -7778,7 +7849,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
                         json_parse(_array);
                         #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                            !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+                            !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                            !defined(BLINKER_LOWPOWER_AIR202))
                         timerManager(_array, true);
                         #endif
                     }
@@ -8019,7 +8091,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         else return false;
     }
 
-
+    #if !defined(BLINKER_LOWPOWER_AIR202)
     bool BlinkerApi::checkAutoPull()
     {
         if ((millis() - _autoPullTime) >= 60000 || \
@@ -8037,9 +8109,11 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
         return blinkerServer(BLINKER_CMD_BRIDGE_NUMBER, data);
     }
+    #endif
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202))
+        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+        !defined(BLINKER_LOWPOWER_AIR202))
 
     // String BlinkerApi::postServer(const String & url, const String & host, int port, const String & msg)
     // {
@@ -11101,7 +11175,8 @@ char * BlinkerApi::widgetName_int(uint8_t num)
     }
 #endif
 
-#if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+#if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+    defined(BLINKER_LOWPOWER_AIR202)
     bool BlinkerApi::powerCheck()
     {
         BlinkerAIR202 BLINKER_AIR202;

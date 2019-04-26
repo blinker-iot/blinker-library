@@ -22,12 +22,16 @@ class BlinkerAIR202LP : public BlinkerStream
         BlinkerAIR202LP()
             : stream(NULL), isConnect(false)
         {}
-
+        
         void begin(const char* _key, const char* _deviceType, String _imei);
         void initStream(Stream& s, bool state, blinker_callback_t func);
+        char * deviceName() { return _deviceName; }
+        char * authKey() { return _authKey; }
+        int init() { return isGPRSinit; }
         int deviceRegister() { return connectServer(); }
 
     private :
+        bool isGPRSinit = false;
         int connectServer();
 
     protected :
@@ -40,12 +44,13 @@ class BlinkerAIR202LP : public BlinkerStream
         bool        _isAuthKey = false;
         const char* _vipKey;
         const char* _deviceType;
-        char*       authKey;
+        char*       _authKey;
+        char*       _deviceName;
 
         blinker_callback_t listenFunc = NULL;
 };
 
-void BlinkerSerialAIR202::begin(const char* _key, const char* _type, String _imei)
+void BlinkerAIR202LP::begin(const char* _key, const char* _type, String _imei)
 {
     _vipKey = _key;
     _deviceType = _type;
@@ -128,18 +133,18 @@ int BlinkerAIR202LP::connectServer()
 
         String _getAuthKey = root[BLINKER_CMD_DETAIL][BLINKER_CMD_AUTHKEY];
 
-        authKey = (char*)malloc((_getAuthKey.length()+1)*sizeof(char));
-        strcpy(authKey, _getAuthKey.c_str());
+        _authKey = (char*)malloc((_getAuthKey.length()+1)*sizeof(char));
+        strcpy(_authKey, _getAuthKey.c_str());
 
         BLINKER_LOG_ALL(BLINKER_F("===================="));
-        BLINKER_LOG_ALL(BLINKER_F("authKey: "), authKey);
+        BLINKER_LOG_ALL(BLINKER_F("_authKey: "), _authKey);
         BLINKER_LOG_ALL(BLINKER_F("===================="));
 
         _isAuthKey = true;
     }
 
     String url_iot = BLINKER_F("/api/v1/user/device/pro/lowpower/auth?authKey=");
-    url_iot += authKey;
+    url_iot += _authKey;
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + url_iot);
 
@@ -181,6 +186,21 @@ int BlinkerAIR202LP::connectServer()
             return false;
         // }
     }
+
+    String _device_name = root[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
+
+    if (isGPRSinit)
+    {
+        free(_deviceName);
+
+        isGPRSinit = false;
+    }
+
+    _deviceName = (char*)malloc((_device_name.length()+1)*sizeof(char));
+    strcpy(_deviceName, _device_name.c_str());
+    isGPRSinit = true;
+
+    return true;
 }
 
 #endif
