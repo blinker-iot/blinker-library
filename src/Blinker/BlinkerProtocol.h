@@ -27,6 +27,16 @@ class BlinkerProtocol
 
         void transport(BlinkerStream & bStream) { conn = &bStream; isInit = true; }
 
+    #if defined(BLINKER_LOWPOWER_AIR202)
+        void print(const String & data);
+        void print(const String & key, const String & data);
+        char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
+        char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
+        int init()          { return isInit ? conn->init() : false; }
+        void begin(const char* _key, const char* _type, String _imei)
+        { conn->begin(_key, _type, _imei); }
+        int deviceRegister(){ return conn->deviceRegister(); }
+    #else
         int connect()       { return isInit ? conn->connect() : false; }
         int connected()
         {
@@ -128,7 +138,7 @@ class BlinkerProtocol
             void attachSubDisconnect(blinker_callback_t func)
             { if (isInit) conn->attachDisconnect(func); }
         #endif
-
+    #endif
     private :
 
     protected :
@@ -145,6 +155,10 @@ class BlinkerProtocol
         char*               _sendBuf;
         blinker_callback_with_string_arg_t  _availableFunc = NULL;
 
+    #if defined(BLINKER_LOWPOWER_AIR202)
+        void checkFormat();
+        void autoFormatData(const String & key, const String & jsonValue);
+    #else
         int checkAvail();
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
@@ -187,33 +201,15 @@ class BlinkerProtocol
         int _print(char * n, bool needCheckLength = true);
 
         void autoFormatData(const String & key, const String & jsonValue);
+    #endif
 };
 
+#if !defined(BLINKER_LOWPOWER_AIR202)
 void BlinkerProtocol::flush()
 {
     isFresh = false; availState = false; 
     canParse = false; isAvail = false;
     if (isInit) conn->flush();
-}
-
-void BlinkerProtocol::print(const String & data)
-{
-    checkFormat();
-    strcpy(_sendBuf, data.c_str());
-    _print(_sendBuf);
-    free(_sendBuf);
-    autoFormat = false;
-    BLINKER_LOG_FreeHeap_ALL();
-}
-
-void BlinkerProtocol::print(const String & key, const String & data)
-{
-    checkFormat();
-    autoFormatData(key, data);
-    if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
-    {
-        autoFormatFreshTime = millis();
-    }
 }
 
 int BlinkerProtocol::checkAvail()
@@ -236,16 +232,6 @@ int BlinkerProtocol::checkAvail()
     return isAvail;
 }
 
-void BlinkerProtocol::checkFormat()
-{
-    if (!autoFormat)
-    {
-        autoFormat = true;
-        _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-        memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
-    }
-}
-
 void BlinkerProtocol::checkAutoFormat()
 {
     if (autoFormat)
@@ -254,11 +240,13 @@ void BlinkerProtocol::checkAutoFormat()
         {
             if (strlen(_sendBuf))
             {
+                #if !defined(BLINKER_LOWPOWER_AIR202)
                 #if defined(BLINKER_ARDUINOJSON)
                     _print(_sendBuf);
                 #else
                     strcat(_sendBuf, "}");
                     _print(_sendBuf);
+                #endif
                 #endif
             }
             free(_sendBuf);
@@ -323,6 +311,40 @@ int BlinkerProtocol::_print(char * n, bool needCheckLength)
         BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
 
         return false;
+    }
+}
+
+#elif defined(BLINKER_LOWPOWER_AIR202)
+
+void BlinkerProtocol::print(const String & data)
+{
+    #if !defined(BLINKER_LOWPOWER_AIR202)
+    checkFormat();
+    strcpy(_sendBuf, data.c_str());
+    _print(_sendBuf);
+    free(_sendBuf);
+    autoFormat = false;
+    BLINKER_LOG_FreeHeap_ALL();
+    #endif
+}
+
+void BlinkerProtocol::print(const String & key, const String & data)
+{
+    checkFormat();
+    autoFormatData(key, data);
+    if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
+    {
+        autoFormatFreshTime = millis();
+    }
+}
+
+void BlinkerProtocol::checkFormat()
+{
+    if (!autoFormat)
+    {
+        autoFormat = true;
+        _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+        memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
     }
 }
 
@@ -415,5 +437,6 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
         }
     #endif
 }
+#endif
 
 #endif
