@@ -314,6 +314,128 @@ int BlinkerProtocol::_print(char * n, bool needCheckLength)
     }
 }
 
+void BlinkerProtocol::print(const String & data)
+{
+    #if !defined(BLINKER_LOWPOWER_AIR202)
+    checkFormat();
+    strcpy(_sendBuf, data.c_str());
+    _print(_sendBuf);
+    free(_sendBuf);
+    autoFormat = false;
+    BLINKER_LOG_FreeHeap_ALL();
+    #endif
+}
+
+void BlinkerProtocol::print(const String & key, const String & data)
+{
+    checkFormat();
+    autoFormatData(key, data);
+    if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
+    {
+        autoFormatFreshTime = millis();
+    }
+}
+
+void BlinkerProtocol::checkFormat()
+{
+    if (!autoFormat)
+    {
+        autoFormat = true;
+        _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+        memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+    }
+}
+
+void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValue)
+{
+    #if defined(BLINKER_ARDUINOJSON)
+        BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key, \
+                        BLINKER_F(", json: "), jsonValue);
+        
+        String _data;
+
+        if (STRING_contains_string(STRING_format(_sendBuf), key))
+        {
+
+            DynamicJsonBuffer jsonSendBuffer;                
+
+            if (strlen(_sendBuf)) {
+                BLINKER_LOG_ALL(BLINKER_F("add"));
+
+                JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
+
+                if (root.containsKey(key)) {
+                    root.remove(key);
+                }
+                root.printTo(_data);
+
+                _data = _data.substring(0, _data.length() - 1);
+
+                if (_data.length() > 4 ) _data += BLINKER_F(",");
+                _data += jsonValue;
+                _data += BLINKER_F("}");
+            }
+            else {
+                BLINKER_LOG_ALL(BLINKER_F("new"));
+                
+                _data = BLINKER_F("{");
+                _data += jsonValue;
+                _data += BLINKER_F("}");
+            }
+        }
+        else {
+            _data = STRING_format(_sendBuf);
+
+            if (_data.length())
+            {
+                BLINKER_LOG_ALL(BLINKER_F("add."));
+
+                _data = _data.substring(0, _data.length() - 1);
+
+                _data += BLINKER_F(",");
+                _data += jsonValue;
+                _data += BLINKER_F("}");
+            }
+            else {
+                BLINKER_LOG_ALL(BLINKER_F("new."));
+                
+                _data = BLINKER_F("{");
+                _data += jsonValue;
+                _data += BLINKER_F("}");
+            }
+        }
+
+        if (_data.length() > BLINKER_MAX_SEND_BUFFER_SIZE)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT: "), BLINKER_MAX_SEND_BUFFER_SIZE);
+            return;
+        }
+
+        strcpy(_sendBuf, _data.c_str());
+    #else
+        String data;
+
+        BLINKER_LOG_ALL(BLINKER_F("autoFormatData data: "), jsonValue);
+        BLINKER_LOG_ALL(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
+        BLINKER_LOG_ALL(BLINKER_F("data.length(): "), jsonValue.length());
+
+        if ((strlen(_sendBuf) + jsonValue.length()) >= BLINKER_MAX_SEND_BUFFER_SIZE)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
+            return;
+        }
+
+        if (strlen(_sendBuf) > 0) {
+            data = "," + jsonValue;
+            strcat(_sendBuf, data.c_str());
+        }
+        else {
+            data = "{" + jsonValue;
+            strcpy(_sendBuf, data.c_str());
+        }
+    #endif
+}
+
 #elif defined(BLINKER_LOWPOWER_AIR202)
 
 void BlinkerProtocol::print(const String & data)
