@@ -142,7 +142,8 @@ class BlinkerWidgets_joy
     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
     defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
     defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+    defined(BLINKER_LOWPOWER_AIR202)
     class BlinkerBridge_key
     {
         public :

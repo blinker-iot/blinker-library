@@ -27,16 +27,16 @@ class BlinkerProtocol
 
         void transport(BlinkerStream & bStream) { conn = &bStream; isInit = true; }
 
-    #if defined(BLINKER_LOWPOWER_AIR202)
-        void print(const String & data);
-        void print(const String & key, const String & data);
-        char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
-        char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
-        int init()          { return isInit ? conn->init() : false; }
-        void begin(const char* _key, const char* _type, String _imei)
-        { conn->begin(_key, _type, _imei); }
-        int deviceRegister(){ return conn->deviceRegister(); }
-    #else
+    // #if defined(BLINKER_LOWPOWER_AIR202)
+    //     void print(const String & data);
+    //     void print(const String & key, const String & data);
+    //     char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
+    //     char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
+    //     int init()          { return isInit ? conn->init() : false; }
+    //     void begin(const char* _key, const char* _type, String _imei)
+    //     { conn->begin(_key, _type, _imei); }
+    //     int deviceRegister(){ return conn->deviceRegister(); }
+    // #else
         int connect()       { return isInit ? conn->connect() : false; }
         int connected()
         {
@@ -96,6 +96,12 @@ class BlinkerProtocol
             void freshAlive() { if (isInit) conn->freshAlive(); }
         #endif
 
+        #if defined(BLINKER_LOWPOWER_AIR202)
+            char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
+            char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
+            int init()          { return isInit ? conn->init() : false; }
+        #endif
+
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP)
             int deviceRegister(){ return conn->deviceRegister(); }
@@ -138,7 +144,7 @@ class BlinkerProtocol
             void attachSubDisconnect(blinker_callback_t func)
             { if (isInit) conn->attachDisconnect(func); }
         #endif
-    #endif
+    // #endif
     private :
 
     protected :
@@ -155,10 +161,10 @@ class BlinkerProtocol
         char*               _sendBuf;
         blinker_callback_with_string_arg_t  _availableFunc = NULL;
 
-    #if defined(BLINKER_LOWPOWER_AIR202)
-        void checkFormat();
-        void autoFormatData(const String & key, const String & jsonValue);
-    #else
+    // #if defined(BLINKER_LOWPOWER_AIR202)
+    //     void checkFormat();
+    //     void autoFormatData(const String & key, const String & jsonValue);
+    // #else
         int checkAvail();
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
@@ -201,10 +207,10 @@ class BlinkerProtocol
         int _print(char * n, bool needCheckLength = true);
 
         void autoFormatData(const String & key, const String & jsonValue);
-    #endif
+    // #endif
 };
 
-#if !defined(BLINKER_LOWPOWER_AIR202)
+// #if !defined(BLINKER_LOWPOWER_AIR202)
 void BlinkerProtocol::flush()
 {
     isFresh = false; availState = false; 
@@ -436,129 +442,129 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
     #endif
 }
 
-#elif defined(BLINKER_LOWPOWER_AIR202)
+// #elif defined(BLINKER_LOWPOWER_AIR202)
 
-void BlinkerProtocol::print(const String & data)
-{
-    #if !defined(BLINKER_LOWPOWER_AIR202)
-    checkFormat();
-    strcpy(_sendBuf, data.c_str());
-    _print(_sendBuf);
-    free(_sendBuf);
-    autoFormat = false;
-    BLINKER_LOG_FreeHeap_ALL();
-    #endif
-}
+// void BlinkerProtocol::print(const String & data)
+// {
+//     #if !defined(BLINKER_LOWPOWER_AIR202)
+//     checkFormat();
+//     strcpy(_sendBuf, data.c_str());
+//     _print(_sendBuf);
+//     free(_sendBuf);
+//     autoFormat = false;
+//     BLINKER_LOG_FreeHeap_ALL();
+//     #endif
+// }
 
-void BlinkerProtocol::print(const String & key, const String & data)
-{
-    checkFormat();
-    autoFormatData(key, data);
-    if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
-    {
-        autoFormatFreshTime = millis();
-    }
-}
+// void BlinkerProtocol::print(const String & key, const String & data)
+// {
+//     checkFormat();
+//     autoFormatData(key, data);
+//     if ((millis() - autoFormatFreshTime) >= BLINKER_MSG_AUTOFORMAT_TIMEOUT)
+//     {
+//         autoFormatFreshTime = millis();
+//     }
+// }
 
-void BlinkerProtocol::checkFormat()
-{
-    if (!autoFormat)
-    {
-        autoFormat = true;
-        _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
-        memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
-    }
-}
+// void BlinkerProtocol::checkFormat()
+// {
+//     if (!autoFormat)
+//     {
+//         autoFormat = true;
+//         _sendBuf = (char*)malloc(BLINKER_MAX_SEND_SIZE*sizeof(char));
+//         memset(_sendBuf, '\0', BLINKER_MAX_SEND_SIZE);
+//     }
+// }
 
-void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValue)
-{
-    #if defined(BLINKER_ARDUINOJSON)
-        BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key, \
-                        BLINKER_F(", json: "), jsonValue);
+// void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValue)
+// {
+//     #if defined(BLINKER_ARDUINOJSON)
+//         BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key, \
+//                         BLINKER_F(", json: "), jsonValue);
         
-        String _data;
+//         String _data;
 
-        if (STRING_contains_string(STRING_format(_sendBuf), key))
-        {
+//         if (STRING_contains_string(STRING_format(_sendBuf), key))
+//         {
 
-            DynamicJsonBuffer jsonSendBuffer;                
+//             DynamicJsonBuffer jsonSendBuffer;                
 
-            if (strlen(_sendBuf)) {
-                BLINKER_LOG_ALL(BLINKER_F("add"));
+//             if (strlen(_sendBuf)) {
+//                 BLINKER_LOG_ALL(BLINKER_F("add"));
 
-                JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
+//                 JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
 
-                if (root.containsKey(key)) {
-                    root.remove(key);
-                }
-                root.printTo(_data);
+//                 if (root.containsKey(key)) {
+//                     root.remove(key);
+//                 }
+//                 root.printTo(_data);
 
-                _data = _data.substring(0, _data.length() - 1);
+//                 _data = _data.substring(0, _data.length() - 1);
 
-                if (_data.length() > 4 ) _data += BLINKER_F(",");
-                _data += jsonValue;
-                _data += BLINKER_F("}");
-            }
-            else {
-                BLINKER_LOG_ALL(BLINKER_F("new"));
+//                 if (_data.length() > 4 ) _data += BLINKER_F(",");
+//                 _data += jsonValue;
+//                 _data += BLINKER_F("}");
+//             }
+//             else {
+//                 BLINKER_LOG_ALL(BLINKER_F("new"));
                 
-                _data = BLINKER_F("{");
-                _data += jsonValue;
-                _data += BLINKER_F("}");
-            }
-        }
-        else {
-            _data = STRING_format(_sendBuf);
+//                 _data = BLINKER_F("{");
+//                 _data += jsonValue;
+//                 _data += BLINKER_F("}");
+//             }
+//         }
+//         else {
+//             _data = STRING_format(_sendBuf);
 
-            if (_data.length())
-            {
-                BLINKER_LOG_ALL(BLINKER_F("add."));
+//             if (_data.length())
+//             {
+//                 BLINKER_LOG_ALL(BLINKER_F("add."));
 
-                _data = _data.substring(0, _data.length() - 1);
+//                 _data = _data.substring(0, _data.length() - 1);
 
-                _data += BLINKER_F(",");
-                _data += jsonValue;
-                _data += BLINKER_F("}");
-            }
-            else {
-                BLINKER_LOG_ALL(BLINKER_F("new."));
+//                 _data += BLINKER_F(",");
+//                 _data += jsonValue;
+//                 _data += BLINKER_F("}");
+//             }
+//             else {
+//                 BLINKER_LOG_ALL(BLINKER_F("new."));
                 
-                _data = BLINKER_F("{");
-                _data += jsonValue;
-                _data += BLINKER_F("}");
-            }
-        }
+//                 _data = BLINKER_F("{");
+//                 _data += jsonValue;
+//                 _data += BLINKER_F("}");
+//             }
+//         }
 
-        if (_data.length() > BLINKER_MAX_SEND_BUFFER_SIZE)
-        {
-            BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT: "), BLINKER_MAX_SEND_BUFFER_SIZE);
-            return;
-        }
+//         if (_data.length() > BLINKER_MAX_SEND_BUFFER_SIZE)
+//         {
+//             BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT: "), BLINKER_MAX_SEND_BUFFER_SIZE);
+//             return;
+//         }
 
-        strcpy(_sendBuf, _data.c_str());
-    #else
-        String data;
+//         strcpy(_sendBuf, _data.c_str());
+//     #else
+//         String data;
 
-        BLINKER_LOG_ALL(BLINKER_F("autoFormatData data: "), jsonValue);
-        BLINKER_LOG_ALL(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
-        BLINKER_LOG_ALL(BLINKER_F("data.length(): "), jsonValue.length());
+//         BLINKER_LOG_ALL(BLINKER_F("autoFormatData data: "), jsonValue);
+//         BLINKER_LOG_ALL(BLINKER_F("strlen(_sendBuf): "), strlen(_sendBuf));
+//         BLINKER_LOG_ALL(BLINKER_F("data.length(): "), jsonValue.length());
 
-        if ((strlen(_sendBuf) + jsonValue.length()) >= BLINKER_MAX_SEND_BUFFER_SIZE)
-        {
-            BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
-            return;
-        }
+//         if ((strlen(_sendBuf) + jsonValue.length()) >= BLINKER_MAX_SEND_BUFFER_SIZE)
+//         {
+//             BLINKER_ERR_LOG(BLINKER_F("FORMAT DATA SIZE IS MAX THAN LIMIT"));
+//             return;
+//         }
 
-        if (strlen(_sendBuf) > 0) {
-            data = "," + jsonValue;
-            strcat(_sendBuf, data.c_str());
-        }
-        else {
-            data = "{" + jsonValue;
-            strcpy(_sendBuf, data.c_str());
-        }
-    #endif
-}
-#endif
+//         if (strlen(_sendBuf) > 0) {
+//             data = "," + jsonValue;
+//             strcat(_sendBuf, data.c_str());
+//         }
+//         else {
+//             data = "{" + jsonValue;
+//             strcpy(_sendBuf, data.c_str());
+//         }
+//     #endif
+// }
+// #endif
 
 #endif

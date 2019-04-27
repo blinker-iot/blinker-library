@@ -2214,9 +2214,9 @@ void BlinkerApi::needInit()
 
 void BlinkerApi::run()
 {
-    #if defined(BLINKER_LOWPOWER_AIR202)
-        ::delay(10);
-    #else
+    // #if defined(BLINKER_LOWPOWER_AIR202)
+    //     ::delay(10);
+    // #else
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
             #if defined(BLINKER_NO_BUTTON)
                 if (millis() > 5000 && !_isCheckPower)
@@ -3172,7 +3172,7 @@ void BlinkerApi::run()
         #endif
 
         BProto::checkAutoFormat();
-    #endif
+    // #endif
 }
 
 void BlinkerApi::parse(char _data[], bool ex_data)
@@ -5046,6 +5046,7 @@ float BlinkerApi::gps(b_gps_t axis)
     }
     #endif
 
+    #if !defined(BLINKER_LOWPOWER_AIR202)
     void BlinkerApi::aligeniePrint(String & _msg)
     {
         BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
@@ -5085,6 +5086,7 @@ float BlinkerApi::gps(b_gps_t axis)
             BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
         }
     }
+    #endif
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -5279,6 +5281,7 @@ float BlinkerApi::gps(b_gps_t axis)
     }
     #endif
 
+    #if !defined(BLINKER_LOWPOWER_AIR202)
     String BlinkerApi::freshSharers()
     {
         String data = BLINKER_F("/share/device?");
@@ -5289,6 +5292,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
         return blinkerServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
     }
+    #endif
 
     #if defined(BLINKER_LOWPOWER)
         int32_t BlinkerApi::comFreqGet()
