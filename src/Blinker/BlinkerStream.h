@@ -16,13 +16,13 @@
 class BlinkerStream
 {
     public :
-    #if defined(BLINKER_LOWPOWER_AIR202)
-        virtual void begin(const char* _key, const char* _deviceType, String _imei) = 0;
-        virtual char * deviceName() = 0;
-        virtual char * authKey() = 0;
-        virtual int init() = 0;
-        virtual int deviceRegister() = 0;
-    #else
+    // #if defined(BLINKER_LOWPOWER_AIR202)
+    //     virtual void begin(const char* _key, const char* _deviceType, String _imei) = 0;
+    //     virtual char * deviceName() = 0;
+    //     virtual char * authKey() = 0;
+    //     virtual int init() = 0;
+    //     virtual int deviceRegister() = 0;
+    // #else
         virtual int available() = 0;
         virtual char * lastRead() = 0;
         virtual void flush() = 0;
@@ -61,6 +61,12 @@ class BlinkerStream
             virtual int init() = 0;           
             virtual int mConnected() = 0;
             virtual void freshAlive() = 0;
+        #endif
+
+        #if defined(BLINKER_LOWPOWER_AIR202)
+            virtual char * deviceName() = 0;
+            virtual char * authKey() = 0;
+            virtual int init() = 0;      
         #endif
 
         // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
@@ -113,7 +119,7 @@ class BlinkerStream
             virtual void attachConnected(blinker_callback_return_int_t func) = 0;
             virtual void attachDisconnect(blinker_callback_t func) = 0;
         #endif
-    #endif
+    // #endif
 };
 
 #endif

@@ -23,6 +23,23 @@ class BlinkerAIR202LP : public BlinkerStream
             : stream(NULL), isConnect(false)
         {}
         
+        int connect() { return true; }
+        int connected() { return true; }
+        void disconnect() { delay(1); }
+        void ping() { delay(1); }
+        int available()
+        { 
+            dataGet();
+            if (isAvail)
+            { 
+                isAvail = false; return true;
+            }
+            else return false;
+        }
+        char * lastRead() { if (isFresh) return msgBuf; return ""; }
+        void flush() { if (isFresh) { free(msgBuf); isFresh = false; isAvail = false; } }
+        void dataGet();
+        int print(char * data, bool needCheck = true);
         void begin(const char* _key, const char* _deviceType, String _imei);
         void initStream(Stream& s, bool state, blinker_callback_t func);
         char * deviceName() { return _deviceName; }
@@ -41,6 +58,7 @@ class BlinkerAIR202LP : public BlinkerStream
         bool        isHWS = false;
         char*       imei;
         bool        isAvail = false;
+        bool        isFresh = false;
         bool        _isAuthKey = false;
         const char* _vipKey;
         const char* _deviceType;
@@ -49,6 +67,129 @@ class BlinkerAIR202LP : public BlinkerStream
 
         blinker_callback_t listenFunc = NULL;
 };
+
+int BlinkerAIR202LP::print(char * data, bool needCheck)
+{
+    String msg = BLINKER_F("{\"deviceName\":\"");
+    msg += _deviceName;
+    msg += BLINKER_F("\",\"key\":\"");
+    msg += _authKey;
+    msg += BLINKER_F("\",\"data\":\"");
+    msg += data;
+    msg += BLINKER_F("\"}");
+
+    String host = BLINKER_F("https://iotdev.clz.me");
+    String url_iot = BLINKER_F("/api/v1/user/device/lowpower/data/update");
+
+    BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + url_iot);
+
+    BlinkerHTTPAIR202 http(*stream, isHWS, listenFunc);
+
+    String conType = BLINKER_F("Content-Type");
+    String application = BLINKER_F("application/json;charset=utf-8");
+
+    http.begin(host, url_iot);
+
+    String payload;
+
+    if (http.POST(msg, conType, application))
+    {
+        BLINKER_LOG(BLINKER_F("[HTTP] ... success"));
+
+        payload = http.getString();
+    }
+    else
+    {
+        BLINKER_LOG(BLINKER_F("[HTTP] GET... failed"));
+
+        return false;
+    }
+
+    BLINKER_LOG_ALL(BLINKER_F("reply was:"));
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+    BLINKER_LOG_ALL(payload);
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& data_rp = jsonBuffer.parseObject(payload);
+
+    if (data_rp.success())
+    {
+        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+        if (msg_code != 1000)
+        {
+            String _detail = data_rp[BLINKER_CMD_DETAIL];
+            BLINKER_ERR_LOG(_detail);
+        }
+        else
+        {
+            payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
+        }        
+    }
+
+    BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
+
+    return true;
+}
+
+void BlinkerAIR202LP::dataGet()
+{
+    String host = BLINKER_F("https://iotdev.clz.me");
+    String uri = "";
+    uri += BLINKER_F("/api/v1/user/device/lowpower/data/get?deviceName=");
+    uri += _deviceName;
+    uri += BLINKER_F("&key=");
+    uri += _authKey;
+
+    BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + uri);
+
+    BlinkerHTTPAIR202 http(*stream, isHWS, listenFunc);
+
+    http.begin(host, uri);
+
+    String payload;
+
+    if (http.GET())
+    {
+        BLINKER_LOG(BLINKER_F("[HTTP] GET... success"));
+
+        payload = http.getString();
+    }
+    else
+    {
+        BLINKER_LOG(BLINKER_F("[HTTP] GET... failed"));
+
+        return;
+    }
+
+    BLINKER_LOG_ALL(BLINKER_F("reply was:"));
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+    BLINKER_LOG_ALL(payload);
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& data_rp = jsonBuffer.parseObject(payload);
+
+    if (data_rp.success())
+    {
+        uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+        if (msg_code != 1000)
+        {
+            String _detail = data_rp[BLINKER_CMD_DETAIL];
+            BLINKER_ERR_LOG(_detail);
+        }
+        else
+        {
+            payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
+            if (isFresh) free(msgBuf);
+            msgBuf = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(msgBuf, payload.c_str());
+            isFresh = true;
+        }        
+    }
+
+    BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
+}
 
 void BlinkerAIR202LP::begin(const char* _key, const char* _type, String _imei)
 {
