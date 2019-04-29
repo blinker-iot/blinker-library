@@ -185,6 +185,8 @@ attachQuery	KEYWORD2
 attachSummary	KEYWORD2
 attachData	KEYWORD2
 attachAir202Reset	KEYWORD2
+attachSleep	KEYWORD2
+attachLowPower	KEYWORD2
 STRING_format	KEYWORD2
 powerState	KEYWORD2
 colorTemp	KEYWORD2
