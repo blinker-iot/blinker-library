@@ -159,7 +159,8 @@ enum b_nbiot_status_t {
     };
 #endif
 
-#if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202)
+#if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
+    defined(BLINKER_LOWPOWER_AIR202)
     enum BlinkerStatus_t
     {
         GPRS_DEV_POWER_CHECK,
@@ -719,6 +720,11 @@ class BlinkerApi : public BlinkerProtocol
             // bool            _isInit = false;
             bool            _isRegistered = false;
             bool            _isPowerOn = false;
+            uint32_t        _register_fresh = 0;
+            uint32_t        _initTime;
+            uint8_t         _registerTimes = 0;
+            BlinkerStatus_t _gprsStatus = GPRS_DEV_POWER_CHECK;
+
             blinker_callback_t _resetAIRFunc = NULL;
         #endif
 
@@ -2759,9 +2765,139 @@ void BlinkerApi::run()
                         _gprsStatus = GPRS_DEV_DISCONNECTED;
                     }
                 }
-
             }
 
+        #endif
+
+        #if defined(BLINKER_LOWPOWER_AIR202)
+            if (!_isPowerOn)
+            {
+                _gprsStatus = GPRS_DEV_POWER_CHECK;
+
+                _isPowerOn = powerCheck();
+
+                return;
+            }
+            else
+            {
+                if (!_isConnBegin)
+                {
+                    _gprsStatus = GPRS_DEV_POWER_ON;
+
+                    BProto::begin(_vipKey, type(), getIMEI());
+                    _isConnBegin = true;
+                    _initTime = millis();
+
+                    BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
+
+                    // if (authCheck())
+                    // {
+                    //     _gprsStatus = GPRS_DEV_AUTHCHECK_SUCCESS;
+
+                    //     BLINKER_LOG_ALL(BLINKER_F("is auth, conn deviceRegister"));
+
+                        _isRegistered = BProto::deviceRegister();
+                        _getRegister = true;
+
+                        if (!_isRegistered)
+                        {
+                            _register_fresh = millis();
+
+                            _gprsStatus = GPRS_DEV_REGISTER_FAIL;
+
+                            _registerTimes++;
+                        }
+                        else
+                        {
+                            _gprsStatus = GPRS_DEV_REGISTER_SUCCESS;
+
+                            _registerTimes = 0;;
+                        }
+                    // }
+                    // else
+                    // {
+                    //     _gprsStatus = GPRS_DEV_AUTHCHECK_FAIL;
+
+                    //     BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
+                    // }
+
+                    BLINKER_LOG_FreeHeap_ALL();
+                }
+            }
+
+            if (!BProto::init())
+            {
+                yield();
+
+                if ((millis() - _initTime) >= 15000)// && \
+                    // !_isRegistered && _registerTimes < 6)
+                {
+                    _isRegistered = BProto::deviceRegister();
+
+                    if (!_isRegistered)
+                    {
+                        _register_fresh = millis();
+
+                        _gprsStatus = GPRS_DEV_REGISTER_FAIL;
+                    }
+                    else
+                    {
+                        _gprsStatus = GPRS_DEV_REGISTER_SUCCESS;
+                    }
+
+                    _registerTimes++;
+                }
+            }
+            else
+            {
+                if (!_isInit)
+                {
+                    if (ntpInit()) //TBD
+                    {
+                        _isInit = true;
+                        _gprsStatus = GPRS_DEV_INIT_SUCCESS;
+
+                        uint32_t connect_time = millis();
+                        uint32_t time_slot = 0;
+
+                        if (_needInit == false)
+                        {
+                            _needInit = true;
+                            needInit();
+
+                            #if defined(BLINKER_LOWPOWER)
+                                return;
+                            #endif
+                        }
+
+                        while (time_slot < 30000)
+                        {
+                            time_slot = millis() - connect_time;
+                            BProto::connect();
+                            yield();
+
+                            if (BProto::connected())
+                            {
+                                state = CONNECTED;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (state == CONNECTING && _gprsStatus != GPRS_DEV_CONNECTING) {
+                        _gprsStatus = GPRS_DEV_CONNECTING;
+                    }
+                    else if (state == CONNECTED && _gprsStatus != GPRS_DEV_CONNECTED) {
+                        if (BProto::connected()) _gprsStatus = GPRS_DEV_CONNECTED;
+                    }
+                    else if (state == DISCONNECTED && _gprsStatus != GPRS_DEV_DISCONNECTED) {
+                        _gprsStatus = GPRS_DEV_DISCONNECTED;
+                    }
+                }
+
+            }
         #endif
 
         #if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
@@ -5294,7 +5430,7 @@ float BlinkerApi::gps(b_gps_t axis)
     }
     #endif
 
-    #if defined(BLINKER_LOWPOWER)
+    #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
         int32_t BlinkerApi::comFreqGet()
         {
             String data = BLINKER_F("/user/device/lowpower/get?");
@@ -8095,7 +8231,6 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         else return false;
     }
 
-    #if !defined(BLINKER_LOWPOWER_AIR202)
     bool BlinkerApi::checkAutoPull()
     {
         if ((millis() - _autoPullTime) >= 60000 || \
@@ -8103,6 +8238,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         else return false;
     }
 
+    #if !defined(BLINKER_LOWPOWER_AIR202)
     String BlinkerApi::bridgeQuery(char * key)
     {
         String data = BLINKER_F("/query?");
