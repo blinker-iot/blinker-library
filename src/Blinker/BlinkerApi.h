@@ -509,6 +509,11 @@ class BlinkerApi : public BlinkerProtocol
                     _LowPowerFunc = newFunction;
                     _LowPowerFreq = _time;
                 }
+
+                void attachSleep(blinker_callback_t newFunction)
+                {
+                    _sleepFunc = newFunction;
+                }
             #endif
         #endif
 
@@ -780,6 +785,7 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_t                  _LowPowerFunc = NULL;
             uint32_t                            _LowPowerFreq = 10;
             // char*                               _LowPowerData;
+            blinker_callback_t                  _sleepFunc = NULL;
             #endif
         #endif
 
@@ -3031,7 +3037,7 @@ void BlinkerApi::run()
             }
         #endif
 
-        #if defined(BLINKER_LOWPOWER)
+        #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
             BLINKER_LOG_ALL(BLINKER_F("LOW POWER"));
 
             char _lp_data_get[1024];
@@ -3058,7 +3064,8 @@ void BlinkerApi::run()
             {
                 if (!comDateUpdate()) comDateUpdate();
             }
-            ::delay(60000); // sleep func TBD
+            // ::delay(60000); // sleep func TBD
+            if (_sleepFunc) _sleepFunc();
             return;
         #endif
 

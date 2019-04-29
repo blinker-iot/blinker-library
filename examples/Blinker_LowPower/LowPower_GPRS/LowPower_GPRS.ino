@@ -65,6 +65,17 @@ void dataRead(const String & data)
     Number1.print(counter);
 }
 
+void doSomething()
+{
+    Blinker.print("hello", "world");
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
+
+void sleep()
+{
+    delay(2 * 60000);
+}
+
 void setup()
 {
     // 初始化串口
@@ -77,6 +88,8 @@ void setup()
     // 初始化blinker
     Blinker.begin(auth, type);
     Blinker.attachData(dataRead);
+    Blinker.attachLowPower(doSomething, 10);
+    Blinker.attachSleep(sleep);
 
     Button1.attach(button1_callback);
 }
