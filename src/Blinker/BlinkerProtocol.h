@@ -100,6 +100,8 @@ class BlinkerProtocol
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }
+            void begin(const char* _key, const char* _type, String _imei) { conn->begin(_key, _type, _imei); }
+            int deviceRegister(){ return conn->deviceRegister(); }
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \

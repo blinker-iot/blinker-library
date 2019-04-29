@@ -66,7 +66,9 @@ class BlinkerStream
         #if defined(BLINKER_LOWPOWER_AIR202)
             virtual char * deviceName() = 0;
             virtual char * authKey() = 0;
-            virtual int init() = 0;      
+            virtual int init() = 0;
+            virtual void begin(const char* _key, const char* _type, String _imei) = 0;
+            virtual int deviceRegister() = 0;   
         #endif
 
         // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO)
