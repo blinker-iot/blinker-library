@@ -248,14 +248,14 @@ void BlinkerProtocol::checkAutoFormat()
         {
             if (strlen(_sendBuf))
             {
-                #if !defined(BLINKER_LOWPOWER_AIR202)
+                // #if !defined(BLINKER_LOWPOWER_AIR202)
                 #if defined(BLINKER_ARDUINOJSON)
                     _print(_sendBuf);
                 #else
                     strcat(_sendBuf, "}");
                     _print(_sendBuf);
                 #endif
-                #endif
+                // #endif
             }
             free(_sendBuf);
             autoFormat = false;

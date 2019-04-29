@@ -1149,7 +1149,7 @@ class BlinkerApi : public BlinkerProtocol
                         httpCode = http.GET();
                         break;
                     case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
-                        url_iot = BLINKER_F("/api/v1/user/device/lowpower/data/update");
+                        url_iot = BLINKER_F("/api/v1/user/device/lowpower/data");
 
                         http.begin(host, url_iot);
 
@@ -1567,7 +1567,7 @@ class BlinkerApi : public BlinkerProtocol
                         httpCode = http.GET();
                         break;
                     case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
-                        url_iot = BLINKER_F("/api/v1/user/device/lowpower/data/update");
+                        url_iot = BLINKER_F("/api/v1/user/device/lowpower/data");
 
                         http.begin(host, url_iot);
 
@@ -2118,7 +2118,7 @@ void BlinkerApi::needInit()
         // BProto::disconnect();
         // BProto::connect();
 
-        #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
+        #if defined(BLINKER_LOWPOWER)// || defined(BLINKER_LOWPOWER_AIR202)
             int32_t _freq_get = comFreqGet();
 
             if (_freq_get < 1) _freq_get = comFreqGet();
@@ -3061,6 +3061,11 @@ void BlinkerApi::run()
             ::delay(60000); // sleep func TBD
             return;
         #endif
+
+        // #if defined(BLINKER_LOWPOWER_AIR202)   
+        //     BProto::checkAutoFormat();
+        //     return; // TBD
+        // #endif
 
         bool conState = BProto::connected();
 
@@ -5433,7 +5438,7 @@ float BlinkerApi::gps(b_gps_t axis)
     #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
         int32_t BlinkerApi::comFreqGet()
         {
-            String data = BLINKER_F("/user/device/lowpower/get?");
+            String data = BLINKER_F("/user/device/lowpower?");
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -5460,7 +5465,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
         String BlinkerApi::comDataGet()
         {
-            String data = BLINKER_F("/user/device/lowpower/data/get?");
+            String data = BLINKER_F("/user/device/lowpower/data?");
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -9010,7 +9015,7 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                         break;
                     case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
                         url_iot = host;
-                        url_iot += BLINKER_F("/api/v1/user/device/lowpower/data/update");
+                        url_iot += BLINKER_F("/api/v1/user/device/lowpower/data");
 
                         #if defined(ESP8266)
                             http.begin(*client_s, url_iot);
