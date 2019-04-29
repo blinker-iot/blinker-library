@@ -23,8 +23,8 @@ class BlinkerAIR202LP : public BlinkerStream
             : stream(NULL), isConnect(false)
         {}
         
-        int connect() { return true; }
-        int connected() { return true; }
+        int connect() { return isGPRSinit ? true : false; }
+        int connected() { return isGPRSinit ? true : false; }
         void disconnect() { delay(1); }
         void ping() { delay(1); }
         int available()
@@ -74,12 +74,12 @@ int BlinkerAIR202LP::print(char * data, bool needCheck)
     msg += _deviceName;
     msg += BLINKER_F("\",\"key\":\"");
     msg += _authKey;
-    msg += BLINKER_F("\",\"data\":\"");
+    msg += BLINKER_F("\",\"data\":");
     msg += data;
-    msg += BLINKER_F("\"}");
+    msg += BLINKER_F("}");
 
     String host = BLINKER_F("https://iotdev.clz.me");
-    String url_iot = BLINKER_F("/api/v1/user/device/lowpower/data/update");
+    String url_iot = BLINKER_F("/api/v1/user/device/lowpower/data");
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + url_iot);
 
@@ -136,7 +136,7 @@ void BlinkerAIR202LP::dataGet()
 {
     String host = BLINKER_F("https://iotdev.clz.me");
     String uri = "";
-    uri += BLINKER_F("/api/v1/user/device/lowpower/data/get?deviceName=");
+    uri += BLINKER_F("/api/v1/user/device/lowpower/data?deviceName=");
     uri += _deviceName;
     uri += BLINKER_F("&key=");
     uri += _authKey;
@@ -182,9 +182,16 @@ void BlinkerAIR202LP::dataGet()
         {
             payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
             if (isFresh) free(msgBuf);
-            msgBuf = (char*)malloc((payload.length()+1)*sizeof(char));
-            strcpy(msgBuf, payload.c_str());
-            isFresh = true;
+
+            if (payload != "{}")
+            {
+                msgBuf = (char*)malloc((payload.length()+1)*sizeof(char));
+                strcpy(msgBuf, payload.c_str());
+                isFresh = true;
+                isAvail = true;
+
+                BLINKER_LOG_ALL(BLINKER_F("isAvail"));
+            }
         }        
     }
 
@@ -224,7 +231,7 @@ int BlinkerAIR202LP::connectServer()
         // uri += _deviceType;
         // uri += BLINKER_F("&deviceName=");
         // uri += imei;
-        uri += BLINKER_F("/user/device/pro/lowpower/auth?deviceType=");
+        uri += BLINKER_F("/api/v1/user/device/pro/lowpower/auth/get?deviceType=");
         uri += _deviceType;
         uri += BLINKER_F("&vipKey=");
         uri += _vipKey;
@@ -319,7 +326,7 @@ int BlinkerAIR202LP::connectServer()
     JsonObject& root = jsonBuffer.parseObject(payload);
 
     if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
-        !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
+        !STRING_contains_string(payload, BLINKER_CMD_DEVICENAME)) {
         // while(1) {
             BLINKER_ERR_LOG(("Please make sure you have register this device!"));
             // ::delay(60000);

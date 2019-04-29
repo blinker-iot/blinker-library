@@ -809,7 +809,7 @@ class BlinkerHTTPAIR202
                 
                 streamData = (char*)malloc((_data.length() + 1)*sizeof(char));
                 strcpy(streamData, _data.c_str());
-                if (_data.length() > 0) streamData[_data.length() - 1] = '\0';
+                if (_data.length() > 0 && streamData[_data.length() - 1] == '\r') streamData[_data.length() - 1] = '\0';
                 isFresh = true;
                 return true;
                 // if (isFresh) free(streamData);
