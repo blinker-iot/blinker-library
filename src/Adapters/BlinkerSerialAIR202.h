@@ -428,17 +428,17 @@ int BlinkerSerialAIR202::print(char * data, bool needCheck)
     // data_add = BLINKER_F("\",\"toDevice\":\"");
     // strcat(data, data_add.c_str());
     strcat(data, "\",\"toDevice\":\"");
-    // if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
-    // {
-    //     strcat(data, _sharers[_sharerFrom]->uuid());
-    // }
-    // else
-    // {
+    if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
+    {
+        strcat(data, _sharers[_sharerFrom]->uuid());
+    }
+    else
+    {
         strcat(data, UUID_GPRS);
-    // }
+    }
     // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
 
-    // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+    _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
     // strcat(data, data_add.c_str());
     strcat(data, "\",\"deviceType\":\"OwnApp\"}");
 
