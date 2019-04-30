@@ -36,7 +36,7 @@
  * *****************************************************************/
 
 #define BLINKER_WIFI
-#define BLINKER_ALIGENIE_MULTI_OUTLET
+#define BLINKER_DUEROS_MULTI_OUTLET
 
 #include <Blinker.h>
 
@@ -46,48 +46,25 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 bool oState = false;
 
-void aligeniePowerState(const String & state, uint8_t num)
+void duerPowerState(const String & state, uint8_t num)
 {
     BLINKER_LOG("need set outlet: ", num, ", power state: ", state);
 
     if (state == BLINKER_CMD_ON) {
         digitalWrite(LED_BUILTIN, HIGH);
 
-        BlinkerAliGenie.powerState("on", num);
-        BlinkerAliGenie.print();
+        BlinkerDuerOS.powerState("on", num);
+        BlinkerDuerOS.print();
 
         oState = true;
     }
     else if (state == BLINKER_CMD_OFF) {
         digitalWrite(LED_BUILTIN, LOW);
 
-        BlinkerAliGenie.powerState("off", num);
-        BlinkerAliGenie.print();
+        BlinkerDuerOS.powerState("off", num);
+        BlinkerDuerOS.print();
 
         oState = false;
-    }
-}
-
-void aligenieQuery(int32_t queryCode)
-{
-    BLINKER_LOG("AliGenie Query codes: ", queryCode);
-
-    switch (queryCode)
-    {
-        case BLINKER_CMD_QUERY_ALL_NUMBER :
-            BLINKER_LOG("AliGenie Query All");
-            BlinkerAliGenie.powerState(oState ? "on" : "off", 0);
-            BlinkerAliGenie.print();
-            break;
-        case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :
-            BLINKER_LOG("AliGenie Query Power State");
-            BlinkerAliGenie.powerState(oState ? "on" : "off", 0);
-            BlinkerAliGenie.print();
-            break;
-        default :
-            BlinkerAliGenie.powerState(oState ? "on" : "off", 0);
-            BlinkerAliGenie.print();
-            break;
     }
 }
 
@@ -113,8 +90,7 @@ void setup()
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
     
-    BlinkerAliGenie.attachPowerState(aligeniePowerState);
-    BlinkerAliGenie.attachQuery(aligenieQuery);
+    BlinkerDuerOS.attachPowerState(duerPowerState);
 }
 
 void loop()

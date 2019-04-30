@@ -214,25 +214,25 @@ class BlinkerSIM7020
                     {
                         struct tm timeinfo;
 
-                        timeinfo.tm_year = _masterAT->getParam(0).substring(1, 4).toInt() + 100;
-                        timeinfo.tm_mon  = _masterAT->getParam(0).substring(5, 7).toInt() - 1;
-                        timeinfo.tm_mday = _masterAT->getParam(0).substring(8, 10).toInt();
-
-                        BLINKER_LOG_ALL(BLINKER_F("year: "), timeinfo.tm_year);
-                        BLINKER_LOG_ALL(BLINKER_F("mon: "), timeinfo.tm_mon);
-                        BLINKER_LOG_ALL(BLINKER_F("mday: "), timeinfo.tm_mday);
+                        timeinfo.tm_year = _masterAT->getParam(0).substring(1, 3).toInt() + 100;
+                        timeinfo.tm_mon  = _masterAT->getParam(0).substring(4, 6).toInt() - 1;
+                        timeinfo.tm_mday = _masterAT->getParam(0).substring(7, 9).toInt();
 
                         timeinfo.tm_hour = _masterAT->getParam(1).substring(0, 2).toInt();
                         timeinfo.tm_min  = _masterAT->getParam(1).substring(3, 5).toInt();
                         timeinfo.tm_sec  = _masterAT->getParam(1).substring(6, 8).toInt();
 
+                        _ntpTime = mk_gmtime(&timeinfo) + (uint32_t)(_timezone * 3600);
+
+                        BLINKER_LOG_ALL(BLINKER_F("year: "), timeinfo.tm_year);
+                        BLINKER_LOG_ALL(BLINKER_F("mon: "), timeinfo.tm_mon);
+                        BLINKER_LOG_ALL(BLINKER_F("mday: "), timeinfo.tm_mday);
                         BLINKER_LOG_ALL(BLINKER_F("hour: "), timeinfo.tm_hour);
                         BLINKER_LOG_ALL(BLINKER_F("mins: "), timeinfo.tm_min);
                         BLINKER_LOG_ALL(BLINKER_F("secs: "), timeinfo.tm_sec);
 
-                        _ntpTime = mk_gmtime(&timeinfo) + _timezone * 3600;
-
                         BLINKER_LOG_ALL(BLINKER_F("_ntpTime: "), _ntpTime);
+                        BLINKER_LOG_ALL(BLINKER_F("==Current time: "), mk_gmtime(&timeinfo));
 
                         free(_masterAT);
                         return true;

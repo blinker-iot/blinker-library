@@ -3312,8 +3312,7 @@ void BlinkerApi::run()
                     if (dataUpdate()) _autoUpdateTime = millis();
                     else
                     {
-                        #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-                            defined(BLINKER_LOWPOWER_AIR202)
+                        #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_LOWPOWER_AIR202)
                             BLINKER_LOG_ALL("need reset!");
                             if (_resetAIRFunc) _resetAIRFunc();
                         #endif
