@@ -1758,6 +1758,10 @@ class BlinkerApi : public BlinkerProtocol
                 void numParse(const JsonObject& data);
             #endif
 
+            #if defined(BLINKER_GPRS_AIR202)
+                void shareParse(const JsonObject& data);
+            #endif
+
             bool checkCUPDATE();
             bool checkCGET();
             bool checkCDEL();
@@ -3360,6 +3364,10 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     defined(BLINKER_PRO_ESP)
                     timerManager(root);
                     // BLINKER_LOG_ALL(BLINKER_F("timerManager"));
+                #endif
+
+                #if defined(BLINKER_GPRS_AIR202)
+                    shareParse(root);
                 #endif
 
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -8105,39 +8113,6 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         }
     }
 
-    void BlinkerApi::shareParse(const JsonObject& data)
-    {
-        if (data.containsKey(BLINKER_CMD_SET))
-        {
-            String value = data[BLINKER_CMD_SET];
-
-            DynamicJsonBuffer jsonBufferSet;
-            JsonObject& rootSet = jsonBufferSet.parseObject(value);
-
-            if (!rootSet.success()) {
-                // BLINKER_ERR_LOG_ALL("Json error");
-                return;
-            }
-
-            if (rootSet.containsKey(BLINKER_CMD_SHARE))
-            {
-                _fresh = true;
-
-                // BProto::sharers(freshSharers());
-                String _shareData = freshSharers();
-                if (STRING_contains_string(_shareData, "users") == false)
-                {
-                    _shareData = freshSharers();
-                }
-                if (STRING_contains_string(_shareData, "users") == true)
-                {
-                    BProto::sharers(_shareData);
-                }
-                BProto::connect();
-            }
-        }
-    }
-
     void BlinkerApi::numParse(const JsonObject& data)
     {
         if (data.containsKey(BLINKER_CMD_SET))
@@ -8192,8 +8167,76 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 }
             }
         }
+    }    
+
+    void BlinkerApi::shareParse(const JsonObject& data)
+    {
+        if (data.containsKey(BLINKER_CMD_SET))
+        {
+            String value = data[BLINKER_CMD_SET];
+
+            DynamicJsonBuffer jsonBufferSet;
+            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+
+            if (!rootSet.success()) {
+                // BLINKER_ERR_LOG_ALL("Json error");
+                return;
+            }
+
+            if (rootSet.containsKey(BLINKER_CMD_SHARE))
+            {
+                _fresh = true;
+
+                // BProto::sharers(freshSharers());
+                String _shareData = freshSharers();
+                if (STRING_contains_string(_shareData, "users") == false)
+                {
+                    _shareData = freshSharers();
+                }
+                if (STRING_contains_string(_shareData, "users") == true)
+                {
+                    BProto::sharers(_shareData);
+                }
+                BProto::connect();
+            }
+        }
     }
 
+    #endif
+
+    #if defined(BLINKER_GPRS_AIR202)
+    void BlinkerApi::shareParse(const JsonObject& data)
+    {
+        if (data.containsKey(BLINKER_CMD_SET))
+        {
+            String value = data[BLINKER_CMD_SET];
+
+            DynamicJsonBuffer jsonBufferSet;
+            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+
+            if (!rootSet.success()) {
+                // BLINKER_ERR_LOG_ALL("Json error");
+                return;
+            }
+
+            if (rootSet.containsKey(BLINKER_CMD_SHARE))
+            {
+                _fresh = true;
+
+                // BProto::sharers(freshSharers());
+                String _shareData = freshSharers();
+                if (STRING_contains_string(_shareData, "users") == false)
+                {
+                    _shareData = freshSharers();
+                }
+                if (STRING_contains_string(_shareData, "users") == true)
+                {
+                    BProto::sharers(_shareData);
+                }
+                BProto::connect();
+            }
+        }
+    }
     #endif
 
     bool BlinkerApi::checkCUPDATE()
