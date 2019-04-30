@@ -3047,6 +3047,7 @@ void BlinkerApi::run()
             char _lp_data_get[1024];
             strcpy(_lp_data_get, comDataGet().c_str());
             if (_lp_data_get == BLINKER_CMD_FALSE) strcpy(_lp_data_get, "");
+            else if (strcmp(_lp_data_get, "{}") == 0) strcpy(_lp_data_get, "");
             else
             {
                 flush();
@@ -5453,7 +5454,7 @@ float BlinkerApi::gps(b_gps_t axis)
     #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
         int32_t BlinkerApi::comFreqGet()
         {
-            String data = BLINKER_F("/user/device/lowpower?");
+            String data = BLINKER_F("/lowpower?");
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -5467,7 +5468,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
         bool BlinkerApi::comFreqUpdate()
         {
-            String data = BLINKER_F("/user/device/lowpower/modify?");
+            String data = BLINKER_F("/lowpower/modify?");
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -5480,7 +5481,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
         String BlinkerApi::comDataGet()
         {
-            String data = BLINKER_F("/user/device/lowpower/data?");
+            String data = BLINKER_F("/lowpower/data?");
             data += BLINKER_F("deviceName=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -5495,9 +5496,9 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
             data += BProto::authKey();
-            data += BLINKER_F("\",\"data\":\"");
+            data += BLINKER_F("\",\"data\":");
             data += BProto::_sendBuf;
-            data += BLINKER_F("\"}");
+            data += BLINKER_F("}");
 
             return blinkerServer(BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER, data) == BLINKER_CMD_FALSE;
         }
