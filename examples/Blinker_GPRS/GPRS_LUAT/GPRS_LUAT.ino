@@ -82,7 +82,6 @@ void setup() {
     
     Blinker.begin(auth, 5, 4);
     Blinker.attachData(dataRead);
-    Blinker.attachHeartbeat(heartbeat);
     Blinker.attachAir202Reset(air202Reset);
 
     Button1.attach(button1_callback);
