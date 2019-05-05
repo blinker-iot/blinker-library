@@ -230,6 +230,8 @@ void BlinkerSerialSIM7020::ping()
     BlinkerSIM7020 BLINKER_SIM7020;
     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);  
 
+    BLINKER_LOG_ALL(BLINKER_F("check isReboot"));
+
     if (BLINKER_SIM7020.isReboot())
     {
         BLINKER_SIM7020.powerCheck();

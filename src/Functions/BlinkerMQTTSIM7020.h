@@ -251,7 +251,44 @@ int BlinkerMQTTSIM7020::connect()
 
 int BlinkerMQTTSIM7020::connected()
 {
-    yield();
+    // yield();
+
+    if (isConnected) 
+    {
+        yield();
+        return isConnected;
+    }
+
+    streamPrint(STRING_format(BLINKER_CMD_CMQCON_REQ) + "?");
+    mqtt_time = millis();
+
+    while(millis() - mqtt_time < _mqttTimeout)
+    {
+        if (streamAvailable())
+        {
+            BLINKER_LOG_ALL(BLINKER_F("connected query"));
+
+            _masterAT = new BlinkerMasterAT();
+            _masterAT->update(STRING_format(streamData));
+
+            if (_masterAT->getState() != AT_M_NONE &&
+                _masterAT->reqName() == BLINKER_CMD_CMQCON &&
+                _masterAT->getParam(0).toInt() == 0)
+            {
+                if (_masterAT->getParam(1) == "1") 
+                {
+                    isConnected = true;
+                }
+                else
+                {
+                    isConnected = false;
+                }
+
+                BLINKER_LOG_ALL(BLINKER_F("isConnected: "), isConnected);
+                break;
+            }
+        }
+    }
     return isConnected;
 }
 

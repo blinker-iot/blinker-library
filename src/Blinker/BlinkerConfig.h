@@ -1877,6 +1877,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_CMQCON_REQ              "AT+CMQCON"
 
+    #define BLINKER_CMD_CMQCON                  "CMQCON"
+
     #define BLINKER_CMD_CMQSUB_REQ              "AT+CMQSUB"
 
     #define BLINKER_CMD_CMQPUB_REQ              "AT+CMQPUB"
