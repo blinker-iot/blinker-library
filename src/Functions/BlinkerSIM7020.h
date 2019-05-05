@@ -214,15 +214,15 @@ class BlinkerSIM7020
                     {
                         struct tm timeinfo;
 
-                        timeinfo.tm_year = _masterAT->getParam(0).substring(1, 3).toInt() + 100;
+                        timeinfo.tm_year = _masterAT->getParam(0).substring(1, 3).toInt() + 130;
                         timeinfo.tm_mon  = _masterAT->getParam(0).substring(4, 6).toInt() - 1;
-                        timeinfo.tm_mday = _masterAT->getParam(0).substring(7, 9).toInt();
+                        timeinfo.tm_mday = _masterAT->getParam(0).substring(7, 9).toInt() - 1;
 
                         timeinfo.tm_hour = _masterAT->getParam(1).substring(0, 2).toInt();
                         timeinfo.tm_min  = _masterAT->getParam(1).substring(3, 5).toInt();
                         timeinfo.tm_sec  = _masterAT->getParam(1).substring(6, 8).toInt();
 
-                        _ntpTime = mk_gmtime(&timeinfo) + (uint32_t)(_timezone * 3600);
+                        _ntpTime = mk_gmtime(&timeinfo);// + (uint32_t)(_timezone * 3600);
 
                         BLINKER_LOG_ALL(BLINKER_F("year: "), timeinfo.tm_year);
                         BLINKER_LOG_ALL(BLINKER_F("mon: "), timeinfo.tm_mon);
