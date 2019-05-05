@@ -2931,6 +2931,7 @@ void BlinkerApi::run()
 
                     BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
 
+                    ::delay(5000);
                     // if (authCheck())
                     // {
                     //     _nbiotStatus = NBIOT_DEV_AUTHCHECK_SUCCESS;
