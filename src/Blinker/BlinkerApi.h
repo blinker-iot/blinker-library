@@ -3317,11 +3317,11 @@ void BlinkerApi::run()
                             BLINKER_LOG_ALL("need reset!");
                             if (_resetAIRFunc) _resetAIRFunc();
                         #elif defined(BLINKER_NBIOT_SIM7020)
-                            stream->println(BLINKER_CMD_CRESET_RESQ);
+                            // stream->println(BLINKER_CMD_CRESET_RESQ);
                             ::delay(1000);
-                            BProto::disconnect();
+                            // BProto::disconnect();
                         #endif
-                        _autoUpdateTime = millis() - 60000;
+                        _autoUpdateTime = millis() - 100000;
                     }
                 }
             }
