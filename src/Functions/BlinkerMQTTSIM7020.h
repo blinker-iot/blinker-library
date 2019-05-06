@@ -283,10 +283,12 @@ int BlinkerMQTTSIM7020::connected()
                 {
                     isConnected = false;
                 }
-
+                free(_masterAT);
                 BLINKER_LOG_ALL(BLINKER_F("isConnected: "), isConnected);
                 break;
             }
+
+            free(_masterAT);
         }
     }
     return isConnected;
