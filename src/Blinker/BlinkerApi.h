@@ -9407,6 +9407,11 @@ char * BlinkerApi::widgetName_int(uint8_t num)
 
                 if (_DuerOSSetColorFunc) _DuerOSSetColorFunc(setValue.toInt());
             }
+            else if (rootSet.containsKey(BLINKER_CMD_COLOR_)) {
+                String setValue = rootSet[BLINKER_CMD_COLOR_];
+
+                if (_DuerOSSetColorFunc) _DuerOSSetColorFunc(setValue.toInt());
+            }
             else if (rootSet.containsKey(BLINKER_CMD_BRIGHTNESS)) {
                 String setValue = rootSet[BLINKER_CMD_BRIGHTNESS];
 
