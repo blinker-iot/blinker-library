@@ -60,7 +60,7 @@ class BlinkerHTTPSIM7020
         void streamPrint(const String & s)
         {
             // stream->flush();
-            BLINKER_LOG_ALL(s);
+            BLINKER_LOG_ALL(BLINKER_F("HTTP streamPrint: "), s);
             stream->println(s);
         }
 
