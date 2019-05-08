@@ -43,46 +43,46 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-#define Table_1 "TableKey"
+#define Tab_1 "TabKey"
 
-BlinkerTable Table1(Table_1);
+BlinkerTab Tab1(Tab_1);
 
-void table1_callback(uint8_t table_set)
+void tab1_callback(uint8_t tab_set)
 {
-    BLINKER_LOG("get table set: ", table_set);
+    BLINKER_LOG("get tab set: ", tab_set);
 
-    switch (table_set)
+    switch (tab_set)
     {
-        case BLINKER_CMD_TABLE_0 :
-            BLINKER_LOG("table 0 set");
+        case BLINKER_CMD_TAB_0 :
+            BLINKER_LOG("tab 0 set");
 
-            Table1.table_0();
+            Tab1.tab_0();
             break;
-        case BLINKER_CMD_TABLE_1 :
-            BLINKER_LOG("table 1 set");
+        case BLINKER_CMD_TAB_1 :
+            BLINKER_LOG("tab 1 set");
 
-            Table1.table_1();
+            Tab1.tab_1();
             break;
-        case BLINKER_CMD_TABLE_2 :
-            BLINKER_LOG("table 2 set");
+        case BLINKER_CMD_TAB_2 :
+            BLINKER_LOG("tab 2 set");
 
-            Table1.table_2();
+            Tab1.tab_2();
             break;
-        case BLINKER_CMD_TABLE_3 :
-            BLINKER_LOG("table 3 set");
+        case BLINKER_CMD_TAB_3 :
+            BLINKER_LOG("tab 3 set");
 
-            Table1.table_3();
+            Tab1.tab_3();
             break;
-        case BLINKER_CMD_TABLE_4 :
-            BLINKER_LOG("table 4 set");
+        case BLINKER_CMD_TAB_4 :
+            BLINKER_LOG("tab 4 set");
 
-            Table1.table_4();
+            Tab1.tab_4();
             break;
         default:
             break;
     }
 
-    Table1.print();
+    Tab1.print();
 }
 
 void dataRead(const String & data)
@@ -108,7 +108,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
-    Table1.attach(table1_callback);
+    Tab1.attach(tab1_callback);
 }
 
 void loop()

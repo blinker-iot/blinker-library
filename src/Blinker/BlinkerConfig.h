@@ -528,15 +528,15 @@
 
 #define BLINKER_ONE_DAY_TIME                    86400UL
 
-#define BLINKER_CMD_TABLE_0                     16 // 0x10000
+#define BLINKER_CMD_TAB_0                     16 // 0x10000
 
-#define BLINKER_CMD_TABLE_1                     8  // 0x01000
+#define BLINKER_CMD_TAB_1                     8  // 0x01000
 
-#define BLINKER_CMD_TABLE_2                     4  // 0x00100
+#define BLINKER_CMD_TAB_2                     4  // 0x00100
 
-#define BLINKER_CMD_TABLE_3                     2  // 0x00010
+#define BLINKER_CMD_TAB_3                     2  // 0x00010
 
-#define BLINKER_CMD_TABLE_4                     1  // 0x00001
+#define BLINKER_CMD_TAB_4                     1  // 0x00001
 
 // #define BLINKER_NTP_SERVER_1                    "ntp1.aliyun.com"
 
