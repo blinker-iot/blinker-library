@@ -138,6 +138,29 @@ class BlinkerWidgets_joy
         blinker_callback_with_joy_arg_t wfunc;
 };
 
+class BlinkerWidgets_table
+{
+    public :
+        BlinkerWidgets_table(char * _name, blinker_callback_with_table_arg_t _func = NULL)
+        {
+            wName = (char*)malloc((strlen(_name)+1)*sizeof(char));
+            strcpy(wName, _name);
+
+            wfunc = _func;
+        }
+
+        char * getName() { return wName; }
+        void setFunc(blinker_callback_with_table_arg_t _func) { wfunc = _func; }
+        blinker_callback_with_table_arg_t getFunc() { return wfunc; }
+        bool checkName(char * name) {
+            return strcmp(name, wName) == 0;
+        }
+
+    private :
+        char *wName;
+        blinker_callback_with_table_arg_t wfunc;
+};
+
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
     defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \

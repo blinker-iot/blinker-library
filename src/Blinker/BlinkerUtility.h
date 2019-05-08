@@ -37,6 +37,7 @@ extern "C" {
     typedef void (*blinker_callback_with_int32_arg_t)(int32_t data);
     typedef void (*blinker_callback_with_rgb_arg_t)(uint8_t r_data, uint8_t g_data, uint8_t b_data, uint8_t bright_data);
     typedef void (*blinker_callback_with_joy_arg_t)(uint8_t x_data, uint8_t y_data);
+    typedef void (*blinker_callback_with_table_arg_t)(uint8_t data);
     typedef String (*blinker_callback_return_string_t)(void);
     #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
         defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \

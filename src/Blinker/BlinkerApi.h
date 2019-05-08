@@ -530,12 +530,14 @@ class BlinkerApi : public BlinkerProtocol
         #endif
         void freshAttachWidget(char _name[], blinker_callback_with_rgb_arg_t _func);
         void freshAttachWidget(char _name[], blinker_callback_with_int32_arg_t _func);
+        void freshAttachWidget(char _name[], blinker_callback_with_table_arg_t _func);
         uint8_t attachWidget(char _name[], blinker_callback_with_string_arg_t _func);
         #if defined(BLINKER_BLE)
             uint8_t attachWidget(char _name[], blinker_callback_with_joy_arg_t _func);
         #endif
         uint8_t attachWidget(char _name[], blinker_callback_with_rgb_arg_t _func);
         uint8_t attachWidget(char _name[], blinker_callback_with_int32_arg_t _func);
+        uint8_t attachWidget(char _name[], blinker_callback_with_table_arg_t _func);
         void attachSwitch(blinker_callback_with_string_arg_t _func);
         char * widgetName_str(uint8_t num);
         #if defined(BLINKER_BLE)
@@ -543,6 +545,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
         char * widgetName_rgb(uint8_t num);
         char * widgetName_int(uint8_t num);
+        char * widgetName_tab(uint8_t num);
 
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
@@ -597,6 +600,11 @@ class BlinkerApi : public BlinkerProtocol
             { _resetAIRFunc = newFunction; }
         #endif
 
+        #if defined(BLINKER_NBIOT_SIM7020)
+            void attachSIM7020Reset(blinker_callback_t newFunction)
+            { _resetSIMFunc = newFunction; }
+        #endif
+
     private :
         bool        _fresh = false;
         int16_t     ahrsValue[3];
@@ -608,6 +616,7 @@ class BlinkerApi : public BlinkerProtocol
         uint8_t     _wCount_joy = 0;
         uint8_t     _wCount_rgb = 0;
         uint8_t     _wCount_int = 0;
+        uint8_t     _wCount_tab = 0;
 
         class BlinkerWidgets_num *          _Widgets_num[BLINKER_MAX_WIDGET_SIZE*2];
         class BlinkerWidgets_string *       _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
@@ -616,6 +625,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
         class BlinkerWidgets_rgb *          _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_int32 *        _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
+        class BlinkerWidgets_table *        _Widgets_tab[BLINKER_MAX_WIDGET_SIZE*2];
         // class BlinkerWidgets_string *       _BUILTIN_SWITCH;
         BlinkerWidgets_string _BUILTIN_SWITCH = BlinkerWidgets_string(BLINKER_CMD_BUILTIN_SWITCH);
 
@@ -743,6 +753,8 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t        _initTime;
             uint8_t         _registerTimes = 0;
             BlinkerStatus_t _nbiotStatus = NBIOT_DEV_POWER_CHECK;
+
+            blinker_callback_t _resetSIMFunc = NULL;
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) ||\
@@ -829,6 +841,7 @@ class BlinkerApi : public BlinkerProtocol
             #endif
             void rgbWidgetsParse(char _wName[], const JsonObject& data);
             void intWidgetsParse(char _wName[], const JsonObject& data);
+            void tabWidgetsParse(char _wName[], const JsonObject& data);
 
             void json_parse(const JsonObject& data);
         #else
@@ -845,6 +858,7 @@ class BlinkerApi : public BlinkerProtocol
             #endif
             void rgbWidgetsParse(char _wName[], char _data[]);
             void intWidgetsParse(char _wName[], char _data[]);
+            void tabWidgetsParse(char _wName[], char _data[]);
 
             void json_parse(char _data[]);
         #endif
@@ -3317,8 +3331,10 @@ void BlinkerApi::run()
                             BLINKER_LOG_ALL("need reset!");
                             if (_resetAIRFunc) _resetAIRFunc();
                         #elif defined(BLINKER_NBIOT_SIM7020)
-                            // stream->println(BLINKER_CMD_CRESET_RESQ);
-                            ::delay(1000);
+                            stream->println(BLINKER_CMD_CRESET_RESQ);
+                            ::delay(10000);
+                            // BLINKER_LOG_ALL("need reset!");
+                            // if (_resetSIMFunc) _resetSIMFunc();
                             // BProto::disconnect();
                         #endif
                         _autoUpdateTime = millis() - 100000;
@@ -5536,6 +5552,12 @@ void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_int32_arg
     if(num >= 0 ) _Widgets_int[num]->setFunc(_func);
 }
 
+void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_table_arg_t _func)
+{
+    int8_t num = checkNum(_name, _Widgets_tab, _wCount_tab);
+    if(num >= 0 ) _Widgets_tab[num]->setFunc(_func);
+}
+
 uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_string_arg_t _func)
 {
     int8_t num = checkNum(_name, _Widgets_str, _wCount_str);
@@ -5666,6 +5688,38 @@ uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_int32_arg_t
     }
 }
 
+uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_table_arg_t _func)
+{
+    int8_t num = checkNum(_name, _Widgets_tab, _wCount_tab);
+    if (num == BLINKER_OBJECT_NOT_AVAIL)
+    {
+        if (_wCount_tab < BLINKER_MAX_WIDGET_SIZE*2)
+        {
+            _Widgets_tab[_wCount_tab] = new BlinkerWidgets_table(_name, _func);
+            _wCount_tab++;
+
+            BLINKER_LOG_ALL(BLINKER_F("new widgets: "), _name, \
+                        BLINKER_F(" _wCount_tab: "), _wCount_tab);
+
+            return _wCount_tab;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else if(num >= 0 )
+    {
+        BLINKER_ERR_LOG(BLINKER_F("widgets name > "), _name, \
+                BLINKER_F(" < has been registered, please register another name!"));
+        return 0;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 void BlinkerApi::attachSwitch(blinker_callback_with_string_arg_t _func)
 {
     // if (!_BUILTIN_SWITCH)
@@ -5703,6 +5757,12 @@ char * BlinkerApi::widgetName_rgb(uint8_t num)
 char * BlinkerApi::widgetName_int(uint8_t num)
 {
     if (num) return _Widgets_int[num - 1]->getName();
+    else return "";
+}
+
+char * BlinkerApi::widgetName_tab(uint8_t num)
+{
+    if (num) return _Widgets_tab[num - 1]->getName();
     else return "";
 }
 
@@ -5994,6 +6054,32 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         }
     }
 
+    void BlinkerApi::tabWidgetsParse(char _wName[], const JsonObject& data)
+    {
+        int8_t num = checkNum(_wName, _Widgets_tab, _wCount_tab);
+
+        if (num == BLINKER_OBJECT_NOT_AVAIL) return;
+
+        if (data.containsKey(_wName)) {
+            String _setData = data[_wName];
+
+            uint8_t _number = 0;
+
+            if (_setData == "10000") _number = BLINKER_CMD_TABLE_0;
+            else if (_setData == "01000") _number = BLINKER_CMD_TABLE_1;
+            else if (_setData == "00100") _number = BLINKER_CMD_TABLE_2;
+            else if (_setData == "00010") _number = BLINKER_CMD_TABLE_3;
+            else if (_setData == "00001") _number = BLINKER_CMD_TABLE_4;
+
+            _fresh = true;
+
+            blinker_callback_with_table_arg_t wFunc = _Widgets_tab[num]->getFunc();
+            if (wFunc) {
+                wFunc(_number);
+            }
+        }
+    }
+
     void BlinkerApi::json_parse(const JsonObject& data)
     {
         setSwitch(data);
@@ -6012,6 +6098,9 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), data);
             }
         #endif
+        for (uint8_t wNum_tab = 0; wNum_tab < _wCount_tab; wNum_tab++) {
+            tabWidgetsParse(_Widgets_tab[wNum_tab]->getName(), data);
+        }
     }
 
 #else
@@ -6243,6 +6332,46 @@ char * BlinkerApi::widgetName_int(uint8_t num)
         }
     }
 
+    void BlinkerApi::tabWidgetsParse(char _wName[], char _data[])
+    {
+        int8_t num = checkNum(_wName, _Widgets_tab, _wCount_tab);
+
+        if (num == BLINKER_OBJECT_NOT_AVAIL) return;
+
+        String _setData;
+
+        if (STRING_find_string_value(_data, _setData, _wName))
+        {
+            BLINKER_LOG_ALL("_setData: ", _setData);
+
+            _fresh = true;
+
+            uint8_t _number = 0;
+
+            if (_setData == "10000") _number = BLINKER_TABLE_0;
+            else if (_setData == "01000") _number = BLINKER_TABLE_1;
+            else if (_setData == "00100") _number = BLINKER_TABLE_2;
+            else if (_setData == "00010") _number = BLINKER_TABLE_3;
+            else if (_setData == "00001") _number = BLINKER_TABLE_4;
+
+            blinker_callback_with_table_arg_t wFunc = _Widgets_tab[num]->getFunc();
+            if (wFunc) {
+                wFunc(_number);
+            }
+        }
+
+        // int _number = STRING_find_numberic_value(_data, _wName);
+
+        // if (_number != FIND_KEY_VALUE_FAILED)
+        // {
+        //     _fresh = true;
+
+        //     blinker_callback_with_table_arg_t wFunc = _Widgets_tab[num]->getFunc();
+
+        //     if (wFunc) wFunc(_number);
+        // }
+    }
+
     void BlinkerApi::json_parse(char _data[])
     {
         setSwitch(_data);
@@ -6263,6 +6392,9 @@ char * BlinkerApi::widgetName_int(uint8_t num)
                 joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), _data);
             }
         #endif
+        for (uint8_t wNum_tab = 0; wNum_tab < _wCount_tab; wNum_tab++) {
+            tabWidgetsParse(_Widgets_tab[wNum_tab]->getName(), _data);
+        }
     }
 #endif
 
