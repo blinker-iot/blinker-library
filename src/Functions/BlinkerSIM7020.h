@@ -498,7 +498,7 @@ class BlinkerSIM7020
                 if (available())
                 {
                     BLINKER_LOG_ALL(BLINKER_F("data len: "), strlen(streamData));
-                    if (strcmp(streamData, BLINKER_CMD_AT) == 0)
+                    if (strncmp(streamData, BLINKER_CMD_AT, 2) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("device reboot"));
                         

@@ -636,7 +636,7 @@ class BlinkerAIR202
             {
                 if (available())
                 {
-                    if (strcmp(streamData, BLINKER_CMD_AT) == 0)
+                    if (strncmp(streamData, BLINKER_CMD_AT, 2) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("device reboot"));
                         
