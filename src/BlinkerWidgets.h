@@ -14,7 +14,7 @@
 #endif
 #include "Functions/BlinkerSlider.h"
 #include "Functions/BlinkerSwitch.h"
-#include "Functions/BlinkerTable.h"
+#include "Functions/BlinkerTab.h"
 #include "Functions/BlinkerText.h"
 
 #if defined(BLINKER_ALIGENIE)

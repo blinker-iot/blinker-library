@@ -6065,11 +6065,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             uint8_t _number = 0;
 
-            if (_setData == "10000") _number = BLINKER_CMD_TABLE_0;
-            else if (_setData == "01000") _number = BLINKER_CMD_TABLE_1;
-            else if (_setData == "00100") _number = BLINKER_CMD_TABLE_2;
-            else if (_setData == "00010") _number = BLINKER_CMD_TABLE_3;
-            else if (_setData == "00001") _number = BLINKER_CMD_TABLE_4;
+            if (_setData == "10000") _number = BLINKER_CMD_TAB_0;
+            else if (_setData == "01000") _number = BLINKER_CMD_TAB_1;
+            else if (_setData == "00100") _number = BLINKER_CMD_TAB_2;
+            else if (_setData == "00010") _number = BLINKER_CMD_TAB_3;
+            else if (_setData == "00001") _number = BLINKER_CMD_TAB_4;
 
             _fresh = true;
 
