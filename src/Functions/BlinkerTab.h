@@ -40,16 +40,16 @@ class BlinkerTab
             else tabData += BLINKER_F("0");
             
             if (tabSet & 1 << 3) tabData += BLINKER_F("1");
-            else tabData += BLINKER_F("1");
+            else tabData += BLINKER_F("0");
             
             if (tabSet & 1 << 2) tabData += BLINKER_F("1");
-            else tabData += BLINKER_F("2");
+            else tabData += BLINKER_F("0");
             
             if (tabSet & 1 << 1) tabData += BLINKER_F("1");
-            else tabData += BLINKER_F("3");
+            else tabData += BLINKER_F("0");
 
             if (tabSet & 1 << 0) tabData += BLINKER_F("1");
-            else tabData += BLINKER_F("4");
+            else tabData += BLINKER_F("0");
             
             tabData += BLINKER_F("\"}");
 

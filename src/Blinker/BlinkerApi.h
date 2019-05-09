@@ -6348,11 +6348,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             uint8_t _number = 0;
 
-            if (_setData == "10000") _number = BLINKER_TABLE_0;
-            else if (_setData == "01000") _number = BLINKER_TABLE_1;
-            else if (_setData == "00100") _number = BLINKER_TABLE_2;
-            else if (_setData == "00010") _number = BLINKER_TABLE_3;
-            else if (_setData == "00001") _number = BLINKER_TABLE_4;
+            if (_setData == "10000") _number = BLINKER_CMD_TAB_0;
+            else if (_setData == "01000") _number = BLINKER_CMD_TAB_1;
+            else if (_setData == "00100") _number = BLINKER_CMD_TAB_2;
+            else if (_setData == "00010") _number = BLINKER_CMD_TAB_3;
+            else if (_setData == "00001") _number = BLINKER_CMD_TAB_4;
 
             blinker_callback_with_table_arg_t wFunc = _Widgets_tab[num]->getFunc();
             if (wFunc) {
