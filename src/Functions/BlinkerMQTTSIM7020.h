@@ -256,14 +256,15 @@ int BlinkerMQTTSIM7020::connected()
 {
     // yield();
 
-    if (isConnected && (millis() - ping_time) <= 60000) 
+    if (isConnected && (millis() - ping_time) <= 10000) 
     {
         yield();
         return isConnected;
     }
 
-    if ((millis() - ping_time) <= 60000) return;
+    if ((millis() - ping_time) <= 30000) return;
 
+    BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connected check <<<<<<"));
     streamPrint(STRING_format(BLINKER_CMD_CMQCON_REQ) + "?");
     mqtt_time = millis();
     ping_time = millis();
@@ -297,6 +298,9 @@ int BlinkerMQTTSIM7020::connected()
             free(_masterAT);
         }
     }
+
+    while(streamAvailable()) { delay(10); }
+    
     return isConnected;
 }
 
@@ -305,13 +309,15 @@ int BlinkerMQTTSIM7020::disconnect()
     streamPrint(STRING_format(BLINKER_CMD_CMQDISCON_RESQ) + "=0");
     mqtt_time = millis();
 
+    isConnected = false;
+
     while(millis() - mqtt_time < _mqttTimeout)
     {
         if (streamAvailable())
         {
             if (strcmp(streamData, BLINKER_CMD_OK) == 0)
             {
-                isConnected = false;
+                // isConnected = false;
 
                 return true;
             }

@@ -147,17 +147,21 @@ class BlinkerSerialSIM7020 : public BlinkerStream
 
 int BlinkerSerialSIM7020::connect()
 {
+    BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connect <<<<<<"));
+
     if (!isMQTTinit) return false;
 
-    if (mqtt_NBIoT->connected()) return true;
+    // if (mqtt_NBIoT->connected()) return true;
 
-    disconnect();
+    BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connect failed <<<<<<"));
 
-    if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
-    {
-        yield();
-        return false;
-    }
+    // disconnect();
+
+    // if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
+    // {
+    //     yield();
+    //     return false;
+    // }
 
     BLINKER_LOG(BLINKER_F("Connecting to MQTT... "));
 
@@ -218,6 +222,10 @@ void BlinkerSerialSIM7020::ping()
     if (!mqtt_NBIoT->connected())
     {
         disconnect();
+
+        delay(100);
+
+        connect();
         // delay(100);
 
         // connect();
