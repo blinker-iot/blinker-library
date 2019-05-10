@@ -90,6 +90,7 @@ class BlinkerMQTTSIM7020
         const char *    username;
         const char *    password;
         uint32_t        mqtt_time;
+        uint32_t        ping_time;
         uint32_t        connect_time;
         uint16_t        _mqttTimeout = 5000;
         uint32_t        _debug_time;
@@ -241,6 +242,8 @@ int BlinkerMQTTSIM7020::connect()
 
                 isConnected = true;
 
+                ping_time = millis();
+
                 return true;
             }
         }
@@ -253,14 +256,17 @@ int BlinkerMQTTSIM7020::connected()
 {
     // yield();
 
-    if (isConnected) 
+    if (isConnected && (millis() - ping_time) <= 60000) 
     {
         yield();
         return isConnected;
     }
 
+    if ((millis() - ping_time) <= 60000) return;
+
     streamPrint(STRING_format(BLINKER_CMD_CMQCON_REQ) + "?");
     mqtt_time = millis();
+    ping_time = millis();
 
     while(millis() - mqtt_time < _mqttTimeout)
     {

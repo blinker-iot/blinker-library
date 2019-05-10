@@ -66,6 +66,15 @@ class BlinkerHTTPSIM7020
 
         bool begin(String host, String uri) { _host = host; _uri = uri; }
         void setTimeout(uint16_t timeout)   { _httpTimeout = timeout; }
+
+        void reboot()
+        {
+            // streamPrint(BLINKER_CMD_CRESET_RESQ);
+            // ::delay(500);
+            // streamPrint(BLINKER_CMD_AT);
+            // streamPrint("ATE0");
+        }
+
         bool GET()
         {
             streamPrint(STRING_format(BLINKER_CMD_CHTTPCREATE_REQ) + \
@@ -126,6 +135,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -172,6 +184,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -221,6 +236,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -270,6 +288,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -324,6 +345,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -411,6 +435,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -460,6 +487,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -481,7 +511,13 @@ class BlinkerHTTPSIM7020
                 }
             }
 
-            if (http_status != sim7020_http_discon_success) return false;
+            if (http_status != sim7020_http_discon_success) 
+            {
+
+                reboot();
+                
+                return false;
+            }
         }
 
         bool POST(String _msg, String _type, String _application)
@@ -544,6 +580,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -590,6 +629,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -639,6 +681,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -692,6 +737,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -746,6 +794,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -824,6 +875,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -873,6 +927,9 @@ class BlinkerHTTPSIM7020
                         }
                     }
                 }
+
+                reboot();
+                
                 return false;
             }
 
@@ -915,7 +972,13 @@ class BlinkerHTTPSIM7020
                 }
             }
 
-            if (http_status != sim7020_http_discon_success) return false;
+            if (http_status != sim7020_http_discon_success) 
+            {
+
+                reboot();
+                
+                return false;
+            }
         }
 
         String getString()
