@@ -755,6 +755,8 @@ class BlinkerApi : public BlinkerProtocol
             BlinkerStatus_t _nbiotStatus = NBIOT_DEV_POWER_CHECK;
 
             blinker_callback_t _resetSIMFunc = NULL;
+
+            uint32_t        _checkCrash = 0;
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) ||\
@@ -2925,6 +2927,64 @@ void BlinkerApi::run()
         #endif
 
         #if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
+            if ((millis() - _checkCrash) >= 60000 || _checkCrash == 0)
+            {
+                BLINKER_LOG_ALL(BLINKER_F(">>>>>>check crash<<<<<<"));
+
+                BlinkerSIM7020 BLINKER_SIM7020;
+                BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+
+                if (!BLINKER_SIM7020.isAlive())
+                {
+                    if (_resetSIMFunc)
+                    {
+                        _resetSIMFunc();
+
+                        uint32_t reset_time = millis();
+
+                        while (!BLINKER_SIM7020.available())
+                        {
+                            
+                            yield();
+
+                            if ((millis() - reset_time) >= 60000 * 10) break;
+                        }
+
+                        if (BLINKER_SIM7020.checkStream("NORMAL POWER DOWN"))
+                        {
+                            _resetSIMFunc();
+                        }
+                    } 
+                }
+
+                if (BLINKER_SIM7020.isReboot())
+                {
+                    if (_resetSIMFunc)
+                    {
+                        _resetSIMFunc();
+
+                        ::delay(100);
+
+                        uint32_t reset_time = millis();
+
+                        while (!BLINKER_SIM7020.available())
+                        {
+                            
+                            yield();
+
+                            if ((millis() - reset_time) >= 6000) break;
+                        }
+
+                        if (BLINKER_SIM7020.checkStream("NORMAL POWER DOWN"))
+                        {
+                            _resetSIMFunc();
+                        }
+                    } 
+                }
+
+                _checkCrash = millis();
+            }
+
             if (!_isPowerOn)
             {
                 _nbiotStatus = NBIOT_DEV_POWER_CHECK;
@@ -3331,8 +3391,8 @@ void BlinkerApi::run()
                             BLINKER_LOG_ALL("need reset!");
                             if (_resetAIRFunc) _resetAIRFunc();
                         #elif defined(BLINKER_NBIOT_SIM7020)
-                            stream->println(BLINKER_CMD_CRESET_RESQ);
-                            ::delay(10000);
+                            // stream->println(BLINKER_CMD_CRESET_RESQ);
+                            // ::delay(5000);
                             // BLINKER_LOG_ALL("need reset!");
                             // if (_resetSIMFunc) _resetSIMFunc();
                             // BProto::disconnect();

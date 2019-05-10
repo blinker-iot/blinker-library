@@ -498,12 +498,13 @@ class BlinkerSIM7020
                 if (available())
                 {
                     BLINKER_LOG_ALL(BLINKER_F("data len: "), strlen(streamData));
-                    if (strncmp(streamData, BLINKER_CMD_AT, 2) == 0)
+                    if (strncmp(streamData, BLINKER_CMD_AT, 2) == 0 || \
+                        (strlen(streamData) != 0 && strncmp(streamData, BLINKER_CMD_OK, 2) != 0))
                     {
                         BLINKER_LOG_ALL(BLINKER_F("device reboot"));
                         
                         // SAPBR();
-                        streamPrint("ATE0");
+                        // streamPrint("ATE0");
 
                         return true;
                     }
@@ -518,6 +519,19 @@ class BlinkerSIM7020
             return false;
         }
 
+        bool isAlive()
+        {
+            streamPrint(BLINKER_CMD_AT);
+            uint32_t dev_time = millis();
+
+            while(millis() - dev_time < _simTimeout * 2)
+            {
+                if (available()) return true;
+            }
+
+            return false;
+        }
+
         void flush()
         {
             if (isFresh) free(streamData);
@@ -525,35 +539,9 @@ class BlinkerSIM7020
             BLINKER_LOG_ALL(BLINKER_F("flush sim7020"));
         }
 
-    protected :
-        class BlinkerMasterAT * _masterAT;
-        blinker_callback_t listenFunc = NULL;
-        Stream* stream;
-        // char    streamData[128];
-        char*   streamData;
-        bool    isFresh = false;
-        bool    isHWS = false;
-        uint16_t    _simTimeout = 1000;
-
-        // time_t  _ntpTime = 0;
-
-        float   _timezone = 8.0;
-
-        void streamPrint(const String & s)
+        bool checkStream(char * data)
         {
-            stream->println(s);
-            BLINKER_LOG_ALL(s);
-        }
-
-        int timedRead()
-        {
-            int c;
-            uint32_t _startMillis = millis();
-            do {
-                c = stream->read();
-                if (c >= 0) return c;
-            } while(millis() - _startMillis < 1000);
-            return -1; 
+            return strcpy(data, streamData) == 0;
         }
 
         bool available()
@@ -652,6 +640,37 @@ class BlinkerSIM7020
             {
                 return false;
             }
+        }
+
+    protected :
+        class BlinkerMasterAT * _masterAT;
+        blinker_callback_t listenFunc = NULL;
+        Stream* stream;
+        // char    streamData[128];
+        char*   streamData;
+        bool    isFresh = false;
+        bool    isHWS = false;
+        uint16_t    _simTimeout = 1000;
+
+        // time_t  _ntpTime = 0;
+
+        float   _timezone = 8.0;
+
+        void streamPrint(const String & s)
+        {
+            stream->println(s);
+            BLINKER_LOG_ALL(BLINKER_F("SIM: "), s);
+        }
+
+        int timedRead()
+        {
+            int c;
+            uint32_t _startMillis = millis();
+            do {
+                c = stream->read();
+                if (c >= 0) return c;
+            } while(millis() - _startMillis < 1000);
+            return -1; 
         }
 };
 

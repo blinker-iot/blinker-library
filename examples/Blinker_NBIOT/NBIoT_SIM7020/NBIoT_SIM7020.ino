@@ -39,6 +39,7 @@
 #include <Blinker.h>
 
 char auth[] = "Your Device Secret Key";
+#define BLINKER_SIM7020_RESET_PIN 4
 
 BlinkerButton Button1("btn-abc");
 BlinkerNumber Number1("num-abc");
@@ -58,6 +59,13 @@ void dataRead(const String & data)
     Number1.print(counter);
 }
 
+void sim7020Reset()
+{
+    digitalWrite(BLINKER_SIM7020_RESET_PIN, HIGH);
+    delay(1000);
+    digitalWrite(BLINKER_SIM7020_RESET_PIN, LOW);
+}
+
 void setup() {
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
@@ -68,6 +76,7 @@ void setup() {
     
     Blinker.begin(auth);
     Blinker.attachData(dataRead);
+    Blinker.attachSIM7020Reset(sim7020Reset);
 
     Button1.attach(button1_callback);
 }
