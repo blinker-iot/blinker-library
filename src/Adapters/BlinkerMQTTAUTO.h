@@ -1351,9 +1351,9 @@ int BlinkerMQTTAUTO::connectServer()
         // client_s->setFingerprint(fingerprint);
         client_s->setInsecure();
 
-        String url_iot = BLINKER_F("/api/v1/user/device/vip/auth/get?deviceType=");
+        String url_iot = BLINKER_F("/api/v1/user/device/auth/get?deviceType=");
         url_iot += _deviceType;
-        url_iot += BLINKER_F("&vipKey=");
+        url_iot += BLINKER_F("&typeKey=");
         url_iot += _vipKey;
         url_iot += BLINKER_F("&deviceName=");
         url_iot += macDeviceName();
@@ -1429,9 +1429,9 @@ int BlinkerMQTTAUTO::connectServer()
         HTTPClient http;
 
         String url_iot = host;
-        url_iot += BLINKER_F("/api/v1/user/device/vip/auth/get?deviceType=");
+        url_iot += BLINKER_F("/api/v1/user/device/auth/get?deviceType=");
         url_iot += _deviceType;
-        url_iot += BLINKER_F("&vipKey=");
+        url_iot += BLINKER_F("&typeKey=");
         url_iot += _vipKey;
         url_iot += BLINKER_F("&deviceName=");
         url_iot += macDeviceName();
@@ -1520,7 +1520,7 @@ int BlinkerMQTTAUTO::connectServer()
     // client_s->setFingerprint(fingerprint);
     client_s->setInsecure();
 
-    String url_iot = BLINKER_F("/api/v1/user/device/vip/auth?authKey=");
+    String url_iot = BLINKER_F("/api/v1/user/device/auth?authKey=");
     url_iot += AUTHKEY_AUTO;
     // url_iot += _aliType;
     // url_iot += _duerType;
@@ -1565,7 +1565,7 @@ int BlinkerMQTTAUTO::connectServer()
     HTTPClient http;
 
     String url_iot = host;
-    url_iot += BLINKER_F("/api/v1/user/device/vip/auth?authKey=");
+    url_iot += BLINKER_F("/api/v1/user/device/auth?authKey=");
     url_iot += AUTHKEY_AUTO;
     // url_iot += _aliType;
     // url_iot += _duerType;
