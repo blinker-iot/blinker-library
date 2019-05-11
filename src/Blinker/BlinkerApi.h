@@ -692,8 +692,9 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP)
+            bool            _isInitCheck = false;
             bool            _isConnBegin = false;
-            bool            _getRegister = true;//false;
+            bool            _getRegister = false;
             // bool            _isInit = false;
             bool            _isRegistered = false;
             uint32_t        _register_fresh = 0;
@@ -2449,6 +2450,7 @@ void BlinkerApi::run()
             }
             else
             {
+                // BLINKER_LOG_ALL(BLINKER_F("wlan connected, _isConnBegin: "), _isConnBegin);
                 if (!_isConnBegin)
                 {
                     _mqttAutoStatue = AUTO_WLAN_CONNECTED;
@@ -2456,11 +2458,13 @@ void BlinkerApi::run()
                     // if (checkCanOTA()) loadOTA();
 
                     BProto::begin(key(), type());
+                    // if (_getRegister) 
                     _isConnBegin = true;
                     _initTime = millis();
 
                     BLINKER_LOG_ALL(BLINKER_F("conn begin, fresh _initTime: "), _initTime);
 
+                    // if (_getRegister) _isConnBegin = true;
                     // loadOTA();
 
                     if (BProto::authCheck())
@@ -2495,6 +2499,28 @@ void BlinkerApi::run()
                     }
 
                     BLINKER_LOG_FreeHeap_ALL();
+                }
+            }
+
+            if (_getRegister)
+            {
+                if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
+                    _register_fresh == 0))
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("conn deviceRegister"));
+
+                    _isRegistered = BProto::deviceRegister();
+
+                    if (!_isRegistered)
+                    {
+                        _register_fresh = millis();
+                        _mqttAutoStatue = AUTO_DEV_AUTHCHECK_FAIL;
+                    }
+                    else
+                    {
+                        _isRegistered = true;
+                        _mqttAutoStatue = AUTO_DEV_REGISTER_SUCCESS;
+                    }
                 }
             }
 
