@@ -509,6 +509,8 @@ class BlinkerSIM7020
 
                         return true;
                     }
+
+                    if (strncmp(streamData, BLINKER_CMD_OK, 2) == 0) return false;
                     // else if (strcmp(streamData, BLINKER_CMD_OK) == 0)
                     // {
                     //     BLINKER_LOG_ALL(BLINKER_F("device not reboot"));
@@ -542,7 +544,11 @@ class BlinkerSIM7020
 
         bool checkStream(char * data)
         {
-            return strcpy(data, streamData) == 0;
+            bool _check_ = strcmp(data, streamData);
+
+            BLINKER_LOG_ALL(BLINKER_F("checkStream: "), _check_);
+
+            return _check_ == 0;
         }
 
         bool available()
