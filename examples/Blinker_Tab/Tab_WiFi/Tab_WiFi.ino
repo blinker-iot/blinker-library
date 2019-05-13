@@ -47,6 +47,8 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 BlinkerTab Tab1(Tab_1);
 
+bool tab[5] = { false };
+
 void tab1_callback(uint8_t tab_set)
 {
     BLINKER_LOG("get tab set: ", tab_set);
@@ -54,34 +56,40 @@ void tab1_callback(uint8_t tab_set)
     switch (tab_set)
     {
         case BLINKER_CMD_TAB_0 :
+            tab[0] = true;
             BLINKER_LOG("tab 0 set");
-
-            Tab1.tab_0();
             break;
         case BLINKER_CMD_TAB_1 :
+            tab[1] = true;
             BLINKER_LOG("tab 1 set");
-
-            Tab1.tab_1();
             break;
         case BLINKER_CMD_TAB_2 :
+            tab[2] = true;
             BLINKER_LOG("tab 2 set");
-
-            Tab1.tab_2();
             break;
         case BLINKER_CMD_TAB_3 :
+            tab[3] = true;
             BLINKER_LOG("tab 3 set");
-
-            Tab1.tab_3();
             break;
         case BLINKER_CMD_TAB_4 :
+            tab[4] = true;
             BLINKER_LOG("tab 4 set");
-
-            Tab1.tab_4();
             break;
         default:
             break;
     }
+}
 
+void tab1_feedback()
+{
+    for(uint8_t num = 0; num < 5; num++)
+    {
+        if (tab[num])
+        {
+            Tab1.tab(num);
+            tab[num] = false;
+        }
+    }
     Tab1.print();
 }
 
@@ -108,7 +116,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
-    Tab1.attach(tab1_callback);
+    Tab1.attach(tab1_callback, tab1_feedback);
 }
 
 void loop()

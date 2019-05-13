@@ -530,14 +530,14 @@ class BlinkerApi : public BlinkerProtocol
         #endif
         void freshAttachWidget(char _name[], blinker_callback_with_rgb_arg_t _func);
         void freshAttachWidget(char _name[], blinker_callback_with_int32_arg_t _func);
-        void freshAttachWidget(char _name[], blinker_callback_with_table_arg_t _func);
+        void freshAttachWidget(char _name[], blinker_callback_with_table_arg_t _func, blinker_callback_t _func2);
         uint8_t attachWidget(char _name[], blinker_callback_with_string_arg_t _func);
         #if defined(BLINKER_BLE)
             uint8_t attachWidget(char _name[], blinker_callback_with_joy_arg_t _func);
         #endif
         uint8_t attachWidget(char _name[], blinker_callback_with_rgb_arg_t _func);
         uint8_t attachWidget(char _name[], blinker_callback_with_int32_arg_t _func);
-        uint8_t attachWidget(char _name[], blinker_callback_with_table_arg_t _func);
+        uint8_t attachWidget(char _name[], blinker_callback_with_table_arg_t _func, blinker_callback_t _func2);
         void attachSwitch(blinker_callback_with_string_arg_t _func);
         char * widgetName_str(uint8_t num);
         #if defined(BLINKER_BLE)
@@ -5638,10 +5638,10 @@ void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_int32_arg
     if(num >= 0 ) _Widgets_int[num]->setFunc(_func);
 }
 
-void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_table_arg_t _func)
+void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_table_arg_t _func, blinker_callback_t _func2)
 {
     int8_t num = checkNum(_name, _Widgets_tab, _wCount_tab);
-    if(num >= 0 ) _Widgets_tab[num]->setFunc(_func);
+    if(num >= 0 ) _Widgets_tab[num]->setFunc(_func, _func2);
 }
 
 uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_string_arg_t _func)
@@ -5774,14 +5774,15 @@ uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_int32_arg_t
     }
 }
 
-uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_table_arg_t _func)
+uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_table_arg_t _func,
+        blinker_callback_t _func2)
 {
     int8_t num = checkNum(_name, _Widgets_tab, _wCount_tab);
     if (num == BLINKER_OBJECT_NOT_AVAIL)
     {
         if (_wCount_tab < BLINKER_MAX_WIDGET_SIZE*2)
         {
-            _Widgets_tab[_wCount_tab] = new BlinkerWidgets_table(_name, _func);
+            _Widgets_tab[_wCount_tab] = new BlinkerWidgets_table(_name, _func, _func2);
             _wCount_tab++;
 
             BLINKER_LOG_ALL(BLINKER_F("new widgets: "), _name, \
@@ -6151,17 +6152,51 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             uint8_t _number = 0;
 
-            if (_setData == "10000") _number = BLINKER_CMD_TAB_0;
-            else if (_setData == "01000") _number = BLINKER_CMD_TAB_1;
-            else if (_setData == "00100") _number = BLINKER_CMD_TAB_2;
-            else if (_setData == "00010") _number = BLINKER_CMD_TAB_3;
-            else if (_setData == "00001") _number = BLINKER_CMD_TAB_4;
+            blinker_callback_with_table_arg_t wFunc = _Widgets_tab[num]->getFunc();
+                    
+            for (uint8_t num = 0; num < 5; num++)
+            {
+                // BLINKER_LOG_ALL(BLINKER_F("num: "), _setData.substring(num, num + 1));
+
+                if (strcmp(_setData.substring(num, num + 1).c_str(), "1") == 0)
+                {
+                    if (wFunc) {
+                        switch (num)
+                        {
+                            case 0:
+                                wFunc(BLINKER_CMD_TAB_0);
+                                break;
+                            case 1:
+                                wFunc(BLINKER_CMD_TAB_1);
+                                break;
+                            case 2:
+                                wFunc(BLINKER_CMD_TAB_2);
+                                break;
+                            case 3:
+                                wFunc(BLINKER_CMD_TAB_3);
+                                break;
+                            case 4:
+                                wFunc(BLINKER_CMD_TAB_4);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+            
+
+            // if (_setData == "10000") _number = BLINKER_CMD_TAB_0;
+            // else if (_setData == "01000") _number = BLINKER_CMD_TAB_1;
+            // else if (_setData == "00100") _number = BLINKER_CMD_TAB_2;
+            // else if (_setData == "00010") _number = BLINKER_CMD_TAB_3;
+            // else if (_setData == "00001") _number = BLINKER_CMD_TAB_4;
 
             _fresh = true;
 
-            blinker_callback_with_table_arg_t wFunc = _Widgets_tab[num]->getFunc();
-            if (wFunc) {
-                wFunc(_number);
+            blinker_callback_t wFunc2 = _Widgets_tab[num]->getFunc2();
+            if (wFunc2) {
+                wFunc2();
             }
         }
     }
@@ -6432,17 +6467,55 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             _fresh = true;
 
-            uint8_t _number = 0;
+            // uint8_t _number = 0;
 
-            if (_setData == "10000") _number = BLINKER_CMD_TAB_0;
-            else if (_setData == "01000") _number = BLINKER_CMD_TAB_1;
-            else if (_setData == "00100") _number = BLINKER_CMD_TAB_2;
-            else if (_setData == "00010") _number = BLINKER_CMD_TAB_3;
-            else if (_setData == "00001") _number = BLINKER_CMD_TAB_4;
+            // if (_setData == "10000") _number = BLINKER_CMD_TAB_0;
+            // else if (_setData == "01000") _number = BLINKER_CMD_TAB_1;
+            // else if (_setData == "00100") _number = BLINKER_CMD_TAB_2;
+            // else if (_setData == "00010") _number = BLINKER_CMD_TAB_3;
+            // else if (_setData == "00001") _number = BLINKER_CMD_TAB_4;
+
+            // blinker_callback_with_table_arg_t wFunc = _Widgets_tab[num]->getFunc();
+            // if (wFunc) {
+            //     wFunc(_number);
+            // }
 
             blinker_callback_with_table_arg_t wFunc = _Widgets_tab[num]->getFunc();
-            if (wFunc) {
-                wFunc(_number);
+                    
+            for (uint8_t num = 0; num < 5; num++)
+            {
+                // BLINKER_LOG_ALL(BLINKER_F("num: "), _setData.substring(num, num + 1));
+
+                if (strcmp(_setData.substring(num, num + 1).c_str(), "1") == 0)
+                {
+                    if (wFunc) {
+                        switch (num)
+                        {
+                            case 0:
+                                wFunc(BLINKER_CMD_TAB_0);
+                                break;
+                            case 1:
+                                wFunc(BLINKER_CMD_TAB_1);
+                                break;
+                            case 2:
+                                wFunc(BLINKER_CMD_TAB_2);
+                                break;
+                            case 3:
+                                wFunc(BLINKER_CMD_TAB_3);
+                                break;
+                            case 4:
+                                wFunc(BLINKER_CMD_TAB_4);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+
+            blinker_callback_t wFunc2 = _Widgets_tab[num]->getFunc2();
+            if (wFunc2) {
+                wFunc2();
             }
         }
 

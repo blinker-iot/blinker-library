@@ -151,8 +151,8 @@ void BlinkerWlan::loadConfig(char *_ssid, char *_pswd) {
     EEPROM.commit();
     EEPROM.end();
 
-    strcpy(_ssid, loadssid);
-    strcpy(_pswd, loadpswd);
+    strcpy(_ssid, "有没有wifi");
+    strcpy(_pswd, "i8888888");
 
     BLINKER_LOG(BLINKER_F("SSID: "), _ssid, BLINKER_F(" PASWD: "), _pswd);
 }
@@ -220,6 +220,7 @@ bool BlinkerWlan::smartconfigDone() {
         BLINKER_LOG(BLINKER_F("SSID: "), WiFi.SSID(), BLINKER_F(" PSWD: "), WiFi.psk());
         // WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
         connectWiFi(WiFi.SSID().c_str(), WiFi.psk().c_str());
+        // connectWiFi("有没有wifi", "i8888888");
 #endif
         return true;
     }

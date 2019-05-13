@@ -141,17 +141,22 @@ class BlinkerWidgets_joy
 class BlinkerWidgets_table
 {
     public :
-        BlinkerWidgets_table(char * _name, blinker_callback_with_table_arg_t _func = NULL)
+        BlinkerWidgets_table(char * _name, 
+            blinker_callback_with_table_arg_t _func = NULL,
+            blinker_callback_t _func2 = NULL)
         {
             wName = (char*)malloc((strlen(_name)+1)*sizeof(char));
             strcpy(wName, _name);
 
             wfunc = _func;
+            wfunc2 = _func2;
         }
 
         char * getName() { return wName; }
-        void setFunc(blinker_callback_with_table_arg_t _func) { wfunc = _func; }
+        void setFunc(blinker_callback_with_table_arg_t _func, blinker_callback_t _func2) 
+        { wfunc = _func; wfunc2 = _func2; }
         blinker_callback_with_table_arg_t getFunc() { return wfunc; }
+        blinker_callback_t getFunc2() { return wfunc2; }
         bool checkName(char * name) {
             return strcmp(name, wName) == 0;
         }
@@ -159,6 +164,7 @@ class BlinkerWidgets_table
     private :
         char *wName;
         blinker_callback_with_table_arg_t wfunc;
+        blinker_callback_t                wfunc2;
 };
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
