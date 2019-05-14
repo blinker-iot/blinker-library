@@ -11255,9 +11255,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 print(BLINKER_CMD_MESSAGE, "deviceType check fail");
             }
             BProto::printNow();
+
+            _fresh = true;
         }
 
-        _fresh = true;
+        // _fresh = true;
     }
 
 

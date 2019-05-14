@@ -69,7 +69,7 @@ void dataRead(const String & data)
     Blinker.vibrate();
     
     uint32_t BlinkerTime = millis();
-    Blinker.print(BlinkerTime);
+    
     Blinker.print("millis", BlinkerTime);
 }
 
@@ -90,7 +90,7 @@ void setup()
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
     Blinker.attachHeartbeat(heartbeat);
-
+    
     dht.begin();
 }
 
