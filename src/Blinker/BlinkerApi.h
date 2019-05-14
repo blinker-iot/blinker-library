@@ -2978,7 +2978,9 @@ void BlinkerApi::run()
 
                         if (BLINKER_SIM7020.checkStream("NORMAL POWER DOWN"))
                         {
+                            ::delay(5000);
                             _resetSIMFunc();
+                            powerCheck();
                         }
                     } 
                 }
@@ -3003,7 +3005,9 @@ void BlinkerApi::run()
 
                         if (BLINKER_SIM7020.checkStream("NORMAL POWER DOWN"))
                         {
+                            ::delay(5000);
                             _resetSIMFunc();
+                            powerCheck();
                         }
                     } 
                 }

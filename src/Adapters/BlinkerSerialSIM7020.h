@@ -155,7 +155,7 @@ int BlinkerSerialSIM7020::connect()
 
     BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connect failed <<<<<<"));
 
-    // disconnect();
+    disconnect();
 
     // if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
     // {

@@ -64,6 +64,20 @@ class BlinkerHTTPSIM7020
             stream->println(s);
         }
 
+        void _streamPrint(const String & s)
+        {
+            // stream->flush();
+            BLINKER_LOG_ALL(BLINKER_F("HTTP streamPrint: "), s);
+            stream->print(s);
+        }
+
+        void _streamPrint()
+        {
+            // stream->flush();
+            BLINKER_LOG_ALL(BLINKER_F("HTTP streamPrint: "));
+            stream->println();
+        }
+
         bool begin(String host, String uri) { _host = host; _uri = uri; }
         void setTimeout(uint16_t timeout)   { _httpTimeout = timeout; }
 
@@ -687,12 +701,14 @@ class BlinkerHTTPSIM7020
                 return false;
             }
 
-            streamPrint(STRING_format(BLINKER_CMD_CHTTPSEND_REQ) + \
-                        "=" + STRING_format(h_id) + ",1,\"" + _uri + \
-                        "\",4163636570743a202a2f2a0d0a436f6e6" + \
-                        "e656374696f6e3a204b6565702d416c6976650d0a557365722d41" + \
-                        "67656e743a2053494d434f4d5f4d4f44554c450d0a,\"" + \
-                        "application/json" + "\"," + encode(_msg));
+            _streamPrint(STRING_format(BLINKER_CMD_CHTTPSEND_REQ));// + 
+            _streamPrint("=" + STRING_format(h_id) + ",1,\"" + _uri);// + 
+            _streamPrint("\",4163636570743a202a2f2a0d0a436f6e6");// + 
+            _streamPrint("e656374696f6e3a204b6565702d416c6976650d0a557365722d41");// + 
+            _streamPrint("67656e743a2053494d434f4d5f4d4f44554c450d0a,\"");// + 
+            _streamPrint("application/json\",");// + 
+            _streamPrint(encode(_msg));
+            _streamPrint();
             http_time = millis();
             http_status = sim7020_http_send_req;
 
@@ -1032,29 +1048,44 @@ class BlinkerHTTPSIM7020
 
         String encode(String data)
         {
-            char _d[1024] = {'\0'};
+            // char _d[2048] = {'\0'};
+
+            String _d = "";
+
+            BLINKER_LOG_FreeHeap_ALL();
+            BLINKER_LOG_ALL("encode data: ", data);
+            BLINKER_LOG_ALL("encode len: ", data.length());
 
             for(uint16_t num = 0; num < data.length(); num++)
             {
-                _d[num*2] = (ecode_data((uint8_t)data[num] >> 4));
-                _d[num*2+1] = (ecode_data((uint8_t)data[num] & 0x0F));
+                _d += (ecode_data((uint8_t)data.c_str()[num] >> 4));
+                _d += (ecode_data((uint8_t)data.c_str()[num] & 0x0F));
             }
+
+            BLINKER_LOG_ALL("encode data: ", _d);
 
             return _d;
         }
 
-        String encode(char data[])
-        {
-            char _d[1024] = {'\0'};
+        // String encode(char data[])
+        // {
+        //     // char _d[2048] = {'\0'};
+        //     String _d = "";
 
-            for(uint16_t num = 0; num < strlen(data); num++)
-            {
-                _d[num*2] = (ecode_data(data[num] >> 4));
-                _d[num*2+1] = (ecode_data(data[num] & 0x0F));
-            }
+        //     BLINKER_LOG_FreeHeap_ALL();
+        //     BLINKER_LOG_ALL("encode data: ", data);
+        //     BLINKER_LOG_ALL("encode len: ", strlen(data));
 
-            return _d;
-        }
+        //     for(uint16_t num = 0; num < strlen(data); num++)
+        //     {
+        //         _d += (ecode_data(data[num] >> 4));
+        //         _d += (ecode_data(data[num] & 0x0F));
+        //     }
+
+        //     BLINKER_LOG_ALL("encode data: ", _d);
+
+        //     return _d;
+        // }
 
         // for(uint16_t num = 0; num < strlen(test); num++)
         // {

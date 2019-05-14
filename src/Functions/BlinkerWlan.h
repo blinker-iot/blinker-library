@@ -151,9 +151,6 @@ void BlinkerWlan::loadConfig(char *_ssid, char *_pswd) {
     EEPROM.commit();
     EEPROM.end();
 
-    strcpy(_ssid, "有没有wifi");
-    strcpy(_pswd, "i8888888");
-
     BLINKER_LOG(BLINKER_F("SSID: "), _ssid, BLINKER_F(" PASWD: "), _pswd);
 }
 
