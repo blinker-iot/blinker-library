@@ -50,7 +50,7 @@ void dataRead(const String & data)
     Blinker.vibrate();
     
     uint32_t BlinkerTime = millis();
-    Blinker.print(BlinkerTime);
+    
     Blinker.print("millis", BlinkerTime);
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));

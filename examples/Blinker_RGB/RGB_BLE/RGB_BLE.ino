@@ -59,7 +59,7 @@ void dataRead(const String & data)
     Blinker.vibrate();
     
     uint32_t BlinkerTime = millis();
-    Blinker.print(BlinkerTime);
+    
     Blinker.print("millis", BlinkerTime);
 
     RGB1.brightness(random(0, 255));

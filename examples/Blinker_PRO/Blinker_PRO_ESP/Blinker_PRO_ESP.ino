@@ -52,8 +52,8 @@
 
 #include <Blinker.h>
 
-char auth[] = "Your Device Secret Key";
 char type[] = "Your Device Type";
+char auth[] = "Your Device Secret Key";
 
 /* 
  * Add your command parse code in this function
@@ -67,7 +67,10 @@ bool dataParse(const JsonObject & data)
     data.printTo(getData);
     
     BLINKER_LOG("Get user command: ", getData);
-    return true;
+
+    // if you parsed this data, return TRUE.
+    // return true;
+    return false;
 }
 
 /* 
@@ -124,7 +127,6 @@ void dataRead(const String & data)
     Blinker.vibrate();
     
     uint32_t BlinkerTime = millis();
-    Blinker.print(BlinkerTime);
     Blinker.print("millis", BlinkerTime);
 }
 
