@@ -1547,6 +1547,15 @@ int BlinkerPROESP::connectServer() {
     // url_iot += _aliType;
     // url_iot += _duerType;
 
+    #if defined(BLINKER_ALIGENIE_LIGHT)
+        url_iot += BLINKER_F("&aliType=light");
+    #elif defined(BLINKER_ALIGENIE_OUTLET)
+        url_iot += BLINKER_F("&aliType=outlet");
+    #elif defined(BLINKER_ALIGENIE_SWITCH)
+    #elif defined(BLINKER_ALIGENIE_SENSOR)
+        url_iot += BLINKER_F("&aliType=sensor");
+    #endif
+
     url_iot = "https://" + host + url_iot;
 
     HTTPClient http;
@@ -1592,14 +1601,14 @@ int BlinkerPROESP::connectServer() {
     // url_iot += _aliType;
     // url_iot += _duerType;
 
-// #if defined(BLINKER_ALIGENIE_LIGHT)
-//     url_iot += BLINKER_F("&aliType=light");
-// #elif defined(BLINKER_ALIGENIE_OUTLET)
-//     url_iot += BLINKER_F("&aliType=outlet");
-// #elif defined(BLINKER_ALIGENIE_SWITCH)
-// #elif defined(BLINKER_ALIGENIE_SENSOR)
-//     url_iot += BLINKER_F("&aliType=sensor");
-// #endif
+    #if defined(BLINKER_ALIGENIE_LIGHT)
+        url_iot += BLINKER_F("&aliType=light");
+    #elif defined(BLINKER_ALIGENIE_OUTLET)
+        url_iot += BLINKER_F("&aliType=outlet");
+    #elif defined(BLINKER_ALIGENIE_SWITCH)
+    #elif defined(BLINKER_ALIGENIE_SENSOR)
+        url_iot += BLINKER_F("&aliType=sensor");
+    #endif
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 

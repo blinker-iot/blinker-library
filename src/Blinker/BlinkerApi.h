@@ -3425,6 +3425,33 @@ void BlinkerApi::run()
                             // ::delay(5000);
                             // BLINKER_LOG_ALL("need reset!");
                             // if (_resetSIMFunc) _resetSIMFunc();
+                            BlinkerSIM7020 BLINKER_SIM7020;
+                            BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
+                            if (_resetSIMFunc)
+                            {
+                                _resetSIMFunc();
+
+                                ::delay(100);
+
+                                uint32_t reset_time = millis();
+
+                                while (!BLINKER_SIM7020.available())
+                                {
+                                    
+                                    yield();
+
+                                    if ((millis() - reset_time) >= 6000) break;
+                                }
+
+                                if (BLINKER_SIM7020.checkStream("NORMAL POWER DOWN"))
+                                {
+                                    ::delay(5000);
+                                    _resetSIMFunc();
+                                    powerCheck();
+                                }
+                            } 
+                            _nbiotStatus = NBIOT_DEV_POWER_CHECK;
+                            _isPowerOn = false;
                             // BProto::disconnect();
                         #endif
                         _autoUpdateTime = millis() - 100000;
