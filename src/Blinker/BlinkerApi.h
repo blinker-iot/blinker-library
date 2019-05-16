@@ -6009,9 +6009,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                 _fresh = true;
 
-                // #if defined(BLINKER_AT_MQTT)
-                //     atHeartbeat();
-                // #endif
+                #if defined(BLINKER_AT_MQTT)
+                    atHeartbeat();
+                #endif
             }
         }
     }
