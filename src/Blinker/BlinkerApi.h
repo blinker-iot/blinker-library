@@ -6883,8 +6883,19 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     void BlinkerApi::checkOverlapping(uint8_t checkDays, uint16_t checkMins)
     {
+        BLINKER_LOG_ALL(BLINKER_F("checkMins: "), checkMins);
+        BLINKER_LOG_ALL(BLINKER_F("checkDays: "), checkDays);
+
+        char _tmAction[BLINKER_TIMER_TIMING_ACTION_SIZE];
+
         for (uint8_t task = 0; task < taskCount; task++)
         {
+            
+            BLINKER_LOG_ALL(BLINKER_F("getTime: "), timingTask[task]->getTime());
+            BLINKER_LOG_ALL(BLINKER_F("isLoop: "), timingTask[task]->isLoop());
+            BLINKER_LOG_ALL(BLINKER_F("state: "), timingTask[task]->state());
+            BLINKER_LOG_ALL(BLINKER_F("isTimingDay: "), timingTask[task]->isTimingDay(checkDays));
+
             if((timingTask[task]->getTime() == checkMins) && \
                 !timingTask[task]->isLoop() && \
                 timingTask[task]->state() && \
@@ -6905,6 +6916,26 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                 BLINKER_LOG_ALL(BLINKER_F("disable timerData: "), timingTask[task]->getTimerData());
                 BLINKER_LOG_ALL(BLINKER_F("disableTask: "), task);
+
+                strcpy(_tmAction, timingTask[task]->getAction());
+                #if defined(BLINKER_AT_MQTT)
+                    BProto::serialPrint(_tmAction);
+                #else
+                    parse(_tmAction, true);
+                #endif         
+            }
+            else if((timingTask[task]->getTime() == checkMins) && \
+                timingTask[task]->state() && \
+                timingTask[task]->isTimingDay(checkDays))
+            {
+                BLINKER_LOG(BLINKER_F("checkOverlapping, timing trigged, action is: "), _tmAction);
+
+                strcpy(_tmAction, timingTask[task]->getAction());
+                #if defined(BLINKER_AT_MQTT)
+                    BProto::serialPrint(_tmAction);
+                #else
+                    parse(_tmAction, true);
+                #endif
             }
         }
     }
