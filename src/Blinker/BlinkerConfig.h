@@ -668,7 +668,7 @@
 
     #define BLINKER_CMD_COMCONFIG               "COMCONFIG"
 
-    #define BLINKER_SERIAL_DEFAULT              115200 << 8 | 8 << 4 | 1 << 2 | 0
+    #define BLINKER_SERIAL_DEFAULT              9600 << 8 | 8 << 4 | 1 << 2 | 0
 
     #define BLINKER_SERIAL_5N1                  5 << 4 | 1 << 2 | 0
 
