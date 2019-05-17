@@ -1735,7 +1735,7 @@ class BlinkerApi : public BlinkerProtocol
                 void loadCountdown();
                 void loadLoop();
                 void loadTiming();
-                void checkOverlapping(uint8_t checkDays, uint16_t checkMins);
+                void checkOverlapping(uint8_t checkDays, uint16_t checkMins, uint8_t taskNum);
                 void freshTiming(uint8_t wDay, uint16_t nowMins);
                 void deleteTiming(uint8_t taskDel);
                 void addTimingTask(uint8_t taskSet, uint32_t timerData, const String & action);
@@ -6881,7 +6881,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     }
 
 
-    void BlinkerApi::checkOverlapping(uint8_t checkDays, uint16_t checkMins)
+    void BlinkerApi::checkOverlapping(uint8_t checkDays, uint16_t checkMins, uint8_t taskNum)
     {
         BLINKER_LOG_ALL(BLINKER_F("checkMins: "), checkMins);
         BLINKER_LOG_ALL(BLINKER_F("checkDays: "), checkDays);
@@ -6918,11 +6918,15 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 BLINKER_LOG_ALL(BLINKER_F("disableTask: "), task);
 
                 strcpy(_tmAction, timingTask[task]->getAction());
-                #if defined(BLINKER_AT_MQTT)
-                    BProto::serialPrint(_tmAction);
-                #else
-                    parse(_tmAction, true);
-                #endif         
+
+                if (task != taskNum)
+                {
+                    #if defined(BLINKER_AT_MQTT)
+                        BProto::serialPrint(_tmAction);
+                    #else
+                        parse(_tmAction, true);
+                    #endif
+                }
             }
             else if((timingTask[task]->getTime() == checkMins) && \
                 timingTask[task]->state() && \
@@ -6931,11 +6935,15 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 BLINKER_LOG(BLINKER_F("checkOverlapping, timing trigged, action is: "), _tmAction);
 
                 strcpy(_tmAction, timingTask[task]->getAction());
-                #if defined(BLINKER_AT_MQTT)
-                    BProto::serialPrint(_tmAction);
-                #else
-                    parse(_tmAction, true);
-                #endif
+                
+                if (task != taskNum)
+                {
+                    #if defined(BLINKER_AT_MQTT)
+                        BProto::serialPrint(_tmAction);
+                    #else
+                        parse(_tmAction, true);
+                    #endif
+                }
             }
         }
     }
@@ -8123,7 +8131,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     parse(_tmAction, true);
                 #endif
 
-                checkOverlapping(wDay, timingTask[triggedTask]->getTime());
+                checkOverlapping(wDay, timingTask[triggedTask]->getTime(), triggedTask);
 
                 freshTiming(wDay, timingTask[triggedTask]->getTime());
 

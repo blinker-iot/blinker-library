@@ -1552,8 +1552,23 @@ int BlinkerPROESP::connectServer() {
     #elif defined(BLINKER_ALIGENIE_OUTLET)
         url_iot += BLINKER_F("&aliType=outlet");
     #elif defined(BLINKER_ALIGENIE_SWITCH)
+        url_iot += BLINKER_F("&aliType=multi_outlet");
     #elif defined(BLINKER_ALIGENIE_SENSOR)
         url_iot += BLINKER_F("&aliType=sensor");
+    #elif defined(BLINKER_ALIGENIE_TYPE)
+        url_iot += BLINKER_ALIGENIE_TYPE;
+    #endif
+
+    #if defined(BLINKER_DUEROS_LIGHT)
+        url_iot += BLINKER_F("&duerType=LIGHT");
+    #elif defined(BLINKER_DUEROS_OUTLET)
+        url_iot += BLINKER_F("&duerType=SOCKET");
+    #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+        url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
+    #elif defined(BLINKER_DUEROS_SENSOR)
+        url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+    #elif defined(BLINKER_DUEROS_TYPE)
+        url_iot += BLINKER_DUEROS_TYPE;
     #endif
 
     url_iot = "https://" + host + url_iot;
