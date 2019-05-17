@@ -250,7 +250,7 @@
         #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
     #endif
 
-#elif defined(BLINKER_PRO_ESP)
+#elif defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_AUTO)
 
     // #if defined(BLINKER_ALIGENIE_LIGHT) || defined(BLINKER_ALIGENIE_OUTLET) || \
     //     defined(BLINKER_ALIGENIE_SWITCH)|| defined(BLINKER_ALIGENIE_SENSOR)
@@ -262,9 +262,175 @@
     //     #error This code is intended to run on the BLINKER_MQTT mode! Please check your mode setting.
     // #endif
 
-    #define BLINKER_ALIGENIE
+    #if defined(BLINKER_ALIGENIE_LIGHT)
+        #if defined(BLINKER_ALIGENIE_OUTLET)
+            #undef BLINKER_ALIGENIE_OUTLET
+        #endif
+        
+        #if defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            #undef BLINKER_ALIGENIE_MULTI_OUTLET
+        #endif
 
-    #define BLINKER_DUEROS
+        #if defined(BLINKER_ALIGENIE_SWITCH)
+            #undef BLINKER_ALIGENIE_SWITCH
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_SENSOR)
+            #undef BLINKER_ALIGENIE_SENSOR
+        #endif
+
+        #define BLINKER_ALIGENIE
+    #elif defined(BLINKER_ALIGENIE_OUTLET)
+        #if defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            #undef BLINKER_ALIGENIE_MULTI_OUTLET
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            #undef BLINKER_ALIGENIE_LIGHT
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_SWITCH)
+            #undef BLINKER_ALIGENIE_SWITCH
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_SENSOR)
+            #undef BLINKER_ALIGENIE_SENSOR
+        #endif
+
+        #define BLINKER_ALIGENIE
+    #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+        #if defined(BLINKER_ALIGENIE_OUTLET)
+            #undef BLINKER_ALIGENIE_OUTLET
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            #undef BLINKER_ALIGENIE_LIGHT
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_SWITCH)
+            #undef BLINKER_ALIGENIE_SWITCH
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_SENSOR)
+            #undef BLINKER_ALIGENIE_SENSOR
+        #endif
+
+        #define BLINKER_ALIGENIE
+    #elif defined(BLINKER_ALIGENIE_SWITCH)
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            #undef BLINKER_ALIGENIE_LIGHT
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_OUTLET)
+            #undef BLINKER_ALIGENIE_OUTLET
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            #undef BLINKER_ALIGENIE_MULTI_OUTLET
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_SENSOR)
+            #undef BLINKER_ALIGENIE_SENSOR
+        #endif
+
+        #define BLINKER_ALIGENIE
+    #elif defined(BLINKER_ALIGENIE_SENSOR)
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            #undef BLINKER_ALIGENIE_LIGHT
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_OUTLET)
+            #undef BLINKER_ALIGENIE_OUTLET
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            #undef BLINKER_ALIGENIE_MULTI_OUTLET
+        #endif
+
+        #if defined(BLINKER_ALIGENIE_SWITCH)
+            #undef BLINKER_ALIGENIE_SWITCH
+        #endif
+        
+        #define BLINKER_ALIGENIE
+    #endif
+
+    #if defined(BLINKER_DUEROS_LIGHT)
+        #if defined(BLINKER_DUEROS_OUTLET)
+            #undef BLINKER_DUEROS_OUTLET
+        #endif
+
+        #if defined(BLINKER_DUEROS_MULTI_OUTLET)
+            #undef BLINKER_DUEROS_MULTI_OUTLET
+        #endif
+
+        #if defined(BLINKER_DUEROS_SWITCH)
+            #undef BLINKER_DUEROS_SWITCH
+        #endif
+
+        #if defined(BLINKER_DUEROS_SENSOR)
+            #undef BLINKER_DUEROS_SENSOR
+        #endif
+
+        #define BLINKER_DUEROS
+    #elif defined(BLINKER_DUEROS_OUTLET)
+        #if defined(BLINKER_DUEROS_MULTI_OUTLET)
+            #undef BLINKER_DUEROS_MULTI_OUTLET
+        #endif
+
+        #if defined(BLINKER_DUEROS_LIGHT)
+            #undef BLINKER_DUEROS_LIGHT
+        #endif
+
+        #if defined(BLINKER_DUEROS_SWITCH)
+            #undef BLINKER_DUEROS_SWITCH
+        #endif
+
+        #if defined(BLINKER_DUEROS_SENSOR)
+            #undef BLINKER_DUEROS_SENSOR
+        #endif
+
+        #define BLINKER_DUEROS
+    #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+        #if defined(BLINKER_DUEROS_OUTLET)
+            #undef BLINKER_DUEROS_OUTLET
+        #endif
+
+        #if defined(BLINKER_DUEROS_LIGHT)
+            #undef BLINKER_DUEROS_LIGHT
+        #endif
+
+        #if defined(BLINKER_DUEROS_SWITCH)
+            #undef BLINKER_DUEROS_SWITCH
+        #endif
+
+        #if defined(BLINKER_DUEROS_SENSOR)
+            #undef BLINKER_DUEROS_SENSOR
+        #endif
+
+        #define BLINKER_DUEROS
+    #elif defined(BLINKER_DUEROS_SENSOR)
+        #if defined(BLINKER_DUEROS_LIGHT)
+            #undef BLINKER_DUEROS_LIGHT
+        #endif
+
+        #if defined(BLINKER_DUEROS_SWITCH)
+            #undef BLINKER_DUEROS_SWITCH
+        #endif
+
+        #if defined(BLINKER_DUEROS_OUTLET)
+            #undef BLINKER_DUEROS_OUTLET
+        #endif
+
+        #if defined(BLINKER_DUEROS_MULTI_OUTLET)
+            #undef BLINKER_DUEROS_MULTI_OUTLET
+        #endif
+
+        #define BLINKER_DUEROS
+    #endif
+
+    #if defined(BLINKER_WIFI_AUTO)
+        #define BLINKER_PRO_ESP
+    #endif
 
     #ifndef BLINKER_ESP_SMARTCONFIG
         #ifndef BLINKER_APCONFIG
@@ -350,17 +516,17 @@
 
     BlinkerLUATPRO  Blinker;
 
-#elif defined(BLINKER_WIFI_AUTO)
+// #elif defined(BLINKER_WIFI_AUTO)
 
-    #define BLINKER_MQTT_AUTO
+//     #define BLINKER_MQTT_AUTO
 
-    #if !defined(BLINKER_ESP_SMARTCONFIG) && !defined(BLINKER_APCONFIG)
-        #define BLINKER_ESP_SMARTCONFIG
-    #endif
+//     #if !defined(BLINKER_ESP_SMARTCONFIG) && !defined(BLINKER_APCONFIG)
+//         #define BLINKER_ESP_SMARTCONFIG
+//     #endif
 
-    #include "BlinkerESPMQTTAUTO.h"
+//     #include "BlinkerESPMQTTAUTO.h"
 
-    BlinkerESPMQTTAUTO  Blinker;
+//     BlinkerESPMQTTAUTO  Blinker;
 
 #elif defined(BLINKER_LOWPOWER_AIR202)
     
