@@ -54,7 +54,7 @@ class BlinkerOTA
         void setURL(String urlstr);
         void config(String _host, String _url, String _fingerPrint)
         {
-            #if defined(ESP8266)
+            // #if defined(ESP8266)
                 BLINKER_LOG_ALL(_host.indexOf("https"));
                 if (_host.indexOf("https") != -1)
                 {
@@ -64,9 +64,9 @@ class BlinkerOTA
                 {
                     ota_host = _host;
                 }                
-            #else
-                ota_host = _host;
-            #endif
+            // #else
+            //     ota_host = _host;
+            // #endif
             ota_url = _url;
             ota_fingerPrint = _fingerPrint;
         }
