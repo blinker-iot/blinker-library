@@ -524,13 +524,19 @@ class BlinkerSIM7020
 
         bool isAlive()
         {
-            streamPrint(BLINKER_CMD_AT);
+            streamPrint(BLINKER_CMD_AT, "isAlive");
             uint32_t dev_time = millis();
 
             while(millis() - dev_time < _simTimeout * 2)
             {
-                if (available()) return true;
+                if (available()) 
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("alive"));
+                    return true;
+                }
             }
+
+            BLINKER_LOG_ALL(BLINKER_F("not alive"));
 
             return false;
         }
@@ -663,10 +669,10 @@ class BlinkerSIM7020
 
         float   _timezone = 8.0;
 
-        void streamPrint(const String & s)
+        void streamPrint(const String & s, String from = "")
         {
             stream->println(s);
-            BLINKER_LOG_ALL(BLINKER_F("SIM: "), s);
+            BLINKER_LOG_ALL(from, BLINKER_F(" SIM: "), s);
         }
 
         int timedRead()
