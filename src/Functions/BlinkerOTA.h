@@ -54,7 +54,19 @@ class BlinkerOTA
         void setURL(String urlstr);
         void config(String _host, String _url, String _fingerPrint)
         {
-            ota_host = _host;
+            #if defined(ESP8266)
+                BLINKER_LOG_ALL(_host.indexOf("https"));
+                if (_host.indexOf("https") != -1)
+                {
+                    ota_host = _host.substring(8);
+                }
+                else
+                {
+                    ota_host = _host;
+                }                
+            #else
+                ota_host = _host;
+            #endif
             ota_url = _url;
             ota_fingerPrint = _fingerPrint;
         }
@@ -152,6 +164,8 @@ bool BlinkerOTA::update() {
 
             client_s.print(_ota_url);
 
+            BLINKER_LOG_ALL(BLINKER_F("_ota_url: "), _ota_url);
+
             unsigned long timeout = millis();
             while (client_s.available() == 0) {
                 if (millis() - timeout > 5000) {
@@ -180,6 +194,8 @@ bool BlinkerOTA::update() {
                     //headers ended
                     break; // and get the OTA started
                 }
+
+                BLINKER_LOG_ALL(BLINKER_F("line: "), line);
 
                 // Check if the HTTP Response is 200
                 // else break and Exit Update
