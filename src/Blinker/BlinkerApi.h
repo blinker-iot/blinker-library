@@ -326,6 +326,8 @@ class BlinkerApi : public BlinkerProtocol
             String dataGet(const String & _type, const String & _date);
             bool dataDelete();
             bool dataDelete(const String & _type);
+            bool event(const String & _key, String _value = "");
+            bool gps(float _long, float _lat);
 
             // bool bridge(char _name[]);
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -980,6 +982,10 @@ class BlinkerApi : public BlinkerProtocol
                         break;
                     case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
                         break;
+                    case BLINKER_CMD_EVENT_DATA_NUMBER :
+                        break;
+                    case BLINKER_CMD_GPS_DATA_NUMBER :
+                        break;
                     default :
                         return BLINKER_CMD_FALSE;
                 }
@@ -1179,6 +1185,22 @@ class BlinkerApi : public BlinkerProtocol
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
+                    case BLINKER_CMD_EVENT_DATA_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/event");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_GPS_DATA_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/gps");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
                     default :
                         return BLINKER_CMD_FALSE;
                 }
@@ -1276,6 +1298,10 @@ class BlinkerApi : public BlinkerProtocol
                         case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
                             break;
                         case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                            break;
+                        case BLINKER_CMD_EVENT_DATA_NUMBER :
+                            break;
+                        case BLINKER_CMD_GPS_DATA_NUMBER :
                             break;
                         default :
                             return BLINKER_CMD_FALSE;
@@ -1403,6 +1429,10 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
                         break;
                     case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                        break;
+                    case BLINKER_CMD_EVENT_DATA_NUMBER :
+                        break;
+                    case BLINKER_CMD_GPS_DATA_NUMBER :
                         break;
                     default :
                         return BLINKER_CMD_FALSE;
@@ -1597,6 +1627,22 @@ class BlinkerApi : public BlinkerProtocol
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
+                    case BLINKER_CMD_EVENT_DATA_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/event");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_GPS_DATA_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/gps");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
                     default :
                         return BLINKER_CMD_FALSE;
                 }
@@ -1695,6 +1741,10 @@ class BlinkerApi : public BlinkerProtocol
                         case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
                             break;
                         case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                            break;
+                        case BLINKER_CMD_EVENT_DATA_NUMBER :
+                            break;
+                        case BLINKER_CMD_GPS_DATA_NUMBER :
                             break;
                         default :
                             return BLINKER_CMD_FALSE;
@@ -5190,6 +5240,42 @@ float BlinkerApi::gps(b_gps_t axis)
         data += _type;
 
         return (blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+    }
+
+
+    bool BlinkerApi::event(const String & _key, String _value)
+    {
+        String data = BLINKER_F("{\"deviceName\":\"");
+        data += BProto::deviceName();
+        data += BLINKER_F("\",\"key\":\"");
+        data += BProto::authKey();
+        data += BLINKER_F("\",\"eKey\":\"");
+        data += _key;
+        data += BLINKER_F("\",\"date\":\"");
+        data += STRING_format(time());
+        data += BLINKER_F("\",\"value\":\"");
+        data += _value;
+        data += BLINKER_F("\"}");
+
+        return (blinkerServer(BLINKER_CMD_EVENT_DATA_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+    }
+
+
+    bool BlinkerApi::gps(float _long, float _lat)
+    {
+        String data = BLINKER_F("{\"deviceName\":\"");
+        data += BProto::deviceName();
+        data += BLINKER_F("\",\"key\":\"");
+        data += BProto::authKey();
+        data += BLINKER_F("\",\"data\":[");
+        data += STRING_format(_long);
+        data += BLINKER_F(",");
+        data += STRING_format(_lat);
+        data += BLINKER_F(",");
+        data += STRING_format(time());
+        data += BLINKER_F("]}");
+
+        return (blinkerServer(BLINKER_CMD_GPS_DATA_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
     }
 
 
@@ -8811,6 +8897,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     break;
                 case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
                     break;
+                case BLINKER_CMD_EVENT_DATA_NUMBER :
+                    break;
+                case BLINKER_CMD_GPS_DATA_NUMBER :
+                    break;
             #endif
             default :
                 return BLINKER_CMD_FALSE;
@@ -9442,6 +9532,32 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         http.addHeader(conType, application);
                         httpCode = http.POST(msg);
                         break;
+                    case BLINKER_CMD_EVENT_DATA_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device/event");
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        http.addHeader(conType, application);
+                        httpCode = http.POST(msg);
+                        break;
+                    case BLINKER_CMD_GPS_DATA_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device/gps");
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        http.addHeader(conType, application);
+                        httpCode = http.POST(msg);
+                        break;
                 #endif
                 default :
                     return BLINKER_CMD_FALSE;
@@ -9553,6 +9669,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
                                 break;
                             case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                                break;
+                            case BLINKER_CMD_EVENT_DATA_NUMBER :
+                                break;
+                            case BLINKER_CMD_GPS_DATA_NUMBER :
                                 break;
                         #endif
                         default :
