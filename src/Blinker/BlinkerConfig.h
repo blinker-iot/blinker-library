@@ -476,6 +476,8 @@
 
 #define BLINKER_CMD_DUEROS              "DuerOS"
 
+#define BLINKER_CMD_MIOT                "MIOT"
+
 #define BLINKER_CMD_SERVERCLIENT        "serverClient"
 
 #define BLINKER_CMD_HELLO               "hello"
@@ -633,6 +635,8 @@
     #define BLINKER_CMD_BLINKER_ALIGENIE        "BLINKER_ALIGENIE"
 
     #define BLINKER_CMD_BLINKER_DUEROS          "BLINKER_DUEROS"
+
+    #define BLINKER_CMD_BLINKER_MIOT            "BLINKER_MIOT"
     
     #define BLINKER_CMD_TIMEZONE                "TIMEZONE"
 

@@ -39,7 +39,8 @@ class BlinkerStream
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP)
                 virtual int aliPrint(const String & data) = 0;
-                virtual int duerPrint(const String & data) = 0; 
+                virtual int duerPrint(const String & data) = 0;
+                virtual int miPrint(const String & data) = 0;
                 // virtual void ping() = 0;
             #if !defined(BLINKER_MQTT_AT)
                 virtual int bPrint(char * name, const String & data) = 0;
@@ -47,6 +48,7 @@ class BlinkerStream
                 virtual void sharers(const String & data);
                 virtual int aligenieAvail() = 0;
                 virtual int duerAvail() = 0;
+                virtual int miAvail() = 0;
                 virtual int needFreshShare() = 0;
             #endif
         #endif
