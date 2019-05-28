@@ -37,6 +37,7 @@ class BlinkerSerialMQTT : public BlinkerStream
         void flush();
         int aliPrint(const String & s);
         int duerPrint(const String & s);
+        int miPrint(const String & s);
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
         int connect()      { isConnect = true; return connected(); }
@@ -183,6 +184,33 @@ int BlinkerSerialMQTT::duerPrint(const String & s)
     respTime = millis();
     
     BLINKER_LOG_ALL(BLINKER_F("DuerOS Response: "), _s);
+    
+    if(connected()) {
+        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        
+        stream->println(_s);
+        return true;
+    }
+    else {
+        BLINKER_LOG_ALL(BLINKER_F("Faile... Disconnected"));
+        
+        return false;
+    }
+}
+
+int BlinkerSerialMQTT::miPrint(const String & s)
+{
+    if (!checkPrintSpan()) {
+        respTime = millis();
+        return false;
+    }
+
+    String _s = s.substring(0, s.length() - 1);
+    _s += BLINKER_F(",\"toDeviceAT\":\"MIOT\"}");
+
+    respTime = millis();
+    
+    BLINKER_LOG_ALL(BLINKER_F("MIOT Response: "), _s);
     
     if(connected()) {
         BLINKER_LOG_ALL(BLINKER_F("Succese..."));

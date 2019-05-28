@@ -75,6 +75,7 @@ class BlinkerMQTT : public BlinkerStream
         int available();
         int aligenieAvail();
         int duerAvail();
+        int miAvail();
         // bool extraAvailable();
         void subscribe();
         char * lastRead();
@@ -83,8 +84,10 @@ class BlinkerMQTT : public BlinkerStream
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int duerPrint(const String & data);
+        int miPrint(const String & data);
         void aliType(const String & type);
         void duerType(const String & type);
+        void miType(const String & type);
         void begin(const char* auth);
         bool begin();
         int autoPrint(uint32_t id);
@@ -132,11 +135,13 @@ class BlinkerMQTT : public BlinkerStream
         void checkKA();
         int checkAliKA();
         int checkDuerKA();
+        int checkMIOTKA();
         int checkCanPrint();
         int checkCanBprint();
         int checkPrintSpan();
         int checkAliPrintSpan();
         int checkDuerPrintSpan();
+        int checkMIOTPrintSpan();
         int checkPrintLimit();
 
     protected :
@@ -152,6 +157,7 @@ class BlinkerMQTT : public BlinkerStream
         char*       _authKey;
         char*       _aliType;
         char*       _duerType;
+        char*       _miType;
         // char        _authKey[BLINKER_AUTHKEY_SIZE];
         bool*       isHandle;// = &isConnect;
         bool        isAlive = false;
@@ -168,6 +174,8 @@ class BlinkerMQTT : public BlinkerStream
         uint32_t    respAliTime = 0;
         uint8_t     respDuerTimes = 0;
         uint32_t    respDuerTime = 0;
+        uint8_t     respMIOTTimes = 0;
+        uint32_t    respMIOTTime = 0;
 
         uint32_t    aliKaTime = 0;
         bool        isAliAlive = false;
@@ -175,6 +183,9 @@ class BlinkerMQTT : public BlinkerStream
         uint32_t    duerKaTime = 0;
         bool        isDuerAlive = false;
         bool        isDuerAvail = false;
+        uint32_t    miKaTime = 0;
+        bool        isMIOTAlive = false;
+        bool        isMIOTAvail = false;
         char*       mqtt_broker;
 
         int isJson(const String & data);
@@ -465,6 +476,20 @@ int BlinkerMQTT::duerAvail()
     }
 }
 
+int BlinkerMQTT::miAvail()
+{
+    if (!checkInit()) return false;
+
+    if (isMIOTAvail)
+    {
+        isMIOTAvail = false;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 // bool BlinkerMQTT::extraAvailable()
 // {
 //     if (isBavail)
@@ -525,6 +550,14 @@ void BlinkerMQTT::subscribe()
                 duerKaTime = millis();
                 isDuerAlive = true;
                 isDuerAvail = true;
+            }
+            else if (_uuid == BLINKER_CMD_MIOT)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("form MIOT"));
+
+                miKaTime = millis();
+                isMIOTAlive = true;
+                isMIOTAvail = true;
             }
             else if (_uuid == BLINKER_CMD_SERVERCLIENT)
             {
@@ -610,7 +643,7 @@ void BlinkerMQTT::flush()
     if (isFresh_MQTT)
     {
         free(msgBuf_MQTT); isFresh_MQTT = false; isAvail_MQTT = false;
-        isAliAvail = false; //isBavail = false;
+        isAliAvail = false; isDuerAvail = false; isMIOTAvail = false;//isBavail = false;
     }
 }
 
@@ -1042,6 +1075,66 @@ int BlinkerMQTT::duerPrint(const String & data)
     }
 }
 
+int BlinkerMQTT::miPrint(const String & data)
+{
+    if (!checkInit()) return false;
+
+    String data_add = BLINKER_F("{\"data\":");
+
+    data_add += data;
+    data_add += BLINKER_F(",\"fromDevice\":\"");
+    data_add += MQTT_ID_MQTT;
+    data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+    data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+    if (!isJson(data_add)) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT MIOT Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (mqtt_MQTT->connected())
+    {
+        if (!checkMIOTKA())
+        {
+            return false;
+        }
+
+        if (!checkMIOTPrintSpan())
+        {
+            respMIOTTime = millis();
+            return false;
+        }
+        respMIOTTime = millis();
+
+        if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data_add.c_str()))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+
+            isMIOTAlive = false;
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+
+            isMIOTAlive = false;
+
+            this->latestTime = millis();
+
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
 void BlinkerMQTT::aliType(const String & type)
 {
     _aliType = (char*)malloc((type.length()+1)*sizeof(char));
@@ -1054,6 +1147,13 @@ void BlinkerMQTT::duerType(const String & type)
     _duerType = (char*)malloc((type.length()+1)*sizeof(char));
     strcpy(_duerType, type.c_str());
     BLINKER_LOG_ALL(BLINKER_F("_duerType: "), _duerType);
+}
+
+void BlinkerMQTT::miType(const String & type)
+{
+    _miType = (char*)malloc((type.length()+1)*sizeof(char));
+    strcpy(_miType, type.c_str());
+    BLINKER_LOG_ALL(BLINKER_F("_miType: "), _miType);
 }
 
 void BlinkerMQTT::begin(const char* auth) {
@@ -1451,6 +1551,7 @@ int BlinkerMQTT::connectServer() {
     url_iot += _authKey;
     url_iot += _aliType;
     url_iot += _duerType;
+    url_iot += _miType;
 
     url_iot = "https://" + host + url_iot;
 
@@ -1527,6 +1628,7 @@ int BlinkerMQTT::connectServer() {
     url_iot += _authKey;
     url_iot += _aliType;
     url_iot += _duerType;
+    url_iot += _miType;
 
 // #if defined(BLINKER_ALIGENIE_LIGHT)
 //     url_iot += BLINKER_F("&aliType=light");
@@ -1882,6 +1984,13 @@ int BlinkerMQTT::checkDuerKA() {
         return true;
 }
 
+int BlinkerMQTT::checkMIOTKA() {
+    if (millis() - miKaTime >= 10000)
+        return false;
+    else
+        return true;
+}
+
 int BlinkerMQTT::checkCanPrint() {
     if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
         return true;
@@ -1966,6 +2075,29 @@ int BlinkerMQTT::checkDuerPrintSpan()
     else
     {
         respDuerTimes = 0;
+        return true;
+    }
+}
+
+int BlinkerMQTT::checkMIOTPrintSpan()
+{
+    if (millis() - respMIOTTime < BLINKER_PRINT_MSG_LIMIT/2)
+    {
+        if (respMIOTTimes > BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+
+            return false;
+        }
+        else
+        {
+            respMIOTTimes++;
+            return true;
+        }
+    }
+    else
+    {
+        respMIOTTimes = 0;
         return true;
     }
 }

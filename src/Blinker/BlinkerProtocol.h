@@ -75,6 +75,7 @@ class BlinkerProtocol
             defined(BLINKER_PRO_ESP)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
+            int miPrint(const String & data)  { return isInit ? conn->miPrint(data) : false; }
             // void ping() { if (isInit) conn->ping(); }
             #if !defined(BLINKER_MQTT_AT)
             int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
@@ -174,6 +175,7 @@ class BlinkerProtocol
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
             bool checkAliAvail()    { return conn->aligenieAvail(); }
             bool checkDuerAvail()   { return conn->duerAvail(); }
+            bool checkMIOTAvail()   { return conn->miAvail(); }
         #endif
         
         #if defined(BLINKER_AT_MQTT)

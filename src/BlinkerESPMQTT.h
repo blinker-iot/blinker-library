@@ -53,10 +53,23 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _duerType = BLINKER_F("");
             #endif
 
+            #if defined(BLINKER_MIOT_LIGHT)
+                String _miType = BLINKER_F("&miType=light");
+            #elif defined(BLINKER_MIOT_OUTLET)
+                String _miType = BLINKER_F("&miType=outlet");
+            #elif defined(BLINKER_MIOT_MULTI_OUTLET)
+                String _miType = BLINKER_F("&miType=multi_outlet");
+            #elif defined(BLINKER_MIOT_SENSOR)
+                String _miType = BLINKER_F("&miType=sensor");
+            #else
+                String _miType = BLINKER_F("");
+            #endif
+
             BApi::begin();
 
             Transp.aliType(_aliType);
             Transp.duerType(_duerType);
+            Transp.miType(_miType);
             Transp.begin(_auth);
 
             transport(Transp);
@@ -110,10 +123,23 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _duerType = BLINKER_F("");
             #endif
 
+            #if defined(BLINKER_MIOT_LIGHT)
+                String _miType = BLINKER_F("&miType=light");
+            #elif defined(BLINKER_MIOT_OUTLET)
+                String _miType = BLINKER_F("&miType=outlet");
+            #elif defined(BLINKER_MIOT_MULTI_OUTLET)
+                String _miType = BLINKER_F("&miType=multi_outlet");
+            #elif defined(BLINKER_MIOT_SENSOR)
+                String _miType = BLINKER_F("&miType=sensor");
+            #else
+                String _miType = BLINKER_F("");
+            #endif
+
             BApi::begin();
 
             Transp.aliType(_aliType);
             Transp.duerType(_duerType);
+            Transp.miType(_miType);
             Transp.begin(_auth);
 
             transport(Transp);

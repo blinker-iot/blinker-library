@@ -29,6 +29,12 @@
     BLINKERDUEROS BlinkerDuerOS;    
 #endif
 
+#if defined(BLINKER_MIOT)
+    #include "Functions/BlinkerMIOT.h"
+
+    BLINKERMIOT BlinkerMIOT;    
+#endif
+
 #if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \
     defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_NBIOT_WH) || defined(BLINKER_GATEWAY) || \
