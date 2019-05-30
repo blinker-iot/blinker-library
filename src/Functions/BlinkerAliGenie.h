@@ -114,7 +114,7 @@ class BLINKERALIGENIE
             payload += BLINKER_F("\":\"");
             payload += clr;
             payload += BLINKER_F("\",");
-            payload = BLINKER_F("\"");
+            payload += BLINKER_F("\"");
             payload += STRING_format(BLINKER_CMD_COLOR);
             payload += BLINKER_F("\":\"");
             payload += clr;

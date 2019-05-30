@@ -17,6 +17,7 @@ BlinkerTicker	KEYWORD1
 
 BlinkerAliGenie	KEYWORD1
 BlinkerDuerOS	KEYWORD1
+BlinkerMIOT	KEYWORD1
 BlinkerUpdater	KEYWORD1
 
 #######################################
