@@ -464,6 +464,20 @@
 
 #define BLINKER_CMD_DUEROS_JUDI         "JUDI"
 
+#define BLINKER_CMD_MIOT_DAY            0
+
+#define BLINKER_CMD_MIOT_NIGHT          1
+
+#define BLINKER_CMD_MIOT_COLOR          2
+
+#define BLINKER_CMD_MIOT_WARMTH         3
+
+#define BLINKER_CMD_MIOT_TV             4
+
+#define BLINKER_CMD_MIOT_READING        5
+
+#define BLINKER_CMD_MIOT_COMPUTER       6
+
 #define BLINKER_CMD_UPGRADE             "upgrade"
 
 #define BLINKER_CMD_SHARE               "share"

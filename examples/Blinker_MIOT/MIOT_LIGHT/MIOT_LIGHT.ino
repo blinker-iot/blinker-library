@@ -58,7 +58,7 @@ BlinkerRGB WS2812(RGB_1);
 
 uint8_t colorR, colorG, colorB, colorW;
 bool wsState;
-String wsMode = BLINKER_CMD_COMMON;
+uint8_t wsMode = BLINKER_CMD_MIOT_DAY;
 
 void pixelShow()
 {
@@ -86,33 +86,11 @@ void ws2812_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t 
     pixelShow();
 }
 
-String getColor()
+uint32_t getColor()
 {
     uint32_t color = colorR << 16 | colorG << 8 | colorB;
 
-    switch (color)
-    {
-        case 0xFF0000 :
-            return "Red";
-        case 0xFFFF00 :
-            return "Yellow";
-        case 0x0000FF :
-            return "Blue";
-        case 0x00FF00 :
-            return "Green";
-        case 0xFFFFFF :
-            return "White";
-        case 0x000000 :
-            return "Black";
-        case 0x00FFFF :
-            return "Cyan";
-        case 0x800080 :
-            return "Purple";
-        case 0xFFA500 :
-            return "Orange";
-        default :
-            return "White";
-    }
+    return color;
 }
 
 void miotPowerState(const String & state)
@@ -161,7 +139,29 @@ void miotMode(uint8_t mode)
 {
     BLINKER_LOG("need set mode: ", mode);
 
-    // wsMode = mode;
+    if (mode == BLINKER_CMD_MIOT_DAY) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_MIOT_NIGHT) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_MIOT_COLOR) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_MIOT_WARMTH) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_MIOT_TV) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_MIOT_READING) {
+        // Your mode function
+    }
+    else if (mode == BLINKER_CMD_MIOT_COMPUTER) {
+        // Your mode function
+    }
+
+    wsMode = mode;
 
     BlinkerMIOT.mode(mode);
     BlinkerMIOT.print();
