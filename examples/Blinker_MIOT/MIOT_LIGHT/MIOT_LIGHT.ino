@@ -185,16 +185,16 @@ void miotBright(const String & bright)
 
     pixelShow();
 
-    // BlinkerMIOT.brightness(colorW);
-    // BlinkerMIOT.print();
+    BlinkerMIOT.brightness(colorW);
+    BlinkerMIOT.print();
 }
 
 void miotColoTemp(int32_t colorTemp)
 {
     BLINKER_LOG("need set colorTemperature: ", colorTemp);
 
-    // BlinkerMIOT.colorTemp(colorTemp);
-    // BlinkerMIOT.print();
+    BlinkerMIOT.colorTemp(colorTemp);
+    BlinkerMIOT.print();
 }
 
 void miotQuery(int32_t queryCode)
