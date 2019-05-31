@@ -10074,6 +10074,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
                 uint8_t setNum = rootSet[BLINKER_CMD_NUM];
 
+                if (setValue == "true") setValue = "on";
+                else setValue = "off";                
+
                 if (_MIOTPowerStateFunc) _MIOTPowerStateFunc(setValue);
                 if (_MIOTPowerStateFunc_m) _MIOTPowerStateFunc_m(setValue, setNum);
             }
@@ -10351,6 +10354,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             {
                 if (STRING_find_string_value(_data, value, BLINKER_CMD_POWERSTATE))
                 {
+                    if (value == "true") value = "on";
+                    else value = "off";   
+
                     if (_MIOTPowerStateFunc) _MIOTPowerStateFunc(value);
                 }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLOR))
