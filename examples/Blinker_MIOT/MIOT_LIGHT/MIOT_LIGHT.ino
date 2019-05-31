@@ -171,15 +171,7 @@ void miotBright(const String & bright)
 {
     BLINKER_LOG("need set brightness: ", bright);
 
-    if (bright == BLINKER_CMD_MAX) {
-        colorW = 255;
-    }
-    else if (bright == BLINKER_CMD_MIN) {
-        colorW = 0;
-    }
-    else {
-        colorW = bright.toInt();
-    }
+    colorW = bright.toInt();
 
     BLINKER_LOG("now set brightness: ", colorW);
 
