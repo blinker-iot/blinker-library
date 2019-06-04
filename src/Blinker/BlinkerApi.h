@@ -508,7 +508,9 @@ class BlinkerApi : public BlinkerProtocol
 
             void aligeniePrint(String & _msg);
             void duerPrint(String & _msg);
+            #if !defined(BLINKER_GPRS_AIR202)
             void miotPrint(String & _msg);
+            #endif
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -5523,6 +5525,7 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
+    #if !defined(BLINKER_GPRS_AIR202)
     void BlinkerApi::miotPrint(String & _msg)
     {
         BLINKER_LOG_ALL(BLINKER_F("response to MIOT: "), _msg);
@@ -5542,6 +5545,7 @@ float BlinkerApi::gps(b_gps_t axis)
             BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
         }
     }
+    #endif
     #endif
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
