@@ -267,6 +267,45 @@ class BlinkerApi : public BlinkerProtocol
         int16_t ahrs(b_ahrsattitude_t attitude) { return ahrsValue[attitude]; }
         float gps(b_gps_t axis);
 
+        #if defined(BLINKER_GPRS_AIR202)
+            String lang()
+            {
+                if (millis() - gps_air202_time > 60000*5 || gps_air202_time == 0)
+                {
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    
+                    if (BLINKER_AIR202.getAMGSMLOC())
+                    {
+                        gps_air202_time = millis();
+
+                        strcpy(_LANG, BLINKER_AIR202.lang().c_str());
+                        strcpy(_LAT, BLINKER_AIR202.lat().c_str());
+                    }
+                }
+
+                return _LANG;
+            }
+            String lat()
+            {
+                if (millis() - gps_air202_time > 60000*5 || gps_air202_time == 0)
+                {
+                    BlinkerAIR202 BLINKER_AIR202;
+                    BLINKER_AIR202.setStream(*stream, isHWS, listenFunc);
+                    
+                    if (BLINKER_AIR202.getAMGSMLOC())
+                    {
+                        gps_air202_time = millis();
+
+                        strcpy(_LANG, BLINKER_AIR202.lang().c_str());
+                        strcpy(_LAT, BLINKER_AIR202.lat().c_str());
+                    }
+                }
+
+                return _LAT;
+            }
+        #endif
+
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
             defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
@@ -635,6 +674,11 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
     private :
+        #if defined(BLINKER_GPRS_AIR202)
+            char    _LANG[14];
+            char    _LAT[14];
+            uint32_t gps_air202_time = 0;
+        #endif
         bool        _fresh = false;
         int16_t     ahrsValue[3];
         float       gpsValue[2];
