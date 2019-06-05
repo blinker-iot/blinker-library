@@ -46,7 +46,25 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 bool oState = false;
 
-void miotPowerState(const String & state, uint8_t num)
+void miotPowerState(const String & state)
+{
+    BLINKER_LOG("need set outlet power state: ", state);
+
+    if (state == BLINKER_CMD_ON) {
+        digitalWrite(LED_BUILTIN, HIGH);
+
+        BlinkerMIOT.powerState("on");
+        BlinkerMIOT.print();
+    }
+    else if (state == BLINKER_CMD_OFF) {
+        digitalWrite(LED_BUILTIN, LOW);
+
+        BlinkerMIOT.powerState("off");
+        BlinkerMIOT.print();
+    }
+}
+
+void miotPowerStateNum(const String & state, uint8_t num)
 {
     BLINKER_LOG("need set outlet: ", num, ", power state: ", state);
 
@@ -114,6 +132,7 @@ void setup()
     Blinker.attachData(dataRead);
     
     BlinkerMIOT.attachPowerState(miotPowerState);
+    BlinkerMIOT.attachPowerState(miotPowerStateNum);
     BlinkerMIOT.attachQuery(miotQuery);
 }
 

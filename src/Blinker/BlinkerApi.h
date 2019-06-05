@@ -9891,9 +9891,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
                 uint8_t setNum = rootSet[BLINKER_CMD_NUM];
+                bool isNum = rootSet.containsKey(BLINKER_CMD_NUM);
 
-                if (_AliGeniePowerStateFunc) _AliGeniePowerStateFunc(setValue);
-                if (_AliGeniePowerStateFunc_m) _AliGeniePowerStateFunc_m(setValue, setNum);
+                if (_AliGeniePowerStateFunc && !isNum) _AliGeniePowerStateFunc(setValue);
+                if (_AliGeniePowerStateFunc_m && isNum) _AliGeniePowerStateFunc_m(setValue, setNum);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
@@ -10003,9 +10004,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
                 uint8_t setNum = rootSet[BLINKER_CMD_NUM];
+                bool isNum = rootSet.containsKey(BLINKER_CMD_NUM);
 
-                if (_DuerOSPowerStateFunc) _DuerOSPowerStateFunc(setValue);
-                if (_DuerOSPowerStateFunc_m) _DuerOSPowerStateFunc_m(setValue, setNum);
+                if (_DuerOSPowerStateFunc && !isNum) _DuerOSPowerStateFunc(setValue);
+                if (_DuerOSPowerStateFunc_m && isNum) _DuerOSPowerStateFunc_m(setValue, setNum);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
@@ -10121,12 +10123,13 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
                 uint8_t setNum = rootSet[BLINKER_CMD_NUM];
+                bool isNum = rootSet.containsKey(BLINKER_CMD_NUM);
 
                 if (setValue == "true") setValue = "on";
                 else setValue = "off";                
 
-                if (_MIOTPowerStateFunc) _MIOTPowerStateFunc(setValue);
-                if (_MIOTPowerStateFunc_m) _MIOTPowerStateFunc_m(setValue, setNum);
+                if (_MIOTPowerStateFunc && !isNum) _MIOTPowerStateFunc(setValue);
+                if (_MIOTPowerStateFunc_m && isNum) _MIOTPowerStateFunc_m(setValue, setNum);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
