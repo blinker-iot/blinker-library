@@ -449,7 +449,7 @@ class BLINKERDUEROS
         void co2(double _co2)
         {
             String payload = BLINKER_F("\"");
-            payload += STRING_format(BLINKER_CMD_PM10);
+            payload += STRING_format(BLINKER_CMD_CO2);
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_co2);
             payload += BLINKER_F("\"");
@@ -469,7 +469,7 @@ class BLINKERDUEROS
         void co2(float _co2)
         {
             String payload = BLINKER_F("\"");
-            payload += STRING_format(BLINKER_CMD_PM10);
+            payload += STRING_format(BLINKER_CMD_CO2);
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_co2);
             payload += BLINKER_F("\"");
@@ -489,7 +489,7 @@ class BLINKERDUEROS
         void co2(int _co2)
         {
             String payload = BLINKER_F("\"");
-            payload += STRING_format(BLINKER_CMD_PM10);
+            payload += STRING_format(BLINKER_CMD_CO2);
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_co2);
             payload += BLINKER_F("\"");
