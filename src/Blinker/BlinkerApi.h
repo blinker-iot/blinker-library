@@ -487,6 +487,8 @@ class BlinkerApi : public BlinkerProtocol
                 { _MIOTSetColorTemperature = newFunction; }
                 // void attachMIOTRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
                 // { _MIOTSetRelativeColorTemperature = newFunction; }
+                void attachMIOTQuery(blinker_callback_with_int32_uint8_arg_t newFunction)
+                { _MIOTQueryFunc_m = newFunction; }
                 void attachMIOTQuery(blinker_callback_with_int32_arg_t newFunction)
                 { _MIOTQueryFunc = newFunction; }
             #endif
@@ -848,6 +850,7 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_with_int32_arg_t   _AliGenieSetRelativeBrightnessFunc = NULL;
             blinker_callback_with_int32_arg_t   _AliGenieSetColorTemperature = NULL;
             blinker_callback_with_int32_arg_t   _AliGenieSetRelativeColorTemperature = NULL;
+            blinker_callback_with_int32_uint8_arg_t _AliGenieQueryFunc_m = NULL;
             blinker_callback_with_int32_arg_t   _AliGenieQueryFunc = NULL;
 
 
@@ -860,6 +863,7 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_with_int32_arg_t   _DuerOSSetRelativeBrightnessFunc = NULL;
             // blinker_callback_with_int32_arg_t   _DuerOSSetColorTemperature = NULL;
             // blinker_callback_with_int32_arg_t   _DuerOSSetRelativeColorTemperature = NULL;
+            blinker_callback_with_int32_uint8_arg_t _DuerOSQueryFunc_m = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSQueryFunc = NULL;
 
             blinker_callback_with_string_uint8_arg_t _MIOTPowerStateFunc_m = NULL;
@@ -871,6 +875,7 @@ class BlinkerApi : public BlinkerProtocol
             // blinker_callback_with_int32_arg_t   _MIOTSetRelativeBrightnessFunc = NULL;
             blinker_callback_with_int32_arg_t   _MIOTSetColorTemperature = NULL;
             // blinker_callback_with_int32_arg_t   _MIOTSetRelativeColorTemperature = NULL;
+            blinker_callback_with_int32_uint8_arg_t _MIOTQueryFunc_m = NULL;
             blinker_callback_with_int32_arg_t   _MIOTQueryFunc = NULL;
 
             // #if !defined(BLINKER_AT_MQTT)
@@ -9845,10 +9850,16 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             String value = root[BLINKER_CMD_GET];
 
             if (value == BLINKER_CMD_STATE){
-                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                uint8_t setNum = root[BLINKER_CMD_NUM];
+                bool isNum = root.containsKey(BLINKER_CMD_NUM);
+                if (_AliGenieQueryFunc && !isNum) _AliGenieQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                if (_AliGenieQueryFunc_m && isNum) _AliGenieQueryFunc_m(BLINKER_CMD_QUERY_ALL_NUMBER, setNum);
             }
             else if (value == BLINKER_CMD_POWERSTATE) {
-                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                uint8_t setNum = root[BLINKER_CMD_NUM];
+                bool isNum = root.containsKey(BLINKER_CMD_NUM);
+                if (_AliGenieQueryFunc && !isNum) _AliGenieQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                if (_AliGenieQueryFunc_m && isNum) _AliGenieQueryFunc_m(BLINKER_CMD_QUERY_POWERSTATE_NUMBER, setNum);
             }
             else if (value == BLINKER_CMD_COLOR) {
                 if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
@@ -9985,7 +9996,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
             }
             else if (value == BLINKER_CMD_TIME_ALL) {
+                uint8_t setNum = root[BLINKER_CMD_NUM];
+                bool isNum = root.containsKey(BLINKER_CMD_NUM);
                 if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_TIME_NUMBER);
+                if (_DuerOSQueryFunc_m && isNum) _DuerOSQueryFunc_m(BLINKER_CMD_QUERY_AQI_NUMBER, setNum);
             }
         }
         else if (root.containsKey(BLINKER_CMD_SET)) {
@@ -10077,10 +10091,16 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             String value = root[BLINKER_CMD_GET];
 
             if (value == BLINKER_CMD_STATE){
-                if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                uint8_t setNum = root[BLINKER_CMD_NUM];
+                bool isNum = root.containsKey(BLINKER_CMD_NUM);
+                if (_MIOTQueryFunc && !isNum) _MIOTQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                if (_MIOTQueryFunc_m && isNum) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_ALL_NUMBER, setNum);
             }
             else if (value == BLINKER_CMD_POWERSTATE) {
-                if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                uint8_t setNum = root[BLINKER_CMD_NUM];
+                bool isNum = root.containsKey(BLINKER_CMD_NUM);
+                if (_MIOTQueryFunc && !isNum) _MIOTQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                if (_MIOTQueryFunc_m && isNum) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_POWERSTATE_NUMBER, setNum);
             }
             else if (value == BLINKER_CMD_COLOR) {
                 if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);

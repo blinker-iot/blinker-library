@@ -44,27 +44,9 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-bool oState = false;
+bool oState[5] = { false };
 
-void aligeniePowerState(const String & state)
-{
-    BLINKER_LOG("need set outlet power state: ", state);
-
-    if (state == BLINKER_CMD_ON) {
-        digitalWrite(LED_BUILTIN, HIGH);
-
-        BlinkerAliGenie.powerState("on");
-        BlinkerAliGenie.print();
-    }
-    else if (state == BLINKER_CMD_OFF) {
-        digitalWrite(LED_BUILTIN, LOW);
-
-        BlinkerAliGenie.powerState("off");
-        BlinkerAliGenie.print();
-    }
-}
-
-void aligeniePowerStateNum(const String & state, uint8_t num)
+void aligeniePowerState(const String & state, uint8_t num)
 {
     BLINKER_LOG("need set outlet: ", num, ", power state: ", state);
 
@@ -74,7 +56,7 @@ void aligeniePowerStateNum(const String & state, uint8_t num)
         BlinkerAliGenie.powerState("on", num);
         BlinkerAliGenie.print();
 
-        oState = true;
+        oState[num] = true;
     }
     else if (state == BLINKER_CMD_OFF) {
         digitalWrite(LED_BUILTIN, LOW);
@@ -82,28 +64,28 @@ void aligeniePowerStateNum(const String & state, uint8_t num)
         BlinkerAliGenie.powerState("off", num);
         BlinkerAliGenie.print();
 
-        oState = false;
+        oState[num] = true;
     }
 }
 
-void aligenieQuery(int32_t queryCode)
+void aligenieQuery(int32_t queryCode, uint8_t num)
 {
-    BLINKER_LOG("AliGenie Query codes: ", queryCode);
+    BLINKER_LOG("AliGenie Query outlet: ", num,", codes: ", queryCode);
 
     switch (queryCode)
     {
         case BLINKER_CMD_QUERY_ALL_NUMBER :
             BLINKER_LOG("AliGenie Query All");
-            BlinkerAliGenie.powerState(oState ? "on" : "off", 0);
+            BlinkerAliGenie.powerState(oState[num] ? "on" : "off", num);
             BlinkerAliGenie.print();
             break;
         case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :
             BLINKER_LOG("AliGenie Query Power State");
-            BlinkerAliGenie.powerState(oState ? "on" : "off", 0);
+            BlinkerAliGenie.powerState(oState[num] ? "on" : "off", num);
             BlinkerAliGenie.print();
             break;
         default :
-            BlinkerAliGenie.powerState(oState ? "on" : "off", 0);
+            BlinkerAliGenie.powerState(oState[num] ? "on" : "off", num);
             BlinkerAliGenie.print();
             break;
     }
