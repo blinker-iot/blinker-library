@@ -44,27 +44,9 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-bool oState = false;
+bool oState[5] = { false };
 
-void duerPowerState(const String & state)
-{
-    BLINKER_LOG("need set outlet power state: ", state);
-
-    if (state == BLINKER_CMD_ON) {
-        digitalWrite(LED_BUILTIN, HIGH);
-
-        BlinkerDuerOS.powerState("on");
-        BlinkerDuerOS.print();
-    }
-    else if (state == BLINKER_CMD_OFF) {
-        digitalWrite(LED_BUILTIN, LOW);
-
-        BlinkerDuerOS.powerState("off");
-        BlinkerDuerOS.print();
-    }
-}
-
-void duerPowerStateNum(const String & state, uint8_t num)
+void duerPowerState(const String & state, uint8_t num)
 {
     BLINKER_LOG("need set outlet: ", num, ", power state: ", state);
 
@@ -74,7 +56,7 @@ void duerPowerStateNum(const String & state, uint8_t num)
         BlinkerDuerOS.powerState("on", num);
         BlinkerDuerOS.print();
 
-        oState = true;
+        oState[num] = true;
     }
     else if (state == BLINKER_CMD_OFF) {
         digitalWrite(LED_BUILTIN, LOW);
@@ -82,7 +64,7 @@ void duerPowerStateNum(const String & state, uint8_t num)
         BlinkerDuerOS.powerState("off", num);
         BlinkerDuerOS.print();
 
-        oState = false;
+        oState[num] = false;
     }
 }
 
@@ -109,7 +91,6 @@ void setup()
     Blinker.attachData(dataRead);
     
     BlinkerDuerOS.attachPowerState(duerPowerState);
-    BlinkerDuerOS.attachPowerState(duerPowerStateNum);
 }
 
 void loop()

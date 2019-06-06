@@ -830,4 +830,12 @@
 
 #endif
 
+#ifndef LED_BUILTIN
+    #if defined(ESP8266) || defined(ESP32)
+        #define LED_BUILTIN 2
+    #else
+        #define LED_BUILTIN 13
+    #endif
+#endif
+
 #endif

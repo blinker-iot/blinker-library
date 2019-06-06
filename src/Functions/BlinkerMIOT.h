@@ -54,6 +54,11 @@ class BLINKERMIOT
         //     Blinker.attachMIOTRelativeColorTemperature(newFunction);
         // }
 
+        void attachQuery(blinker_callback_with_int32_uint8_arg_t newFunction)
+        {
+            Blinker.attachMIOTQuery(newFunction);
+        }
+
         void attachQuery(blinker_callback_with_int32_arg_t newFunction)
         {
             Blinker.attachMIOTQuery(newFunction);

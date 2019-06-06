@@ -44,27 +44,9 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-bool oState = false;
+bool oState[5] = { false };
 
-void miotPowerState(const String & state)
-{
-    BLINKER_LOG("need set outlet power state: ", state);
-
-    if (state == BLINKER_CMD_ON) {
-        digitalWrite(LED_BUILTIN, HIGH);
-
-        BlinkerMIOT.powerState("on");
-        BlinkerMIOT.print();
-    }
-    else if (state == BLINKER_CMD_OFF) {
-        digitalWrite(LED_BUILTIN, LOW);
-
-        BlinkerMIOT.powerState("off");
-        BlinkerMIOT.print();
-    }
-}
-
-void miotPowerStateNum(const String & state, uint8_t num)
+void miotPowerState(const String & state, uint8_t num)
 {
     BLINKER_LOG("need set outlet: ", num, ", power state: ", state);
 
@@ -74,7 +56,7 @@ void miotPowerStateNum(const String & state, uint8_t num)
         BlinkerMIOT.powerState("on", num);
         BlinkerMIOT.print();
 
-        oState = true;
+        oState[num] = true;
     }
     else if (state == BLINKER_CMD_OFF) {
         digitalWrite(LED_BUILTIN, LOW);
@@ -82,28 +64,28 @@ void miotPowerStateNum(const String & state, uint8_t num)
         BlinkerMIOT.powerState("off", num);
         BlinkerMIOT.print();
 
-        oState = false;
+        oState[num] = false;
     }
 }
 
-void miotQuery(int32_t queryCode)
+void miotQuery(int32_t queryCode, uint8_t num)
 {
-    BLINKER_LOG("AliGenie Query codes: ", queryCode);
+    BLINKER_LOG("AliGenie Query outlet: ", num,", codes: ", queryCode);
 
     switch (queryCode)
     {
         case BLINKER_CMD_QUERY_ALL_NUMBER :
             BLINKER_LOG("AliGenie Query All");
-            BlinkerMIOT.powerState(oState ? "on" : "off", 0);
+            BlinkerMIOT.powerState(oState[num] ? "on" : "off", num);
             BlinkerMIOT.print();
             break;
         case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :
             BLINKER_LOG("AliGenie Query Power State");
-            BlinkerMIOT.powerState(oState ? "on" : "off", 0);
+            BlinkerMIOT.powerState(oState[num] ? "on" : "off", num);
             BlinkerMIOT.print();
             break;
         default :
-            BlinkerMIOT.powerState(oState ? "on" : "off", 0);
+            BlinkerMIOT.powerState(oState[num] ? "on" : "off", num);
             BlinkerMIOT.print();
             break;
     }
@@ -132,7 +114,6 @@ void setup()
     Blinker.attachData(dataRead);
     
     BlinkerMIOT.attachPowerState(miotPowerState);
-    BlinkerMIOT.attachPowerState(miotPowerStateNum);
     BlinkerMIOT.attachQuery(miotQuery);
 }
 

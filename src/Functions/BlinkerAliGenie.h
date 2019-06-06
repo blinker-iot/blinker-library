@@ -54,6 +54,11 @@ class BLINKERALIGENIE
             Blinker.attachAliGenieRelativeColorTemperature(newFunction);
         }
 
+        void attachQuery(blinker_callback_with_int32_uint8_arg_t newFunction)
+        {
+            Blinker.attachAliGenieQuery(newFunction);
+        }
+
         void attachQuery(blinker_callback_with_int32_arg_t newFunction)
         {
             Blinker.attachAliGenieQuery(newFunction);
