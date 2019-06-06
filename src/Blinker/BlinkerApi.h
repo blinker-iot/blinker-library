@@ -9851,15 +9851,13 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             if (value == BLINKER_CMD_STATE){
                 uint8_t setNum = root[BLINKER_CMD_NUM];
-                bool isNum = root.containsKey(BLINKER_CMD_NUM);
-                if (_AliGenieQueryFunc && !isNum) _AliGenieQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
-                if (_AliGenieQueryFunc_m && isNum) _AliGenieQueryFunc_m(BLINKER_CMD_QUERY_ALL_NUMBER, setNum);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                if (_AliGenieQueryFunc_m) _AliGenieQueryFunc_m(BLINKER_CMD_QUERY_ALL_NUMBER, setNum);
             }
             else if (value == BLINKER_CMD_POWERSTATE) {
                 uint8_t setNum = root[BLINKER_CMD_NUM];
-                bool isNum = root.containsKey(BLINKER_CMD_NUM);
-                if (_AliGenieQueryFunc && !isNum) _AliGenieQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
-                if (_AliGenieQueryFunc_m && isNum) _AliGenieQueryFunc_m(BLINKER_CMD_QUERY_POWERSTATE_NUMBER, setNum);
+                if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                if (_AliGenieQueryFunc_m) _AliGenieQueryFunc_m(BLINKER_CMD_QUERY_POWERSTATE_NUMBER, setNum);
             }
             else if (value == BLINKER_CMD_COLOR) {
                 if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
@@ -9902,10 +9900,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
                 uint8_t setNum = rootSet[BLINKER_CMD_NUM];
-                bool isNum = rootSet.containsKey(BLINKER_CMD_NUM);
 
-                if (_AliGeniePowerStateFunc && !isNum) _AliGeniePowerStateFunc(setValue);
-                if (_AliGeniePowerStateFunc_m && isNum) _AliGeniePowerStateFunc_m(setValue, setNum);
+                if (_AliGeniePowerStateFunc) _AliGeniePowerStateFunc(setValue);
+                if (_AliGeniePowerStateFunc_m) _AliGeniePowerStateFunc_m(setValue, setNum);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
@@ -9997,9 +9994,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             }
             else if (value == BLINKER_CMD_TIME_ALL) {
                 uint8_t setNum = root[BLINKER_CMD_NUM];
-                bool isNum = root.containsKey(BLINKER_CMD_NUM);
                 if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_TIME_NUMBER);
-                if (_DuerOSQueryFunc_m && isNum) _DuerOSQueryFunc_m(BLINKER_CMD_QUERY_AQI_NUMBER, setNum);
+                if (_DuerOSQueryFunc_m) _DuerOSQueryFunc_m(BLINKER_CMD_QUERY_AQI_NUMBER, setNum);
             }
         }
         else if (root.containsKey(BLINKER_CMD_SET)) {
@@ -10018,10 +10014,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
                 uint8_t setNum = rootSet[BLINKER_CMD_NUM];
-                bool isNum = rootSet.containsKey(BLINKER_CMD_NUM);
 
-                if (_DuerOSPowerStateFunc && !isNum) _DuerOSPowerStateFunc(setValue);
-                if (_DuerOSPowerStateFunc_m && isNum) _DuerOSPowerStateFunc_m(setValue, setNum);
+                if (_DuerOSPowerStateFunc) _DuerOSPowerStateFunc(setValue);
+                if (_DuerOSPowerStateFunc_m) _DuerOSPowerStateFunc_m(setValue, setNum);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
@@ -10092,15 +10087,13 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             if (value == BLINKER_CMD_STATE){
                 uint8_t setNum = root[BLINKER_CMD_NUM];
-                bool isNum = root.containsKey(BLINKER_CMD_NUM);
-                if (_MIOTQueryFunc && !isNum) _MIOTQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
-                if (_MIOTQueryFunc_m && isNum) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_ALL_NUMBER, setNum);
+                if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                if (_MIOTQueryFunc_m) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_ALL_NUMBER, setNum);
             }
             else if (value == BLINKER_CMD_POWERSTATE) {
                 uint8_t setNum = root[BLINKER_CMD_NUM];
-                bool isNum = root.containsKey(BLINKER_CMD_NUM);
-                if (_MIOTQueryFunc && !isNum) _MIOTQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
-                if (_MIOTQueryFunc_m && isNum) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_POWERSTATE_NUMBER, setNum);
+                if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                if (_MIOTQueryFunc_m) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_POWERSTATE_NUMBER, setNum);
             }
             else if (value == BLINKER_CMD_COLOR) {
                 if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
@@ -10143,13 +10136,12 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                 String setValue = rootSet[BLINKER_CMD_POWERSTATE];
                 uint8_t setNum = rootSet[BLINKER_CMD_NUM];
-                bool isNum = rootSet.containsKey(BLINKER_CMD_NUM);
 
                 if (setValue == "true") setValue = "on";
                 else setValue = "off";                
 
-                if (_MIOTPowerStateFunc && !isNum) _MIOTPowerStateFunc(setValue);
-                if (_MIOTPowerStateFunc_m && isNum) _MIOTPowerStateFunc_m(setValue, setNum);
+                if (_MIOTPowerStateFunc) _MIOTPowerStateFunc(setValue);
+                if (_MIOTPowerStateFunc_m) _MIOTPowerStateFunc_m(setValue, setNum);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
