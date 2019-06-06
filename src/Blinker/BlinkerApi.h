@@ -553,7 +553,7 @@ class BlinkerApi : public BlinkerProtocol
 
             void aligeniePrint(String & _msg);
             void duerPrint(String & _msg);
-            #if !defined(BLINKER_GPRS_AIR202)
+            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
             void miotPrint(String & _msg);
             #endif
         #endif
@@ -5578,7 +5578,7 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
-    #if !defined(BLINKER_GPRS_AIR202)
+    #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
     void BlinkerApi::miotPrint(String & _msg)
     {
         BLINKER_LOG_ALL(BLINKER_F("response to MIOT: "), _msg);
