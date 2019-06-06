@@ -441,6 +441,8 @@ class BlinkerApi : public BlinkerProtocol
                 { _AliGenieSetColorTemperature = newFunction; }
                 void attachAliGenieRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
                 { _AliGenieSetRelativeColorTemperature = newFunction; }
+                void attachAliGenieQuery(blinker_callback_with_int32_uint8_arg_t newFunction)
+                { _AliGenieQueryFunc_m = newFunction; }
                 void attachAliGenieQuery(blinker_callback_with_int32_arg_t newFunction)
                 { _AliGenieQueryFunc = newFunction; }
             #endif
@@ -464,6 +466,8 @@ class BlinkerApi : public BlinkerProtocol
                 // { _DuerOSSetColorTemperature = newFunction; }
                 // void attachDuerOSRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
                 // { _DuerOSSetRelativeColorTemperature = newFunction; }
+                void attachDuerOSQuery(blinker_callback_with_int32_uint8_arg_t newFunction)
+                { _DuerOSQueryFunc_m = newFunction; }
                 void attachDuerOSQuery(blinker_callback_with_int32_arg_t newFunction)
                 { _DuerOSQueryFunc = newFunction; }
             #endif

@@ -114,7 +114,6 @@ void setup()
     Blinker.attachData(dataRead);
     
     BlinkerAliGenie.attachPowerState(aligeniePowerState);
-    BlinkerAliGenie.attachPowerState(aligeniePowerStateNum);
     BlinkerAliGenie.attachQuery(aligenieQuery);
 }
 
