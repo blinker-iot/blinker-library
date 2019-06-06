@@ -393,6 +393,60 @@ class BLINKERMIOT
             _fresh |= 0x01 << 7;
         }
 
+        void co2(double _co2)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_CO2);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_co2);
+            payload += BLINKER_F("\"");
+
+            if (_fresh >> 8 & 0x01) {
+                free(aCO2);
+            }
+
+            aCO2 = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aCO2, payload.c_str());
+
+            _fresh |= 0x01 << 8;
+        }
+
+        void co2(float _co2)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_CO2);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_co2);
+            payload += BLINKER_F("\"");
+
+            if (_fresh >> 8 & 0x01) {
+                free(aCO2);
+            }
+
+            aCO2 = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aCO2, payload.c_str());
+
+            _fresh |= 0x01 << 8;
+        }
+
+        void co2(int _co2)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_CO2);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_co2);
+            payload += BLINKER_F("\"");
+
+            if (_fresh >> 8 & 0x01) {
+                free(aCO2);
+            }
+
+            aCO2 = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aCO2, payload.c_str());
+
+            _fresh |= 0x01 << 8;
+        }
+
         void print()
         {
             if (_fresh == 0) return;
@@ -471,6 +525,15 @@ class BLINKERMIOT
                 free(aPm25);
             }
 
+            if (_fresh >> 8 & 0x01) {
+                if (miData.length()) miData += BLINKER_F(",");
+                else miData += BLINKER_F("{");
+                
+                miData += aCO2;
+                
+                free(aCO2);
+            }
+
             miData += BLINKER_F("}");
 
             _fresh = 0;
@@ -487,7 +550,8 @@ class BLINKERMIOT
         char * aTemp;
         char * aHumi;
         char * aPm25;
-        uint8_t _fresh = 0;
+        char * aCO2;  
+        uint16_t _fresh = 0;
 };
 
 #endif

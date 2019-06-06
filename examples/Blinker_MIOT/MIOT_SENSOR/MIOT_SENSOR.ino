@@ -55,12 +55,14 @@ void miotQuery(int32_t queryCode)
             BlinkerMIOT.temp(20);
             BlinkerMIOT.humi(20);
             BlinkerMIOT.pm25(20);
+            BlinkerMIOT.co2(20);
             BlinkerMIOT.print();
             break;
         default :
             BlinkerMIOT.temp(20);
             BlinkerMIOT.humi(20);
             BlinkerMIOT.pm25(20);
+            BlinkerMIOT.co2(20);
             BlinkerMIOT.print();
             break;
     }
