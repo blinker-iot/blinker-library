@@ -449,7 +449,7 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
 //     BLINKER_LOG_ALL(BLINKER_F("AliGenie Response: "), _s);
     
 //     if(connected()) {
-//         BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+//         BLINKER_LOG_ALL(BLINKER_F("Success..."));
         
 //         stream->println(_s);
 //         return true;
@@ -476,7 +476,7 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
 //     BLINKER_LOG_ALL(BLINKER_F("DuerOS Response: "), _s);
     
 //     if(connected()) {
-//         BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+//         BLINKER_LOG_ALL(BLINKER_F("Success..."));
         
 //         stream->println(_s);
 //         return true;

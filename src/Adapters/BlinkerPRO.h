@@ -567,7 +567,7 @@ int BlinkerPRO::print(char * data, bool needCheck)
         
         BLINKER_LOG_ALL(BLINKER_F("WS response: "));
         BLINKER_LOG_ALL(data);
-        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
 
         strcat(data, BLINKER_CMD_NEWLINE);
         

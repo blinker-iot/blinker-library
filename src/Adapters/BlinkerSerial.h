@@ -157,7 +157,7 @@ int BlinkerSerial::print(char * data, bool needCheck)
 
     if(connected())
     {
-        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
         
         stream->println(data);
         return true;

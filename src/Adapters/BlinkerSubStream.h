@@ -78,7 +78,7 @@ class BlinkerSubStream : public BlinkerStream
 
             if(connected() && _subPrint)
             {
-                BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+                BLINKER_LOG_ALL(BLINKER_F("Success..."));
                 
                 _subPrint(data);
                 return true;

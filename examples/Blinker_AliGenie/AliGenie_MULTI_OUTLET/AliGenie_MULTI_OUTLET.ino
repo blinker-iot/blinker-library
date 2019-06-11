@@ -65,6 +65,14 @@ void aligeniePowerState(const String & state, uint8_t num)
         BlinkerAliGenie.print();
 
         oState[num] = true;
+
+        if (num == 0)
+        {
+            for (uint8_t o_num = 0; o_num < 5; o_num++)
+            {
+                oState[o_num] = false;
+            }
+        }
     }
 }
 
