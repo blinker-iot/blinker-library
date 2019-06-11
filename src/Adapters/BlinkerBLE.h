@@ -230,7 +230,7 @@ int BlinkerBLE::print(char * data, bool needCheck)
         
     if (connected())
     {
-        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
 
         s += BLINKER_CMD_NEWLINE;
         

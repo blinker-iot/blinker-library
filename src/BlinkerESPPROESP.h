@@ -20,7 +20,7 @@ class BlinkerESPPROESP : public BlinkerApi
             transport(Transp);
             BApi::begin(_key, _type);
             BApi::loadTimer();
-            BLINKER_LOG(BLINKER_F("ESP8266_PRO initialized..."));
+            BLINKER_LOG(BLINKER_F("ESP_PRO initialized..."));
         }
 
     private :

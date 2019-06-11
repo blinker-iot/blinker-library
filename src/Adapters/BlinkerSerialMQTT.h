@@ -159,7 +159,7 @@ int BlinkerSerialMQTT::aliPrint(const String & s)
     BLINKER_LOG_ALL(BLINKER_F("AliGenie Response: "), _s);
     
     if(connected()) {
-        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
         
         stream->println(_s);
         return true;
@@ -186,7 +186,7 @@ int BlinkerSerialMQTT::duerPrint(const String & s)
     BLINKER_LOG_ALL(BLINKER_F("DuerOS Response: "), _s);
     
     if(connected()) {
-        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
         
         stream->println(_s);
         return true;
@@ -213,7 +213,7 @@ int BlinkerSerialMQTT::miPrint(const String & s)
     BLINKER_LOG_ALL(BLINKER_F("MIOT Response: "), _s);
     
     if(connected()) {
-        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
         
         stream->println(_s);
         return true;
@@ -243,7 +243,7 @@ int BlinkerSerialMQTT::print(char * data, bool needCheck)
 
     if(connected())
     {
-        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
         
         stream->println(data);
         return true;

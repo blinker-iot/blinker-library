@@ -405,7 +405,7 @@ int BlinkerMQTTAT::serialPrint(const String & s, bool needCheck)
     
     if(serialConnected())
     {
-        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
         
         stream->println(s);
         return true;
@@ -873,7 +873,7 @@ int BlinkerMQTTAT::print(char * data, bool needCheck)
         
         BLINKER_LOG_ALL(BLINKER_F("WS response: "));
         BLINKER_LOG_ALL(data);
-        BLINKER_LOG_ALL(BLINKER_F("Succese..."));
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
 
         strcat(data, BLINKER_CMD_NEWLINE);
         
