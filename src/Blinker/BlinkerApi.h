@@ -680,6 +680,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
     private :
+        bool        _isNew = false;
         #if defined(BLINKER_GPRS_AIR202)
             char    _LANG[14];
             char    _LAT[14];
@@ -777,6 +778,7 @@ class BlinkerApi : public BlinkerProtocol
             // bool            _isInit = false;
             bool            _isRegistered = false;
             uint32_t        _register_fresh = 0;
+            uint8_t         _register_times = 0;
             uint32_t        _initTime;
             #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
                 BlinkerStatus_t _proStatus = PRO_WLAN_CONNECTING;
@@ -2487,23 +2489,34 @@ void BlinkerApi::run()
 
             if (_getRegister)
             {
-                if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
-                    _register_fresh == 0))
+                if (_register_times < 12)
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("conn deviceRegister"));
-
-                    _isRegistered = BProto::deviceRegister();
-
-                    if (!_isRegistered)
+                    if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
+                        _register_fresh == 0))
                     {
-                        _register_fresh = millis();
-                        _proStatus = PRO_DEV_REGISTER_FAIL;
+                        BLINKER_LOG_ALL(BLINKER_F("conn deviceRegister, _register_times: "), _register_times);
+
+                        _isRegistered = BProto::deviceRegister();
+
+                        if (!_isRegistered)
+                        {
+                            _register_fresh = millis();
+                            _proStatus = PRO_DEV_REGISTER_FAIL;
+
+                            _register_times++;
+                        }
+                        else
+                        {
+                            _isRegistered = true;
+                            _proStatus = PRO_DEV_REGISTER_SUCCESS;
+
+                            _register_times = 0;
+                        }
                     }
-                    else
-                    {
-                        _isRegistered = true;
-                        _proStatus = PRO_DEV_REGISTER_SUCCESS;
-                    }
+                }
+                else
+                {
+                    if ((millis() - _register_fresh) >= (60000 * 5)) _register_times = 0;
                 }
             }
 
@@ -2512,7 +2525,7 @@ void BlinkerApi::run()
                 yield();
 
                 if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
-                    !_getRegister)
+                    (!_getRegister || _isNew))
                 {
                     reset();
                 }
@@ -2524,6 +2537,7 @@ void BlinkerApi::run()
                     if (ntpInit())
                     {
                         _isInit = true;
+                        _isNew = false;
                         // strcpy(_authKey, conn.authKey());
                         // strcpy(_deviceName, conn.deviceName());
                         _proStatus = PRO_DEV_INIT_SUCCESS;
@@ -2646,23 +2660,34 @@ void BlinkerApi::run()
 
             if (_getRegister)
             {
-                if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
-                    _register_fresh == 0))
+                if (_register_times < 12)
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("conn deviceRegister"));
-
-                    _isRegistered = BProto::deviceRegister();
-
-                    if (!_isRegistered)
+                    if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
+                        _register_fresh == 0))
                     {
-                        _register_fresh = millis();
-                        _mqttAutoStatue = AUTO_DEV_AUTHCHECK_FAIL;
+                        BLINKER_LOG_ALL(BLINKER_F("conn deviceRegister, _register_times: "), _register_times);
+
+                        _isRegistered = BProto::deviceRegister();
+
+                        if (!_isRegistered)
+                        {
+                            _register_fresh = millis();
+                            _mqttAutoStatue = AUTO_DEV_AUTHCHECK_FAIL;
+
+                            _register_times++;
+                        }
+                        else
+                        {
+                            _isRegistered = true;
+                            _mqttAutoStatue = AUTO_DEV_REGISTER_SUCCESS;
+
+                            _register_times = 0;
+                        }
                     }
-                    else
-                    {
-                        _isRegistered = true;
-                        _mqttAutoStatue = AUTO_DEV_REGISTER_SUCCESS;
-                    }
+                }
+                else
+                {
+                    if ((millis() - _register_fresh) >= (60000 * 5)) _register_times = 0;
                 }
             }
 
@@ -11805,6 +11830,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             if (_type == STRING_format(_deviceType))
             {
                 _getRegister = true;
+
+                _isNew = true;
 
                 _register_fresh = millis();
 
