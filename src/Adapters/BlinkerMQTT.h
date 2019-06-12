@@ -153,6 +153,7 @@ class BlinkerMQTT : public BlinkerStream
         b_config_t  _configType = COMM;
         b_configStatus_t _configStatus = SMART_BEGIN;
         uint32_t    _connectTime = 0;
+        uint8_t     _connectTimes = 0;
         // const char* _authKey;
         char*       _authKey;
         char*       _aliType;
@@ -1182,24 +1183,34 @@ bool BlinkerMQTT::begin() {
         // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
         // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
         // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
-    if (_connectTime == 0 || (millis() - _connectTime) >= 10000)
+    if (_connectTimes < 12)
     {
-        _connectTime = millis();
-        if (connectServer()) {
-            mDNSInit();
-            isMQTTinit = true;
-            return true;
-        }
-        else {
-            isMQTTinit = false;
-            // ::delay(10000);
-            // BLINKER_ERR_LOG("init error, ", _connectTime);
-            // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
-            // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
-            // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
-            return false;
+        if (_connectTime == 0 || (millis() - _connectTime) >= 10000)
+        {
+            _connectTime = millis();
+            if (connectServer()) {
+                _connectTimes = 0;
+                mDNSInit();
+                isMQTTinit = true;
+                return true;
+            }
+            else {
+                _connectTimes++;
+                isMQTTinit = false;
+                // ::delay(10000);
+                // BLINKER_ERR_LOG("init error, ", _connectTime);
+                // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
+                // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
+                // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
+                return false;
+            }
         }
     }
+    else
+    {
+        if (millis() - _connectTime > 60000 * 5) _connectTimes = 0;
+    }
+    
 
     // BLINKER_ERR_LOG("init error1, ", _connectTime);
     // ::delay(1000);
