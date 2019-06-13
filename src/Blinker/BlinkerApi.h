@@ -2489,7 +2489,7 @@ void BlinkerApi::run()
 
             if (_getRegister)
             {
-                if (_register_times < 12)
+                if (_register_times < BLINKER_SERVER_CONNECT_LIMIT)
                 {
                     if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
                         _register_fresh == 0))
@@ -2660,7 +2660,7 @@ void BlinkerApi::run()
 
             if (_getRegister)
             {
-                if (_register_times < 12)
+                if (_register_times < BLINKER_SERVER_CONNECT_LIMIT)
                 {
                     if (!_isRegistered && ((millis() - _register_fresh) > 5000 || \
                         _register_fresh == 0))

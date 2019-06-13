@@ -342,7 +342,7 @@ int BlinkerMQTT::connect()
 
         if (ret == 4) 
         {
-            if (_reRegister_times < 12)
+            if (_reRegister_times < BLINKER_SERVER_CONNECT_LIMIT)
             {
                 if (reRegister())
                 {
@@ -366,7 +366,7 @@ int BlinkerMQTT::connect()
         reconnect_time += 1;
         if (reconnect_time >= 12)
         {
-            if (_reRegister_times < 12)
+            if (_reRegister_times < BLINKER_SERVER_CONNECT_LIMIT)
             {
                 if (reRegister())
                 {
@@ -1223,7 +1223,7 @@ bool BlinkerMQTT::begin() {
         // BLINKER_ERR_LOG("Maybe you have put in the wrong AuthKey!");
         // BLINKER_ERR_LOG("Or maybe your request is too frequently!");
         // BLINKER_ERR_LOG("Or maybe your network is disconnected!");
-    if (_connectTimes < 12)
+    if (_connectTimes < BLINKER_SERVER_CONNECT_LIMIT)
     {
         if (_connectTime == 0 || (millis() - _connectTime) >= 10000)
         {

@@ -46,6 +46,8 @@
 
 #define BLINKER_AT_MSG_TIMEOUT          1000UL
 
+#define BLINKER_SERVER_CONNECT_LIMIT    12
+
 #if defined(BLINKER_DATA_HOUR_UPDATE)
     #define BLINKER_DATA_FREQ_TIME          3600UL
 #else
