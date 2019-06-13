@@ -197,6 +197,8 @@ class BlinkerMQTT : public BlinkerStream
         #endif
 
         uint8_t     reconnect_time = 0;
+        uint32_t    _reRegister_time = 0;
+        uint8_t     _reRegister_times = 0;
 
         uint32_t    _print_time = 0;
         uint8_t     _print_times = 0;
@@ -338,14 +340,52 @@ int BlinkerMQTT::connect()
                     BLINKER_MQTT_CONNECT_TIMESLOT/1000, \
                     BLINKER_F(" seconds..."));
 
-        if (ret == 4) reRegister();
+        if (ret == 4) 
+        {
+            if (_reRegister_times < 12)
+            {
+                if (reRegister())
+                {
+                    _reRegister_times = 0;
+                }
+                else
+                {
+                    _reRegister_times++;
+                    _reRegister_time = millis();
+                }
+            }
+            else
+            {
+                if (millis() - _reRegister_time >= 60000 * 5) _reRegister_times = 0;
+            }
+
+            BLINKER_LOG_ALL(BLINKER_F("_reRegister_times: "), _reRegister_times);
+        }
 
         this->latestTime = millis();
         reconnect_time += 1;
         if (reconnect_time >= 12)
         {
-            reRegister();
+            if (_reRegister_times < 12)
+            {
+                if (reRegister())
+                {
+                    _reRegister_times = 0;
+                }
+                else
+                {
+                    _reRegister_times++;
+                    _reRegister_time = millis();
+                }
+            }
+            else
+            {
+                if (millis() - _reRegister_time >= 60000 * 5) _reRegister_times = 0;
+            }
+            
             reconnect_time = 0;
+
+            BLINKER_LOG_ALL(BLINKER_F("_reRegister_times: "), _reRegister_times);
         }
         return false;
     }
