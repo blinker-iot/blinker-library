@@ -25,6 +25,7 @@ BlinkerUpdater	KEYWORD1
 #######################################
 BLINKER_TAST_INIT	KEYWORD2
 
+auth	KEYWORD2
 begin	KEYWORD2
 connect	KEYWORD2
 disconnect	KEYWORD2
