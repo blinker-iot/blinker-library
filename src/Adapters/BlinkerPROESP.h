@@ -151,6 +151,8 @@ class BlinkerPROESP : public BlinkerStream
         int isJson(const String & data);
 
         uint8_t     reconnect_time = 0;
+        uint32_t    _reRegister_time = 0;
+        uint8_t     _reRegister_times = 0;
 
         bool        _isAuthKey = false;
 };
@@ -288,14 +290,52 @@ int BlinkerPROESP::connect()
                     BLINKER_MQTT_CONNECT_TIMESLOT/1000, \
                     BLINKER_F(" seconds..."));
 
-        if (ret == 4) reRegister();
+        if (ret == 4) 
+        {
+            if (_reRegister_times < 12)
+            {
+                if (reRegister())
+                {
+                    _reRegister_times = 0;
+                }
+                else
+                {
+                    _reRegister_times++;
+                    _reRegister_time = millis();
+                }
+            }
+            else
+            {
+                if (millis() - _reRegister_time >= 60000 * 5) _reRegister_times = 0;
+            }
+
+            BLINKER_LOG_ALL(BLINKER_F("_reRegister_times: "), _reRegister_times);
+        }
 
         this->latestTime = millis();
         reconnect_time += 1;
         if (reconnect_time >= 12)
         {
-            reRegister();
+            if (_reRegister_times < 12)
+            {
+                if (reRegister())
+                {
+                    _reRegister_times = 0;
+                }
+                else
+                {
+                    _reRegister_times++;
+                    _reRegister_time = millis();
+                }
+            }
+            else
+            {
+                if (millis() - _reRegister_time >= 60000 * 5) _reRegister_times = 0;
+            }
+            
             reconnect_time = 0;
+
+            BLINKER_LOG_ALL(BLINKER_F("_reRegister_times: "), _reRegister_times);
         }
         return false;
     }
@@ -1304,6 +1344,7 @@ int BlinkerPROESP::connectServer() {
     const int httpsPort = 443;
     #if defined(ESP8266)
         String host = BLINKER_F("iotdev.clz.me");
+        client_mqtt.stop();
     #elif defined(ESP32)
         String host = BLINKER_F("https://iotdev.clz.me");
     #endif
@@ -1448,7 +1489,7 @@ int BlinkerPROESP::connectServer() {
 
 
 
-        client_mqtt.stop();
+        // client_mqtt.stop();
 
         std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
 
