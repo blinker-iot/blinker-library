@@ -92,9 +92,10 @@ class BlinkerPROESP : public BlinkerStream
 
     private :
         bool isMQTTinit = false;
+        bool isWSinit = false;
 
         int connectServer();
-        void mDNSInit();
+        void mDNSInit(String name = macDeviceName());
         void checkKA();
         int checkAliKA();
         int checkDuerKA();
@@ -292,7 +293,7 @@ int BlinkerPROESP::connect()
 
         if (ret == 4) 
         {
-            if (_reRegister_times < 12)
+            if (_reRegister_times < BLINKER_SERVER_CONNECT_LIMIT)
             {
                 if (reRegister())
                 {
@@ -316,7 +317,7 @@ int BlinkerPROESP::connect()
         reconnect_time += 1;
         if (reconnect_time >= 12)
         {
-            if (_reRegister_times < 12)
+            if (_reRegister_times < BLINKER_SERVER_CONNECT_LIMIT)
             {
                 if (reRegister())
                 {
@@ -403,6 +404,10 @@ void BlinkerPROESP::ping()
 
 int BlinkerPROESP::available()
 {
+#if defined(ESP8266)
+    MDNS.update();
+#endif
+
     webSocket_PRO.loop();
 
     if (isMQTTinit) {
@@ -2084,7 +2089,8 @@ int BlinkerPROESP::connectServer() {
     // strcpy(mqtt_broker, _broker.c_str());
     // mqtt_broker = _broker;
 
-    // mDNSInit(MQTT_ID_PRO);
+    MDNS.end();
+    mDNSInit(MQTT_DEVICEID_PRO);
     this->latestTime = millis();
     // if (!isMQTTinit) 
     mqtt_PRO->subscribe(iotSub_PRO);
@@ -2096,15 +2102,17 @@ int BlinkerPROESP::connectServer() {
     #endif
     // connect();
 
+    
+
     return true;
 }
 
-void BlinkerPROESP::mDNSInit()
+void BlinkerPROESP::mDNSInit(String name)
 {
 #if defined(ESP8266)
-    if (!MDNS.begin(macDeviceName().c_str(), WiFi.localIP())) {
+    if (!MDNS.begin(name.c_str(), WiFi.localIP())) {
 #elif defined(ESP32)
-    if (!MDNS.begin(macDeviceName().c_str())) {
+    if (!MDNS.begin(name.c_str())) {
 #endif
         while(1) {
             ::delay(100);
@@ -2113,15 +2121,20 @@ void BlinkerPROESP::mDNSInit()
 
     BLINKER_LOG(BLINKER_F("mDNS responder started"));
     
-    String _service = STRING_format(BLINKER_MDNS_SERVICE_BLINKER) + _deviceType;
+    String _service = STRING_format(BLINKER_MDNS_SERVICE_BLINKER) + STRING_format(_deviceType);
             
-    MDNS.addService(_service.c_str(), "tcp", WS_SERVERPORT);
-    MDNS.addServiceTxt(_service.c_str(), "tcp", "deviceName", macDeviceName());
+    MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
+    MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", name);
 
-    webSocket_PRO.begin();
-    webSocket_PRO.onEvent(webSocketEvent_PRO);
+    if (!isWSinit)
+    {
+        webSocket_PRO.begin();
+        webSocket_PRO.onEvent(webSocketEvent_PRO);
+    }
     BLINKER_LOG(BLINKER_F("webSocket_PRO server started"));
-    BLINKER_LOG(BLINKER_F("ws://"), macDeviceName(), BLINKER_F(".local:"), WS_SERVERPORT);
+    BLINKER_LOG(BLINKER_F("ws://"), name, BLINKER_F(".local:"), WS_SERVERPORT);
+
+    isWSinit = true;
 }
 
 void BlinkerPROESP::checkKA() {
