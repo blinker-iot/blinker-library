@@ -20,8 +20,13 @@ extern "C" {
     #include "user_interface.h"
 }
 
+#if defined _SPIFFS_start
 extern "C" uint32_t _SPIFFS_start;
 extern "C" uint32_t _SPIFFS_end;
+#elif defined _FS_start
+extern "C" uint32_t _FS_start;
+extern "C" uint32_t _FS_end;
+#endif
 
 BlinkerUpdaterClass::BlinkerUpdaterClass()
 : _async(false)
@@ -106,16 +111,21 @@ bool BlinkerUpdaterClass::begin(size_t size, int command, int ledPin, uint8_t le
         //size of current sketch rounded to a sector
         size_t currentSketchSize = (ESP.getSketchSize() + FLASH_SECTOR_SIZE - 1) & (~(FLASH_SECTOR_SIZE - 1));
         //address of the end of the space available for sketch and update
-        uintptr_t updateEndAddress;// = (uintptr_t)&_SPIFFS_start - 0x40200000;
+        uintptr_t updateEndAddress;
+        #if defined _SPIFFS_start
+        updateEndAddress = (uintptr_t)&_SPIFFS_start - 0x40200000;
+        #elif defined _FS_start
+        updateEndAddress = (uintptr_t)&_FS_start - 0x40200000;
+        #endif
 
-        if ((uintptr_t)&_SPIFFS_start > (uintptr_t)&_SPIFFS_end)
-        {
-            updateEndAddress = (uintptr_t)&_SPIFFS_end - 0x40200000;
-        }
-        else
-        {
-            updateEndAddress = (uintptr_t)&_SPIFFS_start - 0x40200000;
-        }
+        // if ((uintptr_t)&_SPIFFS_start > (uintptr_t)&_SPIFFS_end)
+        // {
+        //     updateEndAddress = (uintptr_t)&_SPIFFS_end - 0x40200000;
+        // }
+        // else
+        // {
+        //     updateEndAddress = (uintptr_t)&_SPIFFS_start - 0x40200000;
+        // }
         //size of the update rounded to a sector
         size_t roundedSize = (size + FLASH_SECTOR_SIZE - 1) & (~(FLASH_SECTOR_SIZE - 1));
         //address where we will start writing the update
@@ -138,7 +148,11 @@ bool BlinkerUpdaterClass::begin(size_t size, int command, int ledPin, uint8_t le
         }
     }
     else if (command == U_SPIFFS) {
+        #if defined _SPIFFS_start
         updateStartAddress = (uintptr_t)&_SPIFFS_start - 0x40200000;
+        #elif defined _FS_start
+        updateStartAddress = (uintptr_t)&_FS_start - 0x40200000;
+        #endif
     }
     else {
         // unknown command
