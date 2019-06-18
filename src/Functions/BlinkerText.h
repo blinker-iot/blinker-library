@@ -16,7 +16,7 @@ class BlinkerText
         template <typename T>
         void print(T _text)
         {
-            if (isnan(_text)) return;
+            // if (isnan(_text)) return;
 
             String textData = BLINKER_F("{\"");
             textData += BLINKER_F(BLINKER_CMD_TEXT);
@@ -56,7 +56,7 @@ class BlinkerText
         template <typename T1, typename T2>
         void print(T1 _text1, T2 _text2)
         {
-            if (isnan(_text1) || isnan(_text2)) return;
+            // if (isnan(_text1) || isnan(_text2)) return;
 
             String textData = BLINKER_F("{\"");
             textData += BLINKER_F(BLINKER_CMD_TEXT);
