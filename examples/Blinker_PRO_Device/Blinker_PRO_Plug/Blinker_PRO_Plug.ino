@@ -150,6 +150,11 @@ void doubleClick()
 }
 #endif
 
+void dataStorage()
+{
+    Blinker.dataStorage("power", power_read());
+}
+
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
@@ -181,6 +186,7 @@ void setup()
 #endif
 
     BUILTIN_SWITCH.attach(switch_callback);
+    Blinker.attachDataStorage(dataStorage);
 }
 
 void loop()
