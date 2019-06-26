@@ -302,8 +302,11 @@ void BlinkerAUTO::run(const String & key, const String & state, int32_t nowTime)
 
 void BlinkerAUTO::manager(const String & data)
 {
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(data);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    deserializeJson(jsonBuffer, data);
+    JsonObject root = jsonBuffer.as<JsonObject>();
     
     _autoState = root[BLINKER_CMD_ENABLE];
     

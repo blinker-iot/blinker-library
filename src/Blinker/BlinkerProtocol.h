@@ -61,7 +61,7 @@ class BlinkerProtocol
             }
         }
         void disconnect()   { if (isInit) { conn->disconnect(); state = DISCONNECTED; } }
-        bool available()    { if (availState) {availState = false; return true;} else return false; }
+        // bool available()    { if (availState) {availState = false; return true;} else return false; }
         void flush();
         void checkState(bool state = true)      { isCheck = state; }
         void print(const String & data);
@@ -208,7 +208,7 @@ class BlinkerProtocol
         void checkAutoFormat();
         char* dataParse()       { if (canParse) return conn->lastRead(); else return ""; }
         char* lastRead()        { return conn->lastRead(); }
-        void isParsed()         { flush(); }
+        void isParsed()         { BLINKER_LOG_ALL(BLINKER_F("isParsed")); flush(); }
         int parseState()        { return canParse; }
         int printNow();
         void _timerPrint(const String & n);
@@ -371,17 +371,21 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
         if (STRING_contains_string(STRING_format(_sendBuf), key))
         {
 
-            DynamicJsonBuffer jsonSendBuffer;                
+            // DynamicJsonBuffer jsonSendBuffer;
+            DynamicJsonDocument jsonBuffer(1024);
 
             if (strlen(_sendBuf)) {
                 BLINKER_LOG_ALL(BLINKER_F("add"));
 
-                JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
+                // JsonObject& root = jsonSendBuffer.parseObject(STRING_format(_sendBuf));
+                deserializeJson(jsonBuffer, STRING_format(_sendBuf));
+                JsonObject root = jsonBuffer.as<JsonObject>();
 
                 if (root.containsKey(key)) {
                     root.remove(key);
                 }
-                root.printTo(_data);
+                // root.printTo(_data);
+                serializeJson(root, _data);
 
                 _data = _data.substring(0, _data.length() - 1);
 

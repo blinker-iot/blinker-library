@@ -493,10 +493,15 @@ void BlinkerWlan::serverClient()
 void BlinkerWlan::parseUrl(String data)
 {
     BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& wifi_data = jsonBuffer.parseObject(data);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& wifi_data = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject wifi_data = jsonBuffer.as<JsonObject>();
 
-    if (!wifi_data.success()) {
+    // if (!wifi_data.success())
+    if (error)
+    {
         return;
     }
                     

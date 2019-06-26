@@ -296,8 +296,11 @@ void BlinkerProSIM7020::subscribe()
     {
         BLINKER_LOG_ALL(BLINKER_F("Got: "), mqtt_NBIoT->lastRead);
 
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& root = jsonBuffer.parseObject(String(mqtt_NBIoT->lastRead));
+        // DynamicJsonBuffer jsonBuffer;
+        // JsonObject& root = jsonBuffer.parseObject(String(mqtt_NBIoT->lastRead));
+        DynamicJsonDocument jsonBuffer(1024);
+        DeserializationError error = deserializeJson(jsonBuffer, String(mqtt_NBIoT->lastRead));
+        JsonObject root = jsonBuffer.as<JsonObject>();
 
         String _uuid = root["fromDevice"];
         String dataGet = root["data"];
@@ -865,10 +868,14 @@ void BlinkerProSIM7020::sharers(const String & data)
 {
     BLINKER_LOG_ALL(BLINKER_F("sharers data: "), data);
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(data);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (!root.success()) return;
+    // if (!root.success()) return;
+    if (error) return;
 
     String user_name = "";
 
@@ -988,10 +995,13 @@ int BlinkerProSIM7020::connectServer()
     BLINKER_LOG_ALL(payload);
     BLINKER_LOG_ALL(BLINKER_F("=============================="));
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(payload);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(payload);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, payload);
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
+    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || error ||
         !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
         // while(1) {
             BLINKER_ERR_LOG(("Please make sure you have register this device!"));
@@ -1256,10 +1266,14 @@ int BlinkerProSIM7020::isJson(const String & data)
 {
     BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(data);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (!root.success())
+    // if (!root.success())
+    if (error)
     {
         BLINKER_ERR_LOG("Print data is not Json! ", data);
         return false;

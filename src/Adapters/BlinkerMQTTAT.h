@@ -675,8 +675,11 @@ void BlinkerMQTTAT::subscribe()
         {
             BLINKER_LOG_ALL(BLINKER_F("Got: "), (char *)iotSub_MQTT_AT->lastread);
             
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_MQTT_AT->lastread));
+            // DynamicJsonBuffer jsonBuffer;
+            // JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_MQTT_AT->lastread));
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, (char *)iotSub_MQTT_AT->lastread));
+            JsonObject root = jsonBuffer.as<JsonObject>();
 
             String _uuid = root["fromDevice"];
             String dataGet = root["data"];
@@ -1029,10 +1032,16 @@ int BlinkerMQTTAT::print(char * data, bool needCheck)
 int BlinkerMQTTAT::mqttPrint(const String & data) {
     BLINKER_LOG_ALL(("mqttPrint data: "), data);
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& print_data = jsonBuffer.parseObject(data);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& print_data = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject print_data = jsonBuffer.as<JsonObject>();
 
-    if (!print_data.success()) {
+
+    // if (!print_data.success())
+    if (error)
+    {
         BLINKER_ERR_LOG(("Print data not a Json data"));
         return false;
     }
@@ -1599,10 +1608,14 @@ void BlinkerMQTTAT::sharers(const String & data)
 {
     BLINKER_LOG_ALL(BLINKER_F("sharers data: "), data);
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(data);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, arrayData);
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (!root.success()) return;
+    // if (!root.success()) return;
+    if (error) return;
 
     String user_name = "";
 
@@ -1716,10 +1729,15 @@ void BlinkerMQTTAT::softAPinit()
 int BlinkerMQTTAT::parseUrl(String data)
 {
     BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& wifi_data = jsonBuffer.parseObject(data);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& wifi_data = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject wifi_data = jsonBuffer.as<JsonObject>();
 
-    if (!wifi_data.success()) {
+    // if (!wifi_data.success()) 
+    if (error)
+    {
         return false;
     }
                     
@@ -2169,10 +2187,13 @@ int BlinkerMQTTAT::connectServer() {
     BLINKER_LOG_ALL(payload);
     BLINKER_LOG_ALL(BLINKER_F("=============================="));
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(payload);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(payload);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, payload);
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
+    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || error ||
         !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
         // while(1) {
             BLINKER_ERR_LOG(BLINKER_F("Maybe you have put in the wrong AuthKey!"));
@@ -2584,10 +2605,14 @@ int BlinkerMQTTAT::checkPrintLimit()
 
 int BlinkerMQTTAT::isJson(const String & data)
 {
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (!root.success())
+    // if (!root.success())
+    if (error)
     {
         BLINKER_ERR_LOG("Print data is not Json! ", data);
         return false;

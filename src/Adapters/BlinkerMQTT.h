@@ -557,8 +557,11 @@ void BlinkerMQTT::subscribe()
         {
             BLINKER_LOG_ALL(BLINKER_F("Got: "), (char *)iotSub_MQTT->lastread);
 
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_MQTT->lastread));
+            // DynamicJsonBuffer jsonBuffer;
+            // JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_MQTT->lastread));
+            DynamicJsonDocument jsonBuffer(1024);
+            deserializeJson(jsonBuffer, String((char *)iotSub_MQTT->lastread));
+            JsonObject root = jsonBuffer.as<JsonObject>();
 
             String _uuid = root["fromDevice"];
             String dataGet = root["data"];
@@ -641,7 +644,8 @@ void BlinkerMQTT::subscribe()
                 // else
                 // {
                     // dataGet = String((char *)iotSub_MQTT->lastread);
-                    root.printTo(dataGet);
+                    // root.printTo(dataGet);
+                    serializeJson(root, dataGet);
 
                 //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
                 //                         check is from bridge/share device, \
@@ -1429,10 +1433,14 @@ void BlinkerMQTT::sharers(const String & data)
 {
     BLINKER_LOG_ALL(BLINKER_F("sharers data: "), data);
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(data);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (!root.success()) return;
+    // if (!root.success()) return;
+    if (error) return;
 
     String user_name = "";
 
@@ -1729,10 +1737,13 @@ int BlinkerMQTT::connectServer() {
     BLINKER_LOG_ALL(payload);
     BLINKER_LOG_ALL(BLINKER_F("=============================="));
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(payload);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(payload);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, payload);
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
+    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || error ||
         !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
         // while(1) {
             BLINKER_ERR_LOG(BLINKER_F("Maybe you have put in the wrong AuthKey!"));
@@ -2176,10 +2187,14 @@ int BlinkerMQTT::isJson(const String & data)
 {
     BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, STRING_format(data));
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (!root.success())
+    // if (!root.success())
+    if (error)
     {
         BLINKER_ERR_LOG("Print data is not Json! ", data);
         return false;
@@ -2621,10 +2636,15 @@ void BlinkerMQTT::checkAPCFG()
 bool BlinkerMQTT::parseUrl(String data)
 {
     BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& wifi_data = jsonBuffer.parseObject(data);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& wifi_data = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject wifi_data = jsonBuffer.as<JsonObject>();
 
-    if (!wifi_data.success()) {
+    // if (!wifi_data.success()) 
+    if (error)
+    {
         return false;
     }
 

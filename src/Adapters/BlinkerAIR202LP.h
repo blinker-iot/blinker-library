@@ -110,10 +110,14 @@ int BlinkerAIR202LP::print(char * data, bool needCheck)
     BLINKER_LOG_ALL(payload);
     BLINKER_LOG_ALL(BLINKER_F("=============================="));
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& data_rp = jsonBuffer.parseObject(payload);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& data_rp = jsonBuffer.parseObject(payload);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, payload);
+    JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
-    if (data_rp.success())
+    // if (data_rp.success())
+    if (!error)
     {
         uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
         if (msg_code != 1000)
@@ -167,10 +171,14 @@ void BlinkerAIR202LP::dataGet()
     BLINKER_LOG_ALL(payload);
     BLINKER_LOG_ALL(BLINKER_F("=============================="));
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& data_rp = jsonBuffer.parseObject(payload);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& data_rp = jsonBuffer.parseObject(payload);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, payload);
+    JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
-    if (data_rp.success())
+    // if (data_rp.success())
+    if (!error)
     {
         uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
         if (msg_code != 1000)
@@ -266,10 +274,13 @@ int BlinkerAIR202LP::connectServer()
         BLINKER_LOG_ALL(payload);
         BLINKER_LOG_ALL(BLINKER_F("=============================="));
 
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& root = jsonBuffer.parseObject(payload);
+        // DynamicJsonBuffer jsonBuffer;
+        // JsonObject& root = jsonBuffer.parseObject(payload);
+        DynamicJsonDocument jsonBuffer(1024);
+        DeserializationError error = deserializeJson(jsonBuffer, payload);
+        JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
-        if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
+        if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || error ||
             !STRING_contains_string(payload, BLINKER_CMD_AUTHKEY)) {
             // while(1) {
                 BLINKER_ERR_LOG(("Please make sure you have register this device!"));
@@ -322,10 +333,13 @@ int BlinkerAIR202LP::connectServer()
     BLINKER_LOG_ALL(payload);
     BLINKER_LOG_ALL(BLINKER_F("=============================="));
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(payload);
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(payload);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, payload);
+    JsonObject root = jsonBuffer.as<JsonObject>();
 
-    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || !root.success() ||
+    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || error ||
         !STRING_contains_string(payload, BLINKER_CMD_DEVICENAME)) {
         // while(1) {
             BLINKER_ERR_LOG(("Please make sure you have register this device!"));

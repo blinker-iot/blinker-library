@@ -592,7 +592,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         void attachData(blinker_callback_with_string_arg_t newFunction)
-        { _availableFunc = newFunction; }
+        { BProto::_availableFunc = newFunction; }
         void attachHeartbeat(blinker_callback_t newFunction)
         { _heartbeatFunc = newFunction; }
         void attachSummary(blinker_callback_return_string_t newFunction)
@@ -1309,10 +1309,14 @@ class BlinkerApi : public BlinkerProtocol
 
                     BLINKER_LOG_ALL(payload);
 
-                    DynamicJsonBuffer jsonBuffer;
-                    JsonObject& data_rp = jsonBuffer.parseObject(payload);
+                    // DynamicJsonBuffer jsonBuffer;
+                    // JsonObject& data_rp = jsonBuffer.parseObject(payload);
+                    DynamicJsonDocument jsonBuffer(1024);
+                    DeserializationError error = deserializeJson(jsonBuffer, payload);
+                    JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
-                    if (data_rp.success())
+                    // if (data_rp.success())
+                    if (!error)
                     {
                         uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
                         if (msg_code != 1000)
@@ -1752,10 +1756,14 @@ class BlinkerApi : public BlinkerProtocol
 
                     BLINKER_LOG_ALL(payload);
 
-                    DynamicJsonBuffer jsonBuffer;
-                    JsonObject& data_rp = jsonBuffer.parseObject(payload);
+                    // DynamicJsonBuffer jsonBuffer;
+                    // JsonObject& data_rp = jsonBuffer.parseObject(payload);
+                    DynamicJsonDocument jsonBuffer(1024);
+                    DeserializationError error = deserializeJson(jsonBuffer, payload);
+                    JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
-                    if (data_rp.success())
+                    // if (data_rp.success())
+                    if (!error)
                     {
                         uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
                         if (msg_code != 1000)
@@ -3664,10 +3672,14 @@ void BlinkerApi::parse(char _data[], bool ex_data)
             #if defined(BLINKER_ARDUINOJSON)
                 BLINKER_LOG_ALL(BLINKER_F("defined BLINKER_ARDUINOJSON"));
 
-                DynamicJsonBuffer jsonBuffer;
-                JsonObject& root = jsonBuffer.parseObject(STRING_format(_data));
+                // DynamicJsonBuffer jsonBuffer;
+                // JsonObject& root = jsonBuffer.parseObject(STRING_format(_data));
+                DynamicJsonDocument jsonBuffer(1024);
+                DeserializationError error = deserializeJson(jsonBuffer, STRING_format(_data));
+                JsonObject root = jsonBuffer.as<JsonObject>();
 
-                if (!root.success())
+                // if (!root.success())
+                if (error)
                 {
                     // #if defined(BLINKER_MQTT_AT)
                     //     atResp();
@@ -3749,6 +3761,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     defined(BLINKER_PRO_ESP)
                     if (_parseFunc) {
                         if(_parseFunc(root)) {
+                            BLINKER_LOG_ALL(BLINKER_F("_parseFunc(root) isParsed"));
                             _fresh = true;
                             BProto::isParsed();
                         }
@@ -3765,10 +3778,14 @@ void BlinkerApi::parse(char _data[], bool ex_data)
             String arrayData = BLINKER_F("{\"data\":");
             arrayData += _data;
             arrayData += BLINKER_F("}");
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& root = jsonBuffer.parseObject(arrayData);
+            // DynamicJsonBuffer jsonBuffer;
+            // JsonObject& root = jsonBuffer.parseObject(arrayData);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, arrayData);
+            JsonObject root = jsonBuffer.as<JsonObject>();
 
-            if (!root.success()) return;
+            // if (!root.success()) return;
+            if (error) return;
 
             arrayData = root["data"][0].as<String>();
 
@@ -3779,8 +3796,11 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     arrayData = root["data"][a_num].as<String>();
 
                     if(arrayData.length()) {
-                        DynamicJsonBuffer _jsonBuffer;
-                        JsonObject& _array = _jsonBuffer.parseObject(arrayData);
+                        // DynamicJsonBuffer _jsonBuffer;
+                        // JsonObject& _array = _jsonBuffer.parseObject(arrayData);
+                        DynamicJsonDocument jsonBuffer(1024);
+                        deserializeJson(jsonBuffer, arrayData);
+                        JsonObject _array = jsonBuffer.as<JsonObject>();
 
                         json_parse(_array);
                         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
@@ -3808,9 +3828,12 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                 }
             }
             else {
-                JsonObject& root = jsonBuffer.parseObject(_data);
+                // JsonObject& root = jsonBuffer.parseObject(_data);
+                DeserializationError error = deserializeJson(jsonBuffer, _data);
+                JsonObject root = jsonBuffer.as<JsonObject>();
 
-                if (!root.success()) return;
+                // if (!root.success()) return;
+                if (error) return;
 
                 json_parse(root);
 
@@ -5433,8 +5456,11 @@ float BlinkerApi::gps(b_gps_t axis)
         }
         else
         {
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& autoJson = jsonBuffer.parseObject(payload);
+            // DynamicJsonBuffer jsonBuffer;
+            // JsonObject& autoJson = jsonBuffer.parseObject(payload);
+            DynamicJsonDocument jsonBuffer(1024);
+            deserializeJson(jsonBuffer, payload);
+            JsonObject autoJson = jsonBuffer.as<JsonObject>();
 
             return autoManager(autoJson);
         }
@@ -5655,10 +5681,14 @@ float BlinkerApi::gps(b_gps_t axis)
 
             if (otaData != BLINKER_CMD_FALSE)
             {
-                DynamicJsonBuffer jsonBuffer;
-                JsonObject& otaJson = jsonBuffer.parseObject(otaData);
+                // DynamicJsonBuffer jsonBuffer;
+                // JsonObject& otaJson = jsonBuffer.parseObject(otaData);
+                DynamicJsonDocument jsonBuffer(1024);
+                DeserializationError error = deserializeJson(jsonBuffer, otaData);
+                JsonObject otaJson = jsonBuffer.as<JsonObject>();
 
-                if (!otaJson.success())
+                // if (!otaJson.success())
+                if (error)
                 {
                     BLINKER_ERR_LOG_ALL(BLINKER_F("check ota data error"));
                     return;
@@ -6136,7 +6166,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             ahrsValue[Yaw] = data[BLINKER_CMD_AHRS][Yaw];
             ahrsValue[Roll] = data[BLINKER_CMD_AHRS][Roll];
             ahrsValue[Pitch] = data[BLINKER_CMD_AHRS][Pitch];
-
+            BLINKER_LOG_ALL(BLINKER_F("ahrs isParsed"));
             _fresh = true;
 
             return aAttiValue;
@@ -6161,7 +6191,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             String gpsValue_LAT = data[BLINKER_CMD_GPS][LAT];
             gpsValue[LONG] = gpsValue_LONG.toFloat();
             gpsValue[LAT] = gpsValue_LAT.toFloat();
-
+            BLINKER_LOG_ALL(BLINKER_F("gps isParsed"));
             _fresh = true;
 
             if (_fresh) {
@@ -6180,7 +6210,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     {
         String state = data[BLINKER_CMD_GET];
 
-        if (state.length())
+        // if (state.length())
+        if (data.containsKey(BLINKER_CMD_GET))
         {
             if (state == BLINKER_CMD_STATE)
             {
@@ -6250,7 +6281,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     BProto::checkState(false);
                     BProto::printNow();
                 }
-
+                BLINKER_LOG_ALL(BLINKER_F("heartBeat isParsed"));
                 _fresh = true;
 
                 #if defined(BLINKER_AT_MQTT)
@@ -6264,11 +6295,13 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     {
         String state = data[BLINKER_CMD_GET];
 
-        if (state.length())
+        // if (state.length())
+        if (data.containsKey(BLINKER_CMD_GET))
         {
             if (state == BLINKER_CMD_VERSION)
             {
                 print(BLINKER_CMD_VERSION, "0.1.0");
+                BLINKER_LOG_ALL(BLINKER_F("getVersion isParsed"));
                 _fresh = true;
             }
         }
@@ -6278,7 +6311,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     {
         String state = data[BLINKER_CMD_BUILTIN_SWITCH];
 
-        if (state.length())
+        // if (state.length())
+        if (data.containsKey(BLINKER_CMD_BUILTIN_SWITCH))
         {
             // if (_BUILTIN_SWITCH)
             // {
@@ -6289,6 +6323,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             blinker_callback_with_string_arg_t sFunc = _BUILTIN_SWITCH.getFunc();
 
             if (sFunc) sFunc(state);
+            BLINKER_LOG_ALL(BLINKER_F("setSwitch isParsed"));
             _fresh = true;
         }
     }
@@ -6301,6 +6336,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 if (data[BLINKER_CMD_HELLO] == BLINKER_CMD_WHOIS)
                 {
                     BLINKER_LOG_ALL(BLINKER_F("get device fresh broadCast"));
+                    BLINKER_LOG_ALL(BLINKER_F("broadCast isParsed"));
                     _fresh = true;
                 }
             }
@@ -6347,7 +6383,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         if (data.containsKey(_wName))
         {
             String state = data[_wName];
-
+            BLINKER_LOG_ALL(BLINKER_F("strWidgetsParse isParsed"));
             _fresh = true;
 
             BLINKER_LOG_ALL(BLINKER_F("strWidgetsParse: "), _wName);
@@ -6369,7 +6405,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             {
                 int16_t jxAxisValue = data[_wName][BLINKER_J_Xaxis];
                 uint8_t jyAxisValue = data[_wName][BLINKER_J_Yaxis];
-
+                BLINKER_LOG_ALL(BLINKER_F("joyWidgetsParse isParsed"));
                 _fresh = true;
 
                 blinker_callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
@@ -6390,7 +6426,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             uint8_t _gValue = data[_wName][BLINKER_G];
             uint8_t _bValue = data[_wName][BLINKER_B];
             uint8_t _brightValue = data[_wName][BLINKER_BRIGHT];
-
+            BLINKER_LOG_ALL(BLINKER_F("rgbWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_with_rgb_arg_t wFunc = _Widgets_rgb[num]->getFunc();
@@ -6406,7 +6442,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         if (data.containsKey(_wName)) {
             int _number = data[_wName];
-
+            BLINKER_LOG_ALL(BLINKER_F("intWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_with_int32_arg_t wFunc = _Widgets_int[num]->getFunc();
@@ -6466,7 +6502,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             // else if (_setData == "00100") _number = BLINKER_CMD_TAB_2;
             // else if (_setData == "00010") _number = BLINKER_CMD_TAB_3;
             // else if (_setData == "00001") _number = BLINKER_CMD_TAB_4;
-
+            BLINKER_LOG_ALL(BLINKER_F("tabWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_t wFunc2 = _Widgets_tab[num]->getFunc2();
@@ -6510,7 +6546,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             ahrsValue[Yaw] = STRING_find_array_numberic_value(data, BLINKER_CMD_AHRS, Yaw);
             ahrsValue[Roll] = STRING_find_array_numberic_value(data, BLINKER_CMD_AHRS, Roll);
             ahrsValue[Pitch] = STRING_find_array_numberic_value(data, BLINKER_CMD_AHRS, Pitch);
-
+            BLINKER_LOG_ALL(BLINKER_F("ahrs isParsed"));
             _fresh = true;
 
             return aAttiValue;
@@ -6535,7 +6571,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         if (axisValue != "") {
             gpsValue[LONG] = STRING_find_array_string_value(data, BLINKER_CMD_GPS, LONG).toFloat();
             gpsValue[LAT] = STRING_find_array_string_value(data, BLINKER_CMD_GPS, LAT).toFloat();
-
+            BLINKER_LOG_ALL(BLINKER_F("gps isParsed"));
             _fresh = true;
 
             if (_fresh) {
@@ -6603,7 +6639,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 BProto::checkState(false);
                 BProto::printNow();
             }
-
+            BLINKER_LOG_ALL(BLINKER_F("heartBeat isParsed"));
             _fresh = true;
 
             // #if defined(BLINKER_AT_MQTT)
@@ -6618,6 +6654,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             strstr(data, BLINKER_CMD_VERSION))
         {
             print(BLINKER_CMD_VERSION, BLINKER_VERSION);
+            BLINKER_LOG_ALL(BLINKER_F("getVersion isParsed"));
             _fresh = true;
         }
     }
@@ -6637,6 +6674,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             blinker_callback_with_string_arg_t sFunc = _BUILTIN_SWITCH.getFunc();
 
             if (sFunc) sFunc(state);
+            BLINKER_LOG_ALL(BLINKER_F("setSwitch isParsed"));
             _fresh = true;
         }
     }
@@ -6655,7 +6693,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         if (STRING_find_string_value(_data, state, _wName))
         {
             BLINKER_LOG_ALL("state: ", state);
-
+            BLINKER_LOG_ALL(BLINKER_F("strWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_with_string_arg_t nbFunc = _Widgets_str[num]->getFunc();
@@ -6677,7 +6715,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             {
                 uint8_t jyAxisValue = STRING_find_array_numberic_value(_data, \
                                                     _wName, BLINKER_J_Yaxis);
-
+                BLINKER_LOG_ALL(BLINKER_F("joyWidgetsParse isParsed"));
                 _fresh = true;
 
                 blinker_callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
@@ -6701,7 +6739,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             uint8_t _gValue = STRING_find_array_numberic_value(_data, _wName, BLINKER_G);
             uint8_t _bValue = STRING_find_array_numberic_value(_data, _wName, BLINKER_B);
             uint8_t _brightValue = STRING_find_array_numberic_value(_data, _wName, BLINKER_BRIGHT);
-
+            BLINKER_LOG_ALL(BLINKER_F("rgbWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_with_rgb_arg_t wFunc = _Widgets_rgb[num]->getFunc();
@@ -6720,6 +6758,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         if (_number != FIND_KEY_VALUE_FAILED)
         {
+            BLINKER_LOG_ALL(BLINKER_F("intWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_with_int32_arg_t wFunc = _Widgets_int[num]->getFunc();
@@ -6739,7 +6778,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         if (STRING_find_string_value(_data, _setData, _wName))
         {
             BLINKER_LOG_ALL("_setData: ", _setData);
-
+            BLINKER_LOG_ALL(BLINKER_F("tabWidgetsParse isParsed"));
             _fresh = true;
 
             // uint8_t _number = 0;
@@ -7600,6 +7639,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         if ((isSet || _noSet) && (isCount || isLoop || isTiming))
         {
+            BLINKER_LOG_ALL(BLINKER_F("timerManager isParsed"));
             _fresh = true;
 
             BLINKER_LOG_ALL(BLINKER_F("get timer setting"));
@@ -8231,6 +8271,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             {
                 BProto::_timerPrint(timerSetting());
                 BProto::printNow();
+                BLINKER_LOG_ALL(BLINKER_F("timerManager1 isParsed"));
                 _fresh = true;
                 return true;
             }
@@ -8238,6 +8279,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             {
                 BProto::_timerPrint(countdownConfig());
                 BProto::printNow();
+                BLINKER_LOG_ALL(BLINKER_F("timerManager2 isParsed"));
                 _fresh = true;
                 return true;
             }
@@ -8245,6 +8287,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             {
                 BProto::_timerPrint(loopConfig());
                 BProto::printNow();
+                BLINKER_LOG_ALL(BLINKER_F("timerManager3 isParsed"));
                 _fresh = true;
                 return true;
             }
@@ -8252,6 +8295,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             {
                 BProto::_timerPrint(timingConfig());
                 BProto::printNow();
+                BLINKER_LOG_ALL(BLINKER_F("timerManager4 isParsed"));
                 _fresh = true;
                 return true;
             }
@@ -8492,12 +8536,13 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         // isSet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
         // isAuto = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTO);
         isSet = data.containsKey(BLINKER_CMD_SET);
-        String aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
-        String aDataArray = data[BLINKER_CMD_AUTO][0];
+        const char* aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
+        const char* aDataArray = data[BLINKER_CMD_AUTO][0];
 
-        if (aData.length()) isAuto = true;
+        // if (aData.length()) isAuto = true;
+        if (aData) isAuto = true;
 
-        if (aDataArray.length() && !isAuto)
+        if (aDataArray && !isAuto)
         {
             for (uint8_t num = 0; num < 2; num++)
             {
@@ -8558,6 +8603,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
         else if (isSet && isAuto)
         {
+            BLINKER_LOG_ALL(BLINKER_F("timerManager5 isParsed"));
             _fresh = true;
 
             BLINKER_LOG_ALL(BLINKER_F("get auto setting"));
@@ -8614,8 +8660,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                     if(_autoData_array.length())
                     {
-                        DynamicJsonBuffer _jsonBuffer;
-                        JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
+                        // DynamicJsonBuffer _jsonBuffer;
+                        // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
+                        DynamicJsonDocument jsonBuffer(1024);
+                        deserializeJson(jsonBuffer, _autoData_array);
+                        JsonObject _array = jsonBuffer.as<JsonObject>();
 
                         json_parse(_array);
                         #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -8706,16 +8755,22 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = data[BLINKER_CMD_SET];
 
-            DynamicJsonBuffer jsonBufferSet;
-            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            // DynamicJsonBuffer jsonBufferSet;
+            // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, value);
+            JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
-            if (!rootSet.success()) {
+            // if (!rootSet.success())
+            if (error)
+            {
                 // BLINKER_ERR_LOG_ALL("Json error");
                 return;
             }
 
             if (rootSet.containsKey(BLINKER_CMD_UPGRADE))
             {
+                BLINKER_LOG_ALL(BLINKER_F("otaParse isParsed"));
                 _fresh = true;
 
                 ota();
@@ -8729,16 +8784,22 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = data[BLINKER_CMD_SET];
 
-            DynamicJsonBuffer jsonBufferSet;
-            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            // DynamicJsonBuffer jsonBufferSet;
+            // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, value);
+            JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
-            if (!rootSet.success()) {
+            // if (!rootSet.success())
+            if (error)
+            {
                 // BLINKER_ERR_LOG_ALL("Json error");
                 return;
             }
 
             if (rootSet.containsKey(BLINKER_CMD_AUTO_UPDATE_KEY))
             {
+                BLINKER_LOG_ALL(BLINKER_F("numParse isParsed"));
                 _fresh = true;
 
                 String _name_ = rootSet[BLINKER_CMD_AUTO_UPDATE_KEY];
@@ -8761,6 +8822,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             }
             else if (rootSet.containsKey(BLINKER_CMD_CANCEL_UPDATE_KEY))
             {
+                BLINKER_LOG_ALL(BLINKER_F("numParse2 isParsed"));
                 _fresh = true;
 
                 String _name_ = rootSet[BLINKER_CMD_AUTO_UPDATE_KEY];
@@ -8785,16 +8847,22 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = data[BLINKER_CMD_SET];
 
-            DynamicJsonBuffer jsonBufferSet;
-            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            // DynamicJsonBuffer jsonBufferSet;
+            // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, value);
+            JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
-            if (!rootSet.success()) {
+            // if (!rootSet.success()) 
+            if (error)
+            {
                 // BLINKER_ERR_LOG_ALL("Json error");
                 return;
             }
 
             if (rootSet.containsKey(BLINKER_CMD_SHARE))
             {
+                BLINKER_LOG_ALL(BLINKER_F("shareParse isParsed"));
                 _fresh = true;
 
                 // BProto::sharers(freshSharers());
@@ -8821,16 +8889,22 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = data[BLINKER_CMD_SET];
 
-            DynamicJsonBuffer jsonBufferSet;
-            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            // DynamicJsonBuffer jsonBufferSet;
+            // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, value);
+            JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
-            if (!rootSet.success()) {
+            // if (!rootSet.success()) 
+            if (error)
+            {
                 // BLINKER_ERR_LOG_ALL("Json error");
                 return;
             }
 
             if (rootSet.containsKey(BLINKER_CMD_SHARE))
             {
+                BLINKER_LOG_ALL(BLINKER_F("shareParse isParsed"));
                 _fresh = true;
 
                 // BProto::sharers(freshSharers());
@@ -9742,10 +9816,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                     BLINKER_LOG_ALL(payload);
 
-                    DynamicJsonBuffer jsonBuffer;
-                    JsonObject& data_rp = jsonBuffer.parseObject(payload);
+                    // DynamicJsonBuffer jsonBuffer;
+                    // JsonObject& data_rp = jsonBuffer.parseObject(payload);
+                    DynamicJsonDocument jsonBuffer(1024);
+                    DeserializationError error = deserializeJson(jsonBuffer, payload);
+                    JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
-                    if (data_rp.success())
+                    // if (data_rp.success())
+                    if (!error)
                     {
                         uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
                         if (msg_code != 1000)
@@ -9869,10 +9947,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     {
         BLINKER_LOG_ALL(BLINKER_F("AliGenie parse data: "), _data);
 
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& root = jsonBuffer.parseObject(_data);
+        // DynamicJsonBuffer jsonBuffer;
+        // JsonObject& root = jsonBuffer.parseObject(_data);
+        DynamicJsonDocument jsonBuffer(1024);
+        DeserializationError error = deserializeJson(jsonBuffer, _data);
+        JsonObject root = jsonBuffer.as<JsonObject>();
 
-        if (!root.success()) return;
+        // if (!root.success()) return;
+        if (error) return;
 
         if (root.containsKey(BLINKER_CMD_GET))
         {
@@ -9916,10 +9998,15 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         else if (root.containsKey(BLINKER_CMD_SET)) {
             String value = root[BLINKER_CMD_SET];
 
-            DynamicJsonBuffer jsonBufferSet;
-            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            // DynamicJsonBuffer jsonBufferSet;
+            // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, value);
+            JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
-            if (!rootSet.success()) {
+            // if (!rootSet.success())
+            if (error)
+            {
                 // BLINKER_ERR_LOG_ALL("Json error");
                 return;
             }
@@ -9991,10 +10078,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     {
         BLINKER_LOG_ALL(BLINKER_F("DuerOS parse data: "), _data);
 
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& root = jsonBuffer.parseObject(_data);
+        // DynamicJsonBuffer jsonBuffer;
+        // JsonObject& root = jsonBuffer.parseObject(_data);
+        DynamicJsonDocument jsonBuffer(1024);
+        DeserializationError error = deserializeJson(jsonBuffer, _data);
+        JsonObject root = jsonBuffer.as<JsonObject>();
 
-        if (!root.success()) return;
+        // if (!root.success()) return;
+        if (error) return;
 
         if (root.containsKey(BLINKER_CMD_GET))
         {
@@ -10030,10 +10121,15 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         else if (root.containsKey(BLINKER_CMD_SET)) {
             String value = root[BLINKER_CMD_SET];
 
-            DynamicJsonBuffer jsonBufferSet;
-            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            // DynamicJsonBuffer jsonBufferSet;
+            // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, value);
+            JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
-            if (!rootSet.success()) {
+            // if (!rootSet.success())
+            if (error)
+            {
                 // BLINKER_ERR_LOG_ALL("Json error");
                 return;
             }
@@ -10105,10 +10201,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     {
         BLINKER_LOG_ALL(BLINKER_F("MIOT parse data: "), _data);
 
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& root = jsonBuffer.parseObject(_data);
+        // DynamicJsonBuffer jsonBuffer;
+        // JsonObject& root = jsonBuffer.parseObject(_data);
+        DynamicJsonDocument jsonBuffer(1024);
+        DeserializationError error = deserializeJson(jsonBuffer, _data);
+        JsonObject root = jsonBuffer.as<JsonObject>();
 
-        if (!root.success()) return;
+        // if (!root.success()) return;
+        if (error) return;
 
         if (root.containsKey(BLINKER_CMD_GET))
         {
@@ -10152,10 +10252,15 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         else if (root.containsKey(BLINKER_CMD_SET)) {
             String value = root[BLINKER_CMD_SET];
 
-            DynamicJsonBuffer jsonBufferSet;
-            JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            // DynamicJsonBuffer jsonBufferSet;
+            // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, value);
+            JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
-            if (!rootSet.success()) {
+            // if (!rootSet.success())
+            if (error)
+            {
                 // BLINKER_ERR_LOG_ALL("Json error");
                 return;
             }
@@ -11384,6 +11489,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         if (strcmp(BProto::dataParse(), BLINKER_CMD_OK) == 0 ||
             strcmp(BProto::dataParse(), BLINKER_CMD_ERROR) == 0)
         {
+            BLINKER_LOG_ALL(BLINKER_F("atResp isParsed"));
             _fresh = true;
             // BProto::flushAll();
         }
@@ -11825,7 +11931,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     {
         String _type = data[BLINKER_CMD_REGISTER];
 
-        if (_type.length() > 0)
+        // if (_type.length() > 0)
+        if (data.containsKey(BLINKER_CMD_REGISTER))
         {
             if (_type == STRING_format(_deviceType))
             {
@@ -11846,7 +11953,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 print(BLINKER_CMD_MESSAGE, "deviceType check fail");
             }
             BProto::printNow();
-
+            BLINKER_LOG_ALL(BLINKER_F("checkRegister isParsed"));
             _fresh = true;
         }
 
