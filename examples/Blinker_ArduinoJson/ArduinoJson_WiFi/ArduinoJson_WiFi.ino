@@ -57,10 +57,12 @@ void dataRead(const String & data)
 
     BLINKER_LOG("weather: ", get_weather);
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& weather = jsonBuffer.parseObject(get_weather);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, get_weather);
+    JsonObject weather = jsonBuffer.as<JsonObject>();
 
-    if (!weather.success()) {
+    if (error)
+    {
         BLINKER_LOG(get_weather, " , not a Json buffer!");
     }
 
