@@ -26,6 +26,8 @@ So we named this project **blinker** with this inspiration.
 [WebSockets](https://github.com/Links2004/arduinoWebSockets) - for Blinker to build up a websocket server  
 [Adafruit_MQTT_Library](https://github.com/adafruit/Adafruit_MQTT_Library) - for Blinker to build up a mqtt client  
 [ArduinoJson](https://github.com/bblanchon/ArduinoJson) - for Blinker to format Json data   
+[OneButton](https://github.com/mathertel/OneButton) - for Blinker to manage button  
+[painlessMesh](https://gitlab.com/painlessMesh/painlessMesh/tree/master) - for Blinker to build up a mesh network  
 [Blynk](https://github.com/blynkkk/blynk-library)  
 
 Due to frequent updates of versions, individual items may not be added in time. We hope to understand. If you find out, please let us know.
@@ -34,6 +36,8 @@ Due to frequent updates of versions, individual items may not be added in time. 
 [WebSockets](https://github.com/Links2004/arduinoWebSockets) - Blinker 用这个库建立了一个 websocket 服务器  
 [Adafruit_MQTT_Library](https://github.com/adafruit/Adafruit_MQTT_Library) - Blinker 用这个库建立了一个 MQTT 客户端  
 [ArduinoJson](https://github.com/bblanchon/ArduinoJson) - Blinker 用这个库解析 Json   
+[OneButton](https://github.com/mathertel/OneButton) - Blinker 用这个库管理按键  
+[painlessMesh](https://gitlab.com/painlessMesh/painlessMesh/tree/master) - Blinker 用这个库建立mesh网络  
 [Blynk](https://github.com/blynkkk/blynk-library)  
 
 由于版本更新频繁，个别项目可能没有及时添加，望理解，如有发现可告知我们
