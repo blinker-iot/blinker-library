@@ -372,7 +372,8 @@ void BlinkerProAIR202::subscribe()
                     }
                 }
             }
-            root.printTo(dataGet);
+            // root.printTo(dataGet);
+            serializeJson(root, dataGet);
 
             isAvail_GPRS = true;
             isAlive = true;

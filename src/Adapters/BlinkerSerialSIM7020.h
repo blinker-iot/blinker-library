@@ -387,7 +387,8 @@ void BlinkerSerialSIM7020::subscribe()
                     }
                 }
             }
-            root.printTo(dataGet);
+            // root.printTo(dataGet);
+            serializeJson(root, dataGet);
 
             isAvail_NBIoT = true;
             isAlive = true;
