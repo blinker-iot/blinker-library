@@ -12,4 +12,4 @@
 #define _TASK_STD_FUNCTION          // Support for std::function (ESP8266 ONLY)
 //  #define _TASK_DEBUG             // Make all methods and variables public for debug purposes
 
-#include <TaskScheduler.h>
+#include "modules/TaskScheduler/TaskScheduler.h"
