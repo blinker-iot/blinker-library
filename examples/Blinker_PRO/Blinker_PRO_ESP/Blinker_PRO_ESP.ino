@@ -55,6 +55,17 @@
 char type[] = "Your Device Type";
 char auth[] = "Your Device Secret Key";
 
+BlinkerButton Button1("btn-abc");
+BlinkerNumber Number1("num-abc");
+
+int counter = 0;
+
+void button1_callback(const String & state)
+{
+    BLINKER_LOG("get button state: ", state);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
+
 /* 
  * Add your command parse code in this function
  * 
@@ -64,7 +75,7 @@ bool dataParse(const JsonObject & data)
 {
     String getData;
 
-    data.printTo(getData);
+    serializeJson(data, getData);
     
     BLINKER_LOG("Get user command: ", getData);
 
@@ -124,10 +135,8 @@ void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
 
-    Blinker.vibrate();
-    
-    uint32_t BlinkerTime = millis();
-    Blinker.print("millis", BlinkerTime);
+    counter++;
+    Number1.print(counter);
 }
 
 void setup()
@@ -143,6 +152,7 @@ void setup()
     Blinker.attachData(dataRead);
     Blinker.attachParse(dataParse);
     Blinker.attachHeartbeat(heartbeat);
+    Button1.attach(button1_callback);
 
 #if defined(BLINKER_BUTTON)
     Blinker.attachClick(singalClick);

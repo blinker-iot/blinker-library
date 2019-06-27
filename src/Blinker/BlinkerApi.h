@@ -15,7 +15,7 @@
     #endif
 
     #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-        defined(BLINKER_PRO_ESP)
+        defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
         #include "Functions/BlinkerWlan.h"
     #endif
 #else
@@ -121,7 +121,8 @@ enum b_nbiot_status_t {
     NB_RESET
 };
 
-#if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
+#if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP) || \
+    defined(BLINKER_GATEWAY)
     enum BlinkerStatus_t
     {
         PRO_WLAN_CONNECTING,
@@ -623,7 +624,7 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
             void attachParse(blinker_callback_with_json_arg_t newFunction)
             { _parseFunc = newFunction; }
             void attachClick(blinker_callback_t newFunction)
@@ -771,7 +772,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
             bool            _isInitCheck = false;
             bool            _isConnBegin = false;
             bool            _getRegister = false;
@@ -780,7 +781,8 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t        _register_fresh = 0;
             uint8_t         _register_times = 0;
             uint32_t        _initTime;
-            #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
+            #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP) || \
+                defined(BLINKER_GATEWAY)
                 BlinkerStatus_t _proStatus = PRO_WLAN_CONNECTING;
             #elif defined(BLINKER_MQTT_AUTO)
                 BlinkerStatus_t _mqttAutoStatue = AUTO_WLAN_CONNECTING;
@@ -2001,7 +2003,7 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
             #if !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
             bool beginPro() { return wlanRun(); }
             void begin(const char* _type);
@@ -2249,8 +2251,7 @@ void BlinkerApi::begin()
     #endif
 
     #if defined(BLINKER_OTA_VERSION_CODE) && (defined(BLINKER_MQTT) || \
-        defined(BLINKER_MQTT_AT) || defined(BLINKER_GATEWAY) || \
-        defined(BLINKER_MQTT_AUTO))
+        defined(BLINKER_MQTT_AT) || defined(BLINKER_MQTT_AUTO))
         if (strlen(BLINKER_OTA_VERSION_CODE) >= BLINKER_OTA_INFO_SIZE)
         {
             while(1)
@@ -2319,7 +2320,7 @@ void BlinkerApi::needInit()
 }
 
 #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
     void BlinkerApi::begin(const char* _type)
     {
         #if defined(BLINKER_NO_BUTTON)
@@ -2402,7 +2403,8 @@ void BlinkerApi::run()
     // #if defined(BLINKER_LOWPOWER_AIR202)
     //     ::delay(10);
     // #else
-        #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
+        #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_GATEWAY)
             #if defined(BLINKER_NO_BUTTON)
                 if (millis() > 5000 && !_isCheckPower)
                     {
@@ -2454,7 +2456,7 @@ void BlinkerApi::run()
 
                     #if defined(BLINKER_PRO)
                     BProto::begin(type());
-                    #elif defined(BLINKER_PRO_ESP)
+                    #elif defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
                     BProto::begin(key(), type());
                     #endif
                     _isConnBegin = true;
@@ -2770,7 +2772,7 @@ void BlinkerApi::run()
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
             ntpInit();
             checkTimer();
 
@@ -3379,14 +3381,14 @@ void BlinkerApi::run()
                     BProto::state = CONNECTED;
 
                     #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-                        defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO)
+                        defined(BLINKER_MQTT_AUTO)
                         _disconnectCount = 0;
                     #endif
                 }
                 else
                 {
                     #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-                        defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO)
+                        defined(BLINKER_MQTT_AUTO)
                         if (_isInit)
                         {
                             if (_disconnectCount == 0)
@@ -3688,7 +3690,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                 }
 
                 #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-                    defined(BLINKER_PRO_ESP)
+                    defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
                     checkRegister(root);
                 #endif
 
@@ -3758,7 +3760,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
             else
             {
                 #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-                    defined(BLINKER_PRO_ESP)
+                    defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
                     if (_parseFunc) {
                         if(_parseFunc(root)) {
                             BLINKER_LOG_ALL(BLINKER_F("_parseFunc(root) isParsed"));
@@ -3811,7 +3813,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                         #endif
 
                         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-                            defined(BLINKER_PRO_ESP)
+                            defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
                             if (_parseFunc) {
                                 if(_parseFunc(_array)) {
                                     // _fresh = true;
@@ -3838,7 +3840,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                 json_parse(root);
 
                 #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-                    defined(BLINKER_PRO_ESP)
+                    defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
                     if (_parseFunc) {
                         if(_parseFunc(root)) {
                             // _fresh = true;
@@ -11908,7 +11910,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 #endif
 
 #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
     #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
 
         uint16_t BlinkerApi::pressedTime()

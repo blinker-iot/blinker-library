@@ -43,7 +43,7 @@ extern "C" {
     typedef String (*blinker_callback_return_string_t)(void);
     #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
         defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-        defined(BLINKER_PRO_ESP)
+        defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
         typedef bool (*blinker_callback_with_json_arg_t)(const JsonObject & data);
     #endif
     typedef int (*blinker_callback_return_int_t)(void);

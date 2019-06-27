@@ -35,63 +35,133 @@
  * 
  * *****************************************************************/
 
+/* 
+ * BLINKER_PRO is use for professional device
+ * 
+ * Please make sure you have permission to modify professional device!
+ * Please read usermanual first! Thanks!
+ * https://doc.blinker.app/
+ * 
+ * Written by i3water for blinker.
+ * Learn more:https://blinker.app/
+ */
+
 #define BLINKER_GATEWAY
+#define BLINKER_BUTTON
+#define BLINKER_BUTTON_PIN D7
 
 #include <Blinker.h>
 
+char type[] = "Your Device Type";
 char auth[] = "Your Device Secret Key";
-char ssid[] = "Your WiFi network SSID or name";
-char pswd[] = "Your WiFi network WPA password or WEP key";
 
-int gatewayAvail()
+BlinkerButton Button1("btn-abc");
+BlinkerNumber Number1("num-abc");
+
+int counter = 0;
+
+void button1_callback(const String & state)
 {
-    /*
-    Your device communication codes here
-    eg, use Serial:
-
-    return Serial.available();
-    */
-    return true;
+    BLINKER_LOG("get button state: ", state);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
-String gatewayRead()
+/* 
+ * Add your command parse code in this function
+ * 
+ * When get a command and device not parsed this command, device will call this function
+ */
+bool dataParse(const JsonObject & data)
 {
-    /*
-    Your device communication codes here
-    eg, use Serial:
+    String getData;
 
-    return Serial.readStringUntil("\n");
-    */
-    String data = "";
-    return data;
+    serializeJson(data, getData);
+    
+    BLINKER_LOG("Get user command: ", getData);
+
+    // if you parsed this data, return TRUE.
+    // return true;
+    return false;
 }
 
-void gatewayPrint(const String & data)
+/* 
+ * Add your heartbeat message detail in this function
+ * 
+ * When get heartbeat command {"get": "state"}, device will call this function
+ * For example, you can print message back
+ * 
+ * Every 30s will get a heartbeat command from app 
+ */
+void heartbeat()
 {
-    /*
-    Your device communication codes here
-    eg, use Serial:
+    BLINKER_LOG("heartbeat!");
+}
 
-    return Serial.println(data);
-    */
-    BLINKER_LOG("Blinker gatewayPrint: ", data);
+#if defined(BLINKER_BUTTON)
+/* 
+ * Blinker provide a button parse function for user if you defined BLINKER_BUTTON
+ * 
+ * Blinker button can detect singal click/ double click/ long press
+ * 
+ * Blinker.tick() will run by default, use interrupt will be better
+ */
+void buttonTick()
+{
+    Blinker.tick();
+}
+
+/* 
+ * Add your code in this function
+ * 
+ * When button clicked, device will call this function
+ */
+void singalClick()
+{
+    BLINKER_LOG("Button clicked!");
+}
+
+/* 
+ * Add your code in this function
+ * 
+ * When button double clicked, device will call this function
+ */
+void doubleClick()
+{
+    BLINKER_LOG("Button double clicked!");
+}
+#endif
+
+void dataRead(const String & data)
+{
+    BLINKER_LOG("Blinker readString: ", data);
+
+    counter++;
+    Number1.print(counter);
 }
 
 void setup()
 {
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
-    
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, HIGH);
-    
-    Blinker.begin(auth, ssid, pswd);
+    BLINKER_DEBUG.debugAll();
 
-    Blinker.attachGatewayAvailable(gatewayAvail);
-    Blinker.attachGatewayRead(gatewayRead);
-    Blinker.attachGatewayPrint(gatewayPrint);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
+
+    Blinker.begin(auth, type);
+    Blinker.attachData(dataRead);
+    Blinker.attachParse(dataParse);
+    Blinker.attachHeartbeat(heartbeat);
+    Button1.attach(button1_callback);
+
+#if defined(BLINKER_BUTTON)
+    Blinker.attachClick(singalClick);
+    Blinker.attachDoubleClick(doubleClick);    
+    attachInterrupt(BLINKER_BUTTON_PIN, buttonTick, CHANGE);
+#endif
 }
 
-void loop() {
+void loop()
+{
     Blinker.run();
 }

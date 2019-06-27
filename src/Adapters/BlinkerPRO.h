@@ -505,7 +505,8 @@ void BlinkerPRO::subscribe()
                 
                 // {
                     // dataGet = String((char *)iotSub_PRO->lastread);
-                root.printTo(dataGet);
+                // root.printTo(dataGet);
+                serializeJson(root, dataGet);
                     
                     // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
                     //                     check is from bridge/share device, \

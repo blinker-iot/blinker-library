@@ -1055,7 +1055,8 @@ int BlinkerMQTTAT::mqttPrint(const String & data) {
 
         print_data.remove("toDeviceAT");
         String _data_;
-        print_data.printTo(_data_);
+        // print_data.printTo(_data_);
+        serializeJson(print_data, _data_);
 
         if (_dType == "AliGenie")
         {

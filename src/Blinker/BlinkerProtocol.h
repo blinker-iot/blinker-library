@@ -108,12 +108,13 @@ class BlinkerProtocol
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
             int deviceRegister(){ return conn->deviceRegister(); }
             int authCheck()     { return conn->authCheck(); }
             #if defined(BLINKER_PRO)
             void begin(const char* _deviceType) { conn->begin(_deviceType); }
-            #elif defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            #elif defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+                defined(BLINKER_GATEWAY)
             void begin(const char* _key, const char* _type) { conn->begin(_key, _type); }
             #endif
         #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
