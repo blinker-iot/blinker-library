@@ -3,7 +3,8 @@
 
 #define _TASK_PRIORITY // Support for layered scheduling priority
 #define _TASK_STD_FUNCTION
-#include <TaskSchedulerDeclarations.h>
+// #include <TaskSchedulerDeclarations.h>
+#include "modules/TaskScheduler/TaskSchedulerDeclarations.h"
 
 #ifdef ESP32
 #include <WiFi.h>
