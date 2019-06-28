@@ -117,6 +117,8 @@ class BlinkerWlan
 };
 
 bool BlinkerWlan::checkConfig() {
+    BLINKER_LOG_ALL(BLINKER_F("check wlan config"));
+    
     char ok[2 + 1];
     EEPROM.begin(BLINKER_EEP_SIZE);
     EEPROM.get(BLINKER_EEP_ADDR_WLAN_CHECK, ok);

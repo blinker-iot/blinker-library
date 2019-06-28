@@ -1,6 +1,8 @@
 #ifndef LIBRARIES_ESPASYNCTCP_SRC_ASYNC_CONFIG_H_
 #define LIBRARIES_ESPASYNCTCP_SRC_ASYNC_CONFIG_H_
 
+#if defined(ESP8266)
+
 #ifndef ASYNC_TCP_SSL_ENABLED
 #define ASYNC_TCP_SSL_ENABLED 0
 #endif
@@ -9,3 +11,4 @@
 #define TCP_SSL_DEBUG(...) //ets_printf(__VA_ARGS__)
 
 #endif /* LIBRARIES_ESPASYNCTCP_SRC_ASYNC_CONFIG_H_ */
+#endif

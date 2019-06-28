@@ -22,6 +22,7 @@
  * Compatibility for AxTLS with LWIP raw tcp mode (http://lwip.wikia.com/wiki/Raw/TCP)
  * Original Code and Inspiration: Slavey Karadzhov
  */
+#if defined(ESP8266)
 #include "async_config.h"
 #if ASYNC_TCP_SSL_ENABLED
 
@@ -584,4 +585,5 @@ int ax_port_read(int fd, uint8_t *data, int len) {
 
 void ax_wdt_feed() {}
 
+#endif
 #endif

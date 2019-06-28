@@ -18,7 +18,7 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
+#if defined(ESP8266)
 #include "Arduino.h"
 
 #include "ESPAsyncTCP.h"
@@ -1102,4 +1102,5 @@ err_t AsyncServer::_s_poll(void *arg, struct tcp_pcb *pcb){
 err_t AsyncServer::_s_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *pb, err_t err){
   return reinterpret_cast<AsyncServer*>(arg)->_recv(pcb, pb, err);
 }
+#endif
 #endif

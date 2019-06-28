@@ -18,7 +18,7 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
+#if defined(ESP8266)
 #include "AsyncPrinter.h"
 
 AsyncPrinter::AsyncPrinter()
@@ -185,3 +185,5 @@ void AsyncPrinter::_attachCallbacks(){
   _client->onDisconnect([](void *obj, AsyncClient* c){ ((AsyncPrinter*)(obj))->_on_close(); delete c; }, this);
   _client->onData([](void *obj, AsyncClient* c, void *data, size_t len){ ((AsyncPrinter*)(obj))->_onData(data, len); }, this);
 }
+
+#endif

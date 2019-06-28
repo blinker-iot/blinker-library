@@ -21,7 +21,7 @@
 
 #ifndef ASYNCTCP_H_
 #define ASYNCTCP_H_
-
+#if defined(ESP8266)
 #include "async_config.h"
 #include "IPAddress.h"
 #include <functional>
@@ -255,5 +255,5 @@ class AsyncServer {
 #endif
 };
 
-
+#endif
 #endif /* ASYNCTCP_H_ */
