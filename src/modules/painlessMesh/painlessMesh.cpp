@@ -1,3 +1,4 @@
+#if defined(ESP8266) || defined(ESP32)
 #include "painlessMesh.h"
 
 #include "lwip/init.h"
@@ -172,3 +173,4 @@ bool ICACHE_FLASH_ATTR painlessMesh::startDelayMeas(uint32_t nodeID) {
 void ICACHE_FLASH_ATTR painlessMesh::setDebugMsgTypes(uint16_t newTypes) {
   Log.setLogLevel(newTypes);
 }
+#endif

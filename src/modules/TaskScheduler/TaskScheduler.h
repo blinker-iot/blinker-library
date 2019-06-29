@@ -145,7 +145,7 @@
 //
 // v3.0.2:
 //    2018-11-11 - bug: default constructor is ambiguous when Status Request objects are enabled (github issue #65 & #68)
-
+#if defined(ESP8266) || defined(ESP32)
 #include <Arduino.h>
 #include "TaskSchedulerDeclarations.h"
 
@@ -1017,3 +1017,4 @@ bool Scheduler::execute() {
 
 
 #endif /* _TASKSCHEDULER_H_ */
+#endif

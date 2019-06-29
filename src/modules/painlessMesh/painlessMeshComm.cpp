@@ -5,6 +5,7 @@
 //  Created by Bill Gray on 7/26/16.
 //
 //
+#if defined(ESP8266) || defined(ESP32)
 #include "painlessMesh.h"
 
 extern LogClass Log;
@@ -36,4 +37,6 @@ painlessMesh::broadcastMessage(painlessmesh::protocol::Broadcast pkg,
   }
   return errCode;
 }
+
+#endif
 

@@ -5,7 +5,7 @@
 //  Created by Bill Gray on 7/26/16.
 //
 //
-
+#if defined(ESP8266) || defined(ESP32)
 #include "painlessMesh.h"
 
 //#include "lwip/priv/tcpip_priv.h"
@@ -510,3 +510,4 @@ void ICACHE_FLASH_ATTR painlessMesh::eventHandleInit() {
 #endif // ESP32
     return;
 }
+#endif

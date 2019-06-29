@@ -1,6 +1,8 @@
 #ifndef   _EASY_MESH_H_
 #define   _EASY_MESH_H_
 
+#if defined(ESP8266) || defined(ESP32)
+
 #define _TASK_PRIORITY // Support for layered scheduling priority
 #define _TASK_STD_FUNCTION
 
@@ -16,7 +18,8 @@
 using namespace std;
 #ifdef ESP32
 #include <WiFi.h>
-#include <AsyncTCP.h>
+// #include <AsyncTCP.h>
+#include "modules/AsyncTCP/AsyncTCP.h"
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 // #include <ESPAsyncTCP.h>
@@ -295,5 +298,7 @@ protected:
     friend void tcpSentCb(void * arg, AsyncClient * tpcb, size_t len, uint32_t time);
     friend void meshRecvCb(void * arg, AsyncClient *, void * data, size_t len);
 };
+
+#endif
 
 #endif //   _EASY_MESH_H_
