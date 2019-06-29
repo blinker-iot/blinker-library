@@ -1,7 +1,7 @@
 /* 
  * https://github.com/arkhipenko/TaskScheduler/tree/master/examples/Scheduler_example16_Multitab
  */
-
+#if defined(ESP8266) || defined(ESP32)
 //  #define _TASK_TIMECRITICAL      // Enable monitoring scheduling overruns
 //  #define _TASK_SLEEP_ON_IDLE_RUN // Enable 1 ms SLEEP_IDLE powerdowns between tasks if no callback methods were invoked during the pass 
 //  #define _TASK_STATUS_REQUEST    // Compile with support for StatusRequest functionality - triggering tasks on status change events in addition to time only
@@ -13,3 +13,4 @@
 //  #define _TASK_DEBUG             // Make all methods and variables public for debug purposes
 
 #include "modules/TaskScheduler/TaskScheduler.h"
+#endif

@@ -1,6 +1,6 @@
 // Cooperative multitasking library for Arduino
 // Copyright (c) 2015-2017 Anatoli Arkhipenko
-
+#if defined(ESP8266) || defined(ESP32)
 #include <stddef.h>
 #include <stdint.h>
 
@@ -307,3 +307,4 @@ class Scheduler {
 
 
 #endif /* _TASKSCHEDULERDECLARATIONS_H_ */
+#endif

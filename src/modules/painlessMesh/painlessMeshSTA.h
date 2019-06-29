@@ -1,6 +1,6 @@
 #ifndef   _PAINLESS_MESH_STA_H_
 #define   _PAINLESS_MESH_STA_H_
-
+#if defined(ESP8266) || defined(ESP32)
 #include <list>
 
 #define _TASK_PRIORITY // Support for layered scheduling priority
@@ -51,5 +51,7 @@ class StationScan {
 
     friend class painlessMesh;
 };
+
+#endif
 
 #endif

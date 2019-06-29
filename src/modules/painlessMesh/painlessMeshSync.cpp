@@ -1,3 +1,4 @@
+#if defined(ESP8266) || defined(ESP32)
 #include "painlessMesh.h"
 
 #include "time.h"
@@ -254,3 +255,4 @@ void ICACHE_FLASH_ATTR painlessMesh::syncSubConnections(uint32_t changedId) {
     }
     staticThis->stability /= 2;
 }
+#endif

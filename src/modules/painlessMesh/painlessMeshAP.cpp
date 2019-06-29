@@ -5,7 +5,7 @@
 //  Created by Bill Gray on 7/26/16.
 // 
 //
-
+#if defined(ESP8266) || defined(ESP32)
 #include <Arduino.h>
 
 #include "painlessMesh.h"
@@ -56,3 +56,5 @@ void ICACHE_FLASH_ATTR painlessMesh::tcpServerInit() {
   Log(STARTUP, "AP tcp server established on port %d\n", _meshPort);
   return;
 }
+
+#endif

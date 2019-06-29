@@ -26,6 +26,8 @@
 #ifndef LWIPR_COMPAT_H
 #define LWIPR_COMPAT_H
 
+#if defined(ESP8266)
+
 #include "async_config.h"
 
 #if ASYNC_TCP_SSL_ENABLED
@@ -96,3 +98,4 @@ bool tcp_ssl_has(struct tcp_pcb *tcp);
 #endif /* ASYNC_TCP_SSL_ENABLED */
 
 #endif /* LWIPR_COMPAT_H */
+#endif

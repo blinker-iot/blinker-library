@@ -1,6 +1,8 @@
 #ifndef   _PAINLESS_MESH_CONNECTION_H_
 #define   _PAINLESS_MESH_CONNECTION_H_
 
+#if defined(ESP8266) || defined(ESP32)
+
 #define _TASK_PRIORITY // Support for layered scheduling priority
 #define _TASK_STD_FUNCTION
 // #include <TaskSchedulerDeclarations.h>
@@ -56,4 +58,7 @@ class MeshConnection : public painlessmesh::layout::Neighbour {
         
         friend class painlessMesh;
 };
+
+#endif
+
 #endif

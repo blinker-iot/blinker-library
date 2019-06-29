@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  */
-
+#if defined(ESP8266)
 
 #include <Arduino.h>
 #include <debug.h>
@@ -539,3 +539,5 @@ size_t AsyncTCPbuffer::_handleRxBuffer(uint8_t *buf, size_t len) {
 
     return 0;
 }
+
+#endif

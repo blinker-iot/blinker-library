@@ -22,6 +22,8 @@
 #ifndef SYNCCLIENT_H_
 #define SYNCCLIENT_H_
 
+#if defined(ESP8266)
+
 #include "Client.h"
 #include "async_config.h"
 class cbuf;
@@ -79,4 +81,5 @@ class SyncClient: public Client {
     void flush();
 };
 
+#endif
 #endif /* SYNCCLIENT_H_ */
