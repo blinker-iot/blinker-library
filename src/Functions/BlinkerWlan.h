@@ -31,7 +31,9 @@
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerUtility.h"
 #include "Functions/BlinkerWlan.h"
+#ifndef ARDUINOJSON_VERSION_MAJOR
 #include "modules/ArduinoJson/ArduinoJson.h"
+#endif
 
 #if defined(ESP8266)
     #include <ESP8266WiFi.h>

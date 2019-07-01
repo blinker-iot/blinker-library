@@ -12,7 +12,9 @@
 #include <list>
 #define ARDUINOJSON_USE_LONG_LONG 1
 // #include <ArduinoJson.h>
+#ifndef ARDUINOJSON_VERSION_MAJOR
 #include "modules/ArduinoJson/ArduinoJson.h"
+#endif
 #include <functional>
 #include <memory>
 using namespace std;

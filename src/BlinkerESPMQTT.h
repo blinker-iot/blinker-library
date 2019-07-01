@@ -9,7 +9,9 @@
 
 #include "Adapters/BlinkerMQTT.h"
 #include "Blinker/BlinkerApi.h"
+#ifndef ARDUINOJSON_VERSION_MAJOR
 #include "modules/ArduinoJson/ArduinoJson.h"
+#endif
 
 #if defined(ESP8266)
     #include <ESP8266mDNS.h>

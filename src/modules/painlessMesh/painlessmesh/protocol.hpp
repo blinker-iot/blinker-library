@@ -7,8 +7,9 @@ namespace painlessmesh {
 namespace protocol {
 
 #ifndef ARDUINOJSON_VERSION_MAJOR
-// #include "ArduinoJson.h"
+// #include <ArduinoJson.h>
 #include "modules/ArduinoJson/ArduinoJson.h"
+// #include "modules/ArduinoJson/ArduinoJson/JsonObject.hpp"
 typedef std::string TSTRING;
 #endif
 
