@@ -678,7 +678,7 @@ void BlinkerMQTTAT::subscribe()
             // DynamicJsonBuffer jsonBuffer;
             // JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_MQTT_AT->lastread));
             DynamicJsonDocument jsonBuffer(1024);
-            DeserializationError error = deserializeJson(jsonBuffer, (char *)iotSub_MQTT_AT->lastread));
+            DeserializationError error = deserializeJson(jsonBuffer, (char *)iotSub_MQTT_AT->lastread);
             JsonObject root = jsonBuffer.as<JsonObject>();
 
             String _uuid = root["fromDevice"];
@@ -1612,7 +1612,7 @@ void BlinkerMQTTAT::sharers(const String & data)
     // DynamicJsonBuffer jsonBuffer;
     // JsonObject& root = jsonBuffer.parseObject(data);
     DynamicJsonDocument jsonBuffer(1024);
-    DeserializationError error = deserializeJson(jsonBuffer, arrayData);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
     JsonObject root = jsonBuffer.as<JsonObject>();
 
     // if (!root.success()) return;
