@@ -12,8 +12,9 @@
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
 #include "Functions/BlinkerHTTPAIR202.h"
-
+#ifndef ARDUINOJSON_VERSION_MAJOR
 #include "modules/ArduinoJson/ArduinoJson.h"
+#endif
 #include "Functions/BlinkerMQTTAIR202.h"
 
 #include <EEPROM.h>

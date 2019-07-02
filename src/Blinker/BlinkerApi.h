@@ -50,12 +50,16 @@
 
 #if defined(BLINKER_MQTT_AT)
     #include "Blinker/BlinkerATMaster.h"
+    #ifndef ARDUINOJSON_VERSION_MAJOR
     #include "modules/ArduinoJson/ArduinoJson.h"
+    #endif
 #endif
 
 #if defined (BLINKER_NB73_NBIOT)
     #include "Blinker/BlinkerATMaster.h"
+    #ifndef ARDUINOJSON_VERSION_MAJOR
     #include "modules/ArduinoJson/ArduinoJson.h"
+    #endif
 #endif
 
 #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \

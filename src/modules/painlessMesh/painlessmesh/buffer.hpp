@@ -3,11 +3,8 @@
 
 #include <list>
 
-#ifndef ARDUINOJSON_VERSION_MAJOR
-// #include "ArduinoJson.h"
-#include "modules/ArduinoJson/ArduinoJson.h"
-typedef std::string TSTRING;
-#endif
+#include "Arduino.h"
+#include "modules/painlessmesh/painlessmesh/configuration.hpp"
 
 #ifndef TCP_MSS
 #define TCP_MSS 1024
