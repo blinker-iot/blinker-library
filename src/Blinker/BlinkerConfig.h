@@ -79,7 +79,7 @@
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+    defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
     defined(BLINKER_MQTT_AUTO)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else
@@ -103,7 +103,7 @@
 #ifndef BLINKER_MAX_SEND_SIZE
     #if defined(ESP8266) || defined(ESP32)
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-            defined(BLINKER_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
+            defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
             #define BLINKER_MAX_SEND_SIZE       1024
         #else
@@ -123,7 +123,7 @@
 #ifndef BLINKER_MAX_SEND_BUFFER_SIZE
     #if defined(ESP8266) || defined(ESP32)
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-            defined(BLINKER_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
+            defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO)
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE - 128
         #else
@@ -565,7 +565,7 @@
         defined(BLINKER_MQTT_AUTO)
         #define BLINKER_MAX_BRIDGE_SIZE             4
     #elif defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-        defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
+        defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
         #define BLINKER_MAX_BRIDGE_SIZE             16
     #endif
 #endif
@@ -1334,7 +1334,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
-    defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
+    defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
@@ -1387,7 +1387,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-    defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+    defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
@@ -1540,7 +1540,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
-    defined(BLINKER_GATEWAY)
+    defined(BLINKER_WIFI_GATEWAY)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2
@@ -1613,7 +1613,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_PRO) || \
-    defined(BLINKER_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
+    defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP)
 
     #ifndef BLINKER_OTA_VERSION_CODE
