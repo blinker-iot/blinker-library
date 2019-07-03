@@ -3377,6 +3377,8 @@ void BlinkerApi::run()
 
         // BLINKER_LOG_ALL(BLINKER_F("conState: "), conState);
 
+        BProto::meshCheck();
+
         switch (BProto::state)
         {
             case CONNECTING :

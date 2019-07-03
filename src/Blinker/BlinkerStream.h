@@ -119,6 +119,10 @@ class BlinkerStream
             #endif
         #endif
 
+        #if defined(BLINKER_GATEWAY)
+            virtual void meshCheck() = 0;
+        #endif
+
         #if defined(BLINKER_SUBDEVICE)
             virtual void attachAvailable(blinker_callback_return_int_t func) = 0;
             virtual void attachRead(blinker_callback_return_string_t func) = 0;
