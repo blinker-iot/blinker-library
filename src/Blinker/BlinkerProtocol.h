@@ -69,7 +69,7 @@ class BlinkerProtocol
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
-            defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
+            defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP)
@@ -88,7 +88,7 @@ class BlinkerProtocol
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
@@ -108,13 +108,13 @@ class BlinkerProtocol
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
             int deviceRegister(){ return conn->deviceRegister(); }
             int authCheck()     { return conn->authCheck(); }
             #if defined(BLINKER_PRO)
             void begin(const char* _deviceType) { conn->begin(_deviceType); }
             #elif defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-                defined(BLINKER_GATEWAY)
+                defined(BLINKER_WIFI_GATEWAY)
             void begin(const char* _key, const char* _type) { conn->begin(_key, _type); }
             #endif
         #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
@@ -151,7 +151,7 @@ class BlinkerProtocol
             { if (isInit) conn->attachDisconnect(func); }
         #endif
 
-        #if defined(BLINKER_GATEWAY)
+        #if defined(BLINKER_WIFI_GATEWAY)
             void meshCheck() { conn->meshCheck(); }
         #endif
     // #endif
@@ -177,7 +177,7 @@ class BlinkerProtocol
     // #else
         int checkAvail();
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
             bool checkAliAvail()    { return conn->aligenieAvail(); }

@@ -34,7 +34,7 @@ class BlinkerStream
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
-            defined(BLINKER_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
+            defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP)
@@ -58,7 +58,7 @@ class BlinkerStream
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT) || defined(BLINKER_GATEWAY) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
@@ -100,13 +100,13 @@ class BlinkerStream
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_GATEWAY)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
             virtual int deviceRegister() = 0;
             virtual int authCheck() = 0;
             #if defined(BLINKER_PRO)
                 virtual void begin(const char* _deviceType) = 0;
             #elif defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-                defined(BLINKER_GATEWAY)
+                defined(BLINKER_WIFI_GATEWAY)
                 virtual void begin(const char* auth, const char* type) = 0;
             #endif
         #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
@@ -119,7 +119,7 @@ class BlinkerStream
             #endif
         #endif
 
-        #if defined(BLINKER_GATEWAY)
+        #if defined(BLINKER_WIFI_GATEWAY)
             virtual void meshCheck() = 0;
         #endif
 

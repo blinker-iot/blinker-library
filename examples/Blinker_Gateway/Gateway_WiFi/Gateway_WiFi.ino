@@ -46,7 +46,7 @@
  * Learn more:https://blinker.app/
  */
 
-#define BLINKER_GATEWAY
+#define BLINKER_WIFI_GATEWAY
 #define BLINKER_BUTTON
 #define BLINKER_BUTTON_PIN D7
 
