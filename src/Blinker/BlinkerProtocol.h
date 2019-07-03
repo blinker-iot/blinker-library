@@ -150,6 +150,10 @@ class BlinkerProtocol
             void attachSubDisconnect(blinker_callback_t func)
             { if (isInit) conn->attachDisconnect(func); }
         #endif
+
+        #if defined(BLINKER_GATEWAY)
+            void meshCheck() { conn->meshCheck(); }
+        #endif
     // #endif
     private :
 
