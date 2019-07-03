@@ -4,8 +4,8 @@
 #include "modules/painlessmesh/painlessmesh/configuration.hpp"
 
 #ifdef PAINLESSMESH_ENABLE_ARDUINO_WIFI
-#include "painlessMeshConnection.h"
-#include "painlessMeshSTA.h"
+#include "modules/painlessmesh/painlessMeshConnection.h"
+#include "modules/painlessmesh/painlessMeshSTA.h"
 
 #include "modules/painlessmesh/painlessmesh/logger.hpp"
 #include "modules/painlessmesh/painlessmesh/mesh.hpp"

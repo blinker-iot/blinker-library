@@ -6,11 +6,11 @@
 //
 //
 #if defined(ESP8266) || defined(ESP32)
-#include "painlessMeshConnection.h"
-#include "painlessMesh.h"
+#include "modules/painlessmesh/painlessMeshConnection.h"
+#include "modules/painlessmesh/painlessMesh.h"
 
-#include "painlessmesh/configuration.hpp"
-#include "painlessmesh/logger.hpp"
+#include "modules/painlessmesh/painlessmesh/configuration.hpp"
+#include "modules/painlessmesh/painlessmesh/logger.hpp"
 using namespace painlessmesh;
 
 //#include "lwip/priv/tcpip_priv.h"
