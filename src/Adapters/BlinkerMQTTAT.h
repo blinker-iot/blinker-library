@@ -21,8 +21,9 @@
 #include "modules/WebSockets/WebSocketsServer.h"
 #include "modules/mqtt/Adafruit_MQTT.h"
 #include "modules/mqtt/Adafruit_MQTT_Client.h"
+#ifndef ARDUINOJSON_VERSION_MAJOR
 #include "modules/ArduinoJson/ArduinoJson.h"
-
+#endif
 // #include "Adapters/BlinkerMQTTAT.h"
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"

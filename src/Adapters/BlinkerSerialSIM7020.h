@@ -13,8 +13,9 @@
 #include "Blinker/BlinkerUtility.h"
 #include "Functions/BlinkerSIM7020.h"
 #include "Functions/BlinkerHTTPSIM7020.h"
-
+#ifndef ARDUINOJSON_VERSION_MAJOR
 #include "modules/ArduinoJson/ArduinoJson.h"
+#endif
 #include "Functions/BlinkerMQTTSIM7020.h"
 
 char*       MQTT_HOST_NBIoT;

@@ -23,7 +23,9 @@
 
 #if defined(BLINKER_ARDUINOJSON) || defined(BLINKER_PRO) || \
     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+    #ifndef ARDUINOJSON_VERSION_MAJOR
     #include "modules/ArduinoJson/ArduinoJson.h"
+    #endif
 #endif
 
 extern "C" {

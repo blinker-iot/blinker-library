@@ -15,11 +15,14 @@
 
 #include <EEPROM.h>
 
+// #include "modules/painlessMesh/painlessMesh.h"
+
 #include "modules/WebSockets/WebSocketsServer.h"
 #include "modules/mqtt/Adafruit_MQTT.h"
 #include "modules/mqtt/Adafruit_MQTT_Client.h"
+#ifndef ARDUINOJSON_VERSION_MAJOR
 #include "modules/ArduinoJson/ArduinoJson.h"
-
+#endif
 // #include "Adapters/BlinkerGateway.h"
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
@@ -38,6 +41,25 @@ char*       MQTT_DEVICEID_PRO;
 char*       BLINKER_PUB_TOPIC_PRO;
 char*       BLINKER_SUB_TOPIC_PRO;
 uint16_t    MQTT_PORT_PRO;
+
+// painlessMesh  mesh;
+
+// #ifndef BLINKER_MESH_SSID
+//     #define BLINKER_MESH_SSID   "blinkerMesh"
+// #endif
+
+// #ifndef BLINKER_MESH_PSWD
+//     #define BLINKER_MESH_PSWD   "blinkerMesh"
+// #endif
+
+// #ifndef BLINKER_MESH_PORT
+//     #define BLINKER_MESH_PORT   5555
+// #endif
+
+// void receivedCallback(uint32_t from, String &msg)
+// {
+//     BLINKER_LOG_ALL("bridge: Received from: ", from, ", msg: ",msg);
+// }
 
 class BlinkerGateway : public BlinkerStream
 {
@@ -107,6 +129,8 @@ class BlinkerGateway : public BlinkerStream
         int checkDuerPrintSpan();
         int checkMIOTPrintSpan();
         int pubHello();
+        bool meshInit();
+        void meshCheck();
 
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
@@ -156,6 +180,7 @@ class BlinkerGateway : public BlinkerStream
         uint8_t     _reRegister_times = 0;
 
         bool        _isAuthKey = false;
+        bool        _isMeshInit = false;
 };
 
 // #if defined(ESP8266)
@@ -257,6 +282,8 @@ int BlinkerGateway::connect()
     int8_t ret;
 
     webSocket_PRO.loop();
+
+    meshCheck();
 
     if (!isMQTTinit) {
         return *isHandle;
@@ -2116,8 +2143,6 @@ int BlinkerGateway::connectServer() {
     #endif
     // connect();
 
-    
-
     return true;
 }
 
@@ -2315,6 +2340,42 @@ int BlinkerGateway::isJson(const String & data)
     }
 
     return true;
+}
+
+bool BlinkerGateway::meshInit()
+{
+    // if (WiFi.status() != WL_CONNECTED) return false;
+
+    // mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION );  // set before init() so that you can see startup messages
+    // // Channel set to 6. Make sure to use the same channel for your mesh and for you other
+    // // network (STATION_SSID)
+    // mesh.init(BLINKER_MESH_SSID, BLINKER_MESH_PSWD, BLINKER_MESH_PORT, WIFI_AP_STA, 6);
+    // // mesh.stationManual(STATION_SSID, STATION_PASSWORD, STATION_PORT, station_ip);
+    // // BLINKER_LOG_ALL("SSID: ", WiFi.SSID(), ", PWSD: ", WiFi.psk());
+    // mesh.stationManual(WiFi.SSID(), WiFi.psk(), BLINKER_MESH_PORT);
+    // // Bridge node, should (in most cases) be a root node. See [the wiki](https://gitlab.com/painlessMesh/painlessMesh/wikis/Possible-challenges-in-mesh-formation) for some background
+    // mesh.setRoot(true);
+    // // This and all other mesh should ideally now the mesh contains a root
+    // mesh.setContainsRoot(true);
+
+    // mesh.onReceive(&receivedCallback);
+
+    // WiFi.reconnect();
+
+    return true;
+}
+
+void BlinkerGateway::meshCheck()
+{
+    // if (!_isMeshInit)
+    // {
+    //     if (meshInit()) _isMeshInit = true;
+    // }
+    // else
+    // {
+    //     if (WiFi.status() != WL_CONNECTED) return;
+    //     mesh.update();
+    // }
 }
 
 #endif

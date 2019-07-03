@@ -20,7 +20,9 @@
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerUtility.h"
+#ifndef ARDUINOJSON_VERSION_MAJOR
 #include "modules/ArduinoJson/ArduinoJson.h"
+#endif
 
 class BlinkerAUTO
 {

@@ -13,8 +13,9 @@
 #include "Blinker/BlinkerUtility.h"
 #include "Functions/BlinkerAIR202.h"
 #include "Functions/BlinkerHTTPAIR202.h"
-
+#ifndef ARDUINOJSON_VERSION_MAJOR
 #include "modules/ArduinoJson/ArduinoJson.h"
+#endif
 
 class BlinkerAIR202LP : public BlinkerStream
 {

@@ -1,16 +1,30 @@
 #ifndef _PAINLESS_MESH_PROTOCOL_HPP_
 #define _PAINLESS_MESH_PROTOCOL_HPP_
 
+#include <cmath>
 #include <list>
 
-namespace painlessmesh {
-namespace protocol {
+#include "Arduino.h"
+#include "modules/painlessmesh/painlessmesh/configuration.hpp"
 
-#ifndef ARDUINOJSON_VERSION_MAJOR
-// #include "ArduinoJson.h"
-#include "modules/ArduinoJson/ArduinoJson.h"
-typedef std::string TSTRING;
-#endif
+namespace painlessmesh {
+
+namespace router {
+
+/** Different ways to route packages
+ *
+ * NEIGHBOUR packages are send to the neighbour and will be immediately handled
+ * there. The TIME_SYNC and NODE_SYNC packages are NEIGHBOUR. SINGLE messages
+ * are meant for a specific node. When another node receives this message, it
+ * will look in its routing information and send it on to the correct node,
+ * withouth processing the message in any other way. Only the targetted node
+ * will actually parse/handle this message (without sending it on). Finally,
+ * BROADCAST message are send to every node and processed/handled by every node.
+ * */
+enum Type { ROUTING_ERROR = -1, NEIGHBOUR, SINGLE, BROADCAST };
+}  // namespace router
+
+namespace protocol {
 
 enum Type {
   TIME_DELAY = 3,
@@ -29,12 +43,18 @@ enum TimeType {
   TIME_REPLY
 };
 
+class PackageInterface {
+ public:
+  virtual JsonObject addTo(JsonObject&& jsonObj) const = 0;
+  virtual size_t jsonObjectSize() const = 0;
+};
+
 /**
  * Single package
  *
  * Message send to a specific node
  */
-class Single {
+class Single : public PackageInterface {
  public:
   int type = SINGLE;
   uint32_t from;
@@ -54,7 +74,7 @@ class Single {
     msg = jsonObj["msg"].as<TSTRING>();
   }
 
-  JsonObject addTo(JsonObject&& jsonObj) {
+  JsonObject addTo(JsonObject&& jsonObj) const {
     jsonObj["type"] = type;
     jsonObj["dest"] = dest;
     jsonObj["from"] = from;
@@ -62,7 +82,7 @@ class Single {
     return jsonObj;
   }
 
-  size_t jsonObjectSize() {
+  size_t jsonObjectSize() const {
     return JSON_OBJECT_SIZE(4) + round(1.1 * msg.length());
   }
 };
@@ -76,18 +96,18 @@ class Broadcast : public Single {
 
   using Single::Single;
 
-  JsonObject addTo(JsonObject&& jsonObj) {
+  JsonObject addTo(JsonObject&& jsonObj) const {
     jsonObj = Single::addTo(std::move(jsonObj));
     jsonObj["type"] = type;
     return jsonObj;
   }
 
-  size_t jsonObjectSize() {
+  size_t jsonObjectSize() const {
     return JSON_OBJECT_SIZE(4) + round(1.1 * msg.length());
   }
 };
 
-class NodeTree {
+class NodeTree : public PackageInterface {
  public:
   uint32_t nodeId = 0;
   bool root = false;
@@ -115,7 +135,7 @@ class NodeTree {
     }
   }
 
-  JsonObject addTo(JsonObject&& jsonObj) {
+  JsonObject addTo(JsonObject&& jsonObj) const {
     jsonObj["nodeId"] = nodeId;
     if (root) jsonObj["root"] = root;
     if (subs.size() > 0) {
@@ -148,7 +168,7 @@ class NodeTree {
 
   TSTRING toString(bool pretty = false);
 
-  size_t jsonObjectSize() {
+  size_t jsonObjectSize() const {
     size_t base = 1;
     if (root) ++base;
     if (subs.size() > 0) ++base;
@@ -156,6 +176,12 @@ class NodeTree {
     if (subs.size() > 0) size += JSON_ARRAY_SIZE(subs.size());
     for (auto&& s : subs) size += s.jsonObjectSize();
     return size;
+  }
+
+  void clear() {
+    nodeId = 0;
+    subs.clear();
+    root = false;
   }
 };
 
@@ -183,7 +209,7 @@ class NodeSyncRequest : public NodeTree {
     from = jsonObj["from"].as<uint32_t>();
   }
 
-  JsonObject addTo(JsonObject&& jsonObj) {
+  JsonObject addTo(JsonObject&& jsonObj) const {
     jsonObj = NodeTree::addTo(std::move(jsonObj));
     jsonObj["type"] = type;
     jsonObj["dest"] = dest;
@@ -200,7 +226,7 @@ class NodeSyncRequest : public NodeTree {
     return !this->operator==(b);
   }
 
-  size_t jsonObjectSize() {
+  size_t jsonObjectSize() const {
     size_t base = 4;
     if (root) ++base;
     if (subs.size() > 0) ++base;
@@ -220,7 +246,7 @@ class NodeSyncReply : public NodeSyncRequest {
 
   using NodeSyncRequest::NodeSyncRequest;
 
-  JsonObject addTo(JsonObject&& jsonObj) {
+  JsonObject addTo(JsonObject&& jsonObj) const {
     jsonObj = NodeSyncRequest::addTo(std::move(jsonObj));
     jsonObj["type"] = type;
     return jsonObj;
@@ -237,7 +263,7 @@ struct time_sync_msg_t {
 /**
  * TimeSync package
  */
-class TimeSync {
+class TimeSync : public PackageInterface {
  public:
   int type = TIME_SYNC;
   uint32_t dest;
@@ -289,7 +315,7 @@ class TimeSync {
       msg.t2 = jsonObj["msg"]["t2"].as<uint32_t>();
   }
 
-  JsonObject addTo(JsonObject&& jsonObj) {
+  JsonObject addTo(JsonObject&& jsonObj) const {
     jsonObj["type"] = type;
     jsonObj["dest"] = dest;
     jsonObj["from"] = from;
@@ -322,7 +348,9 @@ class TimeSync {
     std::swap(from, dest);
   }
 
-  size_t jsonObjectSize() { return JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(4); }
+  size_t jsonObjectSize() const {
+    return JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(4);
+  }
 };
 
 /**
@@ -333,7 +361,7 @@ class TimeDelay : public TimeSync {
   int type = TIME_DELAY;
   using TimeSync::TimeSync;
 
-  JsonObject addTo(JsonObject&& jsonObj) {
+  JsonObject addTo(JsonObject&& jsonObj) const {
     jsonObj = TimeSync::addTo(std::move(jsonObj));
     jsonObj["type"] = type;
     return jsonObj;
@@ -401,6 +429,13 @@ class Variant {
     if (!error) jsonObj = jsonBuffer.as<JsonObject>();
   }
 #endif
+  /**
+   * Create Variant object from any package implementing PackageInterface
+   */
+  Variant(const PackageInterface* pkg) : jsonBuffer(pkg->jsonObjectSize()) {
+    jsonObj = jsonBuffer.to<JsonObject>();
+    jsonObj = pkg->addTo(std::move(jsonObj));
+  }
 
   /**
    * Create Variant object from a Single package
@@ -488,6 +523,35 @@ class Variant {
   template <typename T>
   inline T to() {
     return T(jsonObj);
+  }
+
+  /**
+   * Return package type
+   */
+  int type() { return jsonObj["type"].as<int>(); }
+
+  /**
+   * Package routing method
+   */
+  router::Type routing() {
+    if (jsonObj.containsKey("routing"))
+      return (router::Type)jsonObj["routing"].as<int>();
+
+    auto type = this->type();
+    if (type == SINGLE || type == TIME_DELAY) return router::SINGLE;
+    if (type == BROADCAST) return router::BROADCAST;
+    if (type == NODE_SYNC_REQUEST || type == NODE_SYNC_REPLY ||
+        type == TIME_SYNC)
+      return router::NEIGHBOUR;
+    return router::ROUTING_ERROR;
+  }
+
+  /**
+   * Destination node of the package
+   */
+  uint32_t dest() {
+    if (jsonObj.containsKey("dest")) return jsonObj["dest"].as<uint32_t>();
+    return 0;
   }
 
 #ifdef ARDUINOJSON_ENABLE_STD_STRING
