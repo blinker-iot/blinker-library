@@ -14,6 +14,10 @@
  * if use ESP8266 with Blinker.
  * https://github.com/esp8266/Arduino/releases
  * 
+ * Make sure installed 1.0.2 or later ESP32/Arduino package,
+ * if use ESP8266 with Blinker.
+ * https://github.com/espressif/arduino-esp32/releases
+ * 
  * Docs: https://doc.blinker.app/
  *       https://github.com/blinker-iot/blinker-doc/wiki
  * 
@@ -30,10 +34,15 @@
  * 请确保安装了 2.5.0 或更新的 ESP8266/Arduino 支持包。
  * https://github.com/esp8266/Arduino/releases
  * 
+ * 如果使用 ESP32 接入 Blinker,
+ * 请确保安装了 1.0.2 或更新的 ESP32/Arduino 支持包。
+ * https://github.com/espressif/arduino-esp32/releases
+ * 
  * 文档: https://doc.blinker.app/
  *       https://github.com/blinker-iot/blinker-doc/wiki
  * 
  * *****************************************************************/
+
 #define BLINKER_GPRS_AIR202
 
 #include <Blinker.h>
