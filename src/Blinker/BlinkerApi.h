@@ -425,7 +425,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
             defined(BLINKER_MQTT_AT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
 
             #if defined(BLINKER_ALIGENIE)
                 void attachAliGenieSetPowerState(blinker_callback_with_string_uint8_arg_t newFunction)
@@ -503,14 +504,14 @@ class BlinkerApi : public BlinkerProtocol
             #endif
         #endif
 
-        #if defined(BLINKER_WIFI_GATEWAY)
-            void attachGatewayAvailable(blinker_callback_return_int_t newFunction)
-            { _gatewayAvail = newFunction; }
-            void attachGatewayRead(blinker_callback_return_string_t newFunction)
-            { _gatewayRead = newFunction; }
-            void attachGatewayPrint(blinker_callback_with_string_arg_t newFunction)
-            { _gatewayPrint = newFunction; }
-        #endif
+        // #if defined(BLINKER_WIFI_GATEWAY)
+        //     void attachGatewayAvailable(blinker_callback_return_int_t newFunction)
+        //     { _gatewayAvail = newFunction; }
+        //     void attachGatewayRead(blinker_callback_return_string_t newFunction)
+        //     { _gatewayRead = newFunction; }
+        //     void attachGatewayPrint(blinker_callback_with_string_arg_t newFunction)
+        //     { _gatewayPrint = newFunction; }
+        // #endif
 
         // #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_MQTT_AT)
         //     void bridgePrint(char * bName, const String & data);
@@ -628,7 +629,8 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
             void attachParse(blinker_callback_with_json_arg_t newFunction)
             { _parseFunc = newFunction; }
             void attachClick(blinker_callback_t newFunction)
@@ -722,7 +724,7 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
-            defined(BLINKER_LOWPOWER_AIR202)
+            defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE)
             bool        _isInit = false;
             bool        _isAuto = false;
             bool        _isAutoInit = false;
@@ -769,14 +771,16 @@ class BlinkerApi : public BlinkerProtocol
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_LOWPOWER_AIR202))
+                !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_LOWPOWER_AIR202)) && \
+                !defined(BLINKER_WIFI_SUBDEVICE)
                 class BlinkerAUTO *             _AUTO[2];
                 BlinkerOTA                      _OTA;
             #endif
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
             bool            _isInitCheck = false;
             bool            _isConnBegin = false;
             bool            _getRegister = false;
@@ -852,7 +856,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
             blinker_callback_with_string_uint8_arg_t _AliGeniePowerStateFunc_m = NULL;
             blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
@@ -905,11 +910,11 @@ class BlinkerApi : public BlinkerProtocol
             #endif
         #endif
 
-        #if defined(BLINKER_WIFI_GATEWAY)
-            blinker_callback_return_int_t       _gatewayAvail = NULL;
-            blinker_callback_return_string_t    _gatewayRead = NULL;
-            blinker_callback_with_string_arg_t  _gatewayPrint = NULL;
-        #endif
+        // #if defined(BLINKER_WIFI_GATEWAY)
+        //     blinker_callback_return_int_t       _gatewayAvail = NULL;
+        //     blinker_callback_return_string_t    _gatewayRead = NULL;
+        //     blinker_callback_with_string_arg_t  _gatewayPrint = NULL;
+        // #endif
 
         #if defined(BLINKER_MQTT_AT) || defined(BLINKER_NB73_NBIOT)
             class BlinkerMasterAT *         _masterAT;
@@ -930,9 +935,9 @@ class BlinkerApi : public BlinkerProtocol
             void getVersion(const JsonObject& data);
             void setSwitch(const JsonObject& data);
 
-            #if defined(BLINKER_SUBDEVICE)
-                void broadCast(const JsonObject& data);
-            #endif
+            // #if defined(BLINKER_WIFI_SUBDEVICE)
+            //     void broadCast(const JsonObject& data);
+            // #endif
 
             #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                 defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
@@ -1966,7 +1971,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_MQTT_AT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
             void aliParse(const String & _data);
             void duerParse(const String & _data);
             void miotParse(const String & _data);
@@ -2007,15 +2013,18 @@ class BlinkerApi : public BlinkerProtocol
 
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
             #if !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
-            bool beginPro() { return wlanRun(); }
-            void begin(const char* _type);
-            void begin(const char* _key, const char* _type);
+                #if !defined(BLINKER_WIFI_SUBDEVICE)
+                bool beginPro() { return wlanRun(); }
+                BlinkerWlan Bwlan;
+                #endif
+                void begin(const char* _type);
+                void begin(const char* _key, const char* _type);
 
-            const char* _deviceType;
-            const char* _vipKey;
-            BlinkerWlan Bwlan;
+                const char* _deviceType;
+                const char* _vipKey;
             #endif
 
             blinker_callback_with_json_arg_t    _parseFunc = NULL;
@@ -2051,7 +2060,8 @@ class BlinkerApi : public BlinkerProtocol
             unsigned long _startTime; // will be set in state 1
             unsigned long _stopTime; // will be set in state 2
 
-            #if !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
+            #if !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_WIFI_SUBDEVICE)
             bool wlanRun()
             {
                 #if defined(BLINKER_BUTTON)
@@ -2168,11 +2178,11 @@ class BlinkerApi : public BlinkerProtocol
 
         uint32_t debug_time = 0;
 
-        #if defined(BLINKER_SUBDEVICE)
-            uint32_t    broadcastTime = 0;
-            bool        needBroadcast = false;
-            uint8_t     broadcastTimes = 0;
-        #endif
+        // #if defined(BLINKER_WIFI_SUBDEVICE)
+        //     uint32_t    broadcastTime = 0;
+        //     bool        needBroadcast = false;
+        //     uint8_t     broadcastTimes = 0;
+        // #endif
 
         #if defined(BLINKER_NB73_NBIOT)
             uint32_t    nb_run_time = 0;
@@ -2324,7 +2334,8 @@ void BlinkerApi::needInit()
 }
 
 #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY) || \
+    defined(BLINKER_WIFI_SUBDEVICE)
     void BlinkerApi::begin(const char* _type)
     {
         #if defined(BLINKER_NO_BUTTON)
@@ -2407,6 +2418,34 @@ void BlinkerApi::run()
     // #if defined(BLINKER_LOWPOWER_AIR202)
     //     ::delay(10);
     // #else
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            #if defined(BLINKER_NO_BUTTON)
+                if (millis() > 5000 && !_isCheckPower)
+                    {
+                        _isCheckPower = true;
+                        BLINKER_LOG_ALL("erase power count");
+
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
+                        EEPROM.commit();
+                        EEPROM.end();
+                }
+
+                if (_power_count > 3)
+                {
+                    if (millis() - _reset_countdown > 5000)
+                    {
+                        EEPROM.begin(BLINKER_EEP_SIZE);
+                        EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
+                        EEPROM.commit();
+                        EEPROM.end();
+
+                        reset();
+                    }
+                }
+            #endif
+        #endif
+
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_WIFI_GATEWAY)
             #if defined(BLINKER_NO_BUTTON)
@@ -3376,7 +3415,7 @@ void BlinkerApi::run()
         // }
 
         // BLINKER_LOG_ALL(BLINKER_F("conState: "), conState);
-        #if defined(BLINKER_WIFI_GATEWAY)
+        #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
         BProto::meshCheck();
         #endif
 
@@ -3737,9 +3776,9 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                 ahrs(Yaw, root);
                 gps(LONG, root);
 
-                #if defined(BLINKER_SUBDEVICE)
-                    broadCast(root);
-                #endif
+                // #if defined(BLINKER_WIFI_SUBDEVICE)
+                //     broadCast(root);
+                // #endif
             #else
                 BLINKER_LOG_ALL(BLINKER_F("ndef BLINKER_ARDUINOJSON"));
 
@@ -6337,20 +6376,20 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
     }
 
-    #if defined(BLINKER_SUBDEVICE)
-        void BlinkerApi::broadCast(const JsonObject& data)
-        {
-            if (data.containsKey(BLINKER_CMD_HELLO))
-            {
-                if (data[BLINKER_CMD_HELLO] == BLINKER_CMD_WHOIS)
-                {
-                    BLINKER_LOG_ALL(BLINKER_F("get device fresh broadCast"));
-                    BLINKER_LOG_ALL(BLINKER_F("broadCast isParsed"));
-                    _fresh = true;
-                }
-            }
-        }
-    #endif
+    // #if defined(BLINKER_WIFI_SUBDEVICE)
+    //     void BlinkerApi::broadCast(const JsonObject& data)
+    //     {
+    //         if (data.containsKey(BLINKER_CMD_HELLO))
+    //         {
+    //             if (data[BLINKER_CMD_HELLO] == BLINKER_CMD_WHOIS)
+    //             {
+    //                 BLINKER_LOG_ALL(BLINKER_F("get device fresh broadCast"));
+    //                 BLINKER_LOG_ALL(BLINKER_F("broadCast isParsed"));
+    //                 _fresh = true;
+    //             }
+    //         }
+    //     }
+    // #endif
 
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
         defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
@@ -9950,7 +9989,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+    defined(BLINKER_WIFI_SUBDEVICE)
 
     void BlinkerApi::aliParse(const String & _data)
     {
@@ -11917,7 +11957,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 #endif
 
 #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY) || \
+    defined(BLINKER_WIFI_SUBDEVICE)
     #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
 
         uint16_t BlinkerApi::pressedTime()
@@ -11969,16 +12010,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         // _fresh = true;
     }
 
-
     void BlinkerApi::setType(const char* _type)
     {
         _deviceType = _type;
-
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
         Bwlan.setType(_type);
-
+        #endif
         BLINKER_LOG_ALL(BLINKER_F("API deviceType: "), _type);
     }
-
 
     void BlinkerApi::reset()
     {
@@ -11990,8 +12029,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         EEPROM.put(BLINKER_EEP_ADDR_AUUID, _uuid);
         EEPROM.commit();
         EEPROM.end();
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
         Bwlan.deleteConfig();
         Bwlan.reset();
+        #endif
         ESP.restart();
     }
 

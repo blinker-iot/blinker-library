@@ -37,7 +37,7 @@ class BlinkerStream
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE)
                 virtual int aliPrint(const String & data) = 0;
                 virtual int duerPrint(const String & data) = 0;
                 #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
@@ -61,7 +61,8 @@ class BlinkerStream
             defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
             virtual char * deviceName() = 0;
             virtual char * authKey() = 0;
             virtual int init() = 0;           
@@ -100,13 +101,14 @@ class BlinkerStream
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
             virtual int deviceRegister() = 0;
             virtual int authCheck() = 0;
             #if defined(BLINKER_PRO)
                 virtual void begin(const char* _deviceType) = 0;
             #elif defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-                defined(BLINKER_WIFI_GATEWAY)
+                defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
                 virtual void begin(const char* auth, const char* type) = 0;
             #endif
         #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
@@ -119,19 +121,19 @@ class BlinkerStream
             #endif
         #endif
 
-        #if defined(BLINKER_WIFI_GATEWAY)
+        #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
             virtual void meshCheck() = 0;
         #endif
 
-        #if defined(BLINKER_SUBDEVICE)
-            virtual void attachAvailable(blinker_callback_return_int_t func) = 0;
-            virtual void attachRead(blinker_callback_return_string_t func) = 0;
-            virtual void attachPrint(blinker_callback_with_string_arg_t func) = 0;
-            virtual void attachBegin(blinker_callback_t func) = 0;
-            virtual void attachConnect(blinker_callback_return_int_t func) = 0;
-            virtual void attachConnected(blinker_callback_return_int_t func) = 0;
-            virtual void attachDisconnect(blinker_callback_t func) = 0;
-        #endif
+        // #if defined(BLINKER_WIFI_SUBDEVICE)
+        //     virtual void attachAvailable(blinker_callback_return_int_t func) = 0;
+        //     virtual void attachRead(blinker_callback_return_string_t func) = 0;
+        //     virtual void attachPrint(blinker_callback_with_string_arg_t func) = 0;
+        //     virtual void attachBegin(blinker_callback_t func) = 0;
+        //     virtual void attachConnect(blinker_callback_return_int_t func) = 0;
+        //     virtual void attachConnected(blinker_callback_return_int_t func) = 0;
+        //     virtual void attachDisconnect(blinker_callback_t func) = 0;
+        // #endif
     // #endif
 };
 
