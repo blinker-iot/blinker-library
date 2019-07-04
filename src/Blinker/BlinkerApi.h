@@ -3376,8 +3376,9 @@ void BlinkerApi::run()
         // }
 
         // BLINKER_LOG_ALL(BLINKER_F("conState: "), conState);
-
+        #if defined(BLINKER_WIFI_GATEWAY)
         BProto::meshCheck();
+        #endif
 
         switch (BProto::state)
         {
