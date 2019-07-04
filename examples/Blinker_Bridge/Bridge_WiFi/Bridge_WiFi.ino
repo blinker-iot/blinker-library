@@ -15,7 +15,7 @@
  * https://github.com/esp8266/Arduino/releases
  * 
  * Make sure installed 1.0.2 or later ESP32/Arduino package,
- * if use ESP8266 with Blinker.
+ * if use ESP32 with Blinker.
  * https://github.com/espressif/arduino-esp32/releases
  * 
  * Docs: https://doc.blinker.app/
