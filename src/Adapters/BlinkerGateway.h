@@ -1,5 +1,5 @@
-#ifndef BLINKER_PRO_ESP_H
-#define BLINKER_PRO_ESP_H
+#ifndef BLINKER_GATEWAY_H
+#define BLINKER_GATEWAY_H
 
 #if defined(ESP8266) || defined(ESP32)
 
@@ -56,9 +56,15 @@ painlessMesh  mesh;
     #define BLINKER_MESH_PORT   5555
 #endif
 
-void receivedCallback(uint32_t from, String &msg)
+void _receivedCallback(uint32_t from, String &msg)
 {
     BLINKER_LOG_ALL("bridge: Received from: ", from, ", msg: ",msg);
+}
+
+void _newConnectionCallback(uint32_t nodeId)
+{
+    BLINKER_LOG_ALL("--> startHere: New Connection, nodeId = ", nodeId);
+    BLINKER_LOG_ALL("--> startHere: New Connection, ", mesh.subConnectionJson(true));
 }
 
 class BlinkerGateway : public BlinkerStream
@@ -2358,7 +2364,8 @@ bool BlinkerGateway::meshInit()
     // This and all other mesh should ideally now the mesh contains a root
     mesh.setContainsRoot(true);
 
-    mesh.onReceive(&receivedCallback);
+    mesh.onReceive(&_receivedCallback);
+    mesh.onNewConnection(&_newConnectionCallback);
 
     WiFi.reconnect();
 
