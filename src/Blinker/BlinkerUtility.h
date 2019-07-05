@@ -67,20 +67,60 @@ extern "C" {
     defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
     defined(BLINKER_WIFI_SUBDEVICE)
-class BlinkerSharer
-{
-    public :
-        BlinkerSharer(const String & _uuid)
+    class BlinkerSharer
+    {
+        public :
+            BlinkerSharer(const String & _uuid)
+            {
+                name = (char*)malloc((_uuid.length()+1)*sizeof(char));
+                strcpy(name, _uuid.c_str());
+            }
+
+            char * uuid() { return name; }
+
+        private :
+            char * name;
+    };
+
+    #if defined(BLINKER_WIFI_SUBDEVICE)
+        class BlinkerMeshSub
         {
-            name = (char*)malloc((_uuid.length()+1)*sizeof(char));
-            strcpy(name, _uuid.c_str());
-        }
+            public :
+                BlinkerMeshSub(uint32_t nodeId)
+                {
+                    _id = nodeId;
+                    _state = false;
+                    _authState = false;
+                }
 
-        char * uuid() { return name; }
+                void auth(const String & name, const String & key, 
+                    const String & type)
+                {
+                    _name = (char*)malloc((name.length()+1)*sizeof(char));
+                    strcpy(_name, name.c_str());
+                    _key = (char*)malloc((key.length()+1)*sizeof(char));
+                    strcpy(_key, key.c_str());
+                    _type = (char*)malloc((type.length()+1)*sizeof(char));
+                    strcpy(_type, type.c_str());
+                }
 
-    private :
-        char * name;
-};
+                void fresh(bool subState) { _state = subState; }
+
+                void freshAuth(bool authState) { _authState = authState; }
+
+                bool state() { return _state; }
+
+                bool isAuth() { return _authState; }
+
+            private :
+                uint32_t    _id;
+                bool        _state;
+                bool        _authState;
+                char        *_name;
+                char        *_key;
+                char        *_type;
+        };
+    #endif
 #endif
 
 template<class T>
