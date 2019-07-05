@@ -56,15 +56,55 @@ painlessMesh  mesh;
     #define BLINKER_MESH_PORT   5555
 #endif
 
+char*       meshBuf;
+bool        isFresh_mesh = false;
+bool        isAvail_mesh = false;
+uint32_t    msgFrom;
+
+BlinkerMeshSub  *_subDevices[BLINKER_MAX_SUB_DEVICE_NUM];
+uint8_t         _subCount = 0;
+bool            _newSub = false;
+
 void _receivedCallback(uint32_t from, String &msg)
 {
     BLINKER_LOG_ALL("bridge: Received from: ", from, ", msg: ",msg);
+    msgFrom = from;
+
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, msg);
+    JsonObject root = jsonBuffer.as<JsonObject>();
+
+    if (error) 
+    {
+        BLINKER_ERR_LOG_ALL("msg not Json!");
+        return;
+    }
+
+    if (root.containsKey(BLINKER_CMD_GATE))
+    {
+        BLINKER_LOG_ALL("gate data");
+        
+        String _data = root[BLINKER_CMD_GATE];
+        meshBuf = (char*)malloc((_data.length()+1)*sizeof(char));
+        strcpy(meshBuf, _data.c_str());
+
+        isAvail_mesh = true;
+    }
 }
 
 void _newConnectionCallback(uint32_t nodeId)
 {
     BLINKER_LOG_ALL("--> startHere: New Connection, nodeId = ", nodeId);
     BLINKER_LOG_ALL("--> startHere: New Connection, ", mesh.subConnectionJson(true));
+
+    _subDevices[_subCount] = new BlinkerMeshSub(nodeId);
+    _subCount++;
+    _newSub = true;
+}
+
+void _changedConnectionCallback()
+{
+    BLINKER_LOG_ALL("Changed connections");
 }
 
 class BlinkerGateway : public BlinkerStream
@@ -137,6 +177,8 @@ class BlinkerGateway : public BlinkerStream
         int pubHello();
         bool meshInit();
         void meshCheck();
+        void sendBroadcast(String & msg);
+        void sendSingle(uint32_t toId, String & msg);
 
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
@@ -2366,6 +2408,7 @@ bool BlinkerGateway::meshInit()
 
     mesh.onReceive(&_receivedCallback);
     mesh.onNewConnection(&_newConnectionCallback);
+    mesh.onChangedConnections(&_changedConnectionCallback);
 
     WiFi.reconnect();
 
@@ -2382,7 +2425,71 @@ void BlinkerGateway::meshCheck()
     {
         if (WiFi.status() != WL_CONNECTED) return;
         mesh.update();
+
+        if (isAvail_mesh)
+        {
+            BLINKER_LOG_ALL("new mesh data: ", meshBuf);
+
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, meshBuf);
+            JsonObject root = jsonBuffer.as<JsonObject>();
+
+            if (error) 
+            {
+                BLINKER_ERR_LOG_ALL("msg not Json!");
+                return;
+            }
+
+            if (root.containsKey(BLINKER_CMD_DEVICEINFO))
+            {
+                for (uint8_t num = 0; num < _subCount; num++)
+                {
+                    if (_subDevices[num]->id() == msgFrom)
+                    {
+                        _subDevices[num]->auth(root[BLINKER_CMD_DEVICEINFO]["name"],
+                            root[BLINKER_CMD_DEVICEINFO]["key"],
+                            root[BLINKER_CMD_DEVICEINFO]["type"]);
+                    }
+                }
+            }
+
+            isAvail_mesh = false;
+            free(meshBuf);
+        }
+
+        if (_newSub)
+        {
+            // BLINKER_LOG_ALL("{\"hello\":\"whois\"}");
+            // mesh.sendBroadcast("{\"hello\":\"whois\"}");
+            _newSub = false;
+            for (uint8_t num = 0; num < _subCount; num++)
+            {
+                if (_subDevices[num]->isNew())
+                {
+                    sendSingle(_subDevices[num]->id(), "{\"" + STRING_format(BLINKER_CMD_GATE) + "\":" + BLINKER_CMD_WHOIS + "}");
+                }
+            }
+        }
     }
+}
+
+void BlinkerGateway::sendBroadcast(String & msg)
+{
+    mesh.sendBroadcast(msg);
+}
+
+void BlinkerGateway::sendSingle(uint32_t toId, String & msg)
+{
+    BLINKER_LOG_ALL("to id: ", toId, ", msg: ", msg);
+    if (mesh.isConnected(toId))
+    {
+        mesh.sendSingle(toId, msg);
+    }
+    else
+    {
+        BLINKER_ERR_LOG("device disconnected");
+    }
+    
 }
 
 #endif

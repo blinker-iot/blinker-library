@@ -82,40 +82,45 @@ extern "C" {
             char * name;
     };
 
-    #if defined(BLINKER_WIFI_SUBDEVICE)
+    #if defined(BLINKER_WIFI_GATEWAY)
         class BlinkerMeshSub
         {
             public :
                 BlinkerMeshSub(uint32_t nodeId)
                 {
                     _id = nodeId;
-                    _state = false;
                     _authState = false;
+                    _new = true;
                 }
+
+                bool isNew() { return _new; }
 
                 void auth(const String & name, const String & key, 
                     const String & type)
                 {
+                    _new = false;
                     _name = (char*)malloc((name.length()+1)*sizeof(char));
                     strcpy(_name, name.c_str());
                     _key = (char*)malloc((key.length()+1)*sizeof(char));
                     strcpy(_key, key.c_str());
                     _type = (char*)malloc((type.length()+1)*sizeof(char));
                     strcpy(_type, type.c_str());
-                }
 
-                void fresh(bool subState) { _state = subState; }
+                    BLINKER_LOG_ALL("auth msg, name: ", _name, 
+                                    ", key: ", _key,
+                                    ", type:", _type);
+                }
 
                 void freshAuth(bool authState) { _authState = authState; }
 
-                bool state() { return _state; }
-
                 bool isAuth() { return _authState; }
+
+                uint32_t id() { return _id; }
 
             private :
                 uint32_t    _id;
-                bool        _state;
                 bool        _authState;
+                bool        _new;
                 char        *_name;
                 char        *_key;
                 char        *_type;
