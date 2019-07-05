@@ -498,9 +498,15 @@
 
 #define BLINKER_CMD_HELLO               "hello"
 
-#define BLINKER_CMD_WHOIS               "whois"
+// #define BLINKER_CMD_WHOIS               "whois"
 
 #define BLINKER_CMD_AT                  "AT"
+
+#define BLINKER_CMD_GATE                "gate"
+
+#define BLINKER_CMD_DEVICEINFO          "dInf"
+
+#define BLINKER_CMD_WHOIS               "{\"hello\":\"whois\"}"
 
 #define BLINKER_CMD_MODE_READING_NUMBER         0
 
@@ -546,15 +552,17 @@
 
 #define BLINKER_ONE_DAY_TIME                    86400UL
 
-#define BLINKER_CMD_TAB_0                     16 // 0x10000
+#define BLINKER_CMD_TAB_0                       16 // 0x10000
 
-#define BLINKER_CMD_TAB_1                     8  // 0x01000
+#define BLINKER_CMD_TAB_1                       8  // 0x01000
 
-#define BLINKER_CMD_TAB_2                     4  // 0x00100
+#define BLINKER_CMD_TAB_2                       4  // 0x00100
 
-#define BLINKER_CMD_TAB_3                     2  // 0x00010
+#define BLINKER_CMD_TAB_3                       2  // 0x00010
 
-#define BLINKER_CMD_TAB_4                     1  // 0x00001
+#define BLINKER_CMD_TAB_4                       1  // 0x00001
+
+#define BLINKER_MAX_SUB_DEVICE_NUM              36
 
 // #define BLINKER_NTP_SERVER_1                    "ntp1.aliyun.com"
 

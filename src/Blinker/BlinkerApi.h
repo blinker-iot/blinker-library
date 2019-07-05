@@ -2444,6 +2444,12 @@ void BlinkerApi::run()
                     }
                 }
             #endif
+
+            if (!_isConnBegin)
+            {
+                BProto::begin(key(), type());
+                _isConnBegin = true;
+            }
         #endif
 
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP) || \
