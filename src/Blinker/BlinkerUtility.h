@@ -111,6 +111,17 @@ extern "C" {
                                     ", type:", _type);
                 }
 
+                void register(const String & key, const String & name)
+                {
+                    _auth = (char*)malloc((key.length()+1)*sizeof(char));
+                    strcpy(_auth, key.c_str());
+                    _dId = (char*)malloc((name.length()+1)*sizeof(char));
+                    strcpy(_dId, name.c_str());
+
+                    BLINKER_LOG_ALL("register msg, authKey: ", _auth, 
+                                    ", deviceId: ", _dId);
+                }
+
                 void freshAuth(bool authState) { _authState = authState; }
 
                 bool isAuth() { return _authState; }
@@ -124,6 +135,8 @@ extern "C" {
                 char        *_name;
                 char        *_key;
                 char        *_type;
+                char        *_auth;
+                char        *_dId;
         };
     #endif
 #endif

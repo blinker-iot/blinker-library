@@ -65,6 +65,18 @@ BlinkerMeshSub  *_subDevices[BLINKER_MAX_SUB_DEVICE_NUM];
 uint8_t         _subCount = 0;
 bool            _newSub = false;
 
+bool _checkIdAlive(uint32_t nodeId)
+{
+    for (uint8_t num = 0; num < _subCount; num++)
+    {
+        if (_subDevices[num]->id() == nodeId)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void _receivedCallback(uint32_t from, String &msg)
 {
     BLINKER_LOG_ALL("bridge: Received from: ", from, ", msg: ",msg);
@@ -97,9 +109,12 @@ void _newConnectionCallback(uint32_t nodeId)
     BLINKER_LOG_ALL("--> startHere: New Connection, nodeId = ", nodeId);
     BLINKER_LOG_ALL("--> startHere: New Connection, ", mesh.subConnectionJson(true));
 
-    _subDevices[_subCount] = new BlinkerMeshSub(nodeId);
-    _subCount++;
-    _newSub = true;
+    if (!_checkIdAlive(nodeId))
+    {
+        _subDevices[_subCount] = new BlinkerMeshSub(nodeId);
+        _subCount++;
+        _newSub = true;
+    }
 }
 
 void _changedConnectionCallback()
