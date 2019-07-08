@@ -122,6 +122,8 @@
 
 #elif defined(BLINKER_WIFI_GATEWAY)
 
+    #include "BlinkerAssistant.h"
+
     #if defined(ESP8266) || defined(ESP32)
         #include "BlinkerESPGateway.h"
 
@@ -131,6 +133,8 @@
     #endif
 
 #elif defined(BLINKER_WIFI_SUBDEVICE)
+
+    #include "BlinkerAssistant.h"
 
     #include "BlinkerESPSubDevice.h"
 

@@ -50,8 +50,6 @@
 #define BLINKER_BUTTON
 #define BLINKER_BUTTON_PIN D7
 
-#include <Blinker.h>
-
 char type[] = "Your Device Type";
 char auth[] = "Your Device Secret Key";
 

@@ -134,10 +134,12 @@ class BlinkerSubDevice : public BlinkerStream
         int checkDuerPrintSpan();
         int checkMIOTPrintSpan();
         int pubHello();
+        uint16_t vatFormat();
         bool meshInit();
         void meshCheck();
         void sendBroadcast(String & msg);
-        void sendSingle(uint32_t toId, String & msg);
+        bool sendSingle(uint32_t toId, String msg);
+        String gateFormat(const String & msg);
     
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
@@ -457,6 +459,50 @@ int BlinkerSubDevice::isJson(const String & data)
     return true;
 }
 
+uint16_t BlinkerSubDevice::vatFormat()
+{
+    uint16_t vstNum = 0;
+    #if defined(BLINKER_ALIGENIE_LIGHT)
+        vstNum |= 0x01 << 0;
+    #elif defined(BLINKER_ALIGENIE_OUTLET)
+        vstNum |= 0x01 << 1;
+    #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+        vstNum |= 0x01 << 2;
+    #elif defined(BLINKER_ALIGENIE_SENSOR)
+        vstNum |= 0x01 << 3;
+    #elif defined(BLINKER_ALIGENIE_TYPE)
+        vstNum |= 0x01 << 0;
+    #endif
+
+    #if defined(BLINKER_DUEROS_LIGHT)
+        vstNum |= 0x01 << 0;
+    #elif defined(BLINKER_DUEROS_OUTLET)
+        vstNum |= 0x01 << 1;
+    #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+        vstNum |= 0x01 << 2;
+    #elif defined(BLINKER_DUEROS_SENSOR)
+        vstNum |= 0x01 << 3;
+    #elif defined(BLINKER_DUEROS_TYPE)
+        vstNum |= 0x01 << 0;
+    #endif
+
+    #if defined(BLINKER_MIOT_LIGHT)
+        vstNum |= 0x01 << 0;
+    #elif defined(BLINKER_MIOT_OUTLET)
+        vstNum |= 0x01 << 1;
+    #elif defined(BLINKER_MIOT_MULTI_OUTLET)
+        vstNum |= 0x01 << 2;
+    #elif defined(BLINKER_MIOT_SENSOR)
+        vstNum |= 0x01 << 3;
+    #elif defined(BLINKER_MIOT_TYPE)
+        vstNum |= 0x01 << 0;
+    #endif
+
+    BLINKER_LOG_ALL("vstNum: ", vstNum);
+
+    return vstNum;
+}
+
 bool BlinkerSubDevice::meshInit()
 {
     // if (WiFi.status() != WL_CONNECTED) return false;
@@ -497,14 +543,28 @@ void BlinkerSubDevice::meshCheck()
             BLINKER_LOG_ALL("new mesh data: ", meshBuf);
             if (strcmp(meshBuf, BLINKER_CMD_WHOIS) == 0)
             {
-                String data_to = "{\"" + STRING_format(BLINKER_CMD_GATE) + \
-                    "\":{\"" + BLINKER_CMD_DEVICEINFO + \
+                // String data_to = gateFormat("{\"" + BLINKER_CMD_DEVICEINFO + \
+                //     "\":{" + \
+                //     "\"name\":\"" + macDeviceName() + "\"," + \
+                //     "\"key\":\"" + _vipKey + "\"," + \
+                //     "\"type\":\"" + _deviceType + "\"" + \
+                //     "}}");
+                
+                // "{\"" + STRING_format(BLINKER_CMD_GATE) + \
+                //     "\":{\"" + BLINKER_CMD_DEVICEINFO + \
+                //     "\":{" + \
+                //     "\"name\":\"" + macDeviceName() + "\"," + \
+                //     "\"key\":\"" + _vipKey + "\"," + \
+                //     "\"type\":\"" + _deviceType + "\"" + \
+                //     "}}}";
+                sendSingle(msgFrom, gateFormat(
+                    "{\"" + STRING_format(BLINKER_CMD_DEVICEINFO) + \
                     "\":{" + \
                     "\"name\":\"" + macDeviceName() + "\"," + \
                     "\"key\":\"" + _vipKey + "\"," + \
-                    "\"type\":\"" + _deviceType + "\"" + \
-                    "}}}";
-                sendSingle(msgFrom, data_to);
+                    "\"type\":\"" + _deviceType + "\"," + \
+                    "\"vas\":" + STRING_format(vatFormat()) + \
+                    "}}"));
             }
 
             isAvail_mesh = false;
@@ -518,10 +578,23 @@ void BlinkerSubDevice::sendBroadcast(String & msg)
     mesh.sendBroadcast(msg);
 }
 
-void BlinkerSubDevice::sendSingle(uint32_t toId, String & msg)
+bool BlinkerSubDevice::sendSingle(uint32_t toId, String msg)
 {
     BLINKER_LOG_ALL("to id: ", toId, ", msg: ", msg);
-    mesh.sendSingle(toId, msg);
+    if (mesh.isConnected(toId))
+    {
+        return mesh.sendSingle(toId, msg);
+    }
+    else
+    {
+        BLINKER_ERR_LOG("device disconnected");
+        return false;
+    }
+}
+
+String BlinkerSubDevice::gateFormat(const String & msg)
+{
+    return "{\"" + STRING_format(BLINKER_CMD_GATE) + "\":" + msg + "}";
 }
 
 #endif

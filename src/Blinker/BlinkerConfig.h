@@ -508,6 +508,8 @@
 
 #define BLINKER_CMD_WHOIS               "{\"hello\":\"whois\"}"
 
+#define BLINKER_MESH_CHECK_FREQ         60000UL
+
 #define BLINKER_CMD_MODE_READING_NUMBER         0
 
 #define BLINKER_CMD_MODE_MOVIE_NUMBER           1

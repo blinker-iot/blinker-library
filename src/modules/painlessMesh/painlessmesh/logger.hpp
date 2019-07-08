@@ -26,7 +26,11 @@ class LogClass {
   void setLogLevel(uint16_t newTypes) {
     // set the different kinds of debug messages you want to generate.
     types = newTypes;
-    Serial.print(F("\nsetLogLevel:"));
+    Serial.print(F("["));
+    Serial.print(millis());
+    Serial.print(F("] "));
+
+    Serial.print(F("setLogLevel:"));
     if (types & ERROR) {
       Serial.print(F(" ERROR |"));
     }
@@ -72,6 +76,10 @@ class LogClass {
       va_start(args, format);
 
       vsnprintf(str, 200, format, args);
+
+      Serial.print(F("["));
+      Serial.print(millis());
+      Serial.print(F("] "));
 
       if (types) {
         switch (type) {
