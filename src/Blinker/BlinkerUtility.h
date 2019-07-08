@@ -96,7 +96,7 @@ extern "C" {
                 bool isNew() { return _new; }
 
                 void auth(const String & name, const String & key, 
-                    const String & type)
+                    const String & type, uint16_t vas)
                 {
                     _new = false;
                     _name = (char*)malloc((name.length()+1)*sizeof(char));
@@ -105,17 +105,36 @@ extern "C" {
                     strcpy(_key, key.c_str());
                     _type = (char*)malloc((type.length()+1)*sizeof(char));
                     strcpy(_type, type.c_str());
+                    _vas = vas;
 
                     BLINKER_LOG_ALL("auth msg, name: ", _name, 
                                     ", key: ", _key,
-                                    ", type:", _type);
+                                    ", type:", _type,
+                                    ", vas:", _vas);
+                }
+
+                void authInfo(const String & key, const String & name)
+                {
+                    _auth = (char*)malloc((key.length()+1)*sizeof(char));
+                    strcpy(_auth, key.c_str());
+                    _dId = (char*)malloc((name.length()+1)*sizeof(char));
+                    strcpy(_dId, name.c_str());
+
+                    BLINKER_LOG_ALL("register msg, authKey: ", _auth, 
+                                    ", deviceId: ", _dId);
                 }
 
                 void freshAuth(bool authState) { _authState = authState; }
 
-                bool isAuth() { return _authState; }
+                bool isAuth()   { return _authState; }
 
-                uint32_t id() { return _id; }
+                char *name()    { return _name; }
+
+                char *key()     { return _key; }
+
+                char *type()    { return _type; }
+
+                uint32_t id()   { return _id; }
 
             private :
                 uint32_t    _id;
@@ -124,6 +143,9 @@ extern "C" {
                 char        *_name;
                 char        *_key;
                 char        *_type;
+                uint16_t    _vas = 0;
+                char        *_auth;
+                char        *_dId;
         };
     #endif
 #endif

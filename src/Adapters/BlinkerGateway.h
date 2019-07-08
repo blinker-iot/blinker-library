@@ -65,6 +65,18 @@ BlinkerMeshSub  *_subDevices[BLINKER_MAX_SUB_DEVICE_NUM];
 uint8_t         _subCount = 0;
 bool            _newSub = false;
 
+bool _checkIdAlive(uint32_t nodeId)
+{
+    for (uint8_t num = 0; num < _subCount; num++)
+    {
+        if (_subDevices[num]->id() == nodeId)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void _receivedCallback(uint32_t from, String &msg)
 {
     BLINKER_LOG_ALL("bridge: Received from: ", from, ", msg: ",msg);
@@ -97,9 +109,12 @@ void _newConnectionCallback(uint32_t nodeId)
     BLINKER_LOG_ALL("--> startHere: New Connection, nodeId = ", nodeId);
     BLINKER_LOG_ALL("--> startHere: New Connection, ", mesh.subConnectionJson(true));
 
-    _subDevices[_subCount] = new BlinkerMeshSub(nodeId);
-    _subCount++;
-    _newSub = true;
+    if (!_checkIdAlive(nodeId))
+    {
+        _subDevices[_subCount] = new BlinkerMeshSub(nodeId);
+        _subCount++;
+        _newSub = true;
+    }
 }
 
 void _changedConnectionCallback()
@@ -175,10 +190,13 @@ class BlinkerGateway : public BlinkerStream
         int checkDuerPrintSpan();
         int checkMIOTPrintSpan();
         int pubHello();
+        String vasDecode(uint16_t num);
         bool meshInit();
         void meshCheck();
         void sendBroadcast(String & msg);
-        void sendSingle(uint32_t toId, String & msg);
+        bool sendSingle(uint32_t toId, String msg);
+        String gateFormat(const String & msg);
+        bool subRegister(uint32_t num);
 
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
@@ -229,6 +247,7 @@ class BlinkerGateway : public BlinkerStream
 
         bool        _isAuthKey = false;
         bool        _isMeshInit = false;
+        uint32_t    _meshCheckTime = 0;
 };
 
 // #if defined(ESP8266)
@@ -2390,6 +2409,39 @@ int BlinkerGateway::isJson(const String & data)
     return true;
 }
 
+String BlinkerGateway::vasDecode(uint16_t num)
+{
+    String vas = "";
+
+    if (num & 0xF)
+    {
+        if (num & 0x01) vas += "&aliType=light";
+        else if (num >> 1 & 0x01) vas += "&aliType=outlet";
+        else if (num >> 2 & 0x01) vas += "&aliType=multi_outlet";
+        else if (num >> 3 & 0x01) vas += "&aliType=sensor";        
+    }
+
+    if (num >> 4 & 0xF)
+    {
+        if (num >> 4 & 0x01) vas += "&duerType=light";
+        else if (num >> 5 & 0x01) vas += "&duerType=outlet";
+        else if (num >> 6 & 0x01) vas += "&duerType=multi_outlet";
+        else if (num >> 7 & 0x01) vas += "&duerType=sensor";  
+    }
+
+    if (num >> 8 & 0xF)
+    {
+        if (num >> 8 & 0x01) vas += "&miType=light";
+        else if (num >> 9 & 0x01) vas += "&miType=outlet";
+        else if (num >> 10 & 0x01) vas += "&miType=multi_outlet";
+        else if (num >> 11 & 0x01) vas += "&miType=sensor"; 
+    }
+
+    BLINKER_LOG_ALL("vas: ", vas);
+
+    return vas;
+}
+
 bool BlinkerGateway::meshInit()
 {
     if (WiFi.status() != WL_CONNECTED) return false;
@@ -2437,6 +2489,8 @@ void BlinkerGateway::meshCheck()
             if (error) 
             {
                 BLINKER_ERR_LOG_ALL("msg not Json!");
+                isAvail_mesh = false;
+                free(meshBuf);
                 return;
             }
 
@@ -2448,7 +2502,13 @@ void BlinkerGateway::meshCheck()
                     {
                         _subDevices[num]->auth(root[BLINKER_CMD_DEVICEINFO]["name"],
                             root[BLINKER_CMD_DEVICEINFO]["key"],
-                            root[BLINKER_CMD_DEVICEINFO]["type"]);
+                            root[BLINKER_CMD_DEVICEINFO]["type"],
+                            root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
+
+                        // delay(1000);
+                        // subRegister(num); TODO
+
+                        vasDecode(root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
                     }
                 }
             }
@@ -2466,9 +2526,21 @@ void BlinkerGateway::meshCheck()
             {
                 if (_subDevices[num]->isNew())
                 {
-                    sendSingle(_subDevices[num]->id(), "{\"" + STRING_format(BLINKER_CMD_GATE) + "\":" + BLINKER_CMD_WHOIS + "}");
+                    sendSingle(_subDevices[num]->id(), gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
                 }
             }
+            _meshCheckTime = millis();
+        }
+        else if (millis() - _meshCheckTime >= BLINKER_MESH_CHECK_FREQ)
+        {
+            for (uint8_t num = 0; num < _subCount; num++)
+            {
+                if (_subDevices[num]->isNew())
+                {
+                    sendSingle(_subDevices[num]->id(), gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
+                }
+            }
+            _meshCheckTime = millis();
         }
     }
 }
@@ -2478,18 +2550,247 @@ void BlinkerGateway::sendBroadcast(String & msg)
     mesh.sendBroadcast(msg);
 }
 
-void BlinkerGateway::sendSingle(uint32_t toId, String & msg)
+bool BlinkerGateway::sendSingle(uint32_t toId, String msg)
 {
     BLINKER_LOG_ALL("to id: ", toId, ", msg: ", msg);
     if (mesh.isConnected(toId))
     {
-        mesh.sendSingle(toId, msg);
+        return mesh.sendSingle(toId, msg);
     }
     else
     {
         BLINKER_ERR_LOG("device disconnected");
+        return false;
     }
-    
+}
+
+String BlinkerGateway::gateFormat(const String & msg)
+{
+    return "{\"" + STRING_format(BLINKER_CMD_GATE) + "\":" + msg + "}";
+}
+
+bool BlinkerGateway::subRegister(uint32_t num)
+{
+    const int httpsPort = 443;
+    #if defined(ESP8266)
+        String host = BLINKER_F("iotdev.clz.me");
+        client_mqtt.stop();
+    #elif defined(ESP32)
+        String host = BLINKER_F("https://iotdev.clz.me");
+    #endif
+
+    #if defined(ESP8266)
+        String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
+        std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+
+        // client_s->setFingerprint(fingerprint);
+        client_s->setInsecure();
+
+        String url_iot = BLINKER_F("/api/v1/user/device/auth/get?deviceType=");
+        url_iot += _subDevices[num]->type();
+        url_iot += BLINKER_F("&typeKey=");
+        url_iot += _subDevices[num]->key();
+        url_iot += BLINKER_F("&deviceName=");
+        url_iot += _subDevices[num]->name();
+
+        url_iot = "https://" + host + url_iot;
+
+        BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
+
+        HTTPClient http;
+
+        String payload;
+
+        if (http.begin(*client_s, url_iot)) {  // HTTPS
+
+            // Serial.print("[HTTPS] GET...\n");
+            // start connection and send HTTP header
+            int httpCode = http.GET();
+
+            // httpCode will be negative on error
+            if (httpCode > 0) {
+                // HTTP header has been send and Server response header has been handled
+                
+                BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... code: "), httpCode);
+
+                // file found at server
+                if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+                    payload = http.getString();
+                    // Serial.println(payload);
+                }
+            } else {
+                BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
+                payload = http.getString();
+                BLINKER_LOG(payload);
+            }
+
+            http.end();
+        } else {
+            // Serial.printf("[HTTPS] Unable to connect\n");
+        }
+
+    #elif defined(ESP32)
+        HTTPClient http;
+
+        String url_iot = host;
+        url_iot += BLINKER_F("/api/v1/user/device/auth/get?deviceType=");
+        url_iot += _subDevices[num]->type();
+        url_iot += BLINKER_F("&typeKey=");
+        url_iot += _subDevices[num]->key();
+        url_iot += BLINKER_F("&deviceName=");
+        url_iot += _subDevices[num]->name();
+
+        BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
+
+        http.begin(url_iot);
+
+        int httpCode = http.GET();
+
+        String payload;
+
+        if (httpCode > 0) {
+        // HTTP header has been send and Server response header has been handled
+
+            BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... code: "), httpCode);
+
+            // file found at server
+            if (httpCode == HTTP_CODE_OK) {
+                payload = http.getString();
+                // BLINKER_LOG(payload);
+            }
+        }
+        else {
+            BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
+            payload = http.getString();
+            BLINKER_LOG(payload);
+        }
+
+        http.end();
+    #endif
+
+    BLINKER_LOG_ALL(BLINKER_F("reply was:"));
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+    BLINKER_LOG_ALL(payload);
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, payload);
+    JsonObject root = jsonBuffer.as<JsonObject>();
+
+    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || error ||
+        !STRING_contains_string(payload, BLINKER_CMD_AUTHKEY)) {
+        BLINKER_ERR_LOG(BLINKER_F("Maybe you have put in the wrong AuthKey!"));
+        BLINKER_ERR_LOG(BLINKER_F("Or maybe your request is too frequently!"));
+        BLINKER_ERR_LOG(BLINKER_F("Or maybe your network is disconnected!"));
+
+        return false;
+    }
+
+    String _getAuthKey = root[BLINKER_CMD_DETAIL][BLINKER_CMD_AUTHKEY];
+
+    BLINKER_LOG_ALL(BLINKER_F("===================="));
+    BLINKER_LOG_ALL(BLINKER_F("_getAuthKey: "), _getAuthKey);
+    BLINKER_LOG_ALL(BLINKER_F("===================="));
+
+    #if defined(ESP8266)
+        // std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+
+        // client_s->setInsecure();
+
+        url_iot = BLINKER_F("/api/v1/user/device/auth?authKey=");
+        url_iot += _getAuthKey;
+
+        url_iot = "https://" + host + url_iot;
+
+        // HTTPClient http;
+
+        payload = "";
+
+        BLINKER_LOG_ALL(BLINKER_F("[HTTP] begin: "), url_iot);
+
+        if (http.begin(*client_s, url_iot)) {  // HTTPS
+
+            // Serial.print("[HTTPS] GET...\n");
+            // start connection and send HTTP header
+            int httpCode = http.GET();
+
+            // httpCode will be negative on error
+            if (httpCode > 0) {
+                // HTTP header has been send and Server response header has been handled
+
+                BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... code: "), httpCode);
+
+                // file found at server
+                if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+                    payload = http.getString();
+                    // Serial.println(payload);
+                }
+            } else {
+                BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
+                payload = http.getString();
+                BLINKER_LOG(payload);
+            }
+
+            http.end();
+        } else {
+            // Serial.printf("[HTTPS] Unable to connect\n");
+        }
+
+    #elif defined(ESP32)
+        // HTTPClient http;
+
+        url_iot = host;
+        url_iot += BLINKER_F("/api/v1/user/device/auth?authKey=");
+        url_iot += _getAuthKey;
+
+        BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
+        
+        http.begin(url_iot);
+        
+        httpCode = http.GET();
+
+        payload = "";
+
+        if (httpCode > 0) {
+        // HTTP header has been send and Server response header has been handled
+
+            BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... code: "), httpCode);
+
+            // file found at server
+            if (httpCode == HTTP_CODE_OK) {
+                payload = http.getString();
+                // BLINKER_LOG(payload);
+            }
+        }
+        else {
+            BLINKER_LOG(BLINKER_F("[HTTP] GET... failed, error: "), http.errorToString(httpCode).c_str());
+            payload = http.getString();
+            BLINKER_LOG(payload);
+        }
+
+        http.end();
+    #endif
+
+    BLINKER_LOG_ALL(BLINKER_F("reply was:"));
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+    BLINKER_LOG_ALL(payload);
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+
+    DynamicJsonDocument _jsonBuffer(1024);
+    DeserializationError _error = deserializeJson(_jsonBuffer, payload);
+    JsonObject _root = _jsonBuffer.as<JsonObject>();
+
+    if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || _error ||
+        !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
+        // while(1) {
+            BLINKER_ERR_LOG(("Please make sure you have register this device!"));
+            // ::delay(60000);
+
+            return false;
+        // }
+    }
+
+    return true;
 }
 
 #endif
