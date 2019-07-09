@@ -65,16 +65,17 @@ BlinkerMeshSub  *_subDevices[BLINKER_MAX_SUB_DEVICE_NUM];
 uint8_t         _subCount = 0;
 bool            _newSub = false;
 
-bool _checkIdAlive(uint32_t nodeId)
+int16_t _checkIdAlive(uint32_t nodeId)
 {
     for (uint8_t num = 0; num < _subCount; num++)
     {
         if (_subDevices[num]->id() == nodeId)
         {
-            return true;
+            return num;
         }
     }
-    return false;
+
+    return -1;
 }
 
 void _receivedCallback(uint32_t from, String &msg)
@@ -109,12 +110,18 @@ void _newConnectionCallback(uint32_t nodeId)
     BLINKER_LOG_ALL("--> startHere: New Connection, nodeId = ", nodeId);
     BLINKER_LOG_ALL("--> startHere: New Connection, ", mesh.subConnectionJson(true));
 
-    if (!_checkIdAlive(nodeId))
+    int checkId = _checkIdAlive(nodeId);
+    if (checkId == -1)
     {
         _subDevices[_subCount] = new BlinkerMeshSub(nodeId);
         _subCount++;
-        _newSub = true;
     }
+    else
+    {
+        _subDevices[checkId]->state(true);
+        BLINKER_LOG_ALL("fresh new");
+    }
+    _newSub = true;
 }
 
 void _changedConnectionCallback()
@@ -171,7 +178,7 @@ class BlinkerGateway : public BlinkerStream
                 return false;
             }
         }
-            
+        void setTimezone(float tz) { _timezone = tz; }
 
     private :
         bool isMQTTinit = false;
@@ -197,6 +204,7 @@ class BlinkerGateway : public BlinkerStream
         bool sendSingle(uint32_t toId, String msg);
         String gateFormat(const String & msg);
         bool subRegister(uint32_t num);
+        time_t time();
 
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
@@ -248,6 +256,7 @@ class BlinkerGateway : public BlinkerStream
         bool        _isAuthKey = false;
         bool        _isMeshInit = false;
         uint32_t    _meshCheckTime = 0;
+        float       _timezone = 8.0;
 };
 
 // #if defined(ESP8266)
@@ -2566,7 +2575,9 @@ bool BlinkerGateway::sendSingle(uint32_t toId, String msg)
 
 String BlinkerGateway::gateFormat(const String & msg)
 {
-    return "{\"" + STRING_format(BLINKER_CMD_GATE) + "\":" + msg + "}";
+    return "{\"" + STRING_format(BLINKER_CMD_GATE) + "\":" + msg + \
+            ",\"tim\":" + STRING_format(time()) + \
+            ",\"tz\":" + STRING_format(_timezone) + "}";
 }
 
 bool BlinkerGateway::subRegister(uint32_t num)
@@ -2791,6 +2802,13 @@ bool BlinkerGateway::subRegister(uint32_t num)
     }
 
     return true;
+}
+
+time_t BlinkerGateway::time()
+{
+    time_t now_ntp = ::time(nullptr);
+    BLINKER_LOG_ALL("now_ntp: ", now_ntp);
+    return now_ntp;
 }
 
 #endif

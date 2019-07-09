@@ -123,6 +123,9 @@ class BlinkerStream
 
         #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
             virtual void meshCheck() = 0;
+            #if !defined(BLINKER_WIFI_SUBDEVICE)
+            virtual void setTimezone(float tz) = 0;
+            #endif
         #endif
 
         // #if defined(BLINKER_WIFI_SUBDEVICE)
