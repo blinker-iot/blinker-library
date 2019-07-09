@@ -421,6 +421,12 @@ class BlinkerApi : public BlinkerProtocol
 
         #endif
 
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            void aligeniePrint(String & _msg);
+            void duerPrint(String & _msg);
+            void miotPrint(String & _msg);
+        #endif
+
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
             defined(BLINKER_MQTT_AT) || defined(BLINKER_WIFI_GATEWAY) || \
@@ -4257,6 +4263,10 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         _timezone = tz;
         _isNTPInit = false;
+
+        #if defined(BLINKER_WIFI_GATEWAY)
+            BProto::setTimezone(tz);
+        #endif
     }
 
     int8_t BlinkerApi::second()
@@ -5969,6 +5979,68 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     #endif
 
+#endif
+
+#if defined(BLINKER_WIFI_SUBDEVICE)
+    void BlinkerApi::aligeniePrint(String & _msg)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
+
+        // BProto::aliPrint(_msg);
+
+        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+        {
+            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
+            // memcpy(aliData, '\0', _msg.length()+128);
+            // strcpy(aliData, _msg.c_str());
+            BProto::aliPrint(_msg);
+            // free(aliData);
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        }
+    }
+
+    void BlinkerApi::duerPrint(String & _msg)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("response to DuerOS: "), _msg);
+
+        // BProto::aliPrint(_msg);
+
+        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+        {
+            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
+            // memcpy(aliData, '\0', _msg.length()+128);
+            // strcpy(aliData, _msg.c_str());
+            BProto::duerPrint(_msg);
+            // free(aliData);
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        }
+    }
+
+    void BlinkerApi::miotPrint(String & _msg)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("response to MIOT: "), _msg);
+
+        // BProto::aliPrint(_msg);
+
+        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+        {
+            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
+            // memcpy(aliData, '\0', _msg.length()+128);
+            // strcpy(aliData, _msg.c_str());
+            BProto::miPrint(_msg);
+            // free(aliData);
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+        }
+    }
 #endif
 
 void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_string_arg_t _func)

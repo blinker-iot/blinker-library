@@ -53,6 +53,8 @@ char*       meshBuf;
 bool        isFresh_mesh = false;
 bool        isAvail_mesh = false;
 uint32_t    msgFrom;
+bool        isTimeSet = false;
+float       mesh_timezone = 8.0;
 
 void _receivedCallback(uint32_t from, String &msg)
 {
@@ -72,6 +74,21 @@ void _receivedCallback(uint32_t from, String &msg)
     if (root.containsKey(BLINKER_CMD_GATE))
     {
         BLINKER_LOG_ALL("gate data");
+
+        if (!isTimeSet || mesh_timezone != root["tz"])
+        {
+            time_t rtc = root[BLINKER_CMD_TIME];
+            mesh_timezone = root["tz"];
+            BLINKER_LOG_ALL("rtc: ", rtc, ", tz: ", mesh_timezone);
+            timeval tv = { rtc, 0 };
+            timezone tz = { int16_t(mesh_timezone*60) , 0 };
+            settimeofday(&tv, &tz);
+
+            isTimeSet = true;
+        }
+        
+        time_t now = time(nullptr);
+        BLINKER_LOG_ALL("now: ", now, ", ", ctime(&now));        
         
         String _data = root[BLINKER_CMD_GATE];
         meshBuf = (char*)malloc((_data.length()+1)*sizeof(char));
@@ -183,6 +200,7 @@ class BlinkerSubDevice : public BlinkerStream
 
         bool        _isAuthKey = false;
         bool        _isMeshInit = false;
+        // bool        _isTimeSet = false;
 };
 
 int BlinkerSubDevice::connect()
@@ -475,27 +493,27 @@ uint16_t BlinkerSubDevice::vatFormat()
     #endif
 
     #if defined(BLINKER_DUEROS_LIGHT)
-        vstNum |= 0x01 << 0;
+        vstNum |= 0x01 << 4;
     #elif defined(BLINKER_DUEROS_OUTLET)
-        vstNum |= 0x01 << 1;
+        vstNum |= 0x01 << 5;
     #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
-        vstNum |= 0x01 << 2;
+        vstNum |= 0x01 << 6;
     #elif defined(BLINKER_DUEROS_SENSOR)
-        vstNum |= 0x01 << 3;
+        vstNum |= 0x01 << 7;
     #elif defined(BLINKER_DUEROS_TYPE)
-        vstNum |= 0x01 << 0;
+        vstNum |= 0x01 << 4;
     #endif
 
     #if defined(BLINKER_MIOT_LIGHT)
-        vstNum |= 0x01 << 0;
+        vstNum |= 0x01 << 8;
     #elif defined(BLINKER_MIOT_OUTLET)
-        vstNum |= 0x01 << 1;
+        vstNum |= 0x01 << 9;
     #elif defined(BLINKER_MIOT_MULTI_OUTLET)
-        vstNum |= 0x01 << 2;
+        vstNum |= 0x01 << 10;
     #elif defined(BLINKER_MIOT_SENSOR)
-        vstNum |= 0x01 << 3;
+        vstNum |= 0x01 << 11;
     #elif defined(BLINKER_MIOT_TYPE)
-        vstNum |= 0x01 << 0;
+        vstNum |= 0x01 << 8;
     #endif
 
     BLINKER_LOG_ALL("vstNum: ", vstNum);
@@ -543,20 +561,6 @@ void BlinkerSubDevice::meshCheck()
             BLINKER_LOG_ALL("new mesh data: ", meshBuf);
             if (strcmp(meshBuf, BLINKER_CMD_WHOIS) == 0)
             {
-                // String data_to = gateFormat("{\"" + BLINKER_CMD_DEVICEINFO + \
-                //     "\":{" + \
-                //     "\"name\":\"" + macDeviceName() + "\"," + \
-                //     "\"key\":\"" + _vipKey + "\"," + \
-                //     "\"type\":\"" + _deviceType + "\"" + \
-                //     "}}");
-                
-                // "{\"" + STRING_format(BLINKER_CMD_GATE) + \
-                //     "\":{\"" + BLINKER_CMD_DEVICEINFO + \
-                //     "\":{" + \
-                //     "\"name\":\"" + macDeviceName() + "\"," + \
-                //     "\"key\":\"" + _vipKey + "\"," + \
-                //     "\"type\":\"" + _deviceType + "\"" + \
-                //     "}}}";
                 sendSingle(msgFrom, gateFormat(
                     "{\"" + STRING_format(BLINKER_CMD_DEVICEINFO) + \
                     "\":{" + \

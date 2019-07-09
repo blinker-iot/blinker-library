@@ -95,6 +95,8 @@ extern "C" {
 
                 bool isNew() { return _new; }
 
+                void state(bool st) { _new = st; }
+
                 void auth(const String & name, const String & key, 
                     const String & type, uint16_t vas)
                 {
@@ -109,8 +111,8 @@ extern "C" {
 
                     BLINKER_LOG_ALL("auth msg, name: ", _name, 
                                     ", key: ", _key,
-                                    ", type:", _type,
-                                    ", vas:", _vas);
+                                    ", type: ", _type,
+                                    ", vas: ", _vas);
                 }
 
                 void authInfo(const String & key, const String & name)
