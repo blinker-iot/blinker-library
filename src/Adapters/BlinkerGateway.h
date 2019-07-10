@@ -103,6 +103,19 @@ void _receivedCallback(uint32_t from, String &msg)
 
         isAvail_mesh = true;
     }
+
+    int checkId = _checkIdAlive(from);
+    if (checkId == -1)
+    {
+        _subDevices[_subCount] = new BlinkerMeshSub(from);
+        _subCount++;
+    }
+    else
+    {
+        _subDevices[checkId]->state(true);
+        BLINKER_LOG_ALL("fresh new");
+    }
+    // _newSub = true;
 }
 
 void _newConnectionCallback(uint32_t nodeId)
@@ -200,7 +213,7 @@ class BlinkerGateway : public BlinkerStream
         String vasDecode(uint16_t num);
         bool meshInit();
         void meshCheck();
-        void sendBroadcast(String & msg);
+        void sendBroadcast(String msg);
         bool sendSingle(uint32_t toId, String msg);
         String gateFormat(const String & msg);
         bool subRegister(uint32_t num);
@@ -2531,30 +2544,36 @@ void BlinkerGateway::meshCheck()
             // BLINKER_LOG_ALL("{\"hello\":\"whois\"}");
             // mesh.sendBroadcast("{\"hello\":\"whois\"}");
             _newSub = false;
-            for (uint8_t num = 0; num < _subCount; num++)
-            {
-                if (_subDevices[num]->isNew())
-                {
-                    sendSingle(_subDevices[num]->id(), gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
-                }
-            }
+            // for (uint8_t num = 0; num < _subCount; num++)
+            // {
+            //     if (_subDevices[num]->isNew())
+            //     {
+            //         sendSingle(_subDevices[num]->id(), gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
+            //     }
+            // }
+
+            sendBroadcast(gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
+
             _meshCheckTime = millis();
         }
         else if (millis() - _meshCheckTime >= BLINKER_MESH_CHECK_FREQ)
         {
-            for (uint8_t num = 0; num < _subCount; num++)
-            {
-                if (_subDevices[num]->isNew())
-                {
-                    sendSingle(_subDevices[num]->id(), gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
-                }
-            }
+            // for (uint8_t num = 0; num < _subCount; num++)
+            // {
+            //     if (_subDevices[num]->isNew())
+            //     {
+            //         sendSingle(_subDevices[num]->id(), gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
+            //     }
+            // }
+
+            sendBroadcast(gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
+
             _meshCheckTime = millis();
         }
     }
 }
 
-void BlinkerGateway::sendBroadcast(String & msg)
+void BlinkerGateway::sendBroadcast(String msg)
 {
     mesh.sendBroadcast(msg);
 }
