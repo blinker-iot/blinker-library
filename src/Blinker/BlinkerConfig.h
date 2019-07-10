@@ -506,6 +506,8 @@
 
 #define BLINKER_CMD_DEVICEINFO          "dInf"
 
+#define BLINKER_CMD_NEW                 "{\"hello\":\"new\"}"
+
 #define BLINKER_CMD_WHOIS               "{\"hello\":\"whois\"}"
 
 #define BLINKER_MESH_CHECK_FREQ         60000UL

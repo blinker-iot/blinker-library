@@ -250,7 +250,11 @@ class BlinkerAIR202
                         // BLINKER_LOG_ALL(BLINKER_F("mins: "), timeinfo.tm_min);
                         // BLINKER_LOG_ALL(BLINKER_F("secs: "), timeinfo.tm_sec);
                         
+                        #if defined(ESP8266) || defined(ESP32)
+                        _ntpTime = mktime(&timeinfo);
+                        #else
                         _ntpTime = mk_gmtime(&timeinfo);
+                        #endif
 
                         BLINKER_LOG_ALL(BLINKER_F("year: "), timeinfo.tm_year);
                         BLINKER_LOG_ALL(BLINKER_F("mon: "), timeinfo.tm_mon);
@@ -318,7 +322,11 @@ class BlinkerAIR202
                         BLINKER_LOG_ALL(BLINKER_F("mins: "), timeinfo.tm_min);
                         BLINKER_LOG_ALL(BLINKER_F("secs: "), timeinfo.tm_sec);
 
+                        #if defined(ESP8266) || defined(ESP32)
+                        _ntpTime = mktime(&timeinfo);
+                        #else
                         _ntpTime = mk_gmtime(&timeinfo);
+                        #endif
                         // _ntpTime -= _timezone * 3600;
 
                         BLINKER_LOG_ALL(BLINKER_F("_ntpTime: "), _ntpTime);

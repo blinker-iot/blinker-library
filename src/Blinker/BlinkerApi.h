@@ -42,6 +42,9 @@
     #include "Blinker/BlinkerTimer.h"
     #include "Functions/BlinkerTimingTimer.h"
     #include "Functions/BlinkerOTA.h"
+#elif defined(BLINKER_WIFI_SUBDEVICE)
+    #include "Blinker/BlinkerTimer.h"
+    #include "Functions/BlinkerTimingTimer.h"
 #endif
 
 #if defined(BLINKER_AT_MQTT)
@@ -316,11 +319,17 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
 
             void setTimezone(float tz);
 
-            float getTimezone() { return _timezone; }
+            float getTimezone() { 
+                #if defined(BLINKER_WIFI_SUBDEVICE)
+                _timezone = mesh_timezone;
+                #endif
+                return _timezone;
+            }
             int8_t second();
             int8_t minute();
             int8_t hour();
@@ -331,6 +340,8 @@ class BlinkerApi : public BlinkerProtocol
             int16_t yday();
             time_t  time();
             int32_t dtime();
+
+            #if !defined(BLINKER_WIFI_SUBDEVICE)
 
             template<typename T>
             bool sms(const T& msg);
@@ -392,12 +403,6 @@ class BlinkerApi : public BlinkerProtocol
                 void bridgePrint(char * bName, const String & data);
             #endif
 
-            #if !defined(BLINKER_LOWPOWER_AIR202)
-            void aligeniePrint(String & _msg);
-            void duerPrint(String & _msg);
-            void miotPrint(String & _msg);
-            #endif
-
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
                 !defined(BLINKER_LOWPOWER_AIR202))
@@ -419,12 +424,22 @@ class BlinkerApi : public BlinkerProtocol
                 bool comDateUpdate();
             #endif
 
-        #endif
+            #endif
 
-        #if defined(BLINKER_WIFI_SUBDEVICE)
+            #if !defined(BLINKER_LOWPOWER_AIR202)
             void aligeniePrint(String & _msg);
             void duerPrint(String & _msg);
             void miotPrint(String & _msg);
+            #endif
+
+        #endif
+
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            uint32_t ntpFreshTime = 0;
+            time_t ntpGetTime = 0;
+        //     void aligeniePrint(String & _msg);
+        //     void duerPrint(String & _msg);
+        //     void miotPrint(String & _msg);
         #endif
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
@@ -739,8 +754,12 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t    _disconnectTime = 0;
             uint32_t    _refreshTime = 0;
             uint32_t    _reconTime = 0;
-
+            
+            #if defined(BLINKER_WIFI_SUBDEVICE)
+            bool        _isNTPInit = &isTimeSet;
+            #else
             bool        _isNTPInit = false;
+            #endif
             float       _timezone = 8.0;
             uint32_t    _ntpStart;
 
@@ -998,7 +1017,7 @@ class BlinkerApi : public BlinkerProtocol
                     #endif
 
                     BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
-                    BLINKER_LOG_ALL(BLINKER_F("NTP time: "), BLINKER_AIR202._ntpTime - (int)(_timezone*3600));
+                    BLINKER_LOG_ALL(BLINKER_F("NTP time: "), BLINKER_AIR202._ntpTime - (int)(getTimezone()*3600));
 
                     _isNTPInit = true;
 
@@ -1439,7 +1458,7 @@ class BlinkerApi : public BlinkerProtocol
                 {
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return false;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return false;
 
                     struct tm timeinfo;
 
@@ -1450,7 +1469,7 @@ class BlinkerApi : public BlinkerProtocol
                     #endif
 
                     BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
-                    BLINKER_LOG_ALL(BLINKER_F("NTP time: "), BLINKER_SIM7020._ntpTime - (int)(_timezone*3600));
+                    BLINKER_LOG_ALL(BLINKER_F("NTP time: "), BLINKER_SIM7020._ntpTime - (int)(getTimezone()*3600));
 
                     _isNTPInit = true;
 
@@ -3484,7 +3503,7 @@ void BlinkerApi::run()
 
                     #if (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                         defined(BLINKER_WIFI_GATEWAY)) || defined(BLINKER_MQTT_AUTO) || \
-                        defined(BLINKER_PRO_ESP)
+                        defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE)
                         #if defined(BLINKER_ALIGENIE)
                             if (BProto::checkAliAvail())
                             {
@@ -4258,7 +4277,8 @@ float BlinkerApi::gps(b_gps_t axis)
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
+    defined(BLINKER_WIFI_SUBDEVICE)
     void BlinkerApi::setTimezone(float tz)
     {
         _timezone = tz;
@@ -4288,7 +4308,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4351,7 +4371,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4413,7 +4433,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4476,7 +4496,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4538,7 +4558,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4601,7 +4621,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4664,7 +4684,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4727,7 +4747,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4794,7 +4814,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4830,7 +4850,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #if defined(ESP32)
                     return _ntpGetTime;
                 #else
-                    return _ntpGetTime - (int)_timezone*3600;
+                    return _ntpGetTime - (int)(getTimezone()*3600);
                 #endif
             }
             else
@@ -4848,7 +4868,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #if defined(ESP32)
                     return _ntpGetTime;
                 #else
-                    return _ntpGetTime - (int)_timezone*3600;
+                    return _ntpGetTime - (int)(getTimezone()*3600);
                 #endif
             }
 
@@ -4872,7 +4892,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 #elif defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
                     BlinkerSIM7020 BLINKER_SIM7020;
                     BLINKER_SIM7020.setStream(*stream, isHWS, listenFunc);
-                    if (!BLINKER_SIM7020.getSNTP(_timezone)) return -1;
+                    if (!BLINKER_SIM7020.getSNTP(getTimezone())) return -1;
                     time_t now_ntp = BLINKER_SIM7020._ntpTime;
                 #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
                     defined(BLINKER_LOWPOWER_AIR202)
@@ -4919,6 +4939,8 @@ float BlinkerApi::gps(b_gps_t axis)
         return -1;
     }
 
+    #if !defined(BLINKER_WIFI_SUBDEVICE)
+
     template<typename T>
     bool BlinkerApi::sms(const T& msg)
     {
@@ -4943,13 +4965,21 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("\",\"msg\":\"");
             data += _msg;
             data += BLINKER_F("\"}");
+        #elif defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("{\"sms\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
         #endif
 
         if (_msg.length() > 20) {
             return false;
         }
 
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+        return BProto::print(data);
+        #else
         return (blinkerServer(BLINKER_CMD_SMS_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        #endif
     }
 
     template<typename T>
@@ -5652,70 +5682,6 @@ float BlinkerApi::gps(b_gps_t axis)
     }
     #endif
 
-    #if !defined(BLINKER_LOWPOWER_AIR202)
-    void BlinkerApi::aligeniePrint(String & _msg)
-    {
-        BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
-
-        // BProto::aliPrint(_msg);
-
-        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
-        {
-            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
-            // memcpy(aliData, '\0', _msg.length()+128);
-            // strcpy(aliData, _msg.c_str());
-            BProto::aliPrint(_msg);
-            // free(aliData);
-        }
-        else
-        {
-            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
-        }
-    }
-
-    void BlinkerApi::duerPrint(String & _msg)
-    {
-        BLINKER_LOG_ALL(BLINKER_F("response to DuerOS: "), _msg);
-
-        // BProto::aliPrint(_msg);
-
-        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
-        {
-            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
-            // memcpy(aliData, '\0', _msg.length()+128);
-            // strcpy(aliData, _msg.c_str());
-            BProto::duerPrint(_msg);
-            // free(aliData);
-        }
-        else
-        {
-            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
-        }
-    }
-
-    #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
-    void BlinkerApi::miotPrint(String & _msg)
-    {
-        BLINKER_LOG_ALL(BLINKER_F("response to MIOT: "), _msg);
-
-        // BProto::aliPrint(_msg);
-
-        if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
-        {
-            // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
-            // memcpy(aliData, '\0', _msg.length()+128);
-            // strcpy(aliData, _msg.c_str());
-            BProto::miPrint(_msg);
-            // free(aliData);
-        }
-        else
-        {
-            BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
-        }
-    }
-    #endif
-    #endif
-
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
         !defined(BLINKER_LOWPOWER_AIR202))
@@ -5979,9 +5945,9 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     #endif
 
-#endif
+    #endif
 
-#if defined(BLINKER_WIFI_SUBDEVICE)
+    #if !defined(BLINKER_LOWPOWER_AIR202)
     void BlinkerApi::aligeniePrint(String & _msg)
     {
         BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
@@ -6022,6 +5988,7 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
+    #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
     void BlinkerApi::miotPrint(String & _msg)
     {
         BLINKER_LOG_ALL(BLINKER_F("response to MIOT: "), _msg);
@@ -6041,7 +6008,54 @@ float BlinkerApi::gps(b_gps_t axis)
             BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
         }
     }
+    #endif
+    #endif
+
 #endif
+
+// #if defined(BLINKER_WIFI_SUBDEVICE)
+//     void BlinkerApi::aligeniePrint(String & _msg)
+//     {
+//         BLINKER_LOG_ALL(BLINKER_F("response to AliGenie: "), _msg);
+
+//         if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+//         {
+//             BProto::aliPrint(_msg);
+//         }
+//         else
+//         {
+//             BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+//         }
+//     }
+
+//     void BlinkerApi::duerPrint(String & _msg)
+//     {
+//         BLINKER_LOG_ALL(BLINKER_F("response to DuerOS: "), _msg);
+
+//         if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+//         {
+//             BProto::duerPrint(_msg);
+//         }
+//         else
+//         {
+//             BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+//         }
+//     }
+
+//     void BlinkerApi::miotPrint(String & _msg)
+//     {
+//         BLINKER_LOG_ALL(BLINKER_F("response to MIOT: "), _msg);
+
+//         if (_msg.length() <= BLINKER_MAX_SEND_SIZE)
+//         {
+//             BProto::miPrint(_msg);
+//         }
+//         else
+//         {
+//             BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+//         }
+//     }
+// #endif
 
 void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_string_arg_t _func)
 {
@@ -7092,7 +7106,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             time_t now_ntp = ::time(nullptr);
 
-            float _com_timezone = abs(_timezone);
+            float _com_timezone = abs(getTimezone());
             if (_com_timezone < 1.0) _com_timezone = 1.0;
 
             if (now_ntp < _com_timezone * 3600 * 12)
@@ -7120,7 +7134,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
             #if defined(ESP8266)
-                BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp - (int)(_timezone*3600));
+                BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp - (int)(getTimezone()*3600));
             #elif defined(ESP32)
                 BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp);
             #endif
@@ -7142,7 +7156,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         // configTime((long)(_timezone * 3600), 0,
         //         ntp1.c_str(), ntp2.c_str(), ntp3.c_str());
 
-        configTime((long)(_timezone * 3600), 0, "ntp1.aliyun.com", \
+        configTime((long)(getTimezone() * 3600), 0, "ntp1.aliyun.com", \
                     "120.25.108.11", "time.pool.aliyun.com");
     }
 

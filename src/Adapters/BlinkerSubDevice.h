@@ -55,6 +55,7 @@ bool        isAvail_mesh = false;
 uint32_t    msgFrom;
 bool        isTimeSet = false;
 float       mesh_timezone = 8.0;
+bool        isNewConnect = false;
 
 void _receivedCallback(uint32_t from, String &msg)
 {
@@ -75,7 +76,7 @@ void _receivedCallback(uint32_t from, String &msg)
     {
         BLINKER_LOG_ALL("gate data");
 
-        if (!isTimeSet || mesh_timezone != root["tz"])
+        if ((!isTimeSet || mesh_timezone != root["tz"]) && root.containsKey("tz"))
         {
             time_t rtc = root[BLINKER_CMD_TIME];
             mesh_timezone = root["tz"];
@@ -102,6 +103,8 @@ void _newConnectionCallback(uint32_t nodeId)
 {
     BLINKER_LOG_ALL("--> startHere: New Connection, nodeId = ", nodeId);
     BLINKER_LOG_ALL("--> startHere: New Connection, ", mesh.subConnectionJson(true));
+
+    if (!isNewConnect) isNewConnect = true;
 }
 
 class BlinkerSubDevice : public BlinkerStream
@@ -154,7 +157,7 @@ class BlinkerSubDevice : public BlinkerStream
         uint16_t vatFormat();
         bool meshInit();
         void meshCheck();
-        void sendBroadcast(String & msg);
+        void sendBroadcast(String msg);
         bool sendSingle(uint32_t toId, String msg);
         String gateFormat(const String & msg);
     
@@ -200,6 +203,7 @@ class BlinkerSubDevice : public BlinkerStream
 
         bool        _isAuthKey = false;
         bool        _isMeshInit = false;
+        bool        _isHello = false;
         // bool        _isTimeSet = false;
 };
 
@@ -574,11 +578,18 @@ void BlinkerSubDevice::meshCheck()
             isAvail_mesh = false;
             free(meshBuf);
         }
+
+        if (isNewConnect && !_isHello)
+        {
+            sendBroadcast(gateFormat(BLINKER_CMD_NEW));
+            _isHello = true;
+        }
     }
 }
 
-void BlinkerSubDevice::sendBroadcast(String & msg)
+void BlinkerSubDevice::sendBroadcast(String msg)
 {
+    BLINKER_LOG_ALL("broadcast: ", msg);
     mesh.sendBroadcast(msg);
 }
 

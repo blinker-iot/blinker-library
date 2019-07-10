@@ -222,7 +222,12 @@ class BlinkerSIM7020
                         timeinfo.tm_min  = _masterAT->getParam(1).substring(3, 5).toInt();
                         timeinfo.tm_sec  = _masterAT->getParam(1).substring(6, 8).toInt();
 
+                        #if defined(ESP8266) || defined(ESP32)
+                        _ntpTime = mktime(&timeinfo) + (uint32_t)(_timezone * 3600);
+                        #else
                         _ntpTime = mk_gmtime(&timeinfo) + (uint32_t)(_timezone * 3600);
+                        #endif
+                        // _ntpTime = mk_gmtime(&timeinfo) + (uint32_t)(_timezone * 3600);
 
                         BLINKER_LOG_ALL(BLINKER_F("year: "), timeinfo.tm_year);
                         BLINKER_LOG_ALL(BLINKER_F("mon: "), timeinfo.tm_mon);
@@ -232,7 +237,7 @@ class BlinkerSIM7020
                         BLINKER_LOG_ALL(BLINKER_F("secs: "), timeinfo.tm_sec);
 
                         BLINKER_LOG_ALL(BLINKER_F("_ntpTime: "), _ntpTime);
-                        BLINKER_LOG_ALL(BLINKER_F("==Current time: "), mk_gmtime(&timeinfo));
+                        // BLINKER_LOG_ALL(BLINKER_F("==Current time: "), mk_gmtime(&timeinfo));
 
                         free(_masterAT);
                         return true;
