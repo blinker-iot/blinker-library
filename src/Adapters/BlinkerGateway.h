@@ -58,7 +58,8 @@ painlessMesh  mesh;
 
 char*       meshBuf;
 bool        isFresh_mesh = false;
-bool        isAvail_mesh = false;
+bool        isAvail_gate = false;
+bool        isAvail_ctrl = false;
 uint32_t    msgFrom;
 
 BlinkerMeshSub  *_subDevices[BLINKER_MAX_SUB_DEVICE_NUM];
@@ -101,8 +102,19 @@ void _receivedCallback(uint32_t from, String &msg)
         meshBuf = (char*)malloc((_data.length()+1)*sizeof(char));
         strcpy(meshBuf, _data.c_str());
 
-        isAvail_mesh = true;
+        isAvail_gate = true;
     }
+    else if (root.containsKey(BLINKER_CMD_CONTROL))
+    {
+        BLINKER_LOG_ALL("control data");
+        
+        String _data = root[BLINKER_CMD_CONTROL];
+        meshBuf = (char*)malloc((_data.length()+1)*sizeof(char));
+        strcpy(meshBuf, _data.c_str());
+
+        isAvail_ctrl = true;
+    }
+    
 
     int checkId = _checkIdAlive(from);
     if (checkId == -1)
@@ -161,10 +173,14 @@ class BlinkerGateway : public BlinkerStream
         char * lastRead();
         void flush();
         int print(char * data, bool needCheck = true);
+        int subPrint(const String & data, const String & toDevice, const String & subDevice);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
+        int subAliPrint(const String & data, const String & subDevice);
         int duerPrint(const String & data);
+        int subDuerPrint(const String & data, const String & subDevice);
         int miPrint(const String & data);
+        int subMiPrint(const String & data, const String & subDevice);
         // void aliType(const String & type);
         void begin(const char* _key, const char* _type);
         int autoPrint(uint32_t id);
@@ -901,6 +917,52 @@ int BlinkerGateway::print(char * data, bool needCheck)
     }
 }
 
+int BlinkerGateway::subPrint(const String & data, const String & toDevice, const String & subDevice)
+{
+    String data_add = BLINKER_F("{\"data\":");
+
+    data_add += data;
+    data_add += BLINKER_F(",\"fromDevice\":\"");
+    data_add += MQTT_DEVICEID_PRO;
+    data_add += BLINKER_F("\",\"toDevice\":\"");
+    data_add += toDevice;
+    data_add += BLINKER_F("\",\"subDevice\":\"");
+    data_add += subDevice;
+    data_add += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
+
+    _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+
+    if (!isJson(data)) return false;
+    
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (mqtt_PRO->connected())
+    {
+        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }            
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
 int BlinkerGateway::bPrint(char * name, const String & data)
 {
     // String payload;
@@ -1030,35 +1092,8 @@ int BlinkerGateway::bPrint(char * name, const String & data)
 
 int BlinkerGateway::aliPrint(const String & data)
 {
-    // String payload;
-
-    // payload = BLINKER_F("{\"data\":");
-    // payload += data;
-    // payload += BLINKER_F(",\"fromDevice\":\"");
-    // payload += MQTT_DEVICEID_PRO;
-    // payload += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
-    // payload += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
-
-    // uint8_t num = strlen(data);
-    // for(uint8_t c_num = num; c_num > 0; c_num--)
-    // {
-    //     data[c_num+7] = data[c_num-1];
-    // }
-
     String data_add = BLINKER_F("{\"data\":");
-    // for(uint8_t c_num = 0; c_num < 8; c_num++)
-    // {
-    //     data[c_num] = data_add[c_num];
-    // }
-
-    // data_add = BLINKER_F(",\"fromDevice\":\"");
-    // strcat(data, data_add.c_str());
-    // strcat(data, MQTT_DEVICEID_PRO);
-    // data_add = BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
-    // strcat(data, data_add.c_str());
-    // data_add = BLINKER_F(",\"deviceType\":\"vAssistant\"}");
-    // strcat(data, data_add.c_str());
-
+    
     data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += MQTT_DEVICEID_PRO;
@@ -1084,10 +1119,6 @@ int BlinkerGateway::aliPrint(const String & data)
         }
         respAliTime = millis();
 
-        // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_PRO, BLINKER_PUB_TOPIC_PRO);
-
-        // if (! iotPub.publish(payload.c_str())) {
-
         if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
         {
             BLINKER_LOG_ALL(data_add);
@@ -1107,6 +1138,49 @@ int BlinkerGateway::aliPrint(const String & data)
 
             this->latestTime = millis();
 
+            return true;
+        }      
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
+int BlinkerGateway::subAliPrint(const String & data, const String & subDevice)
+{
+    String data_add = BLINKER_F("{\"data\":");
+    
+    data_add += data;
+    data_add += BLINKER_F(",\"fromDevice\":\"");
+    data_add += MQTT_DEVICEID_PRO;
+    data_add += BLINKER_F(",\"subDevice\":\"");
+    data_add += subDevice;
+    data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+    data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+    if (!isJson(data_add)) return false;
+            
+    BLINKER_LOG_ALL(BLINKER_F("MQTT AliGenie Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (mqtt_PRO->connected())
+    {
+        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
             return true;
         }      
     }
@@ -1175,6 +1249,49 @@ int BlinkerGateway::duerPrint(const String & data)
     }
 }
 
+int BlinkerGateway::subDuerPrint(const String & data, const String & subDevice)
+{
+    String data_add = BLINKER_F("{\"data\":");
+
+    data_add += data;
+    data_add += BLINKER_F(",\"fromDevice\":\"");
+    data_add += MQTT_DEVICEID_PRO;
+    data_add += BLINKER_F(",\"subDevice\":\"");
+    data_add += subDevice;
+    data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+    data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+    if (!isJson(data_add)) return false;
+            
+    BLINKER_LOG_ALL(BLINKER_F("MQTT DuerOS Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (mqtt_PRO->connected())
+    {
+        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }      
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
 int BlinkerGateway::miPrint(const String & data)
 {
     String data_add = BLINKER_F("{\"data\":");
@@ -1222,6 +1339,49 @@ int BlinkerGateway::miPrint(const String & data)
             isMIOTAlive = false;
 
             this->latestTime = millis();
+
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
+int BlinkerGateway::subMiPrint(const String & data, const String & subDevice)
+{
+    String data_add = BLINKER_F("{\"data\":");
+
+    data_add += data;
+    data_add += BLINKER_F(",\"fromDevice\":\"");
+    data_add += MQTT_DEVICEID_PRO;
+    data_add += BLINKER_F(",\"subDevice\":\"");
+    data_add += subDevice;
+    data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+    data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+    if (!isJson(data_add)) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT MIOT Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (mqtt_PRO->connected())
+    {
+        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
 
             return true;
         }
@@ -2500,9 +2660,9 @@ void BlinkerGateway::meshCheck()
         if (WiFi.status() != WL_CONNECTED) return;
         mesh.update();
 
-        if (isAvail_mesh)
+        if (isAvail_gate)
         {
-            BLINKER_LOG_ALL("new mesh data: ", meshBuf);
+            BLINKER_LOG_ALL("new gate data: ", meshBuf);
 
             DynamicJsonDocument jsonBuffer(1024);
             DeserializationError error = deserializeJson(jsonBuffer, meshBuf);
@@ -2511,32 +2671,103 @@ void BlinkerGateway::meshCheck()
             if (error) 
             {
                 BLINKER_ERR_LOG_ALL("msg not Json!");
-                isAvail_mesh = false;
+                isAvail_gate = false;
                 free(meshBuf);
                 return;
             }
 
             if (root.containsKey(BLINKER_CMD_DEVICEINFO))
             {
-                for (uint8_t num = 0; num < _subCount; num++)
+                // for (uint8_t num = 0; num < _subCount; num++)
+                // {
+                //     if (_subDevices[num]->id() == msgFrom)
+                //     {
+                //         _subDevices[num]->auth(root[BLINKER_CMD_DEVICEINFO]["name"],
+                //             root[BLINKER_CMD_DEVICEINFO]["key"],
+                //             root[BLINKER_CMD_DEVICEINFO]["type"],
+                //             root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
+
+                //         // delay(1000);
+                //         // subRegister(num); TODO
+
+                //         vasDecode(root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
+                //     }
+                // }
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
                 {
-                    if (_subDevices[num]->id() == msgFrom)
-                    {
-                        _subDevices[num]->auth(root[BLINKER_CMD_DEVICEINFO]["name"],
-                            root[BLINKER_CMD_DEVICEINFO]["key"],
-                            root[BLINKER_CMD_DEVICEINFO]["type"],
-                            root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
+                    _subDevices[checkId]->auth(root[BLINKER_CMD_DEVICEINFO]["name"],
+                        root[BLINKER_CMD_DEVICEINFO]["key"],
+                        root[BLINKER_CMD_DEVICEINFO]["type"],
+                        root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
 
-                        // delay(1000);
-                        // subRegister(num); TODO
-
-                        vasDecode(root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
-                    }
+                    vasDecode(root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
                 }
             }
 
-            isAvail_mesh = false;
+            isAvail_gate = false;
             free(meshBuf);
+        }
+        else if (isAvail_ctrl)
+        {
+            BLINKER_LOG_ALL("new gate data: ", meshBuf);
+
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, meshBuf);
+            JsonObject root = jsonBuffer.as<JsonObject>();
+
+            if (error) 
+            {
+                BLINKER_ERR_LOG_ALL("msg not Json!");
+                isAvail_ctrl = false;
+                free(meshBuf);
+                return;
+            }
+
+            if (root.containsKey("user"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    if (_subDevices[checkId]->isAuth())
+                    {
+                        subPrint(root["user"], root["toDevice"], _subDevices[checkId]->deviceName());
+                    }
+                }
+            }
+            else if (root.containsKey("ali"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    if (_subDevices[checkId]->isAuth())
+                    {
+                        subAliPrint(root["ali"], _subDevices[checkId]->deviceName());
+                    }
+                }
+            }
+            else if (root.containsKey("duer"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    if (_subDevices[checkId]->isAuth())
+                    {
+                        subDuerPrint(root["duer"], _subDevices[checkId]->deviceName());
+                    }
+                }
+            }
+            else if (root.containsKey("miot"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    if (_subDevices[checkId]->isAuth())
+                    {
+                        subMiPrint(root["miot"], _subDevices[checkId]->deviceName());
+                    }
+                }
+            }
         }
 
         if (_newSub)

@@ -504,6 +504,8 @@
 
 #define BLINKER_CMD_GATE                "gate"
 
+#define BLINKER_CMD_CONTROL             "ctrl"
+
 #define BLINKER_CMD_DEVICEINFO          "dInf"
 
 #define BLINKER_CMD_NEW                 "{\"hello\":\"new\"}"

@@ -33,6 +33,7 @@ char*   msgBuf_PRO;
 bool    isFresh_PRO = false;
 bool    isAvail_PRO = false;
 char*   AUTHKEY_PRO;
+char*   UUID_PRO;
 char*   MQTT_DEVICEID_PRO;
 
 painlessMesh  mesh;
@@ -204,6 +205,7 @@ class BlinkerSubDevice : public BlinkerStream
         bool        _isAuthKey = false;
         bool        _isMeshInit = false;
         bool        _isHello = false;
+        uint32_t    gateId = 0;
         // bool        _isTimeSet = false;
 };
 
@@ -214,7 +216,7 @@ int BlinkerSubDevice::connect()
 
 int BlinkerSubDevice::connected()
 {
-    return true;
+    return mesh.isConnected(gateId);
 }
 
 int BlinkerSubDevice::mConnected()
@@ -283,22 +285,272 @@ void BlinkerSubDevice::flush()
 
 int BlinkerSubDevice::print(char * data, bool needCheck)
 {
-    return false;
+    uint16_t num = strlen(data);
+
+    for(uint16_t c_num = num; c_num > 0; c_num--)
+    {
+        data[c_num+15] = data[c_num-1];
+    }
+
+    data[num+16] = '\0';
+
+    String data_add = BLINKER_F("{\"ctrl\":{\"user\":");
+        
+    for(uint16_t c_num = 0; c_num < 16; c_num++)
+    {
+        data[c_num] = data_add[c_num];
+    }
+
+    // data_add = BLINKER_F(",\"fromDevice\":\"");
+    // strcat(data, data_add.c_str());
+    // strcat(data, MQTT_DEVICEID_PRO);
+    data_add = BLINKER_F("\",\"toDevice\":\"");
+    strcat(data, data_add.c_str());
+    if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
+    {
+        strcat(data, _sharers[_sharerFrom]->uuid());
+    }
+    else
+    {
+        strcat(data, UUID_PRO);
+    }
+    // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}}");
+    data_add = BLINKER_F("}}");
+    strcat(data, data_add.c_str());
+
+    _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+
+    if (!isJson(STRING_format(data))) return false;
+    
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+    
+    bool _alive = isAlive;
+
+    if (needCheck)
+    {
+        if (!checkPrintSpan())
+        {
+            return false;
+        }
+        respTime = millis();
+    }
+
+    if (gateId != 0)
+    {
+        if (needCheck)
+        {
+            if (!checkCanPrint())
+            {
+                if (!_alive)
+                {
+                    isAlive = false;
+                }
+                return false;
+            }
+        }
+
+        if (!sendSingle(gateId, data))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            if (!_alive)
+            {
+                isAlive = false;
+            }
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            if (needCheck) printTime = millis();
+
+            if (!_alive)
+            {
+                isAlive = false;
+            }
+
+            this->latestTime = millis();
+
+            return true;
+        }     
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        isAlive = false;
+        return false;
+    }
 }
 
 int BlinkerSubDevice::aliPrint(const String & data)
 {
-    return false;
+    String data_add = BLINKER_F("{\"ctrl\":{\"ali\":");
+
+    data_add += data;
+    data_add += BLINKER_F("}");
+
+    if (!isJson(data_add)) return false;
+            
+    BLINKER_LOG_ALL(BLINKER_F("MQTT AliGenie Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (gateId != 0)
+    {
+        if (!checkAliKA())
+        {
+            return false;
+        }
+
+        if (!checkAliPrintSpan())
+        {
+            respAliTime = millis();
+            return false;
+        }
+        respAliTime = millis();
+
+        if (!sendSingle(gateId, data))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            isAliAlive = false;
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            isAliAlive = false;
+
+            this->latestTime = millis();
+
+            return true;
+        }      
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
 }
 
 int BlinkerSubDevice::duerPrint(const String & data)
 {
-    return false;
+    String data_add = BLINKER_F("{\"ctrl\":{\"duer\":");
+
+    data_add += data;
+    data_add += BLINKER_F("}");
+
+    if (!isJson(data_add)) return false;
+            
+    BLINKER_LOG_ALL(BLINKER_F("MQTT DuerOS Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (gateId != 0)
+    {
+        if (!checkDuerKA())
+        {
+            return false;
+        }
+
+        if (!checkDuerPrintSpan())
+        {
+            respDuerTime = millis();
+            return false;
+        }
+        respDuerTime = millis();
+
+        if (!sendSingle(gateId, data))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            isDuerAlive = false;
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            isDuerAlive = false;
+
+            this->latestTime = millis();
+
+            return true;
+        }      
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
 }
 
 int BlinkerSubDevice::miPrint(const String & data)
 {
-    return false;
+    String data_add = BLINKER_F("{\"ctrl\":{\"miot\":");
+
+    data_add += data;
+    data_add += BLINKER_F("}");
+
+    if (!isJson(data_add)) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT MIOT Publish..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    if (gateId != 0)
+    {
+        if (!checkMIOTKA())
+        {
+            return false;
+        }
+
+        if (!checkMIOTPrintSpan())
+        {
+            respMIOTTime = millis();
+            return false;
+        }
+        respMIOTTime = millis();
+
+        if (!sendSingle(gateId, data))
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+
+            isMIOTAlive = false;
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data_add);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+
+            isMIOTAlive = false;
+
+            this->latestTime = millis();
+
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
 }
 
 void BlinkerSubDevice::begin(const char* _key, const char* _type)
@@ -565,6 +817,8 @@ void BlinkerSubDevice::meshCheck()
             BLINKER_LOG_ALL("new mesh data: ", meshBuf);
             if (strcmp(meshBuf, BLINKER_CMD_WHOIS) == 0)
             {
+                gateId = msgFrom;
+
                 sendSingle(msgFrom, gateFormat(
                     "{\"" + STRING_format(BLINKER_CMD_DEVICEINFO) + \
                     "\":{" + \
