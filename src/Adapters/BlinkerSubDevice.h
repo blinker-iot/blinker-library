@@ -33,6 +33,7 @@ char*   msgBuf_PRO;
 bool    isFresh_PRO = false;
 bool    isAvail_PRO = false;
 char*   AUTHKEY_PRO;
+char*   UUID_PRO;
 char*   MQTT_DEVICEID_PRO;
 
 painlessMesh  mesh;
@@ -215,7 +216,7 @@ int BlinkerSubDevice::connect()
 
 int BlinkerSubDevice::connected()
 {
-    return true;
+    return mesh.isConnected(gateId);
 }
 
 int BlinkerSubDevice::mConnected()
@@ -293,16 +294,16 @@ int BlinkerSubDevice::print(char * data, bool needCheck)
 
     data[num+16] = '\0';
 
-    String data_add = BLINKER_F("{\"ctrl\":{\"data\":");
+    String data_add = BLINKER_F("{\"ctrl\":{\"user\":");
         
     for(uint16_t c_num = 0; c_num < 16; c_num++)
     {
         data[c_num] = data_add[c_num];
     }
 
-    data_add = BLINKER_F(",\"fromDevice\":\"");
-    strcat(data, data_add.c_str());
-    strcat(data, MQTT_DEVICEID_PRO);
+    // data_add = BLINKER_F(",\"fromDevice\":\"");
+    // strcat(data, data_add.c_str());
+    // strcat(data, MQTT_DEVICEID_PRO);
     data_add = BLINKER_F("\",\"toDevice\":\"");
     strcat(data, data_add.c_str());
     if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
@@ -313,7 +314,8 @@ int BlinkerSubDevice::print(char * data, bool needCheck)
     {
         strcat(data, UUID_PRO);
     }
-    data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}}");
+    // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}}");
+    data_add = BLINKER_F("}}");
     strcat(data, data_add.c_str());
 
     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
@@ -388,13 +390,10 @@ int BlinkerSubDevice::print(char * data, bool needCheck)
 
 int BlinkerSubDevice::aliPrint(const String & data)
 {
-    String data_add = BLINKER_F("{\"ctrl\":{\"data\":");
+    String data_add = BLINKER_F("{\"ctrl\":{\"ali\":");
 
     data_add += data;
-    data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_DEVICEID_PRO;
-    data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
-    data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+    data_add += BLINKER_F("}");
 
     if (!isJson(data_add)) return false;
             
@@ -446,13 +445,10 @@ int BlinkerSubDevice::aliPrint(const String & data)
 
 int BlinkerSubDevice::duerPrint(const String & data)
 {
-    String data_add = BLINKER_F("{\"data\":");
+    String data_add = BLINKER_F("{\"ctrl\":{\"duer\":");
 
     data_add += data;
-    data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_DEVICEID_PRO;
-    data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
-    data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+    data_add += BLINKER_F("}");
 
     if (!isJson(data_add)) return false;
             
@@ -504,13 +500,10 @@ int BlinkerSubDevice::duerPrint(const String & data)
 
 int BlinkerSubDevice::miPrint(const String & data)
 {
-    String data_add = BLINKER_F("{\"data\":");
+    String data_add = BLINKER_F("{\"ctrl\":{\"miot\":");
 
     data_add += data;
-    data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_DEVICEID_PRO;
-    data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
-    data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+    data_add += BLINKER_F("}");
 
     if (!isJson(data_add)) return false;
 

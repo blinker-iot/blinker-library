@@ -124,19 +124,23 @@ extern "C" {
 
                     BLINKER_LOG_ALL("register msg, authKey: ", _auth, 
                                     ", deviceId: ", _dId);
+
+                    _authState = true;
                 }
 
                 void freshAuth(bool authState) { _authState = authState; }
 
-                bool isAuth()   { return _authState; }
+                bool isAuth()       { return _authState; }
 
-                char *name()    { return _name; }
+                char *name()        { return _name; }
 
-                char *key()     { return _key; }
+                char *key()         { return _key; }
 
-                char *type()    { return _type; }
+                char *type()        { return _type; }
 
-                uint32_t id()   { return _id; }
+                char *deviceName()  { return _dId; }
+
+                uint32_t id()       { return _id; }
 
             private :
                 uint32_t    _id;
