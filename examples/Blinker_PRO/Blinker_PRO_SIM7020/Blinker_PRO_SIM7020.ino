@@ -69,7 +69,7 @@ bool dataParse(const JsonObject & data)
 {
     String getData;
 
-    data.printTo(getData);
+    serializeJson(data, getData);
     
     BLINKER_LOG("Get user command: ", getData);
     return true;
