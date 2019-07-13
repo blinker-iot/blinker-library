@@ -624,6 +624,7 @@ void BlinkerPROESP::flush()
 }
 
 int BlinkerPROESP::print(char * data, bool needCheck)
+// int BlinkerPROESP::print(const String & data, bool needCheck)
 {
     // BLINKER_LOG_FreeHeap();
     if (*isHandle && dataFrom_PRO == BLINKER_MSG_FROM_WS)
@@ -683,41 +684,61 @@ int BlinkerPROESP::print(char * data, bool needCheck)
         //     // payload += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         // }
 
-        uint16_t num = strlen(data);
+        // uint16_t num = strlen(data);
 
-        for(uint16_t c_num = num; c_num > 0; c_num--)
-        {
-            data[c_num+7] = data[c_num-1];
-        }
+        // for(uint16_t c_num = num; c_num > 0; c_num--)
+        // {
+        //     data[c_num+7] = data[c_num-1];
+        // }
 
-        data[num+8] = '\0';
+        // data[num+8] = '\0';
+
+        // String data_add = BLINKER_F("{\"data\":");
+        
+        // for(uint16_t c_num = 0; c_num < 8; c_num++)
+        // {
+        //     data[c_num] = data_add[c_num];
+        // }
+
+        // data_add = BLINKER_F(",\"fromDevice\":\"");
+        // strcat(data, data_add.c_str());
+        // strcat(data, MQTT_DEVICEID_PRO);
+        // data_add = BLINKER_F("\",\"toDevice\":\"");
+        // strcat(data, data_add.c_str());
+        // if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
+        // {
+        //     strcat(data, _sharers[_sharerFrom]->uuid());
+        // }
+        // else
+        // {
+        //     strcat(data, UUID_PRO);
+        // }
+        // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
+        // strcat(data, data_add.c_str());
+
+        // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+
+        // if (!isJson(STRING_format(data))) return false;
 
         String data_add = BLINKER_F("{\"data\":");
-        
-        for(uint16_t c_num = 0; c_num < 8; c_num++)
-        {
-            data[c_num] = data_add[c_num];
-        }
-
-        data_add = BLINKER_F(",\"fromDevice\":\"");
-        strcat(data, data_add.c_str());
-        strcat(data, MQTT_DEVICEID_PRO);
-        data_add = BLINKER_F("\",\"toDevice\":\"");
-        strcat(data, data_add.c_str());
+        data_add += data;
+        data_add += BLINKER_F(",\"fromDevice\":\"");
+        data_add += MQTT_DEVICEID_PRO;
+        data_add += BLINKER_F("\",\"toDevice\":\"");
         if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
         {
-            strcat(data, _sharers[_sharerFrom]->uuid());
+            data_add += _sharers[_sharerFrom]->uuid();
         }
         else
         {
-            strcat(data, UUID_PRO);
+            data_add += UUID_PRO;
         }
-        data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
-        strcat(data, data_add.c_str());
+
+        data_add += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
 
         _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
 
-        if (!isJson(STRING_format(data))) return false;
+        if (!isJson(data_add)) return false;
         
         BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
         BLINKER_LOG_FreeHeap_ALL();
@@ -747,9 +768,9 @@ int BlinkerPROESP::print(char * data, bool needCheck)
                 }
             }
 
-            if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data))
+            if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
             {
-                BLINKER_LOG_ALL(data);
+                BLINKER_LOG_ALL(data_add);
                 BLINKER_LOG_ALL(BLINKER_F("...Failed"));
                 BLINKER_LOG_FreeHeap_ALL();
                 
@@ -761,7 +782,7 @@ int BlinkerPROESP::print(char * data, bool needCheck)
             }
             else
             {
-                BLINKER_LOG_ALL(data);
+                BLINKER_LOG_ALL(data_add);
                 BLINKER_LOG_ALL(BLINKER_F("...OK!"));
                 BLINKER_LOG_FreeHeap_ALL();
                 
@@ -1847,7 +1868,7 @@ int BlinkerPROESP::connectServer() {
     if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || error ||
         !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
         // while(1) {
-            BLINKER_ERR_LOG(("Please make sure you have register this device!"));
+            BLINKER_ERR_LOG(BLINKER_F("Please make sure you have register this device!"));
             // ::delay(60000);
 
             return false;
@@ -1886,7 +1907,7 @@ int BlinkerPROESP::connectServer() {
         isMQTTinit = false;
     }
 
-    BLINKER_LOG_ALL(("===================="));
+    BLINKER_LOG_ALL(BLINKER_F("===================="));
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
         // memcpy(DEVICE_NAME, _userID.c_str(), 12);
@@ -1909,7 +1930,7 @@ int BlinkerPROESP::connectServer() {
         // strcpy(AUTHKEY_PRO, _authKey.c_str());
         MQTT_PORT_PRO = BLINKER_MQTT_ALIYUN_PORT;
 
-        BLINKER_LOG_ALL(("===================="));
+        BLINKER_LOG_ALL(BLINKER_F("===================="));
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
         // String id2name = _userID.subString(10, _userID.length());
@@ -1951,7 +1972,7 @@ int BlinkerPROESP::connectServer() {
 
     char uuid_eeprom[BLINKER_AUUID_SIZE];
 
-    BLINKER_LOG_ALL(("==========AUTH CHECK=========="));
+    BLINKER_LOG_ALL(BLINKER_F("==========AUTH CHECK=========="));
 
     if (!isFirst)
     {
@@ -2291,7 +2312,7 @@ int BlinkerPROESP::checkDuerPrintSpan()
 
 int BlinkerPROESP::pubHello()
 {
-    char stateJsonStr[256] = ("{\"message\":\"Registration successful\"}");
+    char stateJsonStr[50] = ("{\"message\":\"Registration successful\"}");
     
     BLINKER_LOG_ALL(BLINKER_F("PUB hello: "), stateJsonStr);
     

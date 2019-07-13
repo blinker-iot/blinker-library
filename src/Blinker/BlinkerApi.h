@@ -2448,7 +2448,7 @@ void BlinkerApi::run()
                 if (millis() > 5000 && !_isCheckPower)
                     {
                         _isCheckPower = true;
-                        BLINKER_LOG_ALL("erase power count");
+                        BLINKER_LOG_ALL(BLINKER_F("erase power count"));
 
                         EEPROM.begin(BLINKER_EEP_SIZE);
                         EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
@@ -4841,7 +4841,7 @@ float BlinkerApi::gps(b_gps_t axis)
                 {
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
 
-                    BLINKER_LOG_ALL("millis() - ntpFreshTime1:", (millis() - ntpFreshTime) / 1000);
+                    BLINKER_LOG_ALL(BLINKER_F("millis() - ntpFreshTime1:"), (millis() - ntpFreshTime) / 1000);
                 }
                 
                 ntpGetTime = _ntpGetTime;
@@ -6832,7 +6832,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         if (STRING_find_string_value(_data, state, _wName))
         {
-            BLINKER_LOG_ALL("state: ", state);
+            BLINKER_LOG_ALL(BLINKER_F("state: "), state);
             BLINKER_LOG_ALL(BLINKER_F("strWidgetsParse isParsed"));
             _fresh = true;
 
@@ -7851,7 +7851,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                         if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE)
                         {
-                            BLINKER_ERR_LOG("TIMER ACTION TOO LONG");
+                            BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION TOO LONG"));
                             return true;
                         }
 

@@ -919,39 +919,59 @@ int BlinkerMQTTAT::print(char * data, bool needCheck)
         //     // payload += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         // }
 
-        uint16_t num = strlen(data);
-        for(uint16_t c_num = num; c_num > 0; c_num--)
-        {
-            data[c_num+7] = data[c_num-1];
-        }
+        // uint16_t num = strlen(data);
+        // for(uint16_t c_num = num; c_num > 0; c_num--)
+        // {
+        //     data[c_num+7] = data[c_num-1];
+        // }
 
-        data[num+8] = '\0';
+        // data[num+8] = '\0';
+
+        // String data_add = BLINKER_F("{\"data\":");
+        // for(uint8_t c_num = 0; c_num < 8; c_num++)
+        // {
+        //     data[c_num] = data_add[c_num];
+        // }
+
+        // data_add = BLINKER_F(",\"fromDevice\":\"");
+        // strcat(data, data_add.c_str());
+        // strcat(data, MQTT_ID_MQTT_AT);
+        // data_add = BLINKER_F("\",\"toDevice\":\"");
+        // strcat(data, data_add.c_str());
+        // if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
+        // {
+        //     strcat(data, _sharers[_sharerFrom]->uuid());
+        // }
+        // else
+        // {
+        //     strcat(data, UUID_MQTT_AT);
+        // }
+        // data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
+        // strcat(data, data_add.c_str());
+
+        // _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+
+        // if (!isJson(STRING_format(data))) return false;
 
         String data_add = BLINKER_F("{\"data\":");
-        for(uint8_t c_num = 0; c_num < 8; c_num++)
-        {
-            data[c_num] = data_add[c_num];
-        }
-
-        data_add = BLINKER_F(",\"fromDevice\":\"");
-        strcat(data, data_add.c_str());
-        strcat(data, MQTT_ID_MQTT_AT);
-        data_add = BLINKER_F("\",\"toDevice\":\"");
-        strcat(data, data_add.c_str());
+        data_add += data;
+        data_add += BLINKER_F(",\"fromDevice\":\"");
+        data_add += MQTT_ID_MQTT_AT;
+        data_add += BLINKER_F("\",\"toDevice\":\"");
         if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
         {
-            strcat(data, _sharers[_sharerFrom]->uuid());
+            data_add += _sharers[_sharerFrom]->uuid();
         }
         else
         {
-            strcat(data, UUID_MQTT_AT);
+            data_add += UUID_MQTT_AT;
         }
-        data_add = BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
-        strcat(data, data_add.c_str());
+
+        data_add += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
 
         _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
 
-        if (!isJson(STRING_format(data))) return false;
+        if (!isJson(data_add)) return false;
         
         BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
         BLINKER_LOG_FreeHeap_ALL();
@@ -991,9 +1011,9 @@ int BlinkerMQTTAT::print(char * data, bool needCheck)
                 BLINKER_LOG_ALL(BLINKER_F("_print_times: "), _print_times);
             }
 
-            if (! mqtt_MQTT_AT->publish(BLINKER_PUB_TOPIC_MQTT_AT, data))
+            if (! mqtt_MQTT_AT->publish(BLINKER_PUB_TOPIC_MQTT_AT, data_add.c_str()))
             {
-                BLINKER_LOG_ALL(data);
+                BLINKER_LOG_ALL(data_add);
                 BLINKER_LOG_ALL(BLINKER_F("...Failed"));
                 BLINKER_LOG_FreeHeap_ALL();
                 
@@ -1005,7 +1025,7 @@ int BlinkerMQTTAT::print(char * data, bool needCheck)
             }
             else
             {
-                BLINKER_LOG_ALL(data);
+                BLINKER_LOG_ALL(data_add);
                 BLINKER_LOG_ALL(BLINKER_F("...OK!"));
                 BLINKER_LOG_FreeHeap_ALL();
                 
