@@ -211,11 +211,13 @@ class BlinkerSubDevice : public BlinkerStream
 
 int BlinkerSubDevice::connect()
 {
-    return true;
+    if (gateId == 0) return false;
+    return mesh.isConnected(gateId);
 }
 
 int BlinkerSubDevice::connected()
 {
+    if (gateId == 0) return false;
     return mesh.isConnected(gateId);
 }
 
