@@ -125,6 +125,7 @@ class BlinkerSubDevice : public BlinkerStream
         int miAvail();
         char * lastRead();
         void flush();
+        int subPrint(const String & data);
         int print(char * data, bool needCheck = true);
         int bPrint(char * name, const String & data) { return false; }
         int aliPrint(const String & data);
@@ -211,11 +212,13 @@ class BlinkerSubDevice : public BlinkerStream
 
 int BlinkerSubDevice::connect()
 {
-    return true;
+    if (gateId == 0) return false;
+    return mesh.isConnected(gateId);
 }
 
 int BlinkerSubDevice::connected()
 {
+    if (gateId == 0) return false;
     return mesh.isConnected(gateId);
 }
 
@@ -281,6 +284,19 @@ void BlinkerSubDevice::flush()
         free(msgBuf_PRO); isFresh_PRO = false; isAvail_PRO = false;
         isAliAvail = false; isDuerAvail = false; isMIOTAvail = false;//isBavail = false;
     }
+}
+
+int BlinkerSubDevice::subPrint(const String & data)
+{
+    String data_add = BLINKER_F("{\"ctrl\":");
+    data_add += data;
+    data_add += BLINKER_F("}}");
+
+    if (!isJson(data_add)) return false;
+
+    if (gateId == 0) return false;
+
+    return sendSingle(gateId, data_add);
 }
 
 int BlinkerSubDevice::print(char * data, bool needCheck)

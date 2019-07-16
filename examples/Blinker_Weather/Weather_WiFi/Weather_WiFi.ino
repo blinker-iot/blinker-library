@@ -51,6 +51,11 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
+void weatherData(const String & data)
+{
+    BLINKER_LOG("weather: ", data);
+}
+
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
@@ -61,8 +66,7 @@ void dataRead(const String & data)
     Blinker.print("millis", BlinkerTime);
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    String get_weather = Blinker.weather();
-    BLINKER_LOG("weather: ", get_weather);
+    Blinker.weather();
     
     Blinker.delay(60000);
 }
@@ -77,6 +81,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
+    Blinker.attachWeather(weatherData);
 }
 
 void loop()
