@@ -156,7 +156,10 @@ class BlinkerProtocol
         #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
             void meshCheck() { conn->meshCheck(); }
             #if !defined(BLINKER_WIFI_SUBDEVICE)
-            void setTimezone(float tz) { conn->setTimezone(tz); }
+                void setTimezone(float tz) { conn->setTimezone(tz); }
+            #endif
+            #if defined(BLINKER_WIFI_SUBDEVICE)
+                void subPrint(const String & data) { conn->subPrint(data); }
             #endif
         #endif
     // #endif

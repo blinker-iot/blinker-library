@@ -2792,16 +2792,7 @@ void BlinkerGateway::meshCheck()
 
         if (_newSub)
         {
-            // BLINKER_LOG_ALL("{\"hello\":\"whois\"}");
-            // mesh.sendBroadcast("{\"hello\":\"whois\"}");
             _newSub = false;
-            // for (uint8_t num = 0; num < _subCount; num++)
-            // {
-            //     if (_subDevices[num]->isNew())
-            //     {
-            //         sendSingle(_subDevices[num]->id(), gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
-            //     }
-            // }
 
             sendBroadcast(gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
 
@@ -2809,14 +2800,6 @@ void BlinkerGateway::meshCheck()
         }
         else if (millis() - _meshCheckTime >= BLINKER_MESH_CHECK_FREQ)
         {
-            // for (uint8_t num = 0; num < _subCount; num++)
-            // {
-            //     if (_subDevices[num]->isNew())
-            //     {
-            //         sendSingle(_subDevices[num]->id(), gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
-            //     }
-            // }
-
             sendBroadcast(gateFormat(STRING_format(BLINKER_CMD_WHOIS)));
 
             _meshCheckTime = millis();

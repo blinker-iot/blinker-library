@@ -124,7 +124,10 @@ class BlinkerStream
         #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
             virtual void meshCheck() = 0;
             #if !defined(BLINKER_WIFI_SUBDEVICE)
-            virtual void setTimezone(float tz) = 0;
+                virtual void setTimezone(float tz) = 0;
+            #endif
+            #if defined(BLINKER_WIFI_SUBDEVICE)
+                virtual int subPrint(const String & data) = 0;
             #endif
         #endif
 

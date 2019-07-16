@@ -353,8 +353,8 @@ class BlinkerApi : public BlinkerProtocol
             bool wechat(const T& msg);
             template<typename T>
             bool wechat(const String & title, const String & state, const T& msg);
-            String weather(const String & _city = BLINKER_CMD_DEFAULT);
-            String aqi(const String & _city = BLINKER_CMD_DEFAULT);
+            void weather(const String & _city = BLINKER_CMD_DEFAULT);
+            void aqi(const String & _city = BLINKER_CMD_DEFAULT);
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -371,14 +371,14 @@ class BlinkerApi : public BlinkerProtocol
 
             template<typename T>
             bool configUpdate(const T& msg);
-            String configGet();
+            void configGet();
             bool configDelete();
             template<typename T>
             void dataStorage(char _name[], const T& msg);
             bool dataUpdate();
-            String dataGet();
-            String dataGet(const String & _type);
-            String dataGet(const String & _type, const String & _date);
+            void dataGet();
+            void dataGet(const String & _type);
+            void dataGet(const String & _type, const String & _date);
             bool dataDelete();
             bool dataDelete(const String & _type);
             bool event(const String & _key, String _value = "");
@@ -572,8 +572,8 @@ class BlinkerApi : public BlinkerProtocol
             int8_t month()  { return atGetInt(BLINKER_CMD_MONTH); }
             int16_t year()  { return atGetInt(BLINKER_CMD_YEAR); }
             int16_t yday()  { return atGetInt(BLINKER_CMD_YDAY); }
-            String weather(const String & _city = BLINKER_CMD_DEFAULT);
-            String aqi(const String & _city = BLINKER_CMD_DEFAULT);
+            void weather(const String & _city = BLINKER_CMD_DEFAULT);
+            void aqi(const String & _city = BLINKER_CMD_DEFAULT);
             template<typename T>
             bool sms(const T& msg);
             void reset();
@@ -624,6 +624,14 @@ class BlinkerApi : public BlinkerProtocol
         { _heartbeatFunc = newFunction; }
         void attachSummary(blinker_callback_return_string_t newFunction)
         { _summaryFunc = newFunction; }
+        void attachAQI(blinker_callback_with_string_arg_t newFunction)
+        { _aqiFunc = newFunction; }
+        void attachWeather(blinker_callback_with_string_arg_t newFunction)
+        { _weatherFunc = newFunction; }
+        void attachConfigGet(blinker_callback_with_string_arg_t newFunction)
+        { _configGetFunc = newFunction; }
+        void attachDataGet(blinker_callback_with_string_arg_t newFunction)
+        { _dataGetFunc = newFunction; }
 
         void freshAttachWidget(char _name[], blinker_callback_with_string_arg_t _func);
         #if defined(BLINKER_BLE)
@@ -949,6 +957,10 @@ class BlinkerApi : public BlinkerProtocol
 
         blinker_callback_t                  _heartbeatFunc = NULL;
         blinker_callback_return_string_t    _summaryFunc = NULL;
+        blinker_callback_with_string_arg_t  _aqiFunc = NULL;
+        blinker_callback_with_string_arg_t  _weatherFunc = NULL;
+        blinker_callback_with_string_arg_t  _configGetFunc = NULL;
+        blinker_callback_with_string_arg_t  _dataGetFunc = NULL;
 
         void parse(char _data[], bool ex_data = false);
 
@@ -1026,55 +1038,55 @@ class BlinkerApi : public BlinkerProtocol
                 return true;
             }
 
-            String blinkerServer(uint8_t _type, const String & msg, bool state = false)
+            bool blinkerServer(uint8_t _type, const String & msg, bool state = false)
             {
                 switch (_type)
                 {
                     case BLINKER_CMD_SMS_NUMBER :
                         if (!checkSMS()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
 
                         if ((!state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE) ||
                             (state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE + 15)) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_PUSH_NUMBER :
                         if (!checkPUSH()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_WECHAT_NUMBER :
                         if (!checkWECHAT()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_WEATHER_NUMBER :
                         if (!checkWEATHER()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_AQI_NUMBER :
                         if (!checkAQI()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_BRIDGE_NUMBER :
                         break;
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         if (!checkCUPDATE()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_CONFIG_GET_NUMBER :
                         if (!checkCGET()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_CONFIG_DELETE_NUMBER :
                         if (!checkCDEL()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_DATA_STORAGE_NUMBER :
@@ -1084,17 +1096,17 @@ class BlinkerApi : public BlinkerProtocol
                         break;
                     case BLINKER_CMD_DATA_GET_NUMBER :
                         if (!checkDataGet()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_DATA_DELETE_NUMBER :
                         if (!checkDataDel()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_AUTO_PULL_NUMBER :
                         if (!checkAutoPull()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_OTA_NUMBER :
@@ -1116,7 +1128,7 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_GPS_DATA_NUMBER :
                         break;
                     default :
-                        return BLINKER_CMD_FALSE;
+                        return false;
                 }
 
                 BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
@@ -1331,7 +1343,7 @@ class BlinkerApi : public BlinkerProtocol
                         httpCode = http.POST(msg, conType, application);
                         break;
                     default :
-                        return BLINKER_CMD_FALSE;
+                        return false;
                 }
                 BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 
@@ -1391,9 +1403,11 @@ class BlinkerApi : public BlinkerProtocol
                             // return BLINKER_CMD_FALSE;
                         case BLINKER_CMD_WEATHER_NUMBER :
                             _weatherTime = millis();
+                            if (_weatherFunc) _aqiFunc(payload);
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
+                            if (_aqiFunc) _aqiFunc(payload);
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
@@ -1402,6 +1416,7 @@ class BlinkerApi : public BlinkerProtocol
                             break;
                         case BLINKER_CMD_CONFIG_GET_NUMBER :
                             _cGetTime = millis();
+                            if (_configGetFunc) _configGetFunc(payload);
                             break;
                         case BLINKER_CMD_CONFIG_DELETE_NUMBER :
                             _cDelTime = millis();
@@ -1411,6 +1426,7 @@ class BlinkerApi : public BlinkerProtocol
                             break;
                         case BLINKER_CMD_DATA_GET_NUMBER :
                             _dGetTime = millis();
+                            if (_dataGetFunc) _dataGetFunc(payload);
                             break;
                         case BLINKER_CMD_DATA_DELETE_NUMBER :
                             _dDelTime = millis();
@@ -1437,16 +1453,16 @@ class BlinkerApi : public BlinkerProtocol
                         case BLINKER_CMD_GPS_DATA_NUMBER :
                             break;
                         default :
-                            return BLINKER_CMD_FALSE;
+                            return false;
                     }
 
-                    return payload;
+                    return true;
                 }
                 else
                 {
                     BLINKER_LOG(BLINKER_F("[HTTP] ... failed"));
 
-                    return BLINKER_CMD_FALSE;
+                    return false;
                 }
             }
         #endif
@@ -1546,7 +1562,7 @@ class BlinkerApi : public BlinkerProtocol
                         break;
                     case BLINKER_CMD_AUTO_PULL_NUMBER :
                         if (!checkAutoPull()) {
-                            return BLINKER_CMD_FALSE;
+                            return false;
                         }
                         break;
                     case BLINKER_CMD_OTA_NUMBER :
@@ -1838,9 +1854,11 @@ class BlinkerApi : public BlinkerProtocol
                             // return BLINKER_CMD_FALSE;
                         case BLINKER_CMD_WEATHER_NUMBER :
                             _weatherTime = millis();
+                            if (_weatherFunc) _aqiFunc(payload);
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
+                            if (_aqiFunc) _aqiFunc(payload);
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
@@ -4976,9 +4994,11 @@ float BlinkerApi::gps(b_gps_t axis)
         }
 
         #if defined(BLINKER_WIFI_SUBDEVICE)
-        return BProto::print(data);
+            if (!checkSMS()) return false;
+            _smsTime = millis();
+            return BProto::subPrint(data);
         #else
-        return (blinkerServer(BLINKER_CMD_SMS_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+            return blinkerServer(BLINKER_CMD_SMS_NUMBER, data) == "false";
         #endif
     }
 
@@ -5010,13 +5030,25 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("\",\"msg\":\"");
             data += _msg;
             data += BLINKER_F("\"}");
+        #elif defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("{\"sms\":\"");
+            data += _msg;
+            data += BLINKER_F("\",\"cel\":\"");
+            data += cel;
+            data += BLINKER_F("\"}");
         #endif
 
         if (_msg.length() > 20) {
             return false;
         }
 
-        return (blinkerServer(BLINKER_CMD_SMS_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            if (!checkSMS()) return false;
+            _smsTime = millis();
+            return BProto::subPrint(data);
+        #else
+            return blinkerServer(BLINKER_CMD_SMS_NUMBER, data) == "false";
+        #endif
     }
 
     template<typename T>
@@ -5043,9 +5075,19 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("\",\"msg\":\"");
             data += _msg;
             data += BLINKER_F("\"}");
+        #elif defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("{\"push\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
         #endif
 
-        return (blinkerServer(BLINKER_CMD_PUSH_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            if (!checkPUSH()) return false;
+            _pushTime = millis();
+            return BProto::subPrint(data);
+        #else
+            return blinkerServer(BLINKER_CMD_PUSH_NUMBER, data) == "false";
+        #endif
     }
 
     template<typename T>
@@ -5072,9 +5114,19 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("\",\"msg\":\"");
             data += _msg;
             data += BLINKER_F("\"}");
+        #elif defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("{\"wechat\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
         #endif
 
-        return (blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            if (!checkWECHAT()) return false;
+            _wechatTime = millis();
+            return BProto::subPrint(data);
+        #else
+            return blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) == "false";
+        #endif
     }
 
     template<typename T>
@@ -5109,12 +5161,26 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("\",\"msg\":\"");
             data += _msg;
             data += BLINKER_F("\"}");
+        #elif defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("{\"wechat\":\"");
+            data += _msg;
+            data += BLINKER_F("\",\"title\":\"");
+            data += title;
+            data += BLINKER_F("\",\"state\":\"");
+            data += state;
+            data += BLINKER_F("\"}");
         #endif
 
-        return (blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            if (!checkWECHAT()) return false;
+            _wechatTime = millis();
+            return BProto::subPrint(data);
+        #else
+            return blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) == "false";
+        #endif
     }
 
-    String BlinkerApi::weather(const String & _city)
+    void BlinkerApi::weather(const String & _city)
     {
         String data = BLINKER_F("/weather/now?");
 
@@ -5139,10 +5205,22 @@ float BlinkerApi::gps(b_gps_t axis)
             data += _city;
         }
 
-        return blinkerServer(BLINKER_CMD_WEATHER_NUMBER, data);
+        // #if defined(BLINKER_WIFI_SUBDEVICE)
+        //     data = BLINKER_F("{\"weather\":\"");
+        //     data += _city;
+        //     data += BLINKER_F("\"}");
+        // #endif
+
+        // #if defined(BLINKER_WIFI_SUBDEVICE)
+        //     if (!checkWECHAT()) return false;
+        //     _wechatTime = millis();
+        //     return BProto::subPrint(data);
+        // #else
+            blinkerServer(BLINKER_CMD_WEATHER_NUMBER, data);
+        // #endif
     }
 
-    String BlinkerApi::aqi(const String & _city)
+    void BlinkerApi::aqi(const String & _city)
     {
         String data = BLINKER_F("/weather/aqi?");
 
@@ -5167,7 +5245,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += _city;
         }
 
-        return blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
+        blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
     }
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -5245,18 +5323,18 @@ float BlinkerApi::gps(b_gps_t axis)
 
         if (_msg.length() > 256) return false;
 
-        return (blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        return blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data) == "false";
     }
 
 
-    String BlinkerApi::configGet()
+    void BlinkerApi::configGet()
     {
         String data = BLINKER_F("/pull_userconfig?deviceName=");
         data += BProto::deviceName();
         data += BLINKER_F("&key=");
         data += BProto::authKey();
 
-        return blinkerServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
+        blinkerServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
     }
 
 
@@ -5267,7 +5345,7 @@ float BlinkerApi::gps(b_gps_t axis)
         data += BLINKER_F("&key=");
         data += BProto::authKey();
 
-        return (blinkerServer(BLINKER_CMD_CONFIG_DELETE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        return blinkerServer(BLINKER_CMD_CONFIG_DELETE_NUMBER, data) == "false";
     }
 
     template<typename T>
@@ -5406,7 +5484,7 @@ float BlinkerApi::gps(b_gps_t axis)
                         //  + \ _msg +
                         // "\"}}";
 
-        if (blinkerServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == BLINKER_CMD_FALSE)
+        if (blinkerServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == "false")
         {
             // for (uint8_t _num = 0; _num < data_dataCount; _num++)
             // {
@@ -5433,18 +5511,18 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
 
-    String BlinkerApi::dataGet()
+    void BlinkerApi::dataGet()
     {
         String data = BLINKER_F("/pull_cloudStorage?deviceName=");
         data += BProto::deviceName();
         data += BLINKER_F("&key=");
         data += BProto::authKey();
 
-        return blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+        blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
     }
 
 
-    String BlinkerApi::dataGet(const String & _type)
+    void BlinkerApi::dataGet(const String & _type)
     {
         String data = BLINKER_F("/pull_cloudStorage?deviceName=");
         data += BProto::deviceName();
@@ -5453,11 +5531,11 @@ float BlinkerApi::gps(b_gps_t axis)
         data += BLINKER_F("&dataType=");
         data += _type;
 
-        return blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+        blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
     }
 
 
-    String BlinkerApi::dataGet(const String & _type, const String & _date)
+    void BlinkerApi::dataGet(const String & _type, const String & _date)
     {
         String data = BLINKER_F("/pull_cloudStorage?deviceName=");
         data += BProto::deviceName();
@@ -5468,7 +5546,7 @@ float BlinkerApi::gps(b_gps_t axis)
         data += BLINKER_F("&date=");
         data += _date;
 
-        return blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+        blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
     }
 
 
@@ -5479,7 +5557,7 @@ float BlinkerApi::gps(b_gps_t axis)
         data += BLINKER_F("&key=");
         data += BProto::authKey();
 
-        return (blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == "false";
     }
 
 
@@ -5492,7 +5570,7 @@ float BlinkerApi::gps(b_gps_t axis)
         data += BLINKER_F("&dataType=");
         data += _type;
 
-        return (blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == "false";
     }
 
 
@@ -5510,7 +5588,7 @@ float BlinkerApi::gps(b_gps_t axis)
         data += _value;
         data += BLINKER_F("\"}");
 
-        return (blinkerServer(BLINKER_CMD_EVENT_DATA_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        return blinkerServer(BLINKER_CMD_EVENT_DATA_NUMBER, data) == "false";
     }
 
 
@@ -5528,7 +5606,7 @@ float BlinkerApi::gps(b_gps_t axis)
         data += STRING_format(time());
         data += BLINKER_F("]}");
 
-        return (blinkerServer(BLINKER_CMD_GPS_DATA_NUMBER, data) == BLINKER_CMD_FALSE) ? false:true;
+        return blinkerServer(BLINKER_CMD_GPS_DATA_NUMBER, data) == "false";
     }
 
 
@@ -5854,7 +5932,7 @@ float BlinkerApi::gps(b_gps_t axis)
             return false;
         #endif
 
-        return blinkerServer(BLINKER_CMD_OTA_STATUS_NUMBER, data) == BLINKER_CMD_FALSE;
+        return blinkerServer(BLINKER_CMD_OTA_STATUS_NUMBER, data) == "false";
     }
 
 
@@ -5917,7 +5995,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("&freq=");
             data += STRING_format(_LowPowerFreq);
 
-            return blinkerServer(BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER, data) == BLINKER_CMD_FALSE;
+            return blinkerServer(BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER, data) == "false";
         }
 
         String BlinkerApi::comDataGet()
@@ -5941,7 +6019,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BProto::_sendBuf;
             data += BLINKER_F("}");
 
-            return blinkerServer(BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER, data) == BLINKER_CMD_FALSE;
+            return blinkerServer(BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER, data) == "false";
         }
     #endif
 
@@ -10016,6 +10094,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                                 break;
                             case BLINKER_CMD_CONFIG_GET_NUMBER :
                                 _cGetTime = millis();
+                                if (_configGetFunc) _configGetFunc(payload);
                                 break;
                             case BLINKER_CMD_CONFIG_DELETE_NUMBER :
                                 _cDelTime = millis();
@@ -10025,6 +10104,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                                 break;
                             case BLINKER_CMD_DATA_GET_NUMBER :
                                 _dGetTime = millis();
+                                if (_dataGetFunc) _dataGetFunc(payload);
                                 break;
                             case BLINKER_CMD_DATA_DELETE_NUMBER :
                                 _dDelTime = millis();
@@ -11934,15 +12014,21 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     }
 
 
-    String BlinkerApi::weather(const String & _city)
+    void BlinkerApi::weather(const String & _city)
     {
-        return atGetString(BLINKER_CMD_WEATHER_AT, _city);
+        if (_weatherFunc)
+        {
+            _weatherFunc(atGetString(BLINKER_CMD_WEATHER_AT, _city));
+        }
     }
 
 
-    String BlinkerApi::aqi(const String & _city)
+    void BlinkerApi::aqi(const String & _city)
     {
-        return atGetString(BLINKER_CMD_AQI_AT, _city);
+        if (_aqiFunc)
+        {
+            _aqiFunc(atGetString(BLINKER_CMD_AQI_AT, _city));
+        }
     }
 
 
