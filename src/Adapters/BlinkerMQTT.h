@@ -1,7 +1,7 @@
 #ifndef BLINKER_MQTT_H
 #define BLINKER_MQTT_H
 
-#if defined(ESP8266) || defined(ESP32)
+#if (defined(ESP8266) || defined(ESP32))
 
 #define BLINKER_MQTT
 

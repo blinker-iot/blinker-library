@@ -22,7 +22,7 @@
     #include "Functions/BlinkerTicker.h"
 #endif
 
-#if defined(ESP8266)
+#if defined(ESP8266) && !defined(BLINKER_BLE)
     #include <ESP8266HTTPClient.h>
 
     #if defined(BLINKER_WIFI)
@@ -31,7 +31,7 @@
         static BearSSL::WiFiClientSecure client_s;
     #endif
 
-#elif defined(ESP32)
+#elif defined(ESP32) && !defined(BLINKER_BLE)
     #include <HTTPClient.h>
 #endif
 
@@ -1038,55 +1038,55 @@ class BlinkerApi : public BlinkerProtocol
                 return true;
             }
 
-            bool blinkerServer(uint8_t _type, const String & msg, bool state = false)
+            String blinkerServer(uint8_t _type, const String & msg, bool state = false)
             {
                 switch (_type)
                 {
                     case BLINKER_CMD_SMS_NUMBER :
                         if (!checkSMS()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
 
                         if ((!state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE) ||
                             (state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE + 15)) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_PUSH_NUMBER :
                         if (!checkPUSH()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_WECHAT_NUMBER :
                         if (!checkWECHAT()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_WEATHER_NUMBER :
                         if (!checkWEATHER()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_AQI_NUMBER :
                         if (!checkAQI()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_BRIDGE_NUMBER :
                         break;
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         if (!checkCUPDATE()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_CONFIG_GET_NUMBER :
                         if (!checkCGET()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_CONFIG_DELETE_NUMBER :
                         if (!checkCDEL()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_DATA_STORAGE_NUMBER :
@@ -1096,17 +1096,17 @@ class BlinkerApi : public BlinkerProtocol
                         break;
                     case BLINKER_CMD_DATA_GET_NUMBER :
                         if (!checkDataGet()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_DATA_DELETE_NUMBER :
                         if (!checkDataDel()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_AUTO_PULL_NUMBER :
                         if (!checkAutoPull()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_OTA_NUMBER :
@@ -1128,7 +1128,7 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_GPS_DATA_NUMBER :
                         break;
                     default :
-                        return false;
+                        return BLINKER_CMD_FALSE;
                 }
 
                 BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
@@ -1343,7 +1343,7 @@ class BlinkerApi : public BlinkerProtocol
                         httpCode = http.POST(msg, conType, application);
                         break;
                     default :
-                        return false;
+                        return BLINKER_CMD_FALSE;
                 }
                 BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 
@@ -1403,7 +1403,7 @@ class BlinkerApi : public BlinkerProtocol
                             // return BLINKER_CMD_FALSE;
                         case BLINKER_CMD_WEATHER_NUMBER :
                             _weatherTime = millis();
-                            if (_weatherFunc) _aqiFunc(payload);
+                            if (_weatherFunc) _weatherFunc(payload);
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
@@ -1453,16 +1453,16 @@ class BlinkerApi : public BlinkerProtocol
                         case BLINKER_CMD_GPS_DATA_NUMBER :
                             break;
                         default :
-                            return false;
+                            return BLINKER_CMD_FALSE;
                     }
 
-                    return true;
+                    return payload;
                 }
                 else
                 {
                     BLINKER_LOG(BLINKER_F("[HTTP] ... failed"));
 
-                    return false;
+                    return BLINKER_CMD_FALSE;
                 }
             }
         #endif
@@ -1867,6 +1867,7 @@ class BlinkerApi : public BlinkerProtocol
                             break;
                         case BLINKER_CMD_CONFIG_GET_NUMBER :
                             _cGetTime = millis();
+                            if (_configGetFunc) _configGetFunc(payload);
                             break;
                         case BLINKER_CMD_CONFIG_DELETE_NUMBER :
                             _cDelTime = millis();
@@ -1876,6 +1877,7 @@ class BlinkerApi : public BlinkerProtocol
                             break;
                         case BLINKER_CMD_DATA_GET_NUMBER :
                             _dGetTime = millis();
+                            if (_dataGetFunc) _dataGetFunc(payload);
                             break;
                         case BLINKER_CMD_DATA_DELETE_NUMBER :
                             _dDelTime = millis();
@@ -5205,19 +5207,19 @@ float BlinkerApi::gps(b_gps_t axis)
             data += _city;
         }
 
-        // #if defined(BLINKER_WIFI_SUBDEVICE)
-        //     data = BLINKER_F("{\"weather\":\"");
-        //     data += _city;
-        //     data += BLINKER_F("\"}");
-        // #endif
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            data = BLINKER_F("{\"weather\":\"");
+            data += _city;
+            data += BLINKER_F("\"}");
+        #endif
 
-        // #if defined(BLINKER_WIFI_SUBDEVICE)
-        //     if (!checkWECHAT()) return false;
-        //     _wechatTime = millis();
-        //     return BProto::subPrint(data);
-        // #else
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            if (!checkWECHAT()) return;
+            _wechatTime = millis();
+            BProto::subPrint(data);
+        #else
             blinkerServer(BLINKER_CMD_WEATHER_NUMBER, data);
-        // #endif
+        #endif
     }
 
     void BlinkerApi::aqi(const String & _city)
@@ -5245,7 +5247,19 @@ float BlinkerApi::gps(b_gps_t axis)
             data += _city;
         }
 
-        blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            data = BLINKER_F("{\"aqi\":\"");
+            data += _city;
+            data += BLINKER_F("\"}");
+        #endif
+
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            if (!checkWECHAT()) return;
+            _wechatTime = millis();
+            BProto::subPrint(data);
+        #else
+            blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
+        #endif
     }
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -10080,9 +10094,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             // return BLINKER_CMD_FALSE;
                         case BLINKER_CMD_WEATHER_NUMBER :
                             _weatherTime = millis();
+                            if (_weatherFunc) _weatherFunc(payload);
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
+                            if (_aqiFunc) _aqiFunc(payload);
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;

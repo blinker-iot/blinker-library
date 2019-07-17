@@ -1,7 +1,7 @@
 #ifndef BLINKER_OTA_H
 #define BLINKER_OTA_H
 
-#if defined(ESP8266) || defined(ESP32)
+#if (defined(ESP8266) || defined(ESP32))
 
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"

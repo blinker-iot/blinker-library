@@ -52,7 +52,7 @@ painlessMesh  mesh;
 
 char*       meshBuf;
 bool        isFresh_mesh = false;
-bool        isAvail_mesh = false;
+bool        isAvail_gate = false;
 uint32_t    msgFrom;
 bool        isTimeSet = false;
 float       mesh_timezone = 8.0;
@@ -96,7 +96,7 @@ void _receivedCallback(uint32_t from, String &msg)
         meshBuf = (char*)malloc((_data.length()+1)*sizeof(char));
         strcpy(meshBuf, _data.c_str());
 
-        isAvail_mesh = true;
+        isAvail_gate = true;
     }
 }
 
@@ -828,10 +828,23 @@ void BlinkerSubDevice::meshCheck()
         // if (WiFi.status() != WL_CONNECTED) return;
         mesh.update();
 
-        if (isAvail_mesh)
+        if (isAvail_gate)
         {
             BLINKER_LOG_ALL("new mesh data: ", meshBuf);
-            if (strcmp(meshBuf, BLINKER_CMD_WHOIS) == 0)
+
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, meshBuf);
+            JsonObject root = jsonBuffer.as<JsonObject>();
+
+            if (error) 
+            {
+                BLINKER_ERR_LOG_ALL("msg not Json!");
+                isAvail_gate = false;
+                free(meshBuf);
+                return;
+            }
+
+            if (root.containsKey("hello"))
             {
                 gateId = msgFrom;
 
@@ -844,8 +857,13 @@ void BlinkerSubDevice::meshCheck()
                     "\"vas\":" + STRING_format(vatFormat()) + \
                     "}}"));
             }
+            else if (root.containsKey("auth"))
+            {
+                BLINKER_LOG_ALL("deviceName: ", root["auth"]["deviceName"].as<String>());
+                BLINKER_LOG_ALL("uuid: ", root["auth"]["uuid"].as<String>());
+            }
 
-            isAvail_mesh = false;
+            isAvail_gate = false;
             free(meshBuf);
         }
 

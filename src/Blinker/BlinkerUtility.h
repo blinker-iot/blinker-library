@@ -115,7 +115,7 @@ extern "C" {
                                     ", vas: ", _vas);
                 }
 
-                void authInfo(const String & key, const String & name)
+                void authData(const String & key, const String & name)
                 {
                     _auth = (char*)malloc((key.length()+1)*sizeof(char));
                     strcpy(_auth, key.c_str());
