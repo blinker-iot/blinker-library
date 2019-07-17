@@ -1,7 +1,7 @@
 #ifndef BLINKER_GATEWAY_H
 #define BLINKER_GATEWAY_H
 
-#if defined(ESP8266) || defined(ESP32)
+#if (defined(ESP8266) || defined(ESP32))
 
 #if defined(ESP8266)
     #include <ESP8266mDNS.h>
@@ -234,6 +234,7 @@ class BlinkerGateway : public BlinkerStream
         String gateFormat(const String & msg);
         bool subRegister(uint32_t num);
         time_t time();
+        void blinkerServer(uint8_t nodeNum, uint8_t _type, const String & msg);
 
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
@@ -2698,21 +2699,6 @@ void BlinkerGateway::meshCheck()
 
             if (root.containsKey(BLINKER_CMD_DEVICEINFO))
             {
-                // for (uint8_t num = 0; num < _subCount; num++)
-                // {
-                //     if (_subDevices[num]->id() == msgFrom)
-                //     {
-                //         _subDevices[num]->auth(root[BLINKER_CMD_DEVICEINFO]["name"],
-                //             root[BLINKER_CMD_DEVICEINFO]["key"],
-                //             root[BLINKER_CMD_DEVICEINFO]["type"],
-                //             root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
-
-                //         // delay(1000);
-                //         // subRegister(num); TODO
-
-                //         vasDecode(root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
-                //     }
-                // }
                 int checkId = _checkIdAlive(msgFrom);
                 if (checkId != -1)
                 {
@@ -2722,6 +2708,8 @@ void BlinkerGateway::meshCheck()
                         root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
 
                     vasDecode(root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
+
+                    subRegister(checkId);
                 }
             }
 
@@ -3054,6 +3042,9 @@ bool BlinkerGateway::subRegister(uint32_t num)
         // }
     }
 
+    _subDevices[num]->authData(_getAuthKey, _root["detail"]["deviceName"].as<String>());
+    sendSingle(_subDevices[num]->id(), "{\"gate\":{\"auth\":" + _root["detail"].as<String>() + "}}");
+
     return true;
 }
 
@@ -3062,6 +3053,11 @@ time_t BlinkerGateway::time()
     time_t now_ntp = ::time(nullptr);
     BLINKER_LOG_ALL("now_ntp: ", now_ntp);
     return now_ntp;
+}
+
+void BlinkerGateway::blinkerServer(uint8_t nodeNum, uint8_t _type, const String & msg)
+{
+    
 }
 
 #endif
