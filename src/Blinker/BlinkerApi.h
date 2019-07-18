@@ -353,8 +353,13 @@ class BlinkerApi : public BlinkerProtocol
             bool wechat(const T& msg);
             template<typename T>
             bool wechat(const String & title, const String & state, const T& msg);
+            #if !defined(BLINKER_AT_MQTT)
             void weather(const String & _city = BLINKER_CMD_DEFAULT);
             void aqi(const String & _city = BLINKER_CMD_DEFAULT);
+            #else
+            String weather(const String & _city = BLINKER_CMD_DEFAULT);
+            String aqi(const String & _city = BLINKER_CMD_DEFAULT);
+            #endif
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -5182,6 +5187,7 @@ float BlinkerApi::gps(b_gps_t axis)
         #endif
     }
 
+    #if !defined(BLINKER_AT_MQTT)
     void BlinkerApi::weather(const String & _city)
     {
         String data = BLINKER_F("/weather/now?");
@@ -5261,6 +5267,87 @@ float BlinkerApi::gps(b_gps_t axis)
             blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
         #endif
     }
+    #else
+    String BlinkerApi::weather(const String & _city)
+    {
+        String data = BLINKER_F("/weather/now?");
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
+            defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
+            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
+            data += BLINKER_F("deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+        #elif defined(BLINKER_WIFI)
+            data += BLINKER_F("deviceName=");
+            data += macDeviceName();
+        #endif
+
+        if (_city != BLINKER_CMD_DEFAULT)
+        {
+            data += BLINKER_F("&location=");
+            data += _city;
+        }
+
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            data = BLINKER_F("{\"weather\":\"");
+            data += _city;
+            data += BLINKER_F("\"}");
+        #endif
+
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            if (!checkWECHAT()) return;
+            _wechatTime = millis();
+            return BProto::subPrint(data);
+        #else
+            return blinkerServer(BLINKER_CMD_WEATHER_NUMBER, data);
+        #endif
+    }
+
+    String BlinkerApi::aqi(const String & _city)
+    {
+        String data = BLINKER_F("/weather/aqi?");
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+            defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
+            defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
+            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_LOWPOWER_AIR202)
+            data += BLINKER_F("deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+        #elif defined(BLINKER_WIFI)
+            data += BLINKER_F("deviceName=");
+            data += macDeviceName();
+        #endif
+
+        if (_city != BLINKER_CMD_DEFAULT)
+        {
+            data += BLINKER_F("&location=");
+            data += _city;
+        }
+
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            data = BLINKER_F("{\"aqi\":\"");
+            data += _city;
+            data += BLINKER_F("\"}");
+        #endif
+
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            if (!checkWECHAT()) return;
+            _wechatTime = millis();
+            return BProto::subPrint(data);
+        #else
+            return blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
+        #endif
+    }
+    #endif
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
