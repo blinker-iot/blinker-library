@@ -160,6 +160,9 @@ class BlinkerProtocol
             #endif
             #if defined(BLINKER_WIFI_SUBDEVICE)
                 void subPrint(const String & data) { conn->subPrint(data); }
+                int meshAvail() { conn->meshAvail(); }
+                char * meshLastRead() { conn->meshLastRead(); }
+                void meshFlush() { conn->meshFlush(); }
             #endif
         #endif
     // #endif

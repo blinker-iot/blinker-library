@@ -341,8 +341,6 @@ class BlinkerApi : public BlinkerProtocol
             time_t  time();
             int32_t dtime();
 
-            #if !defined(BLINKER_WIFI_SUBDEVICE)
-
             template<typename T>
             bool sms(const T& msg);
             template<typename T>
@@ -360,6 +358,8 @@ class BlinkerApi : public BlinkerProtocol
             String weather(const String & _city = BLINKER_CMD_DEFAULT);
             String aqi(const String & _city = BLINKER_CMD_DEFAULT);
             #endif
+
+            #if !defined(BLINKER_WIFI_SUBDEVICE)
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -1928,11 +1928,12 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                !defined(BLINKER_LOWPOWER_AIR202))
+                !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_WIFI_SUBDEVICE))
 
                 void beginAuto();
                 bool autoTrigged(uint32_t _id);
@@ -1973,6 +1974,15 @@ class BlinkerApi : public BlinkerProtocol
             bool checkWECHAT();
             bool checkWEATHER();
             bool checkAQI();
+            bool checkCUPDATE();
+            bool checkCGET();
+            bool checkCDEL();
+            bool checkDataUpdata();
+            bool checkDataGet();
+            bool checkDataDel();
+            bool checkAutoPull();
+
+            #if !defined(BLINKER_WIFI_SUBDEVICE)
 
             #if !defined(BLINKER_LOWPOWER_AIR202)
             void autoStart();
@@ -1991,14 +2001,6 @@ class BlinkerApi : public BlinkerProtocol
                 void shareParse(const JsonObject& data);
             #endif
 
-            bool checkCUPDATE();
-            bool checkCGET();
-            bool checkCDEL();
-            bool checkDataUpdata();
-            bool checkDataGet();
-            bool checkDataDel();
-            bool checkAutoPull();
-
             #if !defined(BLINKER_LOWPOWER_AIR202)
             String bridgeQuery(char * key);
             #endif
@@ -2015,6 +2017,8 @@ class BlinkerApi : public BlinkerProtocol
 
             uint32_t ntpFreshTime = 0;
             time_t ntpGetTime = 0;
+
+            #endif
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -2469,6 +2473,10 @@ void BlinkerApi::run()
     //     ::delay(10);
     // #else
         #if defined(BLINKER_WIFI_SUBDEVICE)
+            #if defined(BLINKER_BUTTON)
+                tick();
+            #endif
+
             #if defined(BLINKER_NO_BUTTON)
                 if (millis() > 5000 && !_isCheckPower)
                     {
@@ -3472,7 +3480,34 @@ void BlinkerApi::run()
 
         // BLINKER_LOG_ALL(BLINKER_F("conState: "), conState);
         #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
-        BProto::meshCheck();
+            BProto::meshCheck();
+
+            #if defined(BLINKER_WIFI_SUBDEVICE)
+                if (BProto::meshAvail())
+                {
+                    BLINKER_LOG_ALL("meshAvail");
+
+                    DynamicJsonDocument jsonBuffer(1024);
+                    DeserializationError error = deserializeJson(jsonBuffer, BProto::meshLastRead());
+                    JsonObject root = jsonBuffer.as<JsonObject>();
+
+                    if (error)
+                    {
+                        BProto::meshFlush();
+                        return;
+                    }
+
+                    if (root.containsKey("aqi"))
+                    {
+                        if (_aqiFunc)
+                        {
+                            _aqiFunc(root["aqi"].as<String>());
+                        }
+                    }
+
+                    BProto::meshFlush();
+                }
+            #endif
         #endif
 
         switch (BProto::state)
@@ -3766,7 +3801,7 @@ void BlinkerApi::run()
 void BlinkerApi::parse(char _data[], bool ex_data)
 {
     BLINKER_LOG_ALL(BLINKER_F("parse data: "), _data);
-
+    
     if (!ex_data)
     {
         if (BProto::parseState())
@@ -4964,8 +4999,6 @@ float BlinkerApi::gps(b_gps_t axis)
         return -1;
     }
 
-    #if !defined(BLINKER_WIFI_SUBDEVICE)
-
     template<typename T>
     bool BlinkerApi::sms(const T& msg)
     {
@@ -5348,6 +5381,8 @@ float BlinkerApi::gps(b_gps_t axis)
         #endif
     }
     #endif
+
+    #if !defined(BLINKER_WIFI_SUBDEVICE)
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -7195,11 +7230,12 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
+    defined(BLINKER_WIFI_SUBDEVICE)
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-        !defined(BLINKER_LOWPOWER_AIR202))
+        !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_WIFI_SUBDEVICE))
 
     void BlinkerApi::beginAuto()
     {
@@ -8798,6 +8834,62 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         else return false;
     }
 
+    bool BlinkerApi::checkCUPDATE()
+    {
+        if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+            _cUpdateTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkCGET()
+    {
+        if ((millis() - _cGetTime) >= BLINKER_CONFIG_GET_LIMIT || \
+            _cGetTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkCDEL()
+    {
+        if ((millis() - _cDelTime) >= BLINKER_CONFIG_GET_LIMIT || \
+            _cDelTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkDataUpdata()
+    {
+        if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+            _dUpdateTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkDataGet()
+    {
+        if ((millis() - _dGetTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+            _dGetTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkDataDel()
+    {
+        if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+            _dDelTime == 0) return true;
+        else return false;
+    }
+
+    bool BlinkerApi::checkAutoPull()
+    {
+        if ((millis() - _autoPullTime) >= 60000 || \
+            _autoPullTime == 0) return true;
+        else return false;
+    }
+
+
+    #if !defined(BLINKER_WIFI_SUBDEVICE)
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -9241,60 +9333,6 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
     }
     #endif
-
-    bool BlinkerApi::checkCUPDATE()
-    {
-        if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-            _cUpdateTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkCGET()
-    {
-        if ((millis() - _cGetTime) >= BLINKER_CONFIG_GET_LIMIT || \
-            _cGetTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkCDEL()
-    {
-        if ((millis() - _cDelTime) >= BLINKER_CONFIG_GET_LIMIT || \
-            _cDelTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkDataUpdata()
-    {
-        if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-            _dUpdateTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkDataGet()
-    {
-        if ((millis() - _dGetTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-            _dGetTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkDataDel()
-    {
-        if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-            _dDelTime == 0) return true;
-        else return false;
-    }
-
-    bool BlinkerApi::checkAutoPull()
-    {
-        if ((millis() - _autoPullTime) >= 60000 || \
-            _autoPullTime == 0) return true;
-        else return false;
-    }
 
     #if !defined(BLINKER_LOWPOWER_AIR202)
     String BlinkerApi::bridgeQuery(char * key)
@@ -10259,6 +10297,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     #endif
 
+    #endif
+
 #endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -10654,6 +10694,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
     }
 #endif
+
 
 #if defined(BLINKER_MQTT_AT)
     void BlinkerApi::aliParse(const String & _data)

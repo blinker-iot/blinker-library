@@ -138,6 +138,8 @@ extern "C" {
 
                 char *type()        { return _type; }
 
+                char *authKey()     { return _auth; }
+
                 char *deviceName()  { return _dId; }
 
                 uint32_t id()       { return _id; }

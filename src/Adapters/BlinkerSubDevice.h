@@ -29,6 +29,10 @@
 #include "Blinker/BlinkerStream.h"
 #include "Blinker/BlinkerUtility.h"
 
+char*   msgBuf_mesh;
+bool    isFresh_mesh = false;
+bool    isAvail_mesh = false;
+
 char*   msgBuf_PRO;
 bool    isFresh_PRO = false;
 bool    isAvail_PRO = false;
@@ -51,7 +55,7 @@ painlessMesh  mesh;
 #endif
 
 char*       meshBuf;
-bool        isFresh_mesh = false;
+bool        isFresh_gate = false;
 bool        isAvail_gate = false;
 uint32_t    msgFrom;
 bool        isTimeSet = false;
@@ -98,6 +102,18 @@ void _receivedCallback(uint32_t from, String &msg)
 
         isAvail_gate = true;
     }
+    else if (root.containsKey("data"))
+    {
+        BLINKER_LOG_ALL("mesh data");
+
+        String _data = root["data"];
+        if (isFresh_mesh) free(msgBuf_mesh);
+        msgBuf_mesh = (char*)malloc((_data.length()+1)*sizeof(char));
+        strcpy(msgBuf_mesh, _data.c_str());
+        
+        isAvail_mesh = true;
+        isFresh_mesh = true;
+    }
 }
 
 void _newConnectionCallback(uint32_t nodeId)
@@ -120,11 +136,14 @@ class BlinkerSubDevice : public BlinkerStream
         int mConnected();
         void disconnect();
         int available();
+        int meshAvail();
         int aligenieAvail();
         int duerAvail();
         int miAvail();
         char * lastRead();
+        char * meshLastRead();
         void flush();
+        void meshFlush();
         int subPrint(const String & data);
         int print(char * data, bool needCheck = true);
         int bPrint(char * name, const String & data) { return false; }
@@ -235,6 +254,18 @@ int BlinkerSubDevice::available()
     return false;
 }
 
+int BlinkerSubDevice::meshAvail()
+{
+    if (isAvail_mesh)
+    {
+        isAvail_mesh = false;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 int BlinkerSubDevice::aligenieAvail()
 {
     if (isAliAvail)
@@ -277,12 +308,26 @@ char * BlinkerSubDevice::lastRead()
     return "";
 }
 
+char * BlinkerSubDevice::meshLastRead()
+{
+    if (isFresh_mesh) return msgBuf_mesh;
+    return "";
+}
+
 void BlinkerSubDevice::flush()
 {
     if (isFresh_PRO)
     {
         free(msgBuf_PRO); isFresh_PRO = false; isAvail_PRO = false;
         isAliAvail = false; isDuerAvail = false; isMIOTAvail = false;//isBavail = false;
+    }    
+}
+
+void BlinkerSubDevice::meshFlush()
+{
+    if (isFresh_mesh)
+    {
+        free(msgBuf_mesh); isFresh_mesh = false; isAvail_mesh = false;
     }
 }
 
@@ -846,7 +891,11 @@ void BlinkerSubDevice::meshCheck()
 
             if (root.containsKey("hello"))
             {
-                gateId = msgFrom;
+                if (gateId != msgFrom)
+                {
+                    gateId = msgFrom;
+                    isAuth = false;
+                }
 
                 sendSingle(msgFrom, gateFormat(
                     "{\"" + STRING_format(BLINKER_CMD_DEVICEINFO) + \
@@ -854,13 +903,31 @@ void BlinkerSubDevice::meshCheck()
                     "\"name\":\"" + macDeviceName() + "\"," + \
                     "\"key\":\"" + _vipKey + "\"," + \
                     "\"type\":\"" + _deviceType + "\"," + \
-                    "\"vas\":" + STRING_format(vatFormat()) + \
+                    "\"vas\":" + STRING_format(vatFormat()) + "," + \
+                    "\"auth\":" + STRING_format(isAuth) + \
                     "}}"));
             }
             else if (root.containsKey("auth"))
             {
-                BLINKER_LOG_ALL("deviceName: ", root["auth"]["deviceName"].as<String>());
-                BLINKER_LOG_ALL("uuid: ", root["auth"]["uuid"].as<String>());
+                String _deviceName = root["auth"]["deviceName"].as<String>();
+                String _uuid = root["auth"]["uuid"].as<String>();
+                String _authKey = root["auth"]["authKey"].as<String>();
+
+                MQTT_DEVICEID_PRO = (char*)malloc((_deviceName.length()+1)*sizeof(char));
+                strcpy(MQTT_DEVICEID_PRO, _deviceName.c_str());
+                UUID_PRO = (char*)malloc((_uuid.length()+1)*sizeof(char));
+                strcpy(UUID_PRO, _uuid.c_str());
+                AUTHKEY_PRO = (char*)malloc((_authKey.length()+1)*sizeof(char));
+                strcpy(AUTHKEY_PRO, _authKey.c_str());
+
+
+                BLINKER_LOG_ALL(BLINKER_F("===================="));
+                BLINKER_LOG_ALL("MQTT_DEVICEID_PRO: ", MQTT_DEVICEID_PRO);
+                BLINKER_LOG_ALL("UUID_PRO: ", UUID_PRO);
+                BLINKER_LOG_ALL("AUTHKEY_PRO: ", AUTHKEY_PRO);
+                BLINKER_LOG_ALL(BLINKER_F("===================="));
+
+                isAuth = true;
             }
 
             isAvail_gate = false;
