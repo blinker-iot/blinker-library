@@ -128,6 +128,9 @@ class BlinkerStream
             #endif
             #if defined(BLINKER_WIFI_SUBDEVICE)
                 virtual int subPrint(const String & data) = 0;
+                virtual int meshAvail() = 0;
+                virtual char * meshLastRead() = 0;
+                virtual void meshFlush() = 0;
             #endif
         #endif
 

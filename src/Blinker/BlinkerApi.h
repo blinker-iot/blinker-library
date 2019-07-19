@@ -10,7 +10,8 @@
     #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
         defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
         defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
-        defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+        defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+        defined(BLINKER_WIFI_SUBDEVICE)
         #include "Blinker/BlinkerAuto.h"
     #endif
 
@@ -341,8 +342,6 @@ class BlinkerApi : public BlinkerProtocol
             time_t  time();
             int32_t dtime();
 
-            #if !defined(BLINKER_WIFI_SUBDEVICE)
-
             template<typename T>
             bool sms(const T& msg);
             template<typename T>
@@ -399,6 +398,7 @@ class BlinkerApi : public BlinkerProtocol
                 void autoInput(const String & key, float data);
                 void autoRun();
 
+                #if !defined(BLINKER_WIFI_SUBDEVICE)
                 void freshAttachBridge(char _key[], blinker_callback_with_string_arg_t _func);
                 uint8_t attachBridge(char _key[], blinker_callback_with_string_arg_t _func);
                 char * bridgeKey(uint8_t num);
@@ -406,7 +406,10 @@ class BlinkerApi : public BlinkerProtocol
                 void bridgeInit();
 
                 void bridgePrint(char * bName, const String & data);
+                #endif
             #endif
+
+            #if !defined(BLINKER_WIFI_SUBDEVICE)
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -809,10 +812,11 @@ class BlinkerApi : public BlinkerProtocol
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_LOWPOWER_AIR202)) && \
-                !defined(BLINKER_WIFI_SUBDEVICE)
+                !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_LOWPOWER_AIR202))
                 class BlinkerAUTO *             _AUTO[2];
+                #if !defined(BLINKER_WIFI_SUBDEVICE)
                 BlinkerOTA                      _OTA;
+                #endif
             #endif
         #endif
 
@@ -1928,7 +1932,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
+            defined(BLINKER_WIFI_SUBDEVICE)
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -1938,9 +1943,11 @@ class BlinkerApi : public BlinkerProtocol
                 bool autoTrigged(uint32_t _id);
                 bool checkCanOTA();
 
-                void freshNTP();
+                #if !defined(BLINKER_WIFI_SUBDEVICE)
                 bool ntpInit();
+                void freshNTP();
                 void ntpConfig();
+                #endif
 
                 void saveCountDown(uint32_t _data, char _action[]);
                 void saveLoop(uint32_t _data, char _action1[], char _action2[]);
@@ -1973,11 +1980,20 @@ class BlinkerApi : public BlinkerProtocol
             bool checkWECHAT();
             bool checkWEATHER();
             bool checkAQI();
+            bool checkCUPDATE();
+            bool checkCGET();
+            bool checkCDEL();
+            bool checkDataUpdata();
+            bool checkDataGet();
+            bool checkDataDel();
+            bool checkAutoPull();
 
             #if !defined(BLINKER_LOWPOWER_AIR202)
             void autoStart();
             bool autoManager(const JsonObject& data);
             #endif
+
+            #if !defined(BLINKER_WIFI_SUBDEVICE)
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -1990,14 +2006,6 @@ class BlinkerApi : public BlinkerProtocol
             #if defined(BLINKER_GPRS_AIR202)
                 void shareParse(const JsonObject& data);
             #endif
-
-            bool checkCUPDATE();
-            bool checkCGET();
-            bool checkCDEL();
-            bool checkDataUpdata();
-            bool checkDataGet();
-            bool checkDataDel();
-            bool checkAutoPull();
 
             #if !defined(BLINKER_LOWPOWER_AIR202)
             String bridgeQuery(char * key);
@@ -2015,6 +2023,8 @@ class BlinkerApi : public BlinkerProtocol
 
             uint32_t ntpFreshTime = 0;
             time_t ntpGetTime = 0;
+
+            #endif
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -2469,6 +2479,10 @@ void BlinkerApi::run()
     //     ::delay(10);
     // #else
         #if defined(BLINKER_WIFI_SUBDEVICE)
+            #if defined(BLINKER_BUTTON)
+                tick();
+            #endif
+
             #if defined(BLINKER_NO_BUTTON)
                 if (millis() > 5000 && !_isCheckPower)
                     {
@@ -3472,7 +3486,34 @@ void BlinkerApi::run()
 
         // BLINKER_LOG_ALL(BLINKER_F("conState: "), conState);
         #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
-        BProto::meshCheck();
+            BProto::meshCheck();
+
+            #if defined(BLINKER_WIFI_SUBDEVICE)
+                if (BProto::meshAvail())
+                {
+                    BLINKER_LOG_ALL("meshAvail");
+
+                    DynamicJsonDocument jsonBuffer(1024);
+                    DeserializationError error = deserializeJson(jsonBuffer, BProto::meshLastRead());
+                    JsonObject root = jsonBuffer.as<JsonObject>();
+
+                    if (error)
+                    {
+                        BProto::meshFlush();
+                        return;
+                    }
+
+                    if (root.containsKey("aqi"))
+                    {
+                        if (_aqiFunc)
+                        {
+                            _aqiFunc(root["aqi"].as<String>());
+                        }
+                    }
+
+                    BProto::meshFlush();
+                }
+            #endif
         #endif
 
         switch (BProto::state)
@@ -3766,7 +3807,7 @@ void BlinkerApi::run()
 void BlinkerApi::parse(char _data[], bool ex_data)
 {
     BLINKER_LOG_ALL(BLINKER_F("parse data: "), _data);
-
+    
     if (!ex_data)
     {
         if (BProto::parseState())
@@ -4964,8 +5005,6 @@ float BlinkerApi::gps(b_gps_t axis)
         return -1;
     }
 
-    #if !defined(BLINKER_WIFI_SUBDEVICE)
-
     template<typename T>
     bool BlinkerApi::sms(const T& msg)
     {
@@ -5003,6 +5042,7 @@ float BlinkerApi::gps(b_gps_t axis)
         #if defined(BLINKER_WIFI_SUBDEVICE)
             if (!checkSMS()) return false;
             _smsTime = millis();
+            
             return BProto::subPrint(data);
         #else
             return blinkerServer(BLINKER_CMD_SMS_NUMBER, data) == "false";
@@ -5414,39 +5454,68 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String _msg = STRING_format(msg);
 
-        String data = BLINKER_F("{\"deviceName\":\"");
-        data += BProto::deviceName();
-        data += BLINKER_F("\",\"key\":\"");
-        data += BProto::authKey();
-        data += BLINKER_F("\",\"config\":\"");
-        data += _msg;
-        data += BLINKER_F("\"}");
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\",\"config\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
 
-        if (_msg.length() > 256) return false;
+            if (_msg.length() > 256) return false;
 
-        return blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data) == "false";
+        #else
+            String data = BLINKER_F("{\"configUpdate\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+
+            if (!checkCUPDATE()) return false;
+            _cUpdateTime = millis();
+
+            return BProto::subPrint(data);
+        #endif
     }
 
 
     void BlinkerApi::configGet()
     {
-        String data = BLINKER_F("/pull_userconfig?deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("/pull_userconfig?deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
 
-        blinkerServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
+            blinkerServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
+        #else
+            String data = BLINKER_F("{\"configGet\":\"default\"}");
+
+            if (!checkCGET()) return;
+            _cGetTime = millis();
+
+            BProto::subPrint(data);
+        #endif
     }
 
 
     bool BlinkerApi::configDelete()
     {
-        String data = BLINKER_F("/delete_userconfig?deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("/delete_userconfig?deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
 
-        return blinkerServer(BLINKER_CMD_CONFIG_DELETE_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_CONFIG_DELETE_NUMBER, data) == "false";
+        #else
+            String data = BLINKER_F("{\"configDel\":\"default\"}");
+
+            if (!checkCDEL()) return false;
+            _cDelTime = millis();
+
+            return BProto::subPrint(data);
+        #endif
     }
 
     template<typename T>
@@ -5512,7 +5581,7 @@ float BlinkerApi::gps(b_gps_t axis)
             // BLINKER_ERR_LOG(BLINKER_F("none data storaged!"));
             return false;
         }
-
+    
         // #if defined(BLINKER_GPRS_AIR202)
         //     String data = BLINKER_F("deviceName=");
         //     data += BProto::deviceName();
@@ -5548,12 +5617,17 @@ float BlinkerApi::gps(b_gps_t axis)
 
         //     // data += BLINKER_F("");
         // #else
+
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
             data += BProto::authKey();
             data += BLINKER_F("\",\"data\":{");
             // String _sdata;
+        #else
+            String data = BLINKER_F("{\"dataUpdate\":{");
+        #endif
 
             BLINKER_LOG_FreeHeap_ALL();
 
@@ -5584,15 +5658,13 @@ float BlinkerApi::gps(b_gps_t axis)
         // return true;
                         //  + \ _msg +
                         // "\"}}";
-
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
         if (blinkerServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == "false")
+        #else
+        _dUpdateTime = millis();
+        if (BProto::subPrint(data))
+        #endif
         {
-            // for (uint8_t _num = 0; _num < data_dataCount; _num++)
-            // {
-            //     delete _Data[_num];
-            // }
-            // data_dataCount = 0;
-
             return false;
         }
         else
@@ -5601,11 +5673,6 @@ float BlinkerApi::gps(b_gps_t axis)
             {
                 _Data[_num]->flush();
             }
-            // for (uint8_t _num = 0; _num < data_dataCount; _num++)
-            // {
-            //     delete _Data[_num];
-            // }
-            // data_dataCount = 0;
 
             return true;
         }
@@ -5614,100 +5681,177 @@ float BlinkerApi::gps(b_gps_t axis)
 
     void BlinkerApi::dataGet()
     {
-        String data = BLINKER_F("/pull_cloudStorage?deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("/pull_cloudStorage?deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
 
-        blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+            blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+        #else
+            String data = BLINKER_F("{\"dataGet\":\"\"}");
+
+            if (!checkDataGet()) return;
+            _dGetTime = millis();
+
+            BProto::subPrint(data);
+        #endif
     }
 
 
     void BlinkerApi::dataGet(const String & _type)
     {
-        String data = BLINKER_F("/pull_cloudStorage?deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
-        data += BLINKER_F("&dataType=");
-        data += _type;
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("/pull_cloudStorage?deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+            data += BLINKER_F("&dataType=");
+            data += _type;
 
-        blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+            blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+        #else
+            String data = BLINKER_F("{\"dataGet\":\"");
+            data += _type;
+            data += BLINKER_F("\"}");
+
+            if (!checkDataGet()) return;
+            _dGetTime = millis();
+
+            BProto::subPrint(data);
+        #endif
     }
 
 
     void BlinkerApi::dataGet(const String & _type, const String & _date)
     {
-        String data = BLINKER_F("/pull_cloudStorage?deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
-        data += BLINKER_F("&dataType=");
-        data += _type;
-        data += BLINKER_F("&date=");
-        data += _date;
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("/pull_cloudStorage?deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+            data += BLINKER_F("&dataType=");
+            data += _type;
+            data += BLINKER_F("&date=");
+            data += _date;
 
-        blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+            blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+        #else
+            String data = BLINKER_F("{\"dataGet\":\"");
+            data += _type;
+            data += BLINKER_F("\":\"date\":\"");
+            data += _date;
+            data += BLINKER_F("\"}");
+
+            if (!checkDataGet()) return;
+            _dGetTime = millis();
+
+            BProto::subPrint(data);
+        #endif
     }
 
 
     bool BlinkerApi::dataDelete()
     {
-        String data = BLINKER_F("/delete_cloudStorage?deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("/delete_cloudStorage?deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
 
-        return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == "false";
+        #else
+            String data = BLINKER_F("{\"dataDel\":\"\"}");
+
+            if (!checkDataDel()) return false;
+            _dDelTime = millis();
+
+            return BProto::subPrint(data);
+        #endif
     }
 
 
     bool BlinkerApi::dataDelete(const String & _type)
     {
-        String data = BLINKER_F("/delete_cloudStorage?deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
-        data += BLINKER_F("&dataType=");
-        data += _type;
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("/delete_cloudStorage?deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+            data += BLINKER_F("&dataType=");
+            data += _type;
 
-        return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == "false";
+        #else
+            String data = BLINKER_F("{\"dataDel\":\"");
+            data += _type;
+            data += BLINKER_F("\"}");
+
+            if (!checkDataDel()) return false;
+            _dDelTime = millis();
+
+            return BProto::subPrint(data);
+        #endif
     }
 
 
     bool BlinkerApi::event(const String & _key, String _value)
     {
-        String data = BLINKER_F("{\"deviceName\":\"");
-        data += BProto::deviceName();
-        data += BLINKER_F("\",\"key\":\"");
-        data += BProto::authKey();
-        data += BLINKER_F("\",\"eKey\":\"");
-        data += _key;
-        data += BLINKER_F("\",\"date\":\"");
-        data += STRING_format(time());
-        data += BLINKER_F("\",\"value\":\"");
-        data += _value;
-        data += BLINKER_F("\"}");
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\",\"eKey\":\"");
+            data += _key;
+            data += BLINKER_F("\",\"date\":\"");
+            data += STRING_format(time());
+            data += BLINKER_F("\",\"value\":\"");
+            data += _value;
+            data += BLINKER_F("\"}");
 
-        return blinkerServer(BLINKER_CMD_EVENT_DATA_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_EVENT_DATA_NUMBER, data) == "false";
+        #else
+            String data = BLINKER_F("{\"eKey\":\"");
+            data += _key;
+            data += BLINKER_F("\",\"date\":\"");
+            data += STRING_format(time());
+            data += BLINKER_F("\",\"value\":\"");
+            data += _value;
+            data += BLINKER_F("\"}");
+
+            return BProto::subPrint(data);
+        #endif
     }
 
 
     bool BlinkerApi::gps(float _long, float _lat)
     {
-        String data = BLINKER_F("{\"deviceName\":\"");
-        data += BProto::deviceName();
-        data += BLINKER_F("\",\"key\":\"");
-        data += BProto::authKey();
-        data += BLINKER_F("\",\"data\":[");
-        data += STRING_format(_long);
-        data += BLINKER_F(",");
-        data += STRING_format(_lat);
-        data += BLINKER_F(",");
-        data += STRING_format(time());
-        data += BLINKER_F("]}");
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\",\"data\":[");
+            data += STRING_format(_long);
+            data += BLINKER_F(",");
+            data += STRING_format(_lat);
+            data += BLINKER_F(",");
+            data += STRING_format(time());
+            data += BLINKER_F("]}");
 
-        return blinkerServer(BLINKER_CMD_GPS_DATA_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_GPS_DATA_NUMBER, data) == "false";
+        #else
+            String data = BLINKER_F("{\"gpsUpdate\":[");
+            data += STRING_format(_long);
+            data += BLINKER_F(",");
+            data += STRING_format(_lat);
+            data += BLINKER_F(",");
+            data += STRING_format(time());
+            data += BLINKER_F("]}");
+
+            return BProto::subPrint(data);
+        #endif
     }
 
 
@@ -5716,27 +5860,36 @@ float BlinkerApi::gps(b_gps_t axis)
         !defined(BLINKER_LOWPOWER_AIR202))
     bool BlinkerApi::autoPull()
     {
-        String data = BLINKER_F("/auto/pull?deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("/auto/pull?deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
 
-        String payload = blinkerServer(BLINKER_CMD_AUTO_PULL_NUMBER, data);
+            String payload = blinkerServer(BLINKER_CMD_AUTO_PULL_NUMBER, data);
 
-        if (payload == BLINKER_CMD_FALSE)
-        {
-            return false;
-        }
-        else
-        {
-            // DynamicJsonBuffer jsonBuffer;
-            // JsonObject& autoJson = jsonBuffer.parseObject(payload);
-            DynamicJsonDocument jsonBuffer(1024);
-            deserializeJson(jsonBuffer, payload);
-            JsonObject autoJson = jsonBuffer.as<JsonObject>();
+            if (payload == BLINKER_CMD_FALSE)
+            {
+                return false;
+            }
+            else
+            {
+                // DynamicJsonBuffer jsonBuffer;
+                // JsonObject& autoJson = jsonBuffer.parseObject(payload);
+                DynamicJsonDocument jsonBuffer(1024);
+                deserializeJson(jsonBuffer, payload);
+                JsonObject autoJson = jsonBuffer.as<JsonObject>();
 
-            return autoManager(autoJson);
-        }
+                return autoManager(autoJson);
+            }
+        #else
+            String data = BLINKER_F("{\"autoPull\":\"\"}");
+
+            if (!checkAutoPull()) return false;
+            _autoPullTime = millis();
+
+            return BProto::subPrint(data);
+        #endif
     }
 
 
@@ -5786,6 +5939,7 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
+    #if !defined(BLINKER_WIFI_SUBDEVICE)
 
     void BlinkerApi::freshAttachBridge(char _key[], blinker_callback_with_string_arg_t _func)
     {
@@ -5860,6 +6014,9 @@ float BlinkerApi::gps(b_gps_t axis)
         BProto::bPrint(bName, data);
     }
     #endif
+    #endif
+
+    #if !defined(BLINKER_WIFI_SUBDEVICE)
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -7195,7 +7352,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
+    defined(BLINKER_WIFI_SUBDEVICE)
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -7214,7 +7372,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         _isAuto = true;
         // deserialization();
         // autoStart();
-        autoInit();
+
+        autoInit(); //TODO
     }
 
     bool BlinkerApi::autoTrigged(uint32_t _id)
@@ -7245,21 +7404,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         return true;
     }
 
-    void BlinkerApi:: freshNTP()
-    {
-        if (_isNTPInit)
-        {
-            time_t now_ntp = ::time(nullptr);
-            struct tm timeinfo;
-            #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
-            #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
-            #endif
-        }
-    }
-
-
+    #if !defined(BLINKER_WIFI_SUBDEVICE)
     bool BlinkerApi::ntpInit()
     {
         if (!_isNTPInit)
@@ -7326,6 +7471,21 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     }
 
 
+    void BlinkerApi:: freshNTP()
+    {
+        if (_isNTPInit)
+        {
+            time_t now_ntp = ::time(nullptr);
+            struct tm timeinfo;
+            #if defined(ESP8266)
+                gmtime_r(&now_ntp, &timeinfo);
+            #elif defined(ESP32)
+                localtime_r(&now_ntp, &timeinfo);
+            #endif
+        }
+    }
+
+
     void BlinkerApi::ntpConfig()
     {
         // String ntp1 = BLINKER_F("ntp1.aliyun.com");
@@ -7338,6 +7498,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         configTime((long)(getTimezone() * 3600), 0, "ntp1.aliyun.com", \
                     "120.25.108.11", "time.pool.aliyun.com");
     }
+    #endif
 
 
     void BlinkerApi::saveCountDown(uint32_t _data, char _action[])
@@ -8798,6 +8959,60 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         else return false;
     }
 
+    bool BlinkerApi::checkCUPDATE()
+    {
+        if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+            _cUpdateTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkCGET()
+    {
+        if ((millis() - _cGetTime) >= BLINKER_CONFIG_GET_LIMIT || \
+            _cGetTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkCDEL()
+    {
+        if ((millis() - _cDelTime) >= BLINKER_CONFIG_GET_LIMIT || \
+            _cDelTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkDataUpdata()
+    {
+        if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+            _dUpdateTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkDataGet()
+    {
+        if ((millis() - _dGetTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+            _dGetTime == 0) return true;
+        else return false;
+    }
+
+
+    bool BlinkerApi::checkDataDel()
+    {
+        if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+            _dDelTime == 0) return true;
+        else return false;
+    }
+
+    bool BlinkerApi::checkAutoPull()
+    {
+        if ((millis() - _autoPullTime) >= 60000 || \
+            _autoPullTime == 0) return true;
+        else return false;
+    }
+
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -9067,7 +9282,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
     }
 
-
+    #if !defined(BLINKER_WIFI_SUBDEVICE)
     void BlinkerApi::otaParse(const JsonObject& data)
     {
         if (data.containsKey(BLINKER_CMD_SET))
@@ -9241,60 +9456,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
     }
     #endif
+    #endif
 
-    bool BlinkerApi::checkCUPDATE()
-    {
-        if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-            _cUpdateTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkCGET()
-    {
-        if ((millis() - _cGetTime) >= BLINKER_CONFIG_GET_LIMIT || \
-            _cGetTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkCDEL()
-    {
-        if ((millis() - _cDelTime) >= BLINKER_CONFIG_GET_LIMIT || \
-            _cDelTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkDataUpdata()
-    {
-        if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-            _dUpdateTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkDataGet()
-    {
-        if ((millis() - _dGetTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-            _dGetTime == 0) return true;
-        else return false;
-    }
-
-
-    bool BlinkerApi::checkDataDel()
-    {
-        if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-            _dDelTime == 0) return true;
-        else return false;
-    }
-
-    bool BlinkerApi::checkAutoPull()
-    {
-        if ((millis() - _autoPullTime) >= 60000 || \
-            _autoPullTime == 0) return true;
-        else return false;
-    }
+    #if !defined(BLINKER_WIFI_SUBDEVICE)
 
     #if !defined(BLINKER_LOWPOWER_AIR202)
     String BlinkerApi::bridgeQuery(char * key)
@@ -10259,6 +10423,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     #endif
 
+    #endif
+
 #endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -10654,6 +10820,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
     }
 #endif
+
 
 #if defined(BLINKER_MQTT_AT)
     void BlinkerApi::aliParse(const String & _data)

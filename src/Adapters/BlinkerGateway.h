@@ -234,7 +234,7 @@ class BlinkerGateway : public BlinkerStream
         String gateFormat(const String & msg);
         bool subRegister(uint32_t num);
         time_t time();
-        void blinkerServer(uint8_t nodeNum, uint8_t _type, const String & msg);
+        String blinkerServer(uint8_t _type, const String & msg);
 
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
@@ -2683,6 +2683,8 @@ void BlinkerGateway::meshCheck()
 
         if (isAvail_gate)
         {
+            isAvail_gate = false;
+            
             BLINKER_LOG_ALL("new gate data: ", meshBuf);
 
             DynamicJsonDocument jsonBuffer(1024);
@@ -2692,7 +2694,6 @@ void BlinkerGateway::meshCheck()
             if (error) 
             {
                 BLINKER_ERR_LOG_ALL("msg not Json!");
-                isAvail_gate = false;
                 free(meshBuf);
                 return;
             }
@@ -2702,23 +2703,35 @@ void BlinkerGateway::meshCheck()
                 int checkId = _checkIdAlive(msgFrom);
                 if (checkId != -1)
                 {
+                    bool authState = root[BLINKER_CMD_DEVICEINFO]["auth"];
+                    BLINKER_LOG_ALL("auth state: ", authState);
+                    
                     _subDevices[checkId]->auth(root[BLINKER_CMD_DEVICEINFO]["name"],
-                        root[BLINKER_CMD_DEVICEINFO]["key"],
-                        root[BLINKER_CMD_DEVICEINFO]["type"],
-                        root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
+                    root[BLINKER_CMD_DEVICEINFO]["key"],
+                    root[BLINKER_CMD_DEVICEINFO]["type"],
+                    root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
 
                     vasDecode(root[BLINKER_CMD_DEVICEINFO]["vas"].as<uint16_t>());
 
-                    subRegister(checkId);
+
+                    if (!authState || !_subDevices[checkId]->isAuth())
+                    {
+                        // TODO
+                        if (subRegister(checkId))
+                        {
+                            _subDevices[checkId]->freshAuth(true);
+                        }
+                    }
                 }
             }
 
-            isAvail_gate = false;
             free(meshBuf);
         }
         else if (isAvail_ctrl)
         {
-            BLINKER_LOG_ALL("new gate data: ", meshBuf);
+            isAvail_ctrl = false;
+                
+            BLINKER_LOG_ALL("new ctrl data: ", meshBuf);
 
             DynamicJsonDocument jsonBuffer(1024);
             DeserializationError error = deserializeJson(jsonBuffer, meshBuf);
@@ -2727,7 +2740,6 @@ void BlinkerGateway::meshCheck()
             if (error) 
             {
                 BLINKER_ERR_LOG_ALL("msg not Json!");
-                isAvail_ctrl = false;
                 free(meshBuf);
                 return;
             }
@@ -2776,6 +2788,304 @@ void BlinkerGateway::meshCheck()
                     }
                 }
             }
+            else if (root.containsKey("sms"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"msg\":\"");
+                    data += root["sms"].as<String>();
+
+                    if (root.containsKey("cel"))
+                    {
+                        data += BLINKER_F("\",\"cel\":\"");
+                        data += root["cel"].as<String>();
+                    }
+
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_SMS_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("push"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"msg\":\"");
+                    data += root["push"].as<String>();
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_PUSH_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("wechat"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"msg\":\"");
+                    data += root["wechat"].as<String>();
+
+                    if (root.containsKey("title"))
+                    {
+                        data += BLINKER_F("\",\"title\":\"");
+                        data += root["title"].as<String>();
+                    }
+                    
+                    if (root.containsKey("state"))
+                    {
+                        data += BLINKER_F("\",\"state\":\"");
+                        data += root["state"].as<String>();
+                    }
+
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("weather"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/weather/now?");
+                    data += BLINKER_F("deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("&location=");
+                    data += root["weather"].as<String>();
+
+                    // String dataBack = "{\"ctrl\":{\"weather\":" + \
+                    //     blinkerServer(BLINKER_CMD_WEATHER_NUMBER, data) + \
+                    //     "}}";
+                    String dataBack = blinkerServer(BLINKER_CMD_WEATHER_NUMBER, data);
+
+                    if (dataBack == "null") dataBack = "\"null\"";
+
+                    dataBack = "{\"ctrl\":{\"weather\":" + dataBack + "}}";
+
+                    sendSingle(_subDevices[checkId]->id(), dataBack);
+                }
+            }
+            else if (root.containsKey("aqi"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/weather/aqi?");
+                    data += BLINKER_F("deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("&location=");
+                    data += root["aqi"].as<String>();
+
+                    // String dataBack = "{\"ctrl\":{\"aqi\":" + \
+                    //     blinkerServer(BLINKER_CMD_AQI_NUMBER, data) + \
+                    //     "}}";
+                    String dataBack = blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
+
+                    if (dataBack == "null") dataBack = "\"null\"";
+
+                    dataBack = "{\"data\":{\"aqi\":" + dataBack + "}}";
+                    
+                    sendSingle(_subDevices[checkId]->id(), dataBack);
+                }
+            }
+            else if (root.containsKey("configUpdate"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String _msg = root["configUpdate"].as<String>();
+
+                    if (_msg.length() > 256) break;
+
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"config\":\"");
+                    data += _msg;
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("configGet"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/pull_userconfig?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    String dataBack = blinkerServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
+
+                    if (dataBack == "null") dataBack = "\"null\"";
+
+                    dataBack = "{\"data\":{\"configGet\":" + dataBack + "}}";
+                    
+                    sendSingle(_subDevices[checkId]->id(), dataBack);
+                }
+            }
+            else if (root.containsKey("configDel"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/delete_userconfig?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    blinkerServer(BLINKER_CMD_CONFIG_DELETE_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("dataUpdate"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"data\":");
+                    data += root["dataUpdate"].as<String>();
+                    data += BLINKER_F("}");
+
+                    blinkerServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("dataGet"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/pull_cloudStorage?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    String _type = root["dataGet"].as<String>();
+                    if (_type != "")
+                    {
+                        data += BLINKER_F("&dataType=");
+                        data += _type;
+                    }
+                    if (root.containsKey("date"))
+                    {
+                        data += BLINKER_F("&date=");
+                        data += root["date"].as<String>();
+                    }
+
+                    String dataBack = blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+
+                    if (dataBack == "null") dataBack = "\"null\"";
+
+                    dataBack = "{\"data\":{\"dataGet\":" + dataBack + "}}";
+                    
+                    sendSingle(_subDevices[checkId]->id(), dataBack);
+                }
+            }
+            else if (root.containsKey("dataDel"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/delete_cloudStorage?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    String _type = root["dataDel"].as<String>();
+                    if (_type != "")
+                    {
+                        data += BLINKER_F("&dataType=");
+                        data += _type;
+                    }
+
+                    blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("eKey"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"eKey\":\"");
+                    data += root["eKey"].as<String>();
+                    data += BLINKER_F("\",\"date\":\"");
+                    data += root["date"].as<String>();
+                    data += BLINKER_F("\",\"value\":\"");
+                    data += root["value"].as<String>();
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_EVENT_DATA_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("gpsUpdate"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"data\":[");
+                    data += root["gpsUpdate"][0].as<String>();
+                    data += BLINKER_F(",");
+                    data += root["gpsUpdate"][1].as<String>();
+                    data += BLINKER_F(",");
+                    data += root["gpsUpdate"][2].as<String>();
+                    data += BLINKER_F("]}");
+
+                    blinkerServer(BLINKER_CMD_GPS_DATA_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("autoPull"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/auto/pull?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    String dataBack = blinkerServer(BLINKER_CMD_AUTO_PULL_NUMBER, data);
+
+                    if (dataBack == "null") dataBack = "\"null\"";
+
+                    dataBack = "{\"data\":{\"autoPull\":" + dataBack + "}}";
+                    
+                    sendSingle(_subDevices[checkId]->id(), dataBack);
+                }
+            }
+
+            free(meshBuf);
         }
 
         if (_newSub)
@@ -3043,7 +3353,12 @@ bool BlinkerGateway::subRegister(uint32_t num)
     }
 
     _subDevices[num]->authData(_getAuthKey, _root["detail"]["deviceName"].as<String>());
-    sendSingle(_subDevices[num]->id(), "{\"gate\":{\"auth\":" + _root["detail"].as<String>() + "}}");
+    // _root["detail"]["authKey"] = _getAuthKey;
+    JsonObject _detail = _root["detail"].as<JsonObject>();
+    _detail["authKey"] = _getAuthKey;
+    String _data;
+    serializeJson(_detail, _data);
+    sendSingle(_subDevices[num]->id(), "{\"gate\":{\"auth\":" + _data + "}}");
 
     return true;
 }
@@ -3055,9 +3370,489 @@ time_t BlinkerGateway::time()
     return now_ntp;
 }
 
-void BlinkerGateway::blinkerServer(uint8_t nodeNum, uint8_t _type, const String & msg)
+String BlinkerGateway::blinkerServer(uint8_t _type, const String & msg)
 {
+    switch (_type)
+    {
+        case BLINKER_CMD_SMS_NUMBER :
+            break;
+        case BLINKER_CMD_PUSH_NUMBER :
+            break;
+        case BLINKER_CMD_WECHAT_NUMBER :
+            break;
+        case BLINKER_CMD_WEATHER_NUMBER :
+            break;
+        case BLINKER_CMD_AQI_NUMBER :
+            break;
+        case BLINKER_CMD_BRIDGE_NUMBER :
+            break;
+        case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+            break;
+        case BLINKER_CMD_CONFIG_GET_NUMBER :
+            break;
+        case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+            break;
+        case BLINKER_CMD_DATA_STORAGE_NUMBER :
+            break;
+        case BLINKER_CMD_DATA_GET_NUMBER :
+            break;
+        case BLINKER_CMD_DATA_DELETE_NUMBER :
+            break;
+        case BLINKER_CMD_AUTO_PULL_NUMBER :
+            break;
+        case BLINKER_CMD_OTA_NUMBER :
+            break;
+        case BLINKER_CMD_OTA_STATUS_NUMBER :
+            break;
+        case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+            break;
+        case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+            break;
+        case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+            break;
+        case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+            break;
+        case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+            break;
+        case BLINKER_CMD_EVENT_DATA_NUMBER :
+            break;
+        case BLINKER_CMD_GPS_DATA_NUMBER :
+            break;
+        default :
+            return BLINKER_CMD_FALSE;
+    }
+
+    BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
+
+    #ifndef BLINKER_LAN_DEBUG
+        const int httpsPort = 443;
+    #elif defined(BLINKER_LAN_DEBUG)
+        const int httpsPort = 9090;
+    #endif
+
+    #ifndef BLINKER_LAN_DEBUG
+        String host = BLINKER_F("https://iotdev.clz.me");
+    #elif defined(BLINKER_LAN_DEBUG)
+        String host = BLINKER_F("http://192.168.1.121:9090");
+    #endif
+
+    #if defined(ESP8266)
+        extern BearSSL::WiFiClientSecure client_mqtt;
+        client_mqtt.stop();
+
+        std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+
+        // client_s->setFingerprint(fingerprint);
+        client_s->setInsecure();
+    #endif
+
+    HTTPClient http;
+
+    String url_iot;
+
+    int httpCode;
     
+    String conType = BLINKER_F("Content-Type");
+    String application = BLINKER_F("application/json;charset=utf-8");
+
+    BLINKER_LOG_ALL(BLINKER_F("blinker server begin"));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    switch (_type) {
+        case BLINKER_CMD_SMS_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/sms");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_PUSH_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/push");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+            // return BLINKER_CMD_FALSE;
+        case BLINKER_CMD_WECHAT_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/wxMsg/");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+            // return BLINKER_CMD_FALSE;
+        case BLINKER_CMD_WEATHER_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_AQI_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_BRIDGE_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/userconfig");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_CONFIG_GET_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_DATA_STORAGE_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/cloudStorage/");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_DATA_GET_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_DATA_DELETE_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_AUTO_PULL_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_OTA_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_OTA_STATUS_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/ota/upgrade_status");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/lowpower/data");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_EVENT_DATA_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/event");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_GPS_DATA_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/gps");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        default :
+            return BLINKER_CMD_FALSE;
+    }
+
+    BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
+    BLINKER_LOG_ALL(BLINKER_F("HTTPS payload: "), msg);
+
+    if (httpCode > 0)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("[HTTP] status... code: "), httpCode);
+
+        String payload;
+        if (httpCode == HTTP_CODE_OK) {
+            payload = http.getString();
+
+            BLINKER_LOG_ALL(payload);
+            
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, payload);
+            JsonObject data_rp = jsonBuffer.as<JsonObject>();
+            
+            if (!error)
+            {
+                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
+                if (msg_code != 1000)
+                {
+                    String _detail = data_rp[BLINKER_CMD_DETAIL];
+                    BLINKER_ERR_LOG(_detail);
+                }
+                else
+                {
+                    if (_type == BLINKER_CMD_BRIDGE_NUMBER)
+                        payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME].as<String>();
+                    else if (_type == BLINKER_CMD_OTA_NUMBER || _type == BLINKER_CMD_FRESH_SHARERS_NUMBER)
+                        payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
+                    else if (_type == BLINKER_CMD_LOWPOWER_FREQ_GET_NUM)
+                        payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_FREQ].as<String>();
+                    else
+                        payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
+                }
+            }
+
+            BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
+
+            switch (_type) {
+                case BLINKER_CMD_SMS_NUMBER :
+                    break;
+                case BLINKER_CMD_PUSH_NUMBER :
+                    break;
+                case BLINKER_CMD_WECHAT_NUMBER :
+                    break;
+                case BLINKER_CMD_WEATHER_NUMBER :
+                    break;
+                case BLINKER_CMD_AQI_NUMBER :
+                    break;
+                case BLINKER_CMD_BRIDGE_NUMBER :
+                    break;
+                case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                    break;
+                case BLINKER_CMD_CONFIG_GET_NUMBER :
+                    break;
+                case BLINKER_CMD_CONFIG_DELETE_NUMBER :
+                    break;
+                case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                    break;
+                case BLINKER_CMD_DATA_GET_NUMBER :
+                    break;
+                case BLINKER_CMD_DATA_DELETE_NUMBER :
+                    break;
+                case BLINKER_CMD_AUTO_PULL_NUMBER :
+                    break;
+                case BLINKER_CMD_OTA_NUMBER :
+                    break;
+                case BLINKER_CMD_OTA_STATUS_NUMBER :
+                    break;
+                case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+                    break;
+                case BLINKER_CMD_LOWPOWER_FREQ_GET_NUM :
+                    break;
+                case BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER :
+                    break;
+                case BLINKER_CMD_LOWPOWER_DATA_GET_NUM :
+                    break;
+                case BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER :
+                    break;
+                case BLINKER_CMD_EVENT_DATA_NUMBER :
+                    break;
+                case BLINKER_CMD_GPS_DATA_NUMBER :
+                    break;
+                default :
+                    return BLINKER_CMD_FALSE;
+            }
+        }
+
+        http.end();
+
+        return payload;
+    }
+    else {
+        BLINKER_LOG_ALL(BLINKER_F("[HTTP] ... failed, error: "), http.errorToString(httpCode).c_str());
+        String payload = http.getString();
+        BLINKER_LOG_ALL(payload);
+
+        http.end();
+        return BLINKER_CMD_FALSE;
+    }
 }
 
 #endif
