@@ -159,9 +159,9 @@ class BlinkerProtocol
                 void setTimezone(float tz) { conn->setTimezone(tz); }
             #endif
             #if defined(BLINKER_WIFI_SUBDEVICE)
-                void subPrint(const String & data) { conn->subPrint(data); }
-                int meshAvail() { conn->meshAvail(); }
-                char * meshLastRead() { conn->meshLastRead(); }
+                int subPrint(const String & data) { return conn->subPrint(data); }
+                int meshAvail() { return conn->meshAvail(); }
+                char * meshLastRead() { return conn->meshLastRead(); }
                 void meshFlush() { conn->meshFlush(); }
             #endif
         #endif

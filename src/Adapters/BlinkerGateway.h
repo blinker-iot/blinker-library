@@ -2683,6 +2683,8 @@ void BlinkerGateway::meshCheck()
 
         if (isAvail_gate)
         {
+            isAvail_gate = false;
+            
             BLINKER_LOG_ALL("new gate data: ", meshBuf);
 
             DynamicJsonDocument jsonBuffer(1024);
@@ -2692,7 +2694,6 @@ void BlinkerGateway::meshCheck()
             if (error) 
             {
                 BLINKER_ERR_LOG_ALL("msg not Json!");
-                isAvail_gate = false;
                 free(meshBuf);
                 return;
             }
@@ -2724,12 +2725,13 @@ void BlinkerGateway::meshCheck()
                 }
             }
 
-            isAvail_gate = false;
             free(meshBuf);
         }
         else if (isAvail_ctrl)
         {
-            BLINKER_LOG_ALL("new gate data: ", meshBuf);
+            isAvail_ctrl = false;
+                
+            BLINKER_LOG_ALL("new ctrl data: ", meshBuf);
 
             DynamicJsonDocument jsonBuffer(1024);
             DeserializationError error = deserializeJson(jsonBuffer, meshBuf);
@@ -2738,7 +2740,6 @@ void BlinkerGateway::meshCheck()
             if (error) 
             {
                 BLINKER_ERR_LOG_ALL("msg not Json!");
-                isAvail_ctrl = false;
                 free(meshBuf);
                 return;
             }
@@ -2905,6 +2906,186 @@ void BlinkerGateway::meshCheck()
                     sendSingle(_subDevices[checkId]->id(), dataBack);
                 }
             }
+            else if (root.containsKey("configUpdate"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String _msg = root["configUpdate"].as<String>();
+
+                    if (_msg.length() > 256) break;
+
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"config\":\"");
+                    data += _msg;
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("configGet"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/pull_userconfig?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    String dataBack = blinkerServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
+
+                    if (dataBack == "null") dataBack = "\"null\"";
+
+                    dataBack = "{\"data\":{\"configGet\":" + dataBack + "}}";
+                    
+                    sendSingle(_subDevices[checkId]->id(), dataBack);
+                }
+            }
+            else if (root.containsKey("configDel"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/delete_userconfig?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    blinkerServer(BLINKER_CMD_CONFIG_DELETE_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("dataUpdate"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"data\":");
+                    data += root["dataUpdate"].as<String>();
+                    data += BLINKER_F("}");
+
+                    blinkerServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("dataGet"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/pull_cloudStorage?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    String _type = root["dataGet"].as<String>();
+                    if (_type != "")
+                    {
+                        data += BLINKER_F("&dataType=");
+                        data += _type;
+                    }
+                    if (root.containsKey("date"))
+                    {
+                        data += BLINKER_F("&date=");
+                        data += root["date"].as<String>();
+                    }
+
+                    String dataBack = blinkerServer(BLINKER_CMD_DATA_GET_NUMBER, data);
+
+                    if (dataBack == "null") dataBack = "\"null\"";
+
+                    dataBack = "{\"data\":{\"dataGet\":" + dataBack + "}}";
+                    
+                    sendSingle(_subDevices[checkId]->id(), dataBack);
+                }
+            }
+            else if (root.containsKey("dataDel"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/delete_cloudStorage?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    String _type = root["dataDel"].as<String>();
+                    if (_type != "")
+                    {
+                        data += BLINKER_F("&dataType=");
+                        data += _type;
+                    }
+
+                    blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("eKey"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"eKey\":\"");
+                    data += root["eKey"].as<String>();
+                    data += BLINKER_F("\",\"date\":\"");
+                    data += root["date"].as<String>();
+                    data += BLINKER_F("\",\"value\":\"");
+                    data += root["value"].as<String>();
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_EVENT_DATA_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("gpsUpdate"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"data\":[");
+                    data += root["gpsUpdate"][0].as<String>();
+                    data += BLINKER_F(",");
+                    data += root["gpsUpdate"][1].as<String>();
+                    data += BLINKER_F(",");
+                    data += root["gpsUpdate"][2].as<String>();
+                    data += BLINKER_F("]}");
+
+                    blinkerServer(BLINKER_CMD_GPS_DATA_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("autoPull"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/auto/pull?deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+
+                    String dataBack = blinkerServer(BLINKER_CMD_AUTO_PULL_NUMBER, data);
+
+                    if (dataBack == "null") dataBack = "\"null\"";
+
+                    dataBack = "{\"data\":{\"autoPull\":" + dataBack + "}}";
+                    
+                    sendSingle(_subDevices[checkId]->id(), dataBack);
+                }
+            }
+
+            free(meshBuf);
         }
 
         if (_newSub)
