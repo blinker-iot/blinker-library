@@ -598,7 +598,7 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_LOWPOWER_AIR202)
+            defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE)
 
             // #if !defined(BLINKER_AT_MQTT)
             void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = BLINKER_DATA_UPDATE_COUNT)
@@ -3488,6 +3488,11 @@ void BlinkerApi::run()
         #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
             BProto::meshCheck();
 
+            if (!_isInit)
+            {
+                _isInit = BProto::init();
+            }
+
             #if defined(BLINKER_WIFI_SUBDEVICE)
                 if (BProto::meshAvail())
                 {
@@ -3508,6 +3513,43 @@ void BlinkerApi::run()
                         if (_aqiFunc)
                         {
                             _aqiFunc(root["aqi"].as<String>());
+                        }
+                    }
+                    else if (root.containsKey("weather"))
+                    {
+                        if (_weatherFunc)
+                        {
+                            _weatherFunc(root["weather"].as<String>());
+                        }
+                    }
+                    else if (root.containsKey("configGet"))
+                    {
+                        if (_configGetFunc)
+                        {
+                            _configGetFunc(root["configGet"].as<String>());
+                        }
+                    }
+                    else if (root.containsKey("dataGet"))
+                    {
+                        if (_dataGetFunc)
+                        {
+                            _dataGetFunc(root["dataGet"].as<String>());
+                        }
+                    }
+                    else if (root.containsKey("autoPull"))
+                    {
+                        String payload;
+                        serializeJson(root, payload);
+
+                        if (payload != BLINKER_CMD_FALSE)
+                        {
+                            // DynamicJsonBuffer jsonBuffer;
+                            // JsonObject& autoJson = jsonBuffer.parseObject(payload);
+                            DynamicJsonDocument jsonBuffer(1024);
+                            deserializeJson(jsonBuffer, payload);
+                            JsonObject autoJson = jsonBuffer.as<JsonObject>();
+
+                            autoManager(autoJson);
                         }
                     }
 
@@ -3724,7 +3766,7 @@ void BlinkerApi::run()
             defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_LOWPOWER_AIR202)
+            defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE)
 
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
                 !defined(BLINKER_LOWPOWER_AIR202)
@@ -3750,6 +3792,9 @@ void BlinkerApi::run()
 
             if (millis() - _autoUpdateTime >= _autoStorageTime * _dataTimes * 1000)
             {
+                // BLINKER_LOG_ALL("dataUpdate data_dataCount: ", data_dataCount);
+                // BLINKER_LOG_ALL("_isInit: ", _isInit);
+
                 if (data_dataCount && _isInit)// && ESP.getFreeHeap() > 4000)
                 {
                     // if (dataUpdate()) _autoUpdateTime = millis();
@@ -5662,7 +5707,7 @@ float BlinkerApi::gps(b_gps_t axis)
         if (blinkerServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) == "false")
         #else
         _dUpdateTime = millis();
-        if (BProto::subPrint(data))
+        if (!BProto::subPrint(data))
         #endif
         {
             return false;

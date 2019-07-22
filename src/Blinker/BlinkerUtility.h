@@ -140,7 +140,7 @@ extern "C" {
 
                 char *authKey()     { return _auth; }
 
-                char *deviceName()  { return _dId; }
+                String deviceName()  { return _dId; }
 
                 uint32_t id()       { return _id; }
 
