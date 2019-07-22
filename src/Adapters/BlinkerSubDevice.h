@@ -62,6 +62,23 @@ bool        isTimeSet = false;
 float       mesh_timezone = 8.0;
 bool        isNewConnect = false;
 
+BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
+uint8_t     _sharerCount = 0;
+uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+bool        isAlive = false;
+uint32_t    kaTime = 0;
+bool        _needCheckShare = false;
+uint32_t    latestTime;
+uint32_t    aliKaTime = 0;
+bool        isAliAlive = false;
+bool        isAliAvail = false;
+uint32_t    duerKaTime = 0;
+bool        isDuerAlive = false;
+bool        isDuerAvail = false;
+uint32_t    miKaTime = 0;
+bool        isMIOTAlive = false;
+bool        isMIOTAvail = false;
+
 void _receivedCallback(uint32_t from, String &msg)
 {
     BLINKER_LOG_ALL("bridge: Received from: ", from, ", msg: ",msg);
@@ -114,6 +131,94 @@ void _receivedCallback(uint32_t from, String &msg)
         isAvail_mesh = true;
         isFresh_mesh = true;
     }
+    else if (root.containsKey("subDevice"))
+    {
+        String _uuid = root["fromDevice"];
+        String dataGet = root["data"];
+        
+        BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
+        BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
+
+        if (strcmp(_uuid.c_str(), UUID_PRO) == 0)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("Authority uuid"));
+            
+            kaTime = millis();
+            isAvail_PRO = true;
+            isAlive = true;
+
+            _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+        }
+        else if (_uuid == BLINKER_CMD_ALIGENIE)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("form AliGenie"));
+            
+            aliKaTime = millis();
+            isAliAlive = true;
+            isAliAvail = true;
+        }
+        else if (_uuid == BLINKER_CMD_DUEROS)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
+            
+            duerKaTime = millis();
+            isDuerAlive = true;
+            isDuerAvail = true;
+        }            
+        else if (_uuid == BLINKER_CMD_SERVERCLIENT)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("form Sever"));
+
+            isAvail_PRO = true;
+            isAlive = true;
+
+            _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+        }
+        else
+        {
+            if (_sharerCount)
+            {
+                for (uint8_t num = 0; num < _sharerCount; num++)
+                {
+                    if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+                    {
+                        _sharerFrom = num;
+
+                        kaTime = millis();
+
+                        BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+                        BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+
+                        _needCheckShare = false;
+
+                        break;
+                    }
+                    else
+                    {
+                        BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid,"
+                                    "check is from bridge/share device," 
+                                    "data: "), dataGet);
+
+                        _needCheckShare = true;
+                    }                        
+                }
+            }
+            
+            serializeJson(root, dataGet);
+
+            isAvail_PRO = true;
+            isAlive = true;
+        }
+
+        if (isFresh_PRO) free(msgBuf_PRO);
+        msgBuf_PRO = (char*)malloc((dataGet.length()+1)*sizeof(char));
+        strcpy(msgBuf_PRO, dataGet.c_str());
+        isFresh_PRO = true;
+        
+        latestTime = millis();
+
+        // dataFrom_PRO = BLINKER_MSG_FROM_MQTT;
+    }
 }
 
 void _newConnectionCallback(uint32_t nodeId)
@@ -154,7 +259,7 @@ class BlinkerSubDevice : public BlinkerStream
         int autoPrint(uint32_t id);
         char * deviceName();
         char * authKey() { return AUTHKEY_PRO; }
-        int init() { return false; }
+        int init() { return isAuth; }
         int reRegister();
         int deviceRegister() { return false; }
         int authCheck();
@@ -183,19 +288,12 @@ class BlinkerSubDevice : public BlinkerStream
         String gateFormat(const String & msg);
     
     protected :
-        BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
-        uint8_t     _sharerCount = 0;
-        uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
         const char* _vipKey;
         const char* _deviceType;
 
-        bool        isAlive = false;
         bool        isBavail = false;
-        bool        _needCheckShare = false;
-        uint32_t    latestTime;
         uint32_t    printTime = 0;
         uint32_t    bPrintTime = 0;
-        uint32_t    kaTime = 0;
         uint32_t    linkTime = 0;
         uint8_t     respTimes = 0;
         uint32_t    respTime = 0;
@@ -205,16 +303,6 @@ class BlinkerSubDevice : public BlinkerStream
         uint32_t    respDuerTime = 0;
         uint8_t     respMIOTTimes = 0;
         uint32_t    respMIOTTime = 0;
-
-        uint32_t    aliKaTime = 0;
-        bool        isAliAlive = false;
-        bool        isAliAvail = false;
-        uint32_t    duerKaTime = 0;
-        bool        isDuerAlive = false;
-        bool        isDuerAvail = false;
-        uint32_t    miKaTime = 0;
-        bool        isMIOTAlive = false;
-        bool        isMIOTAvail = false;
 
         bool        isNew = false;
         bool        isAuth = false;
@@ -320,7 +408,7 @@ void BlinkerSubDevice::flush()
     {
         free(msgBuf_PRO); isFresh_PRO = false; isAvail_PRO = false;
         isAliAvail = false; isDuerAvail = false; isMIOTAvail = false;//isBavail = false;
-    }    
+    }
 }
 
 void BlinkerSubDevice::meshFlush()
@@ -335,7 +423,7 @@ int BlinkerSubDevice::subPrint(const String & data)
 {
     String data_add = BLINKER_F("{\"ctrl\":");
     data_add += data;
-    data_add += BLINKER_F("}}");
+    data_add += BLINKER_F("}");
 
     if (!isJson(data_add)) return false;
 
@@ -436,7 +524,7 @@ int BlinkerSubDevice::print(char * data, bool needCheck)
                 isAlive = false;
             }
 
-            this->latestTime = millis();
+            latestTime = millis();
 
             return true;
         }     
@@ -492,7 +580,7 @@ int BlinkerSubDevice::aliPrint(const String & data)
             
             isAliAlive = false;
 
-            this->latestTime = millis();
+            latestTime = millis();
 
             return true;
         }      
@@ -547,7 +635,7 @@ int BlinkerSubDevice::duerPrint(const String & data)
             
             isDuerAlive = false;
 
-            this->latestTime = millis();
+            latestTime = millis();
 
             return true;
         }      
@@ -602,7 +690,7 @@ int BlinkerSubDevice::miPrint(const String & data)
 
             isMIOTAlive = false;
 
-            this->latestTime = millis();
+            latestTime = millis();
 
             return true;
         }

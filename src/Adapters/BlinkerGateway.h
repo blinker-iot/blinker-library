@@ -79,6 +79,22 @@ int16_t _checkIdAlive(uint32_t nodeId)
     return -1;
 }
 
+int16_t _checkIdAlive(const String & name)
+{
+    for (uint8_t num = 0; num < _subCount; num++)
+    {
+        if (_subDevices[num]->isAuth())
+        {
+            if (_subDevices[num]->deviceName() == name)
+            {
+                return num;
+            }
+        }
+    }
+
+    return -1;
+}
+
 void _receivedCallback(uint32_t from, String &msg)
 {
     BLINKER_LOG_ALL("bridge: Received from: ", from, ", msg: ",msg);
@@ -634,108 +650,123 @@ void BlinkerGateway::subscribe()
             DeserializationError error = deserializeJson(jsonBuffer, String((char *)iotSub_PRO->lastread));
             JsonObject root = jsonBuffer.as<JsonObject>();
 
-            String _uuid = root["fromDevice"];
-            String dataGet = root["data"];
-            
-            BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
-            BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
-            
-            if (strcmp(_uuid.c_str(), UUID_PRO) == 0)
+            if (root.containsKey("subDevice"))
             {
-                BLINKER_LOG_ALL(BLINKER_F("Authority uuid"));
-                
-                kaTime = millis();
-                isAvail_PRO = true;
-                isAlive = true;
+                String _sub = root["subDevice"];
 
-                _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
-            }
-            else if (_uuid == BLINKER_CMD_ALIGENIE)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("form AliGenie"));
-                
-                aliKaTime = millis();
-                isAliAlive = true;
-                isAliAvail = true;
-            }
-            else if (_uuid == BLINKER_CMD_DUEROS)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
-                
-                duerKaTime = millis();
-                isDuerAlive = true;
-                isDuerAvail = true;
-            }            
-            else if (_uuid == BLINKER_CMD_SERVERCLIENT)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("form Sever"));
+                int checkId = _checkIdAlive(_sub);
+                if (checkId != -1)
+                {
+                    sendSingle(_subDevices[checkId]->id(), (char *)iotSub_PRO->lastread);
+                }
 
-                isAvail_PRO = true;
-                isAlive = true;
-
-                _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+                this->latestTime = millis();
             }
             else
             {
-                if (_sharerCount)
+                String _uuid = root["fromDevice"];
+                String dataGet = root["data"];
+                
+                BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
+                BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
+                
+                if (strcmp(_uuid.c_str(), UUID_PRO) == 0)
                 {
-                    for (uint8_t num = 0; num < _sharerCount; num++)
-                    {
-                        if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
-                        {
-                            _sharerFrom = num;
-
-                            kaTime = millis();
-
-                            BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
-                            BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
-
-                            _needCheckShare = false;
-
-                            break;
-                        }
-                        else
-                        {
-                            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid,"
-                                        "check is from bridge/share device," 
-                                        "data: "), dataGet);
-
-                            _needCheckShare = true;
-                        }                        
-                    }
-                }
-                
-                // {
-                    // dataGet = String((char *)iotSub_PRO->lastread);
-                // root.printTo(dataGet);
-                serializeJson(root, dataGet);
+                    BLINKER_LOG_ALL(BLINKER_F("Authority uuid"));
                     
-                    // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
-                    //                     check is from bridge/share device, \
-                    //                     data: "), dataGet);
+                    kaTime = millis();
+                    isAvail_PRO = true;
+                    isAlive = true;
+
+                    _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+                }
+                else if (_uuid == BLINKER_CMD_ALIGENIE)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("form AliGenie"));
+                    
+                    aliKaTime = millis();
+                    isAliAlive = true;
+                    isAliAvail = true;
+                }
+                else if (_uuid == BLINKER_CMD_DUEROS)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
+                    
+                    duerKaTime = millis();
+                    isDuerAlive = true;
+                    isDuerAvail = true;
+                }            
+                else if (_uuid == BLINKER_CMD_SERVERCLIENT)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("form Sever"));
+
+                    isAvail_PRO = true;
+                    isAlive = true;
+
+                    _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+                }
+                else
+                {
+                    if (_sharerCount)
+                    {
+                        for (uint8_t num = 0; num < _sharerCount; num++)
+                        {
+                            if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+                            {
+                                _sharerFrom = num;
+
+                                kaTime = millis();
+
+                                BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+                                BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+
+                                _needCheckShare = false;
+
+                                break;
+                            }
+                            else
+                            {
+                                BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid,"
+                                            "check is from bridge/share device," 
+                                            "data: "), dataGet);
+
+                                _needCheckShare = true;
+                            }                        
+                        }
+                    }
+                    
+                    // {
+                        // dataGet = String((char *)iotSub_PRO->lastread);
+                    // root.printTo(dataGet);
+                    serializeJson(root, dataGet);
+                        
+                        // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                        //                     check is from bridge/share device, \
+                        //                     data: "), dataGet);
+                    
+                        // // return;
+
+                        // // isBavail = true;
+
+                        // _needCheckShare = true;
+                    // }
+
+                    isAvail_PRO = true;
+                    isAlive = true;
+                }
+
+                // memset(msgBuf_PRO, 0, BLINKER_MAX_READ_SIZE);
+                // memcpy(msgBuf_PRO, dataGet.c_str(), dataGet.length());
+
+                if (isFresh_PRO) free(msgBuf_PRO);
+                msgBuf_PRO = (char*)malloc((dataGet.length()+1)*sizeof(char));
+                strcpy(msgBuf_PRO, dataGet.c_str());
+                isFresh_PRO = true;
                 
-                    // // return;
+                this->latestTime = millis();
 
-                    // // isBavail = true;
-
-                    // _needCheckShare = true;
-                // }
-
-                isAvail_PRO = true;
-                isAlive = true;
+                dataFrom_PRO = BLINKER_MSG_FROM_MQTT;
             }
-
-            // memset(msgBuf_PRO, 0, BLINKER_MAX_READ_SIZE);
-            // memcpy(msgBuf_PRO, dataGet.c_str(), dataGet.length());
-
-            if (isFresh_PRO) free(msgBuf_PRO);
-            msgBuf_PRO = (char*)malloc((dataGet.length()+1)*sizeof(char));
-            strcpy(msgBuf_PRO, dataGet.c_str());
-            isFresh_PRO = true;
-            
-            this->latestTime = millis();
-
-            dataFrom_PRO = BLINKER_MSG_FROM_MQTT;
         }
     }
 }
@@ -2913,17 +2944,18 @@ void BlinkerGateway::meshCheck()
                 {
                     String _msg = root["configUpdate"].as<String>();
 
-                    if (_msg.length() > 256) break;
+                    if (_msg.length() <= 256) 
+                    {
+                        String data = BLINKER_F("{\"deviceName\":\"");
+                        data += _subDevices[checkId]->deviceName();
+                        data += BLINKER_F("\",\"key\":\"");
+                        data += _subDevices[checkId]->authKey();
+                        data += BLINKER_F("\",\"config\":\"");
+                        data += _msg;
+                        data += BLINKER_F("\"}");
 
-                    String data = BLINKER_F("{\"deviceName\":\"");
-                    data += _subDevices[checkId]->deviceName();
-                    data += BLINKER_F("\",\"key\":\"");
-                    data += _subDevices[checkId]->authKey();
-                    data += BLINKER_F("\",\"config\":\"");
-                    data += _msg;
-                    data += BLINKER_F("\"}");
-
-                    blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data);
+                        blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data);
+                    }
                 }
             }
             else if (root.containsKey("configGet"))
