@@ -353,11 +353,19 @@ class BlinkerApi : public BlinkerProtocol
             template<typename T>
             bool wechat(const String & title, const String & state, const T& msg);
             #if !defined(BLINKER_AT_MQTT)
-            void weather(const String & _city = BLINKER_CMD_DEFAULT);
-            void aqi(const String & _city = BLINKER_CMD_DEFAULT);
+                void weather(const String & _city = BLINKER_CMD_DEFAULT);
+                void aqi(const String & _city = BLINKER_CMD_DEFAULT);
             #else
-            String weather(const String & _city = BLINKER_CMD_DEFAULT);
-            String aqi(const String & _city = BLINKER_CMD_DEFAULT);
+                String weather(const String & _city = BLINKER_CMD_DEFAULT);
+                String aqi(const String & _city = BLINKER_CMD_DEFAULT);
+            #endif
+
+            // void deviceHeartbeat(uint32_t heart_time = 600);
+
+            #if defined(BLINKER_PRO_ESP)
+                bool eventWarn(const String & msg);
+                bool eventError(const String & msg);
+                bool eventMsg(const String & msg);
             #endif
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -798,6 +806,14 @@ class BlinkerApi : public BlinkerProtocol
 
             uint32_t    _autoUpdateTime = 0;
 
+            #if defined(BLINKER_PRO_ESP)
+                uint32_t    _eWarnTime = 0;
+                uint32_t    _eErrTime = 0;
+                uint32_t    _eMsgTime = 0;
+            #endif
+
+            uint32_t    _dHeartTime = 0;
+
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
                 !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_LOWPOWER_AIR202))
@@ -973,6 +989,8 @@ class BlinkerApi : public BlinkerProtocol
 
         void parse(char _data[], bool ex_data = false);
 
+        bool deviceHeartbeat(uint32_t heart_time = 600);
+
         #if defined(BLINKER_ARDUINOJSON)
             int16_t ahrs(b_ahrsattitude_t attitude, const JsonObject& data);
             float gps(b_gps_t axis, const JsonObject& data);
@@ -1136,6 +1154,16 @@ class BlinkerApi : public BlinkerProtocol
                         break;
                     case BLINKER_CMD_GPS_DATA_NUMBER :
                         break;
+                    case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+                        break;
+                    #if defined(BLINKER_PRO_ESP)
+                    case BLINKER_CMD_EVENT_WARNING_NUMBER :
+                        break;
+                    case BLINKER_CMD_EVENT_ERROR_NUMBER :
+                        break;
+                    case BLINKER_CMD_EVENT_MSG_NUMBER :
+                        break;
+                    #endif
                     default :
                         return BLINKER_CMD_FALSE;
                 }
@@ -1351,6 +1379,40 @@ class BlinkerApi : public BlinkerProtocol
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
+                    case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
+                    #if defined(BLINKER_PRO_ESP)
+                        case BLINKER_CMD_EVENT_WARNING_NUMBER :
+                            url_iot = BLINKER_F("/api/v1/user/device/event");
+
+                            http.begin(host, url_iot);
+
+                            // http.addHeader(conType, application);
+                            httpCode = http.POST(msg, conType, application);
+                            break;
+                        case BLINKER_CMD_EVENT_ERROR_NUMBER :
+                            url_iot = BLINKER_F("/api/v1/user/device/event");
+
+                            http.begin(host, url_iot);
+
+                            // http.addHeader(conType, application);
+                            httpCode = http.POST(msg, conType, application);
+                            break;
+                        case BLINKER_CMD_EVENT_MSG_NUMBER :
+                            url_iot = BLINKER_F("/api/v1/user/device/event");
+
+                            http.begin(host, url_iot);
+
+                            // http.addHeader(conType, application);
+                            httpCode = http.POST(msg, conType, application);
+                            break;
+                    #endif
                     default :
                         return BLINKER_CMD_FALSE;
                 }
@@ -1460,7 +1522,20 @@ class BlinkerApi : public BlinkerProtocol
                         case BLINKER_CMD_EVENT_DATA_NUMBER :
                             break;
                         case BLINKER_CMD_GPS_DATA_NUMBER :
+                            break;                        
+                        case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
                             break;
+                        #if defined(BLINKER_PRO_ESP)
+                        case BLINKER_CMD_EVENT_WARNING_NUMBER :
+                            _eWarnTime = millis();
+                            break;
+                        case BLINKER_CMD_EVENT_ERROR_NUMBER :
+                            _eErrTime = millis();
+                            break;
+                        case BLINKER_CMD_EVENT_MSG_NUMBER :
+                            _eMsgTime = millis();
+                            break;
+                        #endif
                         default :
                             return BLINKER_CMD_FALSE;
                     }
@@ -1591,6 +1666,8 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_EVENT_DATA_NUMBER :
                         break;
                     case BLINKER_CMD_GPS_DATA_NUMBER :
+                        break;
+                    case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
                         break;
                     default :
                         return BLINKER_CMD_FALSE;
@@ -1801,6 +1878,14 @@ class BlinkerApi : public BlinkerProtocol
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
+                    case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
+                        break;
                     default :
                         return BLINKER_CMD_FALSE;
                 }
@@ -1912,6 +1997,8 @@ class BlinkerApi : public BlinkerProtocol
                             break;
                         case BLINKER_CMD_GPS_DATA_NUMBER :
                             break;
+                        case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+                            break;
                         default :
                             return BLINKER_CMD_FALSE;
                     }
@@ -1987,6 +2074,12 @@ class BlinkerApi : public BlinkerProtocol
             bool checkDataGet();
             bool checkDataDel();
             bool checkAutoPull();
+
+            #if defined(BLINKER_PRO_ESP)
+                bool checkEventWarn();
+                bool checkEventErr();
+                bool checkEventMsg();
+            #endif
 
             #if !defined(BLINKER_LOWPOWER_AIR202)
             void autoStart();
@@ -3556,6 +3649,17 @@ void BlinkerApi::run()
                     BProto::meshFlush();
                 }
             #endif
+        #endif
+
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO_ESP)
+            if ((millis() - _dHeartTime) >= 60000 || \
+                _dHeartTime == 0)
+            {
+                if (deviceHeartbeat())
+                {
+                    _dHeartTime = millis();
+                }
+            }
         #endif
 
         switch (BProto::state)
@@ -5432,6 +5536,63 @@ float BlinkerApi::gps(b_gps_t axis)
             return blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
         #endif
     }
+    #endif
+
+    bool BlinkerApi::deviceHeartbeat(uint32_t heart_time)
+    {
+        String data = BLINKER_F("/heartbeat?");
+        data += BLINKER_F("deviceName=");
+        data += BProto::deviceName();
+        data += BLINKER_F("&key=");
+        data += BProto::authKey();
+        data += BLINKER_F("&heartbeat=");
+        data += STRING_format(heart_time);
+
+        return blinkerServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data) == BLINKER_CMD_FALSE;
+    }
+
+    #if defined(BLINKER_PRO_ESP)
+        bool BlinkerApi::eventWarn(const String & msg)
+        {
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\",\"title\":\"");
+            data += BLINKER_F("\",\"warning\":\"");
+            data += msg;
+            data += BLINKER_F("\"}");
+
+            return blinkerServer(BLINKER_CMD_EVENT_WARNING_NUMBER, data) == BLINKER_CMD_FALSE;
+        }
+
+        bool BlinkerApi::eventError(const String & msg)
+        {
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\",\"title\":\"");
+            data += BLINKER_F("\",\"error\":\"");
+            data += msg;
+            data += BLINKER_F("\"}");
+
+            return blinkerServer(BLINKER_CMD_EVENT_ERROR_NUMBER, data) == BLINKER_CMD_FALSE;
+        }
+
+        bool BlinkerApi::eventMsg(const String & msg)
+        {
+            String data = BLINKER_F("{\"deviceName\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\",\"title\":\"");
+            data += BLINKER_F("\",\"msg\":\"");
+            data += msg;
+            data += BLINKER_F("\"}");
+
+            return blinkerServer(BLINKER_CMD_EVENT_MSG_NUMBER, data) == BLINKER_CMD_FALSE;
+        }
     #endif
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -9057,6 +9218,29 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             _autoPullTime == 0) return true;
         else return false;
     }
+
+    #if defined(BLINKER_PRO_ESP)
+        bool BlinkerApi::checkEventWarn()
+        {
+            if ((millis() - _eWarnTime) >= 60000 || \
+                _eWarnTime == 0) return true;
+            else return false;
+        }
+
+        bool BlinkerApi::checkEventErr()
+        {
+            if ((millis() - _eErrTime) >= 60000 || \
+                _eErrTime == 0) return true;
+            else return false;
+        }
+
+        bool BlinkerApi::checkEventMsg()
+        {
+            if ((millis() - _eMsgTime) >= 60000 || \
+                _eMsgTime == 0) return true;
+            else return false;
+        }
+    #endif
 
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \

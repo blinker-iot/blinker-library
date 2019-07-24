@@ -43,4 +43,10 @@
     BlinkerSwitch BUILTIN_SWITCH;
 #endif
 
+#if defined(BLINKER_PRO_ESP)
+    #include "Functions/BlinkerEvent.h"
+
+    BLINKEREVENT BlinkerEvent;
+#endif
+
 #endif

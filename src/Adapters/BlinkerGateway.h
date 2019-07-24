@@ -2932,7 +2932,7 @@ void BlinkerGateway::meshCheck()
 
                     if (dataBack == "null") dataBack = "\"null\"";
 
-                    dataBack = "{\"data\":{\"aqi\":" + dataBack + "}}";
+                    dataBack = "{\"meshData\":{\"aqi\":" + dataBack + "}}";
                     
                     sendSingle(_subDevices[checkId]->id(), dataBack);
                 }
@@ -2972,7 +2972,7 @@ void BlinkerGateway::meshCheck()
 
                     if (dataBack == "null") dataBack = "\"null\"";
 
-                    dataBack = "{\"data\":{\"configGet\":" + dataBack + "}}";
+                    dataBack = "{\"meshData\":{\"configGet\":" + dataBack + "}}";
                     
                     sendSingle(_subDevices[checkId]->id(), dataBack);
                 }
@@ -3032,7 +3032,7 @@ void BlinkerGateway::meshCheck()
 
                     if (dataBack == "null") dataBack = "\"null\"";
 
-                    dataBack = "{\"data\":{\"dataGet\":" + dataBack + "}}";
+                    dataBack = "{\"meshData\":{\"dataGet\":" + dataBack + "}}";
                     
                     sendSingle(_subDevices[checkId]->id(), dataBack);
                 }
@@ -3111,7 +3111,7 @@ void BlinkerGateway::meshCheck()
 
                     if (dataBack == "null") dataBack = "\"null\"";
 
-                    dataBack = "{\"data\":{\"autoPull\":" + dataBack + "}}";
+                    dataBack = "{\"meshData\":{\"autoPull\":" + dataBack + "}}";
                     
                     sendSingle(_subDevices[checkId]->id(), dataBack);
                 }

@@ -119,7 +119,7 @@ void _receivedCallback(uint32_t from, String &msg)
 
         isAvail_gate = true;
     }
-    else if (root.containsKey("data"))
+    else if (root.containsKey("meshData"))
     {
         BLINKER_LOG_ALL("mesh data");
 
