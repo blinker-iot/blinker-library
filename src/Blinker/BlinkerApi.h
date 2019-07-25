@@ -989,7 +989,7 @@ class BlinkerApi : public BlinkerProtocol
 
         void parse(char _data[], bool ex_data = false);
 
-        bool deviceHeartbeat(uint32_t heart_time = 600);
+        bool deviceHeartbeat(uint32_t heart_time = BLINKER_DEVICE_HEARTBEAT_TIME);
 
         #if defined(BLINKER_ARDUINOJSON)
             int16_t ahrs(b_ahrsattitude_t attitude, const JsonObject& data);
@@ -1157,12 +1157,21 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
                         break;
                     #if defined(BLINKER_PRO_ESP)
-                    case BLINKER_CMD_EVENT_WARNING_NUMBER :
-                        break;
-                    case BLINKER_CMD_EVENT_ERROR_NUMBER :
-                        break;
-                    case BLINKER_CMD_EVENT_MSG_NUMBER :
-                        break;
+                        case BLINKER_CMD_EVENT_WARNING_NUMBER :
+                            if (!checkEventWarn()) {
+                                return BLINKER_CMD_FALSE;
+                            }
+                            break;
+                        case BLINKER_CMD_EVENT_ERROR_NUMBER :
+                            if (!checkEventErr()) {
+                                return BLINKER_CMD_FALSE;
+                            }
+                            break;
+                        case BLINKER_CMD_EVENT_MSG_NUMBER :
+                            if (!checkEventMsg()) {
+                                return BLINKER_CMD_FALSE;
+                            }
+                            break;
                     #endif
                     default :
                         return BLINKER_CMD_FALSE;
@@ -3651,8 +3660,9 @@ void BlinkerApi::run()
             #endif
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO_ESP)
-            if ((millis() - _dHeartTime) >= 60000 || \
+        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_WIFI_GATEWAY)
+            if ((millis() - _dHeartTime)/1000 >= BLINKER_DEVICE_HEARTBEAT_TIME || \
                 _dHeartTime == 0)
             {
                 if (deviceHeartbeat())
@@ -5194,7 +5204,7 @@ float BlinkerApi::gps(b_gps_t axis)
             
             return BProto::subPrint(data);
         #else
-            return blinkerServer(BLINKER_CMD_SMS_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
         #endif
     }
 
@@ -5243,7 +5253,7 @@ float BlinkerApi::gps(b_gps_t axis)
             _smsTime = millis();
             return BProto::subPrint(data);
         #else
-            return blinkerServer(BLINKER_CMD_SMS_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
         #endif
     }
 
@@ -5282,7 +5292,7 @@ float BlinkerApi::gps(b_gps_t axis)
             _pushTime = millis();
             return BProto::subPrint(data);
         #else
-            return blinkerServer(BLINKER_CMD_PUSH_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_PUSH_NUMBER, data) != "false";
         #endif
     }
 
@@ -5321,7 +5331,7 @@ float BlinkerApi::gps(b_gps_t axis)
             _wechatTime = millis();
             return BProto::subPrint(data);
         #else
-            return blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
         #endif
     }
 
@@ -5372,7 +5382,7 @@ float BlinkerApi::gps(b_gps_t axis)
             _wechatTime = millis();
             return BProto::subPrint(data);
         #else
-            return blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
         #endif
     }
 
@@ -5548,7 +5558,7 @@ float BlinkerApi::gps(b_gps_t axis)
         data += BLINKER_F("&heartbeat=");
         data += STRING_format(heart_time);
 
-        return blinkerServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data) == BLINKER_CMD_FALSE;
+        return blinkerServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data) != BLINKER_CMD_FALSE;
     }
 
     #if defined(BLINKER_PRO_ESP)
@@ -5558,12 +5568,12 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
             data += BProto::authKey();
-            data += BLINKER_F("\",\"title\":\"");
-            data += BLINKER_F("\",\"warning\":\"");
+            data += BLINKER_F("\",\"msgType\":\"warning");
+            data += BLINKER_F("\",\"msg\":\"");
             data += msg;
             data += BLINKER_F("\"}");
 
-            return blinkerServer(BLINKER_CMD_EVENT_WARNING_NUMBER, data) == BLINKER_CMD_FALSE;
+            return blinkerServer(BLINKER_CMD_EVENT_WARNING_NUMBER, data) != BLINKER_CMD_FALSE;
         }
 
         bool BlinkerApi::eventError(const String & msg)
@@ -5572,12 +5582,12 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
             data += BProto::authKey();
-            data += BLINKER_F("\",\"title\":\"");
+            data += BLINKER_F("\",\"msgType\":\"error");
             data += BLINKER_F("\",\"error\":\"");
             data += msg;
             data += BLINKER_F("\"}");
 
-            return blinkerServer(BLINKER_CMD_EVENT_ERROR_NUMBER, data) == BLINKER_CMD_FALSE;
+            return blinkerServer(BLINKER_CMD_EVENT_ERROR_NUMBER, data) != BLINKER_CMD_FALSE;
         }
 
         bool BlinkerApi::eventMsg(const String & msg)
@@ -5586,12 +5596,12 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
             data += BProto::authKey();
-            data += BLINKER_F("\",\"title\":\"");
+            data += BLINKER_F("\",\"msgType\":\"msg");
             data += BLINKER_F("\",\"msg\":\"");
             data += msg;
             data += BLINKER_F("\"}");
 
-            return blinkerServer(BLINKER_CMD_EVENT_MSG_NUMBER, data) == BLINKER_CMD_FALSE;
+            return blinkerServer(BLINKER_CMD_EVENT_MSG_NUMBER, data) != BLINKER_CMD_FALSE;
         }
     #endif
 
@@ -5671,7 +5681,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
             if (_msg.length() > 256) return false;
 
-            return blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data) != "false";
         #else
             String data = BLINKER_F("{\"configUpdate\":\"");
             data += _msg;
@@ -5713,7 +5723,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("&key=");
             data += BProto::authKey();
 
-            return blinkerServer(BLINKER_CMD_CONFIG_DELETE_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_CONFIG_DELETE_NUMBER, data) != "false";
         #else
             String data = BLINKER_F("{\"configDel\":\"default\"}");
 
@@ -5965,7 +5975,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("&key=");
             data += BProto::authKey();
 
-            return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) != "false";
         #else
             String data = BLINKER_F("{\"dataDel\":\"\"}");
 
@@ -5987,7 +5997,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("&dataType=");
             data += _type;
 
-            return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_DATA_DELETE_NUMBER, data) != "false";
         #else
             String data = BLINKER_F("{\"dataDel\":\"");
             data += _type;
@@ -6016,7 +6026,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += _value;
             data += BLINKER_F("\"}");
 
-            return blinkerServer(BLINKER_CMD_EVENT_DATA_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_EVENT_DATA_NUMBER, data) != "false";
         #else
             String data = BLINKER_F("{\"eKey\":\"");
             data += _key;
@@ -6046,7 +6056,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += STRING_format(time());
             data += BLINKER_F("]}");
 
-            return blinkerServer(BLINKER_CMD_GPS_DATA_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_GPS_DATA_NUMBER, data) != "false";
         #else
             String data = BLINKER_F("{\"gpsUpdate\":[");
             data += STRING_format(_long);
@@ -6396,7 +6406,7 @@ float BlinkerApi::gps(b_gps_t axis)
             return false;
         #endif
 
-        return blinkerServer(BLINKER_CMD_OTA_STATUS_NUMBER, data) == "false";
+        return blinkerServer(BLINKER_CMD_OTA_STATUS_NUMBER, data) != "false";
     }
 
 
@@ -6459,7 +6469,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("&freq=");
             data += STRING_format(_LowPowerFreq);
 
-            return blinkerServer(BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_LOWPOWER_FREQ_UP_NUMBER, data) != "false";
         }
 
         String BlinkerApi::comDataGet()
@@ -6483,7 +6493,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BProto::_sendBuf;
             data += BLINKER_F("}");
 
-            return blinkerServer(BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER, data) == "false";
+            return blinkerServer(BLINKER_CMD_LOWPOWER_DATA_UP_NUMBER, data) != "false";
         }
     #endif
 
@@ -9845,6 +9855,25 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     break;
                 case BLINKER_CMD_GPS_DATA_NUMBER :
                     break;
+                case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+                    break;
+                #if defined(BLINKER_PRO_ESP)
+                    case BLINKER_CMD_EVENT_WARNING_NUMBER :
+                        if (!checkEventWarn()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
+                    case BLINKER_CMD_EVENT_ERROR_NUMBER :
+                        if (!checkEventErr()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
+                    case BLINKER_CMD_EVENT_MSG_NUMBER :
+                        if (!checkEventMsg()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                    break;
+                #endif
             #endif
             default :
                 return BLINKER_CMD_FALSE;
@@ -10502,6 +10531,60 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         http.addHeader(conType, application);
                         httpCode = http.POST(msg);
                         break;
+                    case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        httpCode = http.GET();
+                        break;
+                    #if defined(BLINKER_PRO_ESP)
+                        case BLINKER_CMD_EVENT_WARNING_NUMBER :
+                            url_iot = host;
+                            url_iot += BLINKER_F("/api/v1/user/device/event");
+
+                            #if defined(ESP8266)
+                                http.begin(*client_s, url_iot);
+                            #else
+                                http.begin(url_iot);
+                            #endif
+
+                            http.addHeader(conType, application);
+                            httpCode = http.POST(msg);
+                            break;
+                        case BLINKER_CMD_EVENT_ERROR_NUMBER :
+                            url_iot = host;
+                            url_iot += BLINKER_F("/api/v1/user/device/event");
+
+                            #if defined(ESP8266)
+                                http.begin(*client_s, url_iot);
+                            #else
+                                http.begin(url_iot);
+                            #endif
+
+                            http.addHeader(conType, application);
+                            httpCode = http.POST(msg);
+                            break;
+                        case BLINKER_CMD_EVENT_MSG_NUMBER :
+                            url_iot = host;
+                            url_iot += BLINKER_F("/api/v1/user/device/event");
+
+                            #if defined(ESP8266)
+                                http.begin(*client_s, url_iot);
+                            #else
+                                http.begin(url_iot);
+                            #endif
+
+                            http.addHeader(conType, application);
+                            httpCode = http.POST(msg);
+                            break;
+                    #endif
                 #endif
                 default :
                     return BLINKER_CMD_FALSE;
@@ -10626,6 +10709,19 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                                 break;
                             case BLINKER_CMD_GPS_DATA_NUMBER :
                                 break;
+                            case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+                                break;
+                            #if defined(BLINKER_PRO_ESP)
+                                case BLINKER_CMD_EVENT_WARNING_NUMBER :
+                                    _eWarnTime = millis();
+                                    break;
+                                case BLINKER_CMD_EVENT_ERROR_NUMBER :
+                                    _eErrTime = millis();
+                                    break;
+                                case BLINKER_CMD_EVENT_MSG_NUMBER :
+                                    _eMsgTime = millis();
+                                    break;
+                            #endif
                         #endif
                         default :
                             return BLINKER_CMD_FALSE;

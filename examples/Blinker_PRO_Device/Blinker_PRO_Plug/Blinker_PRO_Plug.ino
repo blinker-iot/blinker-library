@@ -142,7 +142,7 @@ void buttonTick()
  * 
  * When button clicked, device will call this function
  */
-void singalClick()
+void singleClick()
 {
     BLINKER_LOG("Button clicked!");
 }
@@ -188,7 +188,7 @@ void setup()
     Blinker.attachHeartbeat(heartbeat);
 
 #if defined(BLINKER_BUTTON)
-    Blinker.attachClick(singalClick);
+    Blinker.attachClick(singleClick);
     Blinker.attachDoubleClick(doubleClick);    
     // attachInterrupt(BLINKER_BUTTON_PIN, buttonTick, CHANGE);
 #endif
