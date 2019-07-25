@@ -3116,6 +3116,73 @@ void BlinkerGateway::meshCheck()
                     sendSingle(_subDevices[checkId]->id(), dataBack);
                 }
             }
+            else if (root.containsKey("deviceHeartbeat"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/heartbeat?");
+                    data += BLINKER_F("deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("&heartbeat=");
+                    data += root["deviceHeartbeat"].as<String>();
+
+                    blinkerServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("eventWarn"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"msgType\":\"warning");
+                    data += BLINKER_F("\",\"msg\":\"");
+                    data += root["eventWarn"].as<String>();
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_EVENT_WARNING_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("eventError"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"msgType\":\"error");
+                    data += BLINKER_F("\",\"msg\":\"");
+                    data += root["eventError"].as<String>();
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_EVENT_ERROR_NUMBER, data);
+                }
+            }
+            else if (root.containsKey("eventMsg"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("{\"deviceName\":\"");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("\",\"key\":\"");
+                    data += _subDevices[checkId]->authKey();
+                    data += BLINKER_F("\",\"msgType\":\"error");
+                    data += BLINKER_F("\",\"msg\":\"");
+                    data += root["eventMsg"].as<String>();
+                    data += BLINKER_F("\"}");
+
+                    blinkerServer(BLINKER_CMD_EVENT_MSG_NUMBER, data);
+                }
+            }
 
             free(meshBuf);
         }
@@ -3450,6 +3517,14 @@ String BlinkerGateway::blinkerServer(uint8_t _type, const String & msg)
             break;
         case BLINKER_CMD_GPS_DATA_NUMBER :
             break;
+        case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+            break;
+        case BLINKER_CMD_EVENT_WARNING_NUMBER :
+            break;
+        case BLINKER_CMD_EVENT_ERROR_NUMBER :
+            break;
+        case BLINKER_CMD_EVENT_MSG_NUMBER :
+            break;
         default :
             return BLINKER_CMD_FALSE;
     }
@@ -3779,6 +3854,58 @@ String BlinkerGateway::blinkerServer(uint8_t _type, const String & msg)
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
+        case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_EVENT_WARNING_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/event");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_EVENT_ERROR_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/event");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_EVENT_MSG_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/event");
+
+            #if defined(ESP8266)
+                http.begin(*client_s, url_iot);
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
         default :
             return BLINKER_CMD_FALSE;
     }
@@ -3867,6 +3994,14 @@ String BlinkerGateway::blinkerServer(uint8_t _type, const String & msg)
                 case BLINKER_CMD_EVENT_DATA_NUMBER :
                     break;
                 case BLINKER_CMD_GPS_DATA_NUMBER :
+                    break;
+                case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+                    break;
+                case BLINKER_CMD_EVENT_WARNING_NUMBER :
+                    break;
+                case BLINKER_CMD_EVENT_ERROR_NUMBER :
+                    break;
+                case BLINKER_CMD_EVENT_MSG_NUMBER :
                     break;
                 default :
                     return BLINKER_CMD_FALSE;

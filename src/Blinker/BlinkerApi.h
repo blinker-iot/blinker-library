@@ -3661,9 +3661,9 @@ void BlinkerApi::run()
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_GATEWAY)
-            if ((millis() - _dHeartTime)/1000 >= BLINKER_DEVICE_HEARTBEAT_TIME || \
-                _dHeartTime == 0)
+            defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
+            if (((millis() - _dHeartTime)/1000 >= BLINKER_DEVICE_HEARTBEAT_TIME || \
+                _dHeartTime == 0) && _isInit)
             {
                 if (deviceHeartbeat())
                 {
@@ -5550,58 +5550,95 @@ float BlinkerApi::gps(b_gps_t axis)
 
     bool BlinkerApi::deviceHeartbeat(uint32_t heart_time)
     {
-        String data = BLINKER_F("/heartbeat?");
-        data += BLINKER_F("deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
-        data += BLINKER_F("&heartbeat=");
-        data += STRING_format(heart_time);
+        #if defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("{\"deviceHeartbeat\":");
+            data += STRING_format(heart_time);            
+            data += BLINKER_F("}");
+            return BProto::subPrint(data);
+        #else
+            String data = BLINKER_F("/heartbeat?");
+            data += BLINKER_F("deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+            data += BLINKER_F("&heartbeat=");
+            data += STRING_format(heart_time);
 
-        return blinkerServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data) != BLINKER_CMD_FALSE;
+            return blinkerServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data) != BLINKER_CMD_FALSE;
+        #endif
     }
 
     #if defined(BLINKER_PRO_ESP)
         bool BlinkerApi::eventWarn(const String & msg)
         {
-            String data = BLINKER_F("{\"deviceName\":\"");
-            data += BProto::deviceName();
-            data += BLINKER_F("\",\"key\":\"");
-            data += BProto::authKey();
-            data += BLINKER_F("\",\"msgType\":\"warning");
-            data += BLINKER_F("\",\"msg\":\"");
-            data += msg;
-            data += BLINKER_F("\"}");
+            #if defined(BLINKER_WIFI_SUBDEVICE)
+                String data = BLINKER_F("{\"eventWarn\":\"");
+                data += msg;            
+                data += BLINKER_F("\"}");
 
-            return blinkerServer(BLINKER_CMD_EVENT_WARNING_NUMBER, data) != BLINKER_CMD_FALSE;
+                if (!checkEventWarn()) return;
+                _eWarnTime = millis();
+                return BProto::subPrint(data);
+            #else
+                String data = BLINKER_F("{\"deviceName\":\"");
+                data += BProto::deviceName();
+                data += BLINKER_F("\",\"key\":\"");
+                data += BProto::authKey();
+                data += BLINKER_F("\",\"msgType\":\"warning");
+                data += BLINKER_F("\",\"msg\":\"");
+                data += msg;
+                data += BLINKER_F("\"}");
+
+                return blinkerServer(BLINKER_CMD_EVENT_WARNING_NUMBER, data) != BLINKER_CMD_FALSE;
+            #endif
         }
 
         bool BlinkerApi::eventError(const String & msg)
         {
-            String data = BLINKER_F("{\"deviceName\":\"");
-            data += BProto::deviceName();
-            data += BLINKER_F("\",\"key\":\"");
-            data += BProto::authKey();
-            data += BLINKER_F("\",\"msgType\":\"error");
-            data += BLINKER_F("\",\"error\":\"");
-            data += msg;
-            data += BLINKER_F("\"}");
+            #if defined(BLINKER_WIFI_SUBDEVICE)
+                String data = BLINKER_F("{\"eventError\":\"");
+                data += msg;            
+                data += BLINKER_F("\"}");
 
-            return blinkerServer(BLINKER_CMD_EVENT_ERROR_NUMBER, data) != BLINKER_CMD_FALSE;
+                if (!checkEventErr()) return;
+                _eErrTime = millis();
+                return BProto::subPrint(data);
+            #else
+                String data = BLINKER_F("{\"deviceName\":\"");
+                data += BProto::deviceName();
+                data += BLINKER_F("\",\"key\":\"");
+                data += BProto::authKey();
+                data += BLINKER_F("\",\"msgType\":\"error");
+                data += BLINKER_F("\",\"error\":\"");
+                data += msg;
+                data += BLINKER_F("\"}");
+
+                return blinkerServer(BLINKER_CMD_EVENT_ERROR_NUMBER, data) != BLINKER_CMD_FALSE;
+            #endif
         }
 
         bool BlinkerApi::eventMsg(const String & msg)
         {
-            String data = BLINKER_F("{\"deviceName\":\"");
-            data += BProto::deviceName();
-            data += BLINKER_F("\",\"key\":\"");
-            data += BProto::authKey();
-            data += BLINKER_F("\",\"msgType\":\"msg");
-            data += BLINKER_F("\",\"msg\":\"");
-            data += msg;
-            data += BLINKER_F("\"}");
+            #if defined(BLINKER_WIFI_SUBDEVICE)
+                String data = BLINKER_F("{\"eventMsg\":\"");
+                data += msg;            
+                data += BLINKER_F("\"}");
 
-            return blinkerServer(BLINKER_CMD_EVENT_MSG_NUMBER, data) != BLINKER_CMD_FALSE;
+                if (!checkEventMsg()) return;
+                _eMsgTime = millis();
+                return BProto::subPrint(data);
+            #else
+                String data = BLINKER_F("{\"deviceName\":\"");
+                data += BProto::deviceName();
+                data += BLINKER_F("\",\"key\":\"");
+                data += BProto::authKey();
+                data += BLINKER_F("\",\"msgType\":\"msg");
+                data += BLINKER_F("\",\"msg\":\"");
+                data += msg;
+                data += BLINKER_F("\"}");
+
+                return blinkerServer(BLINKER_CMD_EVENT_MSG_NUMBER, data) != BLINKER_CMD_FALSE;
+            #endif
         }
     #endif
 
