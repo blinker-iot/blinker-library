@@ -19,6 +19,7 @@ BlinkerAliGenie	KEYWORD1
 BlinkerDuerOS	KEYWORD1
 BlinkerMIOT	KEYWORD1
 BlinkerUpdater	KEYWORD1
+BlinkerEvent	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
@@ -114,6 +115,9 @@ reset	KEYWORD2
 tick	KEYWORD2
 lang	KEYWORD2
 lat	KEYWORD2
+warning	KEYWORD2
+error	KEYWORD2
+message	KEYWORD2
 BLINKER_LOG	KEYWORD2
 BLINKER_LOG	KEYWORD2
 BLINKER_LOG	KEYWORD2

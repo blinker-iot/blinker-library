@@ -54,6 +54,8 @@
     #define BLINKER_DATA_FREQ_TIME          60
 #endif
 
+#define BLINKER_DEVICE_HEARTBEAT_TIME   600
+
 #define BLINKER_MDNS_SERVICE_BLINKER    "blinker"
 
 #define BLINKER_ERROR                   0x00
