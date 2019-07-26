@@ -123,7 +123,7 @@ void _receivedCallback(uint32_t from, String &msg)
     {
         BLINKER_LOG_ALL("mesh data");
 
-        String _data = root["data"];
+        String _data = root["meshData"];
         if (isFresh_mesh) free(msgBuf_mesh);
         msgBuf_mesh = (char*)malloc((_data.length()+1)*sizeof(char));
         strcpy(msgBuf_mesh, _data.c_str());
@@ -265,7 +265,18 @@ class BlinkerSubDevice : public BlinkerStream
         int authCheck();
         void freshAlive() { kaTime = millis(); isAlive = true; }
         void sharers(const String & data);
-        int  needFreshShare() { return false; }
+        int  needFreshShare() {
+            if (_needCheckShare)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("needFreshShare"));
+                _needCheckShare = false;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
     private :
         bool isDeviceInit;
@@ -720,6 +731,43 @@ char * BlinkerSubDevice::deviceName() { return MQTT_DEVICEID_PRO;/*MQTT_ID_PRO;*
 void BlinkerSubDevice::sharers(const String & data)
 {
     BLINKER_LOG_ALL(BLINKER_F("sharers data: "), data);
+
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject root = jsonBuffer.as<JsonObject>();
+
+    // if (!root.success()) return;
+    if (error) return;
+
+    String user_name = "";
+
+    if (_sharerCount)
+    {
+        for (_sharerCount; _sharerCount > 0; _sharerCount--)
+        {
+            delete _sharers[_sharerCount - 1];
+        }
+    }
+
+    _sharerCount = 0;
+
+    for (uint8_t num = 0; num < BLINKER_MQTT_MAX_SHARERS_NUM; num++)
+    {
+        user_name = root["users"][num].as<String>();
+
+        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
+
+            _sharerCount++;
+
+            _sharers[num] = new BlinkerSharer(user_name);
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 int BlinkerSubDevice::authCheck()
