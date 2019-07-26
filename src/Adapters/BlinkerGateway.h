@@ -2937,6 +2937,26 @@ void BlinkerGateway::meshCheck()
                     sendSingle(_subDevices[checkId]->id(), dataBack);
                 }
             }
+            else if (root.containsKey("freshSharers"))
+            {
+                int checkId = _checkIdAlive(msgFrom);
+                if (checkId != -1)
+                {
+                    String data = BLINKER_F("/share/device?");
+                    data += BLINKER_F("deviceName=");
+                    data += _subDevices[checkId]->deviceName();
+                    data += BLINKER_F("&key=");
+                    data += _subDevices[checkId]->authKey();
+                    
+                    String dataBack = blinkerServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
+
+                    if (dataBack == "null") dataBack = "\"null\"";
+
+                    dataBack = "{\"meshData\":{\"freshSharers\":" + dataBack + "}}";
+                    
+                    sendSingle(_subDevices[checkId]->id(), dataBack);
+                }
+            }
             else if (root.containsKey("configUpdate"))
             {
                 int checkId = _checkIdAlive(msgFrom);

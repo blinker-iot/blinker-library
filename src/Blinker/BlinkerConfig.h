@@ -1562,6 +1562,18 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
                                             (BLINKER_AUTODATA_SIZE + BLINKER_TARGETKEY_SIZE + \
                                             BLINKER_TARGETDATA_SIZE) * 2)// + BLINKER_LINKDEVICE_SIZE + BLINKER_LINKTYPE_SIZE + BLINKER_LINKDATA_SIZE) * 2)
 
+    #define BLINKER_EEP_ADDR_AUTONUM_SUB    (BLINKER_EEP_ADDR_OTA_CHECK + BLINKER_OTA_CHECK_SIZE)
+
+    #define BLINKER_AUTONUM_SUB_SIZE        1
+
+    #define BLINKER_EEP_ADDR_AUTO_START_SUB (BLINKER_EEP_ADDR_AUTONUM_SUB + BLINKER_AUTONUM_SUB_SIZE)
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    #define BLINKER_EEP_ADDR_AUTOID_SUB     0
+
+    #define BLINKER_AUTOID_SUB_SIZE         4
+    
 #endif
 
 #if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202) || \

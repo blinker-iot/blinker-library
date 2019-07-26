@@ -417,6 +417,10 @@ class BlinkerApi : public BlinkerProtocol
                 #endif
             #endif
 
+            #if !defined(BLINKER_LOWPOWER_AIR202)
+            String freshSharers(); // NBIOT TODO
+            #endif
+
             #if !defined(BLINKER_WIFI_SUBDEVICE)
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -427,10 +431,6 @@ class BlinkerApi : public BlinkerProtocol
                 String checkOTA();
                 bool updateOTAStatus(int8_t status, const String & msg);
                 void otaStatus(int8_t status, const String & msg);
-            #endif
-
-            #if !defined(BLINKER_LOWPOWER_AIR202)
-            String freshSharers(); // NBIOT TODO
             #endif
 
             #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
@@ -2095,15 +2095,18 @@ class BlinkerApi : public BlinkerProtocol
             bool autoManager(const JsonObject& data);
             #endif
 
-            #if !defined(BLINKER_WIFI_SUBDEVICE)
-
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
                 !defined(BLINKER_LOWPOWER_AIR202))
-                void otaParse(const JsonObject& data);
                 void shareParse(const JsonObject& data);
-                void numParse(const JsonObject& data);
+                
+                #if !defined(BLINKER_WIFI_SUBDEVICE)
+                    void otaParse(const JsonObject& data);
+                    void numParse(const JsonObject& data);
+                #endif
             #endif
+
+            #if !defined(BLINKER_WIFI_SUBDEVICE)
 
             #if defined(BLINKER_GPRS_AIR202)
                 void shareParse(const JsonObject& data);
@@ -2523,7 +2526,7 @@ void BlinkerApi::needInit()
         BLINKER_LOG(BLINKER_F(
                     "\n==========================================================="
                     "\n================= Blinker PRO mode init ! ================="
-                    "\nWarning! EEPROM address 1280-1535 is used for Auto Control!"
+                    "\nWarning! EEPROM address 1280-1535 is used for PRO ESP Mode!"
                     "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
                     "\n===========================================================\n"));
 
@@ -3593,6 +3596,11 @@ void BlinkerApi::run()
             if (!_isInit)
             {
                 _isInit = BProto::init();
+
+                if (_isInit)
+                {
+                    freshSharers();
+                }
             }
 
             #if defined(BLINKER_WIFI_SUBDEVICE)
@@ -3654,6 +3662,15 @@ void BlinkerApi::run()
                             autoManager(autoJson);
                         }
                     }
+                    else if (root.containsKey("freshSharers"))
+                    {
+                        String _shareData = root["freshSharers"].as<String>();
+                        
+                        if (STRING_contains_string(_shareData, "users") == true)
+                        {
+                            BProto::sharers(_shareData);
+                        }
+                    }
 
                     BProto::meshFlush();
                 }
@@ -3665,10 +3682,8 @@ void BlinkerApi::run()
             if (((millis() - _dHeartTime)/1000 >= BLINKER_DEVICE_HEARTBEAT_TIME || \
                 _dHeartTime == 0) && _isInit)
             {
-                if (deviceHeartbeat())
-                {
-                    _dHeartTime = millis();
-                }
+                deviceHeartbeat();
+                _dHeartTime = millis();
             }
         #endif
 
@@ -4012,16 +4027,19 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                     defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-                    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
-                    autoManager(root);
-                    otaParse(root);
+                    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+                    defined(BLINKER_WIFI_SUBDEVICE)
                     shareParse(root);
+                    autoManager(root);
+                    #if !defined(BLINKER_WIFI_SUBDEVICE)
+                    otaParse(root);
                     numParse(root);
 
                     for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
                     {
                         bridgeParse(_Bridge[bNum]->getName(), root);
                     }
+                    #endif
                 #endif
 
                 heartBeat(root);
@@ -6269,6 +6287,27 @@ float BlinkerApi::gps(b_gps_t axis)
     #endif
     #endif
 
+    #if !defined(BLINKER_LOWPOWER_AIR202)
+    String BlinkerApi::freshSharers()
+    {
+        #if !defined(BLINKER_WIFI_SUBDEVICE)
+            String data = BLINKER_F("/share/device?");
+            data += BLINKER_F("deviceName=");
+            data += BProto::deviceName();
+            data += BLINKER_F("&key=");
+            data += BProto::authKey();
+
+            return blinkerServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
+        #else
+            String data = BLINKER_F("{\"freshSharers\":\"\"}");
+
+            BProto::subPrint(data);
+
+            return "";
+        #endif
+    }
+    #endif
+
     #if !defined(BLINKER_WIFI_SUBDEVICE)
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -6465,19 +6504,6 @@ float BlinkerApi::gps(b_gps_t axis)
             printObject(BLINKER_F("upgradeData"), data);
             BProto::printNow();
         #endif
-    }
-    #endif
-
-    #if !defined(BLINKER_LOWPOWER_AIR202)
-    String BlinkerApi::freshSharers()
-    {
-        String data = BLINKER_F("/share/device?");
-        data += BLINKER_F("deviceName=");
-        data += BProto::deviceName();
-        data += BLINKER_F("&key=");
-        data += BProto::authKey();
-
-        return blinkerServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
     }
     #endif
 
@@ -9556,6 +9582,49 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             return false;
         }
+    }       
+
+    void BlinkerApi::shareParse(const JsonObject& data)
+    {
+        if (data.containsKey(BLINKER_CMD_SET))
+        {
+            String value = data[BLINKER_CMD_SET];
+
+            // DynamicJsonBuffer jsonBufferSet;
+            // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, value);
+            JsonObject rootSet = jsonBuffer.as<JsonObject>();
+
+            // if (!rootSet.success()) 
+            if (error)
+            {
+                // BLINKER_ERR_LOG_ALL("Json error");
+                return;
+            }
+
+            if (rootSet.containsKey(BLINKER_CMD_SHARE))
+            {
+                BLINKER_LOG_ALL(BLINKER_F("shareParse isParsed"));
+                _fresh = true;
+                
+                #if !defined(BLINKER_WIFI_SUBDEVICE)
+                // BProto::sharers(freshSharers());
+                String _shareData = freshSharers();
+                if (STRING_contains_string(_shareData, "users") == false)
+                {
+                    _shareData = freshSharers();
+                }
+                if (STRING_contains_string(_shareData, "users") == true)
+                {
+                    BProto::sharers(_shareData);
+                }
+                BProto::connect();
+                #else
+                freshSharers();
+                #endif
+            }
+        }
     }
 
     #if !defined(BLINKER_WIFI_SUBDEVICE)
@@ -9649,46 +9718,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 }
             }
         }
-    }    
-
-    void BlinkerApi::shareParse(const JsonObject& data)
-    {
-        if (data.containsKey(BLINKER_CMD_SET))
-        {
-            String value = data[BLINKER_CMD_SET];
-
-            // DynamicJsonBuffer jsonBufferSet;
-            // JsonObject& rootSet = jsonBufferSet.parseObject(value);
-            DynamicJsonDocument jsonBuffer(1024);
-            DeserializationError error = deserializeJson(jsonBuffer, value);
-            JsonObject rootSet = jsonBuffer.as<JsonObject>();
-
-            // if (!rootSet.success()) 
-            if (error)
-            {
-                // BLINKER_ERR_LOG_ALL("Json error");
-                return;
-            }
-
-            if (rootSet.containsKey(BLINKER_CMD_SHARE))
-            {
-                BLINKER_LOG_ALL(BLINKER_F("shareParse isParsed"));
-                _fresh = true;
-
-                // BProto::sharers(freshSharers());
-                String _shareData = freshSharers();
-                if (STRING_contains_string(_shareData, "users") == false)
-                {
-                    _shareData = freshSharers();
-                }
-                if (STRING_contains_string(_shareData, "users") == true)
-                {
-                    BProto::sharers(_shareData);
-                }
-                BProto::connect();
-            }
-        }
-    }
+    } 
 
     #endif
 
