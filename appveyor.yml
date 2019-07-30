@@ -4,7 +4,7 @@ environment:
   BUILD_HOME: "/home/appveyor"
 
   TARGET_LIB: "$BUILD_HOME/Arduino/libraries/blinker-library"
-  OTHER_LIB: "https://github.com/adafruit/Adafruit_NeoPixel.git,https://github.com/adafruit/DHT-sensor-library.git"
+  OTHER_LIB: "https://github.com/adafruit/Adafruit_NeoPixel.git,https://github.com/adafruit/DHT-sensor-library.git,https://github.com/adafruit/Adafruit_Sensor.git"
 
   ARDUINO_VER: "arduino-1.8.9"
   ARDUINO_URL: "https://downloads.arduino.cc/arduino-1.8.9-linux64.tar.xz"
