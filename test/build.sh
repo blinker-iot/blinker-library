@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 加,
-if [ -n "$LIB_URL" ]; then
-    export $TOOL_PATH=",$TOOL_PATH"
+if [ -n "$TOOL_PATH" ]; then
+    export TOOL_PATH=",$TOOL_PATH"
 fi
 
 # 生成构建配置
