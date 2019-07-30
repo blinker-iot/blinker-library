@@ -14,12 +14,12 @@
 using namespace std;
 #ifdef ESP32
 // #include <AsyncTCP.h>
-#include <modules/AsyncTCP/AsyncTCP.h>
+#include "../AsyncTCP/AsyncTCP.h"
 #include <WiFi.h>
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 // #include <ESPAsyncTCP.h>
-#include <modules/ESPAsyncTCP/ESPAsyncTCP.h>
+#include "../ESPAsyncTCP/ESPAsyncTCP.h"
 #endif  // ESP32
 
 #ifdef PAINLESSMESH_ENABLE_ARDUINO_WIFI
