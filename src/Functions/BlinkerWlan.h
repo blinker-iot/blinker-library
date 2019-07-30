@@ -27,12 +27,12 @@
     #include <WProgram.h>
 #endif
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerUtility.h"
-#include "Functions/BlinkerWlan.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerDebug.h"
+#include "../Blinker/BlinkerUtility.h"
+#include "BlinkerWlan.h"
 #ifndef ARDUINOJSON_VERSION_MAJOR
-#include "modules/ArduinoJson/ArduinoJson.h"
+#include "../modules/ArduinoJson/ArduinoJson.h"
 #endif
 
 #if defined(ESP8266)

@@ -32,7 +32,7 @@
 
 #if ASYNC_TCP_SSL_ENABLED
 
-#include "lwipopts.h"
+#include <lwipopts.h>
 /*
  * All those functions will run only if LWIP tcp raw mode is used
  */
@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include "include/ssl.h"
+#include <include/ssl.h>
 
 #define ERR_TCP_SSL_INVALID_SSL           -101
 #define ERR_TCP_SSL_INVALID_TCP           -102

@@ -17,11 +17,11 @@
 #include <EEPROM.h>
 
 // #include "Blinker/BlinkerAuto.h"
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerUtility.h"
+#include "BlinkerConfig.h"
+#include "BlinkerDebug.h"
+#include "BlinkerUtility.h"
 #ifndef ARDUINOJSON_VERSION_MAJOR
-#include "modules/ArduinoJson/ArduinoJson.h"
+#include "../modules/ArduinoJson/ArduinoJson.h"
 #endif
 
 class BlinkerAUTO

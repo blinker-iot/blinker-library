@@ -1,9 +1,9 @@
 #ifndef BLINKER_AT_MASTER_H
 #define BLINKER_AT_MASTER_H
 
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "BlinkerDebug.h"
+#include "BlinkerConfig.h"
+#include "BlinkerUtility.h"
 
 enum blinker_at_m_state_t {
     AT_M_NONE,

@@ -1,8 +1,8 @@
 #ifndef BlinkerText_H
 #define BlinkerText_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerUtility.h"
 
 class BlinkerText
 {

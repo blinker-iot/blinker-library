@@ -1,8 +1,8 @@
 #ifndef BlinkerRGB_H
 #define BlinkerRGB_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerUtility.h"
 
 class BlinkerRGB
 {

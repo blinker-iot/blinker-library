@@ -1,9 +1,9 @@
 #ifndef BLINKER_API_BASE_H
 #define BLINKER_API_BASE_H
 
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "BlinkerDebug.h"
+#include "BlinkerConfig.h"
+#include "BlinkerUtility.h"
 
 template <class T>
 int8_t checkNum(char * name, T * c, uint8_t count)

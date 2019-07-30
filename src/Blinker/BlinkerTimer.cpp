@@ -1,8 +1,8 @@
 #if defined(ESP8266) || defined(ESP32)
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerTimer.h"
+#include "BlinkerConfig.h"
+#include "BlinkerDebug.h"
+#include "BlinkerTimer.h"
 
 Ticker cdTicker;
 Ticker lpTicker;

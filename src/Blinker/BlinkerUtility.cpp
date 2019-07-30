@@ -1,8 +1,8 @@
-#include "Blinker/BlinkerUtility.h"
+#include "BlinkerUtility.h"
 
 #if defined(ESP8266)
 extern "C" {
-    #include "user_interface.h"
+    #include <user_interface.h>
 }
 
 String macDeviceName()

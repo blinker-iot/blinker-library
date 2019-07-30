@@ -12,15 +12,15 @@
         defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
         defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
         defined(BLINKER_WIFI_SUBDEVICE)
-        #include "Blinker/BlinkerAuto.h"
+        #include "BlinkerAuto.h"
     #endif
 
     #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
         defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
-        #include "Functions/BlinkerWlan.h"
+        #include "../Functions/BlinkerWlan.h"
     #endif
 #else
-    #include "Functions/BlinkerTicker.h"
+    #include "../Functions/BlinkerTicker.h"
 #endif
 
 #if defined(ESP8266) && !defined(BLINKER_BLE)
@@ -40,37 +40,37 @@
     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP)
-    #include "Blinker/BlinkerTimer.h"
-    #include "Functions/BlinkerTimingTimer.h"
-    #include "Functions/BlinkerOTA.h"
+    #include "BlinkerTimer.h"
+    #include "../Functions/BlinkerTimingTimer.h"
+    #include "../Functions/BlinkerOTA.h"
 #elif defined(BLINKER_WIFI_SUBDEVICE)
-    #include "Blinker/BlinkerTimer.h"
-    #include "Functions/BlinkerTimingTimer.h"
+    #include "BlinkerTimer.h"
+    #include "../Functions/BlinkerTimingTimer.h"
 #endif
 
 #if defined(BLINKER_AT_MQTT)
-    #include "Blinker/BlinkerMQTTATBase.h"
+    #include "BlinkerMQTTATBase.h"
 #endif
 
 #if defined(BLINKER_MQTT_AT)
-    #include "Blinker/BlinkerATMaster.h"
+    #include "BlinkerATMaster.h"
     #ifndef ARDUINOJSON_VERSION_MAJOR
-    #include "modules/ArduinoJson/ArduinoJson.h"
+    #include "../modules/ArduinoJson/ArduinoJson.h"
     #endif
 #endif
 
 #if defined (BLINKER_NB73_NBIOT)
-    #include "Blinker/BlinkerATMaster.h"
+    #include "BlinkerATMaster.h"
     #ifndef ARDUINOJSON_VERSION_MAJOR
-    #include "modules/ArduinoJson/ArduinoJson.h"
+    #include "../modules/ArduinoJson/ArduinoJson.h"
     #endif
 #endif
 
 #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
     defined(BLINKER_LOWPOWER_AIR202)
-    #include "Functions/BlinkerAIR202.H"
-    #include "Functions/BlinkerHTTPAIR202.h"
-    #include "modules/base64/Base64.h"
+    #include "../Functions/BlinkerAIR202.H"
+    #include "../Functions/BlinkerHTTPAIR202.h"
+    #include "../modules/base64/Base64.h"
 #endif
 
 #if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020)
@@ -79,8 +79,8 @@
     #include "Functions/BlinkerHTTPSIM7020.h"
 #endif
 
-#include "Blinker/BlinkerApiBase.h"
-#include "Blinker/BlinkerProtocol.h"
+#include "BlinkerApiBase.h"
+#include "BlinkerProtocol.h"
 
 typedef BlinkerProtocol BProto;
 

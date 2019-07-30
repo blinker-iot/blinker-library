@@ -19,17 +19,17 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #if defined(ESP32)
-#include "Arduino.h"
+#include <Arduino.h>
 
-#include "AsyncTCP.h"
+#include <AsyncTCP.h>
 extern "C"{
-#include "lwip/opt.h"
-#include "lwip/tcp.h"
-#include "lwip/inet.h"
-#include "lwip/dns.h"
-#include "lwip/err.h"
+#include <lwip/opt.h>
+#include <lwip/tcp.h>
+#include <lwip/inet.h>
+#include <lwip/dns.h>
+#include <lwip/err.h>
 }
-#include "esp_task_wdt.h"
+#include <esp_task_wdt.h>
 
 /*
  * TCP/IP Event Task
