@@ -68,7 +68,7 @@
 
 #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
     defined(BLINKER_LOWPOWER_AIR202)
-    #include "../Functions/BlinkerAIR202.H"
+    #include "../Functions/BlinkerAIR202.h"
     #include "../Functions/BlinkerHTTPAIR202.h"
     #include "../modules/base64/Base64.h"
 #endif
