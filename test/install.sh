@@ -16,7 +16,7 @@ if [ -n "$LIB_URL" ]; then
     echo -e "\e[93mInstall $TARGET...\e[0m"
     mkdir -p $HWLIB_PATH
     # 执行指定平台安装脚本
-    echo -e "\e[93mRun the $TARGET install script"
+    echo -e "\e[93mRun the $TARGET install script\e[0m"
     if [ "$TARGET" == "ESP8266" ]; then
         # 从库中复制工具链索引文件
         cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/esp8266
