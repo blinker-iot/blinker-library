@@ -1,4 +1,4 @@
-image: Ubuntu
+image: Ubuntu1804
 
 environment:
   BUILD_HOME: "/home/appveyor"
