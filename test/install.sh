@@ -27,6 +27,4 @@ if [ -n "$LIB_URL" ]; then
 else
     echo -e "\e[93mNo package set, skip.\e[0m"
 fi
-echo -e "\e[93mCreate build cache folder...\e[0m"
-mkdir -e $BUILD_HOME/build_cache
 echo -e "\e[93mInstall Done.\e[0m"

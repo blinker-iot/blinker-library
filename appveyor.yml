@@ -27,7 +27,7 @@ environment:
 init:
 - mkdir -p $BUILD_HOME/Arduino/libraries
 - mkdir -p $BUILD_HOME/Arduino/hardware
-
+- mkdir -p $BUILD_HOME/build_cache
 clone_folder: $TARGET_LIB
 
 install:
