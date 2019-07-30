@@ -27,4 +27,19 @@ if [ -n "$LIB_URL" ]; then
 else
     echo -e "\e[93mNo package set, skip.\e[0m"
 fi
+# 安装第三方库
+if [ -n "$OTHER_LIB" ]; then
+    # 解析字符串为数组
+    readarray -td, libs <<<"$OTHER_LIB,"
+    unset 'other_libs[-1]'
+
+    for lib in "${libs[@]}"
+    do
+        echo -e "e[93mCloning $lib...e[0m"
+        cd $BUILD_HOME/Arduino/libraries
+        # 克隆最近的release
+        git clone --depth=1 $lib
+    done
+fi
+
 echo -e "\e[93mInstall Done.\e[0m"
