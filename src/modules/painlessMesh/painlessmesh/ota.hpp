@@ -3,9 +3,9 @@
 
 #include "configuration.hpp"
 
-#include "modules/painlessmesh/painlessmesh/base64.hpp"
-#include "modules/painlessmesh/painlessmesh/logger.hpp"
-#include "modules/painlessmesh/painlessmesh/plugin.hpp"
+#include "base64.hpp"
+#include "logger.hpp"
+#include "plugin.hpp"
 
 #if defined(ESP32) || defined(ESP8266)
 #ifdef ESP32

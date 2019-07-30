@@ -4,9 +4,9 @@
 #include <algorithm>
 #include <map>
 
-#include "modules/painlessmesh/painlessmesh/layout.hpp"
-#include "modules/painlessmesh/painlessmesh/logger.hpp"
-#include "modules/painlessmesh/painlessmesh/protocol.hpp"
+#include "layout.hpp"
+#include "logger.hpp"
+#include "protocol.hpp"
 
 extern painlessmesh::logger::LogClass Log;
 

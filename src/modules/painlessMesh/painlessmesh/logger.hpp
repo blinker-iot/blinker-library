@@ -4,7 +4,7 @@ namespace painlessmesh {
 namespace logger {
 
 #include <stdarg.h>
-#include "Arduino.h"
+#include <Arduino.h>
 
 typedef enum {
   ERROR = 1 << 0,

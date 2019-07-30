@@ -4,8 +4,8 @@
 #include <cmath>
 #include <list>
 
-#include "Arduino.h"
-#include "modules/painlessmesh/painlessmesh/configuration.hpp"
+#include <Arduino.h>
+#include "configuration.hpp"
 
 namespace painlessmesh {
 

@@ -40,7 +40,8 @@ class BlinkerStream
             defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE)
                 virtual int aliPrint(const String & data) = 0;
                 virtual int duerPrint(const String & data) = 0;
-                #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
+                #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
                 virtual int miPrint(const String & data) = 0;
                 #endif
                 // virtual void ping() = 0;
@@ -50,7 +51,8 @@ class BlinkerStream
                 virtual void sharers(const String & data);
                 virtual int aligenieAvail() = 0;
                 virtual int duerAvail() = 0;
-                #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
+                #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
+                    !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
                 virtual int miAvail() = 0;
                 #endif
                 virtual int needFreshShare() = 0;

@@ -9,10 +9,10 @@
 #define TIME_SYNC_ACCURACY 5000  // Minimum time sync accuracy (5ms
 #endif
 
-#include "Arduino.h"
+#include <Arduino.h>
 
-#include "modules/painlessmesh/painlessmesh/logger.hpp"
-#include "modules/painlessmesh/painlessmesh/router.hpp"
+#include "logger.hpp"
+#include "router.hpp"
 
 extern painlessmesh::logger::LogClass Log;
 
