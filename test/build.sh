@@ -21,11 +21,16 @@ EOF
 cat $BUILD_HOME/build.option.json
 echo -e "\e[93mGenerated complete.\e[0m"
 
-echo -e "\e[42mStart building...\e[0m"
+echo -e "\e[42mStart compiling...\e[0m"
 # 遍历ino文件
 for sketch in `find $TARGET_LIB -name '*.ino'`
     do
-        echo -e "\e[32mBuilding:$sketch\e[93m"
+        echo -e "\e[32mCompiling:$sketch\e[0m"
         $ARDUINO_PATH/arduino-builder -build-cache $BUILD_HOME/build_cache -build-options-file $BUILD_HOME/build.option.json $sketch
+        if [ $? -eq 0 ]; then
+            echo -e "\e[101mCompiled successfully\e[0m"
+        else
+            echo -e "\e[101mCompile failed:%?:$sketch\e[0m"
+        fi
     done
 echo -e "\e[32mBuild completed\e[0m"

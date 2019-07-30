@@ -15,11 +15,11 @@ if [ -n "$LIB_URL" ]; then
     unzip $BUILD_HOME/$TARGET.zip -d $BUILD_HOME > /dev/null
     echo -e "\e[93mInstall $TARGET...\e[0m"
     mkdir -p $HWLIB_PATH
-    cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH
     # 执行指定平台安装脚本
     echo -e "\e[93mRun the $TARGET install script"
     if [ "$TARGET" == "ESP8266" ]; then
         # 从库中复制工具链索引文件
+        cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/esp8266
         cp -R $TARGET_LIB/test/package $HWLIB_PATH/esp8266/package
         cd $HWLIB_PATH/esp8266/tools
         python get.py
