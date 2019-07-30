@@ -1,0 +1,29 @@
+image: Ubuntu
+
+clone_folder: /home/appveyor/Arduino/libraries/blinker-library
+
+environment:
+  BUILD_HOME: "/home/appveyor"
+
+  TARGET_LIB: "$BUILD_HOME/Arduino/libraries/blinker-library"
+
+  ARDUINO_VER: "arduino-1.8.9"
+  ARDUINO_URL: "https://downloads.arduino.cc/arduino-1.8.9-linux64.tar.xz"
+
+  ESP8266_VER: "esp8266-2.5.2"
+  ESP8266_URL: "https://github.com/esp8266/Arduino/releases/download/2.5.2/esp8266-2.5.2.zip"
+
+  ARDUINO_PATH: "$BUILD_HOME/$ARDUINO_VER"
+  ARDUINO_BUILDIN_LIB: "$ARDUINO_PATH/libraries"
+
+  ESP8266_PATH: "$BUILD_HOME/Arduino/hardware/esp8266com"
+
+init:
+- mkdir -p /home/appveyor/Arduino/libraries
+
+install:
+- chmod +x $TARGET_LIB/test/install.sh
+- chmod +x $TARGET_LIB/test/build.sh
+- $TARGET_LIB/test/install.sh
+build_script:
+- $TARGET_LIB/test/build.sh
