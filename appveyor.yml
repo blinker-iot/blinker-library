@@ -25,7 +25,8 @@ environment:
     BUILD_CONF: "build.warn_data_percentage=75,runtime.tools.xtensa-lx106-elf-gcc.path=$HWLIB_PATH/esp8266/tools/xtensa-lx106-elf,runtime.tools.xtensa-lx106-elf-gcc-2.5.0-3-20ed2b9.path=$HWLIB_PATH/esp8266/tools/xtensa-lx106-elf,runtime.tools.mkspiffs.path=$HWLIB_PATH/esp8266/tools/mkspiffs,runtime.tools.mkspiffs-2.5.0-3-20ed2b9.path=$HWLIB_PATH/esp8266/tools/mkspiffs,runtime.tools.python.path=$HWLIB_PATH/esp8266/tools/python,runtime.tools.python-3.7.2-post1.path=$HWLIB_PATH/esp8266/tools/python"
 
 init:
-- mkdir -p /home/appveyor/Arduino/libraries
+- mkdir -p $BUILD_HOME/Arduino/libraries
+- mkdir -p $BUILD_HOME/Arduino/hardware
 
 clone_folder: $TARGET_LIB
 
