@@ -262,7 +262,7 @@ int BlinkerMQTTSIM7020::connected()
         return isConnected;
     }
 
-    if ((millis() - ping_time) <= 30000) return;
+    if ((millis() - ping_time) <= 30000) return false;
 
     BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connected check <<<<<<"));
     streamPrint(STRING_format(BLINKER_CMD_CMQCON_REQ) + "?");

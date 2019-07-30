@@ -14,34 +14,34 @@
 using namespace std;
 #ifdef ESP32
 // #include <AsyncTCP.h>
-#include "modules/AsyncTCP/AsyncTCP.h"
+#include <modules/AsyncTCP/AsyncTCP.h>
 #include <WiFi.h>
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 // #include <ESPAsyncTCP.h>
-#include "modules/ESPAsyncTCP/ESPAsyncTCP.h"
+#include <modules/ESPAsyncTCP/ESPAsyncTCP.h>
 #endif  // ESP32
 
 #ifdef PAINLESSMESH_ENABLE_ARDUINO_WIFI
-#include "modules/painlessmesh/painlessMeshConnection.h"
-#include "modules/painlessmesh/painlessMeshSTA.h"
+#include "painlessMeshConnection.h"
+#include "painlessMeshSTA.h"
 
 #include "arduino/wifi.hpp"
 #endif
 
 #ifdef PAINLESSMESH_ENABLE_OTA
-#include "modules/painlessmesh/painlessmesh/ota.hpp"
+#include "painlessmesh/ota.hpp"
 #endif
 
-#include "modules/painlessmesh/painlessmesh/buffer.hpp"
-#include "modules/painlessmesh/painlessmesh/layout.hpp"
-#include "modules/painlessmesh/painlessmesh/logger.hpp"
-#include "modules/painlessmesh/painlessmesh/mesh.hpp"
-#include "modules/painlessmesh/painlessmesh/ntp.hpp"
-#include "modules/painlessmesh/painlessmesh/plugin.hpp"
-#include "modules/painlessmesh/painlessmesh/protocol.hpp"
-#include "modules/painlessmesh/painlessmesh/router.hpp"
-#include "modules/painlessmesh/painlessmesh/tcp.hpp"
+#include "painlessmesh/buffer.hpp"
+#include "painlessmesh/layout.hpp"
+#include "painlessmesh/logger.hpp"
+#include "painlessmesh/mesh.hpp"
+#include "painlessmesh/ntp.hpp"
+#include "painlessmesh/plugin.hpp"
+#include "painlessmesh/protocol.hpp"
+#include "painlessmesh/router.hpp"
+#include "painlessmesh/tcp.hpp"
 using namespace painlessmesh::logger;
 
 #define MIN_FREE_MEMORY \

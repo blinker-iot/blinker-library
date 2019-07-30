@@ -75,7 +75,8 @@ class BlinkerProtocol
             defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
-            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
+            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
             int miPrint(const String & data)  { return isInit ? conn->miPrint(data) : false; }
             #endif
             // void ping() { if (isInit) conn->ping(); }
@@ -194,7 +195,8 @@ class BlinkerProtocol
             defined(BLINKER_WIFI_SUBDEVICE)
             bool checkAliAvail()    { return conn->aligenieAvail(); }
             bool checkDuerAvail()   { return conn->duerAvail(); }
-            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
+            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
             bool checkMIOTAvail()   { return conn->miAvail(); }
             #endif
         #endif

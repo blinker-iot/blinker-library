@@ -1,10 +1,10 @@
 #ifndef _PAINLESS_MESH_PLUGIN_HPP_
 #define _PAINLESS_MESH_PLUGIN_HPP_
 
-#include "Arduino.h"
-#include "modules/painlessmesh/painlessmesh/configuration.hpp"
+#include <Arduino.h>
+#include "configuration.hpp"
 
-#include "modules/painlessmesh/painlessmesh/router.hpp"
+#include "router.hpp"
 
 namespace painlessmesh {
 

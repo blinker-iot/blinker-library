@@ -1,14 +1,14 @@
 #ifndef _PAINLESS_MESH_MESH_HPP_
 #define _PAINLESS_MESH_MESH_HPP_
 
-#include "modules/painlessmesh/painlessmesh/configuration.hpp"
+#include "configuration.hpp"
 
-#include "modules/painlessmesh/painlessmesh/ntp.hpp"
-#include "modules/painlessmesh/painlessmesh/plugin.hpp"
-#include "modules/painlessmesh/painlessmesh/tcp.hpp"
+#include "ntp.hpp"
+#include "plugin.hpp"
+#include "tcp.hpp"
 
 #ifdef PAINLESSMESH_ENABLE_OTA
-#include "modules/painlessmesh/painlessmesh/ota.hpp"
+#include "ota.hpp"
 #endif
 
 namespace painlessmesh {

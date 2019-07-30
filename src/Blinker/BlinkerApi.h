@@ -596,7 +596,8 @@ class BlinkerApi : public BlinkerProtocol
 
             void aligeniePrint(String & _msg);
             void duerPrint(String & _msg);
-            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
+            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
             void miotPrint(String & _msg);
             #endif
         #endif
@@ -1655,7 +1656,7 @@ class BlinkerApi : public BlinkerProtocol
                         break;
                     case BLINKER_CMD_AUTO_PULL_NUMBER :
                         if (!checkAutoPull()) {
-                            return false;
+                            return BLINKER_CMD_FALSE;
                         }
                         break;
                     case BLINKER_CMD_OTA_NUMBER :
@@ -6603,7 +6604,8 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
-    #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020)
+    #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
+        !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
     void BlinkerApi::miotPrint(String & _msg)
     {
         BLINKER_LOG_ALL(BLINKER_F("response to MIOT: "), _msg);

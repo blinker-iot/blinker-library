@@ -3,10 +3,10 @@
 
 #include <list>
 
-#include "Arduino.h"
-#include "modules/painlessmesh/painlessmesh/configuration.hpp"
+#include <Arduino.h>
+#include "configuration.hpp"
 
-#include "modules/painlessmesh/painlessmesh/logger.hpp"
+#include "logger.hpp"
 
 namespace painlessmesh {
 namespace tcp {

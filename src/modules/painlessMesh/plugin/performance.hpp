@@ -1,10 +1,10 @@
 #ifndef _PAINLESS_MESH_PLUGIN_PERFORMANCE_HPP_
 #define _PAINLESS_MESH_PLUGIN_PERFORMANCE_HPP_
 
-#include "modules/painlessmesh/painlessmesh/configuration.hpp"
+#include "../painlessmesh/configuration.hpp"
 
-#include "modules/painlessmesh/painlessmesh/logger.hpp"
-#include "modules/painlessmesh/painlessmesh/plugin.hpp"
+#include "../painlessmesh/logger.hpp"
+#include "../painlessmesh/plugin.hpp"
 
 namespace painlessmesh {
 namespace plugin {

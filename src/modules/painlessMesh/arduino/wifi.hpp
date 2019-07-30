@@ -1,16 +1,16 @@
 #ifndef _PAINLESS_MESH_ARDUINO_WIFI_HPP_
 #define _PAINLESS_MESH_ARDUINO_WIFI_HPP_
 
-#include "modules/painlessmesh/painlessmesh/configuration.hpp"
+#include "../painlessmesh/configuration.hpp"
 
 #ifdef PAINLESSMESH_ENABLE_ARDUINO_WIFI
-#include "modules/painlessmesh/painlessMeshConnection.h"
-#include "modules/painlessmesh/painlessMeshSTA.h"
+#include "../painlessMeshConnection.h"
+#include "../painlessMeshSTA.h"
 
-#include "modules/painlessmesh/painlessmesh/logger.hpp"
-#include "modules/painlessmesh/painlessmesh/mesh.hpp"
-#include "modules/painlessmesh/painlessmesh/router.hpp"
-#include "modules/painlessmesh/painlessmesh/tcp.hpp"
+#include "../painlessmesh/logger.hpp"
+#include "../painlessmesh/mesh.hpp"
+#include "../painlessmesh/router.hpp"
+#include "../painlessmesh/tcp.hpp"
 
 extern painlessmesh::logger::LogClass Log;
 
