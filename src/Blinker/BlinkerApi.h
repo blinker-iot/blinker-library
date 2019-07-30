@@ -9724,6 +9724,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     #endif
 
+    #endif
+
     #if defined(BLINKER_GPRS_AIR202)
     void BlinkerApi::shareParse(const JsonObject& data)
     {
@@ -9763,7 +9765,6 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             }
         }
     }
-    #endif
     #endif
 
     #if !defined(BLINKER_WIFI_SUBDEVICE)

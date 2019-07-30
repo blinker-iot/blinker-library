@@ -279,7 +279,7 @@ int BlinkerAIR202LP::connectServer()
         // JsonObject& root = jsonBuffer.parseObject(payload);
         DynamicJsonDocument jsonBuffer(1024);
         DeserializationError error = deserializeJson(jsonBuffer, payload);
-        JsonObject data_rp = jsonBuffer.as<JsonObject>();
+        JsonObject root = jsonBuffer.as<JsonObject>();
 
         if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || error ||
             !STRING_contains_string(payload, BLINKER_CMD_AUTHKEY)) {
