@@ -10,7 +10,7 @@ echo -e "\e[93mGenerate build.option.json\e[0m"
 cat <<EOF > $BUILD_HOME/build.option.json
 {
   "additionalFiles": "",
-  "builtInLibrariesFolders": "$ARDUINO_BUILDIN_LIB",
+  "builtInLibrariesFolders": "$ARDUINO_PATH/libraries",
   "customBuildProperties": "$BUILD_CONF",
   "fqbn": "$BOARD_CONF",
   "hardwareFolders": "$ARDUINO_PATH/hardware,$BUILD_HOME/Arduino/hardware",
@@ -26,6 +26,6 @@ echo -e "\e[42mStart building...\e[0m"
 for sketch in `find $TARGET_LIB -name '*.ino'`
     do
         echo -e "\e[32mBuilding:$sketch\e[93m"
-        $ARDUINO_PATH/arduino-builder -build-options-file $BUILD_HOME/build.option.json $sketch
+        $ARDUINO_PATH/arduino-builder -build-cache $BUILD_HOME/build_cache -build-options-file $BUILD_HOME/build.option.json $sketch
     done
 echo -e "\e[32mBuild completed\e[0m"
