@@ -18,6 +18,7 @@ echo -e "\e[93mDone.\e[0m"
 
 echo -e "\e[42mStart Building.\e[0m"
 # 遍历ino文件
+mkdir -p $BUILD_HOME/build_temp
 for sketch in `find $TARGET_LIB -name '*.ino'`
     do
         echo -e "\e[32mBuilding:$sketch\e[0m"
