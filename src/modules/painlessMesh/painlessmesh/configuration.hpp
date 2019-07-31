@@ -7,13 +7,13 @@
 #define _TASK_PRIORITY // Support for layered scheduling priority
 #define _TASK_STD_FUNCTION
 
-#include <modules/TaskScheduler/TaskSchedulerDeclarations.h>
+#include "../../TaskScheduler/TaskSchedulerDeclarations.h"
 
 #define ARDUINOJSON_USE_LONG_LONG 1
 #undef ARDUINOJSON_ENABLE_STD_STRING
 // #include <ArduinoJson.h>
 #ifndef ARDUINOJSON_VERSION_MAJOR
-#include <modules/ArduinoJson/ArduinoJson.h>
+#include "../../ArduinoJson/ArduinoJson.h"
 #endif
 #undef ARDUINOJSON_ENABLE_STD_STRING
 
@@ -28,11 +28,11 @@
 #ifdef ESP32
 #include <WiFi.h>
 // #include <AsyncTCP.h>
-#include <modules/AsyncTCP/AsyncTCP.h>
+#include "../../AsyncTCP/AsyncTCP.h"
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 // #include <ESPAsyncTCP.h>
-#include <modules/ESPAsyncTCP/ESPAsyncTCP.h>
+#include "../../ESPAsyncTCP/ESPAsyncTCP.h"
 #endif // ESP32
 
 typedef String TSTRING;

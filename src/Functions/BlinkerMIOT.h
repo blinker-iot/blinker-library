@@ -1,8 +1,8 @@
 #ifndef BLINKER_MIOT_H
 #define BLINKER_MIOT_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerUtility.h"
 
 class BLINKERMIOT
 {

@@ -1,10 +1,10 @@
 #ifndef BLINKER_PROTOCOL_H
 #define BLINKER_PROTOCOL_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerStream.h"
-#include "Blinker/BlinkerUtility.h"
+#include "BlinkerConfig.h"
+#include "BlinkerDebug.h"
+#include "BlinkerStream.h"
+#include "BlinkerUtility.h"
 
 enum _blinker_state_t
 {

@@ -15,18 +15,18 @@
 
 #include <EEPROM.h>
 
-#include "modules/WebSockets/WebSocketsServer.h"
-#include "modules/mqtt/Adafruit_MQTT.h"
-#include "modules/mqtt/Adafruit_MQTT_Client.h"
+#include "../modules/WebSockets/WebSocketsServer.h"
+#include "../modules/mqtt/Adafruit_MQTT.h"
+#include "../modules/mqtt/Adafruit_MQTT_Client.h"
 #ifndef ARDUINOJSON_VERSION_MAJOR
-#include "modules/ArduinoJson/ArduinoJson.h"
+#include "../modules/ArduinoJson/ArduinoJson.h"
 #endif
 
-// #include "Adapters/BlinkerPRO.h"
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerStream.h"
-#include "Blinker/BlinkerUtility.h"
+// #include "../Adapters/BlinkerPRO.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerDebug.h"
+#include "../Blinker/BlinkerStream.h"
+#include "../Blinker/BlinkerUtility.h"
 
 char*       MQTT_HOST_PRO;
 char*       MQTT_ID_PRO;

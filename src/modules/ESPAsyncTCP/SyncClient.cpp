@@ -20,9 +20,9 @@
 */
 #if defined(ESP8266)
 #include "SyncClient.h"
-#include "Arduino.h"
+#include <Arduino.h>
 #include "ESPAsyncTCP.h"
-#include "cbuf.h"
+#include <cbuf.h>
 
 
 SyncClient::SyncClient(size_t txBufLen)

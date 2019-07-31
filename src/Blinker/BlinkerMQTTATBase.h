@@ -3,9 +3,9 @@
 
 #if defined(ESP8266) || defined(ESP32)
 
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "BlinkerDebug.h"
+#include "BlinkerConfig.h"
+#include "BlinkerUtility.h"
 
 // extern uint32_t serialSet;
 

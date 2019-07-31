@@ -22,7 +22,7 @@
 #ifndef _ADAFRUIT_MQTT_H_
 #define _ADAFRUIT_MQTT_H_
 
-#include "Arduino.h"
+#include <Arduino.h>
 
 #if defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_STM32_FEATHER)
 #define strncpy_P(dest, src, len) strncpy((dest), (src), (len))

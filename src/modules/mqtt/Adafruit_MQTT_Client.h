@@ -22,7 +22,7 @@
 #ifndef _ADAFRUIT_MQTT_CLIENT_H_
 #define _ADAFRUIT_MQTT_CLIENT_H_
 
-#include "Client.h"
+#include <Client.h>
 #include "Adafruit_MQTT.h"
 
 

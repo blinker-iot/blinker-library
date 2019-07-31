@@ -9,11 +9,11 @@
     #endif
 #endif
 
-#include "Blinker/BlinkerATMaster.h"
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerStream.h"
-#include "Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerATMaster.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerDebug.h"
+#include "../Blinker/BlinkerStream.h"
+#include "../Blinker/BlinkerUtility.h"
 
 #include <time.h>
 

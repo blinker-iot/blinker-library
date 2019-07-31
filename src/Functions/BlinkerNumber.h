@@ -1,8 +1,8 @@
 #ifndef BlinkerNUM_H
 #define BlinkerNUM_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerUtility.h"
 
 class BlinkerNumber
 {

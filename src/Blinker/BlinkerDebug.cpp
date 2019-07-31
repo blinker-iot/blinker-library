@@ -3,9 +3,9 @@
 #include <stddef.h>
 #ifdef ESP8266
     extern "C" {
-    #include "ets_sys.h"
-    #include "os_type.h"
-    #include "mem.h"
+    #include <ets_sys.h>
+    #include <os_type.h>
+    #include <mem.h>
     }
     #include <Esp.h>
 #else
