@@ -53,7 +53,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 void configGet(const String & data)
 {
-    BLINKER_LOG("Blinker.configGet(): ", config_data);
+    BLINKER_LOG("Blinker.configGet(): ", data);
 }
 
 void dataRead(const String & data)
