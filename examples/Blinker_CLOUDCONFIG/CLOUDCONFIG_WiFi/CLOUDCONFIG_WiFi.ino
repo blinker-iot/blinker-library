@@ -51,6 +51,11 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
+void configGet(const String & data)
+{
+    BLINKER_LOG("Blinker.configGet(): ", config_data);
+}
+
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
@@ -62,9 +67,7 @@ void dataRead(const String & data)
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     if (Blinker.configUpdate("Hello blinker!")) {
-        String config_data = Blinker.configGet();
-
-        BLINKER_LOG("Blinker.configGet(): ", config_data);
+        Blinker.configGet();
     }
 
     Blinker.delay(60000);
@@ -80,6 +83,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
+    Blinker.attachConfigGet(configGet);
 }
 
 void loop()
