@@ -7,16 +7,16 @@
     #include <WProgram.h>
 #endif
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerStream.h"
-#include "Blinker/BlinkerUtility.h"
-#include "Functions/BlinkerSIM7020.h"
-#include "Functions/BlinkerHTTPSIM7020.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerDebug.h"
+#include "../Blinker/BlinkerStream.h"
+#include "../Blinker/BlinkerUtility.h"
+#include "../Functions/BlinkerSIM7020.h"
+#include "../Functions/BlinkerHTTPSIM7020.h"
 #ifndef ARDUINOJSON_VERSION_MAJOR
-#include "modules/ArduinoJson/ArduinoJson.h"
+#include "../modules/ArduinoJson/ArduinoJson.h"
 #endif
-#include "Functions/BlinkerMQTTSIM7020.h"
+#include "../Functions/BlinkerMQTTSIM7020.h"
 
 char*       MQTT_HOST_NBIoT;
 char*       MQTT_ID_NBIoT;

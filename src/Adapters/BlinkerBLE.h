@@ -14,10 +14,10 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerStream.h"
-#include "Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerDebug.h"
+#include "../Blinker/BlinkerStream.h"
+#include "../Blinker/BlinkerUtility.h"
 
 class BlinkerBLE : public BlinkerStream, public BLEServerCallbacks, public BLECharacteristicCallbacks
 {

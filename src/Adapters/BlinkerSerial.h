@@ -7,11 +7,11 @@
     #include <WProgram.h>
 #endif
 
-// #include "Adapters/BlinkerSerial.h"
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerStream.h"
-#include "Blinker/BlinkerUtility.h"
+// #include "../Adapters/BlinkerSerial.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerDebug.h"
+#include "../Blinker/BlinkerStream.h"
+#include "../Blinker/BlinkerUtility.h"
 
 #if defined(ESP32)
     #include <HardwareSerial.h>

@@ -3,8 +3,8 @@
 
 #if (defined(ESP8266) || defined(ESP32))
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerDebug.h"
 #include <EEPROM.h>
 #if defined(ESP8266)
     #include <ESP8266HTTPClient.h>
@@ -19,7 +19,7 @@
     extern WiFiClientSecure client_s;
 #endif
 
-#include "Functions/BlinkerUpdater.h"
+#include "BlinkerUpdater.h"
 
 // extern WiFiClientSecure client_s;
 

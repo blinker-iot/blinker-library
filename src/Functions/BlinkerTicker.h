@@ -9,7 +9,7 @@
     #endif
 #endif
 
-#include "Blinker/BlinkerDebug.h"
+#include "../Blinker/BlinkerDebug.h"
 
 extern "C" {
     typedef void (*blinker_callback_t)(void);

@@ -24,7 +24,7 @@
 
 #if defined(ESP8266)
 
-#include "Client.h"
+#include <Client.h>
 #include "async_config.h"
 class cbuf;
 class AsyncClient;

@@ -1,23 +1,23 @@
 #if defined(ESP8266) || defined(ESP32)
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Functions/BlinkerUpdater.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerDebug.h"
+#include "BlinkerUpdater.h"
 
 #if defined(ESP8266)
 
-#include "Updater.h"
-#include "Arduino.h"
-#include "eboot_command.h"
+#include <Updater.h>
+#include <Arduino.h>
+#include <eboot_command.h>
 #include <interrupts.h>
 #include <esp8266_peri.h>
 
 //#define DEBUG_UPDATER Serial
 
 extern "C" {
-    #include "c_types.h"
-    #include "spi_flash.h"
-    #include "user_interface.h"
+    #include <c_types.h>
+    #include <spi_flash.h>
+    #include <user_interface.h>
 }
 
 #if defined _SPIFFS_start

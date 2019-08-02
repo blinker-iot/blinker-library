@@ -1,8 +1,8 @@
 #ifndef BlinkerTab_H
 #define BlinkerTab_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerUtility.h"
 
 class BlinkerTab
 {

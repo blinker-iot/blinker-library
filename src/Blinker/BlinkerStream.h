@@ -11,7 +11,7 @@
 //     #include "Blinker/BlinkerMQTTATBase.h"
 // #endif
 
-#include "Blinker/BlinkerUtility.h"
+#include "BlinkerUtility.h"
 
 class BlinkerStream
 {

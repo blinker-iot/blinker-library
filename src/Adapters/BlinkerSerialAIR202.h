@@ -7,16 +7,16 @@
     #include <WProgram.h>
 #endif
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerDebug.h"
-#include "Blinker/BlinkerStream.h"
-#include "Blinker/BlinkerUtility.h"
-#include "Functions/BlinkerAIR202.h"
-#include "Functions/BlinkerHTTPAIR202.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerDebug.h"
+#include "../Blinker/BlinkerStream.h"
+#include "../Blinker/BlinkerUtility.h"
+#include "../Functions/BlinkerAIR202.h"
+#include "../Functions/BlinkerHTTPAIR202.h"
 #ifndef ARDUINOJSON_VERSION_MAJOR
-#include "modules/ArduinoJson/ArduinoJson.h"
+#include "../modules/ArduinoJson/ArduinoJson.h"
 #endif
-#include "Functions/BlinkerMQTTAIR202.h"
+#include "../Functions/BlinkerMQTTAIR202.h"
 
 char*       MQTT_HOST_GPRS;
 char*       MQTT_ID_GPRS;

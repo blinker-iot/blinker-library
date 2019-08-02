@@ -1,8 +1,8 @@
 #ifndef BLINKER_ALIGENIE_H
 #define BLINKER_ALIGENIE_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerUtility.h"
 
 class BLINKERALIGENIE
 {

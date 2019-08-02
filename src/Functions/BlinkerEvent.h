@@ -1,8 +1,8 @@
 #ifndef BLINKER_EVENT_H
 #define BLINKER_EVENT_H
 
-#include "Blinker/BlinkerConfig.h"
-#include "Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerConfig.h"
+#include "../Blinker/BlinkerUtility.h"
 
 class BLINKEREVENT
 {
