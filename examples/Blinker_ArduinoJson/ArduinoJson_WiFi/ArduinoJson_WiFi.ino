@@ -51,6 +51,25 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
+void weatherData(const String & data)
+{
+    BLINKER_LOG("weather: ", data);
+
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    JsonObject weather = jsonBuffer.as<JsonObject>();
+
+    if (error)
+    {
+        BLINKER_LOG(data, " , not a Json buffer!");
+    }
+
+    String weather_text = weather["cond_txt"];
+    int8_t weather_temp = weather["tmp"];
+
+    BLINKER_LOG("Local weather is: ", weather_text, " ,temperature is: ", weather_temp, "℃");
+}
+
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
@@ -61,23 +80,7 @@ void dataRead(const String & data)
     Blinker.print("millis", BlinkerTime);
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    String get_weather = Blinker.weather();
-
-    BLINKER_LOG("weather: ", get_weather);
-
-    DynamicJsonDocument jsonBuffer(1024);
-    DeserializationError error = deserializeJson(jsonBuffer, get_weather);
-    JsonObject weather = jsonBuffer.as<JsonObject>();
-
-    if (error)
-    {
-        BLINKER_LOG(get_weather, " , not a Json buffer!");
-    }
-
-    String weather_text = weather["cond_txt"];
-    int8_t weather_temp = weather["tmp"];
-
-    BLINKER_LOG("Local weather is: ", weather_text, " ,temperature is: ", weather_temp, "℃");
+    Blinker.weather();   
 
     Blinker.delay(60000);
 }
@@ -92,6 +95,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
+    Blinker.attachWeather(weatherData);
 }
 
 void loop()
