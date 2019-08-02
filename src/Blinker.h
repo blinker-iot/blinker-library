@@ -136,9 +136,13 @@
 
     #include "BlinkerAssistant.h"
 
-    #include "BlinkerESPSubDevice.h"
+    #if defined(ESP8266) || defined(ESP32)
+        #include "BlinkerESPSubDevice.h"
 
-    BlinkerESPSubDevice     Blinker;
+        BlinkerESPSubDevice     Blinker;
+    #else
+        #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
+    #endif
 
 #elif defined(BLINKER_NBIOT_WH)
 

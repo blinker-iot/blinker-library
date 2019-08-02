@@ -11000,7 +11000,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             else if (value == BLINKER_CMD_TIME_ALL) {
                 uint8_t setNum = root[BLINKER_CMD_NUM];
                 if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_TIME_NUMBER);
-                if (_DuerOSQueryFunc_m) _DuerOSQueryFunc_m(BLINKER_CMD_QUERY_AQI_NUMBER, setNum);
+                if (_DuerOSQueryFunc_m) _DuerOSQueryFunc_m(BLINKER_CMD_QUERY_TIME_NUMBER, setNum);
             }
         }
         else if (root.containsKey(BLINKER_CMD_SET)) {
