@@ -107,7 +107,7 @@
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_WIFI_SUBDEVICE)
+            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_PRO_ESP)
             #define BLINKER_MAX_SEND_SIZE       1024
         #else
             #define BLINKER_MAX_SEND_SIZE       512

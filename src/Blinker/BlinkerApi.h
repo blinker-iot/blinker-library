@@ -3680,8 +3680,7 @@ void BlinkerApi::run()
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
-            if (((millis() - _dHeartTime)/1000 >= BLINKER_DEVICE_HEARTBEAT_TIME || \
-                _dHeartTime == 0) && _isInit)
+            if (((millis() - _dHeartTime)/1000 >= BLINKER_DEVICE_HEARTBEAT_TIME) && _isInit)
             {
                 deviceHeartbeat();
                 _dHeartTime = millis();
