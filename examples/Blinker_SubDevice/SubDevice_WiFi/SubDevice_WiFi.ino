@@ -103,7 +103,7 @@ void heartbeat()
  * 
  * Blinker.tick() will run by default, use interrupt will be better
  */
-void buttonTick()
+ICACHE_RAM_ATTR void buttonTick()
 {
     Blinker.tick();
 }
