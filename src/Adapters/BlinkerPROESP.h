@@ -2312,7 +2312,7 @@ int BlinkerPROESP::checkDuerPrintSpan()
 
 int BlinkerPROESP::pubHello()
 {
-    char stateJsonStr[50] = ("{\"message\":\"Registration successful\"}");
+    char stateJsonStr[256] = ("{\"message\":\"Registration successful\"}");
     
     BLINKER_LOG_ALL(BLINKER_F("PUB hello: "), stateJsonStr);
     
