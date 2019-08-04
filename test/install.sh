@@ -23,6 +23,11 @@ if [ -n "$LIB_URL" ]; then
         cp -R $TARGET_LIB/test/package $HWLIB_PATH/esp8266/package
         cd $HWLIB_PATH/esp8266/tools
         python get.py
+    elif [ "$TARGET" == "ESP32" ]; then
+        # 从库中复制工具链索引文件
+        cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/espressif
+        cd $HWLIB_PATH/esp32/tools
+        python3 get.py
     fi
 else
     echo -e "\e[93mNo package set, skip.\e[0m"
