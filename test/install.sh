@@ -25,9 +25,9 @@ if [ -n "$LIB_URL" ]; then
         python get.py
     elif [ "$TARGET" == "ESP32" ]; then
         # 从库中复制工具链索引文件
-        mkdir -p $HWLIB_PATH/espressif
-        cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/espressif/esp32
-        cd $HWLIB_PATH/espressif/esp32/tools
+        mkdir -p $HWLIB_PATH
+        cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/esp32
+        cd $HWLIB_PATH/esp32/tools
         python3 get.py
     fi
 else
