@@ -21,7 +21,7 @@ environment:
     TOOL_PATH:  "$HWLIB_PATH/esp32/tools"
 
     BOARD_CONF: "espressif:esp32:nodemcu-32s:FlashFreq=80"
-    BUILD_CONF: "build.warn_data_percentage=75,runtime.tools.xtensa-esp32-elf-gcc.path=$HWLIB_PATH/esp32/tools/xtensa-esp32-elf-gcc/1.22.0-80-g6c4433a-5.2.0,runtime.tools.xtensa-esp32-elf-gcc-1.22.0-80-g6c4433a-5.2.0.path=$HWLIB_PATH/esp32/tools/xtensa-esp32-elf-gcc/1.22.0-80-g6c4433a-5.2.0,runtime.tools.esptool_py.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.esptool_py-2.6.1.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.mkspiffs.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3,runtime.tools.mkspiffs-0.2.3.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3"
+    BUILD_CONF: "build.warn_data_percentage=75,runtime.tools.xtensa-esp32-elf-gcc.path=$HWLIB_PATH/esp32/tools/1.22.0-80-g6c4433a-5.2.0,runtime.tools.xtensa-esp32-elf-gcc-1.22.0-80-g6c4433a-5.2.0.path=$HWLIB_PATH/esp32/tools/1.22.0-80-g6c4433a-5.2.0,runtime.tools.esptool_py.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.esptool_py-2.6.1.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.mkspiffs.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3,runtime.tools.mkspiffs-0.2.3.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3"
 
   - TARGET: "UNO"
     BOARD_CONF: "arduino:avr:uno"
