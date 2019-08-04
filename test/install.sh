@@ -29,7 +29,7 @@ if [ -n "$LIB_URL" ]; then
         cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/esp32
         cd $HWLIB_PATH/esp32/tools
         python3 get.py
-        apt install python3-pip
+        sudo apt install python3-pip
         pip3 install pyserial
     fi
 else
