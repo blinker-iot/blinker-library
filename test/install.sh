@@ -29,6 +29,7 @@ if [ -n "$LIB_URL" ]; then
         cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/esp32
         cd $HWLIB_PATH/esp32/tools
         python3 get.py
+        echo -e "\e[93mInstall PySerial.\e[0m"
         sudo pip install pyserial
     fi
 else
