@@ -21,7 +21,7 @@ environment:
     TOOL_PATH:  "$HWLIB_PATH/esp32/tools"
 
     BOARD_CONF: "espressif:esp32:nodemcu-32s:FlashFreq=80"
-    BUILD_CONF: "build.warn_data_percentage=75,runtime.tools.xtensa-esp32-elf-gcc.path=$HWLIB_PATH/esp32/tools/1.22.0-80-g6c4433a-5.2.0,runtime.tools.xtensa-esp32-elf-gcc-1.22.0-80-g6c4433a-5.2.0.path=$HWLIB_PATH/esp32/tools/1.22.0-80-g6c4433a-5.2.0,runtime.tools.esptool_py.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.esptool_py-2.6.1.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.mkspiffs.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3,runtime.tools.mkspiffs-0.2.3.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3"
+    BUILD_CONF: "build.warn_data_percentage=75,runtime.tools.xtensa-esp32-elf-gcc.path=$HWLIB_PATH/esp32/tools/xtensa-esp32-elf,runtime.tools.xtensa-esp32-elf-gcc-1.22.0-80-g6c4433a-5.2.0.path=$HWLIB_PATH/esp32/tools/xtensa-esp32-elf,runtime.tools.esptool_py.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.esptool_py-2.6.1.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.mkspiffs.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3,runtime.tools.mkspiffs-0.2.3.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3"
 
   - TARGET: "UNO"
     BOARD_CONF: "arduino:avr:uno"
@@ -35,8 +35,6 @@ environment:
 
     BOARD_CONF: "esp8266com:esp8266:wifiduino:xtal=80,vt=flash,exception=disabled,ssl=all,eesz=4M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600"
     BUILD_CONF: "build.warn_data_percentage=75,runtime.tools.xtensa-lx106-elf-gcc.path=$HWLIB_PATH/esp8266/tools/xtensa-lx106-elf,runtime.tools.xtensa-lx106-elf-gcc-2.5.0-3-20ed2b9.path=$HWLIB_PATH/esp8266/tools/xtensa-lx106-elf,runtime.tools.mkspiffs.path=$HWLIB_PATH/esp8266/tools/mkspiffs,runtime.tools.mkspiffs-2.5.0-3-20ed2b9.path=$HWLIB_PATH/esp8266/tools/mkspiffs,runtime.tools.python.path=$HWLIB_PATH/esp8266/tools/python,runtime.tools.python-3.7.2-post1.path=$HWLIB_PATH/esp8266/tools/python"
-
-
 
 init:
 - mkdir -p $BUILD_HOME/Arduino/libraries
