@@ -30,7 +30,7 @@ if [ -n "$LIB_URL" ]; then
         cd $HWLIB_PATH/esp32/tools
         python3 get.py
         wget https://bootstrap.pypa.io/get-pip.py
-        sudo python3 get-pip.py 
+        sudo apt --force-yes install python3-pip
         sudo pip3 install pyserial
     fi
 else
