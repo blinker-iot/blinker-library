@@ -29,8 +29,9 @@ if [ -n "$LIB_URL" ]; then
         cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/esp32
         cd $HWLIB_PATH/esp32/tools
         python3 get.py
-        sudo apt install python3-pip
-        pip3 install pyserial
+        wget https://bootstrap.pypa.io/get-pip.py
+        sudo python3 get-pip.py 
+        sudo pip3 install pyserial
     fi
 else
     echo -e "\e[93mNo package set, skip.\e[0m"
