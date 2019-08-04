@@ -13,7 +13,7 @@ environment:
 
   matrix:
 
-  - TARGETL: "ESP32"
+  - TARGET: "ESP32"
     LIB_VER: "arduino-esp32-1.0.2"
     LIB_URL: "https://github.com/espressif/arduino-esp32/archive/1.0.2.zip"
 
