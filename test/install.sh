@@ -23,6 +23,14 @@ if [ -n "$LIB_URL" ]; then
         cp -R $TARGET_LIB/test/package $HWLIB_PATH/esp8266/package
         cd $HWLIB_PATH/esp8266/tools
         python get.py
+    elif [ "$TARGET" == "ESP32" ]; then
+        # 从库中复制工具链索引文件
+        mkdir -p $HWLIB_PATH
+        cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/esp32
+        cd $HWLIB_PATH/esp32/tools
+        python3 get.py
+        echo -e "\e[93mInstall PySerial.\e[0m"
+        sudo pip install pyserial
     fi
 else
     echo -e "\e[93mNo package set, skip.\e[0m"

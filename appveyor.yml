@@ -12,6 +12,17 @@ environment:
   ARDUINO_PATH: "$BUILD_HOME/$ARDUINO_VER"
 
   matrix:
+
+  - TARGET: "ESP32"
+    LIB_VER: "arduino-esp32-1.0.2"
+    LIB_URL: "https://github.com/espressif/arduino-esp32/archive/1.0.2.zip"
+
+    HWLIB_PATH: "$BUILD_HOME/Arduino/hardware/espressif"
+    TOOL_PATH:  "$HWLIB_PATH/esp32/tools"
+
+    BOARD_CONF: "espressif:esp32:nodemcu-32s:FlashFreq=80"
+    BUILD_CONF: "build.warn_data_percentage=75,runtime.tools.xtensa-esp32-elf-gcc.path=$HWLIB_PATH/esp32/tools/xtensa-esp32-elf,runtime.tools.xtensa-esp32-elf-gcc-1.22.0-80-g6c4433a-5.2.0.path=$HWLIB_PATH/esp32/tools/xtensa-esp32-elf,runtime.tools.esptool_py.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.esptool_py-2.6.1.path=$HWLIB_PATH/esp32/tools/esptool_py/2.6.1,runtime.tools.mkspiffs.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3,runtime.tools.mkspiffs-0.2.3.path=$HWLIB_PATH/esp32/tools/mkspiffs/0.2.3"
+
   - TARGET: "UNO"
     BOARD_CONF: "arduino:avr:uno"
 
