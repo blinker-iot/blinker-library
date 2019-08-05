@@ -56,7 +56,11 @@
 
 #define BLINKER_WIFI_GATEWAY
 #define BLINKER_BUTTON
-#define BLINKER_BUTTON_PIN D7
+#if defined(ESP32)
+    #define BLINKER_BUTTON_PIN 4
+#else
+    #define BLINKER_BUTTON_PIN D7
+#endif
 
 #include <Blinker.h>
 
