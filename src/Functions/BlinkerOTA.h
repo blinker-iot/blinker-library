@@ -137,7 +137,7 @@ bool BlinkerOTA::update() {
 
     BLINKER_LOG_ALL(BLINKER_F("Connecting to: "), ota_host);
 
-    t_httpUpdate_return ret = ESPhttpUpdate.update(client_s, ota_host + ota_port);
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client_s, ota_host + ota_url);
 
     switch (ret) {
         case HTTP_UPDATE_FAILED:
