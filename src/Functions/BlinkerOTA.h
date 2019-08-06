@@ -55,17 +55,17 @@ class BlinkerOTA
         void config(String _host, String _url, String _fingerPrint)
         {
             // #if defined(ESP8266)
-                BLINKER_LOG_ALL(_host.indexOf("https"));
-                if (_host.indexOf("https") != -1)
-                {
-                    ota_host = _host.substring(8);
-                }
-                else
-                {
-                    ota_host = _host;
-                }                
+                // BLINKER_LOG_ALL(_host.indexOf("https"));
+                // if (_host.indexOf("https") != -1)
+                // {
+                //     ota_host = _host.substring(8);
+                // }
+                // else
+                // {
+                //     ota_host = _host;
+                // }                
             // #else
-            //     ota_host = _host;
+            ota_host = _host;
             // #endif
             ota_url = _url;
             ota_fingerPrint = _fingerPrint;
@@ -136,9 +136,31 @@ bool BlinkerOTA::update() {
     client_s.setInsecure();
 
     BLINKER_LOG_ALL(BLINKER_F("Connecting to: "), ota_host);
+
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client_s, ota_host + ota_port);
+
+    switch (ret) {
+        case HTTP_UPDATE_FAILED:
+            // USE_SERIAL.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+            // break;
+            BLINKER_LOG_ALL("HTTP_UPDATE_FAILD Error : ", ESPhttpUpdate.getLastError());
+            return false;
+
+        case HTTP_UPDATE_NO_UPDATES:
+            // USE_SERIAL.println("HTTP_UPDATE_NO_UPDATES");
+            // break;
+            BLINKER_LOG_ALL("HTTP_UPDATE_NO_UPDATES");
+            return false;
+
+        case HTTP_UPDATE_OK:
+            // USE_SERIAL.println("HTTP_UPDATE_OK");
+            // break;
+            BLINKER_LOG_ALL("HTTP_UPDATE_OK");
+            return true;
+    }
 #elif defined(ESP32)
     client_s.stop();
-#endif
+// #endif
 
     while (1) {
         if (!client_s.connect(ota_host.c_str(), ota_port)) {
@@ -292,7 +314,7 @@ bool BlinkerOTA::update() {
             }
         }
     }
-// #endif
+#endif
 }
 
 // bool BlinkerOTA::run()

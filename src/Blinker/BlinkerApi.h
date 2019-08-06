@@ -6382,25 +6382,28 @@ float BlinkerApi::gps(b_gps_t axis)
         }
         else if (ota_check == BLINKER_OTA_START)
         {
-            if (!_OTA.loadVersion())
+            if (BProto::connected())
             {
-                _OTA.saveVersion();
-                _OTA.clearOTACheck();
+                if (!_OTA.loadVersion())
+                {
+                    _OTA.saveVersion();
+                    _OTA.clearOTACheck();
 
-                BProto::freshAlive();
-                otaStatus(100, BLINKER_F("Firmware update success"));
-                updateOTAStatus(100, BLINKER_F("Firmware update success"));
-                // ota failed
-            }
-            else
-            {
-                // _OTA.saveVersion();
-                _OTA.clearOTACheck();
+                    BProto::freshAlive();
+                    otaStatus(100, BLINKER_F("Firmware update success"));
+                    updateOTAStatus(100, BLINKER_F("Firmware update success"));
+                    // ota failed
+                }
+                else
+                {
+                    // _OTA.saveVersion();
+                    _OTA.clearOTACheck();
 
-                BProto::freshAlive();
-                otaStatus(-2, BLINKER_F("Firmware download failed"));
-                updateOTAStatus(-2, BLINKER_F("Firmware download failed"));
-                // ota success
+                    BProto::freshAlive();
+                    otaStatus(-2, BLINKER_F("Firmware download failed"));
+                    updateOTAStatus(-2, BLINKER_F("Firmware download failed"));
+                    // ota success
+                }
             }
         }
         else if (ota_check == BLINKER_OTA_CLEAR)
