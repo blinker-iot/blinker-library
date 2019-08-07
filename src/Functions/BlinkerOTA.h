@@ -52,7 +52,7 @@ class BlinkerOTA
         void host(String _host) { ota_host = _host; }
         void url(String _url) { ota_url = _url; }
         void setURL(String urlstr);
-        void config(String _host, String _url, String _fingerPrint)
+        void config(String _host, String _url, String _fingerPrint, String _md5)
         {
             // #if defined(ESP8266)
                 BLINKER_LOG_ALL(_host.indexOf("https"));
@@ -65,10 +65,11 @@ class BlinkerOTA
                     ota_host = _host;
                 }                
             // #else
-            //     ota_host = _host;
+            // ota_host = _host;
             // #endif
             ota_url = _url;
             ota_fingerPrint = _fingerPrint;
+            ota_md5 = _md5;
         }
         bool update();
         // bool run();
@@ -94,6 +95,7 @@ class BlinkerOTA
         String ota_host;
         String ota_url;
         String ota_fingerPrint;
+        String ota_md5;
         uint16_t ota_port = 443;
         char *otaUrl;
         bota_status_t _status;
@@ -135,10 +137,34 @@ bool BlinkerOTA::update() {
 
     client_s.setInsecure();
 
-    BLINKER_LOG_ALL(BLINKER_F("Connecting to: "), ota_host);
+    // BLINKER_LOG_ALL(BLINKER_F("Connecting to: "), ota_host);
+
+    // t_httpUpdate_return ret = BlinkerhttpUpdate.update(client_s, ota_host + ota_url, ota_md5, "");
+
+    // switch (ret) {
+    //     case HTTP_UPDATE_FAILED:
+    //         // USE_SERIAL.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+    //         // break;
+    //         BLINKER_LOG_ALL(BLINKER_F("HTTP_UPDATE_FAILD Error : "), BlinkerhttpUpdate.getLastError());
+    //         return false;
+
+    //     case HTTP_UPDATE_NO_UPDATES:
+    //         // USE_SERIAL.println("HTTP_UPDATE_NO_UPDATES");
+    //         // break;
+    //         BLINKER_LOG_ALL(BLINKER_F("HTTP_UPDATE_NO_UPDATES"));
+    //         return false;
+
+    //     case HTTP_UPDATE_OK:
+    //         // USE_SERIAL.println("HTTP_UPDATE_OK");
+    //         // break;
+    //         BLINKER_LOG_ALL(BLINKER_F("HTTP_UPDATE_OK"));
+    //         return true;
+    // }
 #elif defined(ESP32)
     client_s.stop();
 #endif
+
+    BlinkerUpdater.setMD5(ota_md5.c_str());
 
     while (1) {
         if (!client_s.connect(ota_host.c_str(), ota_port)) {

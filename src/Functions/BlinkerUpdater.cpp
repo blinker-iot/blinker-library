@@ -6,6 +6,490 @@
 
 #if defined(ESP8266)
 
+// #include "ESP8266httpUpdate.h"
+// #include <StreamString.h>
+
+// extern "C" uint32_t _SPIFFS_start;
+// extern "C" uint32_t _SPIFFS_end;
+
+// BlinkerHTTPUpdate::BlinkerHTTPUpdate(void)
+//         : _httpClientTimeout(8000), _followRedirects(false), _ledPin(-1)
+// {
+// }
+
+// BlinkerHTTPUpdate::BlinkerHTTPUpdate(int httpClientTimeout)
+//         : _httpClientTimeout(httpClientTimeout), _followRedirects(false), _ledPin(-1)
+// {
+// }
+
+// BlinkerHTTPUpdate::~BlinkerHTTPUpdate(void)
+// {
+// }
+
+// #ifdef HTTPUPDATE_1_2_COMPATIBLE
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(const String& url, const String& currentVersion,
+//         const String& httpsFingerprint, bool reboot)
+// {
+//     rebootOnUpdate(reboot);
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     return update(url, currentVersion, httpsFingerprint);
+// #pragma GCC diagnostic pop
+// }
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(const String& url, const String& currentVersion)
+// {
+//     HTTPClient http;
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     http.begin(url);
+// #pragma GCC diagnostic pop
+//     return handleUpdate(http, currentVersion, false);
+// }
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(const String& url, const String& currentVersion,
+//         const String& httpsFingerprint)
+// {
+//     HTTPClient http;
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     http.begin(url, httpsFingerprint);
+// #pragma GCC diagnostic pop
+//     return handleUpdate(http, currentVersion, false);
+// }
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(const String& url, const String& currentVersion,
+//         const uint8_t httpsFingerprint[20])
+// {
+//     HTTPClient http;
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     http.begin(url, httpsFingerprint);
+// #pragma GCC diagnostic pop
+//     return handleUpdate(http, currentVersion, false);
+// }
+// #endif
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(WiFiClient& client, const String& url, const String& currentVersion)
+// {
+//     HTTPClient http;
+//     http.begin(client, url);
+//     return handleUpdate(http, currentVersion, false);
+// }
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(WiFiClient& client, const String& url, const String& md5, const String& currentVersion)
+// {
+//     HTTPClient http;
+//     http.begin(client, url);
+//     return handleUpdate(http, currentVersion, false, md5);
+// }
+
+// #ifdef HTTPUPDATE_1_2_COMPATIBLE
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::updateSpiffs(const String& url, const String& currentVersion, const String& httpsFingerprint)
+// {
+//     HTTPClient http;
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     http.begin(url, httpsFingerprint);
+// #pragma GCC diagnostic pop
+//     return handleUpdate(http, currentVersion, true);
+// }
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::updateSpiffs(const String& url, const String& currentVersion, const uint8_t httpsFingerprint[20])
+// {
+//     HTTPClient http;
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     http.begin(url, httpsFingerprint);
+// #pragma GCC diagnostic pop
+//     return handleUpdate(http, currentVersion, true);
+// }
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::updateSpiffs(const String& url, const String& currentVersion)
+// {
+//     HTTPClient http;
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     http.begin(url);
+// #pragma GCC diagnostic pop
+//     return handleUpdate(http, currentVersion, true);
+// }
+// #endif
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::updateSpiffs(WiFiClient& client, const String& url, const String& currentVersion)
+// {
+//     HTTPClient http;
+//     http.begin(client, url);
+//     return handleUpdate(http, currentVersion, true);
+// }
+
+// #ifdef HTTPUPDATE_1_2_COMPATIBLE
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(const String& host, uint16_t port, const String& uri, const String& currentVersion,
+//         bool https, const String& httpsFingerprint, bool reboot)
+// {
+//     (void)https;
+//     rebootOnUpdate(reboot);
+//     if (httpsFingerprint.length() == 0) {
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//         return update(host, port, uri, currentVersion);
+//     } else {
+//         return update(host, port, uri, currentVersion, httpsFingerprint);
+// #pragma GCC diagnostic pop
+//     }
+// }
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(const String& host, uint16_t port, const String& uri,
+//         const String& currentVersion)
+// {
+//     HTTPClient http;
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     http.begin(host, port, uri);
+// #pragma GCC diagnostic pop
+//     return handleUpdate(http, currentVersion, false);
+// }
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(const String& host, uint16_t port, const String& url,
+//         const String& currentVersion, const String& httpsFingerprint)
+// {
+//     HTTPClient http;
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     http.begin(host, port, url, httpsFingerprint);
+// #pragma GCC diagnostic pop
+//     return handleUpdate(http, currentVersion, false);
+// }
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(const String& host, uint16_t port, const String& url,
+//         const String& currentVersion, const uint8_t httpsFingerprint[20])
+// {
+//     HTTPClient http;
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored  "-Wdeprecated-declarations"
+//     http.begin(host, port, url, httpsFingerprint);
+// #pragma GCC diagnostic pop
+//     return handleUpdate(http, currentVersion, false);
+// }
+// #endif
+
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::update(WiFiClient& client, const String& host, uint16_t port, const String& uri,
+//         const String& currentVersion)
+// {
+//     HTTPClient http;
+//     http.begin(client, host, port, uri);
+//     return handleUpdate(http, currentVersion, false);
+// }
+
+// /**
+//  * return error code as int
+//  * @return int error code
+//  */
+// int BlinkerHTTPUpdate::getLastError(void)
+// {
+//     return _lastError;
+// }
+
+// /**
+//  * return error code as String
+//  * @return String error
+//  */
+// String BlinkerHTTPUpdate::getLastErrorString(void)
+// {
+
+//     if(_lastError == 0) {
+//         return String(); // no error
+//     }
+
+//     // error from Update class
+//     if(_lastError > 0) {
+//         StreamString error;
+//         Update.printError(error);
+//         error.trim(); // remove line ending
+//         return String(F("Update error: ")) + error;
+//     }
+
+//     // error from http client
+//     if(_lastError > -100) {
+//         return String(F("HTTP error: ")) + HTTPClient::errorToString(_lastError);
+//     }
+
+//     switch(_lastError) {
+//     case HTTP_UE_TOO_LESS_SPACE:
+//         return F("Not Enough space");
+//     case HTTP_UE_SERVER_NOT_REPORT_SIZE:
+//         return F("Server Did Not Report Size");
+//     case HTTP_UE_SERVER_FILE_NOT_FOUND:
+//         return F("File Not Found (404)");
+//     case HTTP_UE_SERVER_FORBIDDEN:
+//         return F("Forbidden (403)");
+//     case HTTP_UE_SERVER_WRONG_HTTP_CODE:
+//         return F("Wrong HTTP Code");
+//     case HTTP_UE_SERVER_FAULTY_MD5:
+//         return F("Wrong MD5");
+//     case HTTP_UE_BIN_VERIFY_HEADER_FAILED:
+//         return F("Verify Bin Header Failed");
+//     case HTTP_UE_BIN_FOR_WRONG_FLASH:
+//         return F("New Binary Does Not Fit Flash Size");
+//     }
+
+//     return String();
+// }
+
+
+// /**
+//  *
+//  * @param http HTTPClient *
+//  * @param currentVersion const char *
+//  * @return BlinkerHTTPUpdateResult
+//  */
+// BlinkerHTTPUpdateResult BlinkerHTTPUpdate::handleUpdate(HTTPClient& http, const String& currentVersion, bool spiffs, const String& md5)
+// {
+
+//     BlinkerHTTPUpdateResult ret = HTTP_UPDATE_FAILED;
+
+//     // use HTTP/1.0 for update since the update handler not support any transfer Encoding
+//     http.useHTTP10(true);
+//     http.setTimeout(_httpClientTimeout);
+//     http.setFollowRedirects(_followRedirects);
+//     http.setUserAgent(F("ESP8266-http-Update"));
+//     http.addHeader(F("x-ESP8266-STA-MAC"), WiFi.macAddress());
+//     http.addHeader(F("x-ESP8266-AP-MAC"), WiFi.softAPmacAddress());
+//     http.addHeader(F("x-ESP8266-free-space"), String(ESP.getFreeSketchSpace()));
+//     http.addHeader(F("x-ESP8266-sketch-size"), String(ESP.getSketchSize()));
+//     http.addHeader(F("x-ESP8266-sketch-md5"), String(ESP.getSketchMD5()));
+//     http.addHeader(F("x-ESP8266-chip-size"), String(ESP.getFlashChipRealSize()));
+//     http.addHeader(F("x-ESP8266-sdk-version"), ESP.getSdkVersion());
+
+//     if(spiffs) {
+//         http.addHeader(F("x-ESP8266-mode"), F("spiffs"));
+//     } else {
+//         http.addHeader(F("x-ESP8266-mode"), F("sketch"));
+//     }
+
+//     if(currentVersion && currentVersion[0] != 0x00) {
+//         http.addHeader(F("x-ESP8266-version"), currentVersion);
+//     }
+
+//     const char * headerkeys[] = { "x-MD5" };
+//     size_t headerkeyssize = sizeof(headerkeys) / sizeof(char*);
+
+//     // track these headers
+//     http.collectHeaders(headerkeys, headerkeyssize);
+
+
+//     int code = http.GET();
+//     int len = http.getSize();
+
+//     if(code <= 0) {
+//         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] HTTP error: "), http.errorToString(code).c_str());
+//         _lastError = code;
+//         http.end();
+//         return HTTP_UPDATE_FAILED;
+//     }
+
+
+//     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Header read fin."));
+//     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Server header:"));
+//     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate]  - code: "), code);
+//     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate]  - len: "), len);
+
+//     if(http.hasHeader("x-MD5")) {
+//         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate]  - MD5: "), http.header("x-MD5").c_str());
+//     }
+//     if(md5.length() > 1) {
+//         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate]  - MD5: "), md5);
+//     }
+
+//     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] ESP8266 info:"));
+//     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate]  - free Space: "), ESP.getFreeSketchSpace());
+//     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate]  - current Sketch Size: "), ESP.getSketchSize());
+
+//     if(currentVersion && currentVersion[0] != 0x00) {
+//         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate]  - current version: "), currentVersion.c_str() );
+//     }
+
+//     switch(code) {
+//     case HTTP_CODE_OK:  ///< OK (Start Update)
+//         if(len > 0) {
+//             bool startUpdate = true;
+//             if(spiffs) {
+//                 size_t spiffsSize = ((size_t) &_SPIFFS_end - (size_t) &_SPIFFS_start);
+//                 if(len > (int) spiffsSize) {
+//                     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] spiffsSize to low "), spiffsSize, BLINKER_F(" needed: "), len);
+//                     startUpdate = false;
+//                 }
+//             } else {
+//                 if(len > (int) ESP.getFreeSketchSpace()) {
+//                     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] FreeSketchSpace to low "), ESP.getFreeSketchSpace(), BLINKER_F(" needed: "), len);
+//                     startUpdate = false;
+//                 }
+//             }
+
+//             if(!startUpdate) {
+//                 _lastError = HTTP_UE_TOO_LESS_SPACE;
+//                 ret = HTTP_UPDATE_FAILED;
+//             } else {
+
+//                 WiFiClient * tcp = http.getStreamPtr();
+
+//                 WiFiUDP::stopAll();
+//                 WiFiClient::stopAllExcept(tcp);
+
+//                 delay(100);
+
+//                 int command;
+
+//                 if(spiffs) {
+//                     command = U_SPIFFS;
+//                     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] runUpdate spiffs..."));
+//                 } else {
+//                     command = U_FLASH;
+//                     BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] runUpdate flash..."));
+//                 }
+
+//                 if(!spiffs) {
+//                     uint8_t buf[4];
+//                     if(tcp->peekBytes(&buf[0], 4) != 4) {
+//                         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] peekBytes magic header failed"));
+//                         _lastError = HTTP_UE_BIN_VERIFY_HEADER_FAILED;
+//                         http.end();
+//                         return HTTP_UPDATE_FAILED;
+//                     }
+
+//                     // check for valid first magic byte
+//                     if(buf[0] != 0xE9) {
+//                         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Magic header does not start with 0xE9"));
+//                         _lastError = HTTP_UE_BIN_VERIFY_HEADER_FAILED;
+//                         http.end();
+//                         return HTTP_UPDATE_FAILED;
+
+//                     }
+
+//                     uint32_t bin_flash_size = ESP.magicFlashChipSize((buf[3] & 0xf0) >> 4);
+
+//                     // check if new bin fits to SPI flash
+//                     if(bin_flash_size > ESP.getFlashChipRealSize()) {
+//                         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] New binary does not fit SPI Flash size"));
+//                         _lastError = HTTP_UE_BIN_FOR_WRONG_FLASH;
+//                         http.end();
+//                         return HTTP_UPDATE_FAILED;
+//                     }
+//                 }
+//                 if (md5.length() > 1)
+//                 {
+//                     if(runUpdate(*tcp, len, md5, command)) {
+//                         ret = HTTP_UPDATE_OK;
+//                         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Update ok"));
+//                         http.end();
+
+//                         if(_rebootOnUpdate && !spiffs) {
+//                             ESP.restart();
+//                         }
+
+//                     } else {
+//                         ret = HTTP_UPDATE_FAILED;
+//                         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Update failed"));
+//                     }
+//                 }
+//                 else
+//                 {
+//                     if(runUpdate(*tcp, len, http.header("x-MD5"), command)) {
+//                         ret = HTTP_UPDATE_OK;
+//                         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Update ok"));
+//                         http.end();
+
+//                         if(_rebootOnUpdate && !spiffs) {
+//                             ESP.restart();
+//                         }
+
+//                     } else {
+//                         ret = HTTP_UPDATE_FAILED;
+//                         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Update failed"));
+//                     }
+//                 }
+//             }
+//         } else {
+//             _lastError = HTTP_UE_SERVER_NOT_REPORT_SIZE;
+//             ret = HTTP_UPDATE_FAILED;
+//             BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Content-Length was 0 or wasn't set by Server?!"));
+//         }
+//         break;
+//     case HTTP_CODE_NOT_MODIFIED:
+//         ///< Not Modified (No updates)
+//         ret = HTTP_UPDATE_NO_UPDATES;
+//         break;
+//     case HTTP_CODE_NOT_FOUND:
+//         _lastError = HTTP_UE_SERVER_FILE_NOT_FOUND;
+//         ret = HTTP_UPDATE_FAILED;
+//         break;
+//     case HTTP_CODE_FORBIDDEN:
+//         _lastError = HTTP_UE_SERVER_FORBIDDEN;
+//         ret = HTTP_UPDATE_FAILED;
+//         break;
+//     default:
+//         _lastError = HTTP_UE_SERVER_WRONG_HTTP_CODE;
+//         ret = HTTP_UPDATE_FAILED;
+//         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] HTTP Code is "), code);
+//         //http.writeToStream(&Serial1);
+//         break;
+//     }
+
+//     http.end();
+//     return ret;
+// }
+
+// /**
+//  * write Update to flash
+//  * @param in Stream&
+//  * @param size uint32_t
+//  * @param md5 String
+//  * @return true if Update ok
+//  */
+// bool BlinkerHTTPUpdate::runUpdate(Stream& in, uint32_t size, String md5, int command)
+// {
+
+//     StreamString error;
+
+//     if(!Update.begin(size, command, _ledPin, _ledOn)) {
+//         _lastError = Update.getError();
+//         Update.printError(error);
+//         error.trim(); // remove line ending
+//         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Update.begin failed! "), error.c_str());
+//         return false;
+//     }
+
+//     if(md5.length()) {
+//         if(!Update.setMD5(md5.c_str())) {
+//             _lastError = HTTP_UE_SERVER_FAULTY_MD5;
+//             BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Update.setMD5 failed! "), md5.c_str());
+//             return false;
+//         }
+//     }
+
+//     if(Update.writeStream(in) != size) {
+//         _lastError = Update.getError();
+//         Update.printError(error);
+//         error.trim(); // remove line ending
+//         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Update.writeStream failed! "), error.c_str());
+//         return false;
+//     }
+
+//     if(!Update.end()) {
+//         _lastError = Update.getError();
+//         Update.printError(error);
+//         error.trim(); // remove line ending
+//         BLINKER_LOG_ALL(BLINKER_F("[httpUpdate] Update.end failed! "), error.c_str());
+//         return false;
+//     }
+
+//     return true;
+// }
+
+// #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_HTTPUPDATE)
+// BlinkerHTTPUpdate BlinkerhttpUpdate;
+// #endif
+
 #include <Updater.h>
 #include <Arduino.h>
 #include <eboot_command.h>
@@ -20,13 +504,13 @@ extern "C" {
     #include <user_interface.h>
 }
 
-#if defined _SPIFFS_start
+// #if defined _SPIFFS_start
 extern "C" uint32_t _SPIFFS_start;
 extern "C" uint32_t _SPIFFS_end;
-#elif defined _FS_start
-extern "C" uint32_t _FS_start;
-extern "C" uint32_t _FS_end;
-#endif
+// #elif defined _FS_start
+// extern "C" uint32_t _FS_start;
+// extern "C" uint32_t _FS_end;
+// #endif
 
 BlinkerUpdaterClass::BlinkerUpdaterClass()
 : _async(false)
@@ -112,11 +596,11 @@ bool BlinkerUpdaterClass::begin(size_t size, int command, int ledPin, uint8_t le
         size_t currentSketchSize = (ESP.getSketchSize() + FLASH_SECTOR_SIZE - 1) & (~(FLASH_SECTOR_SIZE - 1));
         //address of the end of the space available for sketch and update
         uintptr_t updateEndAddress;
-        #if defined _SPIFFS_start
+        // #if defined _SPIFFS_start
         updateEndAddress = (uintptr_t)&_SPIFFS_start - 0x40200000;
-        #elif defined _FS_start
-        updateEndAddress = (uintptr_t)&_FS_start - 0x40200000;
-        #endif
+        // #elif defined _FS_start
+        // updateEndAddress = (uintptr_t)&_FS_start - 0x40200000;
+        // #endif
 
         // if ((uintptr_t)&_SPIFFS_start > (uintptr_t)&_SPIFFS_end)
         // {
@@ -148,11 +632,11 @@ bool BlinkerUpdaterClass::begin(size_t size, int command, int ledPin, uint8_t le
         }
     }
     else if (command == U_SPIFFS) {
-        #if defined _SPIFFS_start
+        // #if defined _SPIFFS_start
         updateStartAddress = (uintptr_t)&_SPIFFS_start - 0x40200000;
-        #elif defined _FS_start
-        updateStartAddress = (uintptr_t)&_FS_start - 0x40200000;
-        #endif
+        // #elif defined _FS_start
+        // updateStartAddress = (uintptr_t)&_FS_start - 0x40200000;
+        // #endif
     }
     else {
         // unknown command
@@ -534,6 +1018,8 @@ String BlinkerUpdaterClass::printError(){
     return errData;
 }
 
+BlinkerUpdaterClass BlinkerUpdater;
+
 #elif defined(ESP32)
 
 #include "Update.h"
@@ -888,8 +1374,8 @@ void BlinkerUpdaterClass::printError(Stream &out){
     out.println(_err2str(_error));
 }
 
-#endif
-
 BlinkerUpdaterClass BlinkerUpdater;
+
+#endif
 
 #endif

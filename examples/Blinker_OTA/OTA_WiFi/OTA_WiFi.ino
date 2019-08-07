@@ -67,15 +67,15 @@ void dataRead(const String & data)
     Blinker.print("millis", BlinkerTime);
 }
 
-void otaStatus(uint32_t load_size, uint32_t total_size)
-{
-    if (millis() - os_time >= BLINKER_OTA_BLINK_TIME)
-    {
-        os_time = millis();
+// void otaStatus(uint32_t load_size, uint32_t total_size)
+// {
+//     if (millis() - os_time >= BLINKER_OTA_BLINK_TIME)
+//     {
+//         os_time = millis();
 
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    }
-}
+//         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+//     }
+// }
 
 void setup()
 {
@@ -88,7 +88,7 @@ void setup()
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
 
-    BlinkerUpdater.onProgress(otaStatus);
+    // BlinkerUpdater.onProgress(otaStatus);
 }
 
 void loop()

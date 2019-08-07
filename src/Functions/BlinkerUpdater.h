@@ -5,6 +5,125 @@
 
 #if defined(ESP8266)
 
+// #define HTTPUPDATE_1_2_COMPATIBLE
+
+// #include <Arduino.h>
+// #include <ESP8266WiFi.h>
+// #include <WiFiClient.h>
+// #include <WiFiUdp.h>
+// #include <ESP8266HTTPClient.h>
+
+// #ifdef DEBUG_ESP_HTTP_UPDATE
+// #ifdef DEBUG_ESP_PORT
+// #define DEBUG_HTTP_UPDATE(fmt, ...) DEBUG_ESP_PORT.printf_P( (PGM_P)PSTR(fmt), ## __VA_ARGS__ )
+// #endif
+// #endif
+
+// #ifndef DEBUG_HTTP_UPDATE
+// #define DEBUG_HTTP_UPDATE(...) do { (void)0; } while(0)
+// #endif
+
+// /// note we use HTTP client errors too so we start at 100
+// #define HTTP_UE_TOO_LESS_SPACE              (-100)
+// #define HTTP_UE_SERVER_NOT_REPORT_SIZE      (-101)
+// #define HTTP_UE_SERVER_FILE_NOT_FOUND       (-102)
+// #define HTTP_UE_SERVER_FORBIDDEN            (-103)
+// #define HTTP_UE_SERVER_WRONG_HTTP_CODE      (-104)
+// #define HTTP_UE_SERVER_FAULTY_MD5           (-105)
+// #define HTTP_UE_BIN_VERIFY_HEADER_FAILED    (-106)
+// #define HTTP_UE_BIN_FOR_WRONG_FLASH         (-107)
+
+// enum BlinkerHTTPUpdateResult {
+//     HTTP_UPDATE_FAILED,
+//     HTTP_UPDATE_NO_UPDATES,
+//     HTTP_UPDATE_OK
+// };
+
+// typedef BlinkerHTTPUpdateResult t_httpUpdate_return; // backward compatibility
+
+// class BlinkerHTTPUpdate
+// {
+// public:
+//     BlinkerHTTPUpdate(void);
+//     BlinkerHTTPUpdate(int httpClientTimeout);
+//     ~BlinkerHTTPUpdate(void);
+
+//     void rebootOnUpdate(bool reboot)
+//     {
+//         _rebootOnUpdate = reboot;
+//     }
+
+//     void followRedirects(bool follow)
+//     {
+//         _followRedirects = follow;
+//     }
+
+//     void setLedPin(int ledPin = -1, uint8_t ledOn = HIGH)
+//     {
+//         _ledPin = ledPin;
+//         _ledOn = ledOn;
+//     }
+
+// #ifdef HTTPUPDATE_1_2_COMPATIBLE
+//     // This function is deprecated, use rebootOnUpdate and the next one instead
+//     t_httpUpdate_return update(const String& url, const String& currentVersion,
+//                                const String& httpsFingerprint, bool reboot) __attribute__((deprecated));
+//     t_httpUpdate_return update(const String& url, const String& currentVersion = "") __attribute__((deprecated));
+//     t_httpUpdate_return update(const String& url, const String& currentVersion,
+//                                const String& httpsFingerprint) __attribute__((deprecated));
+//     t_httpUpdate_return update(const String& url, const String& currentVersion,
+//                                const uint8_t httpsFingerprint[20]) __attribute__((deprecated)); // BearSSL
+// #endif
+//     t_httpUpdate_return update(WiFiClient& client, const String& url, const String& currentVersion = "");
+//     t_httpUpdate_return update(WiFiClient& client, const String& url, const String& md5, const String& currentVersion);
+
+// #ifdef HTTPUPDATE_1_2_COMPATIBLE
+//     // This function is deprecated, use one of the overloads below along with rebootOnUpdate
+//     t_httpUpdate_return update(const String& host, uint16_t port, const String& uri, const String& currentVersion,
+//                                bool https, const String& httpsFingerprint, bool reboot) __attribute__((deprecated));
+
+//     t_httpUpdate_return update(const String& host, uint16_t port, const String& uri = "/",
+//                                const String& currentVersion = "") __attribute__((deprecated));
+//     t_httpUpdate_return update(const String& host, uint16_t port, const String& url,
+//                                const String& currentVersion, const String& httpsFingerprint) __attribute__((deprecated));
+//     t_httpUpdate_return update(const String& host, uint16_t port, const String& url,
+//                                const String& currentVersion, const uint8_t httpsFingerprint[20]) __attribute__((deprecated)); // BearSSL
+// #endif
+//     t_httpUpdate_return update(WiFiClient& client, const String& host, uint16_t port, const String& uri = "/",
+//                                const String& currentVersion = "");
+
+// #ifdef HTTPUPDATE_1_2_COMPATIBLE
+//     // This function is deprecated, use rebootOnUpdate and the next one instead
+//     t_httpUpdate_return updateSpiffs(const String& url, const String& currentVersion,
+//                                      const String& httpsFingerprint, bool reboot) __attribute__((deprecated));
+//     t_httpUpdate_return updateSpiffs(const String& url, const String& currentVersion = "") __attribute__((deprecated));
+//     t_httpUpdate_return updateSpiffs(const String& url, const String& currentVersion, const String& httpsFingerprint) __attribute__((deprecated));
+//     t_httpUpdate_return updateSpiffs(const String& url, const String& currentVersion, const uint8_t httpsFingerprint[20]) __attribute__((deprecated)); // BearSSL
+// #endif
+//     t_httpUpdate_return updateSpiffs(WiFiClient& client, const String& url, const String& currentVersion = "");
+
+
+//     int getLastError(void);
+//     String getLastErrorString(void);
+
+// protected:
+//     t_httpUpdate_return handleUpdate(HTTPClient& http, const String& currentVersion, bool spiffs = false, const String& md5 = "");
+//     bool runUpdate(Stream& in, uint32_t size, String md5, int command = U_FLASH);
+
+//     int _lastError;
+//     bool _rebootOnUpdate = true;
+// private:
+//     int _httpClientTimeout;
+//     bool _followRedirects;
+
+//     int _ledPin;
+//     uint8_t _ledOn;
+// };
+
+// #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_HTTPUPDATE)
+// extern BlinkerHTTPUpdate BlinkerhttpUpdate;
+// #endif
+
 #include <Arduino.h>
 #include <flash_utils.h>
 #include <MD5Builder.h>
@@ -179,6 +298,8 @@ class BlinkerUpdaterClass {
     // int _ledPin;
     // uint8_t _ledOn;
 };
+
+extern BlinkerUpdaterClass BlinkerUpdater;
 
 #elif defined(ESP32)
 
@@ -357,9 +478,9 @@ class BlinkerUpdaterClass {
     MD5Builder _md5;
 };
 
-#endif
-
 extern BlinkerUpdaterClass BlinkerUpdater;
+
+#endif
 
 #endif
 

@@ -426,6 +426,7 @@ class BlinkerApi : public BlinkerProtocol
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
                 !defined(BLINKER_LOWPOWER_AIR202))
+                bool otaInit = false;
                 void loadOTA();
                 void ota();
                 String checkOTA();
@@ -2774,7 +2775,63 @@ void BlinkerApi::run()
                         uint32_t connect_time = millis();
                         uint32_t time_slot = 0;
 
-                        if (checkCanOTA()) loadOTA();
+                        if (checkCanOTA()) //loadOTA();
+                        {
+                            uint8_t ota_check = _OTA.loadOTACheck();
+
+                            if (ota_check == BLINKER_OTA_RUN)
+                            {
+                                _OTA.saveOTACheck();
+                                updateOTAStatus(10, "download firmware");
+
+                                String otaData = checkOTA();
+
+                                if (otaData != BLINKER_CMD_FALSE)
+                                {
+                                    // DynamicJsonBuffer jsonBuffer;
+                                    // JsonObject& otaJson = jsonBuffer.parseObject(otaData);
+                                    DynamicJsonDocument jsonBuffer(1024);
+                                    DeserializationError error = deserializeJson(jsonBuffer, otaData);
+                                    JsonObject otaJson = jsonBuffer.as<JsonObject>();
+
+                                    // if (!otaJson.success())
+                                    if (error)
+                                    {
+                                        BLINKER_ERR_LOG_ALL(BLINKER_F("check ota data error"));
+                                        return;
+                                    }
+
+                                    // String otaHost = otaJson["host"];
+                                    // String otaUrl = otaJson["url"];
+                                    // String otaFp = otaJson["fingerprint"];
+                                    // String otaMD5 = otaJson["hash"];
+
+                                    // _OTA.config(otaHost, otaUrl, otaFp, otaMD5);
+                                    _OTA.config(otaJson["host"].as<String>(), otaJson["url"].as<String>(), otaJson["fingerprint"].as<String>(), otaJson["hash"].as<String>());
+
+                                    if (_OTA.update())
+                                    {
+                                        // _OTA.saveVersion();
+                                        // _OTA.clearOTACheck();
+
+                                        // updateOTAStatus(100);
+
+                                        BProto::freshAlive();
+                                        otaStatus(99, BLINKER_F("Firmware download sucessed"));
+                                        updateOTAStatus(99, BLINKER_F("Firmware download sucessed"));
+                                        ESP.restart();
+                                    }
+                                    else
+                                    {
+                                        _OTA.clearOTACheck();
+
+                                        BProto::freshAlive();
+                                        otaStatus(-2, BLINKER_F("Firmware download failed"));
+                                        updateOTAStatus(-2, BLINKER_F("Firmware download failed"));
+                                    }
+                                }
+                            }
+                        }
 
                         if (_needInit == false)
                         {
@@ -2948,7 +3005,7 @@ void BlinkerApi::run()
 
                         BLINKER_LOG_ALL(BLINKER_F("checkCanOTA"));
 
-                        if (checkCanOTA()) loadOTA();
+                        // if (checkCanOTA()) loadOTA();
 
                         if (_needInit == false)
                         {
@@ -3027,7 +3084,7 @@ void BlinkerApi::run()
 
                     bridgeInit();
 
-                    if (checkCanOTA()) loadOTA();
+                    // if (checkCanOTA()) loadOTA();
 
                     if (_needInit == false)
                     {
@@ -3730,6 +3787,15 @@ void BlinkerApi::run()
                 }
                 break;
             case CONNECTED :
+                #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP) || \
+                    defined(BLINKER_WIFI_GATEWAY)
+                    if (!otaInit)
+                    {
+                        if (checkCanOTA()) loadOTA();
+                        otaInit = true;
+                    }
+                #endif
+
                 if (conState)
                 {
                     BProto::checkAvail();
@@ -6352,11 +6418,13 @@ float BlinkerApi::gps(b_gps_t axis)
                     return;
                 }
 
-                String otaHost = otaJson["host"];
-                String otaUrl = otaJson["url"];
-                String otaFp = otaJson["fingerprint"];
+                // String otaHost = otaJson["host"];
+                // String otaUrl = otaJson["url"];
+                // String otaFp = otaJson["fingerprint"];
+                // String otaMD5 = otaJson["hash"];
 
-                _OTA.config(otaHost, otaUrl, otaFp);
+                // _OTA.config(otaHost, otaUrl, otaFp, otaMD5);
+                _OTA.config(otaJson["host"].as<String>(), otaJson["url"].as<String>(), otaJson["fingerprint"].as<String>(), otaJson["hash"].as<String>());
 
                 if (_OTA.update())
                 {
@@ -6445,8 +6513,8 @@ float BlinkerApi::gps(b_gps_t axis)
         {
             _OTA.saveOTARun();
 
-            // ::delay(100);
-            // ESP.restart();
+            ::delay(100);
+            ESP.restart();
 
             loadOTA();
         }
