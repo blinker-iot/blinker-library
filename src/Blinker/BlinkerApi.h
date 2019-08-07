@@ -6516,7 +6516,7 @@ float BlinkerApi::gps(b_gps_t axis)
             ::delay(100);
             ESP.restart();
 
-            // loadOTA();
+            loadOTA();
         }
     }
 
