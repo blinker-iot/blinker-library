@@ -8,7 +8,7 @@
 #include <EEPROM.h>
 #if defined(ESP8266)
     #include <ESP8266HTTPClient.h>
-    #include <ESP8266httpUpdate.h>
+    // #include <ESP8266httpUpdate.h>
 
     extern BearSSL::WiFiClientSecure client_mqtt;
 #elif defined(ESP32)
@@ -52,7 +52,7 @@ class BlinkerOTA
         void host(String _host) { ota_host = _host; }
         void url(String _url) { ota_url = _url; }
         void setURL(String urlstr);
-        void config(String _host, String _url, String _fingerPrint)
+        void config(String _host, String _url, String _fingerPrint, String _md5)
         {
             // #if defined(ESP8266)
                 // BLINKER_LOG_ALL(_host.indexOf("https"));
@@ -69,6 +69,7 @@ class BlinkerOTA
             // #endif
             ota_url = _url;
             ota_fingerPrint = _fingerPrint;
+            ota_md5 = _md5;
         }
         bool update();
         // bool run();
@@ -94,6 +95,7 @@ class BlinkerOTA
         String ota_host;
         String ota_url;
         String ota_fingerPrint;
+        String ota_md5;
         uint16_t ota_port = 443;
         char *otaUrl;
         bota_status_t _status;
@@ -137,25 +139,25 @@ bool BlinkerOTA::update() {
 
     BLINKER_LOG_ALL(BLINKER_F("Connecting to: "), ota_host);
 
-    t_httpUpdate_return ret = ESPhttpUpdate.update(client_s, ota_host + ota_url);
+    t_httpUpdate_return ret = BlinkerhttpUpdate.update(client_s, ota_host + ota_url, ota_md5, "");
 
     switch (ret) {
         case HTTP_UPDATE_FAILED:
             // USE_SERIAL.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
             // break;
-            BLINKER_LOG_ALL("HTTP_UPDATE_FAILD Error : ", ESPhttpUpdate.getLastError());
+            BLINKER_LOG_ALL(BLINKER_F("HTTP_UPDATE_FAILD Error : "), BlinkerhttpUpdate.getLastError());
             return false;
 
         case HTTP_UPDATE_NO_UPDATES:
             // USE_SERIAL.println("HTTP_UPDATE_NO_UPDATES");
             // break;
-            BLINKER_LOG_ALL("HTTP_UPDATE_NO_UPDATES");
+            BLINKER_LOG_ALL(BLINKER_F("HTTP_UPDATE_NO_UPDATES"));
             return false;
 
         case HTTP_UPDATE_OK:
             // USE_SERIAL.println("HTTP_UPDATE_OK");
             // break;
-            BLINKER_LOG_ALL("HTTP_UPDATE_OK");
+            BLINKER_LOG_ALL(BLINKER_F("HTTP_UPDATE_OK"));
             return true;
     }
 #elif defined(ESP32)
