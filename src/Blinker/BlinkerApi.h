@@ -4177,13 +4177,13 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
             arrayData = root["data"][0].as<String>();
 
-            if (arrayData.length())
+            if (arrayData != "null")
             {
                 for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
                 {
                     arrayData = root["data"][a_num].as<String>();
 
-                    if(arrayData.length()) {
+                    if(arrayData != "null") {
                         // DynamicJsonBuffer _jsonBuffer;
                         // JsonObject& _array = _jsonBuffer.parseObject(arrayData);
                         DynamicJsonDocument jsonBuffer(1024);
@@ -8509,7 +8509,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             return true;
                         }
 
-                        if (_cdRunState && _action.length())
+                        // BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION: "), _action , BLINKER_F(", LEN: "), _action.length());
+
+                        if (_cdRunState && _action != "null")
                         {
                             // _cdAction = _action;
                             strcpy(_cdAction, _action.c_str());
@@ -8517,7 +8519,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             _cdTime2 = _runTime;
                         }
 
-                        if (!_cdRunState && _action.length() == 0)
+                        if (!_cdRunState && _action == "null")
                         {
                             _cdTime2 += (millis() - _cdStart) / 1000 / 60;
                         }
@@ -8543,7 +8545,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             return true;
                         }
 
-                        if (_cdRunState && _action.length())
+                        if (_cdRunState && _action != "null")
                         {
                             // _cdAction = _action;
                             strcpy(_cdAction, _action.c_str());
@@ -8551,7 +8553,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             _cdTime2 = _runTime;
                         }
 
-                        if (!_cdRunState && _action.length() == 0)
+                        if (!_cdRunState && _action == "null")
                         {
                             _cdTime2 += (millis() - _cdStart) / 1000 / 60;
                         }
@@ -8680,7 +8682,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             return true;
                         }
 
-                        if (_lpRunState && _action2.length())
+                        if (_lpRunState && _action2 != "null")
                         {
                             // _lpAction1 = _action1;
                             // _lpAction2 = _action2;
@@ -8721,7 +8723,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             return true;
                         }
 
-                        if (_lpRunState && _action2.length()) {
+                        if (_lpRunState && _action2 != "null") {
                             // _lpAction1 = _action1;
                             // _lpAction2 = _action2;
                             strcpy(_lpAction1, _action1.c_str());
@@ -9556,14 +9558,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     }
                 }
             }
-            else if(isTriggedArray.length())
+            else if(isTriggedArray != "null")
             {
                 for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
                 {
                     String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
                                                 [BLINKER_CMD_ACTION][a_num];
 
-                    if(_autoData_array.length())
+                    if(_autoData_array != "null")
                     {
                         // DynamicJsonBuffer _jsonBuffer;
                         // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
