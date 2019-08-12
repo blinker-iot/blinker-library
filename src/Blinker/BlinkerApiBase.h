@@ -339,11 +339,11 @@ class BlinkerWidgets_table
                 String _data_ = BLINKER_F("[");//{\"data\":
                 // _data_ += STRING_format(data);
                 for (uint8_t num = 0; num < dataCount; num++) {
-                    _data_ += "[";
+                    _data_ += BLINKER_F("[");
                     _data_ += String(time_data[num]);
-                    _data_ += ",";
+                    _data_ += BLINKER_F(",");
                     _data_ += data[num];
-                    _data_ += "]";
+                    _data_ += BLINKER_F("]");
                     if (num + 1 < dataCount)
                     {
                         _data_ += ",";
