@@ -72,11 +72,11 @@ class BLINKERMIOT
 
             if (state == "on")
             {
-                payload += "True";
+                payload += BLINKER_F("True");
             }
             else
             {
-                payload += "False";
+                payload += BLINKER_F("False");
             }
             
             if (num != 0)
@@ -109,11 +109,11 @@ class BLINKERMIOT
 
             if (state == "on")
             {
-                payload += "True";
+                payload += BLINKER_F("True");
             }
             else
             {
-                payload += "False";
+                payload += BLINKER_F("False");
             }
             
             payload += BLINKER_F("\"");

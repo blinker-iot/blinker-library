@@ -1441,7 +1441,7 @@ class BlinkerApi : public BlinkerProtocol
 
                     // DynamicJsonBuffer jsonBuffer;
                     // JsonObject& data_rp = jsonBuffer.parseObject(payload);
-                    DynamicJsonDocument jsonBuffer(1024);
+                    DynamicJsonDocument jsonBuffer(payload.length() + 1);
                     DeserializationError error = deserializeJson(jsonBuffer, payload);
                     JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
@@ -1915,7 +1915,7 @@ class BlinkerApi : public BlinkerProtocol
 
                     // DynamicJsonBuffer jsonBuffer;
                     // JsonObject& data_rp = jsonBuffer.parseObject(payload);
-                    DynamicJsonDocument jsonBuffer(1024);
+                    DynamicJsonDocument jsonBuffer(payload.length() + 1);
                     DeserializationError error = deserializeJson(jsonBuffer, payload);
                     JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
@@ -2782,7 +2782,7 @@ void BlinkerApi::run()
                             if (ota_check == BLINKER_OTA_RUN)
                             {
                                 _OTA.saveOTACheck();
-                                updateOTAStatus(10, "download firmware");
+                                updateOTAStatus(10, BLINKER_F("download firmware"));
 
                                 String otaData = checkOTA();
 
@@ -2790,7 +2790,7 @@ void BlinkerApi::run()
                                 {
                                     // DynamicJsonBuffer jsonBuffer;
                                     // JsonObject& otaJson = jsonBuffer.parseObject(otaData);
-                                    DynamicJsonDocument jsonBuffer(1024);
+                                    DynamicJsonDocument jsonBuffer(otaData.length() + 1);
                                     DeserializationError error = deserializeJson(jsonBuffer, otaData);
                                     JsonObject otaJson = jsonBuffer.as<JsonObject>();
 
@@ -3664,7 +3664,7 @@ void BlinkerApi::run()
             #if defined(BLINKER_WIFI_SUBDEVICE)
                 if (BProto::meshAvail())
                 {
-                    BLINKER_LOG_ALL("meshAvail");
+                    BLINKER_LOG_ALL(BLINKER_F("meshAvail"));
 
                     DynamicJsonDocument jsonBuffer(1024);
                     DeserializationError error = deserializeJson(jsonBuffer, BProto::meshLastRead());
@@ -3713,7 +3713,7 @@ void BlinkerApi::run()
                         {
                             // DynamicJsonBuffer jsonBuffer;
                             // JsonObject& autoJson = jsonBuffer.parseObject(payload);
-                            DynamicJsonDocument jsonBuffer(1024);
+                            DynamicJsonDocument jsonBuffer(payload.length() + 1);
                             deserializeJson(jsonBuffer, payload);
                             JsonObject autoJson = jsonBuffer.as<JsonObject>();
 
@@ -3997,7 +3997,7 @@ void BlinkerApi::run()
                     else
                     {
                         #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_LOWPOWER_AIR202)
-                            BLINKER_LOG_ALL("need reset!");
+                            BLINKER_LOG_ALL(BLINKER_F("need reset!"));
                             if (_resetAIRFunc) _resetAIRFunc();
                         #elif defined(BLINKER_NBIOT_SIM7020)
                             // stream->println(BLINKER_CMD_CRESET_RESQ);
@@ -4047,6 +4047,8 @@ void BlinkerApi::run()
 void BlinkerApi::parse(char _data[], bool ex_data)
 {
     BLINKER_LOG_ALL(BLINKER_F("parse data: "), _data);
+
+    // BLINKER_LOG_FreeHeap_ALL();
     
     if (!ex_data)
     {
@@ -4059,8 +4061,9 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
                 // DynamicJsonBuffer jsonBuffer;
                 // JsonObject& root = jsonBuffer.parseObject(STRING_format(_data));
-                DynamicJsonDocument jsonBuffer(1024);
-                DeserializationError error = deserializeJson(jsonBuffer, STRING_format(_data));
+                // DynamicJsonDocument jsonBuffer(1024);
+                DynamicJsonDocument jsonBuffer(strlen(_data) + 1);
+                DeserializationError error = deserializeJson(jsonBuffer, _data);//STRING_format(_data));
                 JsonObject root = jsonBuffer.as<JsonObject>();
 
                 // if (!root.success())
@@ -4071,6 +4074,8 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     // #endif
                     return;
                 }
+
+                BLINKER_LOG_FreeHeap_ALL();
 
                 #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
                     defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
@@ -4168,7 +4173,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
             arrayData += BLINKER_F("}");
             // DynamicJsonBuffer jsonBuffer;
             // JsonObject& root = jsonBuffer.parseObject(arrayData);
-            DynamicJsonDocument jsonBuffer(1024);
+            DynamicJsonDocument jsonBuffer(arrayData.length() + 1);
             DeserializationError error = deserializeJson(jsonBuffer, arrayData);
             JsonObject root = jsonBuffer.as<JsonObject>();
 
@@ -4186,7 +4191,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     if(arrayData != "null") {
                         // DynamicJsonBuffer _jsonBuffer;
                         // JsonObject& _array = _jsonBuffer.parseObject(arrayData);
-                        DynamicJsonDocument jsonBuffer(1024);
+                        DynamicJsonDocument jsonBuffer(arrayData.length() + 1);
                         deserializeJson(jsonBuffer, arrayData);
                         JsonObject _array = jsonBuffer.as<JsonObject>();
 
@@ -4606,8 +4611,8 @@ float BlinkerApi::gps(b_gps_t axis)
 
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
-                BLINKER_LOG_ALL("(millis() - ntpFreshTime): ", (millis() - ntpFreshTime));
-                BLINKER_LOG_ALL("ntpGetTime: ", ntpGetTime);
+                BLINKER_LOG_ALL(BLINKER_F("(millis() - ntpFreshTime): "), (millis() - ntpFreshTime));
+                BLINKER_LOG_ALL(BLINKER_F("ntpGetTime: "), ntpGetTime);
                 BLINKER_LOG_ALL((ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000));
 
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -5112,8 +5117,8 @@ float BlinkerApi::gps(b_gps_t axis)
 
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
-                BLINKER_LOG_ALL("(millis() - ntpFreshTime): ", (millis() - ntpFreshTime));
-                BLINKER_LOG_ALL("ntpGetTime: ", ntpGetTime);
+                BLINKER_LOG_ALL(BLINKER_F("(millis() - ntpFreshTime): "), (millis() - ntpFreshTime));
+                BLINKER_LOG_ALL(BLINKER_F("ntpGetTime: "), ntpGetTime);
                 BLINKER_LOG_ALL((ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000));
 
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -5169,8 +5174,8 @@ float BlinkerApi::gps(b_gps_t axis)
                     !defined(BLINKER_LOWPOWER_AIR202))
                     _ntpGetTime = ::time(nullptr);
                 #else
-                    BLINKER_LOG_ALL("ntpGetTime: ", ntpGetTime);
-                    BLINKER_LOG_ALL("millis() - ntpFreshTime2:", (millis() - ntpFreshTime) / 1000);
+                    BLINKER_LOG_ALL(BLINKER_F("ntpGetTime: "), ntpGetTime);
+                    BLINKER_LOG_ALL(BLINKER_F("millis() - ntpFreshTime2:"), (millis() - ntpFreshTime) / 1000);
                     _ntpGetTime = ntpGetTime + ((millis() - ntpFreshTime) / 1000);
                 #endif
 
@@ -6213,7 +6218,7 @@ float BlinkerApi::gps(b_gps_t axis)
             {
                 // DynamicJsonBuffer jsonBuffer;
                 // JsonObject& autoJson = jsonBuffer.parseObject(payload);
-                DynamicJsonDocument jsonBuffer(1024);
+                DynamicJsonDocument jsonBuffer(payload.length() + 1);
                 deserializeJson(jsonBuffer, payload);
                 JsonObject autoJson = jsonBuffer.as<JsonObject>();
 
@@ -6407,7 +6412,7 @@ float BlinkerApi::gps(b_gps_t axis)
             {
                 // DynamicJsonBuffer jsonBuffer;
                 // JsonObject& otaJson = jsonBuffer.parseObject(otaData);
-                DynamicJsonDocument jsonBuffer(1024);
+                DynamicJsonDocument jsonBuffer(otaData.length() + 1);
                 DeserializationError error = deserializeJson(jsonBuffer, otaData);
                 JsonObject otaJson = jsonBuffer.as<JsonObject>();
 
@@ -7124,7 +7129,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             if (state == BLINKER_CMD_VERSION)
             {
-                print(BLINKER_CMD_VERSION, "0.1.0");
+                print(BLINKER_CMD_VERSION, BLINKER_F("0.1.0"));
                 BLINKER_LOG_ALL(BLINKER_F("getVersion isParsed"));
                 _fresh = true;
             }
@@ -9220,7 +9225,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             uint8_t wDay =  wday();
 
-            BLINKER_LOG_ALL(hour(), ":", minute(), ":", second());
+            BLINKER_LOG_ALL(hour(), BLINKER_F(":"), minute(), BLINKER_F(":"), second());
 
             uint16_t nowMins = hour() * 60 + minute();
 
@@ -9569,7 +9574,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     {
                         // DynamicJsonBuffer _jsonBuffer;
                         // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
-                        DynamicJsonDocument jsonBuffer(1024);
+                        DynamicJsonDocument jsonBuffer(_autoData_array.length() + 1);
                         deserializeJson(jsonBuffer, _autoData_array);
                         JsonObject _array = jsonBuffer.as<JsonObject>();
 
@@ -9663,7 +9668,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             // DynamicJsonBuffer jsonBufferSet;
             // JsonObject& rootSet = jsonBufferSet.parseObject(value);
-            DynamicJsonDocument jsonBuffer(1024);
+            DynamicJsonDocument jsonBuffer(value.length() + 1);
             DeserializationError error = deserializeJson(jsonBuffer, value);
             JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
@@ -9707,7 +9712,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             // DynamicJsonBuffer jsonBufferSet;
             // JsonObject& rootSet = jsonBufferSet.parseObject(value);
-            DynamicJsonDocument jsonBuffer(1024);
+            DynamicJsonDocument jsonBuffer(value.length() + 1);
             DeserializationError error = deserializeJson(jsonBuffer, value);
             JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
@@ -9736,7 +9741,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             // DynamicJsonBuffer jsonBufferSet;
             // JsonObject& rootSet = jsonBufferSet.parseObject(value);
-            DynamicJsonDocument jsonBuffer(1024);
+            DynamicJsonDocument jsonBuffer(value.length() + 1);
             DeserializationError error = deserializeJson(jsonBuffer, value);
             JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
@@ -9804,7 +9809,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             // DynamicJsonBuffer jsonBufferSet;
             // JsonObject& rootSet = jsonBufferSet.parseObject(value);
-            DynamicJsonDocument jsonBuffer(1024);
+            DynamicJsonDocument jsonBuffer(value.length() + 1);
             DeserializationError error = deserializeJson(jsonBuffer, value);
             JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
@@ -10752,7 +10757,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                     // DynamicJsonBuffer jsonBuffer;
                     // JsonObject& data_rp = jsonBuffer.parseObject(payload);
-                    DynamicJsonDocument jsonBuffer(1024);
+                    DynamicJsonDocument jsonBuffer(payload.length() + 1);
                     DeserializationError error = deserializeJson(jsonBuffer, payload);
                     JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
@@ -10903,7 +10908,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         // DynamicJsonBuffer jsonBuffer;
         // JsonObject& root = jsonBuffer.parseObject(_data);
-        DynamicJsonDocument jsonBuffer(1024);
+        DynamicJsonDocument jsonBuffer(_data.length() + 1);
         DeserializationError error = deserializeJson(jsonBuffer, _data);
         JsonObject root = jsonBuffer.as<JsonObject>();
 
@@ -10954,7 +10959,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             // DynamicJsonBuffer jsonBufferSet;
             // JsonObject& rootSet = jsonBufferSet.parseObject(value);
-            DynamicJsonDocument jsonBuffer(1024);
+            DynamicJsonDocument jsonBuffer(value.length() + 1);
             DeserializationError error = deserializeJson(jsonBuffer, value);
             JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
@@ -11034,7 +11039,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         // DynamicJsonBuffer jsonBuffer;
         // JsonObject& root = jsonBuffer.parseObject(_data);
-        DynamicJsonDocument jsonBuffer(1024);
+        DynamicJsonDocument jsonBuffer(_data.length() + 1);
         DeserializationError error = deserializeJson(jsonBuffer, _data);
         JsonObject root = jsonBuffer.as<JsonObject>();
 
@@ -11077,7 +11082,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             // DynamicJsonBuffer jsonBufferSet;
             // JsonObject& rootSet = jsonBufferSet.parseObject(value);
-            DynamicJsonDocument jsonBuffer(1024);
+            DynamicJsonDocument jsonBuffer(value.length() + 1);
             DeserializationError error = deserializeJson(jsonBuffer, value);
             JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
@@ -11157,7 +11162,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         // DynamicJsonBuffer jsonBuffer;
         // JsonObject& root = jsonBuffer.parseObject(_data);
-        DynamicJsonDocument jsonBuffer(1024);
+        DynamicJsonDocument jsonBuffer(_data.length() + 1);
         DeserializationError error = deserializeJson(jsonBuffer, _data);
         JsonObject root = jsonBuffer.as<JsonObject>();
 
@@ -11208,7 +11213,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             // DynamicJsonBuffer jsonBufferSet;
             // JsonObject& rootSet = jsonBufferSet.parseObject(value);
-            DynamicJsonDocument jsonBuffer(1024);
+            DynamicJsonDocument jsonBuffer(value.length() + 1);
             DeserializationError error = deserializeJson(jsonBuffer, value);
             JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
@@ -12906,13 +12911,13 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                 BLINKER_LOG_ALL(BLINKER_F("getRegister!"));
 
-                print(BLINKER_CMD_MESSAGE, "success");
+                print(BLINKER_CMD_MESSAGE, BLINKER_F("success"));
             }
             else
             {
                 BLINKER_LOG_ALL(BLINKER_F("not getRegister!"));
 
-                print(BLINKER_CMD_MESSAGE, "deviceType check fail");
+                print(BLINKER_CMD_MESSAGE, BLINKER_F("deviceType check fail"));
             }
             BProto::printNow();
             BLINKER_LOG_ALL(BLINKER_F("checkRegister isParsed"));
