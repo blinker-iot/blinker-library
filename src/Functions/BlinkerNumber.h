@@ -46,7 +46,7 @@ class BlinkerNumber
         template <typename T>
         void text(T _text)
         {
-            if (isnan(_text)) return;
+            // if (isnan(_text)) return;
 
             if (_fresh >> 3 & 0x01) free(ntext);
 
