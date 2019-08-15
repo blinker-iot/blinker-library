@@ -1,14 +1,29 @@
 #ifndef BLINKER_SERIAL_BLE_H
 #define BLINKER_SERIAL_BLE_H
 
+#if !defined (__AVR__)
+    #ifndef BLINKER_ARDUINOJSON
+        #define BLINKER_ARDUINOJSON
+    #endif
+    #ifndef ARDUINOJSON_VERSION_MAJOR
+    #include "modules/ArduinoJson/ArduinoJson.h"
+    #endif
+
+    #if defined(ESP32)
+        #include <HardwareSerial.h>    
+    #elif defined (__AVR__) || defined(ESP8266)
+        #include <SoftwareSerial.h>
+    #endif
+#else
+    #if defined (BLINKER_ARDUINOJSON)
+        #ifndef ARDUINOJSON_VERSION_MAJOR
+        #include "modules/ArduinoJson/ArduinoJson.h"
+        #endif
+    #endif
+#endif
+
 #include "Adapters/BlinkerSerial.h"
 #include "Blinker/BlinkerApi.h"
-
-#if defined(ESP32)
-    #include <HardwareSerial.h>
-#elif defined (__AVR__) || defined(ESP8266)
-    #include <SoftwareSerial.h>
-#endif
 
 typedef BlinkerApi BApi;
 
