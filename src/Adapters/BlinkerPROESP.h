@@ -1702,8 +1702,6 @@ int BlinkerPROESP::connectServer() {
 
     String url_iot = BLINKER_F("/api/v1/user/device/auth?authKey=");
     url_iot += AUTHKEY_PRO;
-    url_iot += BLINKER_F("&version=");
-    url_iot += BLINKER_OTA_VERSION_CODE;
     // url_iot += _aliType;
     // url_iot += _duerType;
 

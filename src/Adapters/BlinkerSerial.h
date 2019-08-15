@@ -17,7 +17,7 @@
     #include <HardwareSerial.h>
 
     HardwareSerial *HSerialBLE;
-#else
+#elif defined (__AVR__) || defined(ESP8266)
     #include <SoftwareSerial.h>
 
     SoftwareSerial *SSerialBLE;
