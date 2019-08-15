@@ -21,6 +21,9 @@
 // SOFTWARE.
 #include "Adafruit_MQTT.h"
 
+#if defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000) \
+    || defined(ESP8266) || defined(ESP32)
+
 #if defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000)
 static char *dtostrf (double val, signed char width, unsigned char prec, char *sout) {
   char fmt[20];
@@ -949,3 +952,5 @@ void Adafruit_MQTT_Subscribe::removeCallback(void) {
   callback_io = 0;
   io_mqtt = 0;
 }
+
+#endif
