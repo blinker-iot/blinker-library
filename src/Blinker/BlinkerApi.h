@@ -808,6 +808,9 @@ class BlinkerApi : public BlinkerProtocol
 
             uint32_t    _autoUpdateTime = 0;
 
+            uint8_t     _serverTimes = 0;
+            uint32_t    _serverTime = 0;
+
             #if defined(BLINKER_PRO_ESP)
                 uint32_t    _eWarnTime = 0;
                 uint32_t    _eErrTime = 0;
@@ -2073,6 +2076,7 @@ class BlinkerApi : public BlinkerProtocol
 
             #endif
 
+            bool checkServerLimit();
             bool checkSMS();
             bool checkPUSH();
             bool checkWECHAT();
@@ -9270,8 +9274,34 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     #endif
 
+    bool BlinkerApi::checkServerLimit()
+    {
+        if ((millis() - _serverTime) < 60 * 60 * 1000)
+        {
+            if (_serverTimes > BLINKER_PRINT_MSG_LIMIT)
+            {
+                BLINKER_ERR_LOG(BLINKER_F("SERVER NOT ALIVE OR MSG LIMIT"));
+
+                return false;
+            }
+            else
+            {
+                _serverTimes++;
+                return true;
+            }
+        }
+        else
+        {
+            _serverTimes++;
+            return true;
+        }
+        
+    }
+
     bool BlinkerApi::checkSMS()
     {
+        if (!checkServerLimit()) return false;
+
         if ((millis() - _smsTime) >= BLINKER_SMS_MSG_LIMIT || \
             _smsTime == 0) return true;
         else return false;
@@ -9280,6 +9310,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     bool BlinkerApi::checkPUSH()
     {
+        if (!checkServerLimit()) return false;
+
         if ((millis() - _pushTime) >= BLINKER_PUSH_MSG_LIMIT || \
             _pushTime == 0) return true;
         else return false;
@@ -9288,6 +9320,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     bool BlinkerApi::checkWECHAT()
     {
+        if (!checkServerLimit()) return false;
+
         if ((millis() - _wechatTime) >= BLINKER_WECHAT_MSG_LIMIT || \
             _wechatTime == 0) return true;
         else return false;
@@ -9296,6 +9330,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     bool BlinkerApi::checkWEATHER()
     {
+        if (!checkServerLimit()) return false;
+
         if ((millis() - _weatherTime) >= BLINKER_WEATHER_MSG_LIMIT || \
             _weatherTime == 0) return true;
         else return false;
@@ -9304,6 +9340,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     bool BlinkerApi::checkAQI()
     {
+        if (!checkServerLimit()) return false;
+
         if ((millis() - _aqiTime) >= BLINKER_AQI_MSG_LIMIT || \
             _aqiTime == 0) return true;
         else return false;
@@ -9319,6 +9357,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     bool BlinkerApi::checkCGET()
     {
+        if (!checkServerLimit()) return false;
+
         if ((millis() - _cGetTime) >= BLINKER_CONFIG_GET_LIMIT || \
             _cGetTime == 0) return true;
         else return false;
@@ -9327,6 +9367,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     bool BlinkerApi::checkCDEL()
     {
+        if (!checkServerLimit()) return false;
+
         if ((millis() - _cDelTime) >= BLINKER_CONFIG_GET_LIMIT || \
             _cDelTime == 0) return true;
         else return false;
@@ -9343,6 +9385,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     bool BlinkerApi::checkDataGet()
     {
+        if (!checkServerLimit()) return false;
+
         if ((millis() - _dGetTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
             _dGetTime == 0) return true;
         else return false;
@@ -9351,6 +9395,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     bool BlinkerApi::checkDataDel()
     {
+        if (!checkServerLimit()) return false;
+        
         if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
             _dDelTime == 0) return true;
         else return false;
