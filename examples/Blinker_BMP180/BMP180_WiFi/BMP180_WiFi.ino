@@ -56,7 +56,7 @@ BlinkerNumber PRES("pres"); // Pressure
 BlinkerNumber ALTI("alti"); // Altitude
 
 // Download Adafruit-BMP085-Library library here:
-//https://github.com/adafruit/Adafruit-BMP085-Library
+// https://github.com/adafruit/Adafruit-BMP085-Library
 #include <Wire.h>
 #include <Adafruit_BMP085.h>
 
