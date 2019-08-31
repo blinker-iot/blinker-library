@@ -9292,10 +9292,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
         else
         {
-            _serverTimes++;
+            _serverTimes = 0;
+            _serverTime = millis();
             return true;
         }
-        
     }
 
     bool BlinkerApi::checkSMS()
