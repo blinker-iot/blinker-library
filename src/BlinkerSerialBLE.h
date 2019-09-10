@@ -128,7 +128,7 @@ class BlinkerSerialBLE : public BlinkerApi
             }
             else if (ss_rx_pin == 19 && ss_tx_pin == 18){
                 BApi::begin();
-                Serial.begin(ss_baud);
+                Serial1.begin(ss_baud);
                 Transp.begin(Serial1, true);
                 transport(Transp);
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
@@ -136,7 +136,7 @@ class BlinkerSerialBLE : public BlinkerApi
             }
             else if (ss_rx_pin == 17 && ss_tx_pin == 16){
                 BApi::begin();
-                Serial.begin(ss_baud);
+                Serial2.begin(ss_baud);
                 Transp.begin(Serial2, true);
                 transport(Transp);
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
@@ -144,7 +144,7 @@ class BlinkerSerialBLE : public BlinkerApi
             }
             else if (ss_rx_pin == 15 && ss_tx_pin == 14){
                 BApi::begin();
-                Serial.begin(ss_baud);
+                Serial3.begin(ss_baud);
                 Transp.begin(Serial3, true);
                 transport(Transp);
                 BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
