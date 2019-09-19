@@ -341,6 +341,8 @@ class BlinkerApi : public BlinkerProtocol
             int16_t yday();
             time_t  time();
             int32_t dtime();
+            time_t  startTime();
+            time_t  runTime();
 
             template<typename T>
             bool sms(const T& msg);
@@ -786,6 +788,7 @@ class BlinkerApi : public BlinkerProtocol
             #else
             bool        _isNTPInit = false;
             #endif
+            time_t      _startTime = 0;
             float       _timezone = 8.0;
             uint32_t    _ntpStart;
 
@@ -5252,6 +5255,24 @@ float BlinkerApi::gps(b_gps_t axis)
         return -1;
     }
 
+    time_t BlinkerApi::startTime()
+    {
+        if (_isNTPInit) return _startTime;
+        else return 0;
+    }
+
+    time_t BlinkerApi::runTime()
+    {
+        if (_isNTPInit)
+        {
+            return time() - _startTime;
+        }
+        else
+        {
+            return millis()/1000;
+        }
+    }
+
     template<typename T>
     bool BlinkerApi::sms(const T& msg)
     {
@@ -7816,6 +7837,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             #endif
 
             _isNTPInit = true;
+
+            _startTime = time() - millis()/1000;
 
             return true;
         }
