@@ -636,6 +636,9 @@ class BlinkerApi : public BlinkerProtocol
                     _sleepFunc = newFunction;
                 }
             #endif
+
+            bool init()                         { return _isInit; }
+            
         #endif
 
         void attachData(blinker_callback_with_string_arg_t newFunction)
@@ -714,7 +717,7 @@ class BlinkerApi : public BlinkerProtocol
             void tick();
             void checkRegister(const JsonObject& data);
 
-            bool init()                         { return _isInit; }
+            // bool init()                         { return _isInit; }
             bool registered()                   { return BProto::authCheck(); }
             #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
             uint8_t status()                    { return _proStatus; }
