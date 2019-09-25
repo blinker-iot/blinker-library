@@ -788,7 +788,7 @@ class BlinkerApi : public BlinkerProtocol
             #else
             bool        _isNTPInit = false;
             #endif
-            time_t      _startTime = 0;
+            time_t      _deviceStartTime = 0;
             float       _timezone = 8.0;
             uint32_t    _ntpStart;
 
@@ -5257,7 +5257,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
     time_t BlinkerApi::startTime()
     {
-        if (_isNTPInit) return _startTime;
+        if (_isNTPInit) return _deviceStartTime;
         else return 0;
     }
 
@@ -5265,7 +5265,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (_isNTPInit)
         {
-            return time() - _startTime;
+            return time() - _deviceStartTime;
         }
         else
         {
@@ -7838,7 +7838,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             _isNTPInit = true;
 
-            _startTime = time() - millis()/1000;
+            _deviceStartTime = time() - millis()/1000;
 
             return true;
         }
