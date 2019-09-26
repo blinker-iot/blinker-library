@@ -341,6 +341,8 @@ class BlinkerApi : public BlinkerProtocol
             int16_t yday();
             time_t  time();
             int32_t dtime();
+            time_t  startTime();
+            time_t  runTime();
 
             template<typename T>
             bool sms(const T& msg);
@@ -634,6 +636,9 @@ class BlinkerApi : public BlinkerProtocol
                     _sleepFunc = newFunction;
                 }
             #endif
+
+            bool init()                         { return _isInit; }
+            
         #endif
 
         void attachData(blinker_callback_with_string_arg_t newFunction)
@@ -712,7 +717,7 @@ class BlinkerApi : public BlinkerProtocol
             void tick();
             void checkRegister(const JsonObject& data);
 
-            bool init()                         { return _isInit; }
+            // bool init()                         { return _isInit; }
             bool registered()                   { return BProto::authCheck(); }
             #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
             uint8_t status()                    { return _proStatus; }
@@ -786,6 +791,7 @@ class BlinkerApi : public BlinkerProtocol
             #else
             bool        _isNTPInit = false;
             #endif
+            time_t      _deviceStartTime = 0;
             float       _timezone = 8.0;
             uint32_t    _ntpStart;
 
@@ -5252,6 +5258,24 @@ float BlinkerApi::gps(b_gps_t axis)
         return -1;
     }
 
+    time_t BlinkerApi::startTime()
+    {
+        if (_isNTPInit) return _deviceStartTime;
+        else return 0;
+    }
+
+    time_t BlinkerApi::runTime()
+    {
+        if (_isNTPInit)
+        {
+            return time() - _deviceStartTime;
+        }
+        else
+        {
+            return millis()/1000;
+        }
+    }
+
     template<typename T>
     bool BlinkerApi::sms(const T& msg)
     {
@@ -7816,6 +7840,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             #endif
 
             _isNTPInit = true;
+
+            _deviceStartTime = time() - millis()/1000;
 
             return true;
         }
