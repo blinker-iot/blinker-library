@@ -3073,7 +3073,7 @@ void BlinkerApi::run()
             checkTimer();
 
             if (!BProto::init()) {
-                ::delay(2000);
+                ::delay(10);
                 // BLINKER_LOG_ALL(BLINKER_F("RETURN"));
 
                 #if defined(BLINKER_AT_MQTT)
