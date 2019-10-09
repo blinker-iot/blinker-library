@@ -166,6 +166,11 @@ class BlinkerProtocol
                 void meshFlush() { conn->meshFlush(); }
             #endif
         #endif
+
+        #if defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+            void smartConfigType() { conn->setSmartConfig(); }
+            void apConfigType() { conn->setApConfig(); }
+        #endif
     // #endif
     private :
 

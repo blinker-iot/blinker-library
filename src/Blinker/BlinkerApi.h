@@ -738,6 +738,11 @@ class BlinkerApi : public BlinkerProtocol
             { _resetSIMFunc = newFunction; }
         #endif
 
+        #if defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+            void esptouchInit() { BProto::smartConfigType(); }
+            void apConfigInit() { BProto::apConfigType(); }
+        #endif
+
     private :
         bool        _isNew = false;
         #if defined(BLINKER_GPRS_AIR202)
