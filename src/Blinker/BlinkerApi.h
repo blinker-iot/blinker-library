@@ -738,6 +738,12 @@ class BlinkerApi : public BlinkerProtocol
             { _resetSIMFunc = newFunction; }
         #endif
 
+        #if defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+            void esptouchInit() { BProto::smartConfigType(); }
+            void apConfigInit() { BProto::apConfigType(); }
+            b_config_t configType() { return BProto::checkIsSmartConfig() ? BLINKER_SMART_CONFIG : BLINKER_AP_CONFIG; }
+        #endif
+
     private :
         bool        _isNew = false;
         #if defined(BLINKER_GPRS_AIR202)
@@ -3073,7 +3079,7 @@ void BlinkerApi::run()
             checkTimer();
 
             if (!BProto::init()) {
-                ::delay(2000);
+                ::delay(10);
                 // BLINKER_LOG_ALL(BLINKER_F("RETURN"));
 
                 #if defined(BLINKER_AT_MQTT)

@@ -279,6 +279,10 @@ attachSubAvailable	KEYWORD2
 attachSubRead	KEYWORD2
 attachSubPrint	KEYWORD2
 
+configType	KEYWORD2
+apConfigInit	KEYWORD2
+esptouchInit	KEYWORD2
+
 #######################################
 # Literals (LITERAL1)
 #######################################
@@ -287,3 +291,5 @@ Roll	LITERAL1
 Pitch	LITERAL1
 LONG	LITERAL1
 LAT	LITERAL1
+BLINKER_AP_CONFIG	LITERAL1
+BLINKER_SMART_CONFIG	LITERAL1

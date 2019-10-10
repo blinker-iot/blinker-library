@@ -94,11 +94,11 @@
         #define BLINKER_PRO_ESP
     #endif
 
-    #ifndef BLINKER_ESP_SMARTCONFIG
-        #ifndef BLINKER_APCONFIG
-            #define BLINKER_ESP_SMARTCONFIG
-        #endif
-    #endif
+    // #ifndef BLINKER_ESP_SMARTCONFIG
+    //     #ifndef BLINKER_APCONFIG
+    //         #define BLINKER_ESP_SMARTCONFIG
+    //     #endif
+    // #endif
 
     #if defined(ESP8266) || defined(ESP32)
         #include "BlinkerESPPROESP.h"
