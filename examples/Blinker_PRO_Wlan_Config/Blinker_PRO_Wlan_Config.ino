@@ -56,6 +56,7 @@
 
 #define BLINKER_PRO_ESP
 #define BLINKER_BUTTON
+#define BLINKER_BUTTON_LONGPRESS_POWERDOWN
 #if defined(ESP32)
     #define BLINKER_BUTTON_PIN 4
 #else
@@ -141,6 +142,33 @@ void doubleClick()
 {
     BLINKER_LOG("Button double clicked!");
 }
+
+/* 
+ * Add your code in this function
+ * 
+ * When long press start, device will call this function
+ */
+void longPressStart()
+{
+    BLINKER_LOG("Button long press start!");
+}
+
+/* 
+ * Add your code in this function
+ * 
+ * When during long press, device will call this function
+ */
+void duringLongPress()
+{
+    // BLINKER_LOG("During button long press!");
+
+    uint16_t pressed_time = Blinker.pressedTime();
+
+    if (pressed_time >= 5000 && Blinker.configType() != BLINKER_AP_CONFIG)
+    {
+        Blinker.apConfigInit();
+    }
+}
 #endif
 
 void dataRead(const String & data)
@@ -168,7 +196,9 @@ void setup()
 
 #if defined(BLINKER_BUTTON)
     Blinker.attachClick(singleClick);
-    Blinker.attachDoubleClick(doubleClick);    
+    Blinker.attachDoubleClick(doubleClick);
+    Blinker.attachLongPressStart(longPressStart);
+    Blinker.attachDuringLongPress(duringLongPress);
     attachInterrupt(BLINKER_BUTTON_PIN, buttonTick, CHANGE);
 #endif
 }

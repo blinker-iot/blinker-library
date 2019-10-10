@@ -170,6 +170,7 @@ class BlinkerProtocol
         #if defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
             void smartConfigType() { conn->setSmartConfig(); }
             void apConfigType() { conn->setApConfig(); }
+            bool checkIsSmartConfig() { return conn->checkSmartConfig(); }
         #endif
     // #endif
     private :

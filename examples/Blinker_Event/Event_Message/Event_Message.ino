@@ -171,7 +171,7 @@ void setup()
 #if defined(BLINKER_BUTTON)
     Blinker.attachClick(singleClick);
     Blinker.attachDoubleClick(doubleClick);    
-    // attachInterrupt(BLINKER_BUTTON_PIN, buttonTick, CHANGE);
+    attachInterrupt(BLINKER_BUTTON_PIN, buttonTick, CHANGE);
 #endif
 }
 

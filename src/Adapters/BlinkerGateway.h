@@ -171,21 +171,20 @@ void _changedConnectionCallback()
 }
 
 enum b_config_t {
-    SMART,
-    APCFG
+    BLINKER_SMART_CONFIG,
+    BLINKER_AP_CONFIG
 };
 
-b_config_t  _configType = SMART;
+b_config_t  _configType = BLINKER_SMART_CONFIG;
 
 class BlinkerGateway : public BlinkerStream
 {
     public :
         BlinkerGateway();
 
-        void setConfigType(b_config_t _type)
-        {
-            _configType = _type;
-        }
+        void setSmartConfig() { _configType = BLINKER_SMART_CONFIG; BLINKER_LOG_ALL(BLINKER_F("SmartConfig")); }
+        void setApConfig() { _configType = BLINKER_AP_CONFIG; BLINKER_LOG_ALL(BLINKER_F("ApConfig")); }
+        bool checkSmartConfig() { return _configType == BLINKER_SMART_CONFIG; }
         int connect();
         int connected();
         int mConnected();// { if (!isMQTTinit) return false; else return mqtt->connected(); }
@@ -4618,7 +4617,7 @@ bool BlinkerWlan::run()
             // #elif defined(BLINKER_APCONFIG)
             //     softAPinit();
             // #endif
-            if (_configType == SMART)
+            if (_configType == BLINKER_SMART_CONFIG)
             {
                 smartconfigBegin();
             }

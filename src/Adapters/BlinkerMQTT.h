@@ -31,8 +31,8 @@
 
 enum b_config_t {
     COMM,
-    SMART,
-    APCFG
+    BLINKER_SMART_CONFIG,
+    BLINKER_AP_CONFIG
 };
 
 enum b_configStatus_t {
@@ -2258,7 +2258,7 @@ bool BlinkerMQTT::checkInit()
                 // begin();
 
                 return false;
-            case SMART :
+            case BLINKER_SMART_CONFIG :
                 switch (_configStatus)
                 {
                     case SMART_BEGIN :
@@ -2308,7 +2308,7 @@ bool BlinkerMQTT::checkInit()
                     default :
                         return false;
                 }
-            case APCFG :
+            case BLINKER_AP_CONFIG :
                 #if defined(BLINKER_APCONFIG)
                 switch (_configStatus)
                 {
@@ -2373,7 +2373,7 @@ void BlinkerMQTT::commonBegin(const char* _ssid, const char* _pswd)
 
 void BlinkerMQTT::smartconfigBegin()
 {
-    _configType = SMART;
+    _configType = BLINKER_SMART_CONFIG;
 
     if (!autoInit()) smartconfig();
     else _configStatus = SMART_DONE;
@@ -2388,7 +2388,7 @@ void BlinkerMQTT::smartconfigBegin()
 void BlinkerMQTT::apconfigBegin()
 {
     #if defined(BLINKER_APCONFIG)
-    _configType = APCFG;
+    _configType = BLINKER_AP_CONFIG;
 
     if (!autoInit()) softAPinit();
     else _configStatus = APCFG_DONE;

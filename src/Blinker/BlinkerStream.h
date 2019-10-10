@@ -139,6 +139,7 @@ class BlinkerStream
         #if defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
             virtual void setSmartConfig() = 0;
             virtual void setApConfig() = 0;
+            virtual bool checkSmartConfig() = 0;
         #endif
 
         // #if defined(BLINKER_WIFI_SUBDEVICE)
