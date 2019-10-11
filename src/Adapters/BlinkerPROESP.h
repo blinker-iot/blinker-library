@@ -2351,10 +2351,10 @@ int BlinkerPROESP::isJson(const String & data)
 }
 
 
-static IPAddress apIP(192, 168, 4, 1);
-#if defined(ESP8266)
-    static IPAddress netMsk(255, 255, 255, 0);
-#endif
+// static IPAddress apIP(192, 168, 4, 1);
+// #if defined(ESP8266)
+//     static IPAddress netMsk(255, 255, 255, 0);
+// #endif
 
 
 enum bwl_status_t
@@ -2725,11 +2725,19 @@ void BlinkerWlan::reset() {
 void BlinkerWlan::softAPinit() {
     // _server = new WiFiServer(80);
 
+    IPAddress apIP(192, 168, 4, 1);
+    #if defined(ESP8266)
+        IPAddress netMsk(255, 255, 255, 0);
+    #endif
+
     WiFi.mode(WIFI_AP);
+
+    delay(1000);
+    
     String softAP_ssid = STRING_format(_deviceType) + "_" + macDeviceName();
     
 #if defined(ESP8266)
-    WiFi.hostname(softAP_ssid);
+    WiFi.hostname(softAP_ssid.c_str());
     WiFi.softAPConfig(apIP, apIP, netMsk);
 #elif defined(ESP32)
     WiFi.setHostname(softAP_ssid.c_str());

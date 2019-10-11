@@ -2444,6 +2444,7 @@ bool BlinkerMQTT::autoInit()
 void BlinkerMQTT::smartconfig()
 {
     WiFi.mode(WIFI_STA);
+
     String _hostname = BLINKER_F("DiyArduino_");
     _hostname += macDeviceName();
 
@@ -2486,7 +2487,10 @@ void BlinkerMQTT::softAPinit()
 
     // _apServer = new WiFiServer(80);
 
-    WiFi.mode(WIFI_AP);
+    WiFi.mode(WIFI_AP);    
+
+    delay(1000);
+
     String softAP_ssid = BLINKER_F("DiyArduino_");
     softAP_ssid += macDeviceName();
 
