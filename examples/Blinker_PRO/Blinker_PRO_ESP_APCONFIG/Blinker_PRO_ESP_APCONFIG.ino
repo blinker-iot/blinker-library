@@ -160,8 +160,8 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
-    Blinker.apConfigInit();
     Blinker.begin(auth, type);
+    Blinker.apConfigInit();
     Blinker.attachData(dataRead);
     Blinker.attachParse(dataParse);
     Blinker.attachHeartbeat(heartbeat);
