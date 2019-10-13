@@ -2048,6 +2048,8 @@ void BlinkerMQTT::mDNSInit()
     webSocket_MQTT.onEvent(webSocketEvent_MQTT);
     BLINKER_LOG(BLINKER_F("webSocket_MQTT server started"));
     BLINKER_LOG(BLINKER_F("ws://"), DEVICE_NAME_MQTT, BLINKER_F(".local:"), WS_SERVERPORT);
+
+    isApCfg = false;
 }
 
 void BlinkerMQTT::checkKA() {

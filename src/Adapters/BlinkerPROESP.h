@@ -251,9 +251,13 @@ void webSocketEvent_PRO(uint8_t num, WStype_t type, \
                 isFresh_PRO = true;
             }
 
+            if (!isApCfg) isConnect_PRO = true;
+
             if (!isApCfg) dataFrom_PRO = BLINKER_MSG_FROM_WS;
 
             ws_num_PRO = num;
+
+            // BLINKER_LOG_ALL(BLINKER_F("isConnect_PRO: "), isConnect_PRO);
 
             // send message to client
             // webSocket_PRO.sendTXT(num, "message here");
@@ -433,7 +437,7 @@ int BlinkerPROESP::available()
     MDNS.update();
 #endif
 
-    BLINKER_LOG("CHECK available");
+    // BLINKER_LOG("CHECK available");
 
     delay(2000);
 
@@ -2204,6 +2208,8 @@ void BlinkerPROESP::mDNSInit(String name)
     BLINKER_LOG(BLINKER_F("ws://"), name, BLINKER_F(".local:"), WS_SERVERPORT);
 
     // isWSinit = true;
+
+    isApCfg = false;
 }
 
 void BlinkerPROESP::checkKA() {
