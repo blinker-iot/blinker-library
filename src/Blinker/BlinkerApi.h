@@ -1072,7 +1072,7 @@ class BlinkerApi : public BlinkerProtocol
                         localtime_r(&BLINKER_AIR202._ntpTime, &timeinfo);
                     #endif
 
-                    BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
+                    BLINKER_LOG_ALL(BLINKER_F("ntpInit Current time: "), asctime(&timeinfo));
                     BLINKER_LOG_ALL(BLINKER_F("NTP time: "), BLINKER_AIR202._ntpTime - (int)(getTimezone()*3600));
 
                     _isNTPInit = true;
@@ -2768,6 +2768,8 @@ void BlinkerApi::run()
 
             if (!BProto::init())
             {
+                // BLINKER_LOG_ALL(BLINKER_F("check init"));
+
                 yield();
 
                 if ((millis() - _initTime) >= BLINKER_CHECK_AUTH_TIME && \
@@ -2782,6 +2784,7 @@ void BlinkerApi::run()
                 {
                     if (ntpInit())
                     {
+                        BLINKER_LOG_ALL(BLINKER_F("check ntp init"));
                         _isInit = true;
                         _isNew = false;
                         // strcpy(_authKey, conn.authKey());
@@ -4622,8 +4625,8 @@ float BlinkerApi::gps(b_gps_t axis)
 
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
-                BLINKER_LOG_ALL("(millis() - ntpFreshTime): ", (millis() - ntpFreshTime));
-                BLINKER_LOG_ALL("ntpGetTime: ", ntpGetTime);
+                BLINKER_LOG_ALL(BLINKER_F("second (millis() - ntpFreshTime): "), (millis() - ntpFreshTime));
+                BLINKER_LOG_ALL(BLINKER_F("ntpGetTime: "), ntpGetTime);
                 BLINKER_LOG_ALL((ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000));
 
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
@@ -5128,8 +5131,8 @@ float BlinkerApi::gps(b_gps_t axis)
 
             if (ntpGetTime == 0 || (millis() - ntpFreshTime) >= 120000)
             {
-                BLINKER_LOG_ALL("(millis() - ntpFreshTime): ", (millis() - ntpFreshTime));
-                BLINKER_LOG_ALL("ntpGetTime: ", ntpGetTime);
+                BLINKER_LOG_ALL(BLINKER_F("time (millis() - ntpFreshTime): "), (millis() - ntpFreshTime));
+                BLINKER_LOG_ALL(BLINKER_F("ntpGetTime: "), ntpGetTime);
                 BLINKER_LOG_ALL((ntpGetTime == 0 || (millis() - ntpFreshTime) >= 600000));
 
                 #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \

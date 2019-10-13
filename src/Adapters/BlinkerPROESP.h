@@ -81,7 +81,16 @@ class BlinkerPROESP : public BlinkerStream
         //             char *name2, char *type2, char *data2);
         char * deviceName();
         char * authKey() { return AUTHKEY_PRO; }
-        int init() { return isMQTTinit; }
+        int init()
+        { 
+            // webSocket_PRO.loop();
+
+            // #if defined(ESP8266)
+            //     MDNS.update();
+            // #endif
+
+            return isMQTTinit;
+        }
         int reRegister() { return connectServer(); }
         int deviceRegister() { return connectServer(); }
         int authCheck();
@@ -267,6 +276,10 @@ BlinkerPROESP::BlinkerPROESP() { isHandle = &isConnect_PRO; }
 int BlinkerPROESP::connect()
 {
     int8_t ret;
+    
+#if defined(ESP8266)
+    MDNS.update();
+#endif
 
     webSocket_PRO.loop();
 
@@ -419,6 +432,10 @@ int BlinkerPROESP::available()
 #if defined(ESP8266)
     MDNS.update();
 #endif
+
+    BLINKER_LOG("CHECK available");
+
+    delay(2000);
 
     webSocket_PRO.loop();
 
@@ -2137,6 +2154,7 @@ int BlinkerPROESP::connectServer() {
     // mqtt_broker = _broker;
 
     MDNS.end();
+    webSocket_PRO.close();
     mDNSInit(MQTT_DEVICEID_PRO);
     this->latestTime = millis();
     // if (!isMQTTinit) 
@@ -2156,6 +2174,10 @@ int BlinkerPROESP::connectServer() {
 
 void BlinkerPROESP::mDNSInit(String name)
 {
+    delay(1000);
+
+    BLINKER_LOG(BLINKER_F("WiFi.localIP: "), WiFi.localIP());
+
 #if defined(ESP8266)
     if (!MDNS.begin(name.c_str(), WiFi.localIP())) {
 #elif defined(ESP32)
@@ -2173,15 +2195,15 @@ void BlinkerPROESP::mDNSInit(String name)
     MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
     MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", name);
 
-    if (!isWSinit)
-    {
+    // if (!isWSinit)
+    // {
         webSocket_PRO.begin();
         webSocket_PRO.onEvent(webSocketEvent_PRO);
-    }
+    // }
     BLINKER_LOG(BLINKER_F("webSocket_PRO server started"));
     BLINKER_LOG(BLINKER_F("ws://"), name, BLINKER_F(".local:"), WS_SERVERPORT);
 
-    isWSinit = true;
+    // isWSinit = true;
 }
 
 void BlinkerPROESP::checkKA() {
