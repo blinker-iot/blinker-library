@@ -4473,6 +4473,23 @@ void BlinkerWlan::softAPinit() {
 
 void BlinkerWlan::serverClient()
 {
+    webSocket_PRO.loop();
+
+    #if defined(ESP8266)
+        MDNS.update();
+    #endif
+
+    if (isAvail_PRO)
+    {
+        BLINKER_LOG(BLINKER_F("checkAPCFG: "), msgBuf_PRO);
+
+        if (STRING_contains_string(msgBuf_PRO, "ssid") && \
+            STRING_contains_string(msgBuf_PRO, "pswd"))
+        {
+            parseUrl(msgBuf_PRO);
+        }
+        isAvail_PRO = false;
+    }
     // if (!_client)
     // {
     //     _client = _server->available();

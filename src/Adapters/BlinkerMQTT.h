@@ -2048,6 +2048,8 @@ void BlinkerMQTT::mDNSInit()
     webSocket_MQTT.onEvent(webSocketEvent_MQTT);
     BLINKER_LOG(BLINKER_F("webSocket_MQTT server started"));
     BLINKER_LOG(BLINKER_F("ws://"), DEVICE_NAME_MQTT, BLINKER_F(".local:"), WS_SERVERPORT);
+
+    isApCfg = false;
 }
 
 void BlinkerMQTT::checkKA() {
@@ -2444,6 +2446,7 @@ bool BlinkerMQTT::autoInit()
 void BlinkerMQTT::smartconfig()
 {
     WiFi.mode(WIFI_STA);
+
     String _hostname = BLINKER_F("DiyArduino_");
     _hostname += macDeviceName();
 
@@ -2486,7 +2489,10 @@ void BlinkerMQTT::softAPinit()
 
     // _apServer = new WiFiServer(80);
 
-    WiFi.mode(WIFI_AP);
+    WiFi.mode(WIFI_AP);    
+
+    delay(1000);
+
     String softAP_ssid = BLINKER_F("DiyArduino_");
     softAP_ssid += macDeviceName();
 
@@ -2507,9 +2513,9 @@ void BlinkerMQTT::softAPinit()
     // BLINKER_LOG(BLINKER_F("URL: http://"), WiFi.softAPIP());
 
     #if defined(ESP8266)
-    if (!MDNS.begin(softAP_ssid, WiFi.localIP())) {
+    if (!MDNS.begin(softAP_ssid.c_str(), WiFi.localIP())) {
     #elif defined(ESP32)
-    if (!MDNS.begin(softAP_ssid)) {
+    if (!MDNS.begin(softAP_ssid.c_str())) {
     #endif
         while(1) {
             ::delay(100);
