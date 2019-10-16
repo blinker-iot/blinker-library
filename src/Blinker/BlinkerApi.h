@@ -1023,7 +1023,7 @@ class BlinkerApi : public BlinkerProtocol
             #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                 defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
                 defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
-                void bridgeParse(char _bName[], const JsonObject& data);
+                void bridgeParse(char _bName[], uint8_t num, const JsonObject& data);
             #endif
             void strWidgetsParse(char _wName[], const JsonObject& data);
             #if defined(BLINKER_BLE)
@@ -4122,7 +4122,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
                     for (uint8_t bNum = 0; bNum < _bridgeCount; bNum++)
                     {
-                        bridgeParse(_Bridge[bNum]->getName(), root);
+                        bridgeParse(_Bridge[bNum]->getName(), bNum, root);
                     }
                     #endif
                 #endif
@@ -7207,31 +7207,36 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
         defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
         defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
-        void BlinkerApi::bridgeParse(char * _bName, const JsonObject& data)
+        void BlinkerApi::bridgeParse(char _bName[], uint8_t num, const JsonObject& data)
         {
+            BLINKER_LOG_ALL(BLINKER_F("_bridgeCount: "), _bridgeCount);
+
             // int8_t num = checkNum(_bName, _Bridge, _bridgeCount);
 
-            // if (num == BLINKER_OBJECT_NOT_AVAIL ||
-            //     !data.containsKey(BLINKER_CMD_FROMDEVICE))
-            // {
-            //     return;
-            // }
+            BLINKER_LOG_ALL(BLINKER_F("bridgeParse num: "), num, ", name: ", _bName);
 
-            // String _name = data[BLINKER_CMD_FROMDEVICE];
+            if (!data.containsKey(BLINKER_CMD_FROMDEVICE))
+            {
+                return;
+            }
 
-            // // if (data.containsKey(_bName))
-            // if (_name == _bName)
-            // {
-            //     String state = data[BLINKER_CMD_DATA];//[_bName];
+            String _name = data[BLINKER_CMD_FROMDEVICE].as<String>();
 
-            //     _fresh = true;
+            BLINKER_LOG_ALL(BLINKER_F("bridgeParse from: "), _name);
 
-            //     BLINKER_LOG_ALL(BLINKER_F("bridgeParse: "), _bName);
+            // if (data.containsKey(_bName))
+            if (strcmp(_name.c_str(), _bName) == 0)
+            {
+                String state = data[BLINKER_CMD_DATA];//[_bName];
 
-            //     blinker_callback_with_string_arg_t nbFunc = _Bridge[num]->getFunc();
+                _fresh = true;
 
-            //     if (nbFunc) nbFunc(state);
-            // }
+                BLINKER_LOG_ALL(BLINKER_F("bridgeParse: "), _bName);
+
+                blinker_callback_with_string_arg_t nbFunc = _Bridge[num]->getFunc();
+
+                if (nbFunc) nbFunc(state);
+            }
         }
     #endif
 
