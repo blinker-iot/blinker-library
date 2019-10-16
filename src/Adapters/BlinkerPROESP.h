@@ -565,7 +565,15 @@ void BlinkerPROESP::subscribe()
                 duerKaTime = millis();
                 isDuerAlive = true;
                 isDuerAvail = true;
-            }            
+            }
+            else if (_uuid == BLINKER_CMD_MIOT)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
+                
+                miKaTime = millis();
+                isMIOTAlive = true;
+                isMIOTAvail = true;
+            }         
             else if (_uuid == BLINKER_CMD_SERVERCLIENT)
             {
                 BLINKER_LOG_ALL(BLINKER_F("form Sever"));

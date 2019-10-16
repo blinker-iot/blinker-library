@@ -3818,6 +3818,7 @@ void BlinkerApi::run()
                 if (conState)
                 {
                     BProto::checkAvail();
+                    
                     if (BProto::isAvail)
                     {
                         parse(BProto::dataParse());
@@ -7643,7 +7644,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         if (STRING_find_string_value(_data, _setData, _wName))
         {
-            BLINKER_LOG_ALL("_setData: ", _setData);
+            BLINKER_LOG_ALL(BLINKER_F("_setData: "), _setData);
             BLINKER_LOG_ALL(BLINKER_F("tabWidgetsParse isParsed"));
             _fresh = true;
 
@@ -7715,7 +7716,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     {
         setSwitch(_data);
 
-        BLINKER_LOG_ALL("====_wCount_str: ", _wCount_str, " ====");
+        BLINKER_LOG_ALL(BLINKER_F("====_wCount_str: "), _wCount_str, BLINKER_F(" ===="));
 
         for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
             strWidgetsParse(_Widgets_str[wNum]->getName(), _data);
