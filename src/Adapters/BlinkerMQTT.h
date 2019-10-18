@@ -635,9 +635,7 @@ void BlinkerMQTT::subscribe()
                         }
                         else
                         {
-                            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
-                                        check is from bridge/share device, \
-                                        data: "), dataGet);
+                            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, check is from bridge/share device, data: "), dataGet);
 
                             _needCheckShare = true;
                         }
@@ -645,9 +643,9 @@ void BlinkerMQTT::subscribe()
                 }
                 // else
                 // {
-                    // dataGet = String((char *)iotSub_MQTT->lastread);
+                    dataGet = String((char *)iotSub_MQTT->lastread);
                     // root.printTo(dataGet);
-                    serializeJson(root, dataGet);
+                    // serializeJson(root, dataGet);
 
                 //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
                 //                         check is from bridge/share device, \

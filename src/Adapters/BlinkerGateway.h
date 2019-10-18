@@ -2442,7 +2442,8 @@ int BlinkerGateway::connectServer() {
     // strcpy(mqtt_broker, _broker.c_str());
     // mqtt_broker = _broker;
 
-    MDNS.end();
+    MDNS.end();    
+    webSocket_PRO.close();
     mDNSInit(MQTT_DEVICEID_PRO);
     this->latestTime = millis();
     // if (!isMQTTinit) 
@@ -2477,15 +2478,17 @@ void BlinkerGateway::mDNSInit(String name)
     MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
     MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", name);
 
-    if (!isWSinit)
-    {
+    // if (!isWSinit)
+    // {
         webSocket_PRO.begin();
         webSocket_PRO.onEvent(webSocketEvent_PRO);
-    }
+    // }
     BLINKER_LOG(BLINKER_F("webSocket_PRO server started"));
     BLINKER_LOG(BLINKER_F("ws://"), name, BLINKER_F(".local:"), WS_SERVERPORT);
 
-    isWSinit = true;
+    // isWSinit = true;
+
+    isApCfg = false;
 }
 
 void BlinkerGateway::checkKA() {
