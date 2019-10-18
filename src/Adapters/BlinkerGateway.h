@@ -2461,6 +2461,10 @@ int BlinkerGateway::connectServer() {
 
 void BlinkerGateway::mDNSInit(String name)
 {
+    delay(1000);
+
+    BLINKER_LOG(BLINKER_F("WiFi.localIP: "), WiFi.localIP());
+
 #if defined(ESP8266)
     if (!MDNS.begin(name.c_str(), WiFi.localIP())) {
 #elif defined(ESP32)
@@ -4450,9 +4454,9 @@ void BlinkerWlan::softAPinit() {
     // BLINKER_LOG(String("URL: http://" + WiFi.softAPIP()));
 
     #if defined(ESP8266)
-    if (!MDNS.begin(softAP_ssid, WiFi.localIP())) {
+    if (!MDNS.begin(softAP_ssid.c_str(), WiFi.localIP())) {
     #elif defined(ESP32)
-    if (!MDNS.begin(softAP_ssid)) {
+    if (!MDNS.begin(softAP_ssid.c_str())) {
     #endif
         while(1) {
             ::delay(100);
