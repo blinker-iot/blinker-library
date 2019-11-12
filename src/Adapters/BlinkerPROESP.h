@@ -439,7 +439,7 @@ int BlinkerPROESP::available()
 
     // BLINKER_LOG("CHECK available");
 
-    delay(2000);
+    delay(1);
 
     webSocket_PRO.loop();
 
@@ -1193,6 +1193,8 @@ void BlinkerPROESP::begin(const char* _key, const char* _type)
     
     BLINKER_LOG_ALL(BLINKER_F("PRO deviceType: "), _type);
 
+    delay(1000);
+    
     mDNSInit();
 }
 
@@ -2186,7 +2188,7 @@ int BlinkerPROESP::connectServer() {
 
 void BlinkerPROESP::mDNSInit(String name)
 {
-    delay(1000);
+    // delay(1000);
 
     BLINKER_LOG(BLINKER_F("WiFi.localIP: "), WiFi.localIP());
 
