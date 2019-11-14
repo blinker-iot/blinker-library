@@ -1197,7 +1197,7 @@ class BlinkerApi : public BlinkerProtocol
                 BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
 
                 #ifndef BLINKER_LAN_DEBUG
-                    String host = BLINKER_F("https://iotdev.clz.me");
+                    String host = BLINKER_F("https://iot.diandeng.tech");
                     const int httpsPort = 443;
                 #elif defined(BLINKER_LAN_DEBUG)
                     String host = BLINKER_F("http://192.168.1.121:9090");
@@ -1702,7 +1702,7 @@ class BlinkerApi : public BlinkerProtocol
                 BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
 
                 #ifndef BLINKER_LAN_DEBUG
-                    String host = BLINKER_F("https://iotdev.clz.me");
+                    String host = BLINKER_F("https://iot.diandeng.tech");
                     const int httpsPort = 443;
                 #elif defined(BLINKER_LAN_DEBUG)
                     String host = BLINKER_F("http://192.168.1.121:9090");
@@ -10115,7 +10115,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         // #if defined(ESP8266)
         //     #ifndef BLINKER_LAN_DEBUG
-        //         String host = BLINKER_F("iotdev.clz.me");
+        //         String host = BLINKER_F("iot.diandeng.tech");
         //     #elif defined(BLINKER_LAN_DEBUG)
         //         String host = BLINKER_F("192.168.1.121");
         //     #endif
@@ -10405,7 +10405,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         //     return _dataGet;
         // #elif defined(ESP32)
             #ifndef BLINKER_LAN_DEBUG
-                String host = BLINKER_F("https://iotdev.clz.me");
+                String host = BLINKER_F("https://iot.diandeng.tech");
             #elif defined(BLINKER_LAN_DEBUG)
                 String host = BLINKER_F("http://192.168.1.121:9090");
             #endif

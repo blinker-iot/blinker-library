@@ -1695,15 +1695,15 @@ int BlinkerGateway::authCheck()
 int BlinkerGateway::connectServer() {
     const int httpsPort = 443;
     #if defined(ESP8266)
-        String host = BLINKER_F("iotdev.clz.me");
+        String host = BLINKER_F("iot.diandeng.tech");
         client_mqtt.stop();
     #elif defined(ESP32)
-        String host = BLINKER_F("https://iotdev.clz.me");
+        String host = BLINKER_F("https://iot.diandeng.tech");
     #endif
     if (!_isAuthKey)
     {
     #if defined(ESP8266)
-        // String host = BLINKER_F("iotdev.clz.me");
+        // String host = BLINKER_F("iot.diandeng.tech");
         String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
         // WiFiClientSecure client_s;
@@ -1892,7 +1892,7 @@ int BlinkerGateway::connectServer() {
         }
 
     #elif defined(ESP32)
-        // String host = BLINKER_F("https://iotdev.clz.me");
+        // String host = BLINKER_F("https://iot.diandeng.tech");
         // const char* ca = \ 
         //     "-----BEGIN CERTIFICATE-----\n" \
         //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
@@ -2461,6 +2461,10 @@ int BlinkerGateway::connectServer() {
 
 void BlinkerGateway::mDNSInit(String name)
 {
+    delay(1000);
+
+    BLINKER_LOG(BLINKER_F("WiFi.localIP: "), WiFi.localIP());
+
 #if defined(ESP8266)
     if (!MDNS.begin(name.c_str(), WiFi.localIP())) {
 #elif defined(ESP32)
@@ -3268,10 +3272,10 @@ bool BlinkerGateway::subRegister(uint32_t num)
 {
     const int httpsPort = 443;
     #if defined(ESP8266)
-        String host = BLINKER_F("iotdev.clz.me");
+        String host = BLINKER_F("iot.diandeng.tech");
         client_mqtt.stop();
     #elif defined(ESP32)
-        String host = BLINKER_F("https://iotdev.clz.me");
+        String host = BLINKER_F("https://iot.diandeng.tech");
     #endif
 
     #if defined(ESP8266)
@@ -3572,7 +3576,7 @@ String BlinkerGateway::blinkerServer(uint8_t _type, const String & msg)
     #endif
 
     #ifndef BLINKER_LAN_DEBUG
-        String host = BLINKER_F("https://iotdev.clz.me");
+        String host = BLINKER_F("https://iot.diandeng.tech");
     #elif defined(BLINKER_LAN_DEBUG)
         String host = BLINKER_F("http://192.168.1.121:9090");
     #endif
@@ -4450,9 +4454,9 @@ void BlinkerWlan::softAPinit() {
     // BLINKER_LOG(String("URL: http://" + WiFi.softAPIP()));
 
     #if defined(ESP8266)
-    if (!MDNS.begin(softAP_ssid, WiFi.localIP())) {
+    if (!MDNS.begin(softAP_ssid.c_str(), WiFi.localIP())) {
     #elif defined(ESP32)
-    if (!MDNS.begin(softAP_ssid)) {
+    if (!MDNS.begin(softAP_ssid.c_str())) {
     #endif
         while(1) {
             ::delay(100);
