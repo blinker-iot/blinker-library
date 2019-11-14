@@ -79,6 +79,7 @@ class BlinkerSerialBLE : public BlinkerApi
                     BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                     return;
                 }
+            #endif
                 else {
                     BApi::begin();
                     SSerialBLE = new SoftwareSerial(ss_rx_pin, ss_tx_pin);
@@ -88,7 +89,6 @@ class BlinkerSerialBLE : public BlinkerApi
                     // this->conn.begin(*SSerialBLE, false);
                     BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 }
-            #endif
         #elif defined(ESP8266)
             if (ss_rx_pin == RX && ss_tx_pin == TX) {
                 BApi::begin();
