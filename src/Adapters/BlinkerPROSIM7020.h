@@ -944,7 +944,7 @@ int BlinkerProSIM7020::authCheck()
 
 int BlinkerProSIM7020::connectServer()
 {
-    String host = BLINKER_F("https://iotdev.clz.me");
+    String host = BLINKER_F("https://iot.diandeng.tech");
     String uri = "";
     uri += BLINKER_F("/api/v1/user/device/register?deviceType=");
     uri += _deviceType;
