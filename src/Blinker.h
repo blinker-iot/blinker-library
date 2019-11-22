@@ -306,7 +306,13 @@
         // #if defined(BLINKER_MQTT)
         //     Blinker.beginMQTT();
         // #endif
-        xTaskCreatePinnedToCore(blinkerLoopTask, "blinkerLoopTask", 4096, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
+        xTaskCreatePinnedToCore(blinkerLoopTask, 
+                                "blinkerLoopTask", 
+                                8192, 
+                                NULL, 
+                                3, 
+                                NULL, 
+                                ARDUINO_RUNNING_CORE);
     }
 
     // #endif
