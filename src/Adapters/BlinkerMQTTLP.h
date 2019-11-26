@@ -82,7 +82,7 @@
 //         int print(char * data, bool needCheck = true);
 //         int bPrint(char * name, const String & data);
 //         int aliPrint(const String & data);
-//         int duerPrint(const String & data);
+//         int  duerPrint(const String & data, bool report = false);
 //         void aliType(const String & type);
 //         void duerType(const String & type);
 //         void begin(const char* auth);
@@ -968,7 +968,7 @@
 //     }
 // }
 
-// int BlinkerMQTTLP::duerPrint(const String & data)
+// int BlinkerMQTTLP::duerPrint(const String & data, bool report)
 // {
 //     if (!checkInit()) return false;
 

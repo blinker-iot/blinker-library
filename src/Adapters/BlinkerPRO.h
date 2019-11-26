@@ -61,7 +61,7 @@ class BlinkerPRO : public BlinkerStream
         int print(char * data, bool needCheck = true);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
-        int duerPrint(const String & data);
+        int  duerPrint(const String & data, bool report = false);
         // void aliType(const String & type);
         void begin(const char* _deviceType);
         int autoPrint(uint32_t id);
@@ -954,7 +954,7 @@ int BlinkerPRO::aliPrint(const String & data)
     }
 }
 
-int BlinkerPRO::duerPrint(const String & data)
+int BlinkerPRO::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"data\":");
 

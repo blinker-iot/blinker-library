@@ -60,7 +60,7 @@ class BlinkerMQTTAUTO : public BlinkerStream
         int print(char * data, bool needCheck = true);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
-        int duerPrint(const String & data);
+        int  duerPrint(const String & data, bool report = false);
         void aliType(const String & type);
         void duerType(const String & type);
         void begin(const char* auth, const char* type);
@@ -913,7 +913,7 @@ int BlinkerMQTTAUTO::aliPrint(const String & data)
     }
 }
 
-int BlinkerMQTTAUTO::duerPrint(const String & data)
+int BlinkerMQTTAUTO::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"data\":");
 

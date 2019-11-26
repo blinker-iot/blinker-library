@@ -203,7 +203,7 @@ class BlinkerGateway : public BlinkerStream
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int subAliPrint(const String & data, const String & subDevice);
-        int duerPrint(const String & data);
+        int  duerPrint(const String & data, bool report = false);
         int subDuerPrint(const String & data, const String & subDevice);
         int miPrint(const String & data);
         int subMiPrint(const String & data, const String & subDevice);
@@ -1254,7 +1254,7 @@ int BlinkerGateway::subAliPrint(const String & data, const String & subDevice)
     }
 }
 
-int BlinkerGateway::duerPrint(const String & data)
+int BlinkerGateway::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"data\":");
 

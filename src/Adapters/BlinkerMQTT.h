@@ -84,7 +84,7 @@ class BlinkerMQTT : public BlinkerStream
         int print(char * data, bool needCheck = true);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
-        int duerPrint(const String & data);
+        int duerPrint(const String & data, bool report = false);
         int miPrint(const String & data);
         void aliType(const String & type);
         void duerType(const String & type);
@@ -1081,13 +1081,23 @@ int BlinkerMQTT::aliPrint(const String & data)
     }
 }
 
-int BlinkerMQTT::duerPrint(const String & data)
+int BlinkerMQTT::duerPrint(const String & data, bool report)
 {
     if (!checkInit()) return false;
 
     String data_add = BLINKER_F("{\"data\":");
 
-    data_add += data;
+    if (report)
+    {
+        data_add += BLINKER_F("{\"report\":");
+        data_add += data;
+        data_add += BLINKER_F("}");
+    }
+    else
+    {
+        data_add += data;
+    }
+
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += MQTT_ID_MQTT;
     data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
@@ -1100,10 +1110,10 @@ int BlinkerMQTT::duerPrint(const String & data)
 
     if (mqtt_MQTT->connected())
     {
-        if (!checkDuerKA())
-        {
-            return false;
-        }
+        // if (!checkDuerKA())
+        // {
+        //     return false;
+        // }
 
         if (!checkDuerPrintSpan())
         {

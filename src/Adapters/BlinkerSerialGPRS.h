@@ -65,7 +65,7 @@ class BlinkerSerialGPRS : public BlinkerStream
         // int aliPrint(const String & s);
         // int duerPrint(const String & s);
         // int aliPrint(const String & data);
-        // int duerPrint(const String & data);
+        // int  duerPrint(const String & data, bool report = false);
         void begin(const char* _deviceType, String _imei);
         void initStream(Stream& s, bool state, blinker_callback_t func);
         char * deviceName();

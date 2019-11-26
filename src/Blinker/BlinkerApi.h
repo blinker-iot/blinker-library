@@ -447,7 +447,7 @@ class BlinkerApi : public BlinkerProtocol
 
             #if !defined(BLINKER_LOWPOWER_AIR202)
             void aligeniePrint(String & _msg);
-            void duerPrint(String & _msg);
+            void duerPrint(String & _msg, bool report = false);
             void miotPrint(String & _msg);
             #endif
 
@@ -598,7 +598,7 @@ class BlinkerApi : public BlinkerProtocol
             void reset();
 
             void aligeniePrint(String & _msg);
-            void duerPrint(String & _msg);
+            void duerPrint(String & _msg, bool report = false);
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
             void miotPrint(String & _msg);
@@ -6689,7 +6689,7 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
-    void BlinkerApi::duerPrint(String & _msg)
+    void BlinkerApi::duerPrint(String & _msg, bool report)
     {
         BLINKER_LOG_ALL(BLINKER_F("response to DuerOS: "), _msg);
 
@@ -6700,7 +6700,7 @@ float BlinkerApi::gps(b_gps_t axis)
             // char* aliData = (char*)malloc((_msg.length()+1+128)*sizeof(char));
             // memcpy(aliData, '\0', _msg.length()+128);
             // strcpy(aliData, _msg.c_str());
-            BProto::duerPrint(_msg);
+            BProto::duerPrint(_msg, report);
             // free(aliData);
         }
         else
@@ -11132,7 +11132,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = root[BLINKER_CMD_GET];
 
-            if (value == BLINKER_CMD_AQI) {
+            if (value == BLINKER_CMD_POWERSTATE) {
+                if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+            }
+            else if (value == BLINKER_CMD_AQI) {
                 if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_AQI_NUMBER);
             }
             else if (value == BLINKER_CMD_PM25) {
@@ -12887,7 +12890,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
     }
 
-    void BlinkerApi::duerPrint(String & _msg)
+    void BlinkerApi::duerPrint(String & _msg, bool report)
     {
         BLINKER_LOG_ALL(BLINKER_F("response to DuerOS: "), _msg);
 

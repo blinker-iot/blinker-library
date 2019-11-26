@@ -662,6 +662,171 @@ class BLINKERDUEROS
             Blinker.duerPrint(duerData);
         }
 
+        void report()
+        {
+            if (_fresh == 0) return;
+            
+            String duerData;
+            bool isCheck = false;
+
+            if (_fresh >> 0 & 0x01) {
+                if (duerData.length()) duerData += BLINKER_F(",");
+                else duerData += BLINKER_F("{");
+                
+                duerData += aState;
+
+                isCheck = true;
+                
+                free(aState);
+            }
+
+            if (_fresh >> 1 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                
+                    duerData += aColor;
+                    
+                    isCheck = true;
+                }
+                
+                free(aColor);
+            }
+
+            if (_fresh >> 2 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aMode;
+                    
+                    isCheck = true;
+                }
+                
+                free(aMode);
+            }
+
+            if (_fresh >> 3 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aBright;
+                    
+                    isCheck = true;
+                }
+                
+                free(aBright);
+            }
+
+            if (_fresh >> 4 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aTemp;
+                    
+                    isCheck = true;
+                }
+                
+                free(aTemp);
+            }
+
+            if (_fresh >> 5 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aHumi;
+                    
+                    isCheck = true;
+                }
+                
+                free(aHumi);
+            }
+
+            if (_fresh >> 6 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aPm25;
+                    
+                    isCheck = true;
+                }
+                
+                free(aPm25);
+            }
+
+            if (_fresh >> 7 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aPm10;
+                    
+                    isCheck = true;
+                }
+                
+                free(aPm10);
+            }
+
+            if (_fresh >> 8 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aCO2;
+                    
+                    isCheck = true;
+                }
+                
+                free(aCO2);
+            }
+
+            if (_fresh >> 9 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aAQI;
+                    
+                    isCheck = true;
+                }
+                
+                free(aAQI);
+            }
+
+            if (_fresh >> 10 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aTIME;
+                    
+                    isCheck = true;
+                }
+                
+                free(aTIME);
+            }
+
+            duerData += BLINKER_F("}");
+
+            _fresh = 0;
+
+            Blinker.duerPrint(duerData, true);
+        }
+
     private :
         char * aState;
         char * aColor;

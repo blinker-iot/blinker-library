@@ -39,7 +39,7 @@ class BlinkerStream
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE)
                 virtual int aliPrint(const String & data) = 0;
-                virtual int duerPrint(const String & data) = 0;
+                virtual int duerPrint(const String & data, bool report = false) = 0;
                 #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
                 virtual int miPrint(const String & data) = 0;

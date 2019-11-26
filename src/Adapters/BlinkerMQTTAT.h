@@ -64,7 +64,7 @@ class BlinkerMQTTAT : public BlinkerStream
         int mqttPrint(const String & data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
-        int duerPrint(const String & data);
+        int  duerPrint(const String & data, bool report = false);
         int miPrint(const String & data);
         // void aliType(const String & type);
         void begin(const char* auth);
@@ -1290,7 +1290,7 @@ int BlinkerMQTTAT::aliPrint(const String & data)
     }
 }
 
-int BlinkerMQTTAT::duerPrint(const String & data)
+int BlinkerMQTTAT::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"data\":");
 
