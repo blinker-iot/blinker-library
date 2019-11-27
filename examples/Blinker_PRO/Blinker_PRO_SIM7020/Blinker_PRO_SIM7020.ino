@@ -58,6 +58,8 @@
 // #define BLINKER_BUTTON
 // #define BLINKER_BUTTON_PIN D7
 
+#define BLINKER_OTA_VERSION_CODE "0.1.1"
+
 #include <Blinker.h>
 
 /* 

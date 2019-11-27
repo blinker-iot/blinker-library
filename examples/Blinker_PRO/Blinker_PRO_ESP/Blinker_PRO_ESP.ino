@@ -43,17 +43,6 @@
  * 
  * *****************************************************************/
 
-/* 
- * BLINKER_PRO is use for professional device
- * 
- * Please make sure you have permission to modify professional device!
- * Please read usermanual first! Thanks!
- * https://doc.blinker.app/
- * 
- * Written by i3water for blinker.
- * Learn more:https://blinker.app/
- */
-
 #define BLINKER_PRO_ESP
 #define BLINKER_BUTTON
 #if defined(ESP32)
@@ -61,6 +50,8 @@
 #else
     #define BLINKER_BUTTON_PIN D7
 #endif
+
+#define BLINKER_OTA_VERSION_CODE "0.1.1"
 
 #include <Blinker.h>
 

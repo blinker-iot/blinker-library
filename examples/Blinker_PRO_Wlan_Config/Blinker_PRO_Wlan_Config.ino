@@ -63,6 +63,8 @@
     #define BLINKER_BUTTON_PIN D7
 #endif
 
+#define BLINKER_OTA_VERSION_CODE "0.1.1"
+
 #include <Blinker.h>
 
 char type[] = "Your Device Type";

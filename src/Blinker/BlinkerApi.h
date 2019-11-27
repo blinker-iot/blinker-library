@@ -7162,7 +7162,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             if (state == BLINKER_CMD_VERSION)
             {
-                print(BLINKER_CMD_VERSION, "0.1.0");
+                print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
                 BLINKER_LOG_ALL(BLINKER_F("getVersion isParsed"));
                 _fresh = true;
             }
