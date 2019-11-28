@@ -1197,7 +1197,7 @@ class BlinkerApi : public BlinkerProtocol
                 BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
 
                 #ifndef BLINKER_LAN_DEBUG
-                    String host = BLINKER_F("https://iot.diandeng.tech");
+                    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
                     const int httpsPort = 443;
                 #elif defined(BLINKER_LAN_DEBUG)
                     String host = BLINKER_F("http://192.168.1.121:9090");
@@ -1702,7 +1702,7 @@ class BlinkerApi : public BlinkerProtocol
                 BLINKER_LOG_ALL(BLINKER_F("message: "), msg);
 
                 #ifndef BLINKER_LAN_DEBUG
-                    String host = BLINKER_F("https://iot.diandeng.tech");
+                    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
                     const int httpsPort = 443;
                 #elif defined(BLINKER_LAN_DEBUG)
                     String host = BLINKER_F("http://192.168.1.121:9090");
@@ -7162,7 +7162,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             if (state == BLINKER_CMD_VERSION)
             {
-                print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
+                print(BLINKER_CMD_VERSION, "0.1.0");
                 BLINKER_LOG_ALL(BLINKER_F("getVersion isParsed"));
                 _fresh = true;
             }
@@ -10115,7 +10115,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
         // #if defined(ESP8266)
         //     #ifndef BLINKER_LAN_DEBUG
-        //         String host = BLINKER_F("iot.diandeng.tech");
+        //         String host = BLINKER_F(BLINKER_SERVER_HOST);
         //     #elif defined(BLINKER_LAN_DEBUG)
         //         String host = BLINKER_F("192.168.1.121");
         //     #endif
@@ -10405,7 +10405,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         //     return _dataGet;
         // #elif defined(ESP32)
             #ifndef BLINKER_LAN_DEBUG
-                String host = BLINKER_F("https://iot.diandeng.tech");
+                String host = BLINKER_F(BLINKER_SERVER_HTTPS);
             #elif defined(BLINKER_LAN_DEBUG)
                 String host = BLINKER_F("http://192.168.1.121:9090");
             #endif

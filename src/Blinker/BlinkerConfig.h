@@ -3,6 +3,7 @@
 
 // #include "Blinker/BlinkerDebug.h"
 // #include "Blinker/BlinkerUtility.h"
+#include "../Server/BlinkerServer.h"
 
 #define BLINKER_VERSION                 "0.3.3"
 

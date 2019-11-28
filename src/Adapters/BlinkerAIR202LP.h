@@ -79,7 +79,7 @@ int BlinkerAIR202LP::print(char * data, bool needCheck)
     msg += data;
     msg += BLINKER_F("}");
 
-    String host = BLINKER_F("https://iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     String url_iot = BLINKER_F("/api/v1/user/device/lowpower/data");
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + url_iot);
@@ -139,7 +139,7 @@ int BlinkerAIR202LP::print(char * data, bool needCheck)
 
 void BlinkerAIR202LP::dataGet()
 {
-    String host = BLINKER_F("https://iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     String uri = "";
     uri += BLINKER_F("/api/v1/user/device/lowpower/data?deviceName=");
     uri += _deviceName;
@@ -232,7 +232,7 @@ void BlinkerAIR202LP::initStream(Stream& s, bool state, blinker_callback_t func)
 
 int BlinkerAIR202LP::connectServer()
 {
-    String host = BLINKER_F("https://iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     String uri = "";
     if (!_isAuthKey)
     {

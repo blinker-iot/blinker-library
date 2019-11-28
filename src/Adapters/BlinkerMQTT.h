@@ -1507,7 +1507,7 @@ void BlinkerMQTT::sharers(const String & data)
 int BlinkerMQTT::connectServer() {
     const int httpsPort = 443;
 #if defined(ESP8266)
-    String host = BLINKER_F("iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HOST);
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
  // WiFiClientSecure client_s;
@@ -1680,7 +1680,7 @@ int BlinkerMQTT::connectServer() {
     }
 
 #elif defined(ESP32)
-    String host = BLINKER_F("https://iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     // const char* ca =
     //     "-----BEGIN CERTIFICATE-----\n"
     //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n"

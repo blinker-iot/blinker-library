@@ -942,7 +942,7 @@ void BlinkerSerialAIR202::sharers(const String & data)
 
 int BlinkerSerialAIR202::connectServer()
 {
-    String host = BLINKER_F("https://iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     String uri = "";
     // uri += BLINKER_F("/api/v1/user/device/register?deviceType=");
     // uri += _deviceType;
