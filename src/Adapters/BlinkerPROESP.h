@@ -1577,6 +1577,43 @@ int BlinkerPROESP::connectServer() {
             url_iot += _vipKey;
             url_iot += BLINKER_F("&deviceName=");
             url_iot += macDeviceName();
+            
+
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            url_iot += BLINKER_F("&aliType=light");
+        #elif defined(BLINKER_ALIGENIE_OUTLET)
+            url_iot += BLINKER_F("&aliType=outlet");
+        #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            url_iot += BLINKER_F("&aliType=multi_outlet");
+        #elif defined(BLINKER_ALIGENIE_SENSOR)
+            url_iot += BLINKER_F("&aliType=sensor");
+        #elif defined(BLINKER_ALIGENIE_TYPE)
+            url_iot += BLINKER_ALIGENIE_TYPE;
+        #endif
+
+        #if defined(BLINKER_DUEROS_LIGHT)
+            url_iot += BLINKER_F("&duerType=LIGHT");
+        #elif defined(BLINKER_DUEROS_OUTLET)
+            url_iot += BLINKER_F("&duerType=SOCKET");
+        #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+            url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
+        #elif defined(BLINKER_DUEROS_SENSOR)
+            url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+        #elif defined(BLINKER_DUEROS_TYPE)
+            url_iot += BLINKER_DUEROS_TYPE;
+        #endif
+
+        #if defined(BLINKER_MIOT_LIGHT)
+            url_iot += BLINKER_F("&miType=light");
+        #elif defined(BLINKER_MIOT_OUTLET)
+            url_iot += BLINKER_F("&miType=outlet");
+        #elif defined(BLINKER_MIOT_MULTI_OUTLET)
+            url_iot += BLINKER_F("&miType=multi_outlet");
+        #elif defined(BLINKER_MIOT_SENSOR)
+            url_iot += BLINKER_F("&miType=sensor");
+        #elif defined(BLINKER_MIOT_TYPE)
+            url_iot += BLINKER_MIOT_TYPE;
+        #endif
 
         url_iot = "https://" + host + url_iot;
 
@@ -1655,6 +1692,42 @@ int BlinkerPROESP::connectServer() {
         url_iot += _vipKey;
         url_iot += BLINKER_F("&deviceName=");
         url_iot += macDeviceName();
+
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            url_iot += BLINKER_F("&aliType=light");
+        #elif defined(BLINKER_ALIGENIE_OUTLET)
+            url_iot += BLINKER_F("&aliType=outlet");
+        #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            url_iot += BLINKER_F("&aliType=multi_outlet");
+        #elif defined(BLINKER_ALIGENIE_SENSOR)
+            url_iot += BLINKER_F("&aliType=sensor");
+        #elif defined(BLINKER_ALIGENIE_TYPE)
+            url_iot += BLINKER_ALIGENIE_TYPE;
+        #endif
+
+        #if defined(BLINKER_DUEROS_LIGHT)
+            url_iot += BLINKER_F("&duerType=LIGHT");
+        #elif defined(BLINKER_DUEROS_OUTLET)
+            url_iot += BLINKER_F("&duerType=SOCKET");
+        #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+            url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
+        #elif defined(BLINKER_DUEROS_SENSOR)
+            url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+        #elif defined(BLINKER_DUEROS_TYPE)
+            url_iot += BLINKER_DUEROS_TYPE;
+        #endif
+
+        #if defined(BLINKER_MIOT_LIGHT)
+            url_iot += BLINKER_F("&miType=light");
+        #elif defined(BLINKER_MIOT_OUTLET)
+            url_iot += BLINKER_F("&miType=outlet");
+        #elif defined(BLINKER_MIOT_MULTI_OUTLET)
+            url_iot += BLINKER_F("&miType=multi_outlet");
+        #elif defined(BLINKER_MIOT_SENSOR)
+            url_iot += BLINKER_F("&miType=sensor");
+        #elif defined(BLINKER_MIOT_TYPE)
+            url_iot += BLINKER_MIOT_TYPE;
+        #endif
 
     // #if defined(BLINKER_ALIGENIE_LIGHT)
     //     url_iot += BLINKER_F("&aliType=light");
