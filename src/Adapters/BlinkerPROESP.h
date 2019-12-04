@@ -71,7 +71,7 @@ class BlinkerPROESP : public BlinkerStream
         int print(char * data, bool needCheck = true);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
-        int duerPrint(const String & data);
+        int duerPrint(const String & data, bool report = false);
         int miPrint(const String & data);
         // void aliType(const String & type);
         void begin(const char* _key, const char* _type);
@@ -1063,7 +1063,7 @@ int BlinkerPROESP::aliPrint(const String & data)
     }
 }
 
-int BlinkerPROESP::duerPrint(const String & data)
+int BlinkerPROESP::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"data\":");
 
@@ -1418,15 +1418,15 @@ int BlinkerPROESP::authCheck()
 int BlinkerPROESP::connectServer() {
     const int httpsPort = 443;
     #if defined(ESP8266)
-        String host = BLINKER_F("iot.diandeng.tech");
+        String host = BLINKER_F(BLINKER_SERVER_HOST);
         client_mqtt.stop();
     #elif defined(ESP32)
-        String host = BLINKER_F("https://iot.diandeng.tech");
+        String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     #endif
     if (!_isAuthKey)
     {
     #if defined(ESP8266)
-        // String host = BLINKER_F("iot.diandeng.tech");
+        // String host = BLINKER_F(BLINKER_SERVER_HOST);
         String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
         // WiFiClientSecure client_s;
@@ -1577,6 +1577,43 @@ int BlinkerPROESP::connectServer() {
             url_iot += _vipKey;
             url_iot += BLINKER_F("&deviceName=");
             url_iot += macDeviceName();
+            
+
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            url_iot += BLINKER_F("&aliType=light");
+        #elif defined(BLINKER_ALIGENIE_OUTLET)
+            url_iot += BLINKER_F("&aliType=outlet");
+        #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            url_iot += BLINKER_F("&aliType=multi_outlet");
+        #elif defined(BLINKER_ALIGENIE_SENSOR)
+            url_iot += BLINKER_F("&aliType=sensor");
+        #elif defined(BLINKER_ALIGENIE_TYPE)
+            url_iot += BLINKER_ALIGENIE_TYPE;
+        #endif
+
+        #if defined(BLINKER_DUEROS_LIGHT)
+            url_iot += BLINKER_F("&duerType=LIGHT");
+        #elif defined(BLINKER_DUEROS_OUTLET)
+            url_iot += BLINKER_F("&duerType=SOCKET");
+        #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+            url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
+        #elif defined(BLINKER_DUEROS_SENSOR)
+            url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+        #elif defined(BLINKER_DUEROS_TYPE)
+            url_iot += BLINKER_DUEROS_TYPE;
+        #endif
+
+        #if defined(BLINKER_MIOT_LIGHT)
+            url_iot += BLINKER_F("&miType=light");
+        #elif defined(BLINKER_MIOT_OUTLET)
+            url_iot += BLINKER_F("&miType=outlet");
+        #elif defined(BLINKER_MIOT_MULTI_OUTLET)
+            url_iot += BLINKER_F("&miType=multi_outlet");
+        #elif defined(BLINKER_MIOT_SENSOR)
+            url_iot += BLINKER_F("&miType=sensor");
+        #elif defined(BLINKER_MIOT_TYPE)
+            url_iot += BLINKER_MIOT_TYPE;
+        #endif
 
         url_iot = "https://" + host + url_iot;
 
@@ -1615,7 +1652,7 @@ int BlinkerPROESP::connectServer() {
         }
 
     #elif defined(ESP32)
-        // String host = BLINKER_F("https://iot.diandeng.tech");
+        // String host = BLINKER_F(BLINKER_SERVER_HTTPS);
         // const char* ca = \ 
         //     "-----BEGIN CERTIFICATE-----\n" \
         //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
@@ -1655,6 +1692,42 @@ int BlinkerPROESP::connectServer() {
         url_iot += _vipKey;
         url_iot += BLINKER_F("&deviceName=");
         url_iot += macDeviceName();
+
+        #if defined(BLINKER_ALIGENIE_LIGHT)
+            url_iot += BLINKER_F("&aliType=light");
+        #elif defined(BLINKER_ALIGENIE_OUTLET)
+            url_iot += BLINKER_F("&aliType=outlet");
+        #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+            url_iot += BLINKER_F("&aliType=multi_outlet");
+        #elif defined(BLINKER_ALIGENIE_SENSOR)
+            url_iot += BLINKER_F("&aliType=sensor");
+        #elif defined(BLINKER_ALIGENIE_TYPE)
+            url_iot += BLINKER_ALIGENIE_TYPE;
+        #endif
+
+        #if defined(BLINKER_DUEROS_LIGHT)
+            url_iot += BLINKER_F("&duerType=LIGHT");
+        #elif defined(BLINKER_DUEROS_OUTLET)
+            url_iot += BLINKER_F("&duerType=SOCKET");
+        #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+            url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
+        #elif defined(BLINKER_DUEROS_SENSOR)
+            url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+        #elif defined(BLINKER_DUEROS_TYPE)
+            url_iot += BLINKER_DUEROS_TYPE;
+        #endif
+
+        #if defined(BLINKER_MIOT_LIGHT)
+            url_iot += BLINKER_F("&miType=light");
+        #elif defined(BLINKER_MIOT_OUTLET)
+            url_iot += BLINKER_F("&miType=outlet");
+        #elif defined(BLINKER_MIOT_MULTI_OUTLET)
+            url_iot += BLINKER_F("&miType=multi_outlet");
+        #elif defined(BLINKER_MIOT_SENSOR)
+            url_iot += BLINKER_F("&miType=sensor");
+        #elif defined(BLINKER_MIOT_TYPE)
+            url_iot += BLINKER_MIOT_TYPE;
+        #endif
 
     // #if defined(BLINKER_ALIGENIE_LIGHT)
     //     url_iot += BLINKER_F("&aliType=light");

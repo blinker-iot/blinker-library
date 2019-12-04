@@ -64,7 +64,7 @@ class BlinkerMQTTAT : public BlinkerStream
         int mqttPrint(const String & data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
-        int duerPrint(const String & data);
+        int  duerPrint(const String & data, bool report = false);
         int miPrint(const String & data);
         // void aliType(const String & type);
         void begin(const char* auth);
@@ -1290,7 +1290,7 @@ int BlinkerMQTTAT::aliPrint(const String & data)
     }
 }
 
-int BlinkerMQTTAT::duerPrint(const String & data)
+int BlinkerMQTTAT::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"data\":");
 
@@ -1902,7 +1902,7 @@ void BlinkerMQTTAT::smartconfig()
 int BlinkerMQTTAT::connectServer() {
     const int httpsPort = 443;
 #if defined(ESP8266)
-    String host = BLINKER_F("iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HOST);
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
     // BearSSL::WiFiClientSecure *client_s;
@@ -2105,7 +2105,7 @@ int BlinkerMQTTAT::connectServer() {
     }
 
 #elif defined(ESP32)
-    String host = BLINKER_F("https://iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     // const char* ca = 
     //     "-----BEGIN CERTIFICATE-----\n" 
     //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" 

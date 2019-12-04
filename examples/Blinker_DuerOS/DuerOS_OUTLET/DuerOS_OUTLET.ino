@@ -52,7 +52,42 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
+#define BUTTON_1 "ButtonKey"
+
+BlinkerButton Button1(BUTTON_1);
+
 bool oState = false;
+
+void button1_callback(const String & state)
+{
+    BLINKER_LOG("get button state: ", state);
+
+    if (state == BLINKER_CMD_ON) {
+        BLINKER_LOG("Toggle on!");
+
+        Button1.icon("icon_1");
+        Button1.color("#FFFFFF");
+        Button1.text("Your button name or describe");
+        Button1.print("on");
+
+        oState = true;
+    }
+    else if (state == BLINKER_CMD_OFF) {
+        BLINKER_LOG("Toggle off!");
+
+        Button1.icon("icon_1");
+        Button1.color("#FFFFFF");
+        Button1.text("Your button name or describe");
+        Button1.print("off");
+
+        oState = false;
+    }
+
+    BlinkerDuerOS.powerState(oState ? "on" : "off");
+    BlinkerDuerOS.report();
+    
+    digitalWrite(LED_BUILTIN, oState);
+}
 
 void duerPowerState(const String & state)
 {
@@ -82,13 +117,18 @@ void duerQuery(int32_t queryCode)
 
     switch (queryCode)
     {
+        case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :        
+            BLINKER_LOG("DuerOS Query power state");
+            BlinkerDuerOS.powerState(oState ? "on" : "off");
+            BlinkerDuerOS.print();
+            break;
         case BLINKER_CMD_QUERY_TIME_NUMBER :
             BLINKER_LOG("DuerOS Query time");
             BlinkerDuerOS.time(millis());
             BlinkerDuerOS.print();
             break;
         default :
-            BlinkerDuerOS.time(millis());
+            BlinkerDuerOS.powerState(oState ? "on" : "off");
             BlinkerDuerOS.print();
             break;
     }
@@ -98,17 +138,21 @@ void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
 
-    Blinker.vibrate();
+    // Blinker.vibrate();
     
-    uint32_t BlinkerTime = millis();
+    // uint32_t BlinkerTime = millis();
     
-    Blinker.print("millis", BlinkerTime);
+    // Blinker.print("millis", BlinkerTime);
+
+    BlinkerDuerOS.powerState("off");
+    BlinkerDuerOS.report();
 }
 
 void setup()
 {
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
+    BLINKER_DEBUG.debugAll();
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);

@@ -253,7 +253,7 @@ class BlinkerSubDevice : public BlinkerStream
         int print(char * data, bool needCheck = true);
         int bPrint(char * name, const String & data) { return false; }
         int aliPrint(const String & data);
-        int duerPrint(const String & data);
+        int  duerPrint(const String & data, bool report = false);
         int miPrint(const String & data);
         void begin(const char* _key, const char* _type);
         int autoPrint(uint32_t id);
@@ -603,7 +603,7 @@ int BlinkerSubDevice::aliPrint(const String & data)
     }
 }
 
-int BlinkerSubDevice::duerPrint(const String & data)
+int BlinkerSubDevice::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"ctrl\":{\"duer\":");
 

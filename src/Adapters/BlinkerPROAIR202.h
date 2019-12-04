@@ -57,7 +57,7 @@ class BlinkerProAIR202 : public BlinkerStream
         int print(char * data, bool needCheck = true);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
-        int duerPrint(const String & data);
+        int  duerPrint(const String & data, bool report = false);
         // void aliType(const String & type);
         // void duerType(const String & type);
         void begin(const char* _deviceType, String _imei);
@@ -717,7 +717,7 @@ int BlinkerProAIR202::aliPrint(const String & data)
     }
 }
 
-int BlinkerProAIR202::duerPrint(const String & data)
+int BlinkerProAIR202::duerPrint(const String & data, bool report)
 {
     if (!isMQTTinit) return false;
 
@@ -971,7 +971,7 @@ int BlinkerProAIR202::authCheck()
 
 int BlinkerProAIR202::connectServer()
 {
-    String host = BLINKER_F("https://iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     String uri = "";
     uri += BLINKER_F("/api/v1/user/device/register?deviceType=");
     uri += _deviceType;

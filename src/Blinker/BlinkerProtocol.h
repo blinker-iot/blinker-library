@@ -74,7 +74,7 @@ class BlinkerProtocol
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
-            int duerPrint(const String & data)  { return isInit ? conn->duerPrint(data) : false; }
+            int duerPrint(const String & data, bool report = false)  { return isInit ? conn->duerPrint(data, report) : false; }
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
             int miPrint(const String & data)  { return isInit ? conn->miPrint(data) : false; }

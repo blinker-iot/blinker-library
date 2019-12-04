@@ -203,7 +203,7 @@ class BlinkerGateway : public BlinkerStream
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int subAliPrint(const String & data, const String & subDevice);
-        int duerPrint(const String & data);
+        int  duerPrint(const String & data, bool report = false);
         int subDuerPrint(const String & data, const String & subDevice);
         int miPrint(const String & data);
         int subMiPrint(const String & data, const String & subDevice);
@@ -1254,7 +1254,7 @@ int BlinkerGateway::subAliPrint(const String & data, const String & subDevice)
     }
 }
 
-int BlinkerGateway::duerPrint(const String & data)
+int BlinkerGateway::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"data\":");
 
@@ -1695,15 +1695,15 @@ int BlinkerGateway::authCheck()
 int BlinkerGateway::connectServer() {
     const int httpsPort = 443;
     #if defined(ESP8266)
-        String host = BLINKER_F("iot.diandeng.tech");
+        String host = BLINKER_F(BLINKER_SERVER_HOST);
         client_mqtt.stop();
     #elif defined(ESP32)
-        String host = BLINKER_F("https://iot.diandeng.tech");
+        String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     #endif
     if (!_isAuthKey)
     {
     #if defined(ESP8266)
-        // String host = BLINKER_F("iot.diandeng.tech");
+        // String host = BLINKER_F(BLINKER_SERVER_HOST);
         String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
         // WiFiClientSecure client_s;
@@ -1892,7 +1892,7 @@ int BlinkerGateway::connectServer() {
         }
 
     #elif defined(ESP32)
-        // String host = BLINKER_F("https://iot.diandeng.tech");
+        // String host = BLINKER_F(BLINKER_SERVER_HTTPS);
         // const char* ca = \ 
         //     "-----BEGIN CERTIFICATE-----\n" \
         //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
@@ -3272,10 +3272,10 @@ bool BlinkerGateway::subRegister(uint32_t num)
 {
     const int httpsPort = 443;
     #if defined(ESP8266)
-        String host = BLINKER_F("iot.diandeng.tech");
+        String host = BLINKER_F(BLINKER_SERVER_HOST);
         client_mqtt.stop();
     #elif defined(ESP32)
-        String host = BLINKER_F("https://iot.diandeng.tech");
+        String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     #endif
 
     #if defined(ESP8266)
@@ -3576,7 +3576,7 @@ String BlinkerGateway::blinkerServer(uint8_t _type, const String & msg)
     #endif
 
     #ifndef BLINKER_LAN_DEBUG
-        String host = BLINKER_F("https://iot.diandeng.tech");
+        String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     #elif defined(BLINKER_LAN_DEBUG)
         String host = BLINKER_F("http://192.168.1.121:9090");
     #endif

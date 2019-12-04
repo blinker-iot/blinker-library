@@ -61,7 +61,7 @@ class BlinkerPRO : public BlinkerStream
         int print(char * data, bool needCheck = true);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
-        int duerPrint(const String & data);
+        int  duerPrint(const String & data, bool report = false);
         // void aliType(const String & type);
         void begin(const char* _deviceType);
         int autoPrint(uint32_t id);
@@ -954,7 +954,7 @@ int BlinkerPRO::aliPrint(const String & data)
     }
 }
 
-int BlinkerPRO::duerPrint(const String & data)
+int BlinkerPRO::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"data\":");
 
@@ -1250,7 +1250,7 @@ int BlinkerPRO::authCheck()
 int BlinkerPRO::connectServer() {
     const int httpsPort = 443;
 #if defined(ESP8266)
-    String host = BLINKER_F("iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HOST);
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
     // WiFiClientSecure client_s;
@@ -1462,7 +1462,7 @@ int BlinkerPRO::connectServer() {
     }
 
 #elif defined(ESP32)
-    String host = BLINKER_F("https://iot.diandeng.tech");
+    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
     // const char* ca = \ 
     //     "-----BEGIN CERTIFICATE-----\n" \
     //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n" \
