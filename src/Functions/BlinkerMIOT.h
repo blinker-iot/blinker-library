@@ -68,20 +68,20 @@ class BLINKERMIOT
         {
             String payload = BLINKER_F("\"");
             payload += STRING_format(BLINKER_CMD_POWERSTATE);
-            payload += BLINKER_F("\":\"");
+            payload += BLINKER_F("\":");
 
             if (state == "on")
             {
-                payload += "True";
+                payload += "true";
             }
             else
             {
-                payload += "False";
+                payload += "false";
             }
             
             if (num != 0)
             {
-                payload += BLINKER_F("\",\"num\":");
+                payload += BLINKER_F(",\"num\":");
                 payload += STRING_format(num);
             }
             else
@@ -105,18 +105,18 @@ class BLINKERMIOT
         {
             String payload = BLINKER_F("\"");
             payload += STRING_format(BLINKER_CMD_POWERSTATE);
-            payload += BLINKER_F("\":\"");
+            payload += BLINKER_F("\":");
 
             if (state == "on")
             {
-                payload += "True";
+                payload += "true";
             }
             else
             {
-                payload += "False";
+                payload += "false";
             }
             
-            payload += BLINKER_F("\"");
+            // payload += BLINKER_F("\"");
 
             // Blinker.aligeniePrint(payload);
 
