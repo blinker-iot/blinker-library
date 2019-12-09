@@ -36,7 +36,7 @@ class BlinkerSerialMQTT : public BlinkerStream
         char * lastRead() { return isFresh ? streamData : NULL; }
         void flush();
         int aliPrint(const String & s);
-        int duerPrint(const String & s);
+        int duerPrint(const String & s, bool report = false);
         int miPrint(const String & s);
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
@@ -171,7 +171,7 @@ int BlinkerSerialMQTT::aliPrint(const String & s)
     }
 }
 
-int BlinkerSerialMQTT::duerPrint(const String & s)
+int BlinkerSerialMQTT::duerPrint(const String & s, bool report)
 {
     if (!checkPrintSpan()) {
         respTime = millis();
