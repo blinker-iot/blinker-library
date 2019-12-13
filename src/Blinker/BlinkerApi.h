@@ -11001,6 +11001,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = root[BLINKER_CMD_GET];
 
+            if ((_AliGenieQueryFunc || _AliGenieQueryFunc_m) != 0)
+            {
+                BLINKER_ERR_LOG("No query function set!");
+            }
+
             if (value == BLINKER_CMD_STATE){
                 uint8_t setNum = root[BLINKER_CMD_NUM];
                 if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
@@ -11132,6 +11137,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = root[BLINKER_CMD_GET];
 
+            if ((_DuerOSQueryFunc || _DuerOSQueryFunc_m) != 0)
+            {
+                BLINKER_ERR_LOG("No query function set!");
+            }
+
             if (value == BLINKER_CMD_POWERSTATE) {
                 if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
             }
@@ -11257,6 +11267,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         if (root.containsKey(BLINKER_CMD_GET))
         {
             String value = root[BLINKER_CMD_GET];
+
+            if ((_MIOTQueryFunc || _MIOTQueryFunc_m) != 0)
+            {
+                BLINKER_ERR_LOG("No query function set!");
+            }
 
             if (value == BLINKER_CMD_STATE){
                 uint8_t setNum = root[BLINKER_CMD_NUM];
@@ -11386,6 +11401,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             String value = "";
             if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
             {
+                if ((_AliGenieQueryFunc || _AliGenieQueryFunc_m) != 0)
+                {
+                    BLINKER_ERR_LOG("No query function set!");
+                }
+
                 if (value == BLINKER_CMD_STATE) {
                     if (_AliGenieQueryFunc) _AliGenieQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
                 }
@@ -11477,6 +11497,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             String value = "";
             if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
             {
+                if ((_DuerOSQueryFunc || _DuerOSQueryFunc_m) != 0)
+                {
+                    BLINKER_ERR_LOG("No query function set!");
+                }
+
                 if (value == BLINKER_CMD_STATE) {
                     if (_DuerOSQueryFunc) _DuerOSQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
                 }
@@ -11561,6 +11586,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             String value = "";
             if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
             {
+                if ((_MIOTQueryFunc || _MIOTQueryFunc_m) != 0)
+                {
+                    BLINKER_ERR_LOG("No query function set!");
+                }
+
                 if (value == BLINKER_CMD_STATE) {
                     if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
                 }
