@@ -11001,9 +11001,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = root[BLINKER_CMD_GET];
 
-            if ((_AliGenieQueryFunc || _AliGenieQueryFunc_m) != 0)
+            bool query_set = false;
+
+            if(_AliGenieQueryFunc) query_set = true;
+            if(_AliGenieQueryFunc_m) query_set = true;
+
+            if (!query_set)
             {
-                BLINKER_ERR_LOG("No query function set!");
+                BLINKER_ERR_LOG("None query function set!");
             }
 
             if (value == BLINKER_CMD_STATE){
@@ -11137,9 +11142,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = root[BLINKER_CMD_GET];
 
-            if ((_DuerOSQueryFunc || _DuerOSQueryFunc_m) != 0)
+            bool query_set = false;
+
+            if(_DuerOSQueryFunc) query_set = true;
+            if(_DuerOSQueryFunc_m) query_set = true;
+
+            if (!query_set)
             {
-                BLINKER_ERR_LOG("No query function set!");
+                BLINKER_ERR_LOG("None query function set!");
             }
 
             if (value == BLINKER_CMD_POWERSTATE) {
@@ -11268,9 +11278,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             String value = root[BLINKER_CMD_GET];
 
-            if ((_MIOTQueryFunc || _MIOTQueryFunc_m) != 0)
+            bool query_set = false;
+
+            if(_MIOTQueryFunc) query_set = true;
+            if(_MIOTQueryFunc_m) query_set = true;
+
+            if (!query_set)
             {
-                BLINKER_ERR_LOG("No query function set!");
+                BLINKER_ERR_LOG("None query function set!");
             }
 
             if (value == BLINKER_CMD_STATE){
@@ -11401,9 +11416,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             String value = "";
             if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
             {
-                if ((_AliGenieQueryFunc || _AliGenieQueryFunc_m) != 0)
+                bool query_set = false;
+
+                if(_AliGenieQueryFunc) query_set = true;
+                if(_AliGenieQueryFunc_m) query_set = true;
+
+                if (!query_set)
                 {
-                    BLINKER_ERR_LOG("No query function set!");
+                    BLINKER_ERR_LOG("None query function set!");
                 }
 
                 if (value == BLINKER_CMD_STATE) {
@@ -11497,9 +11517,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             String value = "";
             if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
             {
-                if ((_DuerOSQueryFunc || _DuerOSQueryFunc_m) != 0)
+                bool query_set = false;
+
+                if(_DuerOSQueryFunc) query_set = true;
+                if(_DuerOSQueryFunc_m) query_set = true;
+
+                if (!query_set)
                 {
-                    BLINKER_ERR_LOG("No query function set!");
+                    BLINKER_ERR_LOG("None query function set!");
                 }
 
                 if (value == BLINKER_CMD_STATE) {
@@ -11586,9 +11611,14 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             String value = "";
             if (STRING_find_string_value(_data, value, BLINKER_CMD_GET))
             {
-                if ((_MIOTQueryFunc || _MIOTQueryFunc_m) != 0)
+                bool query_set = false;
+
+                if(_MIOTQueryFunc) query_set = true;
+                if(_MIOTQueryFunc_m) query_set = true;
+
+                if (!query_set)
                 {
-                    BLINKER_ERR_LOG("No query function set!");
+                    BLINKER_ERR_LOG("None query function set!");
                 }
 
                 if (value == BLINKER_CMD_STATE) {
