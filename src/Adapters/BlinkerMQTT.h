@@ -1642,6 +1642,8 @@ int BlinkerMQTT::connectServer() {
     url_iot += _aliType;
     url_iot += _duerType;
     url_iot += _miType;
+    url_iot += BLINKER_F("&version=");
+    url_iot += BLINKER_OTA_VERSION_CODE;
 
     url_iot = "https://" + host + url_iot;
 
