@@ -1853,6 +1853,9 @@ int BlinkerPROESP::connectServer() {
     #elif defined(BLINKER_MIOT_TYPE)
         url_iot += BLINKER_MIOT_TYPE;
     #endif
+    
+    url_iot += BLINKER_F("&version=");
+    url_iot += BLINKER_OTA_VERSION_CODE;
 
     url_iot = "https://" + host + url_iot;
 
@@ -1934,6 +1937,9 @@ int BlinkerPROESP::connectServer() {
     #elif defined(BLINKER_MIOT_TYPE)
         url_iot += BLINKER_MIOT_TYPE;
     #endif
+    
+    url_iot += BLINKER_F("&version=");
+    url_iot += BLINKER_OTA_VERSION_CODE;
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 
