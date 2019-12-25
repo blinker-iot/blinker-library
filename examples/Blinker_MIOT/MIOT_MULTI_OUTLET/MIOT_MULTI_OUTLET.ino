@@ -91,12 +91,12 @@ void miotQuery(int32_t queryCode, uint8_t num)
     switch (queryCode)
     {
         case BLINKER_CMD_QUERY_ALL_NUMBER :
-            BLINKER_LOG("AliGenie Query All");
+            BLINKER_LOG("MIOT Query All");
             BlinkerMIOT.powerState(oState[num] ? "on" : "off", num);
             BlinkerMIOT.print();
             break;
         case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :
-            BLINKER_LOG("AliGenie Query Power State");
+            BLINKER_LOG("MIOT Query Power State");
             BlinkerMIOT.powerState(oState[num] ? "on" : "off", num);
             BlinkerMIOT.print();
             break;
