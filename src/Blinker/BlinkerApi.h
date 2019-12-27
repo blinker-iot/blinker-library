@@ -3222,7 +3222,7 @@ void BlinkerApi::run()
             {
                 yield();
 
-                if ((millis() - _initTime) >= 15000)// && \
+                if ((millis() - _initTime) >= 15000)// && 
                     // !_isRegistered && _registerTimes < 6)
                 {
                     _isRegistered = BProto::deviceRegister();
@@ -3547,7 +3547,7 @@ void BlinkerApi::run()
             {
                 yield();
 
-                if ((millis() - _initTime) >= 15000)// && \
+                if ((millis() - _initTime) >= 15000)// && 
                     // !_isRegistered && _registerTimes < 6)
                 {
                     _isRegistered = BProto::deviceRegister();

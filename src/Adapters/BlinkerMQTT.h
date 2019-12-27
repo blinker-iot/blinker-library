@@ -647,7 +647,7 @@ void BlinkerMQTT::subscribe()
                     // root.printTo(dataGet);
                     serializeJson(root, dataGet);
 
-                //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, 
                 //                         check is from bridge/share device, \
                 //                         data: "), dataGet);
 
@@ -2633,7 +2633,7 @@ void BlinkerMQTT::checkAPCFG()
 
         //         BLINKER_LOG(BLINKER_F("clientData: "), data);
 
-        //         if (STRING_contains_string(data, "ssid") && \
+        //         if (STRING_contains_string(data, "ssid") && 
         //             STRING_contains_string(data, "pswd"))
         //         {
         //             String msg = BLINKER_F("{\"hello\":\"world\"}");

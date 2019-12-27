@@ -313,6 +313,8 @@ int BlinkerProtocol::printNow()
 
         return print_state;
     }
+
+    return BLINKER_ERROR;
 }
 
 void BlinkerProtocol::_timerPrint(const String & n)
@@ -516,7 +518,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
 // void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValue)
 // {
 //     #if defined(BLINKER_ARDUINOJSON)
-//         BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key, \
+//         BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key, 
 //                         BLINKER_F(", json: "), jsonValue);
         
 //         String _data;
