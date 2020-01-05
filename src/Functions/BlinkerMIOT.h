@@ -86,7 +86,7 @@ class BLINKERMIOT
             }
             else
             {
-                payload += BLINKER_F("\"");
+                payload += BLINKER_F("");
             }            
 
             // Blinker.aligeniePrint(payload);
@@ -105,7 +105,7 @@ class BLINKERMIOT
         {
             String payload = BLINKER_F("\"");
             payload += STRING_format(BLINKER_CMD_POWERSTATE);
-            payload += BLINKER_F("\":\"");
+            payload += BLINKER_F("\":");
 
             if (state == "on")
             {
