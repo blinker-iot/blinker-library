@@ -138,6 +138,8 @@ enum b_nbiot_status_t {
         // PRO_WLAN_DISCONNECTED,
         PRO_WLAN_SMARTCONFIG_BEGIN,
         PRO_WLAN_SMARTCONFIG_DONE,
+        PRO_WLAN_APCONFIG_BEGIN,
+        PRO_WLAN_APTCONFIG_DONE,
         PRO_DEV_AUTHCHECK_FAIL,
         PRO_DEV_AUTHCHECK_SUCCESS,
         PRO_DEV_REGISTER_FAIL,
@@ -2676,6 +2678,12 @@ void BlinkerApi::run()
                 }
                 else if (wl_status == BWL_SMARTCONFIG_DONE) {
                     _proStatus = PRO_WLAN_SMARTCONFIG_DONE;
+                }
+                else if (wl_status == BWL_APCONFIG_BEGIN) {
+                    _proStatus = PRO_WLAN_APCONFIG_BEGIN;
+                }
+                else if (wl_status == BWL_APCONFIG_DONE) {
+                    _proStatus = PRO_WLAN_APCONFIG_DONE;
                 }
                 else {
                     _proStatus = PRO_WLAN_CONNECTING;
