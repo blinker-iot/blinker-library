@@ -1652,16 +1652,22 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     // #define BLINKER_OTA_CHECK_SIZE          1
 #endif
 
+#ifndef BLINKER_OTA_VERSION_CODE
+
+    #define BLINKER_OTA_VERSION_CODE        "0.1.0"
+
+#endif
+
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE)
 
-    #ifndef BLINKER_OTA_VERSION_CODE
+    // #ifndef BLINKER_OTA_VERSION_CODE
 
-        #define BLINKER_OTA_VERSION_CODE        "0.1.0"
+    //     #define BLINKER_OTA_VERSION_CODE        "0.1.0"
 
-    #endif
+    // #endif
 
     #define BLINKER_OTA_RUN                 1
 
