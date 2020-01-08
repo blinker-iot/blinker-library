@@ -2550,7 +2550,7 @@ void BlinkerApi::needInit()
                     "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
                     "\n===========================================================\n"));
 
-        BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+        // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
         #if defined(BLINKER_BUTTON)
             #if defined(BLINKER_BUTTON_PULLDOWN)
@@ -7766,7 +7766,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         BLINKER_LOG(BLINKER_F("=========== DON'T USE THESE EEPROM ADDRESS! ==========="));
         BLINKER_LOG(BLINKER_F("======================================================="));
 
-        BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+        // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
         _isAuto = true;
         // deserialization();
@@ -9489,43 +9489,43 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     {
         uint8_t checkData;
 
-        EEPROM.begin(BLINKER_EEP_SIZE);
-        EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
-        if (checkData != BLINKER_CHECK_DATA)
-        {
-            for (uint16_t _addr = BLINKER_EEP_ADDR_AUTO_START;
-                _addr < BLINKER_EEP_ADDR_AUTO_START +
-                BLINKER_ONE_AUTO_DATA_SIZE * 2; _addr++)
-            {
-                EEPROM.put(_addr, "\0");
-            }
-            EEPROM.put(BLINKER_EEP_ADDR_CHECK, BLINKER_CHECK_DATA);
-            EEPROM.commit();
-            EEPROM.end();
-            return;
-        }
-        EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-        if (_aCount > 2)
-        {
-            _aCount = 0;
-            EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-        }
-        EEPROM.commit();
-        EEPROM.end();
+        // EEPROM.begin(BLINKER_EEP_SIZE);
+        // EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
+        // if (checkData != BLINKER_CHECK_DATA)
+        // {
+        //     for (uint16_t _addr = BLINKER_EEP_ADDR_AUTO_START;
+        //         _addr < BLINKER_EEP_ADDR_AUTO_START +
+        //         BLINKER_ONE_AUTO_DATA_SIZE * 2; _addr++)
+        //     {
+        //         EEPROM.put(_addr, "\0");
+        //     }
+        //     EEPROM.put(BLINKER_EEP_ADDR_CHECK, BLINKER_CHECK_DATA);
+        //     EEPROM.commit();
+        //     EEPROM.end();
+        //     return;
+        // }
+        // EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+        // if (_aCount > 2)
+        // {
+        //     _aCount = 0;
+        //     EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+        // }
+        // EEPROM.commit();
+        // EEPROM.end();
 
-        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+        // BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
 
-        if (_aCount)
-        {
-            for (uint8_t _num = 0; _num < _aCount; _num++)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("new BlinkerAUTO() _num: "), _num);
+        // if (_aCount)
+        // {
+        //     for (uint8_t _num = 0; _num < _aCount; _num++)
+        //     {
+        //         BLINKER_LOG_ALL(BLINKER_F("new BlinkerAUTO() _num: "), _num);
 
-                _AUTO[_num] = new BlinkerAUTO();
-                _AUTO[_num]->setNum(_num);
-                _AUTO[_num]->deserialization();
-            }
-        }
+        //         _AUTO[_num] = new BlinkerAUTO();
+        //         _AUTO[_num]->setNum(_num);
+        //         _AUTO[_num]->deserialization();
+        //     }
+        // }
     }
 
 
@@ -10451,7 +10451,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         #if defined(ESP8266)
             extern BearSSL::WiFiClientSecure client_mqtt;
             client_mqtt.stop();
-
+            
             std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
 
             // client_s->setFingerprint(fingerprint);
