@@ -406,7 +406,7 @@ class BlinkerApi : public BlinkerProtocol
                 !defined(BLINKER_LOWPOWER_AIR202))
                 bool autoPull();
                 void autoInit()         { autoStart(); }
-                void autoInput(const String & key, const String & state);
+                // void autoInput(const String & key, const String & state);
                 void autoInput(const String & key, float data);
                 void autoRun();
 
@@ -3141,6 +3141,8 @@ void BlinkerApi::run()
                     // BProto::sharers(freshSharers());
 
                     BLINKER_LOG_ALL(BLINKER_F("MQTT conn init success"));
+
+                    beginAuto();
                 }
                 else
                 {
@@ -3995,11 +3997,11 @@ void BlinkerApi::run()
                 !defined(BLINKER_LOWPOWER_AIR202)
                 if (_isAuto && _isInit && state == CONNECTED && !_isAutoInit)
                 {
-                    if (autoPull()) _isAutoInit = true;
-                    else
-                    {
-                        if (autoPull()) _isAutoInit = true;
-                    }
+                    // if (autoPull()) _isAutoInit = true;
+                    // else
+                    // {
+                    //     if (autoPull()) _isAutoInit = true;
+                    // } // TODO
                 }
             #endif
 
@@ -6276,17 +6278,17 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
 
-    void BlinkerApi::autoInput(const String & key, const String & state)
-    {
-        if (!_isNTPInit) return;
+    // void BlinkerApi::autoInput(const String & key, const String & state)
+    // {
+    //     if (!_isNTPInit) return;
 
-        int32_t nowTime = dtime();
+    //     int32_t nowTime = dtime();
 
-        for (uint8_t _num = 0; _num < _aCount; _num++)
-        {
-            _AUTO[_num]->run(key, state, nowTime);
-        }
-    }
+    //     for (uint8_t _num = 0; _num < _aCount; _num++)
+    //     {
+    //         _AUTO[_num]->run(key, state, nowTime);
+    //     }
+    // }
 
 
     void BlinkerApi::autoInput(const String & key, float data)
@@ -6308,16 +6310,16 @@ float BlinkerApi::gps(b_gps_t axis)
         {
             if (_AUTO[_num]->isTrigged())
             {
-                // if (autoTrigged(_AUTO[_num]->id()))
-                // {
-                //     BLINKER_LOG_ALL(BLINKER_F("trigged sucessed"));
+                if (autoTrigged(_AUTO[_num]->id()))
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("trigged sucessed"));
 
-                //     _AUTO[_num]->fresh();
-                // }
-                // else
-                // {
-                //     BLINKER_LOG_ALL(BLINKER_F("trigged failed"));
-                // }
+                    _AUTO[_num]->fresh();
+                }
+                else
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("trigged failed"));
+                }
             }
         }
     }
@@ -9539,12 +9541,15 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         // isAuto = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTO);
         isSet = data.containsKey(BLINKER_CMD_SET);
         const char* aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
-        const char* aDataArray = data[BLINKER_CMD_AUTO][0];
+        // const char* aDataArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][0];
 
         // if (aData.length()) isAuto = true;
         if (aData) isAuto = true;
 
-        if (aDataArray && !isAuto)
+        BLINKER_LOG_ALL(BLINKER_F("autoManager begin"));
+
+        // if (aDataArray && !isAuto)
+        if (!isAuto)
         {
             for (uint8_t num = 0; num < 2; num++)
             {
@@ -9605,7 +9610,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
         else if (isSet && isAuto)
         {
-            BLINKER_LOG_ALL(BLINKER_F("timerManager5 isParsed"));
+            // BLINKER_LOG_ALL(BLINKER_F("timerManager5 isParsed"));
             _fresh = true;
 
             BLINKER_LOG_ALL(BLINKER_F("get auto setting"));

@@ -34,7 +34,7 @@ class BlinkerAUTO
         {}
 
         void run(const String & key, float data, int32_t nowTime);
-        void run(const String & key, const String & state, int32_t nowTime);
+        // void run(const String & key, const String & state, int32_t nowTime);
         void manager(const String & data);
         void deserialization();
         void serialization();
@@ -147,7 +147,7 @@ void BlinkerAUTO::run(const String & key, float data, int32_t nowTime)
             }
         }
 
-        if (_logicType == BLINKER_TYPE_OR && _logicType == BLINKER_TYPE_AND)
+        if (_logicType == BLINKER_TYPE_OR || _logicType == BLINKER_TYPE_AND)
         {
             switch (_compareType)
             {
@@ -202,113 +202,108 @@ void BlinkerAUTO::run(const String & key, float data, int32_t nowTime)
     // }
 }
 
-void BlinkerAUTO::run(const String & key, const String & state, int32_t nowTime)
-{
-    // BLINKER_LOG_ALL(BLINKER_F("BlinkerAUTO run key: "), key, \
-    //                 BLINKER_F(" state: "), state, \
-    //                 BLINKER_F(" nowTime: "), nowTime);
+// void BlinkerAUTO::run(const String & key, const String & state, int32_t nowTime)
+// {
+//     BLINKER_LOG_ALL(BLINKER_F("BlinkerAUTO run key: "), key, \
+//                     BLINKER_F(" state: "), state, \
+//                     BLINKER_F(" nowTime: "), nowTime);
 
-    // for (uint8_t _num = 0; _num < _targetNum; _num++)
-    // {
-    //     if (!_autoState) return;
+//     // for (uint8_t _num = 0; _num < _targetNum; _num++)
+//     // {
+//         if (!_autoState) return;
 
-    //     if (key != STRING_format(_targetKey[_num])) return;
+//         if (key != STRING_format(_targetKey)) return;
 
-    //     if (_time1[_num] < _time2[_num])
-    //     {
-    //         if (!(nowTime >= _time1[_num] && nowTime <= _time2[_num]))
-    //         {
-    //             BLINKER_LOG_ALL(BLINKER_F("out of time slot: "), nowTime);
-    //             return;
-    //         }
-    //     }
-    //     else if (_time1[_num] > _time2[_num])
-    //     {
-    //         if (nowTime > _time1[_num] && nowTime < _time2[_num])
-    //         {
-    //             BLINKER_LOG_ALL(BLINKER_F("out of time slot: "), nowTime);
-    //             return;
-    //         }
-    //     }
+//         if (_time1 < _time2)
+//         {
+//             if (!(nowTime >= _time1 && nowTime <= _time2))
+//             {
+//                 BLINKER_LOG_ALL(BLINKER_F("out of time slot: "), nowTime);
+//                 return;
+//             }
+//         }
+//         else if (_time1 > _time2)
+//         {
+//             if (nowTime > _time1 && nowTime < _time2)
+//             {
+//                 BLINKER_LOG_ALL(BLINKER_F("out of time slot: "), nowTime);
+//                 return;
+//             }
+//         }
 
-    //     // if (_logicType == BLINKER_TYPE_STATE) {
-    //     if ((_logicType == BLINKER_TYPE_STATE) || \
-    //         (_logicType == BLINKER_TYPE_OR && \
-    //         logic_type[_num] == BLINKER_TYPE_STATE) || \
-    //         (_logicType == BLINKER_TYPE_AND && \
-    //         logic_type[_num] == BLINKER_TYPE_STATE))
-    //     {
-    //         if (state == BLINKER_CMD_ON)
-    //         {
-    //             if (_targetState[_num])
-    //             {
-    //                 if (!_isTrigged[_num])
-    //                 {
-    //                     triggerCheck("on", _num);
-    //                 }
-    //             }
-    //             else
-    //             {
-    //                 _isTrigged[_num] = false;
-    //                 isRecord[_num] = false;
-    //                 _trigged = false;
-    //             }
-    //         }
-    //         else if (state == BLINKER_CMD_OFF)
-    //         {
-    //             if (!_targetState[_num])
-    //             {
-    //                 if (!_isTrigged[_num])
-    //                 {
-    //                     triggerCheck("off", _num);
-    //                 }
-    //             }
-    //             else
-    //             {
-    //                 _isTrigged[_num] = false;
-    //                 isRecord[_num] = false;
-    //                 _trigged = false;
-    //             }
-    //         }
-    //     }
-    //     else if (_logicType == BLINKER_TYPE_OR && \
-    //         logic_type[_num] == BLINKER_TYPE_STATE)
-    //     {
-    //         if (state == BLINKER_CMD_ON)
-    //         {
-    //             if (_targetState[_num])
-    //             {
-    //                 if (!_isTrigged[_num])
-    //                 {
-    //                     triggerCheck("on", _num);
-    //                 }
-    //             }
-    //             else
-    //             {
-    //                 _isTrigged[_num] = false;
-    //                 isRecord[_num] = false;
-    //                 _trigged = false;
-    //             }
-    //         }
-    //         else if (state == BLINKER_CMD_OFF)
-    //         {
-    //             if (!_targetState[_num])
-    //             {
-    //                 if (!_isTrigged[_num])
-    //                 {
-    //                     triggerCheck("off", _num);
-    //                 }
-    //             }
-    //             else
-    //             {
-    //                 _isTrigged[_num] = false;
-    //                 isRecord[_num] = false;
-    //                 _trigged = false;
-    //             }
-    //         }
-    //     }
-    // }
-}
+//         if (_logicType == BLINKER_TYPE_OR || _logicType == BLINKER_TYPE_AND)
+//         {
+//             if (state == BLINKER_CMD_ON)
+//             {
+//                 if (_targetState)
+//                 {
+//                     if (!_isTrigged)
+//                     {
+//                         triggerCheck("on");
+//                     }
+//                 }
+//                 else
+//                 {
+//                     _isTrigged = false;
+//                     isRecord = false;
+//                     _trigged = false;
+//                 }
+//             }
+//             else if (state == BLINKER_CMD_OFF)
+//             {
+//                 if (!_targetState)
+//                 {
+//                     if (!_isTrigged)
+//                     {
+//                         triggerCheck("off");
+//                     }
+//                 }
+//                 else
+//                 {
+//                     _isTrigged = false;
+//                     isRecord = false;
+//                     _trigged = false;
+//                 }
+//             }
+//         }
+//     //     else if (_logicType == BLINKER_TYPE_OR && \
+//     //         logic_type[_num] == BLINKER_TYPE_STATE)
+//     //     {
+//     //         if (state == BLINKER_CMD_ON)
+//     //         {
+//     //             if (_targetState[_num])
+//     //             {
+//     //                 if (!_isTrigged[_num])
+//     //                 {
+//     //                     triggerCheck("on", _num);
+//     //                 }
+//     //             }
+//     //             else
+//     //             {
+//     //                 _isTrigged[_num] = false;
+//     //                 isRecord[_num] = false;
+//     //                 _trigged = false;
+//     //             }
+//     //         }
+//     //         else if (state == BLINKER_CMD_OFF)
+//     //         {
+//     //             if (!_targetState[_num])
+//     //             {
+//     //                 if (!_isTrigged[_num])
+//     //                 {
+//     //                     triggerCheck("off", _num);
+//     //                 }
+//     //             }
+//     //             else
+//     //             {
+//     //                 _isTrigged[_num] = false;
+//     //                 isRecord[_num] = false;
+//     //                 _trigged = false;
+//     //             }
+//     //         }
+//     //     }
+//     // }
+// }
 
 void BlinkerAUTO::manager(const String & data)
 {
