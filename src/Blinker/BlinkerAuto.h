@@ -35,7 +35,7 @@ class BlinkerAUTO
 
         void run(const String & key, float data, int32_t nowTime);
         // void run(const String & key, const String & state, int32_t nowTime);
-        void manager(const String & data);
+        void manager(const JsonObject& data);
         void deserialization();
         void serialization();
         void setNum(uint8_t num) { a_num = num; }
@@ -305,24 +305,26 @@ void BlinkerAUTO::run(const String & key, float data, int32_t nowTime)
 //     // }
 // }
 
-void BlinkerAUTO::manager(const String & data)
+void BlinkerAUTO::manager(const JsonObject& root)
 {
     // DynamicJsonBuffer jsonBuffer;
     // JsonObject& root = jsonBuffer.parseObject(data);
-    DynamicJsonDocument jsonBuffer(1024);
-    deserializeJson(jsonBuffer, data);
-    JsonObject root = jsonBuffer.as<JsonObject>();
+    // BLINKER_LOG_ALL(BLINKER_F("auto state: "), data);
+
+    // DynamicJsonDocument jsonBuffer(1024);
+    // deserializeJson(jsonBuffer, data);
+    // JsonObject root = jsonBuffer.as<JsonObject>();
     
-    _autoState = root[BLINKER_CMD_ENABLE].as<bool>();
+    _autoState = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]["enable"].as<bool>();
     
     _haveAuto = true;
 
     BLINKER_LOG_ALL(BLINKER_F("==============================================="));
     BLINKER_LOG_ALL(BLINKER_F("auto state: "), _autoState);
 
-    _autoId = root[BLINKER_CMD_ID];
+    _autoId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_ID].as<uint32_t>();
 
-    String logicType = root[BLINKER_CMD_MODE];
+    String logicType = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_MODE].as<String>();
     BLINKER_LOG_ALL(BLINKER_F("_autoId: "), _autoId);
     BLINKER_LOG_ALL(BLINKER_F("logicType: "), logicType);
 
@@ -400,8 +402,8 @@ void BlinkerAUTO::manager(const String & data)
     //     BLINKER_LOG_ALL(BLINKER_F("_duration: "), _duration[0]);
     // }
     // else 
-    if (logicType == BLINKER_CMD_OR || logicType == BLINKER_CMD_AND)
-    {
+    // if (logicType == BLINKER_CMD_OR || logicType == BLINKER_CMD_AND)
+    // {
         if (logicType == BLINKER_CMD_OR)
         {
             BLINKER_LOG_ALL(BLINKER_F("or!"));
@@ -413,13 +415,13 @@ void BlinkerAUTO::manager(const String & data)
             _logicType = BLINKER_TYPE_AND;
         }
 
-        String target_key = root[BLINKER_CMD_TRIGGER][0][BLINKER_CMD_SOURCE];
-        String target_State = root[BLINKER_CMD_TRIGGER][0][BLINKER_CMD_VALUE];
-        String compare_type = root[BLINKER_CMD_TRIGGER][0][BLINKER_CMD_OPERATOR];
-        String day_set = root[BLINKER_CMD_TRIGGER][0][BLINKER_CMD_DAY];
-        _start_time = root[BLINKER_CMD_TRIGGER][0][BLINKER_CMD_RANGE][0].as<uint16_t>();
-        _end_time = root[BLINKER_CMD_TRIGGER][0][BLINKER_CMD_RANGE][1].as<uint16_t>();
-        _duration = root[BLINKER_CMD_DATA][0][BLINKER_CMD_DURATION].as<uint16_t>();
+        String target_key = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_TRIGGER][0][BLINKER_CMD_SOURCE];
+        String target_State = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_TRIGGER][0]["value"];
+        String compare_type = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_TRIGGER][0][BLINKER_CMD_OPERATOR];
+        String day_set = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]["time"][BLINKER_CMD_DAY];
+        _start_time = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]["time"][BLINKER_CMD_RANGE][0].as<uint16_t>();
+        _end_time = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]["time"][BLINKER_CMD_RANGE][1].as<uint16_t>();
+        _duration = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DATA][0][BLINKER_CMD_DURATION].as<uint16_t>();
 
         for (uint8_t day = 0; day < 7; day++)
         {
@@ -430,6 +432,13 @@ void BlinkerAUTO::manager(const String & data)
                 BLINKER_LOG_ALL(BLINKER_F("day: "), day, BLINKER_F(" _day: "), _day);
             }
         }
+
+        BLINKER_LOG_ALL(BLINKER_F("target_key: "), target_key);
+        BLINKER_LOG_ALL(BLINKER_F("target_State: "), target_State);
+        BLINKER_LOG_ALL(BLINKER_F("compare_type: "), compare_type);
+        BLINKER_LOG_ALL(BLINKER_F("day_set: "), day_set);
+        BLINKER_LOG_ALL(BLINKER_F("_start_time: "), _start_time);
+        BLINKER_LOG_ALL(BLINKER_F("_end_time: "), _end_time);
 
         strcpy(_targetKey, target_key.c_str());
         if (compare_type == BLINKER_CMD_LESS)
@@ -523,7 +532,7 @@ void BlinkerAUTO::manager(const String & data)
         //         BLINKER_LOG_ALL(BLINKER_F("_duration: "), _duration[t_num]);
         //     }
         // }
-    }
+    // }
 
     // int32_t timeValue = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
     //                         [BLINKER_CMD_RANGE][0];

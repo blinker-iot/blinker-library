@@ -1205,7 +1205,8 @@ int BlinkerPROESP::autoPrint(uint32_t id)
     payload += BLINKER_F("}}}");
     payload += BLINKER_F(",\"fromDevice\":\"");
     payload += STRING_format(MQTT_DEVICEID_PRO);
-    payload += BLINKER_F("\",\"toDevice\":\"autoManager\"}");
+    payload += BLINKER_F("\",\"deviceType\":\"Auto\"");
+    payload += BLINKER_F(",\"toDevice\":\"serverClient\"}");
         // "\",\"deviceType\":\"" + "type" + "\"}";
 
     BLINKER_LOG_ALL(BLINKER_F("autoPrint..."));

@@ -6295,7 +6295,7 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         if (!_isNTPInit) return;
 
-        int32_t nowTime = dtime();
+        int32_t nowTime = dtime()/60;
 
         for (uint8_t _num = 0; _num < _aCount; _num++)
         {
@@ -9540,13 +9540,13 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         // isSet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
         // isAuto = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTO);
         isSet = data.containsKey(BLINKER_CMD_SET);
-        const char* aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO];
+        String aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO].as<String>();
         // const char* aDataArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][0];
 
         // if (aData.length()) isAuto = true;
-        if (aData) isAuto = true;
+        if (aData != "null") isAuto = true;
 
-        BLINKER_LOG_ALL(BLINKER_F("autoManager begin"));
+        BLINKER_LOG_ALL(BLINKER_F("autoManager begin: "), isAuto, " ", isSet);
 
         // if (aDataArray && !isAuto)
         if (!isAuto)
@@ -9561,7 +9561,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     for (uint8_t _num = 0; _num < _aCount; _num++)
                     {
                         if (_AUTO[_num]->id() == _autoId) {
-                            _AUTO[_num]->manager(arrayData);
+                            // _AUTO[_num]->manager(arrayData);
                             return true;
                         }
                     }
@@ -9569,7 +9569,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     {
                         _AUTO[_aCount] = new BlinkerAUTO();
                         _AUTO[_aCount]->setNum(_aCount);
-                        _AUTO[_aCount]->manager(arrayData);
+                        // _AUTO[_aCount]->manager(arrayData);
 
                         // _aCount = 1;
                         _aCount++;
@@ -9584,7 +9584,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     }
                     else
                     {
-                        _AUTO[_aCount - 1]->manager(arrayData);
+                        // _AUTO[_aCount - 1]->manager(arrayData);
                         // return true;
                     }
                 }
@@ -9592,7 +9592,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 {
                     _AUTO[_aCount] = new BlinkerAUTO();
                     _AUTO[_aCount]->setNum(_aCount);
-                    _AUTO[_aCount]->manager(arrayData);
+                    // _AUTO[_aCount]->manager(arrayData);
 
                     _aCount = 1;
                     // _aCount++;
@@ -9615,83 +9615,84 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             BLINKER_LOG_ALL(BLINKER_F("get auto setting"));
 
-            bool isDelet = STRING_contains_string(BProto::dataParse(), BLINKER_CMD_DELETID);
-            String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                        [BLINKER_CMD_ACTION][0];
+            // bool isDelet = STRING_contains_string(BProto::dataParse(), BLINKER_CMD_DELETID);
+            // String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+            //                             [BLINKER_CMD_ACTION][0];
 
-            if (isDelet)
-            {
-                // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
-                uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE];
+            // if (isDelet)
+            // {
+            //     // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
+            //     uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE];
 
-                if (_aCount)
-                {
-                    for (uint8_t _num = 0; _num < _aCount; _num++)
-                    {
-                        if (_AUTO[_num]->id() == _autoId)
-                        {
-                            // _AUTO[_num]->manager(static_cast<Proto*>(this)->dataParse());
-                            for (uint8_t a_num = _num; a_num < _aCount; a_num++)
-                            {
-                                if (a_num < _aCount - 1)
-                                {
-                                    _AUTO[a_num]->setNum(a_num + 1);
-                                    _AUTO[a_num]->deserialization();
-                                    _AUTO[a_num]->setNum(a_num);
-                                    _AUTO[a_num]->serialization();
-                                }
-                                else{
-                                    _num = _aCount;
-                                }
-                            }
-                            _aCount--;
+            //     if (_aCount)
+            //     {
+            //         for (uint8_t _num = 0; _num < _aCount; _num++)
+            //         {
+            //             if (_AUTO[_num]->id() == _autoId)
+            //             {
+            //                 // _AUTO[_num]->manager(static_cast<Proto*>(this)->dataParse());
+            //                 for (uint8_t a_num = _num; a_num < _aCount; a_num++)
+            //                 {
+            //                     if (a_num < _aCount - 1)
+            //                     {
+            //                         _AUTO[a_num]->setNum(a_num + 1);
+            //                         _AUTO[a_num]->deserialization();
+            //                         _AUTO[a_num]->setNum(a_num);
+            //                         _AUTO[a_num]->serialization();
+            //                     }
+            //                     else{
+            //                         _num = _aCount;
+            //                     }
+            //                 }
+            //                 _aCount--;
 
-                            EEPROM.begin(BLINKER_EEP_SIZE);
-                            EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-                            EEPROM.commit();
-                            EEPROM.end();
+            //                 EEPROM.begin(BLINKER_EEP_SIZE);
+            //                 EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+            //                 EEPROM.commit();
+            //                 EEPROM.end();
 
-                            BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+            //                 BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
 
-                            return true;
-                        }
-                    }
-                }
-            }
-            else if(isTriggedArray != "null")
-            {
-                for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
-                {
-                    String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-                                                [BLINKER_CMD_ACTION][a_num];
+            //                 return true;
+            //             }
+            //         }
+            //     }
+            // }
+            // else if(isTriggedArray != "null")
+            // {
+            //     for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
+            //     {
+            //         String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+            //                                     [BLINKER_CMD_ACTION][a_num];
 
-                    if(_autoData_array != "null")
-                    {
-                        // DynamicJsonBuffer _jsonBuffer;
-                        // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
-                        DynamicJsonDocument jsonBuffer(1024);
-                        deserializeJson(jsonBuffer, _autoData_array);
-                        JsonObject _array = jsonBuffer.as<JsonObject>();
+            //         if(_autoData_array != "null")
+            //         {
+            //             // DynamicJsonBuffer _jsonBuffer;
+            //             // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
+            //             DynamicJsonDocument jsonBuffer(1024);
+            //             deserializeJson(jsonBuffer, _autoData_array);
+            //             JsonObject _array = jsonBuffer.as<JsonObject>();
 
-                        json_parse(_array);
-                        #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-                            !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                            !defined(BLINKER_LOWPOWER_AIR202))
-                        timerManager(_array, true);
-                        #endif
-                    }
-                    else
-                    {
-                        // a_num = BLINKER_MAX_WIDGET_SIZE;
-                        return true;
-                    }
-                }
-            }
-            else
+            //             json_parse(_array);
+            //             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+            //                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+            //                 !defined(BLINKER_LOWPOWER_AIR202))
+            //             timerManager(_array, true);
+            //             #endif
+            //         }
+            //         else
+            //         {
+            //             // a_num = BLINKER_MAX_WIDGET_SIZE;
+            //             return true;
+            //         }
+            //     }
+            // }
+            // else
             {
                 // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
-                uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_AUTOID];
+                uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_AUTOID].as<uint32_t>();
 
+                BLINKER_LOG_ALL(BLINKER_F("_autoId: "), _autoId);
                 // _aCount = 0;
 
                 if (_aCount)
@@ -9700,7 +9701,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     {
                         if (_AUTO[_num]->id() == _autoId)
                         {
-                            _AUTO[_num]->manager(BProto::dataParse());
+                            _AUTO[_num]->manager(data);
                             return true;
                         }
                     }
@@ -9708,7 +9709,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     {
                         _AUTO[_aCount] = new BlinkerAUTO();
                         _AUTO[_aCount]->setNum(_aCount);
-                        _AUTO[_aCount]->manager(BProto::dataParse());
+                        _AUTO[_aCount]->manager(data);
 
                         // _aCount = 1;
                         _aCount++;
@@ -9724,7 +9725,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     }
                     else
                     {
-                        _AUTO[_aCount - 1]->manager(BProto::dataParse());
+                        _AUTO[_aCount - 1]->manager(data);
                         // return true;
                     }
                 }
@@ -9732,7 +9733,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 {
                     _AUTO[_aCount] = new BlinkerAUTO();
                     _AUTO[_aCount]->setNum(_aCount);
-                    _AUTO[_aCount]->manager(BProto::dataParse());
+                    _AUTO[_aCount]->manager(data);
 
                     _aCount = 1;
                     // _aCount++;
