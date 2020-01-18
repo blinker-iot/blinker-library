@@ -209,7 +209,7 @@ class BlinkerGateway : public BlinkerStream
         int subMiPrint(const String & data, const String & subDevice);
         // void aliType(const String & type);
         void begin(const char* _key, const char* _type);
-        int autoPrint(uint32_t id);
+        int autoPrint(unsigned long id);
         // bool autoPrint(char *name, char *type, char *data);
         // bool autoPrint(char *name1, char *type1, char *data1, \
         //             char *name2, char *type2, char *data2);
@@ -1473,7 +1473,7 @@ void BlinkerGateway::begin(const char* _key, const char* _type)
     mDNSInit();
 }
 
-int BlinkerGateway::autoPrint(uint32_t id)
+int BlinkerGateway::autoPrint(unsigned long id)
 {
     String payload = BLINKER_F("{\"data\":{\"set\":{");
     payload += BLINKER_F("\"trigged\":true,\"autoData\":{");

@@ -41,7 +41,7 @@ class BlinkerAUTO
         void setNum(uint8_t num) { a_num = num; }
         bool isTrigged() { return _trigged; }
         void fresh();
-        uint32_t id() { return _autoId; }
+        unsigned long id() { return _autoId; }
 
     private :
         uint8_t     a_num;
@@ -90,7 +90,7 @@ class BlinkerAUTO
         // typestatexxxxxx
         bool        _haveAuto;
         bool        _autoState;
-        uint32_t    _autoId = 0;
+        unsigned long    _autoId = 0;
         uint8_t     _logicType;
         uint8_t     _compareType;
         uint8_t     _day = 0;
@@ -322,10 +322,11 @@ void BlinkerAUTO::manager(const JsonObject& root)
     BLINKER_LOG_ALL(BLINKER_F("==============================================="));
     BLINKER_LOG_ALL(BLINKER_F("auto state: "), _autoState);
 
-    _autoId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_ID].as<uint32_t>();
+    String get_autoId = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_ID].as<String>();
+    _autoId = strtoul(get_autoId.c_str(),NULL,10);
 
     String logicType = root[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_MODE].as<String>();
-    BLINKER_LOG_ALL(BLINKER_F("_autoId: "), _autoId);
+    BLINKER_LOG_ALL(BLINKER_F("_autoId: "), get_autoId, " ", String(_autoId));
     BLINKER_LOG_ALL(BLINKER_F("logicType: "), logicType);
 
     // if (logicType == BLINKER_CMD_STATE)
@@ -628,7 +629,7 @@ void BlinkerAUTO::deserialization()
     EEPROM.end();
 
     BLINKER_LOG_ALL(BLINKER_F("==============================================="));
-    BLINKER_LOG_ALL(BLINKER_F("_autoId: "), _autoId);
+    BLINKER_LOG_ALL(BLINKER_F("_autoId: "), String(_autoId));
     BLINKER_LOG_ALL(BLINKER_F("_day: "), _day);
     BLINKER_LOG_ALL(BLINKER_F("_duration: "), _duration);
     BLINKER_LOG_ALL(BLINKER_F("_start_time: "), _start_time);

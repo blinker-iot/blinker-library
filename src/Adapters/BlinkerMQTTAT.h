@@ -69,7 +69,7 @@ class BlinkerMQTTAT : public BlinkerStream
         // void aliType(const String & type);
         void begin(const char* auth);
         bool begin();
-        int autoPrint(uint32_t id);
+        int autoPrint(unsigned long id);
         // bool autoPrint(char *name, char *type, char *data);
         // bool autoPrint(char *name1, char *type1, char *data1, 
         //             char *name2, char *type2, char *data2);
@@ -1473,7 +1473,7 @@ bool BlinkerMQTTAT::begin()
     // }
 }
 
-int BlinkerMQTTAT::autoPrint(uint32_t id)
+int BlinkerMQTTAT::autoPrint(unsigned long id)
 {
     String payload = BLINKER_F("{\"data\":{\"set\":{");
     payload += BLINKER_F("\"trigged\":true,\"autoData\":{");

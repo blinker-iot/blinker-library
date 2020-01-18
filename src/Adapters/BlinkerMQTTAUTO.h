@@ -65,7 +65,7 @@ class BlinkerMQTTAUTO : public BlinkerStream
         void duerType(const String & type);
         void begin(const char* auth, const char* type);
         // bool begin();
-        int autoPrint(uint32_t id);
+        int autoPrint(unsigned long id);
         // bool autoPrint(char *name, char *type, char *data);
         // bool autoPrint(char *name1, char *type1, char *data1,
         //             char *name2, char *type2, char *data2);
@@ -1000,7 +1000,7 @@ void BlinkerMQTTAUTO::begin(const char* auth, const char* type) {
     mDNSInit();
 }
 
-int BlinkerMQTTAUTO::autoPrint(uint32_t id)
+int BlinkerMQTTAUTO::autoPrint(unsigned long id)
 {
     String payload = BLINKER_F("{\"data\":{\"set\":{");
     payload += BLINKER_F("\"trigged\":true,\"autoData\":{");

@@ -47,7 +47,7 @@ class BlinkerStream
                 // virtual void ping() = 0;
             #if !defined(BLINKER_MQTT_AT)
                 virtual int bPrint(char * name, const String & data) = 0;
-                virtual int autoPrint(uint32_t id) = 0;
+                virtual int autoPrint(unsigned long id) = 0;
                 virtual void sharers(const String & data);
                 virtual int aligenieAvail() = 0;
                 virtual int duerAvail() = 0;

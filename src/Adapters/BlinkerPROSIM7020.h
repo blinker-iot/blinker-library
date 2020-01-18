@@ -62,7 +62,7 @@ class BlinkerProSIM7020 : public BlinkerStream
         // void duerType(const String & type);
         void begin(const char* _deviceType, String _imei);
         void initStream(Stream& s, bool state, blinker_callback_t func);
-        int autoPrint(uint32_t id);
+        int autoPrint(unsigned long id);
         char * deviceName();
         char * authKey() { return AUTHKEY_NBIoT; }
         int init() { return isMQTTinit; }
@@ -802,7 +802,7 @@ void BlinkerProSIM7020::initStream(Stream& s, bool state, blinker_callback_t fun
     // strcpy(_imei, imei.c_str());
 }
 
-int BlinkerProSIM7020::autoPrint(uint32_t id)
+int BlinkerProSIM7020::autoPrint(unsigned long id)
 {
     String payload = BLINKER_F("{\"data\":{\"set\":{");
     payload += BLINKER_F("\"trigged\":true,\"autoData\":{");
