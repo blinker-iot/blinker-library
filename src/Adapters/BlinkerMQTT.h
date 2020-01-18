@@ -565,8 +565,8 @@ void BlinkerMQTT::subscribe()
             deserializeJson(jsonBuffer, String((char *)iotSub_MQTT->lastread));
             JsonObject root = jsonBuffer.as<JsonObject>();
 
-            String _uuid = root["fromDevice"];
-            String dataGet = root["data"];
+            String _uuid = root["fromDevice"].as<String>();
+            String dataGet = root["data"].as<String>();
 
             BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
             BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);

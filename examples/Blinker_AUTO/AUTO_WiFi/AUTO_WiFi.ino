@@ -47,51 +47,32 @@
  *
  *  This example not complete at all, TODO.
  * 
- * /
+ */
 
-// #define BLINKER_PRINT Serial
-// #define BLINKER_WIFI
+#define BLINKER_PRINT Serial
+#define BLINKER_WIFI
 
-// #include <Blinker.h>
+#include <Blinker.h>
 
-// char auth[] = "Your Device Secret Key";
-// char ssid[] = "Your WiFi network SSID or name";
-// char pswd[] = "Your WiFi network WPA password or WEP key";
+char auth[] = "Your Device Secret Key";
+char ssid[] = "Your WiFi network SSID or name";
+char pswd[] = "Your WiFi network WPA password or WEP key";
 
-// #define BUTTON_1 "ButtonKey"
+void setup() {
+    Serial.begin(115200);
+    BLINKER_DEBUG.stream(Serial);
+    BLINKER_DEBUG.debugAll();
 
-// void setup() {
-//     Serial.begin(115200);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
 
-//     pinMode(LED_BUILTIN, OUTPUT);
-//     digitalWrite(LED_BUILTIN, LOW);
+    Blinker.begin(auth, ssid, pswd);
+}
 
-//     Blinker.begin(auth, ssid, pswd);
-//     Blinker.beginAuto();
-//     Blinker.wInit(BUTTON_1, W_BUTTON);
-// }
+void loop()
+{
+    Blinker.run();
 
-// void loop()
-// {
-//     Blinker.run();
-
-//     if (Blinker.available()) {
-//         BLINKER_LOG("Blinker readString: ", data);
-
-//         uint32_t BlinkerTime = millis();
-
-//         Blinker.beginFormat();
-//         Blinker.vibrate();        
-//         Blinker.print("millis", BlinkerTime);
-//         Blinker.endFormat();
-//     }
-
-//     if (Blinker.button(BUTTON_1)) {
-//         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-//     }
-
-//     Blinker.autoInput("key", "value");
-//     Blinker.autoRun();
-
-//     Blinker.delay(1000);
-// }
+    Blinker.autoInput("key", random(0,100));
+    Blinker.autoRun();
+}
