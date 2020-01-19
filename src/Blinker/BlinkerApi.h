@@ -2883,6 +2883,8 @@ void BlinkerApi::run()
                             }
                         }
                         // BProto::sharers(freshSharers());
+
+                        beginAuto();
                     }
                 }
                 else
@@ -3057,6 +3059,8 @@ void BlinkerApi::run()
                             }
                         }
                         // BProto::sharers(freshSharers());
+
+                        beginAuto();
                     }
                 }
                 else
@@ -9493,6 +9497,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         !defined(BLINKER_LOWPOWER_AIR202))
     void BlinkerApi::autoStart()
     {
+        BLINKER_LOG_ALL(BLINKER_F("_______autoStart_______"));
         uint8_t checkData;
 
         EEPROM.begin(BLINKER_EEP_SIZE);
