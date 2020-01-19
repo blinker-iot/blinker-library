@@ -155,6 +155,7 @@ void setup()
     Blinker.attachData(dataRead);
     Blinker.attachParse(dataParse);
     Blinker.attachHeartbeat(heartbeat);
+    
     Button1.attach(button1_callback);
 
 #if defined(BLINKER_BUTTON)

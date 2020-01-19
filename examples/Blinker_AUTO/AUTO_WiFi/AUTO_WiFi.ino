@@ -58,6 +58,59 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
+BlinkerButton Button1("btn-abc");
+BlinkerNumber Number1("num-abc");
+
+int counter = 0;
+
+bool switch_state = false;
+BlinkerButton Button1("btn-abc");
+BlinkerNumber Number1("num-abc");
+
+int counter = 0;
+
+bool switch_state = false;
+
+void button1_callback(const String & state)
+{
+    BLINKER_LOG("get button state: ", state);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
+
+void dataRead(const String & data)
+{
+    BLINKER_LOG("Blinker readString: ", data);
+    counter++;
+    Number1.print(counter);
+}
+
+void switch_callback(const String & state)
+{
+    BLINKER_LOG("get switch state: ", state);
+
+    if (state == BLINKER_CMD_ON) {
+        digitalWrite(LED_BUILTIN, HIGH);
+        switch_state = true;
+        BUILTIN_SWITCH.print("on");
+    }
+    else {
+        digitalWrite(LED_BUILTIN, LOW);
+        switch_state = false;
+        BUILTIN_SWITCH.print("off");
+    }
+
+    Blinker.autoInput("switch", switch_state ? 1.0 : 0.0);
+    Blinker.autoRun();
+}
+
+void heartbeat()
+{
+    if (switch_state) BUILTIN_SWITCH.print("on");
+    else BUILTIN_SWITCH.print("off");
+    
+    Number1.print(counter);
+}
+
 void setup() {
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
@@ -67,12 +120,16 @@ void setup() {
     digitalWrite(LED_BUILTIN, LOW);
 
     Blinker.begin(auth, ssid, pswd);
+    Blinker.attachData(dataRead);
+    Blinker.attachHeartbeat(heartbeat);
+    
+    Button1.attach(button1_callback);
+    
+    BUILTIN_SWITCH.attach(switch_callback);
 }
 
 void loop()
 {
     Blinker.run();
-
-    Blinker.autoInput("key", random(0,100));
     Blinker.autoRun();
 }

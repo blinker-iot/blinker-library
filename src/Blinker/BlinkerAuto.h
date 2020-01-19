@@ -34,7 +34,7 @@ class BlinkerAUTO
         {}
 
         void run(const String & key, float data, int32_t nowTime);
-        // void run(const String & key, const String & state, int32_t nowTime);
+        void run(const String & key, const String & state, int32_t nowTime);
         void manager(const JsonObject& data);
         void deserialization();
         void serialization();
