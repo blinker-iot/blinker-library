@@ -9707,6 +9707,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                     if(_autoData_array != "null")
                     {
+                        _fresh = false;
                         // DynamicJsonBuffer _jsonBuffer;
                         // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
                         DynamicJsonDocument jsonBuffer(1024);
@@ -9719,6 +9720,26 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             !defined(BLINKER_LOWPOWER_AIR202))
                         timerManager(_array, true);
                         #endif
+
+                        if (_fresh)
+                        {
+                            BProto::isParsed();
+                        }
+                        else
+                        {
+                            #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
+                                defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+                                if (_parseFunc) {
+                                    if(_parseFunc(root)) {
+                                        BLINKER_LOG_ALL(BLINKER_F("_parseFunc(root) isParsed"));
+                                        _fresh = true;
+                                        BProto::isParsed();
+                                    }
+
+                                    BLINKER_LOG_ALL(BLINKER_F("run parse callback function"));
+                                }
+                            #endif
+                        }
                     }
                     else
                     {
