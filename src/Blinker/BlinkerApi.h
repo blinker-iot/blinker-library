@@ -2450,7 +2450,7 @@ void BlinkerApi::begin()
     #endif
 
     #if defined(BLINKER_OTA_VERSION_CODE) && (defined(BLINKER_MQTT) || \
-        defined(BLINKER_MQTT_AT) || defined(BLINKER_MQTT_AUTO))
+        defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AUTO))
         if (strlen(BLINKER_OTA_VERSION_CODE) >= BLINKER_OTA_INFO_SIZE)
         {
             while(1)
