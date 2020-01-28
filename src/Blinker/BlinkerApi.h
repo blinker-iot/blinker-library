@@ -9730,8 +9730,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
                                 defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
                                 if (_parseFunc) {
-                                    if(_parseFunc(root)) {
-                                        BLINKER_LOG_ALL(BLINKER_F("_parseFunc(root) isParsed"));
+                                    if(_parseFunc(_array)) {
+                                        BLINKER_LOG_ALL(BLINKER_F("_parseFunc(_array) isParsed"));
                                         _fresh = true;
                                         BProto::isParsed();
                                     }
