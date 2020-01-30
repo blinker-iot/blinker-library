@@ -61,7 +61,7 @@ class BlinkerSerialAIR202 : public BlinkerStream
         void duerType(const String & type);
         void begin(const char* _deviceType, String _imei);
         void initStream(Stream& s, bool state, blinker_callback_t func);
-        int autoPrint(uint32_t id);
+        int autoPrint(unsigned long id);
         char * deviceName();
         char * authKey() { return AUTHKEY_GPRS; }
         int init() { return isMQTTinit; }
@@ -836,7 +836,7 @@ void BlinkerSerialAIR202::initStream(Stream& s, bool state, blinker_callback_t f
     // strcpy(_imei, imei.c_str());
 }
 
-int BlinkerSerialAIR202::autoPrint(uint32_t id)
+int BlinkerSerialAIR202::autoPrint(unsigned long id)
 {
     String payload = BLINKER_F("{\"data\":{\"set\":{");
     payload += BLINKER_F("\"trigged\":true,\"autoData\":{");

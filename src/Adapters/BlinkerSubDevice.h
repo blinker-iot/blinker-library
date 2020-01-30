@@ -256,7 +256,7 @@ class BlinkerSubDevice : public BlinkerStream
         int  duerPrint(const String & data, bool report = false);
         int miPrint(const String & data);
         void begin(const char* _key, const char* _type);
-        int autoPrint(uint32_t id);
+        int autoPrint(unsigned long id);
         char * deviceName();
         char * authKey() { return AUTHKEY_PRO; }
         int init() { return isAuth; }
@@ -721,7 +721,7 @@ void BlinkerSubDevice::begin(const char* _key, const char* _type)
     BLINKER_LOG_ALL(BLINKER_F("PRO deviceType: "), _type);
 }
 
-int BlinkerSubDevice::autoPrint(uint32_t id)
+int BlinkerSubDevice::autoPrint(unsigned long id)
 {
     return false;
 }

@@ -91,7 +91,7 @@ class BlinkerMQTT : public BlinkerStream
         void miType(const String & type);
         void begin(const char* auth);
         bool begin();
-        int autoPrint(uint32_t id);
+        int autoPrint(unsigned long id);
         // bool autoPrint(char *name, char *type, char *data);
         // bool autoPrint(char *name1, char *type1, char *data1,
         //             char *name2, char *type2, char *data2);
@@ -1311,16 +1311,17 @@ bool BlinkerMQTT::begin() {
     // }
 }
 
-int BlinkerMQTT::autoPrint(uint32_t id)
+int BlinkerMQTT::autoPrint(unsigned long id)
 {
     String payload = BLINKER_F("{\"data\":{\"set\":{");
-    payload += BLINKER_F("\"trigged\":true,\"autoData\":{");
-    payload += BLINKER_F("\"autoId\":");
-    payload += STRING_format(id);
+    payload += BLINKER_F("\"auto\":{\"trig\":true,");
+    payload += BLINKER_F("\"id\":");
+    payload += String(id);
     payload += BLINKER_F("}}}");
     payload += BLINKER_F(",\"fromDevice\":\"");
     payload += STRING_format(MQTT_ID_MQTT);
-    payload += BLINKER_F("\",\"toDevice\":\"autoManager\"}");
+    payload += BLINKER_F("\",\"deviceType\":\"Auto\"");
+    payload += BLINKER_F(",\"toDevice\":\"serverClient\"}");
         // "\",\"deviceType\":\"" + "type" + "\"}";
 
     BLINKER_LOG_ALL(BLINKER_F("autoPrint..."));

@@ -2450,7 +2450,7 @@ void BlinkerApi::begin()
     #endif
 
     #if defined(BLINKER_OTA_VERSION_CODE) && (defined(BLINKER_MQTT) || \
-        defined(BLINKER_MQTT_AT) || defined(BLINKER_MQTT_AUTO))
+        defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AUTO))
         if (strlen(BLINKER_OTA_VERSION_CODE) >= BLINKER_OTA_INFO_SIZE)
         {
             while(1)
@@ -2883,6 +2883,8 @@ void BlinkerApi::run()
                             }
                         }
                         // BProto::sharers(freshSharers());
+
+                        beginAuto();
                     }
                 }
                 else
@@ -3057,6 +3059,8 @@ void BlinkerApi::run()
                             }
                         }
                         // BProto::sharers(freshSharers());
+
+                        beginAuto();
                     }
                 }
                 else
@@ -6312,6 +6316,8 @@ float BlinkerApi::gps(b_gps_t axis)
             {
                 if (autoTrigged(_AUTO[_num]->id()))
                 {
+                    run();
+
                     BLINKER_LOG_ALL(BLINKER_F("trigged sucessed"));
 
                     _AUTO[_num]->fresh();
@@ -6320,6 +6326,8 @@ float BlinkerApi::gps(b_gps_t axis)
                 {
                     BLINKER_LOG_ALL(BLINKER_F("trigged failed"));
                 }
+
+                run();
             }
         }
     }
@@ -9489,6 +9497,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         !defined(BLINKER_LOWPOWER_AIR202))
     void BlinkerApi::autoStart()
     {
+        BLINKER_LOG_ALL(BLINKER_F("_______autoStart_______"));
         uint8_t checkData;
 
         EEPROM.begin(BLINKER_EEP_SIZE);
@@ -9553,7 +9562,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             for (uint8_t num = 0; num < 2; num++)
             {
-                uint32_t _autoId = data[BLINKER_CMD_AUTO][num][BLINKER_CMD_AUTOID];
+                unsigned long _autoId = data[BLINKER_CMD_AUTO][num][BLINKER_CMD_AUTOID];
                 String arrayData = data[BLINKER_CMD_AUTO][num];
 
                 if (_aCount)
@@ -9616,8 +9625,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             BLINKER_LOG_ALL(BLINKER_F("get auto setting"));
 
             // bool isDelet = STRING_contains_string(BProto::dataParse(), BLINKER_CMD_DELETID);
-            // String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-            //                             [BLINKER_CMD_ACTION][0];
+            String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                                        [BLINKER_CMD_ACTION][0];
 
             // if (isDelet)
             // {
@@ -9687,19 +9696,74 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             //         }
             //     }
             // }
-            // else
+            if (isTriggedArray != "null")
+            {
+                BLINKER_LOG_ALL(BLINKER_F("_auto trigged action: "), isTriggedArray);
+
+                for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
+                {
+                    String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                                                [BLINKER_CMD_ACTION][a_num];
+
+                    if(_autoData_array != "null")
+                    {
+                        _fresh = false;
+                        // DynamicJsonBuffer _jsonBuffer;
+                        // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
+                        DynamicJsonDocument jsonBuffer(1024);
+                        deserializeJson(jsonBuffer, _autoData_array);
+                        JsonObject _array = jsonBuffer.as<JsonObject>();
+
+                        json_parse(_array);
+                        #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+                            !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                            !defined(BLINKER_LOWPOWER_AIR202))
+                        timerManager(_array, true);
+                        #endif
+
+                        if (_fresh)
+                        {
+                            BProto::isParsed();
+                        }
+                        else
+                        {
+                            #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
+                                defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+                                if (_parseFunc) {
+                                    if(_parseFunc(_array)) {
+                                        BLINKER_LOG_ALL(BLINKER_F("_parseFunc(_array) isParsed"));
+                                        _fresh = true;
+                                        BProto::isParsed();
+                                    }
+
+                                    BLINKER_LOG_ALL(BLINKER_F("run parse callback function"));
+                                }
+                            #endif
+                        }
+                    }
+                    else
+                    {
+                        // a_num = BLINKER_MAX_WIDGET_SIZE;
+                        return true;
+                    }
+                }
+            }
+            else
             {
                 // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
-                uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_AUTOID].as<uint32_t>();
+                String get_autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_ID].as<String>();
+                // _autoId = get_autoId.toInt();
 
-                BLINKER_LOG_ALL(BLINKER_F("_autoId: "), _autoId);
+                BLINKER_LOG_ALL(BLINKER_F("_autoId: "), strtoul(get_autoId.c_str(),NULL,10));
+                BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
                 // _aCount = 0;
 
                 if (_aCount)
                 {
                     for (uint8_t _num = 0; _num < _aCount; _num++)
                     {
-                        if (_AUTO[_num]->id() == _autoId)
+                        BLINKER_LOG_ALL(BLINKER_F("check _autoId: "), _AUTO[_num]->id(), " ", _AUTO[_num]->id() == strtoul(get_autoId.c_str(),NULL,10));
+                        if (_AUTO[_num]->id() == strtoul(get_autoId.c_str(),NULL,10))
                         {
                             _AUTO[_num]->manager(data);
                             return true;

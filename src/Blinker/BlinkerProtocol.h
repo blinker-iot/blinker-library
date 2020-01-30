@@ -82,7 +82,7 @@ class BlinkerProtocol
             // void ping() { if (isInit) conn->ping(); }
             #if !defined(BLINKER_MQTT_AT)
             int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
-            int autoPrint(uint32_t id)  { return isInit ? conn->autoPrint(id) : false; }
+            int autoPrint(unsigned long id)  { return isInit ? conn->autoPrint(id) : false; }
             void sharers(const String & data) { if (isInit) conn->sharers(data); }
             int needFreshShare() { if (isInit) return conn->needFreshShare(); else return false; }
             #endif
