@@ -3078,7 +3078,15 @@ bool BlinkerWlan::run()
             connect();
             break;
         case BWL_SMARTCONFIG_BEGIN :
-            smartconfigDone();
+            if (_configType == BLINKER_SMART_CONFIG)
+            {
+                smartconfigDone();
+            }
+            else
+            {
+                WiFi.stopSmartConfig();
+                _status = BWL_CONFIG_FAIL;
+            }
             break;
         case BWL_SMARTCONFIG_DONE :
             return connected();
