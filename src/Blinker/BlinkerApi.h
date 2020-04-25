@@ -659,24 +659,24 @@ class BlinkerApi : public BlinkerProtocol
         { _dataGetFunc = newFunction; }
 
         void freshAttachWidget(char _name[], blinker_callback_with_string_arg_t _func);
-        #if defined(BLINKER_BLE)
+        // #if defined(BLINKER_BLE)
             void freshAttachWidget(char _name[], blinker_callback_with_joy_arg_t _func);
-        #endif
+        // #endif
         void freshAttachWidget(char _name[], blinker_callback_with_rgb_arg_t _func);
         void freshAttachWidget(char _name[], blinker_callback_with_int32_arg_t _func);
         void freshAttachWidget(char _name[], blinker_callback_with_table_arg_t _func, blinker_callback_t _func2);
         uint8_t attachWidget(char _name[], blinker_callback_with_string_arg_t _func);
-        #if defined(BLINKER_BLE)
+        // #if defined(BLINKER_BLE)
             uint8_t attachWidget(char _name[], blinker_callback_with_joy_arg_t _func);
-        #endif
+        // #endif
         uint8_t attachWidget(char _name[], blinker_callback_with_rgb_arg_t _func);
         uint8_t attachWidget(char _name[], blinker_callback_with_int32_arg_t _func);
         uint8_t attachWidget(char _name[], blinker_callback_with_table_arg_t _func, blinker_callback_t _func2);
         void attachSwitch(blinker_callback_with_string_arg_t _func);
         char * widgetName_str(uint8_t num);
-        #if defined(BLINKER_BLE)
+        // #if defined(BLINKER_BLE)
             char * widgetName_joy(uint8_t num);
-        #endif
+        // #endif
         char * widgetName_rgb(uint8_t num);
         char * widgetName_int(uint8_t num);
         char * widgetName_tab(uint8_t num);
@@ -767,9 +767,9 @@ class BlinkerApi : public BlinkerProtocol
 
         class BlinkerWidgets_num *          _Widgets_num[BLINKER_MAX_WIDGET_SIZE*2];
         class BlinkerWidgets_string *       _Widgets_str[BLINKER_MAX_WIDGET_SIZE*2];
-        #if defined(BLINKER_BLE)
+        // #if defined(BLINKER_BLE)
             class BlinkerWidgets_joy *          _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
-        #endif
+        // #endif
         class BlinkerWidgets_rgb *          _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_int32 *        _Widgets_int[BLINKER_MAX_WIDGET_SIZE*2];
         class BlinkerWidgets_table *        _Widgets_tab[BLINKER_MAX_WIDGET_SIZE*2];
@@ -1028,9 +1028,9 @@ class BlinkerApi : public BlinkerProtocol
                 void bridgeParse(char _bName[], uint8_t num, const JsonObject& data);
             #endif
             void strWidgetsParse(char _wName[], const JsonObject& data);
-            #if defined(BLINKER_BLE)
+            // #if defined(BLINKER_BLE)
                 void joyWidgetsParse(char _wName[], const JsonObject& data);
-            #endif
+            // #endif
             void rgbWidgetsParse(char _wName[], const JsonObject& data);
             void intWidgetsParse(char _wName[], const JsonObject& data);
             void tabWidgetsParse(char _wName[], const JsonObject& data);
@@ -1045,9 +1045,9 @@ class BlinkerApi : public BlinkerProtocol
             void setSwitch(char data[]);
 
             void strWidgetsParse(char _wName[], char _data[]);
-            #if defined(BLINKER_BLE)
+            // #if defined(BLINKER_BLE)
                 void joyWidgetsParse(char _wName[], char _data[]);
-            #endif
+            // #endif
             void rgbWidgetsParse(char _wName[], char _data[]);
             void intWidgetsParse(char _wName[], char _data[]);
             void tabWidgetsParse(char _wName[], char _data[]);
@@ -6803,13 +6803,13 @@ void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_string_ar
     if(num >= 0 ) _Widgets_str[num]->setFunc(_func);
 }
 
-#if defined(BLINKER_BLE)
+// #if defined(BLINKER_BLE)
     void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_joy_arg_t _func)
     {
         int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
         if(num >= 0 ) _Widgets_joy[num]->setFunc(_func);
     }
-#endif
+// #endif
 
 void BlinkerApi::freshAttachWidget(char _name[], blinker_callback_with_rgb_arg_t _func)
 {
@@ -6861,7 +6861,7 @@ uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_string_arg_
     }
 }
 
-#if defined(BLINKER_BLE)
+// #if defined(BLINKER_BLE)
     uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_joy_arg_t _func)
     {
         int8_t num = checkNum(_name, _Widgets_joy, _wCount_joy);
@@ -6893,7 +6893,7 @@ uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_string_arg_
             return 0;
         }
     }
-#endif
+// #endif
 
 uint8_t BlinkerApi::attachWidget(char _name[], blinker_callback_with_rgb_arg_t _func)
 {
@@ -7012,13 +7012,13 @@ char * BlinkerApi::widgetName_str(uint8_t num)
     else return "";
 }
 
-#if defined(BLINKER_BLE)
+// #if defined(BLINKER_BLE)
     char * BlinkerApi::widgetName_joy(uint8_t num)
     {
         if (num) return _Widgets_joy[num - 1]->getName();
         else return "";
     }
-#endif
+// #endif
 
 char * BlinkerApi::widgetName_rgb(uint8_t num)
 {
@@ -7279,7 +7279,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
     }
 
-    #if defined(BLINKER_BLE)
+    // #if defined(BLINKER_BLE)
         void BlinkerApi::joyWidgetsParse(char _wName[], const JsonObject& data)
         {
             int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
@@ -7297,7 +7297,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 if (wFunc) wFunc(jxAxisValue, jyAxisValue);
             }
         }
-    #endif
+    // #endif
 
     void BlinkerApi::rgbWidgetsParse(char _wName[], const JsonObject& data)
     {
@@ -7410,11 +7410,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
             rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), data);
         }
-        #if defined(BLINKER_BLE)
+        // #if defined(BLINKER_BLE)
             for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
                 joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), data);
             }
-        #endif
+        // #endif
         for (uint8_t wNum_tab = 0; wNum_tab < _wCount_tab; wNum_tab++) {
             tabWidgetsParse(_Widgets_tab[wNum_tab]->getName(), data);
         }
@@ -7586,7 +7586,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         }
     }
 
-    #if defined(BLINKER_BLE)
+    // #if defined(BLINKER_BLE)
         void BlinkerApi::joyWidgetsParse(char _wName[], char _data[])
         {
             int8_t num = checkNum(_wName, _Widgets_joy, _wCount_joy);
@@ -7608,7 +7608,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 if (wFunc) wFunc(jxAxisValue, jyAxisValue);
             }
         }
-    #endif
+    // #endif
 
     void BlinkerApi::rgbWidgetsParse(char _wName[], char _data[])
     {
@@ -7745,11 +7745,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         for (uint8_t wNum_rgb = 0; wNum_rgb < _wCount_rgb; wNum_rgb++) {
             rgbWidgetsParse(_Widgets_rgb[wNum_rgb]->getName(), _data);
         }
-        #if defined(BLINKER_BLE)
+        // #if defined(BLINKER_BLE)
             for (uint8_t wNum_joy = 0; wNum_joy < _wCount_joy; wNum_joy++) {
                 joyWidgetsParse(_Widgets_joy[wNum_joy]->getName(), _data);
             }
-        #endif
+        // #endif
         for (uint8_t wNum_tab = 0; wNum_tab < _wCount_tab; wNum_tab++) {
             tabWidgetsParse(_Widgets_tab[wNum_tab]->getName(), _data);
         }

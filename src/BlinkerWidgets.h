@@ -9,9 +9,9 @@
 #include "Functions/BlinkerButton.h"
 #include "Functions/BlinkerNumber.h"
 #include "Functions/BlinkerRGB.h"
-#if defined(BLINKER_BLE)
+// #if defined(BLINKER_BLE)
     #include "Functions/BlinkerJoystick.h"
-#endif
+// #endif
 #include "Functions/BlinkerSlider.h"
 #include "Functions/BlinkerSwitch.h"
 #include "Functions/BlinkerTab.h"
