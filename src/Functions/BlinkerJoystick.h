@@ -1,7 +1,7 @@
 #ifndef BLINKER_JOYSTICK_H
 #define BLINKER_JOYSTICK_H
 
-#if defined(BLINKER_BLE)
+// #if defined(BLINKER_BLE)
     #include "../Blinker/BlinkerConfig.h"
     #include "../Blinker/BlinkerUtility.h"
 
@@ -26,6 +26,6 @@
         private :
             uint8_t wNum;
     };
-#endif
+// #endif
 
 #endif
