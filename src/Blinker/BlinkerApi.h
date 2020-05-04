@@ -9752,13 +9752,15 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             {
                 // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
                 String get_autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_ID].as<String>();
+                String del_autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE].as<String>();
                 // _autoId = get_autoId.toInt();
 
-                BLINKER_LOG_ALL(BLINKER_F("_autoId: "), strtoul(get_autoId.c_str(),NULL,10));
+                BLINKER_LOG_ALL(BLINKER_F("get_autoId: "), strtoul(get_autoId.c_str(),NULL,10));
+                BLINKER_LOG_ALL(BLINKER_F("del_autoId: "), strtoul(del_autoId.c_str(),NULL,10));
                 BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
                 // _aCount = 0;
 
-                if (_aCount)
+                if (_aCount && strtoul(del_autoId.c_str(),NULL,10) == 0)
                 {
                     for (uint8_t _num = 0; _num < _aCount; _num++)
                     {
@@ -9789,11 +9791,18 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     }
                     else
                     {
-                        _AUTO[_aCount - 1]->manager(data);
+                        _AUTO[0]->setNum(1);
+                        _AUTO[0]->deserialization();
+                        _AUTO[0]->setNum(0);
+                        _AUTO[0]->serialization();
+
+                        _AUTO[1] = new BlinkerAUTO();
+                        _AUTO[1]->setNum(1);
+                        _AUTO[1]->manager(data);
                         // return true;
                     }
                 }
-                else
+                else if (_aCount == 0 && strtoul(del_autoId.c_str(),NULL,10) == 0)
                 {
                     _AUTO[_aCount] = new BlinkerAUTO();
                     _AUTO[_aCount]->setNum(_aCount);
@@ -9810,6 +9819,41 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                     // static_cast<Proto*>(this)->_print(autoData(), false);
                     // return true;
+                }
+                else if (strtoul(del_autoId.c_str(),NULL,10) != 0)
+                {
+                    for (uint8_t _num = 0; _num < _aCount; _num++)
+                    {
+                        BLINKER_LOG_ALL(BLINKER_F("check _autoId: "), _AUTO[_num]->id(), " ", _AUTO[_num]->id() == strtoul(del_autoId.c_str(),NULL,10));
+                        if (_AUTO[_num]->id() == strtoul(del_autoId.c_str(),NULL,10))
+                        {
+                            if (_num == 0) 
+                            {
+                                _AUTO[1]->setNum(0);
+                                _AUTO[1]->serialization();
+
+                                _AUTO[0]->deserialization();
+
+                                free(_AUTO[1]);
+                                
+                                _aCount--;
+                                EEPROM.begin(BLINKER_EEP_SIZE);
+                                EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                                EEPROM.commit();
+                                EEPROM.end();
+                            }
+                            else
+                            {
+                                free(_AUTO[1]);
+                                _aCount--;
+                                EEPROM.begin(BLINKER_EEP_SIZE);
+                                EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                                EEPROM.commit();
+                                EEPROM.end();
+                            }
+                            
+                        }
+                    }
                 }
             }
             return true;

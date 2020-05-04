@@ -119,9 +119,10 @@ class BlinkerAUTO
 
 void BlinkerAUTO::run(const String & key, float data, int32_t nowTime)
 {
-    BLINKER_LOG_ALL(BLINKER_F("BlinkerAUTO run key: "), key, 
-                    BLINKER_F(" data: "), data, 
-                    BLINKER_F(" nowTime: "), nowTime);
+    BLINKER_LOG_ALL(BLINKER_F("BlinkerAUTO run key: "), key,
+                    BLINKER_F(" ,data: "), data, 
+                    BLINKER_F(" ,nowTime: "), nowTime,
+                    BLINKER_F(" ,autoId: "), _autoId);
     
     // static uint8_t _num;
     // for (uint8_t _num = 0; _num < _targetNum; _num++)
