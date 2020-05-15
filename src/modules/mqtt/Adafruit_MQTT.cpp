@@ -371,6 +371,30 @@ bool Adafruit_MQTT::subscribe(Adafruit_MQTT_Subscribe *sub) {
   return false;
 }
 
+
+// bool Adafruit_MQTT::subscribeRRPC(Adafruit_MQTT_Subscribe *sub) {
+// //   uint8_t i;
+//   // see if we are already subscribed
+// //   for (i=0; i<MAXSUBSCRIPTIONS; i++) {
+//     if (subrrpcscriptions == sub) {
+//       DEBUG_PRINTLN(F("Already subscribed"));
+//       return true;
+//     }
+// //   }
+// //   if (i==MAXSUBSCRIPTIONS) { // add to subscriptionlist
+// //     for (i=0; i<MAXSUBSCRIPTIONS; i++) {
+//       if (subrrpcscriptions == 0) {
+//         DEBUG_PRINT(F("Added sub "));
+//         subrrpcscriptions = sub;
+//         return true;
+//       }
+// //     }
+// //   }
+
+//   DEBUG_PRINTLN(F("no more subscription space :("));
+//   return false;
+// }
+
 int8_t Adafruit_MQTT::subscribePacketWrite(const char *_topic, uint8_t _qos) {
   if (connected()) {
     // Ignore subscriptions that aren't defined.
@@ -551,7 +575,73 @@ Adafruit_MQTT_Subscribe *Adafruit_MQTT::readSubscription(int16_t timeout) {
       }
     }
   }
-  if (i==MAXSUBSCRIPTIONS) return NULL; // matching sub not found ???
+    if (i==MAXSUBSCRIPTIONS) {
+        DEBUG_PRINTLN(F("Not found sub #"));
+
+        uint8_t packet_id_len = 0;
+        uint16_t packetid = 0;
+        // Check if it is QoS 1, TODO: we dont support QoS 2
+        if ((buffer[0] & 0x6) == 0x2) {
+            packet_id_len = 2;
+            packetid = buffer[topiclen+4];
+            packetid <<= 8;
+            packetid |= buffer[topiclen+5];
+        }
+
+        // uint8_t lastread[SUBSCRIPTIONDATALEN];
+        memset(extra_topic, '\0', 128);
+        memset(extra_data, '\0', SUBSCRIPTIONDATALEN);
+        // uint8_t topic[128];
+
+        if(len <= 129) {
+            datalen = len - topiclen - packet_id_len - 4;
+            if (datalen > SUBSCRIPTIONDATALEN) {
+                datalen = SUBSCRIPTIONDATALEN-1; // cut it off
+            }
+            // extract out just the data, into the subscription object itself
+            memmove(extra_data, buffer+4+topiclen+packet_id_len, datalen);
+            memmove(extra_topic, buffer+4, topiclen);
+            // subscriptions[i]->datalen = datalen;
+            DEBUG_PRINT(F("Data len: ")); DEBUG_PRINTLN(datalen);
+            DEBUG_PRINT(F("Data: ")); DEBUG_PRINTLN((char *)extra_data);
+            DEBUG_PRINT(F("topic: ")); DEBUG_PRINTLN(extra_topic);
+
+            if ((MQTT_PROTOCOL_LEVEL > 3) &&(buffer[0] & 0x6) == 0x2) {
+            uint8_t ackpacket[4];
+            
+            // Construct and send puback packet.
+            uint8_t len = pubackPacket(ackpacket, packetid);
+            if (!sendPacket(ackpacket, len))
+                DEBUG_PRINT(F("Failed"));
+            }
+        }
+        else {
+            datalen = len - topiclen - packet_id_len - 5;
+            if (datalen > SUBSCRIPTIONDATALEN) {
+                datalen = SUBSCRIPTIONDATALEN-1; // cut it off
+            }
+            // extract out just the data, into the subscription object itself
+            memmove(extra_data, buffer+5+topiclen+packet_id_len, datalen);
+            memmove(extra_topic, buffer+5, topiclen);
+            // subscriptions[i]->datalen = datalen;
+            DEBUG_PRINT(F("Data len: ")); DEBUG_PRINTLN(datalen);
+            DEBUG_PRINT(F("Data: ")); DEBUG_PRINTLN((char *)extra_data);
+            DEBUG_PRINT(F("topic: ")); DEBUG_PRINTLN((char *)extra_topic);
+
+            if ((MQTT_PROTOCOL_LEVEL > 3) &&(buffer[0] & 0x6) == 0x2) {
+            uint8_t ackpacket[5];
+            
+            // Construct and send puback packet.
+            uint8_t len = pubackPacket(ackpacket, packetid);
+            if (!sendPacket(ackpacket, len))
+                DEBUG_PRINT(F("Failed"));
+            }
+        }
+        
+        get_extra = true;
+
+        return NULL; // matching sub not found ???
+    }
 
   uint8_t packet_id_len = 0;
   uint16_t packetid = 0;

@@ -185,6 +185,7 @@ class Adafruit_MQTT {
   // Must be called before connect(), subscribing after the connection
   // is made is not currently supported.
   bool subscribe(Adafruit_MQTT_Subscribe *sub);
+//   bool subscribeRRPC(Adafruit_MQTT_Subscribe *sub);
   int8_t subscribePacketWrite(const char *_topic, uint8_t _qos = 0);
   bool subscribeTopic(const char *topic);
 
@@ -201,6 +202,18 @@ class Adafruit_MQTT {
 
   // Ping the server to ensure the connection is still alive.
   bool ping(uint8_t n = 1);
+
+  bool check_extra()
+  {
+      if (get_extra) {
+          get_extra = false;
+          return true;
+      }
+      return false;
+  }
+
+  char *get_extra_topic() { return extra_topic; }
+  uint8_t *get_extra_data() { return extra_data; }
 
  protected:
   // Interface that subclasses need to implement:
@@ -237,8 +250,13 @@ class Adafruit_MQTT {
   uint8_t buffer[MAXBUFFERSIZE];  // one buffer, used for all incoming/outgoing
   uint16_t packet_id_counter;
 
+  char extra_topic[128];
+  uint8_t extra_data[SUBSCRIPTIONDATALEN];
+  bool get_extra = false;
+
  private:
   Adafruit_MQTT_Subscribe *subscriptions[MAXSUBSCRIPTIONS];
+//   Adafruit_MQTT_Subscribe *subrrpcscriptions;
 
   void    flushIncoming(uint16_t timeout);
 
