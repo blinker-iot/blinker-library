@@ -1223,7 +1223,29 @@ int BlinkerMQTT::aliPrint(const String & data)
         }
         respAliTime = millis();
 
-        if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data_add.c_str()))
+        
+        char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+        if (is_rrpc)
+        {
+            
+            strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+            BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+        }
+        else
+        {
+            strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
+        }
+
+        is_rrpc = false;
+
+        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1287,8 +1309,6 @@ int BlinkerMQTT::duerPrint(const String & data, bool report)
         //     return false;
         // }
 
-        is_rrpc = false;
-
         if (!checkDuerPrintSpan())
         {
             respDuerTime = millis();
@@ -1315,6 +1335,8 @@ int BlinkerMQTT::duerPrint(const String & data, bool report)
         {
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
         }
+
+        is_rrpc = false;
         
 
         if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
@@ -1396,6 +1418,8 @@ int BlinkerMQTT::miPrint(const String & data)
         {
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
         }
+
+        is_rrpc = false;
 
         if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {
