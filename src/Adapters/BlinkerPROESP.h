@@ -537,7 +537,7 @@ void BlinkerPROESP::subscribe()
         {
             BLINKER_LOG_ALL(BLINKER_F("Got: "), (char *)iotSub_PRO->lastread);
             
-            parseData((char *)iotSub_MQTT->lastread);
+            parseData((char *)iotSub_PRO->lastread);
             // // DynamicJsonBuffer jsonBuffer;
             // // JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_PRO->lastread));
             // DynamicJsonDocument jsonBuffer(1024);
@@ -681,9 +681,9 @@ void BlinkerPROESP::subscribe()
             // char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
             
             // strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
-            // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+            // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_PRO);
             // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
-            // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_DEVICEID_PRO);
             // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
 
@@ -1207,9 +1207,9 @@ int BlinkerPROESP::aliPrint(const String & data)
         {
             
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
-            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_PRO);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
-            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_DEVICEID_PRO);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
 
@@ -1287,9 +1287,9 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
         {
             
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
-            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_PRO);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
-            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_DEVICEID_PRO);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
 
