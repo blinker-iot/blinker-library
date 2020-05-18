@@ -1182,7 +1182,6 @@ int BlinkerPROESP::aliPrint(const String & data)
 
     if (mqtt_PRO->connected())
     {
-        is_rrpc = false;
         
         if (!checkAliKA())
         {
@@ -1219,6 +1218,8 @@ int BlinkerPROESP::aliPrint(const String & data)
         {
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_PRO);
         }
+
+        is_rrpc = false;
 
         if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {
@@ -1266,7 +1267,6 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
 
     if (mqtt_PRO->connected())
     {
-        is_rrpc = false;
         
         if (!checkDuerKA())
         {
@@ -1299,6 +1299,8 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
         {
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_PRO);
         }
+
+        is_rrpc = false;
 
         if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {
@@ -1346,7 +1348,6 @@ int BlinkerPROESP::miPrint(const String & data)
 
     if (mqtt_PRO->connected())
     {
-        is_rrpc = false;
 
         if (!checkMIOTKA())
         {
@@ -1379,6 +1380,8 @@ int BlinkerPROESP::miPrint(const String & data)
         {
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_PRO);
         }
+
+        is_rrpc = false;
 
         if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {

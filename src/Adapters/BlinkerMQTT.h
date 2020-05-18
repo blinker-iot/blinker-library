@@ -1243,6 +1243,8 @@ int BlinkerMQTT::aliPrint(const String & data)
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
         }
 
+        is_rrpc = false;
+
         if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {
             BLINKER_LOG_ALL(data_add);
@@ -1307,8 +1309,6 @@ int BlinkerMQTT::duerPrint(const String & data, bool report)
         //     return false;
         // }
 
-        is_rrpc = false;
-
         if (!checkDuerPrintSpan())
         {
             respDuerTime = millis();
@@ -1335,6 +1335,8 @@ int BlinkerMQTT::duerPrint(const String & data, bool report)
         {
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
         }
+
+        is_rrpc = false;
         
 
         if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
@@ -1416,6 +1418,8 @@ int BlinkerMQTT::miPrint(const String & data)
         {
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
         }
+
+        is_rrpc = false;
 
         if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {
