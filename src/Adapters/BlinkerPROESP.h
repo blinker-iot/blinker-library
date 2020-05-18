@@ -7,10 +7,14 @@
     #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
     #include <ESP8266HTTPClient.h>
+
+    #include <base64.h>
 #elif defined(ESP32)
     #include <ESPmDNS.h>
     #include <WiFi.h>
     #include <HTTPClient.h>
+
+    #include <base64.h>
 #endif
 
 #include <EEPROM.h>
@@ -38,6 +42,7 @@ char*       MQTT_DEVICEID_PRO;
 // char*       DEVICE_NAME;
 char*       BLINKER_PUB_TOPIC_PRO;
 char*       BLINKER_SUB_TOPIC_PRO;
+char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
 uint16_t    MQTT_PORT_PRO;
 
 enum b_config_t {
@@ -127,6 +132,7 @@ class BlinkerPROESP : public BlinkerStream
         int checkDuerPrintSpan();
         int checkMIOTPrintSpan();
         int pubHello();
+        void parseData(const char* data);
 
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
@@ -176,6 +182,9 @@ class BlinkerPROESP : public BlinkerStream
         uint8_t     _reRegister_times = 0;
 
         bool        _isAuthKey = false;
+
+        char        message_id[24];
+        bool        is_rrpc = false;
 };
 
 // #if defined(ESP8266)
@@ -528,124 +537,279 @@ void BlinkerPROESP::subscribe()
         {
             BLINKER_LOG_ALL(BLINKER_F("Got: "), (char *)iotSub_PRO->lastread);
             
-            // DynamicJsonBuffer jsonBuffer;
-            // JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_PRO->lastread));
-            DynamicJsonDocument jsonBuffer(1024);
-            DeserializationError error = deserializeJson(jsonBuffer, String((char *)iotSub_PRO->lastread));
-            JsonObject root = jsonBuffer.as<JsonObject>();
+            parseData((char *)iotSub_MQTT->lastread);
+            // // DynamicJsonBuffer jsonBuffer;
+            // // JsonObject& root = jsonBuffer.parseObject(String((char *)iotSub_PRO->lastread));
+            // DynamicJsonDocument jsonBuffer(1024);
+            // DeserializationError error = deserializeJson(jsonBuffer, String((char *)iotSub_PRO->lastread));
+            // JsonObject root = jsonBuffer.as<JsonObject>();
 
-            String _uuid = root["fromDevice"];
-            String dataGet = root["data"];
+            // String _uuid = root["fromDevice"];
+            // String dataGet = root["data"];
             
-            BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
-            BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
+            // BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
+            // BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
             
-            if (strcmp(_uuid.c_str(), UUID_PRO) == 0)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("Authority uuid"));
+            // if (strcmp(_uuid.c_str(), UUID_PRO) == 0)
+            // {
+            //     BLINKER_LOG_ALL(BLINKER_F("Authority uuid"));
                 
-                kaTime = millis();
-                isAvail_PRO = true;
-                isAlive = true;
+            //     kaTime = millis();
+            //     isAvail_PRO = true;
+            //     isAlive = true;
 
-                _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
-            }
-            else if (_uuid == BLINKER_CMD_ALIGENIE)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("form AliGenie"));
+            //     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+            // }
+            // else if (_uuid == BLINKER_CMD_ALIGENIE)
+            // {
+            //     BLINKER_LOG_ALL(BLINKER_F("form AliGenie"));
                 
-                aliKaTime = millis();
-                isAliAlive = true;
-                isAliAvail = true;
-            }
-            else if (_uuid == BLINKER_CMD_DUEROS)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
+            //     aliKaTime = millis();
+            //     isAliAlive = true;
+            //     isAliAvail = true;
+            // }
+            // else if (_uuid == BLINKER_CMD_DUEROS)
+            // {
+            //     BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
                 
-                duerKaTime = millis();
-                isDuerAlive = true;
-                isDuerAvail = true;
-            }
-            else if (_uuid == BLINKER_CMD_MIOT)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
+            //     duerKaTime = millis();
+            //     isDuerAlive = true;
+            //     isDuerAvail = true;
+            // }
+            // else if (_uuid == BLINKER_CMD_MIOT)
+            // {
+            //     BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
                 
-                miKaTime = millis();
-                isMIOTAlive = true;
-                isMIOTAvail = true;
-            }         
-            else if (_uuid == BLINKER_CMD_SERVERCLIENT)
-            {
-                BLINKER_LOG_ALL(BLINKER_F("form Sever"));
+            //     miKaTime = millis();
+            //     isMIOTAlive = true;
+            //     isMIOTAvail = true;
+            // }         
+            // else if (_uuid == BLINKER_CMD_SERVERCLIENT)
+            // {
+            //     BLINKER_LOG_ALL(BLINKER_F("form Sever"));
 
-                isAvail_PRO = true;
-                isAlive = true;
+            //     isAvail_PRO = true;
+            //     isAlive = true;
 
-                _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
-            }
-            else
-            {
-                if (_sharerCount)
-                {
-                    for (uint8_t num = 0; num < _sharerCount; num++)
-                    {
-                        if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
-                        {
-                            _sharerFrom = num;
+            //     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+            // }
+            // else
+            // {
+            //     if (_sharerCount)
+            //     {
+            //         for (uint8_t num = 0; num < _sharerCount; num++)
+            //         {
+            //             if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+            //             {
+            //                 _sharerFrom = num;
 
-                            kaTime = millis();
+            //                 kaTime = millis();
 
-                            BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
-                            BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+            //                 BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+            //                 BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
 
-                            _needCheckShare = false;
+            //                 _needCheckShare = false;
 
-                            break;
-                        }
-                        else
-                        {
-                            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid,"
-                                        "check is from bridge/share device," 
-                                        "data: "), dataGet);
+            //                 break;
+            //             }
+            //             else
+            //             {
+            //                 BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid,"
+            //                             "check is from bridge/share device," 
+            //                             "data: "), dataGet);
 
-                            _needCheckShare = true;
-                        }                        
-                    }
-                }
+            //                 _needCheckShare = true;
+            //             }                        
+            //         }
+            //     }
                 
-                // {
-                    // dataGet = String((char *)iotSub_PRO->lastread);
-                // root.printTo(dataGet);
-                serializeJson(root, dataGet);
+            //     // {
+            //         // dataGet = String((char *)iotSub_PRO->lastread);
+            //     // root.printTo(dataGet);
+            //     serializeJson(root, dataGet);
                     
-                    // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
-                    //                     check is from bridge/share device, \
-                    //                     data: "), dataGet);
+            //         // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+            //         //                     check is from bridge/share device, \
+            //         //                     data: "), dataGet);
                 
-                    // // return;
+            //         // // return;
 
-                    // // isBavail = true;
+            //         // // isBavail = true;
 
-                    // _needCheckShare = true;
-                // }
+            //         // _needCheckShare = true;
+            //     // }
 
-                isAvail_PRO = true;
-                isAlive = true;
-            }
+            //     isAvail_PRO = true;
+            //     isAlive = true;
+            // }
 
             // memset(msgBuf_PRO, 0, BLINKER_MAX_READ_SIZE);
             // memcpy(msgBuf_PRO, dataGet.c_str(), dataGet.length());
 
-            if (isFresh_PRO) free(msgBuf_PRO);
-            msgBuf_PRO = (char*)malloc((dataGet.length()+1)*sizeof(char));
-            strcpy(msgBuf_PRO, dataGet.c_str());
-            isFresh_PRO = true;
+            // if (isFresh_PRO) free(msgBuf_PRO);
+            // msgBuf_PRO = (char*)malloc((dataGet.length()+1)*sizeof(char));
+            // strcpy(msgBuf_PRO, dataGet.c_str());
+            // isFresh_PRO = true;
             
-            this->latestTime = millis();
+            // this->latestTime = millis();
 
-            dataFrom_PRO = BLINKER_MSG_FROM_MQTT;
+            // dataFrom_PRO = BLINKER_MSG_FROM_MQTT;
         }
     }
+
+    if (mqtt_PRO->check_extra())
+    {
+        BLINKER_LOG_ALL(BLINKER_F("Got extra topic: "), (char *)mqtt_PRO->get_extra_topic());
+        BLINKER_LOG_ALL(BLINKER_F("Got extra data: "), (char *)mqtt_PRO->get_extra_data());
+
+        if (strncmp(BLINKER_RRPC_SUB_TOPIC_MQTT, 
+                    (char *)mqtt_PRO->get_extra_topic(), 
+                    strlen(BLINKER_RRPC_SUB_TOPIC_MQTT))
+                    == 0)
+        {
+            // char message_id[24];
+            memset(message_id, '\0', 24);
+
+            memmove(message_id, 
+                mqtt_PRO->get_extra_topic()+strlen(BLINKER_RRPC_SUB_TOPIC_MQTT),
+                strlen(mqtt_PRO->get_extra_topic()) - strlen(BLINKER_RRPC_SUB_TOPIC_MQTT));
+            
+            BLINKER_LOG_ALL(BLINKER_F("from server RRPC, message_id: "), message_id);
+
+            parseData((char *)mqtt_PRO->get_extra_data());
+
+            // char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+            
+            // strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+            // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+            // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+            // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+            // strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+            is_rrpc = true;
+            
+            // BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+
+            // mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode("hello blinker").c_str());
+        }
+    }
+}
+
+void BlinkerPROESP::parseData(const char* data)
+{
+    DynamicJsonDocument jsonBuffer(1024);
+    deserializeJson(jsonBuffer, String(data));
+    JsonObject root = jsonBuffer.as<JsonObject>();
+
+    String _uuid = root["fromDevice"].as<String>();
+    String dataGet = root["data"].as<String>();
+
+    BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
+    BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
+
+    if (strcmp(_uuid.c_str(), UUID_PRO) == 0)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("Authority uuid"));
+
+        kaTime = millis();
+        isAvail_PRO = true;
+        isAlive = true;
+
+        _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+    }
+    else if (_uuid == BLINKER_CMD_ALIGENIE)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("form AliGenie"));
+
+        aliKaTime = millis();
+        isAliAlive = true;
+        isAliAvail = true;
+    }
+    else if (_uuid == BLINKER_CMD_DUEROS)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("form DuerOS"));
+
+        duerKaTime = millis();
+        isDuerAlive = true;
+        isDuerAvail = true;
+    }
+    else if (_uuid == BLINKER_CMD_MIOT)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("form MIOT"));
+
+        miKaTime = millis();
+        isMIOTAlive = true;
+        isMIOTAvail = true;
+    }
+    else if (_uuid == BLINKER_CMD_SERVERCLIENT)
+    {
+        BLINKER_LOG_ALL(BLINKER_F("form Sever"));
+
+        isAvail_PRO = true;
+        isAlive = true;
+
+        _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+    }
+    else
+    {
+        if (_sharerCount)
+        {
+            for (uint8_t num = 0; num < _sharerCount; num++)
+            {
+                if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+                {
+                    _sharerFrom = num;
+
+                    kaTime = millis();
+
+                    BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+                    BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+                    
+                    _needCheckShare = false;
+
+                    break;
+                }
+                else
+                {
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, check is from bridge/share device, data: "), dataGet);
+
+                    _needCheckShare = true;
+                }
+            }
+        }
+        // else
+        // {
+            // dataGet = String((char *)iotSub_PRO->lastread);
+            // root.printTo(dataGet);
+            serializeJson(root, dataGet);
+
+        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, 
+        //                         check is from bridge/share device, \
+        //                         data: "), dataGet);
+
+        //     // return;
+
+        //     // isBavail = true;
+
+        //     _needCheckShare = true;
+        // }
+
+        isAvail_PRO = true;
+        isAlive = true;
+    }
+
+    // memset(msgBuf_PRO, 0, BLINKER_MAX_READ_SIZE);
+    // memcpy(msgBuf_PRO, dataGet.c_str(), dataGet.length());
+
+    if (isFresh_PRO) free(msgBuf_PRO);
+    msgBuf_PRO = (char*)malloc((dataGet.length()+1)*sizeof(char));
+    strcpy(msgBuf_PRO, dataGet.c_str());
+    isFresh_PRO = true;
+
+    this->latestTime = millis();
+
+    dataFrom_PRO = BLINKER_MSG_FROM_MQTT;
 }
 
 char * BlinkerPROESP::lastRead()
@@ -1018,6 +1182,8 @@ int BlinkerPROESP::aliPrint(const String & data)
 
     if (mqtt_PRO->connected())
     {
+        is_rrpc = false;
+        
         if (!checkAliKA())
         {
             return false;
@@ -1034,7 +1200,27 @@ int BlinkerPROESP::aliPrint(const String & data)
 
         // if (! iotPub.publish(payload.c_str())) {
 
-        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
+        
+        char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+        if (is_rrpc)
+        {
+            
+            strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+            BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+        }
+        else
+        {
+            strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_PRO);
+        }
+
+        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1080,6 +1266,8 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
 
     if (mqtt_PRO->connected())
     {
+        is_rrpc = false;
+        
         if (!checkDuerKA())
         {
             return false;
@@ -1092,7 +1280,27 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
         }
         respDuerTime = millis();
 
-        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
+        
+        char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+        if (is_rrpc)
+        {
+            
+            strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+            BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+        }
+        else
+        {
+            strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_PRO);
+        }
+
+        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1138,6 +1346,8 @@ int BlinkerPROESP::miPrint(const String & data)
 
     if (mqtt_PRO->connected())
     {
+        is_rrpc = false;
+
         if (!checkMIOTKA())
         {
             return false;
@@ -1150,7 +1360,27 @@ int BlinkerPROESP::miPrint(const String & data)
         }
         respMIOTTime = millis();
 
-        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data_add.c_str()))
+        
+        char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+        if (is_rrpc)
+        {
+            
+            strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_PRO);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_DEVICEID_PRO);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+            BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+        }
+        else
+        {
+            strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_PRO);
+        }
+
+        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -2021,6 +2251,7 @@ int BlinkerPROESP::connectServer() {
         free(MQTT_DEVICEID_PRO);
         free(BLINKER_PUB_TOPIC_PRO);
         free(BLINKER_SUB_TOPIC_PRO);
+        free(BLINKER_RRPC_SUB_TOPIC_MQTT);
         free(mqtt_PRO);
         free(iotSub_PRO);
 
@@ -2160,6 +2391,16 @@ int BlinkerPROESP::connectServer() {
         strcpy(BLINKER_SUB_TOPIC_PRO, SUB_TOPIC_STR.c_str());
         
         BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_PRO: "), BLINKER_SUB_TOPIC_PRO);
+
+        SUB_TOPIC_STR = BLINKER_F("/sys/");
+        SUB_TOPIC_STR += MQTT_PRODUCTINFO_PRO;
+        SUB_TOPIC_STR += BLINKER_F("/");
+        SUB_TOPIC_STR += MQTT_DEVICEID_PRO;
+        SUB_TOPIC_STR += BLINKER_F("/rrpc/request/");
+
+        BLINKER_RRPC_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
+        // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
+        strcpy(BLINKER_RRPC_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
         String PUB_TOPIC_STR = MQTT_PRODUCTINFO_PRO;
