@@ -698,6 +698,8 @@
 
     #define BLINKER_CMD_WEATHER_AT              "WEATHER"
 
+    #define BLINKER_CMD_WEATHER_FORECAST_AT     "WEATHER_FORECAST"
+
     #define BLINKER_CMD_AQI_AT                  "AQI"
 
     #define BLINKER_CMD_NOTICE_AT               "NOTIFY"
@@ -1414,6 +1416,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_EVENT_ERROR_NUMBER      25
 
     #define BLINKER_CMD_EVENT_MSG_NUMBER        26
+
+    #define BLINKER_CMD_WEATHER_FORECAST_NUMBER 27
 
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 
