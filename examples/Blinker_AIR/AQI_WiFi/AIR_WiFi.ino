@@ -51,9 +51,9 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-void aqiData(const String & data)
+void airData(const String & data)
 {
-    BLINKER_LOG("AQI: ", data);
+    BLINKER_LOG("air: ", data);
 }
 
 void dataRead(const String & data)
@@ -81,7 +81,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
-    Blinker.attachAQI(aqiData);
+    Blinker.attachAIR(airData);
 }
 
 void loop()

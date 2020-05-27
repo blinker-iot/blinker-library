@@ -652,8 +652,8 @@ class BlinkerApi : public BlinkerProtocol
         { _heartbeatFunc = newFunction; }
         void attachSummary(blinker_callback_return_string_t newFunction)
         { _summaryFunc = newFunction; }
-        void attachAQI(blinker_callback_with_string_arg_t newFunction)
-        { _aqiFunc = newFunction; }
+        void attachAIR(blinker_callback_with_string_arg_t newFunction)
+        { _airFunc = newFunction; }
         void attachWeather(blinker_callback_with_string_arg_t newFunction)
         { _weatherFunc = newFunction; }
         void attachWeatherForecast(blinker_callback_with_string_arg_t newFunction)
@@ -1007,7 +1007,7 @@ class BlinkerApi : public BlinkerProtocol
 
         blinker_callback_t                  _heartbeatFunc = NULL;
         blinker_callback_return_string_t    _summaryFunc = NULL;
-        blinker_callback_with_string_arg_t  _aqiFunc = NULL;
+        blinker_callback_with_string_arg_t  _airFunc = NULL;
         blinker_callback_with_string_arg_t  _weatherFunc = NULL;
         blinker_callback_with_string_arg_t  _weather_forecast_Func = NULL;
         blinker_callback_with_string_arg_t  _configGetFunc = NULL;
@@ -1522,7 +1522,7 @@ class BlinkerApi : public BlinkerProtocol
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
-                            if (_aqiFunc) _aqiFunc(payload);
+                            if (_airFunc) _airFunc(payload);
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
@@ -2013,7 +2013,7 @@ class BlinkerApi : public BlinkerProtocol
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
-                            if (_aqiFunc) _aqiFunc(payload);
+                            if (_airFunc) _airFunc(payload);
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
@@ -3745,9 +3745,9 @@ void BlinkerApi::run()
 
                     if (root.containsKey("aqi"))
                     {
-                        if (_aqiFunc)
+                        if (_airFunc)
                         {
-                            _aqiFunc(root["aqi"].as<String>());
+                            _airFunc(root["aqi"].as<String>());
                         }
                     }
                     else if (root.containsKey("weather"))
@@ -11217,7 +11217,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
-                            if (_aqiFunc) _aqiFunc(payload);
+                            if (_airFunc) _airFunc(payload);
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
@@ -13248,9 +13248,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
     void BlinkerApi::aqi(const String & _city)
     {
-        if (_aqiFunc)
+        if (_airFunc)
         {
-            _aqiFunc(atGetString(BLINKER_CMD_AQI_AT, _city));
+            _airFunc(atGetString(BLINKER_CMD_AQI_AT, _city));
         }
     }
 
