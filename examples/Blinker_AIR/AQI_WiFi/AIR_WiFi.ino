@@ -81,7 +81,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
-    Blinker.attachAIR(airData);
+    Blinker.attachAir(airData);
 }
 
 void loop()

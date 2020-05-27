@@ -652,7 +652,7 @@ class BlinkerApi : public BlinkerProtocol
         { _heartbeatFunc = newFunction; }
         void attachSummary(blinker_callback_return_string_t newFunction)
         { _summaryFunc = newFunction; }
-        void attachAIR(blinker_callback_with_string_arg_t newFunction)
+        void attachAir(blinker_callback_with_string_arg_t newFunction)
         { _airFunc = newFunction; }
         void attachWeather(blinker_callback_with_string_arg_t newFunction)
         { _weatherFunc = newFunction; }
