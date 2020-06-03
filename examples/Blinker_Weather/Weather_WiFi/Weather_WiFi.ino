@@ -56,6 +56,11 @@ void weatherData(const String & data)
     BLINKER_LOG("weather: ", data);
 }
 
+void weatherForecastData(const String & data)
+{
+    BLINKER_LOG("weather: ", data);
+}
+
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
@@ -67,6 +72,7 @@ void dataRead(const String & data)
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     Blinker.weather();
+    Blinker.weatherForecast();
     
     Blinker.delay(60000);
 }
@@ -82,6 +88,7 @@ void setup()
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
     Blinker.attachWeather(weatherData);
+    Blinker.attachWeatherForecast(weatherForecastData);
 }
 
 void loop()

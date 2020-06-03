@@ -51,7 +51,9 @@ attachLongPressPowerdown	KEYWORD2
 attachLongPressReset	KEYWORD2
 attachNoButtonReset	KEYWORD2
 attachAQI	KEYWORD2
+attachAir	KEYWORD2
 attachWeather	KEYWORD2
+attachWeatherForecast	KEYWORD2
 attachConfigGet	KEYWORD2
 attachDataGet	KEYWORD2
 pressedTime	KEYWORD2

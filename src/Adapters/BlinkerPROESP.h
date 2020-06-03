@@ -1300,13 +1300,13 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_PRO);
         }
 
-        is_rrpc = false;
-
-        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
+        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, is_rrpc ? base64::encode(data_add).c_str() : data_add.c_str()))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
             BLINKER_LOG_FreeHeap_ALL();
+
+            is_rrpc = false;
             
             isDuerAlive = false;
             return false;
@@ -1321,8 +1321,10 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
 
             this->latestTime = millis();
 
+            is_rrpc = false;
+
             return true;
-        }      
+        }
     }
     else
     {

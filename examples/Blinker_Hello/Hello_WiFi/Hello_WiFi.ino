@@ -77,6 +77,7 @@ void setup()
     // 初始化串口
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
+    BLINKER_DEBUG.debugAll();
     
     // 初始化有LED的IO
     pinMode(LED_BUILTIN, OUTPUT);
