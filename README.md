@@ -21,7 +21,7 @@ So we named this project **blinker** with this inspiration.
 # Reference/参考
 * [EN-英文](https://github.com/blinker-iot/blinker-doc/wiki/Blinker-Arduino-library-reference)  
 * [CN-中文](https://github.com/blinker-iot/blinker-doc/wiki/Blinker-Arduino-%E5%BA%93%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C)  
-* [CN-中文/官网](https://doc.blinker.app/?file=003-%E7%A1%AC%E4%BB%B6%E5%BC%80%E5%8F%91/02-Arduino%E6%94%AF%E6%8C%81)  
+* [CN-中文/官网](https://diandeng.tech/doc)  
 # Thanks
 [WebSockets](https://github.com/Links2004/arduinoWebSockets) - for Blinker to build up a websocket server  
 [Adafruit_MQTT_Library](https://github.com/adafruit/Adafruit_MQTT_Library) - for Blinker to build up a mqtt client  
