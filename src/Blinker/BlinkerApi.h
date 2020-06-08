@@ -4731,6 +4731,8 @@ float BlinkerApi::gps(b_gps_t axis)
             #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&_ntpGetTime, &timeinfo);
             #elif defined(ESP32)
+                _ntpGetTime = _ntpGetTime - (int)_timezone*3600;
+
                 localtime_r(&_ntpGetTime, &timeinfo);
             #endif
 
@@ -4793,6 +4795,8 @@ float BlinkerApi::gps(b_gps_t axis)
             #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&_ntpGetTime, &timeinfo);
             #elif defined(ESP32)
+                _ntpGetTime = _ntpGetTime - (int)_timezone*3600;
+
                 localtime_r(&_ntpGetTime, &timeinfo);
             #endif
 
@@ -4856,6 +4860,8 @@ float BlinkerApi::gps(b_gps_t axis)
             #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&_ntpGetTime, &timeinfo);
             #elif defined(ESP32)
+                _ntpGetTime = _ntpGetTime - (int)_timezone*3600;
+
                 localtime_r(&_ntpGetTime, &timeinfo);
             #endif
 
@@ -4919,6 +4925,8 @@ float BlinkerApi::gps(b_gps_t axis)
             #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&_ntpGetTime, &timeinfo);
             #elif defined(ESP32)
+                _ntpGetTime = _ntpGetTime - (int)_timezone*3600;
+
                 localtime_r(&_ntpGetTime, &timeinfo);
             #endif
 
@@ -4981,6 +4989,8 @@ float BlinkerApi::gps(b_gps_t axis)
             #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&_ntpGetTime, &timeinfo);
             #elif defined(ESP32)
+                _ntpGetTime = _ntpGetTime - (int)_timezone*3600;
+
                 localtime_r(&_ntpGetTime, &timeinfo);
             #endif
 
@@ -5044,6 +5054,8 @@ float BlinkerApi::gps(b_gps_t axis)
             #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&_ntpGetTime, &timeinfo);
             #elif defined(ESP32)
+                _ntpGetTime = _ntpGetTime - (int)_timezone*3600;
+
                 localtime_r(&_ntpGetTime, &timeinfo);
             #endif
 
@@ -5107,6 +5119,8 @@ float BlinkerApi::gps(b_gps_t axis)
             #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&_ntpGetTime, &timeinfo);
             #elif defined(ESP32)
+                _ntpGetTime = _ntpGetTime - (int)_timezone*3600;
+
                 localtime_r(&_ntpGetTime, &timeinfo);
             #endif
 
@@ -5170,6 +5184,8 @@ float BlinkerApi::gps(b_gps_t axis)
             #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&_ntpGetTime, &timeinfo);
             #elif defined(ESP32)
+                _ntpGetTime = _ntpGetTime - (int)_timezone*3600;
+
                 localtime_r(&_ntpGetTime, &timeinfo);
             #endif
 
@@ -5315,6 +5331,8 @@ float BlinkerApi::gps(b_gps_t axis)
             #if defined(ESP8266) || defined(__AVR__)
                 gmtime_r(&_ntpGetTime, &timeinfo);
             #elif defined(ESP32)
+                _ntpGetTime = _ntpGetTime - (int)_timezone*3600;
+
                 localtime_r(&_ntpGetTime, &timeinfo);
             #endif
 
