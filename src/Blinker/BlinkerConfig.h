@@ -1447,6 +1447,12 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_MQTT_ONENET_PORT        6002
 
+    #define BLINKER_MQTT_BORKER_BLINKER     "blinker"
+
+    #define BLINKER_MQTT_BLINKER_HOST       "broker.clz.me"
+
+    #define BLINKER_MQTT_BLINKER_PORT       21303
+
     #define BLINKER_MQTT_PING_TIMEOUT       30000UL
 
     #define BLINKER_MQTT_HOST_SIZE          50
