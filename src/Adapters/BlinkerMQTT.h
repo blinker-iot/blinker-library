@@ -1886,6 +1886,8 @@ int BlinkerMQTT::connectServer() {
     url_iot += _miType;
     url_iot += BLINKER_F("&version=");
     url_iot += BLINKER_OTA_VERSION_CODE;
+    url_iot += BLINKER_F("&protocol=mqtts");
+    // url_iot += BLINKER_OTA_VERSION_CODE;
 
     url_iot = "https://" + host + url_iot;
 
@@ -1963,6 +1965,9 @@ int BlinkerMQTT::connectServer() {
     url_iot += _aliType;
     url_iot += _duerType;
     url_iot += _miType;
+    url_iot += BLINKER_F("&version=");
+    url_iot += BLINKER_OTA_VERSION_CODE;
+    url_iot += BLINKER_F("&protocol=mqtts");
 
 // #if defined(BLINKER_ALIGENIE_LIGHT)
 //     url_iot += BLINKER_F("&aliType=light");
@@ -2042,6 +2047,10 @@ int BlinkerMQTT::connectServer() {
     String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
+    String _host = root[BLINKER_CMD_DETAIL]["host"];
+    uint32_t _port = root[BLINKER_CMD_DETAIL]["port"];
+    // uint8_t _host.indexOf("mqtts");
+    _host = _host.substring(8, _host.length());
 
     if (isMQTTinit)
     {
@@ -2153,6 +2162,8 @@ int BlinkerMQTT::connectServer() {
     BLINKER_LOG_ALL(BLINKER_F("MQTT_BROKER: "), _broker);
     BLINKER_LOG_ALL(BLINKER_F("HOST: "), MQTT_HOST_MQTT);
     BLINKER_LOG_ALL(BLINKER_F("PORT: "), MQTT_PORT_MQTT);
+    BLINKER_LOG_ALL(BLINKER_F("HOST: "), _host);
+    BLINKER_LOG_ALL(BLINKER_F("PORT: "), _port);
     BLINKER_LOG_ALL(BLINKER_F("UUID_MQTT: "), UUID_MQTT);
     BLINKER_LOG_ALL(BLINKER_F("===================="));
 
