@@ -18,7 +18,7 @@
  * if use ESP32 with Blinker.
  * https://github.com/espressif/arduino-esp32/releases
  * 
- * Docs: https://doc.blinker.app/
+ * Docs: https://diandeng.tech/doc
  *       https://github.com/blinker-iot/blinker-doc/wiki
  * 
  * *****************************************************************
@@ -38,7 +38,7 @@
  * 请确保安装了 1.0.2 或更新的 ESP32/Arduino 支持包。
  * https://github.com/espressif/arduino-esp32/releases
  * 
- * 文档: https://doc.blinker.app/
+ * 文档: https://diandeng.tech/doc
  *       https://github.com/blinker-iot/blinker-doc/wiki
  * 
  * *****************************************************************/
@@ -48,7 +48,7 @@
  * 
  * Please make sure you have permission to modify professional device!
  * Please read usermanual first! Thanks!
- * https://doc.blinker.app/
+ * https://diandeng.tech/doc
  * 
  * Written by i3water for blinker.
  * Learn more:https://blinker.app/
