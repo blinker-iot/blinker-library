@@ -227,6 +227,214 @@ class BlinkerWidgets_table
         //     char *bridgeName;
     };
 
+    union BlinkerDataType
+    {
+        int32_t     int_data;
+        uint32_t    uint_data;
+        float       float_data;
+    };
+
+    class BlinkerTimeSlotData
+    {
+        public :
+            BlinkerTimeSlotData() 
+                : time_data(0)
+                , key_count(0)
+            {}
+
+            int8_t checkNum(char name[], uint8_t count)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("checkNum count: "), count);
+                for (uint8_t cNum = 0; cNum < count; cNum++)
+                {
+                    // BLINKER_LOG_ALL(BLINKER_F("checkName: "), name, BLINKER_F(", name: "), c[cNum]->getName());
+                    // BLINKER_LOG_ALL(BLINKER_F("is strcmp: "), strcmp(name, c[cNum]->getName()) == 0);
+                    // BLINKER_LOG_ALL(BLINKER_F("is equal: "), name == c[cNum]->getName());
+                    if (strcmp(name, keys[cNum]) == 0) return cNum;
+                }
+
+                return BLINKER_OBJECT_NOT_AVAIL;
+            }
+
+            void saveData(char key[], int32_t data, time_t now_time)
+            {
+                if (key_count == 0) time_data = now_time;
+
+                int8_t num = checkNum(key, key_count);
+
+                // int32_t format_data;
+
+                if (num == BLINKER_OBJECT_NOT_AVAIL)
+                {
+                    if (key_count < 6)
+                    {
+                        strcpy(keys[key_count], key);
+                        data_type[key_count] = BLINKER_INT_DATA;
+                        datas[key_count].int_data = data;
+                        // for(uint8_t i=0; i<4; i++){
+                        //     *(&datas[key_count][0] + i) = *((uint8_t *)&data + i);
+                        // }
+                        // datas[key_count][4] = BLINKER_INT_DATA;
+
+                        // for(uint8_t i=0; i<4; i++){
+                        //     *((uint8_t *)&format_data + i) = *(&datas[key_count][0] + i);
+                        // }
+
+                        BLINKER_LOG_ALL(BLINKER_F("new key: "), key, \
+                                        BLINKER_F(" key_count: "), key_count, \
+                                        BLINKER_F(" data: "), datas[key_count].int_data, \
+                                        BLINKER_F(" data_type: "), data_type[key_count]);
+                        
+                        key_count++;
+                    }
+                }
+            }
+
+            void saveData(char key[], uint32_t data, time_t now_time)
+            {
+                if (key_count == 0) time_data = now_time;
+
+                int8_t num = checkNum(key, key_count);
+
+                uint32_t format_data;
+
+                if (num == BLINKER_OBJECT_NOT_AVAIL)
+                {
+                    if (key_count < 6)
+                    {
+                        strcpy(keys[key_count], key);
+                        data_type[key_count] = BLINKER_UINT_DATA;
+                        datas[key_count].uint_data = data;
+                        // for(uint8_t i=0; i<4; i++){
+                        //     *(&datas[key_count][0] + i) = *((uint8_t *)&data + i);
+                        // }
+                        // datas[key_count][4] = BLINKER_INT_DATA;
+
+                        // for(uint8_t i=0; i<4; i++){
+                        //     *((uint8_t *)&format_data + i) = *(&datas[key_count][0] + i);
+                        // }
+
+                        BLINKER_LOG_ALL(BLINKER_F("new key: "), key, \
+                                        BLINKER_F(" key_count: "), key_count, \
+                                        BLINKER_F(" data: "), datas[key_count].uint_data, \
+                                        BLINKER_F(" data_type: "), data_type[key_count]);
+                        
+                        key_count++;
+                    }
+                }
+            }
+
+            void saveData(char key[], float data, time_t now_time)
+            {
+                if (key_count == 0) time_data = now_time;
+
+                int8_t num = checkNum(key, key_count);
+
+                float format_data;
+
+                if (num == BLINKER_OBJECT_NOT_AVAIL)
+                {
+                    if (key_count < 6)
+                    {
+                        strcpy(keys[key_count], key);
+                        data_type[key_count] = BLINKER_FLOAT_DATA;
+                        datas[key_count].float_data = data;
+                        // for(uint8_t i=0; i<4; i++){
+                        //     *(&datas[key_count][0] + i) = *((uint8_t *)&data + i);
+                        // }
+                        // datas[key_count][4] = BLINKER_INT_DATA;
+
+                        // for(uint8_t i=0; i<4; i++){
+                        //     *((uint8_t *)&format_data + i) = *(&datas[key_count][0] + i);
+                        // }
+
+                        BLINKER_LOG_ALL(BLINKER_F("new key: "), key, \
+                                        BLINKER_F(" key_count: "), key_count, \
+                                        BLINKER_F(" data: "), datas[key_count].float_data, \
+                                        BLINKER_F(" data_type: "), data_type[key_count]);
+                        
+                        key_count++;
+                    }
+                }
+            }
+
+            String getData()
+            {
+                int32_t     int_data;
+                uint32_t    uint_data;
+                float       float_data;
+
+                BLINKER_LOG_FreeHeap_ALL();
+
+                String _data = BLINKER_F("{\"date\":");
+                _data += STRING_format(time_data);
+
+                for(uint8_t num = 0; num < key_count; num++)
+                {
+                    _data += BLINKER_F(",\"");
+                    _data += keys[num];
+                    _data += BLINKER_F("\":");
+                    // _data += keys[num];
+                    BLINKER_LOG_ALL(BLINKER_F("datas["), num,
+                                    BLINKER_F("].data_type: "), 
+                                    data_type[num]);
+
+                    if (data_type[num] == BLINKER_INT_DATA)
+                    {
+                        // for(uint8_t i=0; i<4; i++){
+                        //     *((uint8_t *)&int_data + i) = *(&datas[key_count][0] + i);
+                        // }
+
+                        _data += STRING_format(datas[num].int_data);
+
+                        BLINKER_LOG_ALL(BLINKER_F("datas[num].int_data: "), datas[num].int_data);
+                    }
+                    else if (data_type[num] == BLINKER_UINT_DATA)
+                    {
+                        // for(uint8_t i=0; i<4; i++){
+                        //     *((uint8_t *)&uint_data + i) = *(&datas[key_count][0] + i);
+                        // }
+
+                        _data += STRING_format(datas[num].uint_data);
+
+                        BLINKER_LOG_ALL(BLINKER_F("datas[num].int_data: "), datas[num].uint_data);
+                    }
+                    else if (data_type[num] == BLINKER_FLOAT_DATA)
+                    {
+                        // for(uint8_t i=0; i<4; i++){
+                        //     *((uint8_t *)&float_data + i) = *(&datas[key_count][0] + i);
+                        // }
+
+                        _data += STRING_format(datas[num].float_data);
+
+                        BLINKER_LOG_ALL(BLINKER_F("datas[num].int_data: "), datas[num].float_data);
+                    }
+                }
+
+                _data += STRING_format("}");
+
+                return _data;
+            }
+
+            void flush()
+            {
+                key_count = 0;
+                time_data = 0;
+            }
+
+            // for(uint8_t i=0;i<4;i++){
+            //     *(&test[0] + i) = *((uint8_t *)&testt + i); // 逐个字节单元进行复制
+            //     Serial.println(*((uint8_t *)&testt + i));
+            // }
+
+        private :
+            time_t  time_data;
+            uint8_t key_count;
+            uint8_t data_type[6];
+            char    keys[6][15];
+            BlinkerDataType datas[6];
+    };
+
     class BlinkerData
     {
         public :

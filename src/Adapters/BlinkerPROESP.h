@@ -74,6 +74,7 @@ class BlinkerPROESP : public BlinkerStream
         char * lastRead();
         void flush();
         int print(char * data, bool needCheck = true);
+        int toServer(char * data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int duerPrint(const String & data, bool report = false);
@@ -1008,6 +1009,44 @@ int BlinkerPROESP::print(char * data, bool needCheck)
             isAlive = false;
             return false;
         }
+    }
+}
+
+int BlinkerPROESP::toServer(char * data)
+{
+    // if (!checkInit()) return false;
+
+    if (!isJson(STRING_format(data))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish to server..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    bool _alive = isAlive;
+
+    if (mqtt_PRO->connected())
+    {
+        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        isAlive = false;
+        return false;
     }
 }
 
@@ -2404,7 +2443,7 @@ int BlinkerPROESP::connectServer() {
         SUB_TOPIC_STR += BLINKER_F("/rrpc/request/");
 
         BLINKER_RRPC_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
+        // memcpy(BLINKER_PUB_TOPIC_PRO, PUB_TOPIC_STR.c_str(), str_len);
         strcpy(BLINKER_RRPC_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {

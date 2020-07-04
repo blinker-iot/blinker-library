@@ -54,6 +54,7 @@ class BlinkerSerialSIM7020 : public BlinkerStream
         void flush();
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
+        // int toServer(char * data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int  duerPrint(const String & data, bool report = false);

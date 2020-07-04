@@ -393,6 +393,11 @@ class BlinkerApi : public BlinkerProtocol
             bool configDelete();
             template<typename T>
             void dataStorage(char _name[], const T& msg);
+            void timeSlotData(char _name[], int32_t msg);
+            void timeSlotData(char _name[], uint32_t msg);
+            void timeSlotData(char _name[], float msg);
+            void textData(const String & msg);
+            void jsonData(const String & msg);
             bool dataUpdate();
             void dataGet();
             void dataGet(const String & _type);
@@ -621,7 +626,7 @@ class BlinkerApi : public BlinkerProtocol
             void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = BLINKER_DATA_UPDATE_COUNT)
             {
                 _dataStorageFunc = newFunction;
-                if (_time < 60) _time = 60;
+                if (_time < 5) _time = 5;
                 _autoStorageTime = _time;
                 _autoDataTime = millis();
                 if (d_times > BLINKER_MAX_DATA_COUNT || d_times == 0) d_times = BLINKER_DATA_UPDATE_COUNT;
@@ -815,6 +820,8 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t    _weather_forecast_Time = 0;
             uint32_t    _aqiTime = 0;
             uint8_t     data_dataCount = 0;
+            uint8_t     data_timeSlotDataCount = 0;
+            uint32_t    time_timeSlotData = 0;
             uint8_t     _aCount = 0;
             uint8_t     _bridgeCount = 0;
 
@@ -850,6 +857,8 @@ class BlinkerApi : public BlinkerProtocol
             #endif
 
             class BlinkerData *             _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
+
+            class BlinkerTimeSlotData *     _TimeSlotData[BLINKER_MAX_BLINKER_DATA_SIZE];
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -1152,6 +1161,21 @@ class BlinkerApi : public BlinkerProtocol
                         //     return BLINKER_CMD_FALSE;
                         // }
                         break;
+                    case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                        // if (!checkDataUpdata()) {
+                        //     return BLINKER_CMD_FALSE;
+                        // }
+                        break;
+                    case BLINKER_CMD_TEXT_DATA_NUMBER :
+                        // if (!checkDataUpdata()) {
+                        //     return BLINKER_CMD_FALSE;
+                        // }
+                        break;
+                    case BLINKER_CMD_JSON_DATA_NUMBER :
+                        // if (!checkDataUpdata()) {
+                        //     return BLINKER_CMD_FALSE;
+                        // }
+                        break;
                     case BLINKER_CMD_DATA_GET_NUMBER :
                         if (!checkDataGet()) {
                             return BLINKER_CMD_FALSE;
@@ -1319,6 +1343,57 @@ class BlinkerApi : public BlinkerProtocol
                         url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/");
 
                         http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                        // url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/?");
+                        // url_iot += msg;
+
+                        // http.begin(host, url_iot);
+
+                        // powerCheck();
+                        
+                        // httpCode = http.GET();
+
+                        url_iot = BLINKER_F("/api/v1/storage/ts ");
+
+                        http.begin("https://storage.diandeng.tech", url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_TEXT_DATA_NUMBER :
+                        // url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/?");
+                        // url_iot += msg;
+
+                        // http.begin(host, url_iot);
+
+                        // powerCheck();
+                        
+                        // httpCode = http.GET();
+
+                        url_iot = BLINKER_F("/api/v1/storage/text ");
+
+                        http.begin("https://storage.diandeng.tech", url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_JSON_DATA_NUMBER :
+                        // url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/?");
+                        // url_iot += msg;
+
+                        // http.begin(host, url_iot);
+
+                        // powerCheck();
+                        
+                        // httpCode = http.GET();
+
+                        url_iot = BLINKER_F("/api/v1/storage/object ");
+
+                        http.begin("https://storage.diandeng.tech", url_iot);
 
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -1539,6 +1614,15 @@ class BlinkerApi : public BlinkerProtocol
                         case BLINKER_CMD_DATA_STORAGE_NUMBER :
                             _dUpdateTime = millis();
                             break;
+                        case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                            _dUpdateTime = millis();
+                            break;
+                        case BLINKER_CMD_TEXT_DATA_NUMBER :
+                            _dUpdateTime = millis();
+                            break;
+                        case BLINKER_CMD_JSON_DATA_NUMBER :
+                            _dUpdateTime = millis();
+                            break;
                         case BLINKER_CMD_DATA_GET_NUMBER :
                             _dGetTime = millis();
                             if (_dataGetFunc) _dataGetFunc(payload);
@@ -1679,6 +1763,21 @@ class BlinkerApi : public BlinkerProtocol
                         }
                         break;
                     case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                        // if (!checkDataUpdata()) {
+                        //     return BLINKER_CMD_FALSE;
+                        // }
+                        break;
+                    case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                        // if (!checkDataUpdata()) {
+                        //     return BLINKER_CMD_FALSE;
+                        // }
+                        break;
+                    case BLINKER_CMD_TEXT_DATA_NUMBER :
+                        // if (!checkDataUpdata()) {
+                        //     return BLINKER_CMD_FALSE;
+                        // }
+                        break;
+                    case BLINKER_CMD_JSON_DATA_NUMBER :
                         // if (!checkDataUpdata()) {
                         //     return BLINKER_CMD_FALSE;
                         // }
@@ -1835,6 +1934,30 @@ class BlinkerApi : public BlinkerProtocol
                         url_iot = BLINKER_F("/api/v1/user/device/cloudStorage/");
 
                         http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/storage/ts");
+
+                        http.begin("https://storage.diandeng.tech", url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_TEXT_DATA_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/storage/text");
+
+                        http.begin("https://storage.diandeng.tech", url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_JSON_DATA_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/storage/object");
+
+                        http.begin("https://storage.diandeng.tech", url_iot);
 
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -2028,6 +2151,15 @@ class BlinkerApi : public BlinkerProtocol
                             _cDelTime = millis();
                             break;
                         case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                            _dUpdateTime = millis();
+                            break;
+                        case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                            _dUpdateTime = millis();
+                            break;
+                        case BLINKER_CMD_TEXT_DATA_NUMBER :
+                            _dUpdateTime = millis();
+                            break;
+                        case BLINKER_CMD_JSON_DATA_NUMBER :
                             _dUpdateTime = millis();
                             break;
                         case BLINKER_CMD_DATA_GET_NUMBER :
@@ -4065,7 +4197,7 @@ void BlinkerApi::run()
                 // BLINKER_LOG_ALL("dataUpdate data_dataCount: ", data_dataCount);
                 // BLINKER_LOG_ALL("_isInit: ", _isInit);
 
-                if (data_dataCount && _isInit)// && ESP.getFreeHeap() > 4000)
+                if ((data_dataCount || data_timeSlotDataCount) && _isInit)// && ESP.getFreeHeap() > 4000)
                 {
                     // if (dataUpdate()) _autoUpdateTime = millis();
                     if (dataUpdate()) _autoUpdateTime = millis();
@@ -6158,8 +6290,286 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
 
+    void BlinkerApi::timeSlotData(char _name[], int32_t _data)
+    {
+        uint32_t now_time = time();
+
+        if (data_timeSlotDataCount == BLINKER_MAX_BLINKER_DATA_SIZE)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("BLINKER MAX DATA STORAGE LIMIT!"));
+            return;
+        }
+
+        BLINKER_LOG_ALL(BLINKER_F("timeSlotData save"));
+
+        if (millis() - time_timeSlotData < 1000)
+        {
+            if (data_timeSlotDataCount != 0)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount != 0"));
+                _TimeSlotData[data_timeSlotDataCount - 1]->saveData(_name, _data, now_time);
+            }
+            else
+            {
+                BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount == 0"));
+                _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+                _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+                data_timeSlotDataCount++;
+            }
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+        }
+        else
+        {
+            time_timeSlotData = millis();
+
+            _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+            _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+            data_timeSlotDataCount++;
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+        }
+    }
+
+
+    void BlinkerApi::timeSlotData(char _name[], uint32_t _data)
+    {
+        uint32_t now_time = time();
+
+        if (data_timeSlotDataCount == BLINKER_MAX_BLINKER_DATA_SIZE)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("BLINKER MAX DATA STORAGE LIMIT!"));
+            return;
+        }
+
+        BLINKER_LOG_ALL(BLINKER_F("timeSlotData save"));
+
+        if (millis() - time_timeSlotData < 1000)
+        {
+            if (data_timeSlotDataCount != 0)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount != 0"));
+                _TimeSlotData[data_timeSlotDataCount - 1]->saveData(_name, _data, now_time);
+            }
+            else
+            {
+                BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount == 0"));
+                _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+                _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+                data_timeSlotDataCount++;
+            }
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+        }
+        else
+        {
+            time_timeSlotData = millis();            
+
+            _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+            _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+            data_timeSlotDataCount++;
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+        }
+    }
+
+
+    void BlinkerApi::timeSlotData(char _name[], float _data)
+    {
+        uint32_t now_time = time();
+
+        if (data_timeSlotDataCount == BLINKER_MAX_BLINKER_DATA_SIZE)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("BLINKER MAX DATA STORAGE LIMIT!"));
+            return;
+        }
+
+        BLINKER_LOG_ALL(BLINKER_F("timeSlotData save"));
+
+        if (millis() - time_timeSlotData < 1000)
+        {
+            if (data_timeSlotDataCount != 0)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount != 0"));
+                _TimeSlotData[data_timeSlotDataCount - 1]->saveData(_name, _data, now_time);
+            }
+            else
+            {
+                BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount == 0"));
+                _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+                _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+                data_timeSlotDataCount++;
+            }
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+        }
+        else
+        {
+            time_timeSlotData = millis();
+
+            _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+            _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+            data_timeSlotDataCount++;
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+        }
+    }
+
+
+    void BlinkerApi::textData(const String & msg)
+    {
+        String data = BLINKER_F("{");
+
+        #if defined(BLINKER_PROTOCOL_HTTP_SERVER)
+            data += BLINKER_F("\"device\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\"");
+        #else
+            data += BLINKER_F("\"toStorage\":\"tt\"");
+        #endif
+
+        data += BLINKER_F(",\"data\":\"");
+        data += msg;
+        data += BLINKER_F("\"}");
+
+        BLINKER_LOG_ALL(BLINKER_F("textData: "), data);
+
+        #ifndef BLINKER_PROTOCOL_HTTP_SERVER
+            BProto::toServer((char *)data.c_str());
+        #endif
+
+        #if defined(BLINKER_PROTOCOL_HTTP_SERVER)
+            if (blinkerServer(BLINKER_CMD_TEXT_DATA_NUMBER, data) == "false")
+            {
+                // return false;
+            }
+            else
+            {
+                // return true;
+            }
+        #else
+            // return true;
+        #endif
+    }
+
+
+    void BlinkerApi::jsonData(const String & msg)
+    {
+        DynamicJsonDocument jsonBuffer(1024);
+        DeserializationError error = deserializeJson(jsonBuffer, msg);
+        JsonObject root = jsonBuffer.as<JsonObject>();
+
+        // if (!root.success())
+        if (error)
+        {
+            BLINKER_ERR_LOG("Print data is not Json! ", msg);
+            return;
+        }
+
+        String data = BLINKER_F("{");
+
+        #if defined(BLINKER_PROTOCOL_HTTP_SERVER)
+            data += BLINKER_F("\"device\":\"");
+            data += BProto::deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += BProto::authKey();
+            data += BLINKER_F("\"");
+        #else
+            data += BLINKER_F("\"toStorage\":\"ot\"");
+        #endif
+
+        data += BLINKER_F(",\"data\":");
+        data += msg;
+        data += BLINKER_F("}");
+
+        BLINKER_LOG_ALL(BLINKER_F("jsonData: "), data);
+
+        #ifndef BLINKER_PROTOCOL_HTTP_SERVER
+            BProto::toServer((char *)data.c_str());
+        #endif
+
+        #if defined(BLINKER_PROTOCOL_HTTP_SERVER)
+            if (blinkerServer(BLINKER_CMD_JSON_DATA_NUMBER, data) == "false")
+            {
+                // return false;
+            }
+            else
+            {
+                // return true;
+            }
+        #else
+            // return true;
+        #endif
+    }
+
+
     bool BlinkerApi::dataUpdate()
     {
+        BLINKER_LOG_ALL(BLINKER_F("dataUpdate: "), data_timeSlotDataCount);
+
+        if (data_timeSlotDataCount > 0)
+        {
+            String data = BLINKER_F("{");
+
+            #if defined(BLINKER_PROTOCOL_HTTP_SERVER)
+                data += BLINKER_F("\"device\":\"");
+                data += BProto::deviceName();
+                data += BLINKER_F("\",\"key\":\"");
+                data += BProto::authKey();
+                data += BLINKER_F("\"");
+            #else
+                data += BLINKER_F("\"device\":\"");
+                data += BProto::deviceName();
+                data += BLINKER_F("\",\"toStorage\":\"ts\"");
+            #endif
+
+            data += BLINKER_F(",\"data\":[");
+
+            for (uint8_t _num = 0; _num < data_timeSlotDataCount; _num++) {
+                data += _TimeSlotData[_num]->getData();
+                if (_num < data_timeSlotDataCount - 1) {
+                    data += BLINKER_F(",");
+                }
+            }
+
+            data += BLINKER_F("]}");
+
+            BLINKER_LOG_ALL(BLINKER_F("dataUpdate: "), data);
+
+            #ifndef BLINKER_PROTOCOL_HTTP_SERVER
+                BProto::toServer((char *)data.c_str());
+            #endif
+            
+            for (uint8_t _num = 0; _num < data_timeSlotDataCount; _num++)
+            {
+                // _TimeSlotData[_num]->flush();
+                free(_TimeSlotData[_num]);
+            }
+
+            data_timeSlotDataCount = 0;
+
+            #if defined(BLINKER_PROTOCOL_HTTP_SERVER)
+                if (blinkerServer(BLINKER_CMD_TIME_SLOT_DATA_NUMBER, data) == "false")
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            #else
+                return true;
+            #endif
+        }
+
         if (!data_dataCount) {
             // BLINKER_ERR_LOG(BLINKER_F("none data storaged!"));
             return false;
@@ -10379,6 +10789,21 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     //     return BLINKER_CMD_FALSE;
                     // }
                     break;
+                case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                    // if (!checkDataUpdata()) {
+                    //     return BLINKER_CMD_FALSE;
+                    // }
+                    break;
+                case BLINKER_CMD_TEXT_DATA_NUMBER :
+                    // if (!checkDataUpdata()) {
+                    //     return BLINKER_CMD_FALSE;
+                    // }
+                    break;
+                case BLINKER_CMD_JSON_DATA_NUMBER :
+                    // if (!checkDataUpdata()) {
+                    //     return BLINKER_CMD_FALSE;
+                    // }
+                    break;
                 case BLINKER_CMD_DATA_GET_NUMBER :
                     if (!checkDataGet()) {
                         return BLINKER_CMD_FALSE;
@@ -10945,6 +11370,45 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         http.addHeader(conType, application);
                         httpCode = http.POST(msg);
                         break;
+                    case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                        // url_iot = host;
+                        url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ts");
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        http.addHeader(conType, application);
+                        httpCode = http.POST(msg);
+                        break;
+                    case BLINKER_CMD_TEXT_DATA_NUMBER :
+                        // url_iot = host;
+                        url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/text");
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        http.addHeader(conType, application);
+                        httpCode = http.POST(msg);
+                        break;
+                    case BLINKER_CMD_JSON_DATA_NUMBER :
+                        // url_iot = host;
+                        url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/object");
+
+                        #if defined(ESP8266)
+                            http.begin(*client_s, url_iot);
+                        #else
+                            http.begin(url_iot);
+                        #endif
+
+                        http.addHeader(conType, application);
+                        httpCode = http.POST(msg);
+                        break;
                     case BLINKER_CMD_DATA_GET_NUMBER :
                         url_iot = host;
                         url_iot += BLINKER_F("/api/v1/user/device");
@@ -11253,6 +11717,15 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                                 _cDelTime = millis();
                                 break;
                             case BLINKER_CMD_DATA_STORAGE_NUMBER :
+                                _dUpdateTime = millis();
+                                break;
+                            case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                                _dUpdateTime = millis();
+                                break;
+                            case BLINKER_CMD_TEXT_DATA_NUMBER :
+                                _dUpdateTime = millis();
+                                break;
+                            case BLINKER_CMD_JSON_DATA_NUMBER :
                                 _dUpdateTime = millis();
                                 break;
                             case BLINKER_CMD_DATA_GET_NUMBER :

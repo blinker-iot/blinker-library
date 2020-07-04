@@ -54,6 +54,7 @@ class BlinkerSerialAIR202 : public BlinkerStream
         void flush();
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
+        int toServer(char * data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int  duerPrint(const String & data, bool report = false);
@@ -552,6 +553,44 @@ int BlinkerSerialAIR202::print(char * data, bool needCheck)
     }
 }
 
+int BlinkerSerialAIR202::toServer(char * data)
+{
+    if (!isMQTTinit) return false;
+
+    if (!isJson(STRING_format(data))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish to server..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    bool _alive = isAlive;
+
+    if (mqtt_GPRS->connected())
+    {
+        if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, data))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        isAlive = false;
+        return false;
+    }
+}
+
 int BlinkerSerialAIR202::bPrint(char * name, const String & data)
 {
     if (!isMQTTinit) return false;
@@ -596,7 +635,7 @@ int BlinkerSerialAIR202::bPrint(char * name, const String & data)
         }
         // }
 
-        // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
+        // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_GPRS);
 
         // if (! iotPub.publish(payload.c_str())) {
 
@@ -612,8 +651,8 @@ int BlinkerSerialAIR202::bPrint(char * name, const String & data)
         // }
         // else
         // {
-            // strcpy(bPubTopic, BLINKER_PUB_TOPIC_MQTT);
-            // bPubTopic = BLINKER_PUB_TOPIC_MQTT;
+            // strcpy(bPubTopic, BLINKER_PUB_TOPIC_GPRS);
+            // bPubTopic = BLINKER_PUB_TOPIC_GPRS;
         // }
 
         if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, data_add))
@@ -857,7 +896,7 @@ int BlinkerSerialAIR202::autoPrint(unsigned long id)
         {
             // linkTime = millis();
 
-            // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
+            // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_GPRS);
 
             // if (! iotPub.publish(payload.c_str())) {
 
