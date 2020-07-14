@@ -47,9 +47,9 @@
 
 #include <Blinker.h>
 
-char auth[] = "6650efab7f0a";
-char ssid[] = "有没有wifi";
-char pswd[] = "i8888888";
+char auth[] = "Your Device Secret Key";
+char ssid[] = "Your WiFi network SSID or name";
+char pswd[] = "Your WiFi network WPA password or WEP key";
 
 // 新建组件对象
 BlinkerButton Button1("btn-abc");
