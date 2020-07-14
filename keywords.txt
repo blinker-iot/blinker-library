@@ -37,6 +37,7 @@ connected	KEYWORD2
 available	KEYWORD2
 readString	KEYWORD2
 print	KEYWORD2
+printObject	KEYWORD2
 delay	KEYWORD2
 notify	KEYWORD2
 attachDataStorage	KEYWORD2

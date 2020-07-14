@@ -60,7 +60,7 @@ void dataRead(const String & data)
     
     uint32_t BlinkerTime = millis();
     
-    Blinker.print("millis", BlinkerTime);
+    Blinker.printObject("video", "{\"str\":\"mjpg\",\"url\":\"http:"+ String(WiFi.localIP()) + "\"}");
 }
 
 void setup()
@@ -83,5 +83,7 @@ void loop()
     {
         setupCamera();
         setup_camera = true;
+
+        Blinker.printObject("video", "{\"str\":\"mjpg\",\"url\":\"http:"+ String(WiFi.localIP()) + "\"}");
     }
 }
