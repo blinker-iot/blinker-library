@@ -615,7 +615,7 @@ void BlinkerPROESP::subscribe()
             //             }
             //             else
             //             {
-            //                 BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid,"
+            //                 BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found,"
             //                             "check is from bridge/share device," 
             //                             "data: "), dataGet);
 
@@ -629,7 +629,7 @@ void BlinkerPROESP::subscribe()
             //     // root.printTo(dataGet);
             //     serializeJson(root, dataGet);
                     
-            //         // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+            //         // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, \
             //         //                     check is from bridge/share device, \
             //         //                     data: "), dataGet);
                 
@@ -773,7 +773,7 @@ void BlinkerPROESP::parseData(const char* data)
                 }
                 else
                 {
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, check is from bridge/share device, data: "), dataGet);
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
                     _needCheckShare = true;
                 }
@@ -785,7 +785,7 @@ void BlinkerPROESP::parseData(const char* data)
             // root.printTo(dataGet);
             serializeJson(root, dataGet);
 
-        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, 
+        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, 
         //                         check is from bridge/share device, \
         //                         data: "), dataGet);
 
@@ -1649,7 +1649,7 @@ void BlinkerPROESP::sharers(const String & data)
     {
         user_name = root["users"][num].as<String>();
 
-        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        if (user_name.length() >= BLINKER_MQTT_USER_UUID_SIZE)
         {
             BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
 

@@ -649,7 +649,7 @@ void BlinkerMQTT::subscribe()
             //             }
             //             else
             //             {
-            //                 BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, check is from bridge/share device, data: "), dataGet);
+            //                 BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
             //                 _needCheckShare = true;
             //             }
@@ -661,7 +661,7 @@ void BlinkerMQTT::subscribe()
             //         // root.printTo(dataGet);
             //         serializeJson(root, dataGet);
 
-            //     //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, 
+            //     //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, 
             //     //                         check is from bridge/share device, \
             //     //                         data: "), dataGet);
 
@@ -809,19 +809,23 @@ void BlinkerMQTT::parseData(const char* data)
                 }
                 else
                 {
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, check is from bridge/share device, data: "), dataGet);
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
                     _needCheckShare = true;
                 }
             }
         }
-        // else
-        // {
+        else
+        {
+            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority&share uuid found, check is from bridge/share device, data: "), dataGet);
+
+            _needCheckShare = true;
+        }
             // dataGet = String((char *)iotSub_MQTT->lastread);
             // root.printTo(dataGet);
             serializeJson(root, dataGet);
 
-        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, 
+        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, 
         //                         check is from bridge/share device, \
         //                         data: "), dataGet);
 
@@ -1770,7 +1774,7 @@ void BlinkerMQTT::sharers(const String & data)
     {
         user_name = root["users"][num].as<String>();
 
-        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        if (user_name.length() >= BLINKER_MQTT_USER_UUID_SIZE)
         {
             BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
 
