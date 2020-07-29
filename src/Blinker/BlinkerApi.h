@@ -732,7 +732,7 @@ class BlinkerApi : public BlinkerProtocol
             // bool init()                         { return _isInit; }
             bool registered()                   { return BProto::authCheck(); }
             #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
-            uint8_t status()                    { return _proStatus; }
+            BlinkerStatus_t status()                    { return _proStatus; }
             #elif defined(BLINKER_MQTT_AUTO)
             uint8_t status()                    { return _mqttAutoStatue; }
             #endif
