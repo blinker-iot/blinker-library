@@ -37,6 +37,7 @@ connected	KEYWORD2
 available	KEYWORD2
 readString	KEYWORD2
 print	KEYWORD2
+printObject	KEYWORD2
 delay	KEYWORD2
 notify	KEYWORD2
 attachDataStorage	KEYWORD2
@@ -51,9 +52,7 @@ attachLongPressPowerdown	KEYWORD2
 attachLongPressReset	KEYWORD2
 attachNoButtonReset	KEYWORD2
 attachAQI	KEYWORD2
-attachAir	KEYWORD2
 attachWeather	KEYWORD2
-attachWeatherForecast	KEYWORD2
 attachConfigGet	KEYWORD2
 attachDataGet	KEYWORD2
 pressedTime	KEYWORD2
@@ -95,6 +94,9 @@ bridgeEndFormat	KEYWORD2
 configUpdate	KEYWORD2
 configGet	KEYWORD2
 configDelete	KEYWORD2
+timeSlotData	KEYWORD2
+textData	KEYWORD2
+jsonData	KEYWORD2
 dataStorage	KEYWORD2
 dataUpdate	KEYWORD2
 dataGet	KEYWORD2

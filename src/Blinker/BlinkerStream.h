@@ -65,6 +65,7 @@ class BlinkerStream
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_WIFI_SUBDEVICE)
+            virtual int toServer(char * data) = 0;
             virtual char * deviceName() = 0;
             virtual char * authKey() = 0;
             virtual int init() = 0;           

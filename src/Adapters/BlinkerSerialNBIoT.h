@@ -38,6 +38,7 @@ class BlinkerSerialNBIoT : public BlinkerStream
         int duerPrint(const String & s);
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
+        // int toServer(char * data);
         int connect()      { isConnect = true; return connected(); }
         int connected()    { return isConnect; }
         void disconnect()   { isConnect = false; }

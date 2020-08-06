@@ -61,6 +61,7 @@ class BlinkerSerialGPRS : public BlinkerStream
         void flush();
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
+        int toServer(char * data);
         // int bPrint(char * name, const String & data);
         // int aliPrint(const String & s);
         // int duerPrint(const String & s);
@@ -429,6 +430,44 @@ int BlinkerSerialGPRS::print(char * data, bool needCheck)
 
             return true;
         }            
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        isAlive = false;
+        return false;
+    }
+}
+
+int BlinkerSerialGPRS::toServer(char * data)
+{
+    // if (!checkInit()) return false;
+
+    if (!isJson(STRING_format(data))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish to server..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    bool _alive = isAlive;
+
+    if (mqtt_GPRS->connected())
+    {
+        if (! mqtt_GPRS->publish(BLINKER_PUB_TOPIC_GPRS, data))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }
     }
     else
     {

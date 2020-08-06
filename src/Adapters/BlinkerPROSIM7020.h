@@ -55,6 +55,7 @@ class BlinkerProSIM7020 : public BlinkerStream
         void flush();
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
+        int toServer(char * data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int  duerPrint(const String & data, bool report = false);
@@ -365,7 +366,7 @@ void BlinkerProSIM7020::subscribe()
                     }
                     else
                     {
-                        BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                        BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, \
                                     check is from bridge/share device, \
                                     data: "), dataGet);
 
@@ -514,6 +515,44 @@ int BlinkerProSIM7020::print(char * data, bool needCheck)
     }
 }
 
+int BlinkerProSIM7020::toServer(char * data)
+{
+    if (!isMQTTinit) return false;
+
+    if (!isJson(STRING_format(data))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish to server..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    bool _alive = isAlive;
+
+    if (mqtt_NBIoT->connected())
+    {
+        if (! mqtt_NBIoT->publish(BLINKER_PUB_TOPIC_NBIoT, data))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        isAlive = false;
+        return false;
+    }
+}
+
 int BlinkerProSIM7020::bPrint(char * name, const String & data)
 {
     if (!isMQTTinit) return false;
@@ -558,7 +597,7 @@ int BlinkerProSIM7020::bPrint(char * name, const String & data)
         }
         // }
 
-        // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
+        // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_NBIoT);
 
         // if (! iotPub.publish(payload.c_str())) {
 
@@ -574,8 +613,8 @@ int BlinkerProSIM7020::bPrint(char * name, const String & data)
         // }
         // else
         // {
-            // strcpy(bPubTopic, BLINKER_PUB_TOPIC_MQTT);
-            // bPubTopic = BLINKER_PUB_TOPIC_MQTT;
+            // strcpy(bPubTopic, BLINKER_PUB_TOPIC_NBIoT);
+            // bPubTopic = BLINKER_PUB_TOPIC_NBIoT;
         // }
 
         if (! mqtt_NBIoT->publish(BLINKER_PUB_TOPIC_NBIoT, data_add))
@@ -823,7 +862,7 @@ int BlinkerProSIM7020::autoPrint(unsigned long id)
         {
             // linkTime = millis();
 
-            // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
+            // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_NBIoT);
 
             // if (! iotPub.publish(payload.c_str())) {
 
@@ -895,7 +934,7 @@ void BlinkerProSIM7020::sharers(const String & data)
     {
         user_name = root["users"][num].as<String>();
 
-        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        if (user_name.length() >= BLINKER_MQTT_USER_UUID_SIZE)
         {
             BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
 

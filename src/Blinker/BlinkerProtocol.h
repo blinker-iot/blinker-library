@@ -94,6 +94,7 @@ class BlinkerProtocol
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_WIFI_SUBDEVICE)
+            int toServer(char * data) { return isInit ? conn->toServer(data) : false; }
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }

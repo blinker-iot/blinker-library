@@ -54,6 +54,7 @@ class BlinkerSerialSIM7020 : public BlinkerStream
         void flush();
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
+        // int toServer(char * data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int  duerPrint(const String & data, bool report = false);
@@ -380,7 +381,7 @@ void BlinkerSerialSIM7020::subscribe()
                     }
                     else
                     {
-                        BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                        BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, \
                                     check is from bridge/share device, \
                                     data: "), dataGet);
 
@@ -910,7 +911,7 @@ void BlinkerSerialSIM7020::sharers(const String & data)
     {
         user_name = root["users"][num].as<String>();
 
-        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        if (user_name.length() >= BLINKER_MQTT_USER_UUID_SIZE)
         {
             BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
 

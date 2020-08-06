@@ -86,6 +86,7 @@ class BlinkerMQTT : public BlinkerStream
         char * lastRead();
         void flush();
         int print(char * data, bool needCheck = true);
+        int toServer(char * data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int duerPrint(const String & data, bool report = false);
@@ -648,7 +649,7 @@ void BlinkerMQTT::subscribe()
             //             }
             //             else
             //             {
-            //                 BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, check is from bridge/share device, data: "), dataGet);
+            //                 BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
             //                 _needCheckShare = true;
             //             }
@@ -660,7 +661,7 @@ void BlinkerMQTT::subscribe()
             //         // root.printTo(dataGet);
             //         serializeJson(root, dataGet);
 
-            //     //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, 
+            //     //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, 
             //     //                         check is from bridge/share device, \
             //     //                         data: "), dataGet);
 
@@ -808,19 +809,23 @@ void BlinkerMQTT::parseData(const char* data)
                 }
                 else
                 {
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, check is from bridge/share device, data: "), dataGet);
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
                     _needCheckShare = true;
                 }
             }
         }
-        // else
-        // {
+        else
+        {
+            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority&share uuid found, check is from bridge/share device, data: "), dataGet);
+
+            _needCheckShare = true;
+        }
             // dataGet = String((char *)iotSub_MQTT->lastread);
             // root.printTo(dataGet);
             serializeJson(root, dataGet);
 
-        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, 
+        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, 
         //                         check is from bridge/share device, \
         //                         data: "), dataGet);
 
@@ -1060,6 +1065,44 @@ int BlinkerMQTT::print(char * data, bool needCheck)
             isAlive = false;
             return false;
         }
+    }
+}
+
+int BlinkerMQTT::toServer(char * data)
+{
+    if (!checkInit()) return false;
+
+    if (!isJson(STRING_format(data))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish to server..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    bool _alive = isAlive;
+
+    if (mqtt_MQTT->connected())
+    {
+        if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        isAlive = false;
+        return false;
     }
 }
 
@@ -1731,7 +1774,7 @@ void BlinkerMQTT::sharers(const String & data)
     {
         user_name = root["users"][num].as<String>();
 
-        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        if (user_name.length() >= BLINKER_MQTT_USER_UUID_SIZE)
         {
             BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
 
@@ -2049,8 +2092,11 @@ int BlinkerMQTT::connectServer() {
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
     String _host = root[BLINKER_CMD_DETAIL]["host"];
     uint32_t _port = root[BLINKER_CMD_DETAIL]["port"];
-    // uint8_t _host.indexOf("mqtts");
-    _host = _host.substring(8, _host.length());
+    uint8_t _num = _host.indexOf("://");
+    BLINKER_LOG_ALL("_num: ", _num);
+    if (_num > 0) _num += 3;
+    _host = _host.substring(_num, _host.length());
+
 
     if (isMQTTinit)
     {
@@ -2119,9 +2165,9 @@ int BlinkerMQTT::connectServer() {
         strcpy(MQTT_KEY_MQTT, _key.c_str());
         MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
         strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
-        MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_BLINKER_HOST)+1)*sizeof(char));
-        strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_BLINKER_HOST);
-        MQTT_PORT_MQTT = BLINKER_MQTT_BLINKER_PORT;
+        MQTT_HOST_MQTT = (char*)malloc((_host.length()+1)*sizeof(char));
+        strcpy(MQTT_HOST_MQTT, _host.c_str());
+        MQTT_PORT_MQTT = _port;
     }
     UUID_MQTT = (char*)malloc((_uuid.length()+1)*sizeof(char));
     strcpy(UUID_MQTT, _uuid.c_str());

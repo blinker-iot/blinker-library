@@ -62,11 +62,11 @@ char auth[] = "Your Device Secret Key";
 
 uint32_t os_time;
 
-// void button1_callback(const String & state)
-// {
-//     BLINKER_LOG("get button state: ", state);
-//     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-// }
+void button1_callback(const String & state)
+{
+    BLINKER_LOG("get button state: ", state);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
 
 /* 
  * Add your command parse code in this function
@@ -137,8 +137,8 @@ void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
 
-    // counter++;
-    // Number1.print(counter);
+    counter++;
+    Number1.print(counter);
 }
 
 // void otaStatus(uint32_t load_size, uint32_t total_size)
@@ -163,7 +163,7 @@ void setup()
     Blinker.attachData(dataRead);
     Blinker.attachParse(dataParse);
     Blinker.attachHeartbeat(heartbeat);
-    // Button1.attach(button1_callback);
+    Button1.attach(button1_callback);
 
 #if defined(BLINKER_BUTTON)
     Blinker.attachClick(singleClick);

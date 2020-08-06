@@ -199,6 +199,7 @@ class BlinkerGateway : public BlinkerStream
         char * lastRead();
         void flush();
         int print(char * data, bool needCheck = true);
+        int toServer(char * data);
         int subPrint(const String & data, const String & toDevice, const String & subDevice);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
@@ -737,7 +738,7 @@ void BlinkerGateway::subscribe()
                             }
                             else
                             {
-                                BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid,"
+                                BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found,"
                                             "check is from bridge/share device," 
                                             "data: "), dataGet);
 
@@ -751,7 +752,7 @@ void BlinkerGateway::subscribe()
                     // root.printTo(dataGet);
                     serializeJson(root, dataGet);
                         
-                        // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+                        // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, \
                         //                     check is from bridge/share device, \
                         //                     data: "), dataGet);
                     
@@ -977,6 +978,42 @@ int BlinkerGateway::print(char * data, bool needCheck)
             isAlive = false;
             return false;
         }
+    }
+}
+
+int BlinkerGateway::toServer(char * data)
+{
+    if (!isJson(STRING_format(data))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish to server..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    bool _alive = isAlive;
+
+    if (mqtt_PRO->connected())
+    {
+        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_MQTT, data))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        isAlive = false;
+        return false;
     }
 }
 
@@ -1651,7 +1688,7 @@ void BlinkerGateway::sharers(const String & data)
     {
         user_name = root["users"][num].as<String>();
 
-        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        if (user_name.length() >= BLINKER_MQTT_USER_UUID_SIZE)
         {
             BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
 

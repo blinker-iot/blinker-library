@@ -67,6 +67,12 @@
 
 #define BLINKER_MSG_FROM_WS             1
 
+#define BLINKER_INT_DATA                0
+
+#define BLINKER_UINT_DATA               1
+
+#define BLINKER_FLOAT_DATA              2
+
 // #if defined(BLINKER_MQTT)
 //     #define BLINKER_MSG_AUTOFORMAT_TIMEOUT  1000
 // #else
@@ -1419,6 +1425,12 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_WEATHER_FORECAST_NUMBER 27
 
+    #define BLINKER_CMD_TIME_SLOT_DATA_NUMBER   28
+
+    #define BLINKER_CMD_TEXT_DATA_NUMBER        29
+
+    #define BLINKER_CMD_JSON_DATA_NUMBER        30
+
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 
 #endif
@@ -1471,7 +1483,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_MQTT_DEVICENAME_SIZE    14
 
-    #define BLINKER_MQTT_USER_UUID_SIZE     32
+    #define BLINKER_MQTT_USER_UUID_SIZE     24
 
     #define BLINKER_MQTT_MAX_SHARERS_NUM    9
 

@@ -74,6 +74,7 @@ class BlinkerPROESP : public BlinkerStream
         char * lastRead();
         void flush();
         int print(char * data, bool needCheck = true);
+        int toServer(char * data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int duerPrint(const String & data, bool report = false);
@@ -614,7 +615,7 @@ void BlinkerPROESP::subscribe()
             //             }
             //             else
             //             {
-            //                 BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid,"
+            //                 BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found,"
             //                             "check is from bridge/share device," 
             //                             "data: "), dataGet);
 
@@ -628,7 +629,7 @@ void BlinkerPROESP::subscribe()
             //     // root.printTo(dataGet);
             //     serializeJson(root, dataGet);
                     
-            //         // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, \
+            //         // BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, \
             //         //                     check is from bridge/share device, \
             //         //                     data: "), dataGet);
                 
@@ -772,7 +773,7 @@ void BlinkerPROESP::parseData(const char* data)
                 }
                 else
                 {
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, check is from bridge/share device, data: "), dataGet);
+                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
                     _needCheckShare = true;
                 }
@@ -784,7 +785,7 @@ void BlinkerPROESP::parseData(const char* data)
             // root.printTo(dataGet);
             serializeJson(root, dataGet);
 
-        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid, 
+        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, 
         //                         check is from bridge/share device, \
         //                         data: "), dataGet);
 
@@ -1008,6 +1009,44 @@ int BlinkerPROESP::print(char * data, bool needCheck)
             isAlive = false;
             return false;
         }
+    }
+}
+
+int BlinkerPROESP::toServer(char * data)
+{
+    // if (!checkInit()) return false;
+
+    if (!isJson(STRING_format(data))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish to server..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    bool _alive = isAlive;
+
+    if (mqtt_PRO->connected())
+    {
+        if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        isAlive = false;
+        return false;
     }
 }
 
@@ -1610,7 +1649,7 @@ void BlinkerPROESP::sharers(const String & data)
     {
         user_name = root["users"][num].as<String>();
 
-        if (user_name.length() == BLINKER_MQTT_USER_UUID_SIZE)
+        if (user_name.length() >= BLINKER_MQTT_USER_UUID_SIZE)
         {
             BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
 
@@ -2404,7 +2443,7 @@ int BlinkerPROESP::connectServer() {
         SUB_TOPIC_STR += BLINKER_F("/rrpc/request/");
 
         BLINKER_RRPC_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
+        // memcpy(BLINKER_PUB_TOPIC_PRO, PUB_TOPIC_STR.c_str(), str_len);
         strcpy(BLINKER_RRPC_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
