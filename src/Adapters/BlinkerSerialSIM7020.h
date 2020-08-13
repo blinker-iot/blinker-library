@@ -54,7 +54,7 @@ class BlinkerSerialSIM7020 : public BlinkerStream
         void flush();
         // int print(const String & s, bool needCheck = true);
         int print(char * data, bool needCheck = true);
-        // int toServer(char * data);
+        int toServer(char * data);
         int bPrint(char * name, const String & data);
         int aliPrint(const String & data);
         int  duerPrint(const String & data, bool report = false);
@@ -154,10 +154,11 @@ int BlinkerSerialSIM7020::connect()
     if (!isMQTTinit) return false;
 
     // if (mqtt_NBIoT->connected()) return true;
+    // if (isConnect) return true;
 
     BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connect failed <<<<<<"));
 
-    disconnect();
+    // disconnect();
 
     // if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
     // {
@@ -190,6 +191,8 @@ int BlinkerSerialSIM7020::connect()
     BLINKER_LOG(BLINKER_F("MQTT Connected!"));
     BLINKER_LOG_FreeHeap();
 
+    isConnect = true;
+
     this->latestTime = millis();
 
     return true;
@@ -221,9 +224,9 @@ void BlinkerSerialSIM7020::ping()
 
     if (!isMQTTinit) return;
 
-    if (!mqtt_NBIoT->connected())
+    if (!isConnect)
     {
-        disconnect();
+        // disconnect();
 
         delay(100);
 
@@ -246,7 +249,7 @@ void BlinkerSerialSIM7020::ping()
     {
         BLINKER_SIM7020.powerCheck();
 
-        disconnect();
+        // disconnect();
     }
 }
 
@@ -521,6 +524,45 @@ int BlinkerSerialSIM7020::print(char * data, bool needCheck)
 
             return true;
         }            
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        isAlive = false;
+        return false;
+    }
+}
+
+
+int BlinkerSerialSIM7020::toServer(char * data)
+{
+    if (!isMQTTinit) return false;    
+
+    if (!isJson(STRING_format(data))) return false;
+
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish to server..."));
+    BLINKER_LOG_FreeHeap_ALL();
+
+    bool _alive = isAlive;
+
+    if (mqtt_NBIoT->connected())
+    {
+        if (! mqtt_NBIoT->publish(BLINKER_PUB_TOPIC_NBIoT, data))
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return false;
+        }
+        else
+        {
+            BLINKER_LOG_ALL(data);
+            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_FreeHeap_ALL();
+            
+            return true;
+        }
     }
     else
     {
