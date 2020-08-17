@@ -43,49 +43,45 @@
  * 
  * *****************************************************************/
 
-#define BLINKER_WIFI
+#define BLINKER_QRCODE_NBIOT_SIM7020
 
 #include <Blinker.h>
 
-char auth[] = "Your Device Secret Key";
-char ssid[] = "Your WiFi network SSID or name";
-char pswd[] = "Your WiFi network WPA password or WEP key";
+char type[] = "";
+char auth[] = "";
 
-#define Number_1 "NUMKey"
+BlinkerButton Button1("btn-abc");
+BlinkerNumber Number1("num-abc");
 
-BlinkerNumber Number1(Number_1);
+int counter = 0;
+
+void button1_callback(const String & state)
+{
+    BLINKER_LOG("get button state: ", state);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
 
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
-
-    Blinker.vibrate();
-    
-    uint32_t BlinkerTime = millis();
-    
-    Blinker.print("millis", BlinkerTime);
-
-    Number1.icon("icon_1");
-    Number1.color("#FFFFFF");
-    Number1.unit("ms");
-    Number1.print(BlinkerTime);
-
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    counter++;
+    Number1.print(counter);
 }
 
-void setup()
-{
+void setup() {
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
-
+    BLINKER_DEBUG.debugAll();
+    
     pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, LOW);
-
-    Blinker.begin(auth, ssid, pswd);
+    digitalWrite(LED_BUILTIN, HIGH);
+    
+    Blinker.begin(auth, type, D6, D7);
     Blinker.attachData(dataRead);
+
+    Button1.attach(button1_callback);
 }
 
-void loop()
-{
+void loop() {
     Blinker.run();
 }

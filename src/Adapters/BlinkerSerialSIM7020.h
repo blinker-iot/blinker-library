@@ -154,11 +154,11 @@ int BlinkerSerialSIM7020::connect()
     if (!isMQTTinit) return false;
 
     // if (mqtt_NBIoT->connected()) return true;
-    // if (isConnect) return true;
+    if (isConnect) return true;
 
     BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connect failed <<<<<<"));
 
-    // disconnect();
+    disconnect();
 
     // if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
     // {
@@ -202,7 +202,7 @@ int BlinkerSerialSIM7020::connected()
 {
     if (!isMQTTinit) return false;
 
-    return mqtt_NBIoT->connected();
+    return isConnect;//mqtt_NBIoT->connected();
 }
 
 int BlinkerSerialSIM7020::mConnected()
@@ -213,7 +213,10 @@ int BlinkerSerialSIM7020::mConnected()
 
 void BlinkerSerialSIM7020::disconnect()
 {
-    if (isMQTTinit) mqtt_NBIoT->disconnect();
+    if (isMQTTinit) {
+        isConnect = false;
+        mqtt_NBIoT->disconnect();
+    }
 }
 
 void BlinkerSerialSIM7020::ping()
@@ -481,7 +484,7 @@ int BlinkerSerialSIM7020::print(char * data, bool needCheck)
         respTime = millis();
     }
     
-    if (mqtt_NBIoT->connected())
+    if (connected())
     {
         if (needCheck)
         {
@@ -500,6 +503,8 @@ int BlinkerSerialSIM7020::print(char * data, bool needCheck)
             BLINKER_LOG_ALL(data);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
             BLINKER_LOG_FreeHeap_ALL();
+
+            disconnect();
             
             if (!_alive)
             {

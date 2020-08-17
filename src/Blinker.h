@@ -203,6 +203,12 @@
     #include "BlinkerLowPowerGPRS.h"
 
     BlinkerLowPowerGPRS Blinker;
+
+#elif defined(BLINKER_QRCODE_NBIOT_SIM7020)
+    
+    #include "BlinkerQRCodeSIMNBIOT.h"
+
+    BlinkerQRCodeSerialSIMNBIoT Blinker;
     
 #else
 

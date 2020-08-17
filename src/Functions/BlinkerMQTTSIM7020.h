@@ -256,15 +256,17 @@ int BlinkerMQTTSIM7020::connected()
 {
     // yield();
 
+    // BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connected check <<<<<<"));
+
     if (isConnected && (millis() - ping_time) <= 10000) 
     {
         yield();
         return isConnected;
     }
 
-    if ((millis() - ping_time) <= 30000) return false;
+    if ((millis() - ping_time) <= 60000) return false;
 
-    BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connected check <<<<<<"));
+    BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connected check ping_time<<<<<<"));
     streamPrint(STRING_format(BLINKER_CMD_CMQCON_REQ) + "?");
     mqtt_time = millis();
     ping_time = millis();

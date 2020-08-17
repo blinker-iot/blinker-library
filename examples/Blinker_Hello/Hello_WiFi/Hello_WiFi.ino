@@ -10,11 +10,11 @@
  * It can be used in smart home, data monitoring and other fields 
  * to help users build Internet of Things projects better and faster.
  * 
- * Make sure installed 2.5.0 or later ESP8266/Arduino package,
+ * Make sure installed 2.7.2 or later ESP8266/Arduino package,
  * if use ESP8266 with Blinker.
  * https://github.com/esp8266/Arduino/releases
  * 
- * Make sure installed 1.0.2 or later ESP32/Arduino package,
+ * Make sure installed 1.0.4 or later ESP32/Arduino package,
  * if use ESP32 with Blinker.
  * https://github.com/espressif/arduino-esp32/releases
  * 
@@ -31,11 +31,11 @@
  * 数据监测等领域，可以帮助用户更好更快地搭建物联网项目。
  * 
  * 如果使用 ESP8266 接入 Blinker,
- * 请确保安装了 2.5.0 或更新的 ESP8266/Arduino 支持包。
+ * 请确保安装了 2.7.2 或更新的 ESP8266/Arduino 支持包。
  * https://github.com/esp8266/Arduino/releases
  * 
  * 如果使用 ESP32 接入 Blinker,
- * 请确保安装了 1.0.2 或更新的 ESP32/Arduino 支持包。
+ * 请确保安装了 1.0.4 或更新的 ESP32/Arduino 支持包。
  * https://github.com/espressif/arduino-esp32/releases
  * 
  * 文档: https://diandeng.tech/doc
@@ -47,9 +47,9 @@
 
 #include <Blinker.h>
 
-char auth[] = "Your Device Secret Key";
-char ssid[] = "Your WiFi network SSID or name";
-char pswd[] = "Your WiFi network WPA password or WEP key";
+char auth[] = "6650efab7f0a";
+char ssid[] = "有没有wifi";
+char pswd[] = "i8888888";
 
 // 新建组件对象
 BlinkerButton Button1("btn-abc");

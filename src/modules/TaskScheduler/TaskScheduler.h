@@ -112,7 +112,7 @@
 //    2017-04-27 - added destructor to the Task class to ensure tasks are disables and taken off the execution chain
 //                 upon destruction. (Contributed by Edwin van Leeuwen [BlackEdder - https://github.com/BlackEdder)
 //
-// v2.5.0:
+// v2.7.2:
 //    2017-04-27 - ESP8266 ONLY: added optional support for std::functions via _TASK_STD_FUNCTION compilation option
 //                 (Contributed by Edwin van Leeuwen [BlackEdder - https://github.com/BlackEdder)
 //    2017-08-30 - add _TASK_DEBUG making all methods and variables public FOR DEBUGGING PURPOSES ONLY!

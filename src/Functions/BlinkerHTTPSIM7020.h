@@ -674,7 +674,7 @@ class BlinkerHTTPSIM7020
             http_time = millis();
             http_status = sim7020_http_con_req;
 
-            while(millis() - http_time < _httpTimeout * 2)
+            while(millis() - http_time < _httpTimeout * 20)
             {
                 if (available())
                 {

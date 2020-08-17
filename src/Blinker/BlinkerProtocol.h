@@ -72,11 +72,13 @@ class BlinkerProtocol
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE)
+            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE) || \
+            defined(BLINKER_QRCODE_NBIOT_SIM7020)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data, bool report = false)  { return isInit ? conn->duerPrint(data, report) : false; }
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_QRCODE_NBIOT_SIM7020)
             int miPrint(const String & data)  { return isInit ? conn->miPrint(data) : false; }
             #endif
             // void ping() { if (isInit) conn->ping(); }
@@ -93,7 +95,7 @@ class BlinkerProtocol
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_SUBDEVICE)
+            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020)
             int toServer(char * data) { return isInit ? conn->toServer(data) : false; }
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
@@ -122,10 +124,17 @@ class BlinkerProtocol
             void begin(const char* _key, const char* _type) { conn->begin(_key, _type); }
             #endif
         #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
+            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+            defined(BLINKER_QRCODE_NBIOT_SIM7020)
             int deviceRegister(){ return conn->deviceRegister(); }
-            void begin(const char* _deviceType, String _imei)
-            { conn->begin(_deviceType, _imei); }
+
+            #if defined(BLINKER_QRCODE_NBIOT_SIM7020)
+                void begin(const char* _authKey, const char* _deviceType, String _imei)
+                { conn->begin(_authKey, _deviceType, _imei); }
+            #else
+                void begin(const char* _deviceType, String _imei)
+                { conn->begin(_deviceType, _imei); }
+            #endif
 
             #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
                 int authCheck()     { return conn->authCheck(); }
@@ -203,7 +212,8 @@ class BlinkerProtocol
             bool checkAliAvail()    { return conn->aligenieAvail(); }
             bool checkDuerAvail()   { return conn->duerAvail(); }
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202)
+                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+                !defined(BLINKER_QRCODE_NBIOT_SIM7020)
             bool checkMIOTAvail()   { return conn->miAvail(); }
             #endif
         #endif
