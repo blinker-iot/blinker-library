@@ -1366,9 +1366,11 @@ class BlinkerApi : public BlinkerProtocol
                         // httpCode = http.GET();
 
                         url_iot = BLINKER_F("/api/v1/storage/ts ");
-
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin("https://storage.diandeng.tech", url_iot);
-
+                        #else
+                        http.begin("http://storage.diandeng.tech", url_iot);
+                        #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
@@ -1383,9 +1385,11 @@ class BlinkerApi : public BlinkerProtocol
                         // httpCode = http.GET();
 
                         url_iot = BLINKER_F("/api/v1/storage/text ");
-
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin("https://storage.diandeng.tech", url_iot);
-
+                        #else
+                        http.begin("http://storage.diandeng.tech", url_iot);
+                        #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
@@ -1400,9 +1404,11 @@ class BlinkerApi : public BlinkerProtocol
                         // httpCode = http.GET();
 
                         url_iot = BLINKER_F("/api/v1/storage/object ");
-
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin("https://storage.diandeng.tech", url_iot);
-
+                        #else
+                        http.begin("http://storage.diandeng.tech", url_iot);
+                        #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
@@ -1949,25 +1955,31 @@ class BlinkerApi : public BlinkerProtocol
                         break;
                     case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
                         url_iot = BLINKER_F("/api/v1/storage/ts");
-
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin("https://storage.diandeng.tech", url_iot);
-
+                        #else
+                        http.begin("http://storage.diandeng.tech", url_iot);
+                        #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
                     case BLINKER_CMD_TEXT_DATA_NUMBER :
                         url_iot = BLINKER_F("/api/v1/storage/text");
-
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin("https://storage.diandeng.tech", url_iot);
-
+                        #else
+                        http.begin("http://storage.diandeng.tech", url_iot);
+                        #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
                     case BLINKER_CMD_JSON_DATA_NUMBER :
                         url_iot = BLINKER_F("/api/v1/storage/object");
-
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin("https://storage.diandeng.tech", url_iot);
-
+                        #else
+                        http.begin("http://storage.diandeng.tech", url_iot);
+                        #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
                         break;
@@ -11249,13 +11261,17 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         // #endif
 
         #if defined(ESP8266)
-            extern BearSSL::WiFiClientSecure client_mqtt;
-            client_mqtt.stop();
-            
-            std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+            #ifndef BLINKER_WITHOUT_SSL
+                extern BearSSL::WiFiClientSecure client_mqtt;
+                client_mqtt.stop();
+                
+                std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
 
-            // client_s->setFingerprint(fingerprint);
-            client_s->setInsecure();
+                // client_s->setFingerprint(fingerprint);
+                client_s->setInsecure();
+            #else
+                WiFiClient               client_s;
+            #endif
         #endif
 
             HTTPClient http;
@@ -11279,7 +11295,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     url_iot += BLINKER_F("/api/v1/user/device/sms");
 
                     #if defined(ESP8266)
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin(*client_s, url_iot);
+                        #else
+                        http.begin(client_s, url_iot);
+                        #endif
                     #else
                         http.begin(url_iot);
                     #endif
@@ -11292,7 +11312,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     url_iot += BLINKER_F("/api/v1/user/device/push");
 
                     #if defined(ESP8266)
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin(*client_s, url_iot);
+                        #else
+                        http.begin(client_s, url_iot);
+                        #endif
                     #else
                         http.begin(url_iot);
                     #endif
@@ -11306,7 +11330,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     url_iot += BLINKER_F("/api/v1/user/device/wxMsg/");
 
                     #if defined(ESP8266)
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin(*client_s, url_iot);
+                        #else
+                        http.begin(client_s, url_iot);
+                        #endif
                     #else
                         http.begin(url_iot);
                     #endif
@@ -11321,7 +11349,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     url_iot += msg;
 
                     #if defined(ESP8266)
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin(*client_s, url_iot);
+                        #else
+                        http.begin(client_s, url_iot);
+                        #endif
                     #else
                         http.begin(url_iot);
                     #endif
@@ -11334,7 +11366,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     url_iot += msg;
 
                     #if defined(ESP8266)
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin(*client_s, url_iot);
+                        #else
+                        http.begin(client_s, url_iot);
+                        #endif
                     #else
                         http.begin(url_iot);
                     #endif
@@ -11347,7 +11383,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     url_iot += msg;
 
                     #if defined(ESP8266)
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin(*client_s, url_iot);
+                        #else
+                        http.begin(client_s, url_iot);
+                        #endif
                     #else
                         http.begin(url_iot);
                     #endif
@@ -11360,7 +11400,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     url_iot += msg;
 
                     #if defined(ESP8266)
+                        #ifndef BLINKER_WITHOUT_SSL
                         http.begin(*client_s, url_iot);
+                        #else
+                        http.begin(client_s, url_iot);
+                        #endif
                     #else
                         http.begin(url_iot);
                     #endif
@@ -11375,7 +11419,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += BLINKER_F("/api/v1/user/device/userconfig");
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11389,7 +11437,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11402,7 +11454,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11414,7 +11470,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += BLINKER_F("/api/v1/user/device/cloudStorage/");
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11424,10 +11484,18 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         break;
                     case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
                         // url_iot = host;
-                        url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ts");
+                        #ifndef BLINKER_WITHOUT_SSL
+                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ts");
+                        #else
+                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ts");
+                        #endif
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11437,10 +11505,18 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         break;
                     case BLINKER_CMD_TEXT_DATA_NUMBER :
                         // url_iot = host;
-                        url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/text");
+                        #ifndef BLINKER_WITHOUT_SSL
+                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/text");
+                        #else
+                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/text");
+                        #endif
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11450,10 +11526,18 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         break;
                     case BLINKER_CMD_JSON_DATA_NUMBER :
                         // url_iot = host;
-                        url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/object");
+                        #ifndef BLINKER_WITHOUT_SSL
+                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/object");
+                        #else
+                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/object");
+                        #endif
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11467,7 +11551,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11480,7 +11568,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11493,7 +11585,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11506,7 +11602,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11518,7 +11618,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += BLINKER_F("/api/v1/user/device/ota/upgrade_status");
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11532,7 +11636,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11545,7 +11653,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11558,7 +11670,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11571,7 +11687,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11583,7 +11703,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += BLINKER_F("/api/v1/user/device/lowpower/data");
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11596,7 +11720,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += BLINKER_F("/api/v1/user/device/event");
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11609,7 +11737,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += BLINKER_F("/api/v1/user/device/gps");
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11623,7 +11755,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         url_iot += msg;
 
                         #if defined(ESP8266)
+                            #ifndef BLINKER_WITHOUT_SSL
                             http.begin(*client_s, url_iot);
+                            #else
+                            http.begin(client_s, url_iot);
+                            #endif
                         #else
                             http.begin(url_iot);
                         #endif
@@ -11636,7 +11772,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             url_iot += BLINKER_F("/api/v1/user/device/event");
 
                             #if defined(ESP8266)
+                                #ifndef BLINKER_WITHOUT_SSL
                                 http.begin(*client_s, url_iot);
+                                #else
+                                http.begin(client_s, url_iot);
+                                #endif
                             #else
                                 http.begin(url_iot);
                             #endif
@@ -11649,7 +11789,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             url_iot += BLINKER_F("/api/v1/user/device/event");
 
                             #if defined(ESP8266)
+                                #ifndef BLINKER_WITHOUT_SSL
                                 http.begin(*client_s, url_iot);
+                                #else
+                                http.begin(client_s, url_iot);
+                                #endif
                             #else
                                 http.begin(url_iot);
                             #endif
@@ -11662,7 +11806,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             url_iot += BLINKER_F("/api/v1/user/device/event");
 
                             #if defined(ESP8266)
+                                #ifndef BLINKER_WITHOUT_SSL
                                 http.begin(*client_s, url_iot);
+                                #else
+                                http.begin(client_s, url_iot);
+                                #endif
                             #else
                                 http.begin(url_iot);
                             #endif
