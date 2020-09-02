@@ -228,7 +228,11 @@ char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
 uint16_t    MQTT_PORT_MQTT;
 
 #if defined(ESP8266)
-    BearSSL::WiFiClientSecure   client_mqtt;
+    #ifndef BLINKER_WITHOUT_SSL
+        BearSSL::WiFiClientSecure   client_mqtt;
+    #else
+        WiFiClient               client_mqtt;
+    #endif
     // WiFiClientSecure         client_mqtt;
 #elif defined(ESP32)
     WiFiClientSecure     client_s;
@@ -343,8 +347,10 @@ int BlinkerMQTT::connect()
     // BLINKER_LOG_ALL(BLINKER_F("MQTT_KEY_MQTT: "), MQTT_KEY_MQTT);
 
     #if defined(ESP8266)
-        client_mqtt.setInsecure();
-        ::delay(10);
+        #ifndef BLINKER_WITHOUT_SSL
+            client_mqtt.setInsecure();
+            ::delay(10);
+        #endif
     #endif
 
     if ((ret = mqtt_MQTT->connect()) != 0)
@@ -1914,13 +1920,16 @@ int BlinkerMQTT::connectServer() {
 //     String payload = _dataGet;
 
 
+    #ifndef BLINKER_WITHOUT_SSL
+        client_mqtt.stop();
 
-    client_mqtt.stop();
+        std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
 
-    std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
-
-    // client_s->setFingerprint(fingerprint);
-    client_s->setInsecure();
+        // client_s->setFingerprint(fingerprint);
+        client_s->setInsecure();
+    #else
+        WiFiClient               client_s;
+    #endif
 
     String url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
     url_iot += _authKey;
@@ -1929,18 +1938,29 @@ int BlinkerMQTT::connectServer() {
     url_iot += _miType;
     url_iot += BLINKER_F("&version=");
     url_iot += BLINKER_OTA_VERSION_CODE;
+    #ifndef BLINKER_WITHOUT_SSL
     url_iot += BLINKER_F("&protocol=mqtts");
+    #else
+    url_iot += BLINKER_F("&protocol=mqtt");
+    #endif
     // url_iot += BLINKER_OTA_VERSION_CODE;
 
-    url_iot = "https://" + host + url_iot;
-
+    #ifndef BLINKER_WITHOUT_SSL
+        url_iot = "https://" + host + url_iot;
+    #else
+        url_iot = "http://" + host + url_iot;
+    #endif
     HTTPClient http;
 
     String payload;
 
     BLINKER_LOG_ALL(BLINKER_F("[HTTP] begin: "), url_iot);
 
+    #ifndef BLINKER_WITHOUT_SSL
     if (http.begin(*client_s, url_iot)) {  // HTTPS
+    #else
+    if (http.begin(client_s, url_iot)) {
+    #endif
 
         // Serial.print("[HTTPS] GET...\n");
         // start connection and send HTTP header
@@ -2369,7 +2389,9 @@ int BlinkerMQTT::connectServer() {
     #if defined(ESP8266)
         // client_s->stop();
         // if (!isMQTTinit)
-        client_mqtt.setInsecure();
+        #ifndef BLINKER_WITHOUT_SSL
+            client_mqtt.setInsecure();
+        #endif
     #endif
     // connect();
 

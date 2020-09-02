@@ -10,7 +10,9 @@
     #include <ESP8266HTTPClient.h>
     #include <ESP8266httpUpdate.h>
 
+    #ifndef BLINKER_WITHOUT_SSL
     extern BearSSL::WiFiClientSecure client_mqtt;
+    #endif
 #elif defined(ESP32)
     #include <WiFi.h>
     #include <Update.h>
@@ -119,6 +121,7 @@ bool BlinkerOTA::update() {
     saveOTACheck();
 
 #if defined(ESP8266)
+    #ifndef BLINKER_WITHOUT_SSL
     BearSSL::WiFiClientSecure client_s;
 
     BLINKER_LOG_FreeHeap();
@@ -160,6 +163,11 @@ bool BlinkerOTA::update() {
     //         BLINKER_LOG_ALL(BLINKER_F("HTTP_UPDATE_OK"));
     //         return true;
     // }
+
+    #else
+        WiFiClient               client_s;
+    #endif
+
 #elif defined(ESP32)
     client_s.stop();
 #endif

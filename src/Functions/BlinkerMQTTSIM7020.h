@@ -256,15 +256,17 @@ int BlinkerMQTTSIM7020::connected()
 {
     // yield();
 
+    // BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connected check <<<<<<"));
+
     if (isConnected && (millis() - ping_time) <= 10000) 
     {
         yield();
         return isConnected;
     }
 
-    if ((millis() - ping_time) <= 30000) return false;
+    if ((millis() - ping_time) <= 60000) return false;
 
-    BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connected check <<<<<<"));
+    BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connected check ping_time<<<<<<"));
     streamPrint(STRING_format(BLINKER_CMD_CMQCON_REQ) + "?");
     mqtt_time = millis();
     ping_time = millis();
@@ -378,14 +380,28 @@ int BlinkerMQTTSIM7020::readSubscription(uint16_t time_out)
                 if (_masterAT->getState() != AT_M_NONE &&
                     _masterAT->reqName() == BLINKER_CMD_CMQPUB)
                 {
-                    String subData = String(streamData).substring(
+                    String _Data = STRING_format(streamData);
+
+                    time_t now_time = millis();
+                    while (millis() - now_time < 1500)
+                    {   
+                        if (stream->available())
+                        {
+                            _Data += stream->readStringUntil('\n').c_str();
+                        }
+                        // delay(1000);
+                    }
+                    BLINKER_LOG_ALL(BLINKER_F("_Data: "), _Data);
+
+                    String subData = _Data.substring(
                                         _masterAT->getParam(0).length() +
                                         _masterAT->getParam(1).length() + 
                                         _masterAT->getParam(2).length() + 
                                         _masterAT->getParam(3).length() + 
                                         _masterAT->getParam(4).length() + 
                                         _masterAT->getParam(5).length() + 
-                                        15, strlen(streamData) - 1);
+                                        15, _Data.length() - 1);
+
                     // BLINKER_LOG_ALL(BLINKER_F("leng 0: "), _masterAT->getParam(0).length());
                     // BLINKER_LOG_ALL(BLINKER_F("leng 1: "), _masterAT->getParam(1).length());
                     // BLINKER_LOG_ALL(BLINKER_F("leng 2: "), _masterAT->getParam(2).length());
@@ -458,6 +474,17 @@ bool BlinkerMQTTSIM7020::streamAvailable()
     {
         // strcpy(_data, stream->readStringUntil('\n').c_str());
         String _data = stream->readStringUntil('\n');
+
+        // time_t now_time = millis();
+        // while (millis() - now_time < 1500)
+        // {   
+        //     if (stream->available())
+        //     {
+        //         _data += stream->readStringUntil('\n').c_str();
+        //     }
+        //     // delay(1000);
+        // }
+
         BLINKER_LOG_ALL(BLINKER_F("handleSerial rs: "), _data);
         BLINKER_LOG_ALL("len: ", _data.length());
         // _data[strlen(_data) - 1] = '\0';
@@ -474,7 +501,7 @@ bool BlinkerMQTTSIM7020::streamAvailable()
         
         streamData = (char*)malloc((_data.length() + 1)*sizeof(char));
         strcpy(streamData, _data.c_str());
-        if (_data.length() > 0) streamData[_data.length() - 1] = '\0';
+        if (streamData[_data.length() - 1] == '\r') streamData[_data.length() - 1] = '\0';
         isFresh = true;
         return true;
         // if (isFresh) free(streamData);
