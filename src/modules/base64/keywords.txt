@@ -1,0 +1,24 @@
+#######################################
+# Syntax Coloring Map For Base64
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+# I WANT BASE64.h HIGHLIGHTED, DAMMIT!
+Base64		KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+base64_encode 	KEYWORD2
+base64_decode 	KEYWORD2
+base64_enc_len 	KEYWORD2
+base64_dec_len 	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+

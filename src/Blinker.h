@@ -164,6 +164,16 @@
 
     BlinkerSerialSIMNBIoT   Blinker;
 
+#elif defined(BLINKER_NBIOT_SIM7000)
+
+    // #ifndef BLINKER_SIM7020C_NBIOT
+    // #define BLINKER_SIM7020C_NBIOT
+    // #endif
+
+    #include "BlinkerSerialSIM7000NBIoT.h"
+
+    BlinkerSerialSIM7000NBIoT   Blinker;
+
 #elif defined(BLINKER_PRO_SIM7020)
 
     #include "BlinkerSIMPRO.h"

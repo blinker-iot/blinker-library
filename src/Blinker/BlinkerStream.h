@@ -38,12 +38,12 @@ class BlinkerStream
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7020)
+            defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000)
                 virtual int aliPrint(const String & data) = 0;
                 virtual int duerPrint(const String & data, bool report = false) = 0;
                 #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                    !defined(BLINKER_QRCODE_NBIOT_SIM7020)
+                    !defined(BLINKER_QRCODE_NBIOT_SIM7020) && !defined(BLINKER_NBIOT_SIM7000)
                 virtual int miPrint(const String & data) = 0;
                 #endif
                 // virtual void ping() = 0;
@@ -55,7 +55,7 @@ class BlinkerStream
                 virtual int duerAvail() = 0;
                 #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
                     !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                    !defined(BLINKER_QRCODE_NBIOT_SIM7020)
+                    !defined(BLINKER_QRCODE_NBIOT_SIM7020) && !defined(BLINKER_NBIOT_SIM7000)
                 virtual int miAvail() = 0;
                 #endif
                 virtual int needFreshShare() = 0;
@@ -67,7 +67,8 @@ class BlinkerStream
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020)
+            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
+            defined(BLINKER_NBIOT_SIM7000)
             virtual int toServer(char * data) = 0;
             virtual char * deviceName() = 0;
             virtual char * authKey() = 0;
@@ -119,7 +120,7 @@ class BlinkerStream
             #endif
         #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7020)
+            defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000)
             virtual int deviceRegister() = 0;
 
             #if defined(BLINKER_QRCODE_NBIOT_SIM7020)
