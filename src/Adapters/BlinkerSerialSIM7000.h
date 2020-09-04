@@ -149,7 +149,7 @@ class BlinkerSerialSIM7000 : public BlinkerStream
 
 int BlinkerSerialSIM7000::connect()
 {
-    BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connect <<<<<<"));
+    // BLINKER_LOG_ALL(BLINKER_F(">>>>>> mqtt connect <<<<<<"));
 
     if (!isMQTTinit) return false;
 
@@ -985,6 +985,7 @@ int BlinkerSerialSIM7000::connectServer()
     uri += _deviceType;
     uri += _aliType;
     uri += _duerType;
+    uri += BLINKER_F("&protocol=mqtt");
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), host + uri);
 

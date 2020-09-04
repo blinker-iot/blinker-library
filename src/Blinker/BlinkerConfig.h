@@ -2046,9 +2046,9 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_SHBOD_REQ               "AT+SHBOD"
 
-    #define BLINKER_CMD_SHREQ_REQ               "AT+SHREG"
+    #define BLINKER_CMD_SHREQ_REQ               "AT+SHREQ"
 
-    #define BLINKER_CMD_SHREQ                   "SHREG"
+    #define BLINKER_CMD_SHREQ                   "SHREQ"
 
     #define BLINKER_CMD_SHREAD_REQ              "AT+SHREAD"
 

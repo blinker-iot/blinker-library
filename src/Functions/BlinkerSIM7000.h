@@ -31,6 +31,8 @@ enum sim7000_status_t
     sim7000_cgact_success,
     sim7000_cops_REQ,
     sim7000_cops_success,
+    sim7000_cnact_REQ,
+    sim7000_cnact_success,
     sim7000_cgcontrdp_REQ,
     sim7000_cgcontrdp_success,
 };
@@ -105,7 +107,58 @@ class BlinkerSIM7000
 
             if (pdn_status != sim7000_cpin_success) return false;
 
-            streamPrint(BLINKER_CMD_CSQ_REQ);
+            // streamPrint(BLINKER_CMD_CSQ_REQ);
+            // sim_time = millis();
+
+            // while(millis() - sim_time < _simTimeout)
+            // {
+            //     if (available())
+            //     {
+            //         _masterAT = new BlinkerMasterAT();
+            //         _masterAT->update(STRING_format(streamData));
+
+            //         if (_masterAT->getState() != AT_M_NONE &&
+            //             _masterAT->reqName() == BLINKER_CMD_CSQ &&
+            //             _masterAT->getParam(0).toInt() != 99)
+            //         {
+            //             BLINKER_LOG_ALL(BLINKER_F("sim7000_csq_success"));
+            //             pdn_status = sim7000_csq_success;
+            //             free(_masterAT);
+            //             break;
+            //         }
+            //         free(_masterAT);
+            //     }
+            // }
+
+            // if (pdn_status != sim7000_csq_success) return false;
+
+            // streamPrint(BLINKER_CMD_COPS_REQ);
+            // sim_time = millis();
+
+            // while(millis() - sim_time < _simTimeout)
+            // {
+            //     if (available())
+            //     {
+            //         _masterAT = new BlinkerMasterAT();
+            //         _masterAT->update(STRING_format(streamData));
+
+            //         if (_masterAT->getState() != AT_M_NONE &&
+            //             _masterAT->reqName() == BLINKER_CMD_COPS)
+            //             //  &&
+            //             // _masterAT->getParam(3).toInt() == 9)
+            //         {
+            //             BLINKER_LOG_ALL(BLINKER_F("sim7000_cops_success"));
+            //             pdn_status = sim7000_cops_success;
+            //             free(_masterAT);
+            //             break;
+            //         }
+            //         free(_masterAT);
+            //     }
+            // }
+
+            // if (pdn_status != sim7000_cops_success) return false;
+
+            streamPrint(STRING_format(BLINKER_CMD_CNACT_REQ) + "=?");
             sim_time = millis();
 
             while(millis() - sim_time < _simTimeout)
@@ -116,34 +169,8 @@ class BlinkerSIM7000
                     _masterAT->update(STRING_format(streamData));
 
                     if (_masterAT->getState() != AT_M_NONE &&
-                        _masterAT->reqName() == BLINKER_CMD_CSQ &&
-                        _masterAT->getParam(0).toInt() != 99)
-                    {
-                        BLINKER_LOG_ALL(BLINKER_F("sim7000_csq_success"));
-                        pdn_status = sim7000_csq_success;
-                        free(_masterAT);
-                        break;
-                    }
-                    free(_masterAT);
-                }
-            }
-
-            if (pdn_status != sim7000_csq_success) return false;
-
-            streamPrint(BLINKER_CMD_COPS_REQ);
-            sim_time = millis();
-
-            while(millis() - sim_time < _simTimeout)
-            {
-                if (available())
-                {
-                    _masterAT = new BlinkerMasterAT();
-                    _masterAT->update(STRING_format(streamData));
-
-                    if (_masterAT->getState() != AT_M_NONE &&
-                        _masterAT->reqName() == BLINKER_CMD_COPS)
-                        //  &&
-                        // _masterAT->getParam(3).toInt() == 9)
+                        _masterAT->reqName() == "CNACT" &&
+                        _masterAT->getParam(0).toInt() == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("sim7000_cops_success"));
                         pdn_status = sim7000_cops_success;
@@ -151,12 +178,11 @@ class BlinkerSIM7000
                         break;
                     }
                     free(_masterAT);
+                    // return true;
                 }
             }
 
-            if (pdn_status != sim7000_cops_success) return false;
-
-            streamPrint(STRING_format(BLINKER_CMD_CNACT_REQ) + "=1");
+            streamPrint(STRING_format(BLINKER_CMD_CNACT_REQ) + "=1,\"cmnet\"");
             sim_time = millis();
             
             while(millis() - sim_time < _simTimeout)
@@ -165,7 +191,22 @@ class BlinkerSIM7000
                 {
                     if (strncmp(streamData, BLINKER_CMD_OK, 2) == 0)
                     {
+                        //return true;
+                        pdn_status = sim7000_cnact_success;
+                    }
+                }
+            }
+
+            delay(2000);
+
+            while(millis() - sim_time < _simTimeout)
+            {
+                if (available())
+                {
+                    if (strstr(streamData, "ACTIVE") && strstr(streamData, "DEACTIVED") == 0)
+                    {
                         return true;
+                        // pdn_status = sim7000_cnact_success;
                     }
                 }
             }
@@ -259,7 +300,7 @@ class BlinkerSIM7000
 
         bool powerCheck()
         {
-            streamPrint(BLINKER_CMD_AT);
+            // streamPrint(BLINKER_CMD_AT);
             streamPrint("ATE0");
 
             if (!checkPDN()) return false;

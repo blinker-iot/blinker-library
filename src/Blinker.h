@@ -170,6 +170,10 @@
     // #define BLINKER_SIM7020C_NBIOT
     // #endif
 
+    #ifndef BLINKER_WITHOUT_SSL
+        #define BLINKER_WITHOUT_SSL
+    #endif
+
     #include "BlinkerSerialSIM7000NBIoT.h"
 
     BlinkerSerialSIM7000NBIoT   Blinker;

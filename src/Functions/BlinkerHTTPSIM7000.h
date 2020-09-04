@@ -101,7 +101,7 @@ class BlinkerHTTPSIM7000
         bool GET()
         {
             streamPrint(STRING_format(BLINKER_CMD_SHCONF_REQ) + \
-                        "=\"URL\",\"" + _host + "/\"");
+                        "=\"URL\",\"" + _host + "\"");
             uint8_t  h_id = 0;
             uint32_t http_time = millis();
             sim7000_http_status_t http_status = sim7000_http_url_set;
@@ -126,7 +126,7 @@ class BlinkerHTTPSIM7000
             }
 
             streamPrint(STRING_format(BLINKER_CMD_SHCONF_REQ) +
-                        "=\"BODYLEN\",1024");
+                        "=\"BODYLEN\",256");
             http_time = millis();
             
             while(millis() - http_time < _httpTimeout * 2)
@@ -184,6 +184,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_con_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -216,6 +217,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_state_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -236,6 +238,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_chead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -259,6 +262,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_ahead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -282,6 +286,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_ahead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -305,6 +310,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_ahead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -328,6 +334,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_ahead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -351,6 +358,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_send_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -385,6 +393,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_get_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -413,9 +422,28 @@ class BlinkerHTTPSIM7000
                 }
             }
 
-            if (http_status != sim7000_http_get_success)
+            if (http_status != sim7000_http_read_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
+            }
+
+            http_time = millis();
+
+            while(millis() - http_time < _httpTimeout * 4)
+            {
+                if (available())
+                {
+                    String http_data = STRING_format(streamData);
+                    BLINKER_LOG_ALL(BLINKER_F("http_data: "), http_data);
+                    
+                    if (isFreshPayload) free(payload);
+                    payload = (char*)malloc((http_data.length() + 1)*sizeof(char));
+                    memset(payload, '\0', (http_data.length() + 1));
+                    strcpy(payload, http_data.c_str());
+                    isFreshPayload = true;
+                    break;
+                }
             }
 
             streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
@@ -435,6 +463,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_disc_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
             return true;
@@ -526,6 +555,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_con_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -558,6 +588,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_state_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -578,6 +609,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_chead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -601,6 +633,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_ahead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -624,6 +657,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_ahead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -647,6 +681,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_ahead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -670,6 +705,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_ahead_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -693,6 +729,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_body_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
             
@@ -716,6 +753,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_send_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -750,6 +788,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_get_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -780,6 +819,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_get_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
 
@@ -800,6 +840,7 @@ class BlinkerHTTPSIM7000
 
             if (http_status != sim7000_http_disc_success)
             {
+                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
                 return false;
             }
             return true;

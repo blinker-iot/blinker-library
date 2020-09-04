@@ -279,7 +279,7 @@ int BlinkerMQTTSIM7000::connect()
     }
 
     streamPrint(STRING_format(BLINKER_CMD_SMSUB_REQ) + \
-                "\"" + subTopic + "\",0");
+                "=\"" + subTopic + "\",0");
     mqtt_time = millis();
 
     while(millis() - mqtt_time < _mqttTimeout)
