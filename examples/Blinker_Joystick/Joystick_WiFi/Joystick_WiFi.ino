@@ -19,7 +19,7 @@
  * https://github.com/espressif/arduino-esp32/releases
  * 
  * Docs: https://diandeng.tech/doc
- *       https://github.com/blinker-iot/blinker-doc/wiki
+ *       
  * 
  * *****************************************************************
  * 
@@ -39,7 +39,7 @@
  * https://github.com/espressif/arduino-esp32/releases
  * 
  * 文档: https://diandeng.tech/doc
- *       https://github.com/blinker-iot/blinker-doc/wiki
+ *       
  * 
  * *****************************************************************/
 
