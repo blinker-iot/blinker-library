@@ -53,29 +53,30 @@ class BlinkerSIM7000
 
         bool getSNTP(float _tz = 8.0, char _url[] = "120.25.108.11")
         {
-            uint32_t os_time = millis();
-            _timezone = _tz;
-            streamPrint(STRING_format(BLINKER_CMD_CNTP_REQ) + \
-                        "=" + STRING_format(_url) + \
-                        "," + STRING_format((int8_t)(_tz * 4)));
+            // uint32_t os_time = millis();
+            // _timezone = _tz;
+            // streamPrint(STRING_format(BLINKER_CMD_CNTP_REQ) + \
+            //             "=" + STRING_format(_url) + \
+            //             "," + STRING_format((int8_t)(_tz * 4)));
 
-            while(millis() - os_time < _simTimeout * 10)
-            {
-                if (available())
-                {
-                    _masterAT = new BlinkerMasterAT();
-                    _masterAT->update(STRING_format(streamData));
+            // while(millis() - os_time < _simTimeout * 10)
+            // {
+            //     if (available())
+            //     {
+            //         _masterAT = new BlinkerMasterAT();
+            //         _masterAT->update(STRING_format(streamData));
 
-                    if (_masterAT->getState() != AT_M_NONE &&
-                        _masterAT->reqName() == BLINKER_CMD_CNTP)
-                    {
-                        free(_masterAT);
-                        return true;
-                    }
-                    free(_masterAT);
-                }
-            }
-            return false;
+            //         if (_masterAT->getState() != AT_M_NONE &&
+            //             _masterAT->reqName() == BLINKER_CMD_CNTP)
+            //         {
+            //             free(_masterAT);
+            //             return true;
+            //         }
+            //         free(_masterAT);
+            //     }
+            // }
+            // return false;
+            return true;
         }
 
         int checkPDN()
@@ -241,7 +242,7 @@ class BlinkerSIM7000
             {
                 if (available())
                 {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    if (strncmp(streamData, BLINKER_CMD_OK, 2) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("get IMEI: "), _imei,
                                         BLINKER_F(", length: "), strlen(streamData));
@@ -283,7 +284,7 @@ class BlinkerSIM7000
             {
                 if (available())
                 {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    if (strncmp(streamData, BLINKER_CMD_OK, 2) == 0)
                     {
                         BLINKER_LOG_ALL(BLINKER_F("get ICCID: "), _iccid,
                                         BLINKER_F(", length: "), strlen(streamData));
@@ -302,29 +303,41 @@ class BlinkerSIM7000
         {
             // streamPrint(BLINKER_CMD_AT);
             streamPrint("ATE0");
-
-            if (!checkPDN()) return false;
-
-            BLINKER_LOG_ALL(BLINKER_F("power check"));
-            streamPrint(BLINKER_CMD_AT);
             uint32_t dev_time = millis();
 
             while(millis() - dev_time < _simTimeout)
             {
                 if (available())
                 {
-                    if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+                    if (strncmp(streamData, BLINKER_CMD_OK, 2) == 0)
                     {
-                        BLINKER_LOG_ALL(BLINKER_F("power on"));
-                        
-                        // SAPBR();
-
-                        return true;
+                        BLINKER_LOG_ALL(BLINKER_F("ATE0"));
                     }
                 }
             }
 
-            return false;
+            if (!checkPDN()) return false;
+
+            // BLINKER_LOG_ALL(BLINKER_F("power check"));
+            // streamPrint(BLINKER_CMD_AT);
+            // uint32_t dev_time = millis();
+
+            // while(millis() - dev_time < _simTimeout)
+            // {
+            //     if (available())
+            //     {
+            //         if (strncmp(streamData, BLINKER_CMD_OK, 2) == 0)
+            //         {
+            //             BLINKER_LOG_ALL(BLINKER_F("power on"));
+                        
+            //             // SAPBR();
+
+                        return true;
+            //         }
+            //     }
+            // }
+
+            // return false;
         }
 
         bool isReboot()

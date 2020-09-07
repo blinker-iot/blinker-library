@@ -195,6 +195,29 @@ int BlinkerMQTTSIM7000::connect()
         return false;
     }
 
+    // streamPrint(STRING_format(BLINKER_CMD_SMCONF_REQ) + \
+    //             "=\"KEEPTIME\",60");
+    // mqtt_time = millis();
+
+    // mqtt_status = sim7000_mqtt_url_set;
+
+    // while(millis() - mqtt_time < _mqttTimeout)
+    // {
+    //     if (streamAvailable())
+    //     {
+    //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+    //         {
+    //             mqtt_status = sim7000_mqtt_user_success;
+    //             break;
+    //         }
+    //     }
+    // }
+
+    // if (mqtt_status != sim7000_mqtt_user_success)
+    // {
+    //     return false;
+    // }
+
     streamPrint(STRING_format(BLINKER_CMD_SMCONF_REQ) + \
                 "=username," + username);
     mqtt_time = millis();
@@ -278,9 +301,8 @@ int BlinkerMQTTSIM7000::connect()
         return false;
     }
 
-    streamPrint(STRING_format(BLINKER_CMD_SMSUB_REQ) + \
-                "=\"" + subTopic + "\",0");
-    mqtt_time = millis();
+    streamPrint(STRING_format(BLINKER_CMD_SMUNSUB_REQ) + \
+                "=\"" + subTopic + "\"");
 
     while(millis() - mqtt_time < _mqttTimeout)
     {
@@ -288,13 +310,30 @@ int BlinkerMQTTSIM7000::connect()
         {
             if (strcmp(streamData, BLINKER_CMD_OK) == 0)
             {
-                mqtt_status = sim7000_mqtt_connect_success;
                 break;
             }
         }
     }
 
-    if (mqtt_status != sim7000_mqtt_connect_success)
+    streamPrint(STRING_format(BLINKER_CMD_SMSUB_REQ) + \
+                "=\"" + subTopic + "\",0");
+    mqtt_time = millis();
+    
+    mqtt_status = sim7000_mqtt_set_sub;
+
+    while(millis() - mqtt_time < _mqttTimeout)
+    {
+        if (streamAvailable())
+        {
+            if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+            {
+                mqtt_status = sim7000_mqtt_set_sub_success;
+                break;
+            }
+        }
+    }
+
+    if (mqtt_status != sim7000_mqtt_set_sub_success)
     {
         return false;
     }
@@ -332,7 +371,21 @@ int BlinkerMQTTSIM7000::connected()
             BLINKER_LOG_ALL(BLINKER_F("isConnected: "), isConnected);
             break;
         }
-    }
+    }    
+
+    // streamPrint(STRING_format(BLINKER_CMD_SMSUB_REQ) + \
+    //             "=\"" + subTopic + "\",0");
+
+    // while(millis() - mqtt_time < _mqttTimeout)
+    // {
+    //     if (streamAvailable())
+    //     {
+    //         if (strcmp(streamData, BLINKER_CMD_OK) == 0)
+    //         {
+    //             break;
+    //         }
+    //     }
+    // }
 
     return isConnected;
 }
@@ -368,14 +421,27 @@ int BlinkerMQTTSIM7000::publish(const char * topic, const char * msg)
                 "=\"" + topic + "\"," + 
                 STRING_format(strlen(msg)) + ",0,0");
     mqtt_time = millis();
+    
+    while(millis() - mqtt_time < _mqttTimeout)
+    {
+        if (streamAvailable())
+        {
+            if (strncmp(streamData, ">", 1) == 0)
+            {               
+                // return true;
+                break;
+            }
+        }
+    }
+
+    streamPrint(msg);
 
     while(millis() - mqtt_time < _mqttTimeout)
     {
         if (streamAvailable())
         {
             if (strcmp(streamData, BLINKER_CMD_OK) == 0)
-            {
-                streamPrint(msg);
+            {               
                 return true;
             }
         }
@@ -393,6 +459,7 @@ int BlinkerMQTTSIM7000::readSubscription(uint16_t time_out)
     }
     else
     {
+        // BLINKER_LOG_ALL(BLINKER_F("readSubscription in"));
         mqtt_time = millis();
 
         while(millis() - mqtt_time < time_out)
@@ -429,7 +496,7 @@ int BlinkerMQTTSIM7000::readSubscription(uint16_t time_out)
                     //                     _masterAT->getParam(4).length() + 
                     //                     _masterAT->getParam(5).length() + 
                     //                     15, _Data.length() - 1);
-                    String subData = _masterAT->getParam(1);
+                    String subData = _Data.substring(_Data.indexOf(",") + 2, _Data.length() - 1);//_masterAT->getParam(1);
 
                     // BLINKER_LOG_ALL(BLINKER_F("leng 0: "), _masterAT->getParam(0).length());
                     // BLINKER_LOG_ALL(BLINKER_F("leng 1: "), _masterAT->getParam(1).length());

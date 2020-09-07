@@ -2064,6 +2064,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_CMD_SMSUB_REQ               "AT+SMSUB"
 
+    #define BLINKER_CMD_SMUNSUB_REQ             "AT+SMUNSUB"
+
     #define BLINKER_CMD_SMSUB                   "SMSUB"
 
     #define BLINKER_CMD_SMPUB_REQ               "AT+SMPUB"
