@@ -223,6 +223,16 @@
     #include "BlinkerQRCodeSIMNBIOT.h"
 
     BlinkerQRCodeSerialSIMNBIoT Blinker;
+
+#elif defined(BLINKER_QRCODE_NBIOT_SIM7000)
+
+    #ifndef BLINKER_WITHOUT_SSL
+        #define BLINKER_WITHOUT_SSL
+    #endif
+    
+    #include "BlinkerQRCodeSIM7000NBIOT.h"
+
+    BlinkerQRCodeSerialSIM7000NBIoT Blinker;
     
 #else
 

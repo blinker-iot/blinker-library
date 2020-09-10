@@ -126,7 +126,7 @@ class BlinkerHTTPSIM7000
             }
 
             streamPrint(STRING_format(BLINKER_CMD_SHCONF_REQ) +
-                        "=\"BODYLEN\",256");
+                        "=\"BODYLEN\",350");
             http_time = millis();
             
             while(millis() - http_time < _httpTimeout * 2)
@@ -215,11 +215,11 @@ class BlinkerHTTPSIM7000
                 }
             }
 
-            if (http_status != sim7000_http_state_success)
-            {
-                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
-                return false;
-            }
+            // if (http_status != sim7000_http_state_success)
+            // {
+            //     streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
+            //     return false;
+            // }
 
             streamPrint(STRING_format(BLINKER_CMD_SHCHEAD_REQ));
             http_time = millis();
@@ -472,7 +472,7 @@ class BlinkerHTTPSIM7000
         bool POST(String _msg, String _type, String _application)
         {
             streamPrint(STRING_format(BLINKER_CMD_SHCONF_REQ) + \
-                        "=\"URL\",\"" + _host + "/\"");
+                        "=\"URL\",\"" + _host + "\"");
             uint8_t  h_id = 0;
             uint32_t http_time = millis();
             sim7000_http_status_t http_status = sim7000_http_url_set;
@@ -497,7 +497,7 @@ class BlinkerHTTPSIM7000
             }
 
             streamPrint(STRING_format(BLINKER_CMD_SHCONF_REQ) +
-                        "=\"BODYLEN\",1024");
+                        "=\"BODYLEN\",350");
             http_time = millis();
             
             while(millis() - http_time < _httpTimeout * 2)
@@ -586,11 +586,11 @@ class BlinkerHTTPSIM7000
                 }
             }
 
-            if (http_status != sim7000_http_state_success)
-            {
-                streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
-                return false;
-            }
+            // if (http_status != sim7000_http_state_success)
+            // {
+            //     streamPrint(STRING_format(BLINKER_CMD_SHDISC_REQ));
+            //     return false;
+            // }
 
             streamPrint(STRING_format(BLINKER_CMD_SHCHEAD_REQ));
             http_time = millis();
@@ -709,8 +709,10 @@ class BlinkerHTTPSIM7000
                 return false;
             }
 
+            uint16_t _msg_len = _msg.length();
+            _msg.replace("\"", "\\\"");
             streamPrint(STRING_format(BLINKER_CMD_SHBOD_REQ) + \
-                        "=\"" + _msg + "\"," + STRING_format(_msg.length()));
+                        "=\"" + _msg + "\"," + STRING_format(_msg_len));
             http_time = millis();
 
             http_status = sim7000_http_body_set;
@@ -777,7 +779,10 @@ class BlinkerHTTPSIM7000
                         BLINKER_LOG_ALL(BLINKER_F("get_string: "), get_string, \
                                         BLINKER_F(", get_code: "), get_code, \
                                         BLINKER_F(", get_len: "), get_len);
-                        http_status = sim7000_http_get_success;
+                        if (get_code == 200)
+                        {
+                            http_status = sim7000_http_get_success;
+                        }
                         free(_masterAT);
                         break;
                     }
@@ -800,20 +805,22 @@ class BlinkerHTTPSIM7000
             {
                 if (available())
                 {
-                    _masterAT = new BlinkerMasterAT();
-                    _masterAT->update(STRING_format(streamData));
+                    // _masterAT = new BlinkerMasterAT();
+                    // _masterAT->update(STRING_format(streamData));
 
-                    if (_masterAT->getState() != AT_M_NONE &&
-                        _masterAT->reqName() == BLINKER_CMD_SHREAD)
-                    {
-                        String read_string = _masterAT->getParam(0);
-                        BLINKER_LOG_ALL(BLINKER_F("read_string: "), read_string);
-                        http_status = sim7000_http_read_success;
-                        free(_masterAT);
-                        break;
-                    }
+                    // if (_masterAT->getState() != AT_M_NONE &&
+                    //     _masterAT->reqName() == BLINKER_CMD_SHREAD)
+                    // {
+                    //     String read_string = _masterAT->getParam(0);
+                    //     BLINKER_LOG_ALL(BLINKER_F("read_string: "), read_string);
+                    //     http_status = sim7000_http_read_success;
+                    //     free(_masterAT);
+                    //     break;
+                    // }
 
-                    free(_masterAT);
+                    // free(_masterAT);
+
+                    BLINKER_LOG_ALL(BLINKER_F("read_string: "), streamData);
                 }
             }
 
