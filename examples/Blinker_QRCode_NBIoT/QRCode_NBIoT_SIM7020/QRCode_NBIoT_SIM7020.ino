@@ -43,47 +43,45 @@
  * 
  * *****************************************************************/
 
-#define BLINKER_WIFI
-#define BLINKER_ESP_SMARTCONFIG
+#define BLINKER_QRCODE_NBIOT_SIM7020
 
 #include <Blinker.h>
-#include "ESP32_CAM_SERVER.h"
 
-char auth[] = "Your Device Secret Key";
-bool setup_camera = false;
+char type[] = "";
+char auth[] = "";
+
+BlinkerButton Button1("btn-abc");
+BlinkerNumber Number1("num-abc");
+
+int counter = 0;
+
+void button1_callback(const String & state)
+{
+    BLINKER_LOG("get button state: ", state);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
 
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
-
-    Blinker.vibrate();
-    
-    uint32_t BlinkerTime = millis();
-    
-    Blinker.print("millis", BlinkerTime);
+    counter++;
+    Number1.print(counter);
 }
 
-void setup()
-{
+void setup() {
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
-
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, LOW);
+    BLINKER_DEBUG.debugAll();
     
-    Blinker.begin(auth);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+    
+    Blinker.begin(auth, type, D6, D7);
     Blinker.attachData(dataRead);
+
+    Button1.attach(button1_callback);
 }
 
-void loop()
-{
+void loop() {
     Blinker.run();
-
-    if (Blinker.connected() && !setup_camera)
-    {
-        setupCamera();
-        setup_camera = true;
-
-        Blinker.printObject("video", "{\"str\":\"mjpg\",\"url\":\"http://"+ WiFi.localIP().toString() + "\"}")
-    }
 }
