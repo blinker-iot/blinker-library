@@ -328,12 +328,12 @@ int BlinkerMQTT::connect()
 
     int8_t ret;
 
-    if ((millis() - con_log) >= 5000)
-    {
-        con_log += 5000;
-        BLINKER_LOG(BLINKER_F("Connecting to MQTT...heap "));
-        BLINKER_LOG_FreeHeap_ALL();
-    }
+    // if ((millis() - con_log) >= 5000)
+    // {
+    //     con_log += 5000;
+    //     BLINKER_LOG(BLINKER_F("Connecting to MQTT...heap "));
+    //     BLINKER_LOG_FreeHeap_ALL();
+    // }
 
     webSocket_MQTT.loop();
 
@@ -2178,7 +2178,7 @@ int BlinkerMQTT::connectServer() {
         // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
         #if defined(BLINKER_WITHOUT_SSL)
             if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((24+1)*sizeof(char));
-            strcpy(DEVICE_NAME_MQTT, _userID.substring(0, 24).c_str());
+            strcpy(DEVICE_NAME_MQTT, _userName.substring(0, 24).c_str());
         #else
             if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
             strcpy(DEVICE_NAME_MQTT, _userID.c_str());
