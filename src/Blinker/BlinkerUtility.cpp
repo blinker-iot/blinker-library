@@ -36,6 +36,20 @@ String macDeviceName()
 }
 #endif
 
+
+// String deviceLocalIP()
+// {
+//     uint8_t mac[4];
+//     char macStr[13] = { 0 };
+//     ips = WiFi.localIP();
+
+//     sprintf(macStr, "%d.%d.%d.%d", ips[0], ips[1], ips[2], ips[3]);
+//     String macStr_l = STRING_format(macStr);
+//     //macStr_l.toLowerCase();
+//     //BLINKER_LOG("MACADDR: ", macStr_l);
+//     return macStr_l;
+// }
+
 String STRING_find_string(const String & src, const String & targetStart, const String & targetEnd, uint8_t skipNum) {
     int addr_start = src.indexOf(targetStart);
     int addr_end;

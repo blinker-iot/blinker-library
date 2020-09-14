@@ -2424,6 +2424,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
     protected :
+        uint32_t log_time = 0;
         void begin();
 
         void needInit();
@@ -2871,8 +2872,10 @@ void BlinkerApi::needInit()
 void BlinkerApi::run()
 {
     // #if defined(BLINKER_LOWPOWER_AIR202)
-    //     ::delay(10);
+        // delayMicroseconds(1);
     // #else
+
+        // BLINKER_LOG_ALL(BLINKER_F("BProto::run00001"));
         #if defined(BLINKER_WIFI_SUBDEVICE)
             #if defined(BLINKER_BUTTON)
                 tick();
@@ -2910,6 +2913,8 @@ void BlinkerApi::run()
                 _isConnBegin = true;
             }
         #endif
+
+        // BLINKER_LOG_ALL(BLINKER_F("BProto::run0001"));
 
         #if defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_WIFI_GATEWAY)
@@ -3173,6 +3178,8 @@ void BlinkerApi::run()
 
         #endif
 
+        // BLINKER_LOG_ALL(BLINKER_F("BProto::run001"));
+
         #if defined(BLINKER_MQTT_AUTO)
             if (!wlanRun())
             {
@@ -3348,6 +3355,8 @@ void BlinkerApi::run()
             }
         #endif
 
+        // BLINKER_LOG_ALL(BLINKER_F("BProto::run01"));
+
         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
             ntpInit();
@@ -3358,6 +3367,8 @@ void BlinkerApi::run()
                 return;
             }
         #endif
+
+        // BLINKER_LOG_ALL(BLINKER_F("BProto::run0"));
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY)
@@ -3397,18 +3408,18 @@ void BlinkerApi::run()
                         #endif
                     }
 
-                    while (time_slot < 30000)
-                    {
-                        time_slot = millis() - connect_time;
-                        BProto::connect();
-                        yield();
+                    // while (time_slot < 30000)
+                    // {
+                    //     time_slot = millis() - connect_time;
+                    //     BProto::connect();
+                    //     yield();
 
-                        if (BProto::mConnected())
-                        {
-                            state = CONNECTED;
-                            break;
-                        }
-                    }
+                    //     if (BProto::mConnected())
+                    //     {
+                    //         state = CONNECTED;
+                    //         break;
+                    //     }
+                    // }
 
                     BLINKER_LOG_ALL(BLINKER_F("millis: "), millis(),
                                     BLINKER_F(", connect_time: "), connect_time);
@@ -3912,6 +3923,8 @@ void BlinkerApi::run()
             }
         #endif
 
+        // BLINKER_LOG_ALL(BLINKER_F("BProto::run1"));
+
         #if defined(BLINKER_LOWPOWER) || defined(BLINKER_LOWPOWER_AIR202)
             BLINKER_LOG_ALL(BLINKER_F("LOW POWER"));
 
@@ -3945,22 +3958,17 @@ void BlinkerApi::run()
             return;
         #endif
 
+        // BLINKER_LOG_ALL(BLINKER_F("BProto::run"));
+
         // #if defined(BLINKER_LOWPOWER_AIR202)   
         //     BProto::checkAutoFormat();
         //     return; // TBD
         // #endif
 
-        bool conState = BProto::connected();
+        bool conState = BProto::connect();
 
-        // if (millis() - debug_time >= 2000)
-        // {
-        //     BLINKER_LOG_ALL("BProto::state: ", BProto::state);
-        //     BLINKER_LOG_ALL("BProto::connected: ", BProto::connected());
-
-        //     debug_time = millis();
-        // }
-
-        // BLINKER_LOG_ALL(BLINKER_F("conState: "), conState);
+        // delay(10);
+        
         #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
             BProto::meshCheck();
 
@@ -4063,9 +4071,17 @@ void BlinkerApi::run()
                 _dHeartTime = millis();
             }
         #endif
+        
+        if (millis() - log_time >= 1000)
+        {
+            // BLINKER_LOG_ALL(BLINKER_F("BProto::run1"));
+            log_time += 1000;
+            // BLINKER_LOG_ALL(BLINKER_F("BProto::state: "), BProto::state);
+        }
 
         switch (BProto::state)
         {
+            // BLINKER_LOG_ALL(BLINKER_F("BProto::state: "), BProto::state);
             case CONNECTING :
                 if (BProto::connect())
                 {
@@ -4262,10 +4278,12 @@ void BlinkerApi::run()
                                     _disFreshTime = millis();
                                     _disconnectCount++;
 
-                                    if (_disconnectCount > 12) _disconnectCount = 12;
+                                    if (_disconnectCount > 6) _disconnectCount = 6;
 
                                     BLINKER_LOG_ALL(BLINKER_F("_disFreshTime: "), _disFreshTime);
                                     BLINKER_LOG_ALL(BLINKER_F("_disconnectCount: "), _disconnectCount);
+
+                                    // ESP.restart();
                                 }
                             }
                         }
