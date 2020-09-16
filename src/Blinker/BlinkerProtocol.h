@@ -264,14 +264,14 @@ void BlinkerProtocol::flush()
 {
     isFresh = false; availState = false; 
     canParse = false; isAvail = false;
-    if (isInit) conn->flush();
+    if (isInit && isAvail) conn->flush();
 }
 
 int BlinkerProtocol::checkAvail()
 {
     if (!isInit) return false;
 
-    // flush();
+    flush();
 
     if (connected())
     {
