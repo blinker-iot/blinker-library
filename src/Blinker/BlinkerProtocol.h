@@ -271,13 +271,16 @@ int BlinkerProtocol::checkAvail()
 {
     if (!isInit) return false;
 
-    flush();
+    // flush();
 
     if (connected())
     {
         isAvail = conn->available();
+
         if (isAvail)
-        {
+        { 
+            BLINKER_LOG_ALL(BLINKER_F("checkAvail: "), isAvail);
+
             isFresh = true;
             canParse = true;
             availState = true;

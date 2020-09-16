@@ -294,6 +294,8 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
                 strcpy(msgBuf_MQTT, (char*)payload);
                 isAvail_MQTT = true;
                 isFresh_MQTT = true;
+
+                BLINKER_LOG_ALL(BLINKER_F("isAvail_MQTT: "), isAvail_MQTT);
             }
 
             if (!isApCfg) dataFrom_MQTT = BLINKER_MSG_FROM_WS;
@@ -537,6 +539,8 @@ int BlinkerMQTT::available()
 
     if (isAvail_MQTT)
     {
+        BLINKER_LOG_ALL(BLINKER_F("available: "), isAvail_MQTT);
+
         isAvail_MQTT = false;
         return true;
     }
@@ -905,6 +909,8 @@ void BlinkerMQTT::flush()
 {
     if (isFresh_MQTT)
     {
+        BLINKER_LOG_ALL(BLINKER_F("flush"));
+
         free(msgBuf_MQTT); isFresh_MQTT = false; isAvail_MQTT = false;
         isAliAvail = false; isDuerAvail = false; isMIOTAvail = false;//isBavail = false;
     }

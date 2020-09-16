@@ -4072,12 +4072,12 @@ void BlinkerApi::run()
             }
         #endif
         
-        if (millis() - log_time >= 1000)
-        {
-            // BLINKER_LOG_ALL(BLINKER_F("BProto::run1"));
-            log_time += 1000;
-            // BLINKER_LOG_ALL(BLINKER_F("BProto::state: "), BProto::state);
-        }
+        // if (millis() - log_time >= 1000)
+        // {
+        //     BLINKER_LOG_ALL(BLINKER_F("BProto::run1"));
+        //     log_time += 1000;
+        //     BLINKER_LOG_ALL(BLINKER_F("BProto::state: "), BProto::state);
+        // }
 
         switch (BProto::state)
         {
