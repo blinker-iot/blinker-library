@@ -74,7 +74,7 @@ class BlinkerProtocol
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE) || \
             defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data, bool report = false)  { return isInit ? conn->duerPrint(data, report) : false; }
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
@@ -98,7 +98,8 @@ class BlinkerProtocol
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             int toServer(char * data) { return isInit ? conn->toServer(data) : false; }
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
@@ -212,7 +213,7 @@ class BlinkerProtocol
             defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_SUBDEVICE)
+            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
             bool checkAliAvail()    { return conn->aligenieAvail(); }
             bool checkDuerAvail()   { return conn->duerAvail(); }
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \

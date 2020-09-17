@@ -233,7 +233,13 @@
     #include "BlinkerQRCodeSIM7000NBIOT.h"
 
     BlinkerQRCodeSerialSIM7000NBIoT Blinker;
-    
+
+#elif defined(BLINKER_HTTP)
+
+    #include "BlinkerESPHTTP.h"
+
+    BlinkerESPHTTP      Blinker;   
+
 #else
 
     #error Please set a mode BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT ! Please check your mode setting.

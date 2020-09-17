@@ -11,7 +11,7 @@
         defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
         defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
         defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-        defined(BLINKER_WIFI_SUBDEVICE)
+        defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
         #include "BlinkerAuto.h"
     #endif
 
@@ -39,7 +39,7 @@
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP)
+    defined(BLINKER_PRO_ESP) || defined(BLINKE_HTTP)
     #include "BlinkerTimer.h"
     #include "../Functions/BlinkerTimingTimer.h"
     #include "../Functions/BlinkerOTA.h"
@@ -334,7 +334,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
             defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
 
             void setTimezone(float tz);
 
@@ -638,7 +639,7 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE) || \
             defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
 
             // #if !defined(BLINKER_AT_MQTT)
             void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = BLINKER_DATA_UPDATE_COUNT)
@@ -819,7 +820,7 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE) || \
             defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
             bool        _isInit = false;
             bool        _isAuto = false;
             bool        _isAutoInit = false;
@@ -981,7 +982,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
             defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             blinker_callback_with_string_uint8_arg_t _AliGeniePowerStateFunc_m = NULL;
             blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
@@ -2284,7 +2286,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
             defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
 
             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -2398,7 +2401,8 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             void aliParse(const String & _data);
             void duerParse(const String & _data);
             void miotParse(const String & _data);
@@ -2699,7 +2703,7 @@ void BlinkerApi::begin()
     #endif
 
     #if defined(BLINKER_OTA_VERSION_CODE) && (defined(BLINKER_MQTT) || \
-        defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AUTO))
+        defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AUTO) || defined(BLINKE_HTTP))
         if (strlen(BLINKER_OTA_VERSION_CODE) >= BLINKER_OTA_INFO_SIZE)
         {
             while(1)
@@ -2720,7 +2724,7 @@ void BlinkerApi::needInit()
         defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
         defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
         defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-        defined(BLINKER_QRCODE_NBIOT_SIM7000)
+        defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
         BLINKER_LOG_ALL(BLINKER_F("==== needInit ===="));
         #if !defined(BLINKER_LOWPOWER_AIR202)
             String _shareData = freshSharers();
@@ -2874,7 +2878,6 @@ void BlinkerApi::run()
     // #if defined(BLINKER_LOWPOWER_AIR202)
         // delayMicroseconds(1);
     // #else
-
         // BLINKER_LOG_ALL(BLINKER_F("BProto::run00001"));
         #if defined(BLINKER_WIFI_SUBDEVICE)
             #if defined(BLINKER_BUTTON)
@@ -3369,6 +3372,16 @@ void BlinkerApi::run()
         #endif
 
         // BLINKER_LOG_ALL(BLINKER_F("BProto::run0"));
+        // #if defined(BLINKE_HTTP)
+        // #endif
+        ::delay(1000);
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("!WL_CONNECTED============"));
+            return;
+        }
+        BLINKER_LOG_ALL(BLINKER_F("============WL_CONNECTED"));
+
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY)
@@ -4064,7 +4077,8 @@ void BlinkerApi::run()
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
+            defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE) || \
+            defined(BLINKE_HTTP)
             if (((millis() - _dHeartTime)/1000 >= BLINKER_DEVICE_HEARTBEAT_TIME) && _isInit)
             {
                 deviceHeartbeat();
@@ -4301,7 +4315,8 @@ void BlinkerApi::run()
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
 
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
                 !defined(BLINKER_LOWPOWER_AIR202) && !defined(BLINKER_QRCODE_NBIOT_SIM7020) && \
@@ -4429,7 +4444,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
                     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
                     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
-                    defined(BLINKER_PRO_ESP)
+                    defined(BLINKER_PRO_ESP) || defined(BLINKE_HTTP)
                     timerManager(root);
                     // BLINKER_LOG_ALL(BLINKER_F("timerManager"));
                 #endif
@@ -4441,7 +4456,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                     defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
                     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-                    defined(BLINKER_WIFI_SUBDEVICE)
+                    defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
                     shareParse(root);
                     autoManager(root);
                     #if !defined(BLINKER_WIFI_SUBDEVICE)
@@ -4541,7 +4556,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
                             defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
                             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
-                            defined(BLINKER_PRO_ESP)
+                            defined(BLINKER_PRO_ESP) || defined(BLINKE_HTTP)
                             timerManager(_array, true);
                         #endif
 
@@ -4670,7 +4685,8 @@ void BlinkerApi::printNumArray(char * _name, const String & data)
             #if (defined(ESP8266) || defined(ESP32)) && \
             (defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP))
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKE_HTTP))
             dataStorage(_name, data);
             #endif
         }
@@ -4935,7 +4951,8 @@ float BlinkerApi::gps(b_gps_t axis)
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
     defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-    defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+    defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+    defined(BLINKE_HTTP)
     void BlinkerApi::setTimezone(float tz)
     {
         _timezone = tz;
@@ -5713,7 +5730,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -5758,7 +5776,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -5808,7 +5827,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -5848,7 +5868,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -5888,7 +5909,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -5999,7 +6021,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -6049,7 +6072,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -6099,7 +6123,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -6150,7 +6175,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -6200,7 +6226,8 @@ float BlinkerApi::gps(b_gps_t axis)
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
             defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
@@ -7423,7 +7450,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || defined(BLINKE_HTTP)
             data = BLINKER_F("{\"deviceName\":\"");
             data += BProto::deviceName();
             data += BLINKER_F("\",\"key\":\"");
@@ -7453,7 +7480,8 @@ float BlinkerApi::gps(b_gps_t axis)
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
             defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKE_HTTP)
             print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
             print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
             printObject(BLINKER_F("upgradeData"), data);
@@ -7937,7 +7965,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
                     defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
                     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
-                    defined(BLINKER_PRO_ESP)
+                    defined(BLINKER_PRO_ESP) || defined(BLINKE_HTTP)
                     String _timer = taskCount ? "1":"0";
                     _timer += _cdState ? "1":"0";
                     _timer += _lpState ? "1":"0";
@@ -7949,7 +7977,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                         defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-                        defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+                        defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+                        defined(BLINKE_HTTP)
                         print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
                     #endif
                 #endif
@@ -8596,7 +8625,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
     defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-    defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+    defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+    defined(BLINKE_HTTP)
 
     #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
         !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
@@ -11002,7 +11032,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 break;
             #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                 defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-                defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+                defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+                defined(BLINKE_HTTP)
                 case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                     if (!checkCUPDATE()) {
                         return BLINKER_CMD_FALSE;
@@ -11583,7 +11614,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     break;
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                     defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-                    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+                    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+                    defined(BLINKE_HTTP)
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         url_iot = host;
                         url_iot += BLINKER_F("/api/v1/user/device/userconfig");
@@ -12075,7 +12107,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             break;
                         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
                             defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-                            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+                            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+                            defined(BLINKE_HTTP)
                             case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                                 _cUpdateTime = millis();
                                 break;
@@ -12174,7 +12207,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
     defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-    defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
+    defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+    defined(BLINKE_HTTP)
 
     void BlinkerApi::aliParse(const String & _data)
     {
