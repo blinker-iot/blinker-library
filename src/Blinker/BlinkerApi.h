@@ -3374,13 +3374,13 @@ void BlinkerApi::run()
         // BLINKER_LOG_ALL(BLINKER_F("BProto::run0"));
         // #if defined(BLINKE_HTTP)
         // #endif
-        ::delay(1000);
-        if (WiFi.status() != WL_CONNECTED)
-        {
-            BLINKER_LOG_ALL(BLINKER_F("!WL_CONNECTED============"));
-            return;
-        }
-        BLINKER_LOG_ALL(BLINKER_F("============WL_CONNECTED"));
+        // ::delay(1000);
+        // if (WiFi.status() != WL_CONNECTED)
+        // {
+        //     BLINKER_LOG_ALL(BLINKER_F("!WL_CONNECTED============"));
+        //     return;
+        // }
+        // BLINKER_LOG_ALL(BLINKER_F("============WL_CONNECTED"));
 
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
