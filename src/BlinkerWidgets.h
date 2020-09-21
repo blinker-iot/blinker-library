@@ -38,7 +38,8 @@
 #if defined(BLINKER_BLE) || defined(BLINKER_WIFI) || \
     defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_NBIOT_WH) || defined(BLINKER_WIFI_GATEWAY) || \
-    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP)
+    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+    defined(BLINKE_HTTP)
 
     BlinkerSwitch BUILTIN_SWITCH;
 #endif

@@ -7,7 +7,8 @@
     defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE) || \
-    defined(BLINKER_QRCODE_NBIOT_SIM7020)))
+    defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
+    defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)))
 
 #if ARDUINO >= 100
     #include <Arduino.h>

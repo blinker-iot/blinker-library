@@ -164,6 +164,20 @@
 
     BlinkerSerialSIMNBIoT   Blinker;
 
+#elif defined(BLINKER_NBIOT_SIM7000)
+
+    // #ifndef BLINKER_SIM7020C_NBIOT
+    // #define BLINKER_SIM7020C_NBIOT
+    // #endif
+
+    #ifndef BLINKER_WITHOUT_SSL
+        #define BLINKER_WITHOUT_SSL
+    #endif
+
+    #include "BlinkerSerialSIM7000NBIoT.h"
+
+    BlinkerSerialSIM7000NBIoT   Blinker;
+
 #elif defined(BLINKER_PRO_SIM7020)
 
     #include "BlinkerSIMPRO.h"
@@ -209,7 +223,23 @@
     #include "BlinkerQRCodeSIMNBIOT.h"
 
     BlinkerQRCodeSerialSIMNBIoT Blinker;
+
+#elif defined(BLINKER_QRCODE_NBIOT_SIM7000)
+
+    #ifndef BLINKER_WITHOUT_SSL
+        #define BLINKER_WITHOUT_SSL
+    #endif
     
+    #include "BlinkerQRCodeSIM7000NBIOT.h"
+
+    BlinkerQRCodeSerialSIM7000NBIoT Blinker;
+
+#elif defined(BLINKER_HTTP)
+
+    #include "BlinkerESPHTTP.h"
+
+    BlinkerESPHTTP      Blinker;   
+
 #else
 
     #error Please set a mode BLINKER_BLE/BLINKER_WIFI/BLINKER_MQTT ! Please check your mode setting.

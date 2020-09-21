@@ -73,12 +73,14 @@ class BlinkerProtocol
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7020)
+            defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
+            defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
             int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
             int duerPrint(const String & data, bool report = false)  { return isInit ? conn->duerPrint(data, report) : false; }
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                !defined(BLINKER_QRCODE_NBIOT_SIM7020)
+                !defined(BLINKER_QRCODE_NBIOT_SIM7020) && !defined(BLINKER_NBIOT_SIM7000) && \
+                !defined(BLINKER_QRCODE_NBIOT_SIM7000)
             int miPrint(const String & data)  { return isInit ? conn->miPrint(data) : false; }
             #endif
             // void ping() { if (isInit) conn->ping(); }
@@ -95,7 +97,9 @@ class BlinkerProtocol
             defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020)
+            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+            defined(BLINKE_HTTP)
             int toServer(char * data) { return isInit ? conn->toServer(data) : false; }
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
@@ -125,10 +129,11 @@ class BlinkerProtocol
             #endif
         #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7020)
+            defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
+            defined(BLINKER_QRCODE_NBIOT_SIM7000)
             int deviceRegister(){ return conn->deviceRegister(); }
 
-            #if defined(BLINKER_QRCODE_NBIOT_SIM7020)
+            #if defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
                 void begin(const char* _authKey, const char* _deviceType, String _imei)
                 { conn->begin(_authKey, _deviceType, _imei); }
             #else
@@ -208,12 +213,13 @@ class BlinkerProtocol
             defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_SUBDEVICE)
+            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
             bool checkAliAvail()    { return conn->aligenieAvail(); }
             bool checkDuerAvail()   { return conn->duerAvail(); }
             #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                !defined(BLINKER_QRCODE_NBIOT_SIM7020)
+                !defined(BLINKER_QRCODE_NBIOT_SIM7020) && !defined(BLINKER_NBIOT_SIM7000) && \
+                !defined(BLINKER_QRCODE_NBIOT_SIM7000)
             bool checkMIOTAvail()   { return conn->miAvail(); }
             #endif
         #endif
@@ -259,7 +265,7 @@ void BlinkerProtocol::flush()
 {
     isFresh = false; availState = false; 
     canParse = false; isAvail = false;
-    if (isInit) conn->flush();
+    if (isInit && isAvail) conn->flush();
 }
 
 int BlinkerProtocol::checkAvail()
@@ -271,8 +277,11 @@ int BlinkerProtocol::checkAvail()
     if (connected())
     {
         isAvail = conn->available();
+
         if (isAvail)
-        {
+        { 
+            BLINKER_LOG_ALL(BLINKER_F("checkAvail: "), isAvail);
+
             isFresh = true;
             canParse = true;
             availState = true;

@@ -5,7 +5,7 @@
 // #include "Blinker/BlinkerUtility.h"
 #include "../Server/BlinkerServer.h"
 
-#define BLINKER_VERSION                 "0.3.4"
+#define BLINKER_VERSION                 "0.3.5"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
@@ -89,7 +89,8 @@
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_WIFI_SUBDEVICE)
+    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_WIFI_SUBDEVICE) || \
+    defined(BLINKE_HTTP)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else
     #define BLINKER_MAX_WIDGET_SIZE         6
@@ -114,7 +115,8 @@
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_PRO_ESP)
+            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKE_HTTP)
             #define BLINKER_MAX_SEND_SIZE       1024
         #else
             #define BLINKER_MAX_SEND_SIZE       512
@@ -122,7 +124,8 @@
     #else
         #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
-            defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020)
+            defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
             #define BLINKER_MAX_SEND_SIZE       512
         #else
             #define BLINKER_MAX_SEND_SIZE       128
@@ -135,7 +138,7 @@
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_WIFI_SUBDEVICE)
+            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE - 128
         #else
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
@@ -143,7 +146,8 @@
     #else
         #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
-            defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020)
+            defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
+            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
             #define BLINKER_MAX_SEND_BUFFER_SIZE       512
         #else
             #define BLINKER_MAX_SEND_BUFFER_SIZE       128
@@ -591,7 +595,7 @@
 
 #ifndef BLINKER_MAX_BRIDGE_SIZE
     #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-        defined(BLINKER_MQTT_AUTO)
+        defined(BLINKER_MQTT_AUTO) || defined(BLINKE_HTTP)
         #define BLINKER_MAX_BRIDGE_SIZE             4
     #elif defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
         defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY) || \
@@ -1370,7 +1374,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
-    defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020)
+    defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
+    defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
     #define BLINKER_CMD_SMS_NUMBER              1
 
     #define BLINKER_CMD_PUSH_NUMBER             2
@@ -1441,7 +1446,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
     defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE) || \
-    defined(BLINKER_QRCODE_NBIOT_SIM7020)
+    defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
+    defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
     #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
@@ -1623,7 +1629,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE) || \
-    defined(BLINKER_QRCODE_NBIOT_SIM7020)
+    defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
+    defined(BLINKER_QRCODE_NBIOT_SIM7000)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2
@@ -1703,7 +1710,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
     defined(BLINKER_AT_MQTT) || defined(BLINKER_PRO) || \
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE)
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE) || \
+    defined(BLINKE_HTTP)
 
     // #ifndef BLINKER_OTA_VERSION_CODE
 
@@ -1932,7 +1940,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #endif
 
 #if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
-    defined(BLINKER_PRO_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020)
+    defined(BLINKER_PRO_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
+    defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
     // http://www.simcom.com/upload/file/1547183713.pdf HTTP
     // http://www.simcom.com/upload/file/1547183663.pdf MQTT
     // http://www.simcom.com/upload/file/1547177595.pdf AT
@@ -2021,6 +2030,62 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     // AT+CMQSUB=0,"/JgCGbHlndgz/278669B20M25B642205N3CXP/r",0
     // OK
     // +CMQPUB: 0,"/JgCGbHlndgz/278669B20M25B642205N3CXP/r",0,0,0,6,"313233"
+
+// #endif
+
+// #if defined(BLINKER_NBIOT_SIM7000)
+
+    // #define BLINKER_CMD_AT                      "AT"
+
+    #define BLINKER_CMD_SHCONF_REQ              "AT+SHCONF"
+
+    #define BLINKER_CMD_SHCONN_REQ              "AT+SHCONN"
+
+    #define BLINKER_CMD_SHSTATE_REQ             "AT+SHSTATE"
+
+    #define BLINKER_CMD_SHSTATE                 "SHSTATE"
+
+    #define BLINKER_CMD_SHCHEAD_REQ             "AT+SHCHEAD"
+
+    #define BLINKER_CMD_SHAHEAD_REQ             "AT+SHAHEAD"
+
+    #define BLINKER_CMD_SHBOD_REQ               "AT+SHBOD"
+
+    #define BLINKER_CMD_SHREQ_REQ               "AT+SHREQ"
+
+    #define BLINKER_CMD_SHREQ                   "SHREQ"
+
+    #define BLINKER_CMD_SHREAD_REQ              "AT+SHREAD"
+
+    #define BLINKER_CMD_SHREAD                  "SHREAD"
+
+    #define BLINKER_CMD_SHBOD                   "SHBOD"
+
+    #define BLINKER_CMD_SHDISC_REQ              "AT+SHDISC"
+
+    #define BLINKER_CMD_SMCONF_REQ              "AT+SMCONF"
+
+    #define BLINKER_CMD_SMCONN_REQ              "AT+SMCONN"
+
+    #define BLINKER_CMD_SMSUB_REQ               "AT+SMSUB"
+
+    #define BLINKER_CMD_SMUNSUB_REQ             "AT+SMUNSUB"
+
+    #define BLINKER_CMD_SMSUB                   "SMSUB"
+
+    #define BLINKER_CMD_SMPUB_REQ               "AT+SMPUB"
+
+    #define BLINKER_CMD_SMDISC_REQ              "AT+SMDISC"
+
+    #define BLINKER_CMD_SMSTATE_REQ             "AT+SMSTATE"
+
+    #define BLINKER_CMD_SMSTATE                 "SMSTATE"
+
+    #define BLINKER_CMD_CNTP_REQ                "AT+CNTP"
+
+    #define BLINKER_CMD_CNTP                    "CNTP"
+
+    #define BLINKER_CMD_CNACT_REQ               "AT+CNACT"
 
 #endif
 
