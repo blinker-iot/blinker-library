@@ -187,6 +187,10 @@ class BlinkerProtocol
             void apConfigType() { conn->setApConfig(); }
             bool checkIsSmartConfig() { return conn->checkSmartConfig(); }
         #endif
+
+        #if defined(BLINKER_HTTP)
+            void subscribe() { conn->subscribe(); }
+        #endif
     // #endif
     private :
 

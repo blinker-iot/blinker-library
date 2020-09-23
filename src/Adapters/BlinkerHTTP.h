@@ -345,6 +345,172 @@ int BlinkerHTTP::print(char * data, bool needCheck)
     if (!isConnect_HTTP) return false;
 
     // TBD
+    String msg = BLINKER_F("{\"token\":\"");
+    msg += STRING_format(MQTT_KEY_HTTP);
+    msg += BLINKER_F("\",\"toDevice\":\"");
+    msg += STRING_format(UUID_HTTP);
+    msg += BLINKER_F("\",\"deviceType\":\"OwnApp\",\"data\":");
+    msg += STRING_format(data);
+    msg += BLINKER_F("}");
+
+    String conType = BLINKER_F("Content-Type");
+    String application = BLINKER_F("application/json;charset=utf-8");
+        
+    const int httpsPort = 443;
+#if defined(ESP8266)
+    String host = BLINKER_F(BLINKER_SERVER_HOST);
+    String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
+
+
+
+    #ifndef BLINKER_WITHOUT_SSL
+
+        std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+
+        // client_s->setFingerprint(fingerprint);
+        client_s->setInsecure();
+    #else
+        WiFiClient               client_s;
+    #endif
+
+    String url_iot = BLINKER_F("/api/v1/user/device/http/pub");
+    // url_iot += STRING_format(MQTT_KEY_HTTP);
+    // url_iot += BLINKER_OTA_VERSION_CODE;
+
+    #ifndef BLINKER_WITHOUT_SSL
+        url_iot = "https://" + host + url_iot;
+    #else
+        url_iot = "http://" + host + url_iot;
+    #endif
+    HTTPClient http;
+
+    String payload;
+
+    BLINKER_LOG_ALL(BLINKER_F("[HTTP] begin: "), url_iot);
+
+    #ifndef BLINKER_WITHOUT_SSL
+    if (http.begin(*client_s, url_iot)) {  // HTTPS
+    #else
+    if (http.begin(client_s, url_iot)) {
+    #endif
+
+        // Serial.print("[HTTPS] GET...\n");
+        // start connection and send HTTP header
+        http.addHeader(conType, application);
+        int httpCode = http.POST(msg);
+
+        BLINKER_LOG_ALL(BLINKER_F("[HTTP] POST: "), msg);
+
+        // httpCode will be negative on error
+        if (httpCode > 0) {
+            // HTTP header has been send and Server response header has been handled
+
+            BLINKER_LOG_ALL(BLINKER_F("[HTTP] POST... code: "), httpCode);
+
+            // file found at server
+            if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+                payload = http.getString();
+                // Serial.println(payload);
+            }
+        } else {
+            BLINKER_LOG(BLINKER_F("[HTTP] POST... failed, error: "), http.errorToString(httpCode).c_str());
+            payload = http.getString();
+            BLINKER_LOG(payload);
+        }
+
+        http.end();
+    } else {
+        // Serial.printf("[HTTPS] Unable to connect\n");
+    }
+
+#elif defined(ESP32)
+    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
+    // const char* ca =
+    //     "-----BEGIN CERTIFICATE-----\n"
+    //     "MIIEgDCCA2igAwIBAgIQDKTfhr9lmWbWUT0hjX36oDANBgkqhkiG9w0BAQsFADBy\n"
+    //     "MQswCQYDVQQGEwJDTjElMCMGA1UEChMcVHJ1c3RBc2lhIFRlY2hub2xvZ2llcywg\n"
+    //     "SW5jLjEdMBsGA1UECxMURG9tYWluIFZhbGlkYXRlZCBTU0wxHTAbBgNVBAMTFFRy\n"
+    //     "dXN0QXNpYSBUTFMgUlNBIENBMB4XDTE4MDEwNDAwMDAwMFoXDTE5MDEwNDEyMDAw\n"
+    //     "MFowGDEWMBQGA1UEAxMNaW90ZGV2LmNsei5tZTCCASIwDQYJKoZIhvcNAQEBBQAD\n"
+    //     "ggEPADCCAQoCggEBALbOFn7cJ2I/FKMJqIaEr38n4kCuJCCeNf1bWdWvOizmU2A8\n"
+    //     "QeTAr5e6Q3GKeJRdPnc8xXhqkTm4LOhgdZB8KzuVZARtu23D4vj4sVzxgC/zwJlZ\n"
+    //     "MRMxN+cqI37kXE8gGKW46l2H9vcukylJX+cx/tjWDfS2YuyXdFuS/RjhCxLgXzbS\n"
+    //     "cve1W0oBZnBPRSMV0kgxTWj7hEGZNWKIzK95BSCiMN59b+XEu3NWGRb/VzSAiJEy\n"
+    //     "Hy9DcDPBC9TEg+p5itHtdMhy2gq1OwsPgl9HUT0xmDATSNEV2RB3vwviNfu9/Eif\n"
+    //     "ObhsV078zf30TqdiESqISEB68gJ0Otru67ePoTkCAwEAAaOCAWowggFmMB8GA1Ud\n"
+    //     "IwQYMBaAFH/TmfOgRw4xAFZWIo63zJ7dygGKMB0GA1UdDgQWBBR/KLqnke61779P\n"
+    //     "xc9htonQwLOxPDAYBgNVHREEETAPgg1pb3RkZXYuY2x6Lm1lMA4GA1UdDwEB/wQE\n"
+    //     "AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwTAYDVR0gBEUwQzA3\n"
+    //     "BglghkgBhv1sAQIwKjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQu\n"
+    //     "Y29tL0NQUzAIBgZngQwBAgEwgYEGCCsGAQUFBwEBBHUwczAlBggrBgEFBQcwAYYZ\n"
+    //     "aHR0cDovL29jc3AyLmRpZ2ljZXJ0LmNvbTBKBggrBgEFBQcwAoY+aHR0cDovL2Nh\n"
+    //     "Y2VydHMuZGlnaXRhbGNlcnR2YWxpZGF0aW9uLmNvbS9UcnVzdEFzaWFUTFNSU0FD\n"
+    //     "QS5jcnQwCQYDVR0TBAIwADANBgkqhkiG9w0BAQsFAAOCAQEAhtM4eyrWB14ajJpQ\n"
+    //     "ibZ5FbzVuvv2Le0FOSoss7UFCDJUYiz2LiV8yOhL4KTY+oVVkqHaYtcFS1CYZNzj\n"
+    //     "6xWcqYZJ+pgsto3WBEgNEEe0uLSiTW6M10hm0LFW9Det3k8fqwSlljqMha3gkpZ6\n"
+    //     "8WB0f2clXOuC+f1SxAOymnGUsSqbU0eFSgevcOIBKR7Hr3YXBXH3jjED76Q52OMS\n"
+    //     "ucfOM9/HB3jN8o/ioQbkI7xyd/DUQtzK6hSArEoYRl3p5H2P4fr9XqmpoZV3i3gQ\n"
+    //     "oOdVycVtpLunyUoVAB2DcOElfDxxXCvDH3XsgoIU216VY03MCaUZf7kZ2GiNL+UX\n"
+    //     "9UBd0Q==\n"
+    //     "-----END CERTIFICATE-----\n";
+// #endif
+
+    HTTPClient http;
+
+    String url_iot = host;
+    url_iot += BLINKER_F("/api/v1/user/device/http/pub");
+    url_iot += STRING_format(MQTT_KEY_HTTP);
+
+// #if defined(BLINKER_ALIGENIE_LIGHT)
+//     url_iot += BLINKER_F("&aliType=light");
+// #elif defined(BLINKER_ALIGENIE_OUTLET)
+//     url_iot += BLINKER_F("&aliType=outlet");
+// #elif defined(BLINKER_ALIGENIE_SWITCH)
+// #elif defined(BLINKER_ALIGENIE_SENSOR)
+//     url_iot += BLINKER_F("&aliType=sensor");
+// #endif
+
+    BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
+
+// #if defined(ESP8266)
+//     http.begin(url_iot, fingerprint); //HTTP
+// #elif defined(ESP32)
+    // http.begin(url_iot, ca); TODO
+    http.begin(url_iot);
+// #endif
+    http.addHeader(conType, application);
+    int httpCode = http.POST(msg);
+
+    BLINKER_LOG_ALL(BLINKER_F("[HTTP] POST: "), msg);
+
+    String payload;
+
+    if (httpCode > 0) {
+      // HTTP header has been send and Server response header has been handled
+
+        BLINKER_LOG_ALL(BLINKER_F("[HTTP] POST... code: "), httpCode);
+
+        // file found at server
+        if (httpCode == HTTP_CODE_OK) {
+            payload = http.getString();
+            // BLINKER_LOG(payload);
+        }
+    }
+    else {
+        BLINKER_LOG(BLINKER_F("[HTTP] POST... failed, error: "), http.errorToString(httpCode).c_str());
+        payload = http.getString();
+        BLINKER_LOG(payload);
+    }
+
+    http.end();
+#endif
+
+    // payload = "";
+
+    BLINKER_LOG_ALL(BLINKER_F("reply was:"));
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
+    BLINKER_LOG_ALL(payload);
+    BLINKER_LOG_ALL(BLINKER_F("=============================="));
 }
 
 void BlinkerHTTP::begin(const char* auth)
@@ -359,6 +525,8 @@ void BlinkerHTTP::begin(const char* auth)
 
 bool BlinkerHTTP::begin()
 {
+    if (!checkInit()) return false;
+
     if (reRegister())
     {
         return true;
@@ -629,6 +797,8 @@ int BlinkerHTTP::connectServer()
 
     isInit = true;
 
+    isConnect_HTTP = true;
+
     return true;
 }
 
@@ -758,11 +928,11 @@ bool BlinkerHTTP::checkInit()
         }
     }
 
-    if (!_isBegin)
-    {
-        _isBegin = begin();
-        return _isBegin;
-    }
+    // if (!_isBegin)
+    // {
+    //     _isBegin = begin();
+    //     return _isBegin;
+    // }
     return true;
 }
 
