@@ -73,6 +73,7 @@ class BlinkerMQTTAT : public BlinkerStream
         // bool autoPrint(char *name, char *type, char *data);
         // bool autoPrint(char *name1, char *type1, char *data1, 
         //             char *name2, char *type2, char *data2);
+        int toServer(char * data) { return true; }
         char * deviceName();
         char * authKey() { return _authKey; }
         char * deviceId();// { return MQTT_ID; }
