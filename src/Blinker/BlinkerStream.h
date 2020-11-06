@@ -158,6 +158,10 @@ class BlinkerStream
             virtual bool checkSmartConfig() = 0;
         #endif
 
+        #if defined(BLINKER_HTTP)
+            virtual void subscribe() = 0;
+        #endif
+
         // #if defined(BLINKER_WIFI_SUBDEVICE)
         //     virtual void attachAvailable(blinker_callback_return_int_t func) = 0;
         //     virtual void attachRead(blinker_callback_return_string_t func) = 0;

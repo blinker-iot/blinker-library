@@ -780,6 +780,10 @@ class BlinkerApi : public BlinkerProtocol
             b_config_t configType() { return BProto::checkIsSmartConfig() ? BLINKER_SMART_CONFIG : BLINKER_AP_CONFIG; }
         #endif
 
+        #if defined(BLINKER_HTTP)
+            void subscribe() { BProto::subscribe(); }
+        #endif
+
     private :
         bool        _isNew = false;
         #if defined(BLINKER_GPRS_AIR202)
