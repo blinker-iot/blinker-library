@@ -36,7 +36,7 @@ class BlinkerESPMQTTAT : public BlinkerApi
                 serialSet = BLINKER_SERIAL_DEFAULT;
                 ss_baud = 9600;
                 ss_cfg = SERIAL_8N1;
-                
+
                 EEPROM.put(BLINKER_EEP_ADDR_SERIALCFG, serialSet);
             }
 
@@ -44,7 +44,7 @@ class BlinkerESPMQTTAT : public BlinkerApi
             EEPROM.end();
 
             Serial.begin(ss_baud, ss_cfg);
-            Transp.serialBegin(Serial, true);
+            Transp->serialBegin(Serial, true);
             transport(Transp);
             BApi::atBegin();
             // strcpy(BApi::_authKey, this->conn.authKey().c_str());
@@ -54,7 +54,7 @@ class BlinkerESPMQTTAT : public BlinkerApi
         }
 
     private :
-        BlinkerMQTTAT Transp;
+        BlinkerMQTTAT *Transp;
 };
 
 #endif

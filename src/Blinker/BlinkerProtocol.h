@@ -25,7 +25,7 @@ class BlinkerProtocol
             , canParse(false)
         {}
 
-        void transport(BlinkerStream & bStream) { conn = &bStream; isInit = true; }
+        void transport(BlinkerStream *bStream) { conn = bStream; isInit = true; }
 
     // #if defined(BLINKER_LOWPOWER_AIR202)
     //     void print(const String & data);
@@ -149,7 +149,7 @@ class BlinkerProtocol
         // #if defined(BLINKER_WIFI_SUBDEVICE)
         //     void attachSubAvailable(blinker_callback_return_int_t func)
         //     { if (isInit) conn->attachAvailable(func); }
-            
+
         //     void attachSubRead(blinker_callback_return_string_t func)
         //     { if (isInit) conn->attachRead(func); }
 
@@ -227,7 +227,7 @@ class BlinkerProtocol
             bool checkMIOTAvail()   { return conn->miAvail(); }
             #endif
         #endif
-        
+
         #if defined(BLINKER_AT_MQTT)
             void begin(const char* auth) { return conn->begin(auth); }
             int serialAvailable()   { return conn->serialAvailable(); }
@@ -267,7 +267,7 @@ class BlinkerProtocol
 // #if !defined(BLINKER_LOWPOWER_AIR202)
 void BlinkerProtocol::flush()
 {
-    isFresh = false; availState = false; 
+    isFresh = false; availState = false;
     canParse = false; isAvail = false;
     if (isInit && isAvail) conn->flush();
 }
@@ -283,7 +283,7 @@ int BlinkerProtocol::checkAvail()
         isAvail = conn->available();
 
         if (isAvail)
-        { 
+        {
             BLINKER_LOG_ALL(BLINKER_F("checkAvail: "), isAvail);
 
             isFresh = true;
@@ -344,7 +344,7 @@ int BlinkerProtocol::printNow()
 void BlinkerProtocol::_timerPrint(const String & n)
 {
     BLINKER_LOG_ALL(BLINKER_F("print: "), n);
-    
+
     if (n.length() <= BLINKER_MAX_SEND_SIZE)
     {
         checkFormat();
@@ -360,7 +360,7 @@ void BlinkerProtocol::_timerPrint(const String & n)
 int BlinkerProtocol::_print(char * n, bool needCheckLength)
 {
     BLINKER_LOG_ALL(BLINKER_F("print: "), n);
-    
+
     if (strlen(n) <= BLINKER_MAX_SEND_SIZE || \
         !needCheckLength)
     {
@@ -416,7 +416,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
     #if defined(BLINKER_ARDUINOJSON)
         BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key, \
                         BLINKER_F(", json: "), jsonValue);
-        
+
         String _data;
 
         if (STRING_contains_string(STRING_format(_sendBuf), key))
@@ -446,7 +446,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
             }
             else {
                 BLINKER_LOG_ALL(BLINKER_F("new"));
-                
+
                 _data = BLINKER_F("{");
                 _data += jsonValue;
                 _data += BLINKER_F("}");
@@ -467,7 +467,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
             }
             else {
                 BLINKER_LOG_ALL(BLINKER_F("new."));
-                
+
                 _data = BLINKER_F("{");
                 _data += jsonValue;
                 _data += BLINKER_F("}");
@@ -542,15 +542,15 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
 // void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValue)
 // {
 //     #if defined(BLINKER_ARDUINOJSON)
-//         BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key, 
+//         BLINKER_LOG_ALL(BLINKER_F("autoFormatData key: "), key,
 //                         BLINKER_F(", json: "), jsonValue);
-        
+
 //         String _data;
 
 //         if (STRING_contains_string(STRING_format(_sendBuf), key))
 //         {
 
-//             DynamicJsonBuffer jsonSendBuffer;                
+//             DynamicJsonBuffer jsonSendBuffer;
 
 //             if (strlen(_sendBuf)) {
 //                 BLINKER_LOG_ALL(BLINKER_F("add"));
@@ -570,7 +570,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
 //             }
 //             else {
 //                 BLINKER_LOG_ALL(BLINKER_F("new"));
-                
+
 //                 _data = BLINKER_F("{");
 //                 _data += jsonValue;
 //                 _data += BLINKER_F("}");
@@ -591,7 +591,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
 //             }
 //             else {
 //                 BLINKER_LOG_ALL(BLINKER_F("new."));
-                
+
 //                 _data = BLINKER_F("{");
 //                 _data += jsonValue;
 //                 _data += BLINKER_F("}");
