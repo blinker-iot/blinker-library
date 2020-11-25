@@ -4507,6 +4507,7 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
             if (_fresh)
             {
+                BLINKER_LOG_ALL(BLINKER_F("_fresh need flush"));
                 BProto::isParsed();
             }
             else
@@ -8027,7 +8028,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     BProto::checkState(false);
                     BProto::printNow();
                 }
-                BLINKER_LOG_ALL(BLINKER_F("heartBeat isParsed"));
+                BLINKER_LOG_ALL(BLINKER_F("heartBeat isParsed 1"));
                 _fresh = true;
 
                 #if defined(BLINKER_AT_MQTT)
