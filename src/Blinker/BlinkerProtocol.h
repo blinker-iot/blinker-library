@@ -267,9 +267,11 @@ class BlinkerProtocol
 // #if !defined(BLINKER_LOWPOWER_AIR202)
 void BlinkerProtocol::flush()
 {
-    isFresh = false; availState = false; 
-    canParse = false; isAvail = false;
     if (isInit && isAvail) conn->flush();
+    isAvail = false;
+    isFresh = false;
+    availState = false; 
+    canParse = false;
 }
 
 int BlinkerProtocol::checkAvail()

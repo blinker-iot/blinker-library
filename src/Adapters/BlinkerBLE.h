@@ -130,7 +130,7 @@ int BlinkerBLE::available()
 
         if (isNewLine)
         {                   
-            BLINKER_LOG_ALL(BLINKER_F("GET: "), BLEBuf);
+            BLINKER_LOG_ALL(BLINKER_F("GET1: "), BLEBuf);
             isAvail = true;
             _isFresh = true;
 
@@ -202,8 +202,9 @@ char * BlinkerBLE::lastRead()
 
 void BlinkerBLE::flush()
 {
-    if (_isFresh)
+    if (_isFresh || _bufLen)
     {
+        BLINKER_LOG_ALL(BLINKER_F("flush"));
         free(BLEBuf); //isFresh = false; 
         isAvail = false; _isFresh = false;
         _bufLen = 0; //isNewLine = false;
