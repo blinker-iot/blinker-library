@@ -259,6 +259,7 @@ class BlinkerSubDevice : public BlinkerStream
         int autoPrint(unsigned long id);
         char * deviceName();
         char * authKey() { return AUTHKEY_PRO; }
+        char * token() { if (!isAuth) return ""; else return MQTT_KEY_PRO; }
         int init() { return isAuth; }
         int reRegister();
         int deviceRegister() { return false; }

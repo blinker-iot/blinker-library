@@ -39,6 +39,10 @@
 
 #define BLINKER_AQI_MSG_LIMIT           60000UL
 
+#define BLINKER_LOG_MSG_LIMIT           60000UL
+
+#define BLINKER_COD_MSG_LIMIT           60000UL
+
 #define BLINKER_CONFIG_UPDATE_LIMIT     10000UL
 
 #define BLINKER_CONFIG_GET_LIMIT        10000UL
@@ -1435,6 +1439,10 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_TEXT_DATA_NUMBER        29
 
     #define BLINKER_CMD_JSON_DATA_NUMBER        30
+
+    #define BLINKER_CMD_LOG_NUMBER              31
+
+    #define BLINKER_CMD_COD_NUMBER              32
 
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 

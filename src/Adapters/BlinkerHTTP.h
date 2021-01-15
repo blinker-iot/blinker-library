@@ -355,7 +355,7 @@ int BlinkerHTTP::print(char * data, bool needCheck)
 
     String conType = BLINKER_F("Content-Type");
     String application = BLINKER_F("application/json;charset=utf-8");
-        
+    
     const int httpsPort = 443;
 #if defined(ESP8266)
     String host = BLINKER_F(BLINKER_SERVER_HOST);

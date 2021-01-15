@@ -65,6 +65,7 @@ class BlinkerSerialSIM7000 : public BlinkerStream
         int autoPrint(unsigned long id);
         char * deviceName();
         char * authKey() { return AUTHKEY_NBIoT; }
+        char * token() { if (!isMQTTinit) return ""; else return MQTT_KEY_NBIoT; }
         int init() { return isMQTTinit; }
         int reRegister() { return connectServer(); }
         int deviceRegister() { return connectServer(); }

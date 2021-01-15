@@ -65,6 +65,7 @@ class BlinkerSerialAIR202 : public BlinkerStream
         int autoPrint(unsigned long id);
         char * deviceName();
         char * authKey() { return AUTHKEY_GPRS; }
+        char * token() { if (!isMQTTinit) return ""; else return MQTT_KEY_GPRS; }
         int init() { return isMQTTinit; }
         int reRegister() { return connectServer(); }
         int deviceRegister() { return connectServer(); }
