@@ -106,6 +106,7 @@ push	KEYWORD2
 wechat	KEYWORD2
 weather	KEYWORD2
 aqi	KEYWORD2
+log	KEYWORD2
 status	KEYWORD2
 flush	KEYWORD2
 init	KEYWORD2

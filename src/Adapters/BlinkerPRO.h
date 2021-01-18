@@ -70,6 +70,7 @@ class BlinkerPRO : public BlinkerStream
         //             char *name2, char *type2, char *data2);
         char * deviceName();
         char * authKey() { return AUTHKEY_PRO; }
+        char * token() { if (!isMQTTinit) return ""; else return MQTT_KEY_PRO; }
         int init() { return isMQTTinit; }
         int reRegister() { return connectServer(); }
         int deviceRegister() { return connectServer(); }

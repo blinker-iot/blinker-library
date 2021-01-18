@@ -76,6 +76,7 @@ class BlinkerMQTTAT : public BlinkerStream
         int toServer(char * data) { return true; }
         char * deviceName();
         char * authKey() { return _authKey; }
+        char * token() { if (!isMQTTinit) return ""; else return MQTT_KEY_MQTT_AT; }
         char * deviceId();// { return MQTT_ID; }
         char * uuid();// { return UUID; }
         void softAPinit();

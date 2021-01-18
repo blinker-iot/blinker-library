@@ -103,6 +103,7 @@ class BlinkerProtocol
             int toServer(char * data) { return isInit ? conn->toServer(data) : false; }
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
+            char * token()    { if (isInit) return conn->token(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }
             int mConnected()    { return isInit ? conn->mConnected() : false; }
             void freshAlive() { if (isInit) conn->freshAlive(); }
@@ -111,6 +112,7 @@ class BlinkerProtocol
         #if defined(BLINKER_LOWPOWER_AIR202)
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
+            char * token()    { if (isInit) return conn->token(); else return "";  }
             int init()          { return isInit ? conn->init() : false; }
             void begin(const char* _key, const char* _type, String _imei) { conn->begin(_key, _type, _imei); }
             int deviceRegister(){ return conn->deviceRegister(); }

@@ -44,23 +44,31 @@
  * *****************************************************************/
 
 #define BLINKER_WIFI
-#define BLINKER_ESP_SMARTCONFIG
 
 #include <Blinker.h>
-#include "ESP32_CAM_SERVER.h"
 
 char auth[] = "Your Device Secret Key";
-bool setup_camera = false;
+char ssid[] = "Your WiFi network SSID or name";
+char pswd[] = "Your WiFi network WPA password or WEP key";
+
+
 
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
 
-    Blinker.vibrate();
-    
     uint32_t BlinkerTime = millis();
-    
+
+    Blinker.vibrate();        
     Blinker.print("millis", BlinkerTime);
+
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
+
+void dataPrint()
+{
+    Blinker.dataStorage("data1", random(0,120));
+    Blinker.dataStorage("data2", random(0,120)/2.0);
 }
 
 void setup()
@@ -70,20 +78,13 @@ void setup()
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
-    
-    Blinker.begin(auth);
+
+    Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
+    Blinker.attachRTData(dataPrint);
 }
 
 void loop()
 {
     Blinker.run();
-
-    if (Blinker.connected() && !setup_camera)
-    {
-        setupCamera();
-        setup_camera = true;
-
-        Blinker.printObject("video", "{\"str\":\"mjpg\",\"url\":\"http:"+ String(WiFi.localIP()) + "\"}")
-    }
 }

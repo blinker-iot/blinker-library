@@ -67,6 +67,19 @@ enum b_configStatus_t {
 //         char * name;
 // };
 
+char*       MQTT_HOST_MQTT;
+char*       MQTT_ID_MQTT;
+char*       MQTT_NAME_MQTT;
+char*       MQTT_KEY_MQTT;
+char*       MQTT_PRODUCTINFO_MQTT;
+char*       UUID_MQTT;
+char*       DEVICE_NAME_MQTT;
+char*       BLINKER_PUB_TOPIC_MQTT;
+char*       BLINKER_SUB_TOPIC_MQTT;
+// char*       BLINKER_RRPC_PUB_TOPIC_MQTT;
+char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
+uint16_t    MQTT_PORT_MQTT;
+
 class BlinkerMQTT : public BlinkerStream
 {
     public :
@@ -102,6 +115,7 @@ class BlinkerMQTT : public BlinkerStream
         //             char *name2, char *type2, char *data2);
         char * deviceName();
         char * authKey() { return _authKey; }
+        char * token() { if (!isMQTTinit) return ""; else return MQTT_KEY_MQTT; }
         int init() { if (!isMQTTinit) checkInit(); return isMQTTinit; }
         int reRegister() { return connectServer(); }
         void freshAlive() { kaTime = millis(); isAlive = true; }
@@ -214,19 +228,6 @@ class BlinkerMQTT : public BlinkerStream
         char        message_id[24];
         bool        is_rrpc = false;
 };
-
-char*       MQTT_HOST_MQTT;
-char*       MQTT_ID_MQTT;
-char*       MQTT_NAME_MQTT;
-char*       MQTT_KEY_MQTT;
-char*       MQTT_PRODUCTINFO_MQTT;
-char*       UUID_MQTT;
-char*       DEVICE_NAME_MQTT;
-char*       BLINKER_PUB_TOPIC_MQTT;
-char*       BLINKER_SUB_TOPIC_MQTT;
-// char*       BLINKER_RRPC_PUB_TOPIC_MQTT;
-char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
-uint16_t    MQTT_PORT_MQTT;
 
 #if defined(ESP8266)
     #ifndef BLINKER_WITHOUT_SSL
