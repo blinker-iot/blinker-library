@@ -28,12 +28,7 @@ typedef BlinkerApi BApi;
 class BlinkerESPHTTP : public BlinkerApi
 {
     public : 
-    #if defined(BLINKER_WIFI_Multi)
-        void addAP(    const char* _ssid, 
-                       const char* _pswd )
-              {WiFiMulti.addAP(_ssid, _pswd);} 
-    #endif
-    #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_APCONFIG) || defined(BLINKER_WIFI_Multi)
+    #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_APCONFIG)
         void begin(const char* _auth)
         {
             BApi::begin();
@@ -45,8 +40,6 @@ class BlinkerESPHTTP : public BlinkerApi
                 Transp.smartconfigBegin();
             #elif defined(BLINKER_APCONFIG)
                 Transp.apconfigBegin();
-            #elif defined(BLINKER_WIFI_Multi)
-                Transp.connectWiFiMulti();
             #endif
         }
     #else
