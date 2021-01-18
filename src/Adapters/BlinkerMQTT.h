@@ -146,7 +146,7 @@ class BlinkerMQTT : public BlinkerStream
         #endif
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
-
+        void connectWiFiMulti();
     private :
         bool isMQTTinit = false;
         bool isMQTTset = false;
@@ -3205,7 +3205,26 @@ void BlinkerMQTT::connectWiFi(const char* _ssid, const char* _pswd)
 
     // _isWiFiInit = true;
 }
+void BlinkerMQTT::connectWiFiMulti()
+{
+    uint32_t _connectTime = millis();
+    WiFi.mode(WIFI_STA);
 
+    while (WiFiMulti.run() != WL_CONNECTED) {
+          delay(100);
+        }
+    BLINKER_LOG(BLINKER_F("Connecting to "),WiFi.SSID());
+   
+    
+    String _hostname = BLINKER_F("DiyArduinoMQTT_");
+    _hostname += macDeviceName();
+
+    #if defined(ESP8266)
+        WiFi.hostname(_hostname.c_str());
+    #elif defined(ESP32)
+        WiFi.setHostname(_hostname.c_str());
+    #endif
+}
 #endif
 
 #endif
