@@ -26,6 +26,7 @@ BlinkerEvent	KEYWORD1
 #######################################
 BLINKER_TAST_INIT	KEYWORD2
 
+add	KEYWORD2
 auth	KEYWORD2
 ssid	KEYWORD2
 pswd	KEYWORD2
