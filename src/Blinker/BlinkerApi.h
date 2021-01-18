@@ -3557,11 +3557,12 @@ void BlinkerApi::run()
                 {
                     _reconTime = millis();
                     #if defined(BLINKER_WIFI_Multi)
-                    BLINKER_LOG(BLINKER_F("WiFiMulti disconnected! reconnecting!"));
-                    WiFiMulti.run();
+                        BLINKER_LOG(BLINKER_F("WiFiMulti disconnected! reconnecting!"));
+                        WiFiMulti.run();
                     #else
-                    BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
-                    WiFi.reconnect();
+                        BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                        WiFi.reconnect();
+                    #endif
                 }
 
                 return;

@@ -3205,17 +3205,17 @@ void BlinkerMQTT::connectWiFi(const char* _ssid, const char* _pswd)
 
     // _isWiFiInit = true;
 }
+#if defined(BLINKER_WIFI_Multi)
 void BlinkerMQTT::connectWiFiMulti()
 {
     uint32_t _connectTime = millis();
-    WiFi.mode(WIFI_STA);
 
     while (WiFiMulti.run() != WL_CONNECTED) {
           delay(100);
         }
     BLINKER_LOG(BLINKER_F("Connecting to "),WiFi.SSID());
    
-    
+    WiFi.mode(WIFI_STA);
     String _hostname = BLINKER_F("DiyArduinoMQTT_");
     _hostname += macDeviceName();
 
@@ -3225,6 +3225,7 @@ void BlinkerMQTT::connectWiFiMulti()
         WiFi.setHostname(_hostname.c_str());
     #endif
 }
+#endif
 #endif
 
 #endif
