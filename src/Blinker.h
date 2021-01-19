@@ -23,11 +23,19 @@
         BlinkerSerialBLE    Blinker;
     #endif
 
-#elif defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+#elif defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || defined(BLINKER_WIFI_Multi) && defined(BLINKER_WIFI)
 
     #if defined(BLINKER_WIFI)
         #undef BLINKER_WIFI
         #define BLINKER_MQTT
+    #endif
+
+    #if defined(BLINKER_WIFI_Multi) && defined (ESP8266)
+        #include <ESP8266WiFiMulti.h>
+        ESP8266WiFiMulti WiFiMulti;
+    #elif defined(BLINKER_WIFI_Multi) && defined(ESP32)
+        #include <WiFiMulti.h>
+        WiFiMulti  WiFiMulti;
     #endif
 
     #include "BlinkerAssistant.h"
