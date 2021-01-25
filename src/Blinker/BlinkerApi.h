@@ -8267,6 +8267,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         void BlinkerApi::bridgeParse(char _bName[], uint8_t num, const JsonObject& data)
         {
             BLINKER_LOG_ALL(BLINKER_F("_bridgeCount: "), _bridgeCount);
+            
+            BLINKER_LOG_ALL(BLINKER_F("data: "), _bridgeCount);
 
             // int8_t num = checkNum(_bName, _Bridge, _bridgeCount);
 
@@ -8279,10 +8281,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             String _name = data[BLINKER_CMD_FROMDEVICE].as<String>();
 
-            BLINKER_LOG_ALL(BLINKER_F("bridgeParse from: "), _name);
-
             // if (data.containsKey(_bName))
-            if (strcmp(_name.c_str(), _bName) == 0)
+            if (strncmp(_name.c_str(), _bName, _name.length()) == 0)
             {
                 String state = data[BLINKER_CMD_DATA];//[_bName];
 

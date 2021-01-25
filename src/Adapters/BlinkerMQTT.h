@@ -837,6 +837,7 @@ void BlinkerMQTT::parseData(const char* data)
     }
     else
     {
+        BLINKER_LOG_ALL(BLINKER_F("_sharerCount: "), _sharerCount);
         if (_sharerCount)
         {
             for (uint8_t num = 0; num < _sharerCount; num++)
@@ -870,7 +871,9 @@ void BlinkerMQTT::parseData(const char* data)
         }
             // dataGet = String((char *)iotSub_MQTT->lastread);
             // root.printTo(dataGet);
-            serializeJson(root, dataGet);
+            // serializeJson(root, dataGet);
+
+            dataGet = data;
 
         //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, 
         //                         check is from bridge/share device, \
@@ -911,6 +914,8 @@ void BlinkerMQTT::flush()
     if (isFresh_MQTT)
     {
         BLINKER_LOG_ALL(BLINKER_F("flush"));
+
+        _needCheckShare = false;
 
         free(msgBuf_MQTT); isFresh_MQTT = false; isAvail_MQTT = false;
         isAliAvail = false; isDuerAvail = false; isMIOTAvail = false;//isBavail = false;
