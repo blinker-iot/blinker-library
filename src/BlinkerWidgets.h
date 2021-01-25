@@ -8,6 +8,7 @@
 
 #include "Functions/BlinkerButton.h"
 #include "Functions/BlinkerNumber.h"
+#include "Functions/BlinkerImage.h"
 #include "Functions/BlinkerRGB.h"
 // #if defined(BLINKER_BLE)
     #include "Functions/BlinkerJoystick.h"
