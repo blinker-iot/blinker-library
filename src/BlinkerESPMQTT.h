@@ -7,6 +7,12 @@
     #define BLINKER_ARDUINOJSON
 #endif
 
+#if defined(ESP8266)
+    #ifndef BLINKER_WITH_SSL
+        #define BLINKER_WITHOUT_SSL
+    #endif
+#endif
+
 #include "Adapters/BlinkerMQTT.h"
 #include "Blinker/BlinkerApi.h"
 #ifndef ARDUINOJSON_VERSION_MAJOR
