@@ -8,15 +8,21 @@
 #if defined(ESP8266)
     #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
+    #include <ESP8266WiFiMulti.h>
     #include <ESP8266HTTPClient.h>
 
     #include <base64.h>
+
+    ESP8266WiFiMulti wifiMulti;
 #elif defined(ESP32)
     #include <ESPmDNS.h>
     #include <WiFi.h>
+    #include <WiFiMulti.h>
     #include <HTTPClient.h>
 
     #include <base64.h>
+
+    WiFiMulti  wifiMulti;
 #endif
 
 // #include <EEPROM.h>
@@ -36,7 +42,8 @@
 enum b_config_t {
     COMM,
     BLINKER_SMART_CONFIG,
-    BLINKER_AP_CONFIG
+    BLINKER_AP_CONFIG,
+    BLINKER_MULTI
 };
 
 enum b_configStatus_t {
@@ -136,6 +143,7 @@ class BlinkerMQTT : public BlinkerStream
         bool checkInit();
         void commonBegin(const char* _ssid, const char* _pswd);
         void smartconfigBegin();
+        void multiBegin(const char* _ssid, const char* _pswd);
         void apconfigBegin();
         bool autoInit();
         void smartconfig();
@@ -2782,6 +2790,32 @@ bool BlinkerMQTT::checkInit()
                         return false;
                 }                
                 #endif
+            case BLINKER_MULTI:
+                _connectTime = millis();
+                // BLINKER_LOG(BLINKER_F("checkInit..."));
+                if (wifiMulti.run() != WL_CONNECTED) {
+                    ::delay(500);
+
+                    if (millis() - _connectTime > BLINKER_CONNECT_TIMEOUT_MS && WiFi.status() != WL_CONNECTED) {
+                        // _connectTime = millis();
+                        BLINKER_LOG(BLINKER_F("WiFi connect timeout, please check ssid and pswd!"));
+                        BLINKER_LOG(BLINKER_F("Retring WiFi connect again!"));
+                        return false;
+                    }
+
+                    // BLINKER_LOG(BLINKER_F("checkInit..."));
+
+                    return false;
+                }
+                BLINKER_LOG(BLINKER_F("WiFi Connected."));
+                BLINKER_LOG(BLINKER_F("IP Address: "));
+                BLINKER_LOG(WiFi.localIP());
+                _isWiFiInit = true;
+                _connectTime = 0;
+
+                // begin();
+
+                return false;
             default :
                 return false;
         }
@@ -2814,6 +2848,31 @@ void BlinkerMQTT::smartconfigBegin()
 
     if (!autoInit()) smartconfig();
     else _configStatus = SMART_DONE;
+
+    #if defined(ESP8266)
+        BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
+    #elif defined(ESP32)
+        BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
+    #endif
+}
+
+void BlinkerMQTT::multiBegin(const char* _ssid, const char* _pswd)
+{
+    _configType = BLINKER_MULTI;
+
+    WiFi.mode(WIFI_STA);
+    String _hostname = BLINKER_F("DiyArduinoMQTT_");
+    _hostname += macDeviceName();
+
+    #if defined(ESP8266)
+        WiFi.hostname(_hostname.c_str());
+    #elif defined(ESP32)
+        WiFi.setHostname(_hostname.c_str());
+    #endif
+
+    wifiMulti.addAP(_ssid, _pswd);
+
+    BLINKER_LOG(BLINKER_F("wifiMulti add "), _ssid);
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));

@@ -32,8 +32,11 @@
         static BearSSL::WiFiClientSecure client_s;
     #endif
 
+    extern ESP8266WiFiMulti wifiMulti;
 #elif defined(ESP32) && !defined(BLINKER_BLE)
     #include <HTTPClient.h>
+
+    extern WiFiMulti wifiMulti;
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
@@ -3550,18 +3553,32 @@ void BlinkerApi::run()
                 ntpInit();
             }
 
-            if (WiFi.status() != WL_CONNECTED)
-            {
-                if ((millis() - _reconTime) >= 10000 || \
-                    _reconTime == 0 )
+            #if defined(BLINKER_WIFI_MULTI)
+                if (wifiMulti.run() != WL_CONNECTED)
                 {
-                    _reconTime = millis();
-                    BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
-                    WiFi.reconnect();
-                }
+                    if ((millis() - _reconTime) >= 10000 || \
+                        _reconTime == 0 )
+                    {
+                        _reconTime = millis();
+                        BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                    }
 
-                return;
-            }
+                    return;
+                }
+            #else
+                if (WiFi.status() != WL_CONNECTED)
+                {
+                    if ((millis() - _reconTime) >= 10000 || \
+                        _reconTime == 0 )
+                    {
+                        _reconTime = millis();
+                        BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                        WiFi.reconnect();
+                    }
+
+                    return;
+                }
+            #endif
         #endif
 
         #if defined(BLINKER_NB73_NBIOT)
