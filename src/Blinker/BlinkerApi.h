@@ -31,12 +31,14 @@
 
         static BearSSL::WiFiClientSecure client_s;
     #endif
-
+    #if defined(BLINKER_WIFI_MULTI)
     extern ESP8266WiFiMulti wifiMulti;
+    #endif
 #elif defined(ESP32) && !defined(BLINKER_BLE)
     #include <HTTPClient.h>
-
+    #if defined(BLINKER_WIFI_MULTI)
     extern WiFiMulti wifiMulti;
+    #endif
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
