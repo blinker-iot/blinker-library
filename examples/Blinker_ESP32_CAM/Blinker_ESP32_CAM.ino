@@ -84,6 +84,6 @@ void loop()
         setupCamera();
         setup_camera = true;
 
-        Blinker.printObject("video", "{\"str\":\"mjpg\",\"url\":\"http:"+ String(WiFi.localIP()) + "\"}")
+        Blinker.printObject("video", "{\"str\":\"mjpg\",\"url\":\"http://"+ WiFi.localIP().toString() + "\"}");
     }
 }
