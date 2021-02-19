@@ -87,6 +87,7 @@ class BlinkerPROESP : public BlinkerStream
         //             char *name2, char *type2, char *data2);
         char * deviceName();
         char * authKey() { return AUTHKEY_PRO; }
+        char * token() { if (!isMQTTinit) return ""; else return MQTT_KEY_PRO; }
         int init()
         { 
             // webSocket_PRO.loop();
@@ -2555,6 +2556,8 @@ void BlinkerPROESP::mDNSInit(String name)
 
     BLINKER_LOG(BLINKER_F("WiFi.localIP: "), WiFi.localIP());
 
+    // MDNS.end();
+
 #if defined(ESP8266)
     if (!MDNS.begin(name.c_str(), WiFi.localIP())) {
 #elif defined(ESP32)
@@ -2571,6 +2574,7 @@ void BlinkerPROESP::mDNSInit(String name)
             
     MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
     MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", name);
+    MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "mac", macDeviceName());
 
     // if (!isWSinit)
     // {
@@ -3153,20 +3157,20 @@ void BlinkerWlan::softAPinit() {
     // BLINKER_LOG(BLINKER_F("HTTP _server started"));
     // BLINKER_LOG(String("URL: http://" + WiFi.softAPIP()));
 
-    #if defined(ESP8266)
-    if (!MDNS.begin(softAP_ssid.c_str(), WiFi.localIP())) {
-    #elif defined(ESP32)
-    if (!MDNS.begin(softAP_ssid.c_str())) {
-    #endif
-        while(1) {
-            ::delay(100);
-        }
-    }
+    // #if defined(ESP8266)
+    // if (!MDNS.begin(softAP_ssid.c_str(), WiFi.localIP())) {
+    // #elif defined(ESP32)
+    // if (!MDNS.begin(softAP_ssid.c_str())) {
+    // #endif
+    //     while(1) {
+    //         ::delay(100);
+    //     }
+    // }
 
-    BLINKER_LOG(BLINKER_F("mDNS responder started"));
+    // BLINKER_LOG(BLINKER_F("mDNS responder started"));
 
-    MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
-    MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", macDeviceName());
+    // MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
+    // MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", macDeviceName());
 
     webSocket_PRO.begin();
     webSocket_PRO.onEvent(webSocketEvent_PRO);
@@ -3264,7 +3268,7 @@ void BlinkerWlan::parseUrl(String data)
     BLINKER_LOG(BLINKER_F("pswd: "), _pswd);
 
     // free(_server);
-    MDNS.end();
+    // MDNS.end();
     webSocket_PRO.close();
 
     SSID = (char*)malloc(BLINKER_SSID_SIZE*sizeof(char));

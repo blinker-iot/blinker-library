@@ -45,6 +45,7 @@ class BlinkerAIR202LP : public BlinkerStream
         void initStream(Stream& s, bool state, blinker_callback_t func);
         char * deviceName() { return _deviceName; }
         char * authKey() { return _authKey; }
+        char * token() { if (!isGPRSinit) return ""; else return _authKey; }
         int init() { return isGPRSinit; }
         int deviceRegister() { return connectServer(); }
 

@@ -76,6 +76,7 @@ class BlinkerStream
             virtual int toServer(char * data) = 0;
             virtual char * deviceName() = 0;
             virtual char * authKey() = 0;
+            virtual char * token() = 0;
             virtual int init() = 0;           
             virtual int mConnected() = 0;
             virtual void freshAlive() = 0;

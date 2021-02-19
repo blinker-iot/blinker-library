@@ -71,6 +71,7 @@ class BlinkerSerialGPRS : public BlinkerStream
         void initStream(Stream& s, bool state, blinker_callback_t func);
         char * deviceName();
         char * authKey() { return AUTHKEY_GPRS; }
+        char * token() { if (!isMQTTinit) return ""; else return MQTT_KEY_GPRS; }
         int init() { return isMQTTinit; }
         int reRegister() { return connectServer(); }
         int deviceRegister() { return connectServer(); }

@@ -87,6 +87,7 @@ class BlinkerPROESP_QRCODE : public BlinkerStream
         //             char *name2, char *type2, char *data2);
         char * deviceName();
         char * authKey() { return AUTHKEY_PRO; }
+        char * token() { if (!isMQTTinit) return ""; else return MQTT_KEY_PRO; }
         int init()
         { 
             // webSocket_PRO.loop();

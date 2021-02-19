@@ -31,9 +31,14 @@
 
         static BearSSL::WiFiClientSecure client_s;
     #endif
-
+    #if defined(BLINKER_WIFI_MULTI)
+    extern ESP8266WiFiMulti wifiMulti;
+    #endif
 #elif defined(ESP32) && !defined(BLINKER_BLE)
     #include <HTTPClient.h>
+    #if defined(BLINKER_WIFI_MULTI)
+    extern WiFiMulti wifiMulti;
+    #endif
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
@@ -378,6 +383,9 @@ class BlinkerApi : public BlinkerProtocol
                 String aqi(const String & _city = BLINKER_CMD_DEFAULT);
             #endif
 
+            void log(const String & msg);
+            void coordinate(float _long, float _lat);
+
             // void deviceHeartbeat(uint32_t heart_time = 600);
 
             #if defined(BLINKER_PRO_ESP)
@@ -483,6 +491,17 @@ class BlinkerApi : public BlinkerProtocol
         //     void aligeniePrint(String & _msg);
         //     void duerPrint(String & _msg);
         //     void miotPrint(String & _msg);
+        #endif
+
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+            defined(BLINKER_PRO)
+
+            void attachRTData(char _name[], blinker_callback_t newFunction)
+            {
+                strcpy(_RTDataKey, _name);
+                _RTDataFunc = newFunction;
+            }
+
         #endif
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
@@ -594,6 +613,20 @@ class BlinkerApi : public BlinkerProtocol
             // void initCheck(uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
         #endif
 
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+            void reset()
+            {
+                BLINKER_LOG(BLINKER_F("Blinker reset..."));
+                char config_check[3] = {0};
+                EEPROM.begin(BLINKER_EEP_SIZE);
+                EEPROM.put(BLINKER_EEP_ADDR_WLAN_CHECK, config_check);
+                EEPROM.commit();
+                EEPROM.end();
+
+                ESP.restart();
+            }
+        #endif
+
         #if defined(BLINKER_MQTT_AT)
             void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
             int analogRead();
@@ -618,6 +651,8 @@ class BlinkerApi : public BlinkerProtocol
             void weather(const String & _city = BLINKER_CMD_DEFAULT);
             void weatherForecast(const String & _city = BLINKER_CMD_DEFAULT);
             void aqi(const String & _city = BLINKER_CMD_DEFAULT);
+            void log(const String & msg);
+            void coordinate(float _long, float _lat);
             template<typename T>
             bool sms(const T& msg);
             void reset();
@@ -849,6 +884,8 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t    _weatherTime = 0;
             uint32_t    _weather_forecast_Time = 0;
             uint32_t    _aqiTime = 0;
+            uint32_t    _logTime = 0;
+            uint32_t    _codTime = 0;
             uint8_t     data_dataCount = 0;
             uint8_t     data_timeSlotDataCount = 0;
             uint32_t    time_timeSlotData = 0;
@@ -979,6 +1016,13 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t        _checkCrash = 0;
         #endif
 
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+            defined(BLINKER_PRO)
+            char                                _RTDataKey[16];
+            blinker_callback_t                  _RTDataFunc = NULL;
+            Ticker                              _RTTicker;
+        #endif
+
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) ||\
             defined(BLINKER_MQTT_AT) || defined(BLINKER_WIFI_GATEWAY) || \
             defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
@@ -988,6 +1032,7 @@ class BlinkerApi : public BlinkerProtocol
             defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
             defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
             defined(BLINKE_HTTP)
+
             blinker_callback_with_string_uint8_arg_t _AliGeniePowerStateFunc_m = NULL;
             blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
@@ -1059,6 +1104,8 @@ class BlinkerApi : public BlinkerProtocol
         blinker_callback_with_string_arg_t  _weather_forecast_Func = NULL;
         blinker_callback_with_string_arg_t  _configGetFunc = NULL;
         blinker_callback_with_string_arg_t  _dataGetFunc = NULL;
+
+        void rtParse(const JsonObject& data);
 
         void parse(char _data[], bool ex_data = false);
 
@@ -1177,6 +1224,16 @@ class BlinkerApi : public BlinkerProtocol
                             return BLINKER_CMD_FALSE;
                         }
                         break;
+                    case BLINKER_CMD_LOG_NUMBER :
+                        if (!checkLOG()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
+                    case BLINKER_CMD_COD_NUMBER :
+                        if (!checkCOD()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
                     case BLINKER_CMD_BRIDGE_NUMBER :
                         break;
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
@@ -1276,8 +1333,8 @@ class BlinkerApi : public BlinkerProtocol
                     String host = BLINKER_F(BLINKER_SERVER_HTTPS);
                     const int httpsPort = 443;
                 #elif defined(BLINKER_LAN_DEBUG)
-                    String host = BLINKER_F("http://192.168.1.121:9090");
-                    const int httpsPort = 9090;
+                    String host = BLINKER_F("http://192.168.0.105:8887");
+                    const int httpsPort = 8887;
                 #endif
 
                 BlinkerHTTPAIR202 http(*stream, isHWS, listenFunc);
@@ -1335,6 +1392,22 @@ class BlinkerApi : public BlinkerProtocol
                         http.begin(host, url_iot);
 
                         httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOG_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/cloud_storage/logs");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_COD_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/cloud_storage/coordinate");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
                         break;
                     case BLINKER_CMD_BRIDGE_NUMBER :
                         url_iot = BLINKER_F("/api/v1/user/device");
@@ -1643,6 +1716,12 @@ class BlinkerApi : public BlinkerProtocol
                             _aqiTime = millis();
                             if (_airFunc) _airFunc(payload);
                             break;
+                        case BLINKER_CMD_LOG_NUMBER :
+                            _logTime = millis();
+                            break;
+                        case BLINKER_CMD_COD_NUMBER :
+                            _codTime = millis();
+                            break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
                         case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
@@ -1810,6 +1889,16 @@ class BlinkerApi : public BlinkerProtocol
                             return BLINKER_CMD_FALSE;
                         }
                         break;
+                    case BLINKER_CMD_LOG_NUMBER :
+                        if (!checkLOG()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
+                    case BLINKER_CMD_COD_NUMBER :
+                        if (!checkCOD()) {
+                            return BLINKER_CMD_FALSE;
+                        }
+                        break;
                     case BLINKER_CMD_BRIDGE_NUMBER :
                         break;
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
@@ -1892,8 +1981,8 @@ class BlinkerApi : public BlinkerProtocol
                     String host = BLINKER_F(BLINKER_SERVER_HTTPS);
                     const int httpsPort = 443;
                 #elif defined(BLINKER_LAN_DEBUG)
-                    String host = BLINKER_F("http://192.168.1.121:9090");
-                    const int httpsPort = 9090;
+                    String host = BLINKER_F("http://192.168.0.105:8887");
+                    const int httpsPort = 8887;
                 #endif
 
                 #if defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
@@ -1967,6 +2056,22 @@ class BlinkerApi : public BlinkerProtocol
                         http.begin(host, url_iot);
 
                         httpCode = http.GET();
+                        break;
+                    case BLINKER_CMD_LOG_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/cloud_storage/logs");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_COD_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device/cloud_storage/coordinate");
+
+                        http.begin(host, url_iot);
+
+                        // http.addHeader(conType, application);
+                        httpCode = http.POST(msg, conType, application);
                         break;
                     case BLINKER_CMD_BRIDGE_NUMBER :
                         url_iot = BLINKER_F("/api/v1/user/device");
@@ -2214,6 +2319,12 @@ class BlinkerApi : public BlinkerProtocol
                             _aqiTime = millis();
                             if (_airFunc) _airFunc(payload);
                             break;
+                        case BLINKER_CMD_LOG_NUMBER :
+                            _logTime = millis();
+                            break;
+                        case BLINKER_CMD_COD_NUMBER :
+                            _codTime = millis();
+                            break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;
                         case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
@@ -2341,6 +2452,8 @@ class BlinkerApi : public BlinkerProtocol
             bool checkWEATHER();
             bool checkWEATHERFORECAST();
             bool checkAQI();
+            bool checkLOG();
+            bool checkCOD();
             bool checkCUPDATE();
             bool checkCGET();
             bool checkCDEL();
@@ -3456,18 +3569,32 @@ void BlinkerApi::run()
                 ntpInit();
             }
 
-            if (WiFi.status() != WL_CONNECTED)
-            {
-                if ((millis() - _reconTime) >= 10000 || \
-                    _reconTime == 0 )
+            #if defined(BLINKER_WIFI_MULTI)
+                if (wifiMulti.run() != WL_CONNECTED)
                 {
-                    _reconTime = millis();
-                    BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
-                    WiFi.reconnect();
-                }
+                    if ((millis() - _reconTime) >= 10000 || \
+                        _reconTime == 0 )
+                    {
+                        _reconTime = millis();
+                        BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                    }
 
-                return;
-            }
+                    return;
+                }
+            #else
+                if (WiFi.status() != WL_CONNECTED)
+                {
+                    if ((millis() - _reconTime) >= 10000 || \
+                        _reconTime == 0 )
+                    {
+                        _reconTime = millis();
+                        BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                        WiFi.reconnect();
+                    }
+
+                    return;
+                }
+            #endif
         #endif
 
         #if defined(BLINKER_NB73_NBIOT)
@@ -4410,6 +4537,20 @@ void BlinkerApi::run()
     // #endif
 }
 
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+    defined(BLINKER_PRO)
+void BlinkerApi::rtParse(const JsonObject& data)
+{
+    if (data.containsKey(_RTDataKey))
+    {
+        if (_RTDataFunc)
+        {
+            _RTTicker.once(15, _RTDataFunc);
+        }
+    }
+}
+#endif
+
 void BlinkerApi::parse(char _data[], bool ex_data)
 {
     BLINKER_LOG_ALL(BLINKER_F("parse data: "), _data);
@@ -4455,6 +4596,11 @@ void BlinkerApi::parse(char _data[], bool ex_data)
 
                 #if defined(BLINKER_GPRS_AIR202)
                     shareParse(root);
+                #endif
+
+                #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+                    defined(BLINKER_PRO)
+
                 #endif
 
                 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -6108,6 +6254,35 @@ float BlinkerApi::gps(b_gps_t axis)
             blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
         #endif
     }
+
+    void BlinkerApi::log(const String & msg)
+    {
+        String data = BLINKER_F("{\"token\":\"");
+        data += BProto::token();
+        data += BLINKER_F("\",\"data\":[[");
+        data += STRING_format(time());
+        data += BLINKER_F(",\"");
+        data += msg;
+        data += BLINKER_F("\"]]}");
+
+        blinkerServer(BLINKER_CMD_LOG_NUMBER, data);
+    }
+
+    void BlinkerApi::coordinate(float _long, float _lat)
+    {
+        String data = BLINKER_F("{\"token\":\"");
+        data += BProto::token();
+        data += BLINKER_F("\",\"data\":[[");
+        data += STRING_format(time());
+        data += BLINKER_F(",[");
+        data += STRING_format(_long);
+        data += BLINKER_F(",");
+        data += STRING_format(_lat);
+        data += BLINKER_F("]]]}");
+
+        blinkerServer(BLINKER_CMD_COD_NUMBER, data);
+    }
+
     #else
     String BlinkerApi::weather(const String & _city)
     {
@@ -6262,6 +6437,35 @@ float BlinkerApi::gps(b_gps_t axis)
             return blinkerServer(BLINKER_CMD_AQI_NUMBER, data);
         #endif
     }
+
+    void BlinkerApi::log(const String & msg)
+    {
+        String data = BLINKER_F("{\"token\":\"");
+        data += BProto::token();
+        data += BLINKER_F("\",\"data\":[[");
+        data += STRING_format(time())
+        data += BLINKER_F(",");
+        data += _msg;
+        data += BLINKER_F("]]}");
+
+        blinkerServer(BLINKER_CMD_LOG_NUMBER, data);
+    }
+
+    void BlinkerApi::coordinate(float _long, float _lat)
+    {
+        String data = BLINKER_F("{\"token\":\"");
+        data += BProto::token();
+        data += BLINKER_F("\",\"data\":[[");
+        data += STRING_format(time());
+        data += BLINKER_F(",[");
+        data += STRING_format(_long);
+        data += BLINKER_F(",");
+        data += STRING_format(_lat);
+        data += BLINKER_F("]]]}");
+
+        blinkerServer(BLINKER_CMD_COD_NUMBER, data);
+    }
+
     #endif
 
     bool BlinkerApi::deviceHeartbeat(uint32_t heart_time)
@@ -8096,6 +8300,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         void BlinkerApi::bridgeParse(char _bName[], uint8_t num, const JsonObject& data)
         {
             BLINKER_LOG_ALL(BLINKER_F("_bridgeCount: "), _bridgeCount);
+            
+            BLINKER_LOG_ALL(BLINKER_F("data: "), _bridgeCount);
 
             // int8_t num = checkNum(_bName, _Bridge, _bridgeCount);
 
@@ -8108,10 +8314,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             String _name = data[BLINKER_CMD_FROMDEVICE].as<String>();
 
-            BLINKER_LOG_ALL(BLINKER_F("bridgeParse from: "), _name);
-
             // if (data.containsKey(_bName))
-            if (strcmp(_name.c_str(), _bName) == 0)
+            if (strncmp(_name.c_str(), _bName, _name.length()) == 0)
             {
                 String state = data[BLINKER_CMD_DATA];//[_bName];
 
@@ -10286,6 +10490,25 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         else return false;
     }
 
+
+    bool BlinkerApi::checkLOG()
+    {
+        if (!checkServerLimit()) return false;
+
+        if ((millis() - _logTime) >= BLINKER_LOG_MSG_LIMIT || \
+            _logTime == 0) return true;
+        else return false;
+    }
+
+    bool BlinkerApi::checkCOD()
+    {
+        if (!checkServerLimit()) return false;
+
+        if ((millis() - _codTime) >= BLINKER_COD_MSG_LIMIT || \
+            _codTime == 0) return true;
+        else return false;
+    }
+
     bool BlinkerApi::checkCUPDATE()
     {
         if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
@@ -11033,6 +11256,16 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     return BLINKER_CMD_FALSE;
                 }
                 break;
+            case BLINKER_CMD_LOG_NUMBER :
+                if (!checkLOG()) {
+                    return BLINKER_CMD_FALSE;
+                }
+                break;
+            case BLINKER_CMD_COD_NUMBER :
+                if (!checkCOD()) {
+                    return BLINKER_CMD_FALSE;
+                }
+                break;
             case BLINKER_CMD_BRIDGE_NUMBER :
                 break;
             #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -11433,7 +11666,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             #ifndef BLINKER_LAN_DEBUG
                 String host = BLINKER_F(BLINKER_SERVER_HTTPS);
             #elif defined(BLINKER_LAN_DEBUG)
-                String host = BLINKER_F("http://192.168.1.121:9090");
+                String host = BLINKER_F("http://192.168.0.105:8887");
             #endif
 
             // const char* ca =
@@ -11599,6 +11832,40 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     #endif
 
                     httpCode = http.GET();
+                    break;
+                case BLINKER_CMD_LOG_NUMBER :
+                    url_iot = host;
+                    url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/logs");
+
+                    #if defined(ESP8266)
+                        #ifndef BLINKER_WITHOUT_SSL
+                        http.begin(*client_s, url_iot);
+                        #else
+                        http.begin(client_s, url_iot);
+                        #endif
+                    #else
+                        http.begin(url_iot);
+                    #endif
+
+                    http.addHeader(conType, application);
+                    httpCode = http.POST(msg);
+                    break;
+                case BLINKER_CMD_COD_NUMBER :
+                    url_iot = host;
+                    url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/coordinate");
+
+                    #if defined(ESP8266)
+                        #ifndef BLINKER_WITHOUT_SSL
+                        http.begin(*client_s, url_iot);
+                        #else
+                        http.begin(client_s, url_iot);
+                        #endif
+                    #else
+                        http.begin(url_iot);
+                    #endif
+
+                    http.addHeader(conType, application);
+                    httpCode = http.POST(msg);
                     break;
                 case BLINKER_CMD_BRIDGE_NUMBER :
                     url_iot = host;
@@ -12107,6 +12374,12 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
                             if (_airFunc) _airFunc(payload);
+                            break;
+                        case BLINKER_CMD_LOG_NUMBER :
+                            _logTime = millis();
+                            break;
+                        case BLINKER_CMD_COD_NUMBER :
+                            _codTime = millis();
                             break;
                         case BLINKER_CMD_BRIDGE_NUMBER :
                             break;

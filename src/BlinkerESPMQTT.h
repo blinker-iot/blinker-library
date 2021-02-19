@@ -7,6 +7,12 @@
     #define BLINKER_ARDUINOJSON
 #endif
 
+#if defined(ESP8266)
+    #ifndef BLINKER_WITH_SSL
+        #define BLINKER_WITHOUT_SSL
+    #endif
+#endif
+
 #include "Adapters/BlinkerMQTT.h"
 #include "Blinker/BlinkerApi.h"
 #ifndef ARDUINOJSON_VERSION_MAJOR
@@ -146,7 +152,11 @@ class BlinkerESPMQTT : public BlinkerApi
 
             transport(Transp);
 
-            Transp.commonBegin(_ssid, _pswd);
+            #if defined(BLINKER_WIFI_MULTI)
+                Transp.multiBegin(_ssid, _pswd);
+            #else
+                Transp.commonBegin(_ssid, _pswd);
+            #endif
             BApi::loadTimer();
             // __auth = _auth;
             // __ssid = _ssid;
@@ -155,6 +165,27 @@ class BlinkerESPMQTT : public BlinkerApi
             // #ifndef BLINKER_ESP_TASK
             //     beginMQTT();
             // #endif
+        }
+    #endif
+
+    #if defined(BLINKER_WIFI_MULTI)
+        void addAP( const char* _ssid, 
+                    const char* _pswd)
+        {
+            BLINKER_LOG(BLINKER_F("wifiMulti add "), _ssid);
+            wifiMulti.addAP(_ssid, _pswd);
+        }
+    
+        void existAP(   const char* _ssid, 
+                        const char* _pswd)
+        {
+            BLINKER_LOG(BLINKER_F("wifiMulti existAP "), _ssid);
+            wifiMulti.existsAP(_ssid, _pswd);
+        }
+    
+        void cleanAPlist()
+        {
+            wifiMulti.cleanAPlist();
         }
     #endif
         // void beginMQTT()
