@@ -2486,6 +2486,7 @@ void BlinkerMQTT::mDNSInit()
 
     MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
     MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", String(DEVICE_NAME_MQTT));
+    MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "mac", macDeviceName());
 
     webSocket_MQTT.begin();
     webSocket_MQTT.onEvent(webSocketEvent_MQTT);
@@ -2912,16 +2913,18 @@ bool BlinkerMQTT::autoInit()
     WiFi.begin();
     ::delay(500);
 
-    BLINKER_LOG(BLINKER_F("Waiting for WiFi "),
-                BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
-                BLINKER_F("s, will enter SMARTCONFIG or "),
-                BLINKER_F("APCONFIG while WiFi not connect!"));
+    // BLINKER_LOG(BLINKER_F("Waiting for WiFi "),
+    //             BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
+    //             BLINKER_F("s, will enter SMARTCONFIG or "),
+    //             BLINKER_F("APCONFIG while WiFi not connect!"));
+
+    BLINKER_LOG(BLINKER_F("Connecting to WiFi"));
 
     uint8_t _times = 0;
     while (WiFi.status() != WL_CONNECTED) {
         ::delay(500);
-        if (_times > BLINKER_WIFI_AUTO_INIT_TIMEOUT / 500) break;
-        _times++;
+        // if (_times > BLINKER_WIFI_AUTO_INIT_TIMEOUT / 500) break;
+        // _times++;
     }
 
     if (WiFi.status() != WL_CONNECTED) return false;
@@ -3006,20 +3009,20 @@ void BlinkerMQTT::softAPinit()
     // BLINKER_LOG(BLINKER_F("HTTP _apServer started"));
     // BLINKER_LOG(BLINKER_F("URL: http://"), WiFi.softAPIP());
 
-    #if defined(ESP8266)
-    if (!MDNS.begin(softAP_ssid.c_str(), WiFi.localIP())) {
-    #elif defined(ESP32)
-    if (!MDNS.begin(softAP_ssid.c_str())) {
-    #endif
-        while(1) {
-            ::delay(100);
-        }
-    }
+    // #if defined(ESP8266)
+    // if (!MDNS.begin(softAP_ssid.c_str(), WiFi.localIP())) {
+    // #elif defined(ESP32)
+    // if (!MDNS.begin(softAP_ssid.c_str())) {
+    // #endif
+    //     while(1) {
+    //         ::delay(100);
+    //     }
+    // }
 
-    BLINKER_LOG(BLINKER_F("mDNS responder started"));
+    // BLINKER_LOG(BLINKER_F("mDNS responder started"));
 
-    MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
-    MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", macDeviceName());
+    // MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
+    // MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", macDeviceName());
 
     webSocket_MQTT.begin();
     webSocket_MQTT.onEvent(webSocketEvent_MQTT);
@@ -3215,7 +3218,7 @@ bool BlinkerMQTT::parseUrl(String data)
     BLINKER_LOG(BLINKER_F("pswd: "), _pswd);
 
     // free(_apServer);
-    MDNS.end();
+    // MDNS.end();
     webSocket_MQTT.close();
 
     connectWiFi(_ssid, _pswd);
