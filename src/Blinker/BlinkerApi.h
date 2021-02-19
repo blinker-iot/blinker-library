@@ -613,6 +613,20 @@ class BlinkerApi : public BlinkerProtocol
             // void initCheck(uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
         #endif
 
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
+            void reset()
+            {
+                BLINKER_LOG(BLINKER_F("Blinker reset..."));
+                char config_check[3] = {0};
+                EEPROM.begin(BLINKER_EEP_SIZE);
+                EEPROM.put(BLINKER_EEP_ADDR_WLAN_CHECK, config_check);
+                EEPROM.commit();
+                EEPROM.end();
+
+                ESP.restart();
+            }
+        #endif
+
         #if defined(BLINKER_MQTT_AT)
             void initCheck(const String & _data, uint32_t timeout = BLINKER_STREAM_TIMEOUT*10);
             int analogRead();
