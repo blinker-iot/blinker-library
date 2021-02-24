@@ -6443,9 +6443,9 @@ float BlinkerApi::gps(b_gps_t axis)
         String data = BLINKER_F("{\"token\":\"");
         data += BProto::token();
         data += BLINKER_F("\",\"data\":[[");
-        data += STRING_format(time())
+        data += STRING_format(time());
         data += BLINKER_F(",");
-        data += _msg;
+        data += msg;
         data += BLINKER_F("]]}");
 
         blinkerServer(BLINKER_CMD_LOG_NUMBER, data);

@@ -2466,6 +2466,8 @@ int BlinkerMQTT::connectServer() {
         #ifndef BLINKER_WITHOUT_SSL
             client_mqtt.setInsecure();
         #endif
+    #elif defined(ESP32)
+        client_s.setInsecure();
     #endif
     // connect();
 
