@@ -48,7 +48,25 @@
 
 #include <Blinker.h>
 
+// Download OneButton library here:
+// https://github.com/mathertel/OneButton
+#include "OneButton.h"
+
+#if defined(ESP32)
+    #define BLINKER_BUTTON_PIN 4
+#else
+    #define BLINKER_BUTTON_PIN D7
+#endif
+// button trigged when pin input level is LOW
+OneButton button(BLINKER_BUTTON_PIN, true);
+
 char auth[] = "Your Device Secret Key";
+
+void deviceReset()
+{
+    // Reset device ,erase WiFi config.
+    Blinker.reset();
+}
 
 void dataRead(const String & data)
 {
@@ -71,9 +89,11 @@ void setup()
     
     Blinker.begin(auth);
     Blinker.attachData(dataRead);
+    button.attachLongPressStop(deviceReset);
 }
 
 void loop()
 {
     Blinker.run();
+    button.tick();
 }
