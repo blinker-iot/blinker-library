@@ -14,7 +14,7 @@
  * if use ESP8266 with Blinker.
  * https://github.com/esp8266/Arduino/releases
  * 
- * Make sure installed 1.0.4 or later ESP32/Arduino package,
+ * Make sure installed 1.0.5 or later ESP32/Arduino package,
  * if use ESP32 with Blinker.
  * https://github.com/espressif/arduino-esp32/releases
  * 
@@ -35,7 +35,7 @@
  * https://github.com/esp8266/Arduino/releases
  * 
  * 如果使用 ESP32 接入 Blinker,
- * 请确保安装了 1.0.4 或更新的 ESP32/Arduino 支持包。
+ * 请确保安装了 1.0.5 或更新的 ESP32/Arduino 支持包。
  * https://github.com/espressif/arduino-esp32/releases
  * 
  * 文档: https://diandeng.tech/doc
@@ -48,7 +48,25 @@
 
 #include <Blinker.h>
 
+// Download OneButton library here:
+// https://github.com/mathertel/OneButton
+#include "OneButton.h"
+
+#if defined(ESP32)
+    #define BLINKER_BUTTON_PIN 4
+#else
+    #define BLINKER_BUTTON_PIN D7
+#endif
+// button trigged when pin input level is LOW
+OneButton button(BLINKER_BUTTON_PIN, true);
+
 char auth[] = "Your Device Secret Key";
+
+void deviceReset()
+{
+    // Reset device ,erase WiFi config.
+    Blinker.reset();
+}
 
 void dataRead(const String & data)
 {
@@ -71,9 +89,11 @@ void setup()
     
     Blinker.begin(auth);
     Blinker.attachData(dataRead);
+    button.attachLongPressStop(deviceReset);
 }
 
 void loop()
 {
     Blinker.run();
+    button.tick();
 }

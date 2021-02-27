@@ -578,6 +578,8 @@ Adafruit_MQTT_Subscribe *Adafruit_MQTT::readSubscription(int16_t timeout) {
     if (i==MAXSUBSCRIPTIONS) {
         DEBUG_PRINTLN(F("Not found sub #"));
 
+        if (topiclen == 0) return NULL;
+
         uint8_t packet_id_len = 0;
         uint16_t packetid = 0;
         // Check if it is QoS 1, TODO: we dont support QoS 2

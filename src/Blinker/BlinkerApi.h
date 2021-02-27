@@ -1104,8 +1104,11 @@ class BlinkerApi : public BlinkerProtocol
         blinker_callback_with_string_arg_t  _weather_forecast_Func = NULL;
         blinker_callback_with_string_arg_t  _configGetFunc = NULL;
         blinker_callback_with_string_arg_t  _dataGetFunc = NULL;
-
-        void rtParse(const JsonObject& data);
+        
+        #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+            defined(BLINKER_PRO)
+            void rtParse(const JsonObject& data);
+        #endif
 
         void parse(char _data[], bool ex_data = false);
 
@@ -6443,9 +6446,9 @@ float BlinkerApi::gps(b_gps_t axis)
         String data = BLINKER_F("{\"token\":\"");
         data += BProto::token();
         data += BLINKER_F("\",\"data\":[[");
-        data += STRING_format(time())
+        data += STRING_format(time());
         data += BLINKER_F(",");
-        data += _msg;
+        data += msg;
         data += BLINKER_F("]]}");
 
         blinkerServer(BLINKER_CMD_LOG_NUMBER, data);

@@ -31,6 +31,17 @@
 #include "../Blinker/BlinkerUtility.h"
 #include "../Blinker/BlinkerMQTTATBase.h"
 
+char*       MQTT_HOST_MQTT_AT;
+char*       MQTT_ID_MQTT_AT;
+char*       MQTT_NAME_MQTT_AT;
+char*       MQTT_KEY_MQTT_AT;
+char*       MQTT_PRODUCTINFO_MQTT_AT;
+char*       UUID_MQTT_AT;
+char*       DEVICE_NAME_MQTT_AT;
+char*       BLINKER_PUB_TOPIC_MQTT_AT;
+char*       BLINKER_SUB_TOPIC_MQTT_AT;
+uint16_t    MQTT_PORT_MQTT_AT;
+
 class BlinkerMQTTAT : public BlinkerStream
 {
     public :
@@ -197,17 +208,6 @@ class BlinkerMQTTAT : public BlinkerStream
 // extern WiFiClient              client;
 
 // #endif
-
-char*       MQTT_HOST_MQTT_AT;
-char*       MQTT_ID_MQTT_AT;
-char*       MQTT_NAME_MQTT_AT;
-char*       MQTT_KEY_MQTT_AT;
-char*       MQTT_PRODUCTINFO_MQTT_AT;
-char*       UUID_MQTT_AT;
-char*       DEVICE_NAME_MQTT_AT;
-char*       BLINKER_PUB_TOPIC_MQTT_AT;
-char*       BLINKER_SUB_TOPIC_MQTT_AT;
-uint16_t    MQTT_PORT_MQTT_AT;
 
 #if defined(ESP8266)
     #include <SoftwareSerial.h>
