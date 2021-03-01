@@ -872,6 +872,8 @@ void BlinkerMQTT::parseData(const char* data)
                     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
                     _needCheckShare = true;
+
+                    dataGet = data;
                 }
             }
         }
@@ -880,12 +882,12 @@ void BlinkerMQTT::parseData(const char* data)
             BLINKER_ERR_LOG_ALL(BLINKER_F("No authority&share uuid found, check is from bridge/share device, data: "), dataGet);
 
             _needCheckShare = true;
+
+            dataGet = data;
         }
             // dataGet = String((char *)iotSub_MQTT->lastread);
             // root.printTo(dataGet);
             // serializeJson(root, dataGet);
-
-            dataGet = data;
 
         //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, 
         //                         check is from bridge/share device, \

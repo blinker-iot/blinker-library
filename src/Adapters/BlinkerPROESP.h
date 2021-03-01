@@ -777,14 +777,17 @@ void BlinkerPROESP::parseData(const char* data)
                     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
                     _needCheckShare = true;
+                    dataGet = data;
                 }
             }
         }
-        // else
-        // {
+        else
+        {
+            dataGet = data;
+        }
             // dataGet = String((char *)iotSub_PRO->lastread);
             // root.printTo(dataGet);
-            serializeJson(root, dataGet);
+            // serializeJson(root, dataGet);
 
         //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, 
         //                         check is from bridge/share device, \
