@@ -551,10 +551,10 @@ class BlinkerApi : public BlinkerProtocol
                 { _DuerOSSetBrightnessFunc = newFunction; }
                 void attachDuerOSRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
                 { _DuerOSSetRelativeBrightnessFunc = newFunction; }
-                // void attachDuerOSSetColorTemperature(blinker_callback_with_int32_arg_t newFunction)
-                // { _DuerOSSetColorTemperature = newFunction; }
-                // void attachDuerOSRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
-                // { _DuerOSSetRelativeColorTemperature = newFunction; }
+                void attachDuerOSSetColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+                { _DuerOSSetColorTemperature = newFunction; }
+                void attachDuerOSRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+                { _DuerOSSetRelativeColorTemperature = newFunction; }
                 void attachDuerOSQuery(blinker_callback_with_int32_uint8_arg_t newFunction)
                 { _DuerOSQueryFunc_m = newFunction; }
                 void attachDuerOSQuery(blinker_callback_with_int32_arg_t newFunction)
@@ -1053,8 +1053,8 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_with_string_arg_t  _DuerOSSetcModeFunc = NULL;
             blinker_callback_with_string_arg_t  _DuerOSSetBrightnessFunc = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSSetRelativeBrightnessFunc = NULL;
-            // blinker_callback_with_int32_arg_t   _DuerOSSetColorTemperature = NULL;
-            // blinker_callback_with_int32_arg_t   _DuerOSSetRelativeColorTemperature = NULL;
+            blinker_callback_with_int32_arg_t   _DuerOSSetColorTemperature = NULL;
+            blinker_callback_with_int32_arg_t   _DuerOSSetRelativeColorTemperature = NULL;
             blinker_callback_with_int32_uint8_arg_t _DuerOSQueryFunc_m = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSQueryFunc = NULL;
 
@@ -12739,21 +12739,21 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                 if (_DuerOSSetRelativeBrightnessFunc) _DuerOSSetRelativeBrightnessFunc(- setValue.toInt());
             }
-            // else if (rootSet.containsKey(BLINKER_CMD_COLORTEMP)) {
-            //     String setValue = rootSet[BLINKER_CMD_COLORTEMP];
+            else if (rootSet.containsKey(BLINKER_CMD_COLORTEMP)) {
+                String setValue = rootSet[BLINKER_CMD_COLORTEMP];
 
-            //     if (_DuerOSSetColorTemperature) _DuerOSSetColorTemperature(setValue.toInt());
-            // }
-            // else if (rootSet.containsKey(BLINKER_CMD_UPCOLORTEMP)) {
-            //     String setValue = rootSet[BLINKER_CMD_UPCOLORTEMP];
+                if (_DuerOSSetColorTemperature) _DuerOSSetColorTemperature(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_UPCOLORTEMP)) {
+                String setValue = rootSet[BLINKER_CMD_UPCOLORTEMP];
 
-            //     if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(setValue.toInt());
-            // }
-            // else if (rootSet.containsKey(BLINKER_CMD_DOWNCOLORTEMP)) {
-            //     String setValue = rootSet[BLINKER_CMD_DOWNCOLORTEMP];
+                if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_DOWNCOLORTEMP)) {
+                String setValue = rootSet[BLINKER_CMD_DOWNCOLORTEMP];
 
-            //     if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(- setValue.toInt());
-            // }
+                if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(- setValue.toInt());
+            }
             else if (rootSet.containsKey(BLINKER_CMD_MODE)) {
                 String setMode = rootSet[BLINKER_CMD_MODE];
 
@@ -13084,18 +13084,18 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 {
                     if (_DuerOSSetRelativeBrightnessFunc) _DuerOSSetRelativeBrightnessFunc(- value.toInt());
                 }
-                // else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLORTEMP))
-                // {
-                //     if (_DuerOSSetColorTemperature) _DuerOSSetColorTemperature(value.toInt());
-                // }
-                // else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPCOLORTEMP))
-                // {
-                //     if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(value.toInt());
-                // }
-                // else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNCOLORTEMP))
-                // {
-                //     if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(- value.toInt());
-                // }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_COLORTEMP))
+                {
+                    if (_DuerOSSetColorTemperature) _DuerOSSetColorTemperature(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_UPCOLORTEMP))
+                {
+                    if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_DOWNCOLORTEMP))
+                {
+                    if (_DuerOSSetRelativeColorTemperature) _DuerOSSetRelativeColorTemperature(- value.toInt());
+                }
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_MODE))
                 {
                     if (_DuerOSSetModeFunc) _DuerOSSetModeFunc(value);
