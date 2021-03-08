@@ -2927,7 +2927,7 @@ void BlinkerApi::needInit()
                     "\n==========================================================="
                     "\n================= Blinker PRO mode init ! ================="
                     "\n     EEPROM address 1280-1535 is used for PRO ESP Mode!"
-                    "\n============ PLEASE AVOID THESE EEPROM ADDRESS! ==========="
+                    "\n========= PLEASE AVOID USING THESE EEPROM ADDRESS! ========"
                     "\n===========================================================\n"));
 
         // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
@@ -6567,7 +6567,7 @@ float BlinkerApi::gps(b_gps_t axis)
             "\n==========================================================="
             "\n================== Blinker Timer loaded! =================="
             "\n     EEPROM address 1536-2431 is used for Blinker Timer!"
-            "\n============ PLEASE AVOID THESE EEPROM ADDRESS! ==========="
+            "\n========= PLEASE AVOID USING THESE EEPROM ADDRESS! ========"
             "\n===========================================================\n"));
 
         checkTimerErase();
@@ -8842,7 +8842,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             BLINKER_LOG(BLINKER_F("======================================================="));
             BLINKER_LOG(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
             BLINKER_LOG(BLINKER_F("     EEPROM address 0-1279 is used for Auto Control!"));
-            BLINKER_LOG(BLINKER_F("========== PLEASE AVOID THESE EEPROM ADDRESS! ========="));
+            BLINKER_LOG(BLINKER_F("======= PLEASE AVOID USING THESE EEPROM ADDRESS! ======"));
             BLINKER_LOG(BLINKER_F("======================================================="));
 
             // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
