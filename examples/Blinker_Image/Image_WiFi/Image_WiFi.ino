@@ -57,6 +57,11 @@ BlinkerImage  Image1("img_abc");
 
 int counter = 0;
 
+void image1_callback(int32_t num)
+{
+    BLINKER_LOG("image is tapped, number is : ", num);
+}
+
 void button1_callback(const String & state)
 {
     BLINKER_LOG("get button state: ", state);
@@ -85,6 +90,7 @@ void setup()
     Blinker.attachData(dataRead);
 
     Button1.attach(button1_callback);
+    Image1.attach(image1_callback);
 }
 
 void loop() {

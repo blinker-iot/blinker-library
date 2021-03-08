@@ -374,13 +374,13 @@ class BlinkerApi : public BlinkerProtocol
             template<typename T>
             bool wechat(const String & title, const String & state, const T& msg);
             #if !defined(BLINKER_AT_MQTT)
-                void weather(const String & _city = BLINKER_CMD_DEFAULT);
-                void weatherForecast(const String & _city = BLINKER_CMD_DEFAULT);
-                void aqi(const String & _city = BLINKER_CMD_DEFAULT);
+                void weather(uint32_t _city = 0);
+                void weatherForecast(uint32_t _city = 0);
+                void aqi(uint32_t _city = 0);
             #else
-                String weather(const String & _city = BLINKER_CMD_DEFAULT);
-                String weatherForecast(const String & _city = BLINKER_CMD_DEFAULT);
-                String aqi(const String & _city = BLINKER_CMD_DEFAULT);
+                String weather(uint32_t _city = 0);
+                String weatherForecast(uint32_t _city = 0);
+                String aqi(uint32_t _city = 0);
             #endif
 
             void log(const String & msg);
@@ -648,9 +648,9 @@ class BlinkerApi : public BlinkerProtocol
             int8_t month()  { return atGetInt(BLINKER_CMD_MONTH); }
             int16_t year()  { return atGetInt(BLINKER_CMD_YEAR); }
             int16_t yday()  { return atGetInt(BLINKER_CMD_YDAY); }
-            void weather(const String & _city = BLINKER_CMD_DEFAULT);
-            void weatherForecast(const String & _city = BLINKER_CMD_DEFAULT);
-            void aqi(const String & _city = BLINKER_CMD_DEFAULT);
+            void weather(uint32_t _city = 0);
+            void weatherForecast(uint32_t _city = 0);
+            void aqi(uint32_t _city = 0);
             void log(const String & msg);
             void coordinate(float _long, float _lat);
             template<typename T>
@@ -2037,7 +2037,7 @@ class BlinkerApi : public BlinkerProtocol
                         break;
                         // return BLINKER_CMD_FALSE;
                     case BLINKER_CMD_WEATHER_NUMBER :
-                        url_iot = BLINKER_F("/api/v2");
+                        url_iot = BLINKER_F("/api/v3");
                         url_iot += msg;
 
                         http.begin(host, url_iot);
@@ -2045,7 +2045,7 @@ class BlinkerApi : public BlinkerProtocol
                         httpCode = http.GET();
                         break;
                     case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
-                        url_iot = BLINKER_F("/api/v2");
+                        url_iot = BLINKER_F("/api/v3");
                         url_iot += msg;
 
                         http.begin(host, url_iot);
@@ -2053,7 +2053,7 @@ class BlinkerApi : public BlinkerProtocol
                         httpCode = http.GET();
                         break;
                     case BLINKER_CMD_AQI_NUMBER :
-                        url_iot = BLINKER_F("/api/v2");
+                        url_iot = BLINKER_F("/api/v3");
                         url_iot += msg;
 
                         http.begin(host, url_iot);
@@ -2292,6 +2292,10 @@ class BlinkerApi : public BlinkerProtocol
                                 payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
                             else if (_type == BLINKER_CMD_LOWPOWER_FREQ_GET_NUM)
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_FREQ].as<String>();
+                            else if (_type == BLINKER_CMD_WEATHER_FORECAST_NUMBER || \
+                                    _type == BLINKER_CMD_WEATHER_NUMBER || \
+                                    _type == BLINKER_CMD_AQI_NUMBER)
+                                payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
                             else
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
                         }
@@ -2919,11 +2923,11 @@ void BlinkerApi::needInit()
 
         begin();
 
-        BLINKER_LOG(BLINKER_F(
+        BLINKER_LOG_ALL(BLINKER_F(
                     "\n==========================================================="
                     "\n================= Blinker PRO mode init ! ================="
-                    "\nWarning! EEPROM address 1280-1535 is used for PRO ESP Mode!"
-                    "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
+                    "\n     EEPROM address 1280-1535 is used for PRO ESP Mode!"
+                    "\n============ PLEASE AVOID THESE EEPROM ADDRESS! ==========="
                     "\n===========================================================\n"));
 
         // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
@@ -6106,17 +6110,15 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
     #if !defined(BLINKER_AT_MQTT)
-    void BlinkerApi::weather(const String & _city)
+    void BlinkerApi::weather(uint32_t _city)
     {
-        String data = BLINKER_F("/weather/");
+        String data = BLINKER_F("/weather?");
 
-        if (_city != BLINKER_CMD_DEFAULT)
+        if (_city != 0)
         {
-            data += _city;
-            data += BLINKER_F("?");
-        }
-        else {
-            data += BLINKER_F("sichuan-chengdushi?");
+            data += BLINKER_F("code=");
+            data += STRING_format(_city);
+            data += BLINKER_F("&");
         }
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -6129,7 +6131,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
-            data += BProto::authKey();
+            data += BProto::token();
         #elif defined(BLINKER_WIFI)
             data += BLINKER_F("deviceName=");
             data += macDeviceName();
@@ -6156,17 +6158,15 @@ float BlinkerApi::gps(b_gps_t axis)
         #endif
     }
 
-    void BlinkerApi::weatherForecast(const String & _city)
+    void BlinkerApi::weatherForecast(uint32_t _city)
     {
-        String data = BLINKER_F("/forecast/");
+        String data = BLINKER_F("/forecast?");
 
-        if (_city != BLINKER_CMD_DEFAULT)
+        if (_city != 0)
         {
-            data += _city;
-            data += BLINKER_F("?");
-        }
-        else {
-            data += BLINKER_F("sichuan-chengdushi?");
+            data += BLINKER_F("code=");
+            data += STRING_format(_city);
+            data += BLINKER_F("&");
         }
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -6180,7 +6180,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
-            data += BProto::authKey();
+            data += BProto::token();
         #elif defined(BLINKER_WIFI)
             data += BLINKER_F("deviceName=");
             data += macDeviceName();
@@ -6207,17 +6207,15 @@ float BlinkerApi::gps(b_gps_t axis)
         #endif
     }
 
-    void BlinkerApi::aqi(const String & _city)
+    void BlinkerApi::aqi(uint32_t _city)
     {
-        String data = BLINKER_F("/air/");
+        String data = BLINKER_F("/air?");
 
-        if (_city != BLINKER_CMD_DEFAULT)
+        if (_city != 0)
         {
-            data += _city;
-            data += BLINKER_F("?");
-        }
-        else {
-            data += BLINKER_F("sichuan-chengdushi?");
+            data += BLINKER_F("code=");
+            data += STRING_format(_city);
+            data += BLINKER_F("&");
         }
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -6231,7 +6229,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
-            data += BProto::authKey();
+            data += BProto::token();
         #elif defined(BLINKER_WIFI)
             data += BLINKER_F("deviceName=");
             data += macDeviceName();
@@ -6287,17 +6285,15 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
     #else
-    String BlinkerApi::weather(const String & _city)
+    String BlinkerApi::weather(uint32_t _city)
     {
-        String data = BLINKER_F("/weather/");
+        String data = BLINKER_F("/weather?");
 
-        if (_city != BLINKER_CMD_DEFAULT)
+        if (_city != 0)
         {
-            data += _city;
-            data += BLINKER_F("?");
-        }
-        else {
-            data += BLINKER_F("sichuan-chengdushi?");
+            data += BLINKER_F("code=");
+            data += STRING_format(_city);
+            data += BLINKER_F("&");
         }
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -6311,7 +6307,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
-            data += BProto::authKey();
+            data += BProto::token();
         #elif defined(BLINKER_WIFI)
             data += BLINKER_F("device=");
             data += macDeviceName();
@@ -6339,17 +6335,15 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
     
-    String BlinkerApi::weatherForecast(const String & _city)
+    String BlinkerApi::weatherForecast(uint32_t _city)
     {
-        String data = BLINKER_F("/forecast/");
+        String data = BLINKER_F("/forecast?");
 
-        if (_city != BLINKER_CMD_DEFAULT)
+        if (_city != 0)
         {
-            data += _city;
-            data += BLINKER_F("?");
-        }
-        else {
-            data += BLINKER_F("sichuan-chengdushi?");
+            data += BLINKER_F("code=");
+            data += STRING_format(_city);
+            data += BLINKER_F("&");
         }
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -6363,7 +6357,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
-            data += BProto::authKey();
+            data += BProto::token();
         #elif defined(BLINKER_WIFI)
             data += BLINKER_F("device=");
             data += macDeviceName();
@@ -6390,17 +6384,15 @@ float BlinkerApi::gps(b_gps_t axis)
         #endif
     }
 
-    String BlinkerApi::aqi(const String & _city)
+    String BlinkerApi::aqi(uint32_t _city)
     {
-        String data = BLINKER_F("/air/");
+        String data = BLINKER_F("/air?");
 
-        if (_city != BLINKER_CMD_DEFAULT)
+        if (_city != 0)
         {
-            data += _city;
-            data += BLINKER_F("?");
-        }
-        else {
-            data += BLINKER_F("sichuan-chengdushi?");
+            data += BLINKER_F("code=");
+            data += STRING_format(_city);
+            data += BLINKER_F("&");
         }
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
@@ -6414,7 +6406,7 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BLINKER_F("device=");
             data += BProto::deviceName();
             data += BLINKER_F("&key=");
-            data += BProto::authKey();
+            data += BProto::token();
         #elif defined(BLINKER_WIFI)
             data += BLINKER_F("device=");
             data += macDeviceName();
@@ -6574,8 +6566,8 @@ float BlinkerApi::gps(b_gps_t axis)
         BLINKER_LOG(BLINKER_F(
             "\n==========================================================="
             "\n================== Blinker Timer loaded! =================="
-            "\nWarning!EEPROM address 1536-2431 is used for Blinker Timer!"
-            "\n============= DON'T USE THESE EEPROM ADDRESS! ============="
+            "\n     EEPROM address 1536-2431 is used for Blinker Timer!"
+            "\n============ PLEASE AVOID THESE EEPROM ADDRESS! ==========="
             "\n===========================================================\n"));
 
         checkTimerErase();
@@ -8849,8 +8841,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         {
             BLINKER_LOG(BLINKER_F("======================================================="));
             BLINKER_LOG(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
-            BLINKER_LOG(BLINKER_F("Warning!EEPROM address 0-1279 is used for Auto Control!"));
-            BLINKER_LOG(BLINKER_F("=========== DON'T USE THESE EEPROM ADDRESS! ==========="));
+            BLINKER_LOG(BLINKER_F("     EEPROM address 0-1279 is used for Auto Control!"));
+            BLINKER_LOG(BLINKER_F("========== PLEASE AVOID THESE EEPROM ADDRESS! ========="));
             BLINKER_LOG(BLINKER_F("======================================================="));
 
             // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
@@ -11787,7 +11779,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     // return BLINKER_CMD_FALSE;
                 case BLINKER_CMD_WEATHER_NUMBER :
                     url_iot = host;
-                    url_iot += BLINKER_F("/api/v2");
+                    url_iot += BLINKER_F("/api/v3");
                     url_iot += msg;
 
                     #if defined(ESP8266)
@@ -11804,7 +11796,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     break;
                 case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
                     url_iot = host;
-                    url_iot += BLINKER_F("/api/v2");
+                    url_iot += BLINKER_F("/api/v3");
                     url_iot += msg;
 
                     #if defined(ESP8266)
@@ -11821,7 +11813,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     break;
                 case BLINKER_CMD_AQI_NUMBER :
                     url_iot = host;
-                    url_iot += BLINKER_F("/api/v2");
+                    url_iot += BLINKER_F("/api/v3");
                     url_iot += msg;
 
                     #if defined(ESP8266)
@@ -12317,6 +12309,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 BLINKER_LOG_ALL(BLINKER_F("[HTTP] status... code: "), httpCode);
 
                 String payload;
+                String payload_;
                 if (httpCode == HTTP_CODE_OK) {
                     payload = http.getString();
 
@@ -12324,7 +12317,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                     // DynamicJsonBuffer jsonBuffer;
                     // JsonObject& data_rp = jsonBuffer.parseObject(payload);
-                    DynamicJsonDocument jsonBuffer(1024);
+                    DynamicJsonDocument jsonBuffer(2048);
                     DeserializationError error = deserializeJson(jsonBuffer, payload);
                     JsonObject data_rp = jsonBuffer.as<JsonObject>();
 
@@ -12339,6 +12332,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         }
                         else
                         {
+                            BLINKER_LOG_ALL(BLINKER_F("_type: "), _type);
                             // String _payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA];
                             // payload = _payload;
 
@@ -12348,6 +12342,13 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                                 payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
                             else if (_type == BLINKER_CMD_LOWPOWER_FREQ_GET_NUM)
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_FREQ].as<String>();
+                            else if (_type == BLINKER_CMD_WEATHER_FORECAST_NUMBER || \
+                                    _type == BLINKER_CMD_WEATHER_NUMBER || \
+                                    _type == BLINKER_CMD_AQI_NUMBER)
+                            {
+                                payload_ = data_rp[BLINKER_CMD_DETAIL].as<String>();
+                                BLINKER_LOG_ALL(BLINKER_F("payload_: "), payload_);
+                            }
                             else
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
                         }
@@ -12368,11 +12369,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             // return BLINKER_CMD_FALSE;
                         case BLINKER_CMD_WEATHER_NUMBER :
                             _weatherTime = millis();
-                            if (_weatherFunc) _weatherFunc(payload);
+                            if (_weatherFunc) _weatherFunc(payload_);
                             break;
                         case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
                             _weather_forecast_Time = millis();
-                            if (_weather_forecast_Func) _weather_forecast_Func(payload);
+                            if (_weather_forecast_Func) _weather_forecast_Func(payload_);
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
@@ -14405,7 +14406,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     }
 
 
-    void BlinkerApi::weather(const String & _city)
+    void BlinkerApi::weather(uint32_t _city)
     {
         if (_weatherFunc)
         {
@@ -14414,7 +14415,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     }
 
 
-    void BlinkerApi::weatherForecast(const String & _city)
+    void BlinkerApi::weatherForecast(uint32_t _city)
     {
         if (_weather_forecast_Func)
         {
@@ -14423,7 +14424,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     }
 
 
-    void BlinkerApi::aqi(const String & _city)
+    void BlinkerApi::aqi(uint32_t _city)
     {
         if (_airFunc)
         {
