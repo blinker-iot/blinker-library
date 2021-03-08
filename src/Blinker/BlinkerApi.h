@@ -12309,7 +12309,6 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 BLINKER_LOG_ALL(BLINKER_F("[HTTP] status... code: "), httpCode);
 
                 String payload;
-                String payload_;
                 if (httpCode == HTTP_CODE_OK) {
                     payload = http.getString();
 
@@ -12345,10 +12344,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             else if (_type == BLINKER_CMD_WEATHER_FORECAST_NUMBER || \
                                     _type == BLINKER_CMD_WEATHER_NUMBER || \
                                     _type == BLINKER_CMD_AQI_NUMBER)
-                            {
-                                payload_ = data_rp[BLINKER_CMD_DETAIL].as<String>();
-                                BLINKER_LOG_ALL(BLINKER_F("payload_: "), payload_);
-                            }
+                                payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
                             else
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
                         }
@@ -12369,11 +12365,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                             // return BLINKER_CMD_FALSE;
                         case BLINKER_CMD_WEATHER_NUMBER :
                             _weatherTime = millis();
-                            if (_weatherFunc) _weatherFunc(payload_);
+                            if (_weatherFunc) _weatherFunc(payload);
                             break;
                         case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
                             _weather_forecast_Time = millis();
-                            if (_weather_forecast_Func) _weather_forecast_Func(payload_);
+                            if (_weather_forecast_Func) _weather_forecast_Func(payload);
                             break;
                         case BLINKER_CMD_AQI_NUMBER :
                             _aqiTime = millis();
