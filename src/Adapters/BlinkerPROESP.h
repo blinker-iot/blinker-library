@@ -200,7 +200,11 @@ class BlinkerPROESP : public BlinkerStream
 
 
 #if defined(ESP8266)
-    BearSSL::WiFiClientSecure   client_mqtt;
+    #ifndef BLINKER_WITHOUT_SSL
+        BearSSL::WiFiClientSecure   client_mqtt;
+    #else
+        WiFiClient               client_mqtt;
+    #endif
     // WiFiClientSecure            client_mqtt;
 #elif defined(ESP32)
     WiFiClientSecure            client_s;
@@ -318,8 +322,10 @@ int BlinkerPROESP::connect()
     BLINKER_LOG(BLINKER_F("Connecting to MQTT... "));
 
     #if defined(ESP8266)
-        client_mqtt.setInsecure();
-        ::delay(10);
+        #ifndef BLINKER_WITHOUT_SSL
+            client_mqtt.setInsecure();
+            ::delay(10);
+        #endif
     #endif
 
     BLINKER_LOG_FreeHeap_ALL();
@@ -1845,10 +1851,16 @@ int BlinkerPROESP::connectServer() {
 
         // client_mqtt.stop();
 
-        std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+        #ifndef BLINKER_WITHOUT_SSL
+            client_mqtt.stop();
 
-        // client_s->setFingerprint(fingerprint);
-        client_s->setInsecure();
+            std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+
+            // client_s->setFingerprint(fingerprint);
+            client_s->setInsecure();
+        #else
+            WiFiClient               client_s;
+        #endif
 
         String url_iot = BLINKER_F("/api/v1/user/device/auth/get?deviceType=");
             url_iot += _deviceType;
@@ -1894,7 +1906,19 @@ int BlinkerPROESP::connectServer() {
             url_iot += BLINKER_MIOT_TYPE;
         #endif
 
-        url_iot = "https://" + host + url_iot;
+        url_iot += BLINKER_F("&version=");
+        url_iot += BLINKER_OTA_VERSION_CODE;
+        #ifndef BLINKER_WITHOUT_SSL
+        url_iot += BLINKER_F("&protocol=mqtts");
+        #else
+        url_iot += BLINKER_F("&protocol=mqtt");
+        #endif
+
+        #ifndef BLINKER_WITHOUT_SSL
+            url_iot = "https://" + host + url_iot;
+        #else
+            url_iot = "http://" + host + url_iot;
+        #endif
 
         BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 
@@ -1902,7 +1926,11 @@ int BlinkerPROESP::connectServer() {
 
         String payload;
 
+        #ifndef BLINKER_WITHOUT_SSL
         if (http.begin(*client_s, url_iot)) {  // HTTPS
+        #else
+        if (http.begin(client_s, url_iot)) {
+        #endif
 
             // Serial.print("[HTTPS] GET...\n");
             // start connection and send HTTP header
@@ -2087,10 +2115,16 @@ int BlinkerPROESP::connectServer() {
 #if defined(ESP8266)
     // client_mqtt.stop();
 
-    std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+    #ifndef BLINKER_WITHOUT_SSL
+        client_mqtt.stop();
 
-    // client_s->setFingerprint(fingerprint);
-    client_s->setInsecure();
+        std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+
+        // client_s->setFingerprint(fingerprint);
+        client_s->setInsecure();
+    #else
+        WiFiClient               client_s;
+    #endif
 
     String url_iot = BLINKER_F("/api/v1/user/device/auth?authKey=");
     url_iot += AUTHKEY_PRO;
@@ -2132,11 +2166,20 @@ int BlinkerPROESP::connectServer() {
     #elif defined(BLINKER_MIOT_TYPE)
         url_iot += BLINKER_MIOT_TYPE;
     #endif
-    
+
     url_iot += BLINKER_F("&version=");
     url_iot += BLINKER_OTA_VERSION_CODE;
+    #ifndef BLINKER_WITHOUT_SSL
+    url_iot += BLINKER_F("&protocol=mqtts");
+    #else
+    url_iot += BLINKER_F("&protocol=mqtt");
+    #endif
 
-    url_iot = "https://" + host + url_iot;
+    #ifndef BLINKER_WITHOUT_SSL
+        url_iot = "https://" + host + url_iot;
+    #else
+        url_iot = "http://" + host + url_iot;
+    #endif
 
     HTTPClient http;
 
@@ -2144,8 +2187,11 @@ int BlinkerPROESP::connectServer() {
 
     BLINKER_LOG_ALL(BLINKER_F("[HTTP] begin: "), url_iot);
 
+    #ifndef BLINKER_WITHOUT_SSL
     if (http.begin(*client_s, url_iot)) {  // HTTPS
-
+    #else
+    if (http.begin(client_s, url_iot)) {
+    #endif
         // Serial.print("[HTTPS] GET...\n");
         // start connection and send HTTP header
         int httpCode = http.GET();
@@ -2216,9 +2262,14 @@ int BlinkerPROESP::connectServer() {
     #elif defined(BLINKER_MIOT_TYPE)
         url_iot += BLINKER_MIOT_TYPE;
     #endif
-    
+
     url_iot += BLINKER_F("&version=");
     url_iot += BLINKER_OTA_VERSION_CODE;
+    #ifndef BLINKER_WITHOUT_SSL
+    url_iot += BLINKER_F("&protocol=mqtts");
+    #else
+    url_iot += BLINKER_F("&protocol=mqtt");
+    #endif
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 
@@ -2313,8 +2364,15 @@ int BlinkerPROESP::connectServer() {
         // String _deviceName = _userID.substring(12, 36);
         // MQTT_DEVICEID_PRO = (char*)malloc((_deviceName.length()+1)*sizeof(char));
         // String _deviceName = _userID.substring(12, 36);
-        MQTT_DEVICEID_PRO = (char*)malloc((_userID.length()+1)*sizeof(char));
-        strcpy(MQTT_DEVICEID_PRO, _userID.c_str());
+        // MQTT_DEVICEID_PRO = (char*)malloc((_userID.length()+1)*sizeof(char));
+        // strcpy(MQTT_DEVICEID_PRO, _userID.c_str());
+        #if defined(BLINKER_WITHOUT_SSL)
+            MQTT_DEVICEID_PRO = (char*)malloc((24+1)*sizeof(char));
+            strcpy(MQTT_DEVICEID_PRO, _userName.substring(0, 24).c_str());
+        #else
+            MQTT_DEVICEID_PRO = (char*)malloc((_userID.length()+1)*sizeof(char));
+            strcpy(MQTT_DEVICEID_PRO, _userID.c_str());
+        #endif
         MQTT_ID_PRO = (char*)malloc((_userID.length()+1)*sizeof(char));
         strcpy(MQTT_ID_PRO, _userID.c_str());
         MQTT_NAME_PRO = (char*)malloc((_userName.length()+1)*sizeof(char));
@@ -2544,11 +2602,14 @@ int BlinkerPROESP::connectServer() {
     
     #if defined(ESP8266)
         // client_s->stop();
-        client_mqtt.setInsecure();
+        // if (!isMQTTinit)
+        #ifndef BLINKER_WITHOUT_SSL
+            client_mqtt.setInsecure();
+        #endif
+    #elif defined(ESP32)
+        client_s.setInsecure();
     #endif
-    // connect();
-
-    
+    // connect();    
 
     return true;
 }

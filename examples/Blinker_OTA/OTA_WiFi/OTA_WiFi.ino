@@ -14,7 +14,7 @@
  * if use ESP8266 with Blinker.
  * https://github.com/esp8266/Arduino/releases
  * 
- * Make sure installed 1.0.5 or later ESP32/Arduino package,
+ * Make sure installed 1.0.4 or later ESP32/Arduino package,
  * if use ESP32 with Blinker.
  * https://github.com/espressif/arduino-esp32/releases
  * 
@@ -58,9 +58,10 @@
 char type[] = "Your Device Type";
 char auth[] = "Your Device Secret Key";
 
-#define BLINKER_OTA_BLINK_TIME 500
+BlinkerButton Button1("btn-abc");
+BlinkerNumber Number1("num-abc");
 
-uint32_t os_time;
+int counter = 0;
 
 void button1_callback(const String & state)
 {
@@ -141,19 +142,10 @@ void dataRead(const String & data)
     Number1.print(counter);
 }
 
-// void otaStatus(uint32_t load_size, uint32_t total_size)
-// {
-//     if (millis() - os_time >= BLINKER_OTA_BLINK_TIME)
-//     {
-//         os_time = millis();
-
-//         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-//     }
-// }
-
 void setup()
 {
     Serial.begin(115200);
+    BLINKER_DEBUG.stream(Serial);
     BLINKER_DEBUG.debugAll();
 
     pinMode(LED_BUILTIN, OUTPUT);
@@ -170,7 +162,6 @@ void setup()
     Blinker.attachDoubleClick(doubleClick);    
     attachInterrupt(BLINKER_BUTTON_PIN, buttonTick, CHANGE);
 #endif
-    // BlinkerUpdater.onProgress(otaStatus);
 }
 
 void loop()
