@@ -1016,7 +1016,7 @@ int BlinkerMQTT::print(char * data, bool needCheck)
         // data_add = BLINKER_F(",\"fromDevice\":\"");
         // strcat(data, data_add.c_str());
         strcat(data, ",\"fromDevice\":\"");
-        strcat(data, MQTT_ID_MQTT);
+        strcat(data, DEVICE_NAME_MQTT);
         // data_add = BLINKER_F("\",\"toDevice\":\"");
         // strcat(data, data_add.c_str());
         strcat(data, "\",\"toDevice\":\"");
@@ -1214,7 +1214,7 @@ int BlinkerMQTT::bPrint(char * name, const String & data)
 
     data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_ID_MQTT;
+    data_add += DEVICE_NAME_MQTT;
     data_add += BLINKER_F("\",\"toDevice\":\"");
     data_add += name;
     data_add += BLINKER_F("\",\"deviceType\":\"DiyBridge\"}");
@@ -1311,7 +1311,7 @@ int BlinkerMQTT::aliPrint(const String & data)
 
     data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_ID_MQTT;
+    data_add += DEVICE_NAME_MQTT;
     data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
@@ -1343,7 +1343,7 @@ int BlinkerMQTT::aliPrint(const String & data)
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
-            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
 
@@ -1403,7 +1403,7 @@ int BlinkerMQTT::duerPrint(const String & data, bool report)
     }
 
     data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_ID_MQTT;
+    data_add += DEVICE_NAME_MQTT;
     data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
@@ -1436,7 +1436,7 @@ int BlinkerMQTT::duerPrint(const String & data, bool report)
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
-            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
 
@@ -1489,7 +1489,7 @@ int BlinkerMQTT::miPrint(const String & data)
 
     data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
-    data_add += MQTT_ID_MQTT;
+    data_add += DEVICE_NAME_MQTT;
     data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
@@ -1521,7 +1521,7 @@ int BlinkerMQTT::miPrint(const String & data)
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
-            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_ID_MQTT);
+            strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
 
@@ -1671,7 +1671,7 @@ int BlinkerMQTT::autoPrint(unsigned long id)
     payload += String(id);
     payload += BLINKER_F("}}}");
     payload += BLINKER_F(",\"fromDevice\":\"");
-    payload += STRING_format(MQTT_ID_MQTT);
+    payload += STRING_format(DEVICE_NAME_MQTT);
     payload += BLINKER_F("\",\"deviceType\":\"Auto\"");
     payload += BLINKER_F(",\"toDevice\":\"serverClient\"}");
         // "\",\"deviceType\":\"" + "type" + "\"}";
