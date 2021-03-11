@@ -44,6 +44,16 @@ class BLINKERDUEROS
             Blinker.attachDuerOSRelativeBrightness(newFunction);
         }
 
+        void attachColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+        {
+            Blinker.attachDuerOSSetColorTemperature(newFunction);
+        }
+
+        void attachRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
+        {
+            Blinker.attachDuerOSRelativeColorTemperature(newFunction);
+        }
+
         void attachQuery(blinker_callback_with_int32_uint8_arg_t newFunction)
         {
             Blinker.attachDuerOSQuery(newFunction);
@@ -167,6 +177,26 @@ class BLINKERDUEROS
             strcpy(aMode, payload.c_str());
 
             _fresh |= 0x01 << 2;
+        }        
+
+        void colorTemp(int clrTemp)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_COLORTEMP);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(clrTemp);
+            payload += BLINKER_F("\"");
+
+            // Blinker.DuerOSPrint(payload);
+
+            if (_fresh >> 3 & 0x01) {
+                free(aCtemp);
+            }
+
+            aCtemp = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aCtemp, payload.c_str());
+
+            _fresh |= 0x01 << 3;
         }
 
         void brightness(int now_bright)
@@ -179,14 +209,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 3 & 0x01) {
+            if (_fresh >> 4 & 0x01) {
                 free(aBright);
             }
 
             aBright = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aBright, payload.c_str());
 
-            _fresh |= 0x01 << 3;
+            _fresh |= 0x01 << 4;
         }
 
         void brightness(int pre_bright, int now_bright)
@@ -201,14 +231,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 3 & 0x01) {
+            if (_fresh >> 4 & 0x01) {
                 free(aBright);
             }
 
             aBright = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aBright, payload.c_str());
 
-            _fresh |= 0x01 << 3;
+            _fresh |= 0x01 << 4;
         }
 
         void temp(double _temp)
@@ -221,14 +251,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 4 & 0x01) {
+            if (_fresh >> 5 & 0x01) {
                 free(aTemp);
             }
 
             aTemp = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aTemp, payload.c_str());
 
-            _fresh |= 0x01 << 4;
+            _fresh |= 0x01 << 5;
         }
 
         void temp(float _temp)
@@ -241,14 +271,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 4 & 0x01) {
+            if (_fresh >> 5 & 0x01) {
                 free(aTemp);
             }
 
             aTemp = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aTemp, payload.c_str());
 
-            _fresh |= 0x01 << 4;
+            _fresh |= 0x01 << 5;
         }
 
         void temp(int _temp)
@@ -261,14 +291,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 4 & 0x01) {
+            if (_fresh >> 5 & 0x01) {
                 free(aTemp);
             }
 
             aTemp = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aTemp, payload.c_str());
 
-            _fresh |= 0x01 << 4;
+            _fresh |= 0x01 << 5;
         }
 
         void humi(double _humi)
@@ -281,14 +311,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 5 & 0x01) {
+            if (_fresh >> 6 & 0x01) {
                 free(aHumi);
             }
 
             aHumi = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aHumi, payload.c_str());
 
-            _fresh |= 0x01 << 5;
+            _fresh |= 0x01 << 6;
         }
 
         void humi(float _humi)
@@ -301,14 +331,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 5 & 0x01) {
+            if (_fresh >> 6 & 0x01) {
                 free(aHumi);
             }
 
             aHumi = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aHumi, payload.c_str());
 
-            _fresh |= 0x01 << 5;
+            _fresh |= 0x01 << 6;
         }
 
         void humi(int _humi)
@@ -321,14 +351,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 5 & 0x01) {
+            if (_fresh >> 6 & 0x01) {
                 free(aHumi);
             }
 
             aHumi = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aHumi, payload.c_str());
 
-            _fresh |= 0x01 << 5;
+            _fresh |= 0x01 << 6;
         }
 
         void pm25(double _pm25)
@@ -341,14 +371,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 6 & 0x01) {
+            if (_fresh >> 7 & 0x01) {
                 free(aPm25);
             }
 
             aPm25 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm25, payload.c_str());
 
-            _fresh |= 0x01 << 6;
+            _fresh |= 0x01 << 7;
         }
 
         void pm25(float _pm25)
@@ -361,14 +391,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 6 & 0x01) {
+            if (_fresh >> 7 & 0x01) {
                 free(aPm25);
             }
 
             aPm25 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm25, payload.c_str());
 
-            _fresh |= 0x01 << 6;
+            _fresh |= 0x01 << 7;
         }
 
         void pm25(int _pm25)
@@ -381,14 +411,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 6 & 0x01) {
+            if (_fresh >> 7 & 0x01) {
                 free(aPm25);
             }
 
             aPm25 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm25, payload.c_str());
 
-            _fresh |= 0x01 << 6;
+            _fresh |= 0x01 << 7;
         }
 
         void pm10(double _pm10)
@@ -401,14 +431,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 7 & 0x01) {
+            if (_fresh >> 8 & 0x01) {
                 free(aPm10);
             }
 
             aPm10 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm10, payload.c_str());
 
-            _fresh |= 0x01 << 7;
+            _fresh |= 0x01 << 8;
         }
 
         void pm10(float _pm10)
@@ -421,14 +451,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 7 & 0x01) {
+            if (_fresh >> 8 & 0x01) {
                 free(aPm10);
             }
 
             aPm10 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm10, payload.c_str());
 
-            _fresh |= 0x01 << 7;
+            _fresh |= 0x01 << 8;
         }
 
         void pm10(int _pm10)
@@ -441,14 +471,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 7 & 0x01) {
+            if (_fresh >> 8 & 0x01) {
                 free(aPm10);
             }
 
             aPm10 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aPm10, payload.c_str());
 
-            _fresh |= 0x01 << 7;
+            _fresh |= 0x01 << 8;
         }
 
         void co2(double _co2)
@@ -461,14 +491,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 8 & 0x01) {
+            if (_fresh >> 9 & 0x01) {
                 free(aCO2);
             }
 
             aCO2 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aCO2, payload.c_str());
 
-            _fresh |= 0x01 << 8;
+            _fresh |= 0x01 << 9;
         }
 
         void co2(float _co2)
@@ -481,14 +511,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 8 & 0x01) {
+            if (_fresh >> 9 & 0x01) {
                 free(aCO2);
             }
 
             aCO2 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aCO2, payload.c_str());
 
-            _fresh |= 0x01 << 8;
+            _fresh |= 0x01 << 9;
         }
 
         void co2(int _co2)
@@ -501,14 +531,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 8 & 0x01) {
+            if (_fresh >> 9 & 0x01) {
                 free(aCO2);
             }
 
             aCO2 = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aCO2, payload.c_str());
 
-            _fresh |= 0x01 << 8;
+            _fresh |= 0x01 << 9;
         }
 
         void aqi(int _aqi)
@@ -521,14 +551,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 9 & 0x01) {
+            if (_fresh >> 10 & 0x01) {
                 free(aAQI);
             }
 
             aAQI = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aAQI, payload.c_str());
 
-            _fresh |= 0x01 << 9;
+            _fresh |= 0x01 << 10;
         }        
 
         void time(uint32_t _time)
@@ -540,14 +570,14 @@ class BLINKERDUEROS
 
             // Blinker.DuerOSPrint(payload);
 
-            if (_fresh >> 10 & 0x01) {
+            if (_fresh >> 11 & 0x01) {
                 free(aTIME);
             }
 
             aTIME = (char*)malloc((payload.length()+1)*sizeof(char));
             strcpy(aTIME, payload.c_str());
 
-            _fresh |= 0x01 << 10;
+            _fresh |= 0x01 << 11;
         }
 
         void print()
@@ -587,12 +617,21 @@ class BLINKERDUEROS
                 if (duerData.length()) duerData += BLINKER_F(",");
                 else duerData += BLINKER_F("{");
                 
+                duerData += aCtemp;
+                
+                free(aCtemp);
+            }
+
+            if (_fresh >> 4 & 0x01) {
+                if (duerData.length()) duerData += BLINKER_F(",");
+                else duerData += BLINKER_F("{");
+                
                 duerData += aBright;
                 
                 free(aBright);
             }
 
-            if (_fresh >> 4 & 0x01) {
+            if (_fresh >> 5 & 0x01) {
                 if (duerData.length()) duerData += BLINKER_F(",");
                 else duerData += BLINKER_F("{");
                 
@@ -601,7 +640,7 @@ class BLINKERDUEROS
                 free(aTemp);
             }
 
-            if (_fresh >> 5 & 0x01) {
+            if (_fresh >> 6 & 0x01) {
                 if (duerData.length()) duerData += BLINKER_F(",");
                 else duerData += BLINKER_F("{");
                 
@@ -610,7 +649,7 @@ class BLINKERDUEROS
                 free(aHumi);
             }
 
-            if (_fresh >> 6 & 0x01) {
+            if (_fresh >> 7 & 0x01) {
                 if (duerData.length()) duerData += BLINKER_F(",");
                 else duerData += BLINKER_F("{");
                 
@@ -619,7 +658,7 @@ class BLINKERDUEROS
                 free(aPm25);
             }
 
-            if (_fresh >> 7 & 0x01) {
+            if (_fresh >> 8 & 0x01) {
                 if (duerData.length()) duerData += BLINKER_F(",");
                 else duerData += BLINKER_F("{");
                 
@@ -628,7 +667,7 @@ class BLINKERDUEROS
                 free(aPm10);
             }
 
-            if (_fresh >> 8 & 0x01) {
+            if (_fresh >> 9 & 0x01) {
                 if (duerData.length()) duerData += BLINKER_F(",");
                 else duerData += BLINKER_F("{");
                 
@@ -637,7 +676,7 @@ class BLINKERDUEROS
                 free(aCO2);
             }
 
-            if (_fresh >> 9 & 0x01) {
+            if (_fresh >> 10 & 0x01) {
                 if (duerData.length()) duerData += BLINKER_F(",");
                 else duerData += BLINKER_F("{");
                 
@@ -646,7 +685,7 @@ class BLINKERDUEROS
                 free(aAQI);
             }
 
-            if (_fresh >> 10 & 0x01) {
+            if (_fresh >> 11 & 0x01) {
                 if (duerData.length()) duerData += BLINKER_F(",");
                 else duerData += BLINKER_F("{");
                 
@@ -831,6 +870,7 @@ class BLINKERDUEROS
         char * aState;
         char * aColor;
         char * aMode;
+        char * aCtemp;
         char * aBright;
         char * aTemp;
         char * aHumi;

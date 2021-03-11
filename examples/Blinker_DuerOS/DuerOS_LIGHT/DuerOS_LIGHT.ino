@@ -263,6 +263,22 @@ void duerRelativeBright(int32_t bright)
     BlinkerDuerOS.print();
 }
 
+void duerColoTemp(int32_t colorTemp)
+{
+    BLINKER_LOG("need set colorTemperature: ", colorTemp);
+
+    BlinkerDuerOS.colorTemp(colorTemp);
+    BlinkerDuerOS.print();
+}
+
+void duerRelativeColoTemp(int32_t colorTemp)
+{
+    BLINKER_LOG("need set relative colorTemperature: ", colorTemp);
+
+    BlinkerDuerOS.colorTemp(colorTemp);
+    BlinkerDuerOS.print();
+}
+
 void duerQuery(int32_t queryCode)
 {
     BLINKER_LOG("DuerOS Query codes: ", queryCode);
@@ -309,6 +325,8 @@ void setup()
     BlinkerDuerOS.attachCancelMode(duercMode);
     BlinkerDuerOS.attachBrightness(duerBright);
     BlinkerDuerOS.attachRelativeBrightness(duerRelativeBright);
+    BlinkerDuerOS.attachColorTemperature(duerColoTemp);
+    BlinkerDuerOS.attachRelativeColorTemperature(duerRelativeColoTemp);
     BlinkerDuerOS.attachQuery(duerQuery);
 
     pinMode(14, OUTPUT);

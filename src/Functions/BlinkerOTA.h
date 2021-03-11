@@ -121,12 +121,13 @@ bool BlinkerOTA::update() {
     saveOTACheck();
 
 #if defined(ESP8266)
-    #ifndef BLINKER_WITHOUT_SSL
+    // #ifndef BLINKER_WITHOUT_SSL
     BearSSL::WiFiClientSecure client_s;
 
     BLINKER_LOG_FreeHeap();
-
-    client_mqtt.stop();
+    #ifndef BLINKER_WITHOUT_SSL
+        client_mqtt.stop();
+    #endif
     ::delay(100);
 
     bool mfln = client_s.probeMaxFragmentLength(ota_host, ota_port, 1024);
@@ -164,9 +165,9 @@ bool BlinkerOTA::update() {
     //         return true;
     // }
 
-    #else
-        WiFiClient               client_s;
-    #endif
+    // #else
+    //     WiFiClient               client_s;
+    // #endif
 
 #elif defined(ESP32)
     client_s.stop();

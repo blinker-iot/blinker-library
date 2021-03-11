@@ -7,10 +7,18 @@
 class BlinkerImage
 {
     public :
-        BlinkerImage(char _name[])
+        BlinkerImage(char _name[], blinker_callback_with_int32_arg_t _func = NULL)
         {
-            numName = (char*)malloc((strlen(_name)+1)*sizeof(char));
-            strcpy(numName, _name);
+            wNum = Blinker.attachWidget(_name, _func);
+            // numName = (char*)malloc((strlen(_name)+1)*sizeof(char));
+            // strcpy(numName, _name);
+        }
+        
+        void attach(blinker_callback_with_int32_arg_t _func)
+        {
+            if (wNum == 0) return;
+
+            Blinker.freshAttachWidget(Blinker.widgetName_int(wNum), _func);
         }
 
         uint8_t getNum() { return num; }
@@ -19,15 +27,16 @@ class BlinkerImage
         {
             num = _num;
 
-            String ImageData = BLINKER_F("{\"img\":");
-            ImageData += STRING_format(num);
-            ImageData += BLINKER_F("}");
+            // String ImageData = BLINKER_F("{\"img\":");
+            // ImageData += STRING_format(num);
+            // ImageData += BLINKER_F("}");
 
-            Blinker.printArray(numName, ImageData);
+            // Blinker.printArray(numName, ImageData);
+            Blinker.print(Blinker.widgetName_int(wNum), num);
         }
 
     private :
-        char * numName;
+        uint8_t wNum;
         uint8_t num = 0;
 };
 

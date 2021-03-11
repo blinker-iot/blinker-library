@@ -53,7 +53,9 @@ attachLongPressPowerdown	KEYWORD2
 attachLongPressReset	KEYWORD2
 attachNoButtonReset	KEYWORD2
 attachAQI	KEYWORD2
+attachAir	KEYWORD2
 attachWeather	KEYWORD2
+attachWeatherForecast	KEYWORD2
 attachConfigGet	KEYWORD2
 attachDataGet	KEYWORD2
 pressedTime	KEYWORD2
@@ -106,6 +108,7 @@ sms	KEYWORD2
 push	KEYWORD2
 wechat	KEYWORD2
 weather	KEYWORD2
+weatherForecast	KEYWORD2
 aqi	KEYWORD2
 status	KEYWORD2
 flush	KEYWORD2
