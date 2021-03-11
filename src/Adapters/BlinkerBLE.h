@@ -243,7 +243,7 @@ int BlinkerBLE::print(char * data, bool needCheck)
                 s_send = s.substring(num*(20), s.length()); 
             else
                 s_send = s.substring(num*(20), (num+1)*20);    
-
+            // BLINKER_LOG_ALL("s_send: ", s_send);
             pCharacteristic->setValue(s_send.c_str());
             pCharacteristic->notify();
             delay(5);
@@ -267,6 +267,7 @@ void BlinkerBLE::onDisconnect(BLEServer* pServer)
 {
     deviceConnected = false;
     BLINKER_LOG_ALL("BLE disconnect");
+    pServer->startAdvertising();
 }
 
 void BlinkerBLE::onWrite(BLECharacteristic *pCharacteristic)
