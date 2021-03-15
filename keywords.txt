@@ -110,6 +110,7 @@ wechat	KEYWORD2
 weather	KEYWORD2
 weatherForecast	KEYWORD2
 aqi	KEYWORD2
+air	KEYWORD2
 status	KEYWORD2
 flush	KEYWORD2
 init	KEYWORD2
