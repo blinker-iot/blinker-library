@@ -66,7 +66,7 @@ void dataRead(const String & data)
     Blinker.print("millis", BlinkerTime);
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    Blinker.aqi();
+    Blinker.air();
     
     Blinker.delay(60000);
 }

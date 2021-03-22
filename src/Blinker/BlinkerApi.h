@@ -376,11 +376,11 @@ class BlinkerApi : public BlinkerProtocol
             #if !defined(BLINKER_AT_MQTT)
                 void weather(uint32_t _city = 0);
                 void weatherForecast(uint32_t _city = 0);
-                void aqi(uint32_t _city = 0);
+                void air(uint32_t _city = 0);
             #else
                 String weather(uint32_t _city = 0);
                 String weatherForecast(uint32_t _city = 0);
-                String aqi(uint32_t _city = 0);
+                String air(uint32_t _city = 0);
             #endif
 
             void log(const String & msg);
@@ -650,7 +650,7 @@ class BlinkerApi : public BlinkerProtocol
             int16_t yday()  { return atGetInt(BLINKER_CMD_YDAY); }
             void weather(uint32_t _city = 0);
             void weatherForecast(uint32_t _city = 0);
-            void aqi(uint32_t _city = 0);
+            void air(uint32_t _city = 0);
             void log(const String & msg);
             void coordinate(float _long, float _lat);
             template<typename T>
@@ -6207,7 +6207,7 @@ float BlinkerApi::gps(b_gps_t axis)
         #endif
     }
 
-    void BlinkerApi::aqi(uint32_t _city)
+    void BlinkerApi::air(uint32_t _city)
     {
         String data = BLINKER_F("/air?");
 
@@ -6384,7 +6384,7 @@ float BlinkerApi::gps(b_gps_t axis)
         #endif
     }
 
-    String BlinkerApi::aqi(uint32_t _city)
+    String BlinkerApi::air(uint32_t _city)
     {
         String data = BLINKER_F("/air?");
 
@@ -13956,7 +13956,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             reqData = BLINKER_F("+");
             reqData += BLINKER_CMD_WEATHER_AT;
             reqData += BLINKER_F(":");
-            reqData += STRING_format(weather(_slaverAT->getParam(0)));
+            reqData += STRING_format(weather(_slaverAT->getParam(0).toInt()));
 
             BProto::serialPrint(reqData);
             BProto::serialPrint(BLINKER_CMD_OK);
@@ -13967,7 +13967,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             reqData = BLINKER_F("+");
             reqData += BLINKER_CMD_AQI_AT;
             reqData += BLINKER_F(":");
-            reqData += STRING_format(aqi(_slaverAT->getParam(0)));
+            reqData += STRING_format(air(_slaverAT->getParam(0).toInt()));
 
             BProto::serialPrint(reqData);
             BProto::serialPrint(BLINKER_CMD_OK);
@@ -14420,7 +14420,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
     }
 
 
-    void BlinkerApi::aqi(uint32_t _city)
+    void BlinkerApi::air(uint32_t _city)
     {
         if (_airFunc)
         {
