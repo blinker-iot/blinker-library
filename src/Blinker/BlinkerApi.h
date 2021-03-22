@@ -13956,7 +13956,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             reqData = BLINKER_F("+");
             reqData += BLINKER_CMD_WEATHER_AT;
             reqData += BLINKER_F(":");
-            reqData += STRING_format(weather(_slaverAT->getParam(0)));
+            reqData += STRING_format(weather(_slaverAT->getParam(0).toInt()));
 
             BProto::serialPrint(reqData);
             BProto::serialPrint(BLINKER_CMD_OK);
@@ -13967,7 +13967,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
             reqData = BLINKER_F("+");
             reqData += BLINKER_CMD_AQI_AT;
             reqData += BLINKER_F(":");
-            reqData += STRING_format(aqi(_slaverAT->getParam(0)));
+            reqData += STRING_format(air(_slaverAT->getParam(0).toInt()));
 
             BProto::serialPrint(reqData);
             BProto::serialPrint(BLINKER_CMD_OK);
