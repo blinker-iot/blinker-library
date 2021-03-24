@@ -865,6 +865,8 @@ void BlinkerMQTT::parseData(const char* data)
                     
                     _needCheckShare = false;
 
+                    dataGet = root["data"].as<String>();
+
                     break;
                 }
                 else
