@@ -57,6 +57,9 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         void checkState(bool state = true)      { isCheck = state; }
 
+    #if defined(BLINKER_MIOT)
+        void miotPrint(const String & _msg)       { conn.miPrint(_msg); }
+    #endif
     private :
         void autoPrint(const String & key, const String & data);
         void autoFormatData(const String & key, const String & jsonValue);
@@ -129,6 +132,10 @@ void BlinkerProtocol<Transp>::run()
             {
                 isAvail = true;
                 BApi::parse(conn.lastRead());
+            }
+            else if (conn.miAvail())
+            {
+                BApi::miotParse(conn.lastRead());
             }
             break;
         

@@ -180,7 +180,8 @@ class BlinkerWidgets_table
     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
     defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE) || \
     defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-    defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
+    defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP) || \
+    defined(BLINKER_WIFI)
     class BlinkerBridge_key
     {
         public :

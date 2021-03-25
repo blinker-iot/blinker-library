@@ -8,7 +8,8 @@ template <class Functions>
 class BlinkerButton
 {
     public :
-        BlinkerButton(Functions& nFunc, const char* _name, blinker_callback_with_string_arg_t _func = NULL)
+        BlinkerButton(Functions& nFunc, const char* _name, 
+            blinker_callback_with_string_arg_t _func = NULL)
             :   func(nFunc),
                 name(_name)
         {
@@ -209,11 +210,8 @@ class BlinkerButton
 
     private :
         Functions&  func;
-
         const char* name;
-        
         uint8_t     wNum;
-        
         char *      bicon;
         char *      iconClr;
         char *      bcon;

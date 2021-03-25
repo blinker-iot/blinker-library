@@ -4,7 +4,6 @@
 #if (defined(ESP8266) || defined(ESP32))
 
 #define BLINKER_WIFI
-#define BLINKER_MQTT
 
 #if defined(ESP8266)
     #include <ESP8266mDNS.h>
@@ -83,13 +82,12 @@ class BlinkerWiFiESP
         void ping();
         bool available();
         char * lastRead();
-
-        const char* key() { return _authKey;}
         void flush();
         int  print(char * data, bool needCheck = true);
         void subscribe();
         int  isJson(const String & data);
         bool deviceRegister();
+        void freshSharers();
         String toServer(uint8_t _type, const String & msg, bool state = false);
         
         bool checkInit();
@@ -107,6 +105,11 @@ class BlinkerWiFiESP
         #endif
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
+    
+    #if defined(BLINKER_MIOT)
+        int miAvail();
+        int miPrint(const String & data);
+    #endif
 
     private :
         void mDNSInit();
@@ -117,6 +120,11 @@ class BlinkerWiFiESP
         int checkCanPrint();
         int checkPrintSpan();
         int checkPrintLimit();
+
+    #if defined(BLINKER_MIOT)
+        int checkMIOTKA();
+        int checkMIOTPrintSpan();
+    #endif
 
         void parseData(const char* data);
 
@@ -926,9 +934,63 @@ bool BlinkerWiFiESP::deviceRegister()
         client_s.setInsecure();
     #endif
 
+    freshSharers();
+
     BLINKER_LOG_FreeHeap();
 
     return true;
+}
+
+void BlinkerWiFiESP::freshSharers()
+{
+    String  data = BLINKER_F("/share/device?");
+            data += BLINKER_F("deviceName=");
+            data += STRING_format(DEVICE_NAME_MQTT);
+            data += BLINKER_F("&key=");
+            data += STRING_format(_authKey);
+
+    String payload = toServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
+
+    BLINKER_LOG_ALL(BLINKER_F("sharers data: "), payload);
+
+    // DynamicJsonBuffer jsonBuffer;
+    // JsonObject& root = jsonBuffer.parseObject(data);
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, payload);
+    JsonObject root = jsonBuffer.as<JsonObject>();
+
+    // if (!root.success()) return;
+    if (error) return;
+
+    String user_name = "";
+
+    if (_sharerCount)
+    {
+        for (uint8_t num = _sharerCount; num > 0; num--)
+        {
+            delete _sharers[num - 1];
+        }
+    }
+
+    _sharerCount = 0;
+
+    for (uint8_t num = 0; num < BLINKER_MQTT_MAX_SHARERS_NUM; num++)
+    {
+        user_name = root["users"][num].as<String>();
+
+        if (user_name.length() >= BLINKER_MQTT_USER_UUID_SIZE)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
+
+            _sharerCount++;
+
+            _sharers[num] = new BlinkerSharer(user_name);
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
@@ -936,6 +998,8 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
     switch (_type)
     {
         case BLINKER_CMD_WIFI_AUTH_NUMBER :
+            break;
+        case BLINKER_CMD_FRESH_SHARERS_NUMBER :
             break;
         default :
             return BLINKER_CMD_FALSE;
@@ -1024,6 +1088,23 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
 
             httpCode = http.GET();
             break;
+        case BLINKER_CMD_FRESH_SHARERS_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
         default :
             return BLINKER_CMD_FALSE;
     }
@@ -1058,7 +1139,7 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
                 }
                 else
                 {
-                    switch (BLINKER_CMD_WIFI_AUTH_NUMBER)
+                    switch (_type)
                     {
                         // case BLINKER_CMD_WIFI_AUTH_NUMBER :
                             
@@ -1077,6 +1158,8 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
             switch (_type)
             {
                 case BLINKER_CMD_WIFI_AUTH_NUMBER :
+                    break;
+                case BLINKER_CMD_FRESH_SHARERS_NUMBER :
                     break;
                 default :
                     return BLINKER_CMD_FALSE;
@@ -1752,6 +1835,134 @@ int BlinkerWiFiESP::checkPrintLimit()
         return true;
     }
 }
+
+#if defined(BLINKER_MIOT)
+    int BlinkerWiFiESP::miAvail()
+    {
+        if (!checkInit()) return false;
+
+        if (isMIOTAvail)
+        {
+            isMIOTAvail = false;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    int BlinkerWiFiESP::miPrint(const String & data)
+    {
+        if (!checkInit()) return false;
+
+        String data_add = BLINKER_F("{\"data\":");
+
+        data_add += data;
+        data_add += BLINKER_F(",\"fromDevice\":\"");
+        data_add += DEVICE_NAME_MQTT;
+        data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+        data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+        if (!isJson(data_add)) return false;
+
+        BLINKER_LOG_ALL(BLINKER_F("MQTT MIOT Publish..."));
+        BLINKER_LOG_FreeHeap_ALL();
+
+        if (mqtt_MQTT->connected())
+        {
+            if (!checkMIOTKA())
+            {
+                return false;
+            }
+
+            if (!checkMIOTPrintSpan())
+            {
+                respMIOTTime = millis();
+                return false;
+            }
+            respMIOTTime = millis();
+
+            
+            char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+            if (is_rrpc)
+            {
+                
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+                BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+            }
+            else
+            {
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
+            }
+
+            is_rrpc = false;
+
+            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isMIOTAlive = false;
+                return false;
+            }
+            else
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isMIOTAlive = false;
+
+                this->latestTime = millis();
+
+                return true;
+            }
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+            return false;
+        }
+    }
+
+    int BlinkerWiFiESP::checkMIOTKA() {
+        if (millis() - miKaTime >= 10000)
+            return false;
+        else
+            return true;
+    }
+
+    int BlinkerWiFiESP::checkMIOTPrintSpan()
+    {
+        if (millis() - respMIOTTime < BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            if (respMIOTTimes > BLINKER_PRINT_MSG_LIMIT/2)
+            {
+                BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+
+                return false;
+            }
+            else
+            {
+                respMIOTTimes++;
+                return true;
+            }
+        }
+        else
+        {
+            respMIOTTimes = 0;
+            return true;
+        }
+    }
+#endif
 
 #endif
 

@@ -8,7 +8,8 @@ template <class Functions>
 class BlinkerImage
 {
     public :
-        BlinkerImage(Functions& nFunc, const char* _name, blinker_callback_with_int32_arg_t _func = NULL)
+        BlinkerImage(Functions& nFunc, const char* _name, 
+            blinker_callback_with_int32_arg_t _func = NULL)
             :   func(nFunc),
                 name(_name)
         {
@@ -33,9 +34,7 @@ class BlinkerImage
 
     private :
         Functions&  func;
-
         const char* name;
-        
         uint8_t     wNum;
 };
 

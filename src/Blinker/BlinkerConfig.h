@@ -5,7 +5,7 @@
 #include "Blinker/BlinkerUtility.h"
 #include "../Server/BlinkerServer.h"
 
-#define BLINKER_VERSION                 "0.4.0"
+#define BLINKER_VERSION                 "0.3.6"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
@@ -120,7 +120,7 @@
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKE_HTTP)
+            defined(BLINKE_HTTP) || defined(BLINKER_WIFI)
             #define BLINKER_MAX_SEND_SIZE       1024
         #else
             #define BLINKER_MAX_SEND_SIZE       512
@@ -142,7 +142,8 @@
         #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
+            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP) || \
+            defined(BLINKER_WIFI)
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE - 128
         #else
             #define BLINKER_MAX_SEND_BUFFER_SIZE       BLINKER_MAX_SEND_SIZE
@@ -599,7 +600,8 @@
 
 #ifndef BLINKER_MAX_BRIDGE_SIZE
     #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
-        defined(BLINKER_MQTT_AUTO) || defined(BLINKE_HTTP)
+        defined(BLINKER_MQTT_AUTO) || defined(BLINKE_HTTP) || \
+        defined(BLINKER_WIFI)
         #define BLINKER_MAX_BRIDGE_SIZE             4
     #elif defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
         defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY) || \
@@ -1457,7 +1459,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
     defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE) || \
     defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-    defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
+    defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP) || \
+    defined(BLINKER_WIFI)
     #define BLINKER_MQTT_BORKER_ALIYUN      "aliyun"
 
     #define BLINKER_MQTT_ALIYUN_HOST        "public.iot-as-mqtt.cn-shanghai.aliyuncs.com"
@@ -1641,7 +1644,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE) || \
     defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
     defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKER_WIFI) || \
-    defined(BLINKER_MQTT)
+    defined(BLINKER_MQTT) || defined(BLINKER_WIFI)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2

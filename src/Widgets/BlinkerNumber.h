@@ -68,7 +68,6 @@ class BlinkerNumber
 
     private :
         Functions&  func;
-
         const char* name;
         char *      nicon;// = "";
         char *      ncolor;// = "";

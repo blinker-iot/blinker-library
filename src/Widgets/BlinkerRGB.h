@@ -8,7 +8,8 @@ template <class Functions>
 class BlinkerRGB
 {
     public :
-        BlinkerRGB(Functions& nFunc, const char* _name, blinker_callback_with_rgb_arg_t _func = NULL)
+        BlinkerRGB(Functions& nFunc, const char* _name, 
+            blinker_callback_with_rgb_arg_t _func = NULL)
             :   func(nFunc),
                 name(_name)
         {
@@ -61,11 +62,9 @@ class BlinkerRGB
 
     private :
         Functions&  func;
-
         const char* name;
-        
         uint8_t     wNum;
-        uint8_t rgbrightness = 0;
+        uint8_t     rgbrightness = 0;
 };
 
 #endif
