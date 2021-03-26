@@ -27,12 +27,12 @@ class BlinkerImage
         {
             num = _num;
 
-            // String ImageData = BLINKER_F("{\"img\":");
-            // ImageData += STRING_format(num);
-            // ImageData += BLINKER_F("}");
+            String ImageData = BLINKER_F("{\"img\":");
+            ImageData += STRING_format(num);
+            ImageData += BLINKER_F("}");
 
             // Blinker.printArray(numName, ImageData);
-            Blinker.print(Blinker.widgetName_int(wNum), num);
+            Blinker.printArray(Blinker.widgetName_int(wNum), ImageData);
         }
 
     private :
