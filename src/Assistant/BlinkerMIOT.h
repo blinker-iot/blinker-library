@@ -12,22 +12,26 @@ class BLINKERMIOT
 
         void attachPowerState(blinker_callback_with_string_uint8_arg_t newFunction)
         {
-            func.attachMIOTSetPowerState(newFunction);
+            // func.attachMIOTSetPowerState(newFunction);
+            _MIOTPowerStateFunc_m = newFunction;
         }
 
         void attachPowerState(blinker_callback_with_string_arg_t newFunction)
         {
-            func.attachMIOTSetPowerState(newFunction);
+            // func.attachMIOTSetPowerState(newFunction);
+            _MIOTPowerStateFunc = newFunction;
         }
 
         void attachColor(blinker_callback_with_int32_arg_t newFunction)
         {
-            func.attachMIOTSetColor(newFunction);
+            // func.attachMIOTSetColor(newFunction);
+            _MIOTSetColorFunc = newFunction;
         }
 
         void attachMode(blinker_callback_with_uint8_arg_t newFunction)
         {
-            func.attachMIOTSetMode(newFunction);
+            // func.attachMIOTSetMode(newFunction);
+            _MIOTSetModeFunc = newFunction;
         }
 
         // void attachCancelMode(blinker_callback_with_string_arg_t newFunction)
@@ -37,7 +41,8 @@ class BLINKERMIOT
 
         void attachBrightness(blinker_callback_with_string_arg_t newFunction)
         {
-            func.attachMIOTSetBrightness(newFunction);
+            // func.attachMIOTSetBrightness(newFunction);
+            _MIOTSetBrightnessFunc = newFunction;
         }
 
         // void attachRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
@@ -47,7 +52,8 @@ class BLINKERMIOT
 
         void attachColorTemperature(blinker_callback_with_int32_arg_t newFunction)
         {
-            func.attachMIOTSetColorTemperature(newFunction);
+            // func.attachMIOTSetColorTemperature(newFunction);
+            _MIOTSetColorTemperature = newFunction;
         }
 
         // void attachRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
@@ -57,12 +63,14 @@ class BLINKERMIOT
 
         void attachQuery(blinker_callback_with_int32_uint8_arg_t newFunction)
         {
-            func.attachMIOTQuery(newFunction);
+            // func.attachMIOTQuery(newFunction);
+            _MIOTQueryFunc_m = newFunction;
         }
 
         void attachQuery(blinker_callback_with_int32_arg_t newFunction)
         {
-            func.attachMIOTQuery(newFunction);
+            // func.attachMIOTQuery(newFunction);
+            _MIOTQueryFunc = newFunction;
         }
 
         void powerState(const String & state, uint8_t num)
@@ -542,6 +550,14 @@ class BLINKERMIOT
             func.miotPrint(miData);
         }
 
+        void run()
+        {
+            if (func.miotAvail())
+            {
+                miotParse(func.lastRead());
+            }
+        }
+
     private :
         Functions&  func;
         char *      aState;
@@ -554,6 +570,161 @@ class BLINKERMIOT
         char *      aPm25;
         char *      aCO2;  
         uint16_t    _fresh = 0;
+
+        blinker_callback_with_string_uint8_arg_t    _MIOTPowerStateFunc_m = NULL;
+        blinker_callback_with_string_arg_t          _MIOTPowerStateFunc = NULL;
+        blinker_callback_with_int32_arg_t           _MIOTSetColorFunc = NULL;
+        blinker_callback_with_uint8_arg_t           _MIOTSetModeFunc = NULL;
+        // blinker_callback_with_string_arg_t       _MIOTSetcModeFunc = NULL;
+        blinker_callback_with_string_arg_t          _MIOTSetBrightnessFunc = NULL;
+        // blinker_callback_with_int32_arg_t        _MIOTSetRelativeBrightnessFunc = NULL;
+        blinker_callback_with_int32_arg_t           _MIOTSetColorTemperature = NULL;
+        // blinker_callback_with_int32_arg_t        _MIOTSetRelativeColorTemperature = NULL;
+        blinker_callback_with_int32_uint8_arg_t     _MIOTQueryFunc_m = NULL;
+        blinker_callback_with_int32_arg_t           _MIOTQueryFunc = NULL;
+
+        void miotParse(const String & _data)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("MIOT parse data: "), _data);
+
+            // DynamicJsonBuffer jsonBuffer;
+            // JsonObject& root = jsonBuffer.parseObject(_data);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, _data);
+            JsonObject root = jsonBuffer.as<JsonObject>();
+
+            // if (!root.success()) return;
+            if (error) return;
+
+            if (root.containsKey(BLINKER_CMD_GET))
+            {
+                String value = root[BLINKER_CMD_GET];
+
+                bool query_set = false;
+
+                if(_MIOTQueryFunc) query_set = true;
+                if(_MIOTQueryFunc_m) query_set = true;
+
+                if (!query_set)
+                {
+                    BLINKER_ERR_LOG("None query function set!");
+                }
+
+                if (value == BLINKER_CMD_STATE){
+                    uint8_t setNum = root[BLINKER_CMD_NUM];
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
+                    if (_MIOTQueryFunc_m) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_ALL_NUMBER, setNum);
+                }
+                else if (value == BLINKER_CMD_POWERSTATE) {
+                    uint8_t setNum = root[BLINKER_CMD_NUM];
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
+                    if (_MIOTQueryFunc_m) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_POWERSTATE_NUMBER, setNum);
+                }
+                else if (value == BLINKER_CMD_COLOR) {
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
+                }
+                else if (value == BLINKER_CMD_COLOR_) {
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_COLOR_NUMBER);
+                }
+                else if (value == BLINKER_CMD_COLORTEMP) {
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_COLORTEMP_NUMBER);
+                }
+                else if (value == BLINKER_CMD_BRIGHTNESS) {
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_BRIGHTNESS_NUMBER);
+                }
+                else if (value == BLINKER_CMD_TEMP) {
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_TEMP_NUMBER);
+                }
+                else if (value == BLINKER_CMD_HUMI) {
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_HUMI_NUMBER);
+                }
+                else if (value == BLINKER_CMD_PM25) {
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_PM25_NUMBER);
+                }
+                else if (value == BLINKER_CMD_MODE) {
+                    if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_MODE_NUMBER);
+                }
+            }
+            else if (root.containsKey(BLINKER_CMD_SET)) {
+                String value = root[BLINKER_CMD_SET];
+
+                // DynamicJsonBuffer jsonBufferSet;
+                // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+                DynamicJsonDocument jsonBuffer(1024);
+                DeserializationError error = deserializeJson(jsonBuffer, value);
+                JsonObject rootSet = jsonBuffer.as<JsonObject>();
+
+                // if (!rootSet.success())
+                if (error)
+                {
+                    // BLINKER_ERR_LOG_ALL("Json error");
+                    return;
+                }
+
+                // BLINKER_LOG_ALL("Json parse success");
+
+                if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
+                    String setValue = rootSet[BLINKER_CMD_POWERSTATE];
+                    uint8_t setNum = rootSet[BLINKER_CMD_NUM];
+
+                    if (setValue == "true") setValue = "on";
+                    else setValue = "off";                
+
+                    if (_MIOTPowerStateFunc) _MIOTPowerStateFunc(setValue);
+                    if (_MIOTPowerStateFunc_m) _MIOTPowerStateFunc_m(setValue, setNum);
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
+                    String setValue = rootSet[BLINKER_CMD_COLOR];
+
+                    if (_MIOTSetColorFunc) _MIOTSetColorFunc(setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_COLOR_)) {
+                    String setValue = rootSet[BLINKER_CMD_COLOR_];
+
+                    if (_MIOTSetColorFunc) _MIOTSetColorFunc(setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_BRIGHTNESS)) {
+                    String setValue = rootSet[BLINKER_CMD_BRIGHTNESS];
+
+                    if (_MIOTSetBrightnessFunc) _MIOTSetBrightnessFunc(setValue);
+                }
+                // else if (rootSet.containsKey(BLINKER_CMD_UPBRIGHTNESS)) {
+                //     String setValue = rootSet[BLINKER_CMD_UPBRIGHTNESS];
+
+                //     if (_MIOTSetRelativeBrightnessFunc) _MIOTSetRelativeBrightnessFunc(setValue.toInt());
+                // }
+                // else if (rootSet.containsKey(BLINKER_CMD_DOWNBRIGHTNESS)) {
+                //     String setValue = rootSet[BLINKER_CMD_DOWNBRIGHTNESS];
+
+                //     if (_MIOTSetRelativeBrightnessFunc) _MIOTSetRelativeBrightnessFunc(- setValue.toInt());
+                // }
+                else if (rootSet.containsKey(BLINKER_CMD_COLORTEMP)) {
+                    String setValue = rootSet[BLINKER_CMD_COLORTEMP];
+
+                    if (_MIOTSetColorTemperature) _MIOTSetColorTemperature(setValue.toInt());
+                }
+                // else if (rootSet.containsKey(BLINKER_CMD_UPCOLORTEMP)) {
+                //     String setValue = rootSet[BLINKER_CMD_UPCOLORTEMP];
+
+                //     if (_MIOTSetRelativeColorTemperature) _MIOTSetRelativeColorTemperature(setValue.toInt());
+                // }
+                // else if (rootSet.containsKey(BLINKER_CMD_DOWNCOLORTEMP)) {
+                //     String setValue = rootSet[BLINKER_CMD_DOWNCOLORTEMP];
+
+                //     if (_MIOTSetRelativeColorTemperature) _MIOTSetRelativeColorTemperature(- setValue.toInt());
+                // }
+                else if (rootSet.containsKey(BLINKER_CMD_MODE)) {
+                    String setMode = rootSet[BLINKER_CMD_MODE];
+
+                    if (_MIOTSetModeFunc) _MIOTSetModeFunc(setMode.toInt());
+                }
+                // else if (rootSet.containsKey(BLINKER_CMD_CANCELMODE)) {
+                //     String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
+
+                //     if (_MIOTSetcModeFunc) _MIOTSetcModeFunc(setcMode);
+                // }
+            }
+        }
 };
 
 #endif

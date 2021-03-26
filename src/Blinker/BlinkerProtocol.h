@@ -1,7 +1,19 @@
 #ifndef BLINKER_PROTOCOL_H
 #define BLINKER_PROTOCOL_H
 
+#include <time.h>
+
 #include "Blinker/BlinkerApi.h"
+
+#if defined(ESP8266) && !defined(BLINKER_BLE)
+    #if defined(BLINKER_WIFI_MULTI)
+        extern ESP8266WiFiMulti wifiMulti;
+    #endif
+#elif defined(ESP32) && !defined(BLINKER_BLE)
+    #if defined(BLINKER_WIFI_MULTI)
+        extern WiFiMulti wifiMulti;
+    #endif
+#endif
 
 template <class Transp>
 class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
@@ -24,6 +36,8 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         void begin();
         void run();
+        void delay(unsigned long ms);
+        char * lastRead()                       { return conn.lastRead(); }
 
         template <typename T1>
         void print(T1 n1, const String &s2);
@@ -57,8 +71,24 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         void checkState(bool state = true)      { isCheck = state; }
 
+        void setTimezone(float tz)              { _timezone = tz; _isNTPInit = false; }
+
+        int8_t second();
+        int8_t minute();
+        int8_t hour();
+        int8_t mday();
+        int8_t wday();
+        int8_t month();
+        int16_t year();
+        int16_t yday();
+        time_t  time();
+        int32_t dtime();
+        time_t  startTime();
+        time_t  runTime();
+
     #if defined(BLINKER_MIOT)
-        void miotPrint(const String & _msg)       { conn.miPrint(_msg); }
+        bool miotAvail()                        { return conn.miAvail(); }
+        void miotPrint(const String & _msg)     { conn.miPrint(_msg); }
     #endif
     private :
         void autoPrint(const String & key, const String & data);
@@ -66,11 +96,21 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void checkAutoFormat();
         void printNow();
         int  _print(char * n, bool needCheckLength = true);
+        void _timerPrint(const String & n);
+
+        bool wlanCheck();
+        bool ntpInit();
         
         char                _sendBuf[BLINKER_MAX_SEND_SIZE];
         uint32_t            autoFormatFreshTime;
         bool                autoFormat = false;
         bool                isCheck = true;
+        uint32_t            _reconTime = 0;
+
+        bool                _isNTPInit = false;
+        uint32_t            _ntpStart;
+        float               _timezone = 8.0;
+        time_t              _deviceStartTime = 0;
 
     protected :
         Transp&             conn;
@@ -114,6 +154,11 @@ void BlinkerProtocol<Transp>::begin()
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
+    if (!wlanCheck()) return;
+
+    ntpInit();
+    BApi::checkTimer();
+
     switch (state)
     {
         case CONNECTING :
@@ -133,10 +178,10 @@ void BlinkerProtocol<Transp>::run()
                 isAvail = true;
                 BApi::parse(conn.lastRead());
             }
-            else if (conn.miAvail())
-            {
-                BApi::miotParse(conn.lastRead());
-            }
+            // else if (conn.miAvail())
+            // {
+            //     BApi::miotParse(conn.lastRead());
+            // }
             break;
         
         case DISCONNECTED :
@@ -149,6 +194,31 @@ void BlinkerProtocol<Transp>::run()
     }
 
     checkAutoFormat();
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::delay(unsigned long ms)
+{
+    uint32_t start = micros();
+    uint32_t __start = millis();
+    unsigned long _ms = ms;
+    while (ms > 0)
+    {
+        run();
+
+        if ((micros() - start) >= 1000)
+        {
+            ms -= 1;
+            start += 1000;
+        }
+
+        if ((millis() - __start) >= _ms)
+        {
+            ms = 0;
+        }
+
+        yield();
+    }
 }
 
 template <class Transp> template <typename T1>
@@ -413,10 +483,375 @@ int BlinkerProtocol<Transp>::_print(char * n, bool needCheckLength)
 }
 
 template <class Transp>
+void BlinkerProtocol<Transp>::_timerPrint(const String & n)
+{
+    BLINKER_LOG_ALL(BLINKER_F("print: "), n);
+    
+    if (n.length() <= BLINKER_MAX_SEND_SIZE)
+    {
+        if (!autoFormat) autoFormat = true;
+        checkState(false);
+        strcpy(_sendBuf, n.c_str());
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("SEND DATA BYTES MAX THAN LIMIT!"));
+    }
+}
+
+template <class Transp>
 void BlinkerProtocol<Transp>::flush()
 { 
     conn.flush();
     isAvail = false;
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::wlanCheck()
+{
+    #if defined(BLINKER_WIFI_MULTI)
+        if (wifiMulti.run() != WL_CONNECTED)
+        {
+            if ((millis() - _reconTime) >= 10000 || \
+                _reconTime == 0 )
+            {
+                _reconTime = millis();
+                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+            }
+
+            return false;
+        }
+    #else
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            if ((millis() - _reconTime) >= 10000 || \
+                _reconTime == 0 )
+            {
+                _reconTime = millis();
+                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                WiFi.reconnect();
+            }
+
+            return false;
+        }
+    #endif
+
+    return true;
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::ntpInit()
+{
+    if (!_isNTPInit)
+    {
+        if (_isNTPInit)
+        {
+            time_t now_ntp = ::time(nullptr);
+            struct tm timeinfo;
+            #if defined(ESP8266)
+                gmtime_r(&now_ntp, &timeinfo);
+            #elif defined(ESP32)
+                localtime_r(&now_ntp, &timeinfo);
+            #endif
+        }
+
+        if ((millis() - _ntpStart) > BLINKER_NTP_TIMEOUT)
+        {
+            _ntpStart = millis();
+        }
+        else {
+            return false;
+        }
+
+        configTime((long)(_timezone * 3600), 0, 
+                    "ntp1.aliyun.com", 
+                    "120.25.108.11", 
+                    "time.pool.aliyun.com");
+
+        time_t now_ntp = ::time(nullptr);
+
+        float _com_timezone = abs(_timezone);
+        if (_com_timezone < 1.0) _com_timezone = 1.0;
+
+        if (now_ntp < _com_timezone * 3600 * 12)
+        {
+            configTime((long)(_timezone * 3600), 0, 
+                    "ntp1.aliyun.com", 
+                    "120.25.108.11", 
+                    "time.pool.aliyun.com");
+            now_ntp = ::time(nullptr);
+            if (now_ntp < _com_timezone * 3600 * 12)
+            {
+                ::delay(50);
+                now_ntp = ::time(nullptr);
+                return false;
+            }
+        }
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
+        #if defined(ESP8266)
+            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp);
+        #elif defined(ESP32)
+            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp);
+        #endif
+
+        _isNTPInit = true;
+
+        _deviceStartTime = time() - millis()/1000;
+
+        return true;
+    }
+    return true;
+}
+
+template <class Transp>
+int8_t BlinkerProtocol<Transp>::second()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        return timeinfo.tm_sec;
+    }
+    return -1;
+}
+
+template <class Transp>
+int8_t BlinkerProtocol<Transp>::minute()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        return timeinfo.tm_min;
+    }
+    return -1;
+}
+
+template <class Transp>
+int8_t BlinkerProtocol<Transp>::hour()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        return timeinfo.tm_hour;
+    }
+    return -1;
+}
+
+template <class Transp>
+int8_t BlinkerProtocol<Transp>::mday()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        return timeinfo.tm_mday;
+    }
+    return -1;
+}
+
+template <class Transp>
+int8_t BlinkerProtocol<Transp>::wday()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        return timeinfo.tm_wday;
+    }
+    return -1;
+}
+
+template <class Transp>
+int8_t BlinkerProtocol<Transp>::month()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        return timeinfo.tm_mon + 1;
+    }
+    return -1;
+}
+
+template <class Transp>
+int16_t BlinkerProtocol<Transp>::year()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        return timeinfo.tm_year + 1900;
+    }
+    return -1;
+}
+
+template <class Transp>
+int16_t BlinkerProtocol<Transp>::yday()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        return timeinfo.tm_yday + 1;
+    }
+    return -1;
+}
+
+template <class Transp>
+time_t BlinkerProtocol<Transp>::time()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        return now_ntp;
+    }
+    return millis();
+}
+
+template <class Transp>
+int32_t BlinkerProtocol<Transp>::dtime()
+{
+    if (_isNTPInit)
+    {
+        time_t _ntpGetTime;
+
+        time_t now_ntp = ::time(nullptr);
+
+        struct tm timeinfo;
+
+        #if defined(ESP8266)
+            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+            gmtime_r(&_now_ntp, &timeinfo);
+        #elif defined(ESP32)
+            localtime_r(&now_ntp, &timeinfo);
+        #endif
+
+        return timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
+    }
+    return -1;
+}
+
+template <class Transp>
+time_t BlinkerProtocol<Transp>::startTime()
+{
+    if (_isNTPInit) return _deviceStartTime;
+    else return 0;
+}
+
+template <class Transp>
+time_t BlinkerProtocol<Transp>::runTime()
+{
+    if (_isNTPInit)
+    {
+        return time() - _deviceStartTime;
+    }
+    else
+    {
+        return millis()/1000;
+    }
 }
 
 #endif

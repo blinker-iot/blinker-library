@@ -132,4 +132,5 @@ void setup()
 void loop()
 {
     Blinker.run();
+    BlinkerMIOT.run();
 }

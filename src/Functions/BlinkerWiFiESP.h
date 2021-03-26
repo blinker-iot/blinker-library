@@ -362,6 +362,7 @@ bool BlinkerWiFiESP::connect()
                 {
                     _reRegister_times++;
                     _reRegister_time = millis();
+                    latestTime = millis();
                 }
             }
             else
@@ -372,33 +373,35 @@ bool BlinkerWiFiESP::connect()
             BLINKER_LOG_ALL(BLINKER_F("_reRegister_times1: "), _reRegister_times);
             return false;
         }
-
-        this->latestTime = millis();
-        reconnect_time += 1;
-        if (reconnect_time >= 6)
+        else
         {
-            if (_reRegister_times < BLINKER_SERVER_CONNECT_LIMIT)
+            latestTime = millis();
+            reconnect_time += 1;
+            if (reconnect_time >= 6)
             {
-                if (deviceRegister())
+                if (_reRegister_times < BLINKER_SERVER_CONNECT_LIMIT)
                 {
-                    _reRegister_times = 0;
+                    if (deviceRegister())
+                    {
+                        _reRegister_times = 0;
+                    }
+                    else
+                    {
+                        _reRegister_times++;
+                        _reRegister_time = millis();
+                    }
                 }
                 else
                 {
-                    _reRegister_times++;
-                    _reRegister_time = millis();
+                    if (millis() - _reRegister_time >= 60000 * 1) _reRegister_times = 0;
                 }
-            }
-            else
-            {
-                if (millis() - _reRegister_time >= 60000 * 1) _reRegister_times = 0;
-            }
-            
-            reconnect_time = 0;
+                
+                reconnect_time = 0;
 
-            BLINKER_LOG_ALL(BLINKER_F("_reRegister_times2: "), _reRegister_times);
+                BLINKER_LOG_ALL(BLINKER_F("_reRegister_times2: "), _reRegister_times);
+            }
+            return false;
         }
-        return false;
     }
     
     reconnect_time = 0;
