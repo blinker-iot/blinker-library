@@ -88,6 +88,22 @@ class BlinkerWiFiESP
         int  isJson(const String & data);
         bool deviceRegister();
         void freshSharers();
+
+        template<typename T>
+        bool sms(const T& msg);
+        template<typename T>
+        bool sms(const T& msg, const char* cel);
+        template<typename T>
+        bool push(const T& msg);
+        template<typename T>
+        bool wechat(const T& msg);
+        template<typename T>
+        bool wechat(const String & title, const String & state, const T& msg);
+
+        String weather(uint32_t _city);
+        String weatherForecast(uint32_t _city);
+        String air(uint32_t _city);
+
         String toServer(uint8_t _type, const String & msg, bool state = false);
         
         bool checkInit();
@@ -106,6 +122,16 @@ class BlinkerWiFiESP
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
     
+    #if defined(BLINKER_ALIGENIE)
+        int aliAvail();
+        int aliPrint(const String & data);
+    #endif
+    
+    #if defined(BLINKER_DUEROS)
+        int duerAvail();
+        int duerPrint(const String & data, bool report);
+    #endif
+
     #if defined(BLINKER_MIOT)
         int miAvail();
         int miPrint(const String & data);
@@ -121,12 +147,39 @@ class BlinkerWiFiESP
         int checkPrintSpan();
         int checkPrintLimit();
 
+    #if defined(BLINKER_ALIGENIE)
+        int checkAliKA();
+        int checkAliPrintSpan();
+    #endif
+
+    #if defined(BLINKER_DUEROS)
+        int checkDuerKA();
+        int checkDuerPrintSpan();
+    #endif
+
     #if defined(BLINKER_MIOT)
         int checkMIOTKA();
         int checkMIOTPrintSpan();
     #endif
 
         void parseData(const char* data);
+
+        bool checkServerLimit();
+        bool checkSMS();
+        bool checkPUSH();
+        bool checkWECHAT();
+        bool checkWEATHER();
+        bool checkWEATHERFORECAST();
+        bool checkAQI();
+        bool checkLOG();
+        bool checkCOD();
+        bool checkCUPDATE();
+        bool checkCGET();
+        bool checkCDEL();
+        bool checkDataUpdata();
+        bool checkDataGet();
+        bool checkDataDel();
+        bool checkAutoPull();
 
     protected :
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
@@ -176,7 +229,34 @@ class BlinkerWiFiESP
         uint8_t     _reRegister_times = 0;
 
         char        message_id[24];
-        bool        is_rrpc = false;
+        bool        is_rrpc = false;        
+
+        uint32_t    _smsTime = 0;
+        uint32_t    _pushTime = 0;
+        uint32_t    _wechatTime = 0;
+        uint32_t    _weatherTime = 0;
+        uint32_t    _weather_forecast_Time = 0;
+        uint32_t    _aqiTime = 0;
+        uint32_t    _logTime = 0;
+        uint32_t    _codTime = 0;
+        uint8_t     data_dataCount = 0;
+        uint8_t     data_timeSlotDataCount = 0;
+        uint32_t    time_timeSlotData = 0;
+        uint8_t     _aCount = 0;
+        uint8_t     _bridgeCount = 0;
+
+        uint32_t    _cUpdateTime = 0;
+        uint32_t    _dUpdateTime = 0;
+        uint32_t    _cGetTime = 0;
+        uint32_t    _cDelTime = 0;
+        uint32_t    _dGetTime = 0;
+        uint32_t    _dDelTime = 0;
+        uint32_t    _autoPullTime = 0;
+
+        uint32_t    _autoUpdateTime = 0;
+
+        uint8_t     _serverTimes = 0;
+        uint32_t    _serverTime = 0;
 };
 
 #if defined(ESP8266)
@@ -996,10 +1076,192 @@ void BlinkerWiFiESP::freshSharers()
     }
 }
 
+template<typename T>
+bool BlinkerWiFiESP::sms(const T& msg)
+{
+    String _msg = STRING_format(msg);
+
+    String  data = BLINKER_F("{\"deviceName\":\"");
+            data += DEVICE_NAME_MQTT;
+            data += BLINKER_F("\",\"key\":\"");
+            data += _authKey;
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+
+    if (_msg.length() > 20) return false;
+
+    return toServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
+}
+
+template<typename T>
+bool BlinkerWiFiESP::sms(const T& msg, const char* cel)
+{
+    String _msg = STRING_format(msg);
+    
+    String  data = BLINKER_F("{\"deviceName\":\"");
+            data += DEVICE_NAME_MQTT;
+            data += BLINKER_F("\",\"key\":\"");
+            data += _authKey;
+            data += BLINKER_F("\",\"cel\":\"");
+            data += cel;
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+
+    if (_msg.length() > 20) return false;
+
+    return toServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
+}
+
+template<typename T>
+bool BlinkerWiFiESP::push(const T& msg)
+{
+    String _msg = STRING_format(msg);
+    
+    String  data = BLINKER_F("{\"deviceName\":\"");
+            data += DEVICE_NAME_MQTT;
+            data += BLINKER_F("\",\"key\":\"");
+            data += _authKey;
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+
+    return toServer(BLINKER_CMD_PUSH_NUMBER, data) != "false";
+}
+
+template<typename T>
+bool BlinkerWiFiESP::wechat(const T& msg)
+{
+    String _msg = STRING_format(msg);
+    
+    String  data = BLINKER_F("{\"deviceName\":\"");
+            data += DEVICE_NAME_MQTT;
+            data += BLINKER_F("\",\"key\":\"");
+            data += _authKey;
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+
+    return toServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
+}
+
+template<typename T>
+bool BlinkerWiFiESP::wechat(const String & title, const String & state, const T& msg)
+{
+    String _msg = STRING_format(msg);
+
+    String  data = BLINKER_F("{\"deviceName\":\"");
+            data += DEVICE_NAME_MQTT;
+            data += BLINKER_F("\",\"key\":\"");
+            data += _authKey;
+            data += BLINKER_F("\",\"title\":\"");
+            data += title;
+            data += BLINKER_F("\",\"state\":\"");
+            data += state;
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+
+    return toServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
+}
+
+String BlinkerWiFiESP::weather(uint32_t _city)
+{
+    String data = BLINKER_F("/weather?");
+
+    if (_city != 0)
+    {
+        data += BLINKER_F("code=");
+        data += STRING_format(_city);
+        data += BLINKER_F("&");
+    }
+
+    data += BLINKER_F("deviceName=");
+    data += DEVICE_NAME_MQTT;
+    data += BLINKER_F("&key=");
+    data += MQTT_KEY_MQTT;
+
+    return toServer(BLINKER_CMD_WEATHER_NUMBER, data);
+}
+
+String BlinkerWiFiESP::weatherForecast(uint32_t _city)
+{
+    String data = BLINKER_F("/forecast?");
+
+    if (_city != 0)
+    {
+        data += BLINKER_F("code=");
+        data += STRING_format(_city);
+        data += BLINKER_F("&");
+    }
+
+    data += BLINKER_F("deviceName=");
+    data += DEVICE_NAME_MQTT;
+    data += BLINKER_F("&key=");
+    data += MQTT_KEY_MQTT;
+
+    return toServer(BLINKER_CMD_WEATHER_FORECAST_NUMBER, data);
+}
+
+String BlinkerWiFiESP::air(uint32_t _city)
+{
+    String data = BLINKER_F("/air?");
+
+    if (_city != 0)
+    {
+        data += BLINKER_F("code=");
+        data += STRING_format(_city);
+        data += BLINKER_F("&");
+    }
+
+    data += BLINKER_F("deviceName=");
+    data += DEVICE_NAME_MQTT;
+    data += BLINKER_F("&key=");
+    data += MQTT_KEY_MQTT;
+
+    return toServer(BLINKER_CMD_AQI_NUMBER, data);
+}
+
 String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
 {
     switch (_type)
     {
+        case BLINKER_CMD_SMS_NUMBER :
+            if (!checkSMS()) {
+                return BLINKER_CMD_FALSE;
+            }
+
+            if ((!state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE) ||
+                (state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE + 15)) {
+                return BLINKER_CMD_FALSE;
+            }
+            break;
+        case BLINKER_CMD_PUSH_NUMBER :
+            if (!checkPUSH()) {
+                return BLINKER_CMD_FALSE;
+            }
+            break;
+        case BLINKER_CMD_WECHAT_NUMBER :
+            if (!checkWECHAT()) {
+                return BLINKER_CMD_FALSE;
+            }
+            break;
+        case BLINKER_CMD_WEATHER_NUMBER :
+            if (!checkWEATHER()) {
+                return BLINKER_CMD_FALSE;
+            }
+            break;
+        case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
+            if (!checkWEATHERFORECAST()) {
+                return BLINKER_CMD_FALSE;
+            }
+            break;
+        case BLINKER_CMD_AQI_NUMBER :
+            if (!checkAQI()) {
+                return BLINKER_CMD_FALSE;
+            }
+            break;
         case BLINKER_CMD_WIFI_AUTH_NUMBER :
             break;
         case BLINKER_CMD_FRESH_SHARERS_NUMBER :
@@ -1036,6 +1298,108 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
 
     switch (_type)
     {
+        case BLINKER_CMD_SMS_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/sms");
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_PUSH_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/push");
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_WECHAT_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/wxMsg/");
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_WEATHER_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v3");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v3");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
+        case BLINKER_CMD_AQI_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v3");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
         case BLINKER_CMD_WIFI_AUTH_NUMBER :
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
@@ -1160,6 +1524,24 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
 
             switch (_type)
             {
+                case BLINKER_CMD_SMS_NUMBER :
+                    _smsTime = millis();
+                    break;
+                case BLINKER_CMD_PUSH_NUMBER :
+                    _pushTime = millis();
+                    break;
+                case BLINKER_CMD_WECHAT_NUMBER :
+                    _wechatTime = millis();
+                    break;
+                case BLINKER_CMD_WEATHER_NUMBER :
+                    _weatherTime = millis();
+                    break;
+                case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
+                    _weather_forecast_Time = millis();
+                    break;
+                case BLINKER_CMD_AQI_NUMBER :
+                    _aqiTime = millis();
+                    break;
                 case BLINKER_CMD_WIFI_AUTH_NUMBER :
                     break;
                 case BLINKER_CMD_FRESH_SHARERS_NUMBER :
@@ -1176,6 +1558,10 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
         BLINKER_LOG_ALL(BLINKER_F("[HTTP] ... failed, error: "), http.errorToString(httpCode).c_str());
         String payload = http.getString();
         BLINKER_LOG_ALL(payload);
+
+        if (_type == BLINKER_CMD_SMS_NUMBER) {
+            _smsTime = millis();
+        }
         
         http.end();
 
@@ -1838,6 +2224,441 @@ int BlinkerWiFiESP::checkPrintLimit()
         return true;
     }
 }
+
+bool BlinkerWiFiESP::checkServerLimit()
+{
+    if ((millis() - _serverTime) < 60 * 60 * 1000)
+    {
+        if (_serverTimes > BLINKER_PRINT_MSG_LIMIT)
+        {
+            BLINKER_ERR_LOG(BLINKER_F("SERVER NOT ALIVE OR MSG LIMIT"));
+
+            return false;
+        }
+        else
+        {
+            _serverTimes++;
+            return true;
+        }
+    }
+    else
+    {
+        _serverTimes = 0;
+        _serverTime = millis();
+        return true;
+    }
+}
+
+bool BlinkerWiFiESP::checkSMS()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _smsTime) >= BLINKER_SMS_MSG_LIMIT || \
+        _smsTime == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkPUSH()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _pushTime) >= BLINKER_PUSH_MSG_LIMIT || \
+        _pushTime == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkWECHAT()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _wechatTime) >= BLINKER_WECHAT_MSG_LIMIT || \
+        _wechatTime == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkWEATHER()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _weatherTime) >= BLINKER_WEATHER_MSG_LIMIT || \
+        _weatherTime == 0) return true;
+    else return false;
+}    
+
+
+bool BlinkerWiFiESP::checkWEATHERFORECAST()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _weather_forecast_Time) >= BLINKER_WEATHER_MSG_LIMIT || \
+        _weather_forecast_Time == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkAQI()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _aqiTime) >= BLINKER_AQI_MSG_LIMIT || \
+        _aqiTime == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkLOG()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _logTime) >= BLINKER_LOG_MSG_LIMIT || \
+        _logTime == 0) return true;
+    else return false;
+}
+
+bool BlinkerWiFiESP::checkCOD()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _codTime) >= BLINKER_COD_MSG_LIMIT || \
+        _codTime == 0) return true;
+    else return false;
+}
+
+bool BlinkerWiFiESP::checkCUPDATE()
+{
+    if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+        _cUpdateTime == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkCGET()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _cGetTime) >= BLINKER_CONFIG_GET_LIMIT || \
+        _cGetTime == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkCDEL()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _cDelTime) >= BLINKER_CONFIG_GET_LIMIT || \
+        _cDelTime == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkDataUpdata()
+{
+    if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+        _dUpdateTime == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkDataGet()
+{
+    if (!checkServerLimit()) return false;
+
+    if ((millis() - _dGetTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+        _dGetTime == 0) return true;
+    else return false;
+}
+
+
+bool BlinkerWiFiESP::checkDataDel()
+{
+    if (!checkServerLimit()) return false;
+    
+    if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
+        _dDelTime == 0) return true;
+    else return false;
+}
+
+bool BlinkerWiFiESP::checkAutoPull()
+{
+    if ((millis() - _autoPullTime) >= 60000 || \
+        _autoPullTime == 0) return true;
+    else return false;
+}
+
+#if defined(BLINKER_ALIGENIE)
+    int BlinkerWiFiESP::aliAvail()
+    {
+        if (!checkInit()) return false;
+
+        if (isAliAvail)
+        {
+            isAliAvail = false;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    int BlinkerWiFiESP::aliPrint(const String & data)
+    {
+        if (!checkInit()) return false;
+
+        String data_add = BLINKER_F("{\"data\":");
+
+        data_add += data;
+        data_add += BLINKER_F(",\"fromDevice\":\"");
+        data_add += DEVICE_NAME_MQTT;
+        data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+        data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+        if (!isJson(data_add)) return false;
+
+        BLINKER_LOG_ALL(BLINKER_F("MQTT AliGenie Publish..."));
+        BLINKER_LOG_FreeHeap_ALL();
+
+        if (mqtt_MQTT->connected())
+        {
+            if (!checkAliKA())
+            {
+                return false;
+            }
+
+            if (!checkAliPrintSpan())
+            {
+                respAliTime = millis();
+                return false;
+            }
+            respAliTime = millis();
+
+            
+            char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+            if (is_rrpc)
+            {
+                
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+                BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+            }
+            else
+            {
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
+            }
+
+            is_rrpc = false;
+
+            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isAliAlive = false;
+                return false;
+            }
+            else
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isAliAlive = false;
+
+                this->latestTime = millis();
+
+                return true;
+            }
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+            return false;
+        }
+    }    
+
+    int BlinkerWiFiESP::checkAliKA()
+    {
+        if (millis() - aliKaTime >= 10000)
+            return false;
+        else
+            return true;
+    }
+
+    int BlinkerWiFiESP::checkAliPrintSpan()
+    {
+        if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2)
+            {
+                BLINKER_ERR_LOG(BLINKER_F("ALIGENIE NOT ALIVE OR MSG LIMIT"));
+
+                return false;
+            }
+            else
+            {
+                respAliTimes++;
+                return true;
+            }
+        }
+        else
+        {
+            respAliTimes = 0;
+            return true;
+        }
+    }
+#endif
+
+#if defined(BLINKER_DUEROS)
+    int BlinkerWiFiESP::duerAvail()
+    {
+        if (!checkInit()) return false;
+
+        if (isDuerAvail)
+        {
+            isDuerAvail = false;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    int BlinkerWiFiESP::duerPrint(const String & data, bool report)
+    {
+        if (!checkInit()) return false;
+
+        String data_add = BLINKER_F("{\"data\":");
+
+        if (report)
+        {
+            data_add += BLINKER_F("{\"report\":");
+            data_add += data;
+            data_add += BLINKER_F("}");
+        }
+        else
+        {
+            data_add += data;
+        }
+
+        data_add += BLINKER_F(",\"fromDevice\":\"");
+        data_add += DEVICE_NAME_MQTT;
+        data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+        data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+        if (!isJson(data_add)) return false;
+
+        BLINKER_LOG_ALL(BLINKER_F("MQTT DuerOS Publish..."));
+        BLINKER_LOG_FreeHeap_ALL();
+        BLINKER_LOG_ALL(BLINKER_F("is_rrpc: "), is_rrpc);
+
+        if (mqtt_MQTT->connected())
+        {
+            // if (!checkDuerKA())
+            // {
+            //     return false;
+            // }
+
+            if (!checkDuerPrintSpan())
+            {
+                respDuerTime = millis();
+                return false;
+            }
+            respDuerTime = millis();
+
+            
+            char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+            if (is_rrpc)
+            {
+                
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+                BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+            }
+            else
+            {
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
+            }        
+
+            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, is_rrpc ? base64::encode(data_add).c_str() : data_add.c_str()))
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isDuerAlive = false;
+
+                is_rrpc = false;
+                
+                return false;
+            }
+            else
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isDuerAlive = false;
+
+                this->latestTime = millis();
+
+                is_rrpc = false;
+
+                return true;
+            }
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+            return false;
+        }
+    }
+
+    int BlinkerWiFiESP::checkDuerKA() {
+        if (millis() - duerKaTime >= 10000)
+            return false;
+        else
+            return true;
+    }
+
+    int BlinkerWiFiESP::checkDuerPrintSpan()
+    {
+        if (millis() - respDuerTime < BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            if (respDuerTimes > BLINKER_PRINT_MSG_LIMIT/2)
+            {
+                BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+
+                return false;
+            }
+            else
+            {
+                respDuerTimes++;
+                return true;
+            }
+        }
+        else
+        {
+            respDuerTimes = 0;
+            return true;
+        }
+    }
+#endif
 
 #if defined(BLINKER_MIOT)
     int BlinkerWiFiESP::miAvail()

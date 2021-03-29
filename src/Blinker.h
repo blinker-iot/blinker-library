@@ -17,6 +17,14 @@
     #include "Widgets/BlinkerText.h"
 #endif
 
+#if defined(BLINKER_ALIGENIE) && (defined(BLINKER_DUEROS) || defined(ESP8266))
+    #include "Assistant/BlinkerDuerOS.h"
+#endif
+
+#if defined(BLINKER_DUEROS) && (defined(BLINKER_DUEROS) || defined(ESP8266))
+    #include "Assistant/BlinkerDuerOS.h"
+#endif
+
 #if defined(BLINKER_MIOT) && (defined(ESP32) || defined(ESP8266))
     #include "Assistant/BlinkerMIOT.h"
 #endif

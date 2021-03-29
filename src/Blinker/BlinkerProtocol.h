@@ -86,10 +86,56 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         time_t  startTime();
         time_t  runTime();
 
+        template<typename T>
+        bool sms(const T& msg)
+        { return conn.sms(msg); }
+
+        template<typename T>
+        bool sms(const T& msg, const char* cel)
+        { return conn.sms(msg, cel); }
+
+        template<typename T>
+        bool push(const T& msg)
+        { return conn.push(msg); }
+
+        template<typename T>
+        bool wechat(const T& msg)
+        { return conn.wechat(msg); }
+
+        template<typename T>
+        bool wechat(const String & title, const String & state, const T& msg)
+        { return conn.wechat(title, state, msg); }
+
+        void weather(uint32_t _city = 0)
+        { if (_weatherFunc) _weatherFunc(conn.weather(_city)); }
+        void weatherForecast(uint32_t _city = 0)
+        { if (_weather_forecast_Func) _weather_forecast_Func(conn.weatherForecast(_city)); }
+        void air(uint32_t _city = 0)
+        { if (_airFunc) _airFunc(conn.air(_city)); }
+
+        void attachAir(blinker_callback_with_string_arg_t newFunction)
+        { _airFunc = newFunction; }
+        void attachWeather(blinker_callback_with_string_arg_t newFunction)
+        { _weatherFunc = newFunction; }
+        void attachWeatherForecast(blinker_callback_with_string_arg_t newFunction)
+        { _weather_forecast_Func = newFunction; }
+
+    #if defined(BLINKER_ALIGENIE)
+        bool aliAvail()                         { return conn.aliAvail(); }
+        void aliPrint(const String & _msg)      { conn.aliPrint(_msg); }
+    #endif
+
+    #if defined(BLINKER_DUEROS)
+        bool duerAvail()                        { return conn.duerAvail(); }
+        void duerPrint(const String & _msg, bool report = false)
+        { conn.duerPrint(_msg, report); }
+    #endif
+
     #if defined(BLINKER_MIOT)
         bool miotAvail()                        { return conn.miAvail(); }
         void miotPrint(const String & _msg)     { conn.miPrint(_msg); }
     #endif
+
     private :
         void autoPrint(const String & key, const String & data);
         void autoFormatData(const String & key, const String & jsonValue);
@@ -116,6 +162,10 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         Transp&             conn;
         _blinker_state_t    state;
         bool                isAvail;
+        
+        blinker_callback_with_string_arg_t  _airFunc = NULL;
+        blinker_callback_with_string_arg_t  _weatherFunc = NULL;
+        blinker_callback_with_string_arg_t  _weather_forecast_Func = NULL;
 };
 
 template <class Transp>
@@ -157,7 +207,9 @@ void BlinkerProtocol<Transp>::run()
     if (!wlanCheck()) return;
 
     ntpInit();
+#if defined(BLINKER_WIDGET)
     BApi::checkTimer();
+#endif
 
     switch (state)
     {
@@ -607,6 +659,10 @@ bool BlinkerProtocol<Transp>::ntpInit()
         _isNTPInit = true;
 
         _deviceStartTime = time() - millis()/1000;
+
+    #if defined(BLINKER_WIDGET)
+        BApi::loadTiming();
+    #endif
 
         return true;
     }

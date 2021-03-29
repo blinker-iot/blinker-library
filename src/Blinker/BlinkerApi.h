@@ -22,6 +22,9 @@ class BlinkerApi
     public :
         void attachData(blinker_callback_with_string_arg_t newFunction)
         { _availableFunc = newFunction; }
+
+        void attachHeartbeat(blinker_callback_t newFunction)
+        { _heartbeatFunc = newFunction; }
     
     #if defined(BLINKER_WIDGET)
         void freshAttachWidget(const char* _name, blinker_callback_with_string_arg_t _func)
@@ -61,6 +64,9 @@ class BlinkerApi
         uint8_t attachWidget(const char* _name, blinker_callback_with_int32_arg_t _func);
         uint8_t attachWidget(const char* _name, blinker_callback_with_rgb_arg_t _func);
         uint8_t attachWidget(const char* _name, blinker_callback_with_table_arg_t _func, blinker_callback_t _func2);
+
+        void loadTimer();
+        void loadTiming();
     #endif
 
     private :
@@ -68,7 +74,8 @@ class BlinkerApi
 
         void heartBeat(const JsonObject& data);
 
-        blinker_callback_with_string_arg_t _availableFunc = NULL;
+        blinker_callback_with_string_arg_t  _availableFunc = NULL;
+        blinker_callback_t                  _heartbeatFunc = NULL;
 
     #if defined(BLINKER_WIDGET)
         uint8_t     _wCount_str = 0;
@@ -90,7 +97,6 @@ class BlinkerApi
         void saveLoop(uint32_t _data, char _action1[], char _action2[]);
         void loadCountdown();
         void loadLoop();
-        void loadTiming();
         void checkOverlapping(uint8_t checkDays, uint16_t checkMins, uint8_t taskNum);
         void freshTiming(uint8_t wDay, uint16_t nowMins);
         void deleteTiming(uint8_t taskDel);
@@ -102,13 +108,14 @@ class BlinkerApi
         String timingConfig();
         String getTimingCfg(uint8_t task);
         bool timerManager(const JsonObject& data, bool _noSet = false);
-        
     #endif
 
     protected :
         void parse(char _data[], bool ex_data = false);
 
+    #if defined(BLINKER_WIDGET)
         bool checkTimer();
+    #endif
 };
 
 template <class Proto>
@@ -261,6 +268,8 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             BLINKER_LOG_ALL(BLINKER_F("timer codes: "), _timer);
             static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
         #endif
+
+            if (_heartbeatFunc) { _heartbeatFunc(); }
             static_cast<Proto*>(this)->print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
             static_cast<Proto*>(this)->print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
             static_cast<Proto*>(this)->checkState(false);
@@ -1939,6 +1948,21 @@ bool BlinkerApi<Proto>::checkTimer()
     }
 
     return false;
+}
+
+template <class Proto>
+void BlinkerApi<Proto>::loadTimer()
+{
+    BLINKER_LOG(BLINKER_F(
+        "\n==========================================================="
+        "\n================== Blinker Timer loaded! =================="
+        "\n     EEPROM address 1536-2431 is used for Blinker Timer!"
+        "\n========= PLEASE AVOID USING THESE EEPROM ADDRESS! ========"
+        "\n===========================================================\n"));
+
+    checkTimerErase();
+    loadCountdown();
+    loadLoop();
 }
 #endif
 
