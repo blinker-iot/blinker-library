@@ -20,7 +20,13 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
         {
             Base::begin();
             this->conn.begin(_auth);
+
+        #if defined(BLINKER_WIFI_MULTI)
+            this->conn.multiBegin(_ssid, _pswd);
+        #else
             this->conn.commonBegin(_ssid, _pswd);
+        #endif
+
         #if defined(BLINKER_WIDGET)
             Base::loadTimer();
         #endif
@@ -30,6 +36,13 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
         {
             Base::begin();
             this->conn.begin(_auth);
+
+        #if defined(BLINKER_ESP_SMARTCONFIG)
+            this->conn.smartconfigBegin();
+        #elif defined(BLINKER_APCONFIG)
+            this->conn.apconfigBegin();
+        #endif
+        
         #if defined(BLINKER_WIDGET)
             Base::loadTimer();
         #endif

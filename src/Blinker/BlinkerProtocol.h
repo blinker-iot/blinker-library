@@ -37,6 +37,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void begin();
         void run();
         void delay(unsigned long ms);
+        b_device_staus_t status()               { return conn.status(); }
         char * lastRead()                       { return conn.lastRead(); }
 
         template <typename T1>
@@ -100,7 +101,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         template<typename T>
         bool wechat(const T& msg)
-        { return conn.wechat(msg); }
+        { return conn.wechat(msg, BApi::time()); }
 
         template<typename T>
         bool wechat(const String & title, const String & state, const T& msg)
@@ -113,12 +114,17 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void air(uint32_t _city = 0)
         { if (_airFunc) _airFunc(conn.air(_city)); }
 
+        bool log(const String & msg)
+        { return conn.log(msg); }
+
         void attachAir(blinker_callback_with_string_arg_t newFunction)
         { _airFunc = newFunction; }
         void attachWeather(blinker_callback_with_string_arg_t newFunction)
         { _weatherFunc = newFunction; }
         void attachWeatherForecast(blinker_callback_with_string_arg_t newFunction)
         { _weather_forecast_Func = newFunction; }
+
+        void reset()                            { conn.reset(); }
 
     #if defined(BLINKER_ALIGENIE)
         bool aliAvail()                         { return conn.aliAvail(); }
@@ -204,6 +210,8 @@ void BlinkerProtocol<Transp>::begin()
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
+    if (!conn.init()) return;
+
     if (!wlanCheck()) return;
 
     ntpInit();

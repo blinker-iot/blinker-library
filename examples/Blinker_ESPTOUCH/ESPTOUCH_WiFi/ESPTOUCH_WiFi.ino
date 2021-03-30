@@ -62,6 +62,7 @@
 OneButton button(BLINKER_BUTTON_PIN, true);
 
 char auth[] = "Your Device Secret Key";
+time_t run_time = 0;
 
 void deviceReset()
 {
@@ -97,4 +98,10 @@ void loop()
 {
     Blinker.run();
     button.tick();
+
+    if (millis() - run_time >= 1000)
+    {
+        run_time += 1000;
+        BLINKER_LOG("Blinker.status: ", Blinker.status());
+    }
 }

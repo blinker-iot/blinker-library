@@ -53,6 +53,17 @@ extern "C" {
     // typedef void (*callback_with_bool_arg_t)(bool state);
 }
 
+enum b_device_staus_t {
+    WLAN_CONNECTING,
+    WLAN_CONNECTED,
+    WLAN_SMARTCONFIG_BEGIN,
+    WLAN_APCONFIG_BEGIN,
+    DEV_REGISTER,
+    DEV_CONNECTING,
+    DEV_CONNECTED,
+    DEV_DISCONNECTED
+};
+
 // enum blinker_at_aligenie_t
 // {
 //     ALI_NONE,
