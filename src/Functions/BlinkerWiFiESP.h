@@ -107,6 +107,7 @@ class BlinkerWiFiESP
         String air(uint32_t _city);
 
         bool log(const String & msg, time_t now_time);
+        bool dataUpdate(const String & msg);
 
         String toServer(uint8_t _type, const String & msg, bool state = false);
         
@@ -1252,7 +1253,7 @@ String BlinkerWiFiESP::air(uint32_t _city)
     return toServer(BLINKER_CMD_AQI_NUMBER, data);
 }
 
-void BlinkerWiFiESP::log(const String & msg, time_t now_time)
+bool BlinkerWiFiESP::log(const String & msg, time_t now_time)
 {
     String data = BLINKER_F("{\"token\":\"");
     data += MQTT_KEY_MQTT;
@@ -1262,7 +1263,20 @@ void BlinkerWiFiESP::log(const String & msg, time_t now_time)
     data += msg;
     data += BLINKER_F("\"]]}");
 
-    return toServer(BLINKER_CMD_LOG_NUMBER, data) != "false";;
+    return toServer(BLINKER_CMD_LOG_NUMBER, data) != "false";
+}
+
+bool BlinkerWiFiESP::dataUpdate(const String & msg)
+{
+    String data = BLINKER_F("{\"deviceName\":\"");
+    data += DEVICE_NAME_MQTT;
+    data += BLINKER_F("\",\"key\":\"");
+    data += _authKey;
+    data += BLINKER_F("\",\"data\":{");
+    data += msg;
+    data += BLINKER_F("}}");
+    
+    return toServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) != "false";
 }
 
 String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
@@ -1308,6 +1322,8 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
             if (!checkLOG()) {
                 return BLINKER_CMD_FALSE;
             }
+            break;
+        case BLINKER_CMD_DATA_STORAGE_NUMBER :
             break;
         case BLINKER_CMD_WIFI_AUTH_NUMBER :
             break;
@@ -1450,6 +1466,23 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
         case BLINKER_CMD_LOG_NUMBER :
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/logs");
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_DATA_STORAGE_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/cloudStorage/");
 
             #if defined(ESP8266)
                 #ifndef BLINKER_WITHOUT_SSL
@@ -1608,6 +1641,8 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
                     break;
                 case BLINKER_CMD_LOG_NUMBER :
                     _logTime = millis();
+                    break;
+                case BLINKER_CMD_DATA_STORAGE_NUMBER :
                     break;
                 case BLINKER_CMD_WIFI_AUTH_NUMBER :
                     break;
