@@ -107,7 +107,9 @@ class BlinkerWiFiESP
         String air(uint32_t _city);
 
         bool log(const String & msg, time_t now_time);
-        bool dataUpdate(const String & msg);
+        bool dataStorage(const String & msg);
+        bool timeSlot(const String & msg);
+        void httpHeartbeat();
 
         String toServer(uint8_t _type, const String & msg, bool state = false);
         
@@ -1266,7 +1268,7 @@ bool BlinkerWiFiESP::log(const String & msg, time_t now_time)
     return toServer(BLINKER_CMD_LOG_NUMBER, data) != "false";
 }
 
-bool BlinkerWiFiESP::dataUpdate(const String & msg)
+bool BlinkerWiFiESP::dataStorage(const String & msg)
 {
     String data = BLINKER_F("{\"deviceName\":\"");
     data += DEVICE_NAME_MQTT;
@@ -1277,6 +1279,31 @@ bool BlinkerWiFiESP::dataUpdate(const String & msg)
     data += BLINKER_F("}}");
     
     return toServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) != "false";
+}
+
+bool BlinkerWiFiESP::timeSlot(const String & msg)
+{
+    String data = BLINKER_F("{\"device\":\"");
+    data += DEVICE_NAME_MQTT;
+    data += BLINKER_F("\",\"toStorage\":\"ts\"");
+    data += BLINKER_F(",\"data\":[");
+    data += msg;
+    data += BLINKER_F("]}");
+    
+    return toServer(BLINKER_CMD_TIME_SLOT_DATA_NUMBER, data) != "false";
+}
+
+void BlinkerWiFiESP::httpHeartbeat()
+{
+    String data = BLINKER_F("/heartbeat?");
+    data += BLINKER_F("deviceName=");
+    data += DEVICE_NAME_MQTT;
+    data += BLINKER_F("&key=");
+    data += _authKey;
+    data += BLINKER_F("&heartbeat=");
+    data += STRING_format(BLINKER_DEVICE_HEARTBEAT_TIME);
+
+    toServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data);
 }
 
 String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
@@ -1324,6 +1351,10 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
             }
             break;
         case BLINKER_CMD_DATA_STORAGE_NUMBER :
+            break;
+        case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+            break;
+        case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
             break;
         case BLINKER_CMD_WIFI_AUTH_NUMBER :
             break;
@@ -1497,6 +1528,44 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
+        case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+            // url_iot = host;
+            #ifndef BLINKER_WITHOUT_SSL
+                url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ts");
+            #else
+                url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ts");
+            #endif
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            http.addHeader(conType, application);
+            httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
+            break;
         case BLINKER_CMD_WIFI_AUTH_NUMBER :
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
@@ -1582,7 +1651,7 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
         BLINKER_LOG_ALL(BLINKER_F("[HTTP] status... code: "), httpCode);
 
         String payload;
-        if (httpCode == HTTP_CODE_OK)
+        if (httpCode == HTTP_CODE_OK || httpCode == 201)
         {
             payload = http.getString();
 
@@ -1644,6 +1713,10 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
                     break;
                 case BLINKER_CMD_DATA_STORAGE_NUMBER :
                     break;
+                case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
+                    break;
+                case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
+                    break;
                 case BLINKER_CMD_WIFI_AUTH_NUMBER :
                     break;
                 case BLINKER_CMD_FRESH_SHARERS_NUMBER :
@@ -1651,10 +1724,10 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
                 default :
                     return BLINKER_CMD_FALSE;
             }
-            http.end();
-
-            return payload;
         }
+        http.end();
+
+        return payload;
     }
     else {
         BLINKER_LOG_ALL(BLINKER_F("[HTTP] ... failed, error: "), http.errorToString(httpCode).c_str());

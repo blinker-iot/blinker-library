@@ -115,7 +115,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         { if (_airFunc) _airFunc(conn.air(_city)); }
 
         bool log(const String & msg)
-        { return conn.log(msg, BApi::time()); }
+        { return conn.log(msg, time()); }
 
         void attachAir(blinker_callback_with_string_arg_t newFunction)
         { _airFunc = newFunction; }
@@ -145,6 +145,9 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         template<typename T>
         void dataStorage(char _name[], const T& msg);
         void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = BLINKER_DATA_UPDATE_COUNT);
+        
+        template<typename T>
+        void timeSlotData(char _name[], const T& _data);
 
     private :
         void autoPrint(const String & key, const String & data);
@@ -170,6 +173,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         uint32_t            _ntpStart;
         float               _timezone = 8.0;
         time_t              _deviceStartTime = 0;
+        uint32_t            _dHeartTime = 0;
 
     protected :
         Transp&             conn;
@@ -181,12 +185,16 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         blinker_callback_with_string_arg_t  _weather_forecast_Func = NULL;
 
         class BlinkerData *                 _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
+        class BlinkerTimeSlotData *         _TimeSlotData[BLINKER_MAX_BLINKER_DATA_SIZE];
+        
         blinker_callback_t                  _dataStorageFunc = NULL;
         uint32_t                            _autoStorageTime = 60;
         uint32_t                            _autoDataTime = 0;
         uint8_t                             _dataTimes = BLINKER_MAX_DATA_COUNT;
-        uint8_t                             data_dataCount = 0;
         uint32_t                            _autoUpdateTime = 0;
+        uint8_t                             data_dataCount = 0;
+        uint8_t                             data_timeSlotDataCount = 0;
+        uint32_t                            time_timeSlotData = 0;
 };
 
 template <class Transp>
@@ -233,6 +241,12 @@ void BlinkerProtocol<Transp>::run()
 #if defined(BLINKER_WIDGET)
     BApi::checkTimer();
 #endif
+
+    if (((millis() - _dHeartTime)/1000UL >= BLINKER_DEVICE_HEARTBEAT_TIME) && conn.checkInit())
+    {
+        _dHeartTime += BLINKER_DEVICE_HEARTBEAT_TIME * 1000;
+        conn.httpHeartbeat();
+    }
 
     switch (state)
     {
@@ -1018,7 +1032,7 @@ void BlinkerProtocol<Transp>::checkDataStorage()
 
     if (millis() - _autoUpdateTime >= _autoStorageTime * _dataTimes * 1000)
     {
-        if (data_dataCount && conn.checkInit() )// && ESP.getFreeHeap() > 4000)
+        if ((data_dataCount || data_timeSlotDataCount) && conn.checkInit() )// && ESP.getFreeHeap() > 4000)
         {
             if (dataUpdate()) _autoUpdateTime += _autoStorageTime * _dataTimes * 1000;
             else _autoUpdateTime = millis() - 100000;
@@ -1029,9 +1043,32 @@ void BlinkerProtocol<Transp>::checkDataStorage()
 template <class Transp>
 bool BlinkerProtocol<Transp>::dataUpdate()
 {
-    if (!data_dataCount) return false;
-
     String data = "";
+
+    if (data_timeSlotDataCount > 0)
+    {
+        for (uint8_t _num = 0; _num < data_timeSlotDataCount; _num++) {
+            data += _TimeSlotData[_num]->getData();
+            if (_num < data_timeSlotDataCount - 1) {
+                data += BLINKER_F(",");
+            }
+        }
+
+        if (conn.timeSlot(data))
+        {
+            for (uint8_t _num = 0; _num < data_timeSlotDataCount; _num++)
+            {
+                // _TimeSlotData[_num]->flush();
+                free(_TimeSlotData[_num]);
+            }
+
+            data_timeSlotDataCount = 0;
+            return true;
+        }
+        return false;
+    }
+
+    if (!data_dataCount) return false;
 
     for (uint8_t _num = 0; _num < data_dataCount; _num++) {
         data += BLINKER_F("\"");
@@ -1048,7 +1085,7 @@ bool BlinkerProtocol<Transp>::dataUpdate()
         BLINKER_LOG_FreeHeap_ALL();
     }
 
-    if (conn.dataUpdate(data))
+    if (conn.dataStorage(data))
     {
         for (uint8_t _num = 0; _num < data_dataCount; _num++)
         {
@@ -1059,6 +1096,50 @@ bool BlinkerProtocol<Transp>::dataUpdate()
     }
 
     return false;
+}
+
+template <class Transp> template<typename T>
+void BlinkerProtocol<Transp>::timeSlotData(char _name[], const T& _data)
+{
+    uint32_t now_time = time();
+
+    if (data_timeSlotDataCount == BLINKER_MAX_BLINKER_DATA_SIZE)
+    {
+        BLINKER_ERR_LOG(BLINKER_F("BLINKER MAX DATA STORAGE LIMIT!"));
+        return;
+    }
+
+    BLINKER_LOG_ALL(BLINKER_F("timeSlotData save"));
+
+    if (millis() - time_timeSlotData < 1000)
+    {
+        if (data_timeSlotDataCount != 0)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount != 0"));
+            _TimeSlotData[data_timeSlotDataCount - 1]->saveData(_name, _data, now_time);
+        }
+        else
+        {
+            BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount == 0"));
+            _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+            _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+            data_timeSlotDataCount++;
+        }
+
+        BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+        BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+    }
+    else
+    {
+        time_timeSlotData = millis();
+
+        _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+        _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+        data_timeSlotDataCount++;
+
+        BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+        BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+    }
 }
 
 #endif
