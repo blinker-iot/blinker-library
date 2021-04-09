@@ -41,12 +41,25 @@ class BlinkerAUTO
         void deserialization();
         void serialization();
         void setNum(uint8_t num) { a_num = num; }
-        bool isTrigged() { return _trigged; }
+        bool isTrigged() 
+        { 
+            return _trigged;
+            // if (_trigged)
+            // {
+            //     if (millis() - _last_tri_time >= 6000 || _last_tri_time == 0)
+            //     {
+            //         _last_tri_time = millis();
+            //         return true;
+            //     }
+            // }
+            // return false;
+        }
         void fresh();
         unsigned long id() { return _autoId; }
 
     private :
         uint8_t     a_num;
+        time_t      _last_tri_time;
         
         // {
         //     "auto":{
@@ -915,7 +928,7 @@ void BlinkerAUTO::fresh()
     // }
     // _trigged = false;
 
-    if (isRecord) _isTrigged =  true;
+    if (isRecord) _isTrigged = true;
 
     _trigged = false;
 }

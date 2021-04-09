@@ -184,6 +184,14 @@
         #undef BLINKER_MIOT_SENSOR
     #endif
 
+    #if defined(BLINKER_MIOT_FAN)
+        #undef BLINKER_MIOT_FAN
+    #endif
+
+    #if defined(BLINKER_MIOT_AIRCONDITION)
+        #undef BLINKER_MIOT_AIRCONDITION
+    #endif
+
     #define BLINKER_MIOT
 #elif defined(BLINKER_MIOT_OUTLET)
     #if defined(BLINKER_MIOT_MULTI_OUTLET)
@@ -200,6 +208,14 @@
 
     #if defined(BLINKER_MIOT_SENSOR)
         #undef BLINKER_MIOT_SENSOR
+    #endif
+
+    #if defined(BLINKER_MIOT_FAN)
+        #undef BLINKER_MIOT_FAN
+    #endif
+
+    #if defined(BLINKER_MIOT_AIRCONDITION)
+        #undef BLINKER_MIOT_AIRCONDITION
     #endif
 
     #define BLINKER_MIOT
@@ -220,6 +236,10 @@
         #undef BLINKER_MIOT_SENSOR
     #endif
 
+    #if defined(BLINKER_MIOT_FAN)
+        #undef BLINKER_MIOT_FAN
+    #endif
+
     #define BLINKER_MIOT
 #elif defined(BLINKER_MIOT_SWITCH)
     #if defined(BLINKER_MIOT_LIGHT)
@@ -238,6 +258,14 @@
         #undef BLINKER_MIOT_SENSOR
     #endif
 
+    #if defined(BLINKER_MIOT_FAN)
+        #undef BLINKER_MIOT_FAN
+    #endif
+
+    #if defined(BLINKER_MIOT_AIRCONDITION)
+        #undef BLINKER_MIOT_AIRCONDITION
+    #endif
+
     #define BLINKER_MIOT
 #elif defined(BLINKER_MIOT_SENSOR)
     #if defined(BLINKER_MIOT_LIGHT)
@@ -254,6 +282,66 @@
 
     #if defined(BLINKER_MIOT_SWITCH)
         #undef BLINKER_MIOT_SWITCH
+    #endif
+
+    #if defined(BLINKER_MIOT_FAN)
+        #undef BLINKER_MIOT_FAN
+    #endif
+
+    #if defined(BLINKER_MIOT_AIRCONDITION)
+        #undef BLINKER_MIOT_AIRCONDITION
+    #endif
+    
+    #define BLINKER_MIOT
+#elif defined(BLINKER_MIOT_FAN)
+    #if defined(BLINKER_MIOT_LIGHT)
+        #undef BLINKER_MIOT_LIGHT
+    #endif
+
+    #if defined(BLINKER_MIOT_OUTLET)
+        #undef BLINKER_MIOT_OUTLET
+    #endif
+
+    #if defined(BLINKER_MIOT_MULTI_OUTLET)
+        #undef BLINKER_MIOT_MULTI_OUTLET
+    #endif
+
+    #if defined(BLINKER_MIOT_SWITCH)
+        #undef BLINKER_MIOT_SWITCH
+    #endif
+
+    #if defined(BLINKER_MIOT_SENSOR)
+        #undef BLINKER_MIOT_SENSOR
+    #endif
+
+    #if defined(BLINKER_MIOT_AIRCONDITION)
+        #undef BLINKER_MIOT_AIRCONDITION
+    #endif
+    
+    #define BLINKER_MIOT
+#elif defined(BLINKER_MIOT_AIRCONDITION)
+    #if defined(BLINKER_MIOT_LIGHT)
+        #undef BLINKER_MIOT_LIGHT
+    #endif
+
+    #if defined(BLINKER_MIOT_OUTLET)
+        #undef BLINKER_MIOT_OUTLET
+    #endif
+
+    #if defined(BLINKER_MIOT_MULTI_OUTLET)
+        #undef BLINKER_MIOT_MULTI_OUTLET
+    #endif
+
+    #if defined(BLINKER_MIOT_SWITCH)
+        #undef BLINKER_MIOT_SWITCH
+    #endif
+
+    #if defined(BLINKER_MIOT_SENSOR)
+        #undef BLINKER_MIOT_SENSOR
+    #endif
+
+    #if defined(BLINKER_MIOT_FAN)
+        #undef BLINKER_MIOT_FAN
     #endif
     
     #define BLINKER_MIOT

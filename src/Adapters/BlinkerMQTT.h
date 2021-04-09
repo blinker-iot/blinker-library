@@ -838,7 +838,7 @@ void BlinkerMQTT::parseData(const char* data)
         isMIOTAlive = true;
         isMIOTAvail = true;
     }
-    else if (_uuid == BLINKER_CMD_SERVERCLIENT)
+    else if (_uuid == BLINKER_CMD_SERVERCLIENT || _uuid == "senderClient1")
     {
         BLINKER_LOG_ALL(BLINKER_F("form Sever"));
 
@@ -2549,7 +2549,7 @@ int BlinkerMQTT::isJson(const String & data)
 
     // DynamicJsonBuffer jsonBuffer;
     // JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
-    DynamicJsonDocument jsonBuffer(1024);
+    DynamicJsonDocument jsonBuffer(2048);
     DeserializationError error = deserializeJson(jsonBuffer, STRING_format(data));
     JsonObject root = jsonBuffer.as<JsonObject>();
 

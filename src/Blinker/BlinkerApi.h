@@ -414,6 +414,8 @@ class BlinkerApi : public BlinkerProtocol
             bool configDelete();
             template<typename T>
             void dataStorage(char _name[], const T& msg);
+            void RTDataStorage(char _name[], int msg);
+            void RTDataPrint();
             void timeSlotData(char _name[], int32_t msg);
             void timeSlotData(char _name[], uint32_t msg);
             void timeSlotData(char _name[], float msg);
@@ -547,6 +549,14 @@ class BlinkerApi : public BlinkerProtocol
                 { _DuerOSSetModeFunc = newFunction; }
                 void attachDuerOSSetcMode(blinker_callback_with_string_arg_t newFunction)
                 { _DuerOSSetcModeFunc = newFunction; }
+                void attachDuerOSSetLevel(blinker_callback_with_uint8_arg_t newFunction)
+                { _DuerOSSetLevelFunc = newFunction; }
+                void attachDuerOSRelativeLevel(blinker_callback_with_int32_arg_t newFunction)
+                { _DuerOSSetRelativeLevelFunc = newFunction; }
+                void attachDuerOSSetTemp(blinker_callback_with_uint8_arg_t newFunction)
+                { _DuerOSSetTempFunc = newFunction; }
+                void attachDuerOSRelativeTemp(blinker_callback_with_int32_arg_t newFunction)
+                { _DuerOSSetRelativeTempFunc = newFunction; }
                 void attachDuerOSSetBrightness(blinker_callback_with_string_arg_t newFunction)
                 { _DuerOSSetBrightnessFunc = newFunction; }
                 void attachDuerOSRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
@@ -566,10 +576,36 @@ class BlinkerApi : public BlinkerProtocol
                 { _MIOTPowerStateFunc_m = newFunction; }
                 void attachMIOTSetPowerState(blinker_callback_with_string_arg_t newFunction)
                 { _MIOTPowerStateFunc = newFunction; }
+                void attachMIOTSetHSwingState(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTHSwingStateFunc = newFunction; }
+                void attachMIOTSetVSwingState(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTVSwingStateFunc = newFunction; }
+                void attachMIOTSetECO(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTECOFunc = newFunction; }
+                void attachMIOTSetAnion(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTAnionFunc = newFunction; }
+                void attachMIOTSetHeater(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTHeaterFunc = newFunction; }
+                void attachMIOTSetDryer(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTDryerFunc = newFunction; }
+                void attachMIOTSetSleep(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTSleepFunc = newFunction; }
+                void attachMIOTSetSoft(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTSoftFunc = newFunction; }
+                void attachMIOTSetUV(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTUVFunc = newFunction; }
+                void attachMIOTSetUNSB(blinker_callback_with_string_arg_t newFunction)
+                { _MIOTUNSBFunc = newFunction; }
                 void attachMIOTSetColor(blinker_callback_with_int32_arg_t newFunction)
                 { _MIOTSetColorFunc = newFunction; }
                 void attachMIOTSetMode(blinker_callback_with_uint8_arg_t newFunction)
                 { _MIOTSetModeFunc = newFunction; }
+                void attachMIOTSetLevel(blinker_callback_with_uint8_arg_t newFunction)
+                { _MIOTSetLevelFunc = newFunction; }
+                void attachMIOTSetTemp(blinker_callback_with_uint8_arg_t newFunction)
+                { _MIOTSetTempFunc = newFunction; }
+                void attachMIOTSetHumi(blinker_callback_with_uint8_arg_t newFunction)
+                { _MIOTSetHumiFunc = newFunction; }
                 // void attachMIOTSetcMode(blinker_callback_with_string_arg_t newFunction)
                 // { _MIOTSetcModeFunc = newFunction; }
                 void attachMIOTSetBrightness(blinker_callback_with_string_arg_t newFunction)
@@ -887,6 +923,7 @@ class BlinkerApi : public BlinkerProtocol
             uint32_t    _logTime = 0;
             uint32_t    _codTime = 0;
             uint8_t     data_dataCount = 0;
+            uint8_t     data_rtDataCount = 0;
             uint8_t     data_timeSlotDataCount = 0;
             uint32_t    time_timeSlotData = 0;
             uint8_t     _aCount = 0;
@@ -926,6 +963,7 @@ class BlinkerApi : public BlinkerProtocol
             #endif
 
             class BlinkerData *             _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
+            class BlinkerRTData *           _RTData[2];
 
             class BlinkerTimeSlotData *     _TimeSlotData[BLINKER_MAX_BLINKER_DATA_SIZE];
 
@@ -1051,6 +1089,10 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_with_int32_arg_t   _DuerOSSetColorFunc = NULL;
             blinker_callback_with_string_arg_t  _DuerOSSetModeFunc = NULL;
             blinker_callback_with_string_arg_t  _DuerOSSetcModeFunc = NULL;
+            blinker_callback_with_uint8_arg_t   _DuerOSSetLevelFunc = NULL;
+            blinker_callback_with_int32_arg_t   _DuerOSSetRelativeLevelFunc = NULL;
+            blinker_callback_with_uint8_arg_t   _DuerOSSetTempFunc = NULL;
+            blinker_callback_with_int32_arg_t   _DuerOSSetRelativeTempFunc = NULL;
             blinker_callback_with_string_arg_t  _DuerOSSetBrightnessFunc = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSSetRelativeBrightnessFunc = NULL;
             blinker_callback_with_int32_arg_t   _DuerOSSetColorTemperature = NULL;
@@ -1060,8 +1102,21 @@ class BlinkerApi : public BlinkerProtocol
 
             blinker_callback_with_string_uint8_arg_t _MIOTPowerStateFunc_m = NULL;
             blinker_callback_with_string_arg_t  _MIOTPowerStateFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTHSwingStateFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTVSwingStateFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTECOFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTAnionFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTHeaterFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTDryerFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTSleepFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTSoftFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTUVFunc = NULL;
+            blinker_callback_with_string_arg_t  _MIOTUNSBFunc = NULL;
             blinker_callback_with_int32_arg_t   _MIOTSetColorFunc = NULL;
             blinker_callback_with_uint8_arg_t   _MIOTSetModeFunc = NULL;
+            blinker_callback_with_uint8_arg_t   _MIOTSetLevelFunc = NULL;
+            blinker_callback_with_uint8_arg_t   _MIOTSetTempFunc = NULL;
+            blinker_callback_with_uint8_arg_t   _MIOTSetHumiFunc = NULL;
             // blinker_callback_with_string_arg_t  _MIOTSetcModeFunc = NULL;
             blinker_callback_with_string_arg_t  _MIOTSetBrightnessFunc = NULL;
             // blinker_callback_with_int32_arg_t   _MIOTSetRelativeBrightnessFunc = NULL;
@@ -4548,8 +4603,13 @@ void BlinkerApi::run()
     defined(BLINKER_PRO)
 void BlinkerApi::rtParse(const JsonObject& data)
 {
-    if (data.containsKey(_RTDataKey))
+    String get_key = data[_RTDataKey][BLINKER_CMD_GET];
+    // BLINKER_LOG_ALL(BLINKER_F("_RTDataKey: "), _RTDataKey);
+    BLINKER_LOG_ALL(BLINKER_F("get_key: "), get_key);
+    // BLINKER_LOG_ALL(BLINKER_F("strncmp: "), strncmp(_RTDataKey, get_key.c_str(), strlen(_RTDataKey)) == 0);
+    if (get_key != "null")
     {
+        _fresh = true;
         if (_RTDataFunc)
         {
             _RTTicker.once(15, _RTDataFunc);
@@ -4616,6 +4676,8 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
                     shareParse(root);
                     autoManager(root);
+
+                    rtParse(root);
                     #if !defined(BLINKER_WIFI_SUBDEVICE)
                     otaParse(root);
                     numParse(root);
@@ -6741,8 +6803,88 @@ float BlinkerApi::gps(b_gps_t axis)
             BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), _msg, BLINKER_F(" time: "), now_time);
             BLINKER_LOG_ALL(BLINKER_F("data_dataCount: "), data_dataCount);
         }
+    }
 
 
+    void BlinkerApi::RTDataStorage(char _name[], int msg)
+    {
+        // String _msg = STRING_format(msg);
+
+        int8_t num = checkNum(_name, _RTData, data_rtDataCount);
+
+        time_t _time = time();
+        // uint8_t _second = second();
+        time_t now_time = _time;// - _second;
+
+        // BLINKER_LOG_ALL(BLINKER_F("time: "), _time, BLINKER_F(",second: "), _second);
+
+        BLINKER_LOG_ALL(BLINKER_F("now_time: "), now_time);
+
+        // now_time = now_time - now_time % 10;
+
+        BLINKER_LOG_ALL(BLINKER_F("dataStorage num: "), num, BLINKER_F(" ,"), now_time);
+        BLINKER_LOG_ALL(BLINKER_F("dataStorage count: "), data_rtDataCount);
+
+        // String data_msg = String(msg);
+
+        // if (data_msg.length() > 10) return;
+
+        if( num == BLINKER_OBJECT_NOT_AVAIL )
+        {
+            if (data_rtDataCount == 2)
+            {
+                return;
+            }
+            _RTData[data_rtDataCount] = new BlinkerRTData();
+            _RTData[data_rtDataCount]->name(_name);
+            // _RTData[data_rtDataCount]->saveData(time(), _msg);
+            // if
+            _RTData[data_rtDataCount]->saveData(msg, now_time);
+            data_rtDataCount++;
+            // {
+            //     dataUpdate();
+            // }
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), msg, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_rtDataCount: "), data_rtDataCount);
+        }
+        else {
+            // _RTData[num]->saveData(time(), _msg);
+            // if
+            _RTData[num]->saveData(msg, now_time);
+            // {
+            //     dataUpdate();
+            // }
+
+            BLINKER_LOG_ALL(_name, BLINKER_F(" save: "), msg, BLINKER_F(" time: "), now_time);
+            BLINKER_LOG_ALL(BLINKER_F("data_rtDataCount: "), data_rtDataCount);
+        }
+
+
+    }
+
+    void BlinkerApi::RTDataPrint()
+    {
+        String data = "{\"rt\":{";
+
+        for (uint8_t _num = 0; _num < data_rtDataCount; _num++) {
+            data += BLINKER_F("\"");
+            data += _RTData[_num]->getName();
+            data += BLINKER_F("\":");
+            data += _RTData[_num]->getData();
+            if (_num < data_rtDataCount - 1) {
+                data += BLINKER_F(",");
+            }
+
+            BLINKER_LOG_ALL(BLINKER_F("num: "), _num, \
+                    BLINKER_F(" name: "), _RTData[_num]->getName());
+
+            BLINKER_LOG_FreeHeap_ALL();
+        }
+
+        data += BLINKER_F("}}");
+
+        printObject(_RTDataKey, data);
     }
 
 
@@ -10596,6 +10738,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
         !defined(BLINKER_NBIOT_SIM7000) && !defined(BLINKER_QRCODE_NBIOT_SIM7000))
         void BlinkerApi::autoStart()
         {
+            // autoPull();
+
             BLINKER_LOG_ALL(BLINKER_F("_______autoStart_______"));
             uint8_t checkData;
 
@@ -12761,6 +12905,36 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
                 if (_DuerOSSetcModeFunc) _DuerOSSetcModeFunc(setcMode);
             }
+            else if (rootSet.containsKey(BLINKER_CMD_LEVEL)) {
+                String setValue = rootSet[BLINKER_CMD_LEVEL];
+
+                if (_DuerOSSetLevelFunc) _DuerOSSetLevelFunc(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_LEVEL_UP)) {
+                String setValue = rootSet[BLINKER_CMD_LEVEL_UP];
+
+                if (_DuerOSSetRelativeLevelFunc) _DuerOSSetRelativeLevelFunc(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_LEVEL_DW)) {
+                String setValue = rootSet[BLINKER_CMD_LEVEL_DW];
+
+                if (_DuerOSSetRelativeLevelFunc) _DuerOSSetRelativeLevelFunc(-setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_TEMP)) {
+                String setValue = rootSet[BLINKER_CMD_TEMP];
+
+                if (_DuerOSSetTempFunc) _DuerOSSetTempFunc(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_TEMP_UP)) {
+                String setValue = rootSet[BLINKER_CMD_TEMP_UP];
+
+                if (_DuerOSSetRelativeTempFunc) _DuerOSSetRelativeTempFunc(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_TEMP_DW)) {
+                String setValue = rootSet[BLINKER_CMD_TEMP_DW];
+
+                if (_DuerOSSetRelativeTempFunc) _DuerOSSetRelativeTempFunc(-setValue.toInt());
+            }
         }
     }
 
@@ -12797,7 +12971,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_ALL_NUMBER);
                 if (_MIOTQueryFunc_m) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_ALL_NUMBER, setNum);
             }
-            else if (value == BLINKER_CMD_POWERSTATE) {
+            else if (value == BLINKER_CMD_POWERSTATE1) {
                 uint8_t setNum = root[BLINKER_CMD_NUM];
                 if (_MIOTQueryFunc) _MIOTQueryFunc(BLINKER_CMD_QUERY_POWERSTATE_NUMBER);
                 if (_MIOTQueryFunc_m) _MIOTQueryFunc_m(BLINKER_CMD_QUERY_POWERSTATE_NUMBER, setNum);
@@ -12845,15 +13019,95 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
 
             // BLINKER_LOG_ALL("Json parse success");
 
-            if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
-                String setValue = rootSet[BLINKER_CMD_POWERSTATE];
+            if (rootSet.containsKey(BLINKER_CMD_POWERSTATE1)) {
+                String setValue = rootSet[BLINKER_CMD_POWERSTATE1];
                 uint8_t setNum = rootSet[BLINKER_CMD_NUM];
 
-                if (setValue == "true") setValue = "on";
-                else setValue = "off";                
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
 
                 if (_MIOTPowerStateFunc) _MIOTPowerStateFunc(setValue);
                 if (_MIOTPowerStateFunc_m) _MIOTPowerStateFunc_m(setValue, setNum);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_HSTATE)) {
+                String setValue = rootSet[BLINKER_CMD_HSTATE];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTHSwingStateFunc) _MIOTHSwingStateFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_VSTATE)) {
+                String setValue = rootSet[BLINKER_CMD_VSTATE];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTVSwingStateFunc) _MIOTVSwingStateFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_ECO)) {
+                String setValue = rootSet[BLINKER_CMD_ECO];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTECOFunc) _MIOTECOFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_ANION)) {
+                String setValue = rootSet[BLINKER_CMD_ANION];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTAnionFunc) _MIOTAnionFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_HEATER)) {
+                String setValue = rootSet[BLINKER_CMD_HEATER];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTHeaterFunc) _MIOTHeaterFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_DRYER)) {
+                String setValue = rootSet[BLINKER_CMD_DRYER];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTDryerFunc) _MIOTDryerFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_SLEEP)) {
+                String setValue = rootSet[BLINKER_CMD_SLEEP];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTSleepFunc) _MIOTSleepFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_SOFT)) {
+                String setValue = rootSet[BLINKER_CMD_SOFT];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTSoftFunc) _MIOTSoftFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_UV)) {
+                String setValue = rootSet[BLINKER_CMD_UV];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTUVFunc) _MIOTUVFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_UNSB)) {
+                String setValue = rootSet[BLINKER_CMD_UNSB];
+
+                // if (setValue == "true") setValue = "on";
+                // else setValue = "off";                
+
+                if (_MIOTUNSBFunc) _MIOTUNSBFunc(setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
@@ -12899,6 +13153,21 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 String setMode = rootSet[BLINKER_CMD_MODE];
 
                 if (_MIOTSetModeFunc) _MIOTSetModeFunc(setMode.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_LEVEL)) {
+                String setLevel = rootSet[BLINKER_CMD_LEVEL];
+
+                if (_MIOTSetLevelFunc) _MIOTSetLevelFunc(setLevel.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_TEMP)) {
+                String setTemp = rootSet[BLINKER_CMD_TEMP];
+
+                if (_MIOTSetTempFunc) _MIOTSetTempFunc(setTemp.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_HUMI)) {
+                String setHumi = rootSet[BLINKER_CMD_HUMI];
+
+                if (_MIOTSetHumiFunc) _MIOTSetHumiFunc(setHumi.toInt());
             }
             // else if (rootSet.containsKey(BLINKER_CMD_CANCELMODE)) {
             //     String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
@@ -13200,6 +13469,18 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 else if (STRING_find_string_value(_data, value, BLINKER_CMD_MODE))
                 {
                     if (_MIOTSetModeFunc) _MIOTSetModeFunc(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_LEVEL))
+                {
+                    if (_MIOTSetLevelFunc) _MIOTSetLevelFunc(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_TEMP))
+                {
+                    if (_MIOTSetTempFunc) _MIOTSetTempFunc(value.toInt());
+                }
+                else if (STRING_find_string_value(_data, value, BLINKER_CMD_HUMI))
+                {
+                    if (_MIOTSetHumiFunc) _MIOTSetHumiFunc(value.toInt());
                 }
                 // else if (STRING_find_string_value(_data, value, BLINKER_CMD_CANCELMODE))
                 // {
