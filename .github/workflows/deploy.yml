@@ -1,0 +1,16 @@
+name: auto-deploy
+on: [push]
+jobs:
+  archive-file:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: deploy files to server
+        uses: sahil-io/release-upload-sftp@4.2
+        with:
+          package_name: 'blinker-library'
+          username: 'ubuntu'
+          server: '${{ secrets.SERVER_IP }}'
+          port: 20
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          local_path: '/home/ubuntu/www/diandeng.tech/sdk'
