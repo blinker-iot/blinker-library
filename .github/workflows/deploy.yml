@@ -4,7 +4,6 @@ jobs:
   archive-file:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
       - name: deploy files to server
         uses: sahil-io/release-upload-sftp@4.2
         with:
