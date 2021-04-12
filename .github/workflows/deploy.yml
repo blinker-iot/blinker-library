@@ -12,7 +12,7 @@ jobs:
           package_name: 'blinker-library'
           username: 'ubuntu'
           server: '${{ secrets.SERVER_IP }}'
-          port: 22
+          port: 20
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           local_path: '/github/workspace'
           remote_path: '/home/ubuntu/'
