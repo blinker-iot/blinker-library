@@ -10,6 +10,6 @@ jobs:
           package_name: 'blinker-library'
           username: 'ubuntu'
           server: '${{ secrets.SERVER_IP }}'
-          port: 20
+          port: 22
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           local_path: '/home/ubuntu/www/diandeng.tech/sdk'
