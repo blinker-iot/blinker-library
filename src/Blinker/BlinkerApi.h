@@ -518,12 +518,26 @@ class BlinkerApi : public BlinkerProtocol
                 { _AliGeniePowerStateFunc_m = newFunction; }
                 void attachAliGenieSetPowerState(blinker_callback_with_string_arg_t newFunction)
                 { _AliGeniePowerStateFunc = newFunction; }
+                void attachAliGenieSetHSwingState(blinker_callback_with_string_arg_t newFunction)
+                { _AliGenieHSwingStateFunc = newFunction; }
+                void attachAliGenieSetVSwingState(blinker_callback_with_string_arg_t newFunction)
+                { _AliGenieVSwingStateFunc = newFunction; }
                 void attachAliGenieSetColor(blinker_callback_with_string_arg_t newFunction)
                 { _AliGenieSetColorFunc = newFunction; }
                 void attachAliGenieSetMode(blinker_callback_with_string_arg_t newFunction)
                 { _AliGenieSetModeFunc = newFunction; }
                 void attachAliGenieSetcMode(blinker_callback_with_string_arg_t newFunction)
                 { _AliGenieSetcModeFunc = newFunction; }
+                void attachAliGenieSetLevel(blinker_callback_with_string_arg_t newFunction)
+                { _AliGenieSetLevelFunc_str = newFunction; }
+                void attachAliGenieSetLevel(blinker_callback_with_uint8_arg_t newFunction)
+                { _AliGenieSetLevelFunc = newFunction; }
+                void attachAliGenieRelativeLevel(blinker_callback_with_int32_arg_t newFunction)
+                { _AliGenieSetRelativeLevelFunc = newFunction; }
+                void attachAliGenieSetTemp(blinker_callback_with_uint8_arg_t newFunction)
+                { _AliGenieSetTempFunc = newFunction; }
+                void attachAliGenieRelativeTemp(blinker_callback_with_int32_arg_t newFunction)
+                { _AliGenieSetRelativeTempFunc = newFunction; }
                 void attachAliGenieSetBrightness(blinker_callback_with_string_arg_t newFunction)
                 { _AliGenieSetBrightnessFunc = newFunction; }
                 void attachAliGenieRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
@@ -1073,9 +1087,16 @@ class BlinkerApi : public BlinkerProtocol
 
             blinker_callback_with_string_uint8_arg_t _AliGeniePowerStateFunc_m = NULL;
             blinker_callback_with_string_arg_t  _AliGeniePowerStateFunc = NULL;
+            blinker_callback_with_string_arg_t  _AliGenieHSwingStateFunc = NULL;
+            blinker_callback_with_string_arg_t  _AliGenieVSwingStateFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetColorFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetModeFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetcModeFunc = NULL;
+            blinker_callback_with_string_arg_t  _AliGenieSetLevelFunc_str = NULL;
+            blinker_callback_with_uint8_arg_t   _AliGenieSetLevelFunc = NULL;
+            blinker_callback_with_uint8_arg_t   _AliGenieSetTempFunc = NULL;
+            blinker_callback_with_int32_arg_t   _AliGenieSetRelativeLevelFunc = NULL;
+            blinker_callback_with_int32_arg_t   _AliGenieSetRelativeTempFunc = NULL;
             blinker_callback_with_string_arg_t  _AliGenieSetBrightnessFunc = NULL;
             blinker_callback_with_int32_arg_t   _AliGenieSetRelativeBrightnessFunc = NULL;
             blinker_callback_with_int32_arg_t   _AliGenieSetColorTemperature = NULL;
@@ -12719,6 +12740,16 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 if (_AliGeniePowerStateFunc) _AliGeniePowerStateFunc(setValue);
                 if (_AliGeniePowerStateFunc_m) _AliGeniePowerStateFunc_m(setValue, setNum);
             }
+            else if (rootSet.containsKey(BLINKER_CMD_HSTATE)) {
+                String setValue = rootSet[BLINKER_CMD_HSTATE];
+
+                if (_AliGenieHSwingStateFunc) _AliGenieHSwingStateFunc(setValue);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_VSTATE)) {
+                String setValue = rootSet[BLINKER_CMD_VSTATE];
+
+                if (_AliGenieVSwingStateFunc) _AliGenieVSwingStateFunc(setValue);
+            }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
 
@@ -12768,6 +12799,37 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
 
                 if (_AliGenieSetcModeFunc) _AliGenieSetcModeFunc(setcMode);
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_LEVEL)) {
+                String setLevel = rootSet[BLINKER_CMD_LEVEL];
+
+                if (_AliGenieSetLevelFunc_str) _AliGenieSetLevelFunc_str(setLevel);
+                if (_AliGenieSetLevelFunc) _AliGenieSetLevelFunc(setLevel.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_TEMP)) {
+                String setValue = rootSet[BLINKER_CMD_TEMP];
+
+                if (_AliGenieSetTempFunc) _AliGenieSetTempFunc(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_LEVEL_UP)) {
+                String setValue = rootSet[BLINKER_CMD_LEVEL_UP];
+
+                if (_AliGenieSetRelativeLevelFunc) _AliGenieSetRelativeLevelFunc(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_LEVEL_DW)) {
+                String setValue = rootSet[BLINKER_CMD_LEVEL_DW];
+
+                if (_AliGenieSetRelativeLevelFunc) _AliGenieSetRelativeLevelFunc(- setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_TEMP_UP)) {
+                String setValue = rootSet[BLINKER_CMD_TEMP_UP];
+
+                if (_AliGenieSetRelativeTempFunc) _AliGenieSetRelativeTempFunc(setValue.toInt());
+            }
+            else if (rootSet.containsKey(BLINKER_CMD_TEMP_DW)) {
+                String setValue = rootSet[BLINKER_CMD_TEMP_DW];
+
+                if (_AliGenieSetRelativeTempFunc) _AliGenieSetRelativeTempFunc(- setValue.toInt());
             }
         }
     }

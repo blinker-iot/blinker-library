@@ -119,6 +119,10 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _aliType = BLINKER_F("&aliType=multi_outlet");
             #elif defined(BLINKER_ALIGENIE_SENSOR)
                 String _aliType = BLINKER_F("&aliType=sensor");
+            #elif defined(BLINKER_ALIGENIE_FAN)
+                String _aliType = BLINKER_F("&aliType=fan");
+            #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
+                String _aliType = BLINKER_F("&aliType=aircondition");
             #else
                 String _aliType = BLINKER_F("");
             #endif

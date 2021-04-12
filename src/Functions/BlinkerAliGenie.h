@@ -19,6 +19,16 @@ class BLINKERALIGENIE
             Blinker.attachAliGenieSetPowerState(newFunction);
         }
 
+        void attachHSwing(blinker_callback_with_string_arg_t newFunction)
+        {
+            Blinker.attachAliGenieSetHSwingState(newFunction);
+        }
+
+        void attachVSwing(blinker_callback_with_string_arg_t newFunction)
+        {
+            Blinker.attachAliGenieSetVSwingState(newFunction);
+        }
+
         void attachColor(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachAliGenieSetColor(newFunction);
@@ -32,6 +42,31 @@ class BLINKERALIGENIE
         void attachCancelMode(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachAliGenieSetcMode(newFunction);
+        }
+
+        void attachLevel(blinker_callback_with_string_arg_t newFunction)
+        {
+            Blinker.attachAliGenieSetLevel(newFunction);
+        }
+
+        void attachLevel(blinker_callback_with_uint8_arg_t newFunction)
+        {
+            Blinker.attachAliGenieSetLevel(newFunction);
+        }
+
+        void attachRelativeLevel(blinker_callback_with_int32_arg_t newFunction)
+        {
+            Blinker.attachAliGenieRelativeLevel(newFunction);
+        }
+
+        void attachTemp(blinker_callback_with_uint8_arg_t newFunction)
+        {
+            Blinker.attachAliGenieSetTemp(newFunction);
+        }
+
+        void attachRelativeTemp(blinker_callback_with_int32_arg_t newFunction)
+        {
+            Blinker.attachAliGenieRelativeTemp(newFunction);
         }
 
         void attachBrightness(blinker_callback_with_string_arg_t newFunction)
@@ -377,6 +412,82 @@ class BLINKERALIGENIE
             _fresh |= 0x01 << 7;
         }
 
+        void level(uint8_t _level)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_LEVEL);
+            payload += BLINKER_F("\":\"");
+            payload += STRING_format(_level);
+            payload += BLINKER_F("\"");
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 8 & 0x01) {
+                free(aLevel);
+            }
+
+            aLevel = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aLevel, payload.c_str());
+
+            _fresh |= 0x01 << 8;
+        }
+
+        void level(const String & _level)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_LEVEL);
+            payload += BLINKER_F("\":\"");
+            payload += _level;
+            payload += BLINKER_F("\"");
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 8 & 0x01) {
+                free(aLevel);
+            }
+
+            aLevel = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aLevel, payload.c_str());
+
+            _fresh |= 0x01 << 8;
+        }
+
+        void hswing(const String & state)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_HSTATE);
+            payload += BLINKER_F("\":\"");
+            payload += state;
+            payload += BLINKER_F("\"");
+
+            if (_fresh >> 9 & 0x01) {
+                free(ahState);
+            }
+
+            ahState = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(ahState, payload.c_str());
+
+            _fresh |= 0x01 << 9;
+        }
+
+        void vswing(const String & state)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_VSTATE);
+            payload += BLINKER_F("\":\"");
+            payload += state;
+            payload += BLINKER_F("\"");
+
+            if (_fresh >> 10 & 0x01) {
+                free(avState);
+            }
+
+            avState = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(avState, payload.c_str());
+
+            _fresh |= 0x01 << 10;
+        }
+
         void print()
         {
             if (_fresh == 0) return;
@@ -455,6 +566,33 @@ class BLINKERALIGENIE
                 free(aPm25);
             }
 
+            if (_fresh >> 8 & 0x01) {
+                if (aliData.length()) aliData += BLINKER_F(",");
+                else aliData += BLINKER_F("{");
+                
+                aliData += aLevel;
+                
+                free(aLevel);
+            }
+
+            if (_fresh >> 9 & 0x01) {
+                if (aliData.length()) aliData += BLINKER_F(",");
+                else aliData += BLINKER_F("{");
+                
+                aliData += ahState;
+                
+                free(ahState);
+            }
+
+            if (_fresh >> 10 & 0x01) {
+                if (aliData.length()) aliData += BLINKER_F(",");
+                else aliData += BLINKER_F("{");
+                
+                aliData += avState;
+                
+                free(avState);
+            }
+
             aliData += BLINKER_F("}");
 
             _fresh = 0;
@@ -471,7 +609,11 @@ class BLINKERALIGENIE
         char * aTemp;
         char * aHumi;
         char * aPm25;
-        uint8_t _fresh = 0;
+        
+        char * aLevel;
+        char * ahState;
+        char * avState;
+        uint16_t _fresh = 0;
 };
 
 #endif
