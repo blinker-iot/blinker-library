@@ -4,16 +4,15 @@ jobs:
   archive-file:
     runs-on: ubuntu-latest
     steps:
-      - name: action-zip
-        uses: montudor/action-zip@v0.1.1
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: deploy files to server
+        uses: sahilNR/release-upload-sftp@v4
         with:
-          args: zip -qq -r blinker-library.zip /github/workspace
-
-      - name: Deploy
-        uses: garygrossgarten/github-action-scp@v0.5.3
-        with:
-          local: blinker-library.zip
-          remote: /home/ubuntu/
-          host: ${{ secrets.SERVER_IP }}
-          username: ubuntu
-          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          package_name: 'blinker-library'
+          username: 'ubuntu'
+          server: '${{ secrets.SERVER_IP }}'
+          port: 22
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          local_path: '/home/ubuntu/'
+          remote_path: ${{ secrets.REMOTE_PATH}}
