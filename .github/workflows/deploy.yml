@@ -10,9 +10,9 @@ jobs:
           args: zip -qq -r blinker-library.zip /github/workspace
       
       - name: debug
-        runs: ls -al
-        runs: pwd
-        runs: ls *.zip
+        run: ls -al
+        run: pwd
+        run: ls *.zip
 
       - name: Deploy
         uses: garygrossgarten/github-action-scp@v0.5.3
