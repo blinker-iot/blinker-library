@@ -14,5 +14,5 @@ jobs:
           server: '${{ secrets.SERVER_IP }}'
           port: 22
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          local_path: '/home/ubuntu/'
-          remote_path: ${{ secrets.REMOTE_PATH}}
+          local_path: '/github/workspace'
+          remote_path: '/home/ubuntu/'
