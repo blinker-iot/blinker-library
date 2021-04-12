@@ -13,7 +13,7 @@ jobs:
         uses: garygrossgarten/github-action-scp@v0.5.3
         with:
           local: blinker-library.zip
-          remote: /home/ubuntu/www/admin.diandeng.tech
+          remote: /home/ubuntu/
           host: ${{ secrets.SERVER_IP }}
           username: ubuntu
           privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
