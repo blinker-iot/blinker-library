@@ -7,7 +7,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: deploy files to server
-        uses: sahilNR/release-upload-sftp@v4
+        uses: sahil-io/release-upload-sftp@4.2
         with:
           package_name: 'blinker-library'
           username: 'ubuntu'
