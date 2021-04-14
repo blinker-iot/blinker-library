@@ -170,25 +170,20 @@ void duerColor(int32_t color)
 void duerMode(const String & mode)
 {
     BLINKER_LOG("need set mode: ", mode);
-
-    if (mode == BLINKER_CMD_DUEROS_READING) {
-        // Your mode function
-    }
-    else if (mode == BLINKER_CMD_DUEROS_SLEEP) {
-        // Your mode function
-    }
-    else if (mode == BLINKER_CMD_DUEROS_ALARM) {
-        // Your mode function
-    }
-    else if (mode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
-        // Your mode function
-    }
-    else if (mode == BLINKER_CMD_DUEROS_ROMANTIC) {
-        // Your mode function
-    }
-    else if (mode == BLINKER_CMD_DUEROS_READING) {
-        // Your mode function
-    }
+    // READING：阅读
+    // SLEEP：睡眠
+    // ALARM：报警
+    // NIGHT_LIGHT：夜灯
+    // ROMANTIC：浪漫
+    // SUNDOWN：日落
+    // SUNRISE：日出
+    // RELAX ：休闲/放松
+    // LIGHTING ：照明
+    // SUN ：太阳
+    // STAR ：星星
+    // ENERGY_SAVING：节能
+    // MOON：月亮
+    // JUDI：蹦迪
 
     wsMode = mode;
 
@@ -199,25 +194,6 @@ void duerMode(const String & mode)
 void duercMode(const String & cmode)
 {
     BLINKER_LOG("need cancel mode: ", cmode);
-
-    if (cmode == BLINKER_CMD_DUEROS_READING) {
-        // Your mode function
-    }
-    else if (cmode == BLINKER_CMD_DUEROS_SLEEP) {
-        // Your mode function
-    }
-    else if (cmode == BLINKER_CMD_DUEROS_ALARM) {
-        // Your mode function
-    }
-    else if (cmode == BLINKER_CMD_DUEROS_NIGHT_LIGHT) {
-        // Your mode function
-    }
-    else if (cmode == BLINKER_CMD_DUEROS_ROMANTIC) {
-        // Your mode function
-    }
-    else if (cmode == BLINKER_CMD_DUEROS_READING) {
-        // Your mode function
-    }
 
     wsMode = BLINKER_CMD_COMMON; // new mode
 
