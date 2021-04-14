@@ -1,28 +1,55 @@
 name: auto-deploy
-on: [push]
+on:
+  push:
+    branches: [master]
+
 jobs:
   archive-file:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+      - name: get version
+        id: version
+        uses: notiz-dev/github-action-json-property@release
+        with:
+          path: 'library.json'
+          prop_path: 'version'
+      
+      - name: get current time
+        uses: 1466587594/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYY.MM.DD
+          utcOffset: "+08:00"
+      
       - name: action-zip
         uses: montudor/action-zip@v0.1.1
         with:
-          args: zip -qq -r blinker-library.zip /github/workspace
+          args: zip -qq -r blinker-library-${{steps.version.outputs.prop}}.zip . -x .github/* -x .git/*
       
-      - name: current dir
-        run: pwd
-      
-      - name: list file
-        run: ls *.zip
-      
-      - name: list all file
-        run: ls *
+      - name: create json
+        id: jsonfile
+        uses: jsdaniell/create-json@1.1.2
+        with:
+          name: "arduino.json"
+          json: '{"img": "assets/sdk/arduino.png", "text": "Arduino (C++)", "update": "${{ steps.current-time.outputs.formattedTime}}", "version": "${{steps.version.outputs.prop}}", "github": "https://github.com/blinker-iot/blinker-library", "document": "https://diandeng.tech/doc/arduino-support", "download": "sdk/blinker-library-${{steps.version.outputs.prop}}.zip" }'
 
-      - name: Deploy
+      - name: upload zip
         uses: garygrossgarten/github-action-scp@v0.5.3
         with:
-          local: blinker-library.zip
-          remote: /home/ubuntu/
+          local: blinker-library-${{steps.version.outputs.prop}}.zip
+          remote: ${{ secrets.REMOTE_PATH }}/blinker-library-${{steps.version.outputs.prop}}.zip
           host: ${{ secrets.SERVER_IP }}
           username: ubuntu
           privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          recursive: true
+      
+      - name: upload json
+        uses: garygrossgarten/github-action-scp@v0.5.3
+        with:
+          local: arduino.json
+          remote: ${{ secrets.REMOTE_PATH }}/arduino.json
+          host: ${{ secrets.SERVER_IP }}
+          username: ubuntu
+          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          recursive: true
