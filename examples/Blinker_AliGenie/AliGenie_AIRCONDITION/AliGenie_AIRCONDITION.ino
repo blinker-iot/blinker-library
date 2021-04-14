@@ -55,7 +55,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 bool oState = false;
 bool hsState = false;
 bool vsState = false;
-uint8_t setLevel;
+String setLevel = "auto";
 uint8_t setTemp = 26;
 
 void aligenieTemp(uint8_t temp)
@@ -78,10 +78,13 @@ void aligenieRelativeTemp(uint8_t relTemp)
     BlinkerAliGenie.print();
 }
 
-void aligenieLevel(uint8_t level)
+void aligenieLevel(const String & level)
 {
     BLINKER_LOG("need set level: ", level);
-    // 0:AUTO MODE, 1-3 LEVEL
+    // auto	自动风
+    // low	低风
+    // medium	中风
+    // high	高风
 
     setLevel = level;
 
