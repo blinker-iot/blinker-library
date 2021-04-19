@@ -50,6 +50,11 @@ enum b_config_t {
     BLINKER_AP_CONFIG
 };
 
+enum b_broker_t {
+    aliyun_b,
+    blinker_b
+};
+
 b_config_t  _configType = BLINKER_SMART_CONFIG;
 
 class BlinkerPROESP : public BlinkerStream
@@ -137,6 +142,8 @@ class BlinkerPROESP : public BlinkerStream
         void parseData(const char* data);
 
     protected :
+        b_broker_t  _use_broker = aliyun_b;
+        char        _messageId[20];
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
         uint8_t     _sharerCount = 0;
         uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
@@ -713,6 +720,17 @@ void BlinkerPROESP::parseData(const char* data)
     String _uuid = root["fromDevice"].as<String>();
     String dataGet = root["data"].as<String>();
 
+    if (_use_broker == blinker_b)
+    {
+        if (_uuid == "ServerSender")
+        {
+            _uuid = root["data"]["from"].as<String>();
+            String _mId = root["data"]["messageId"].as<String>();
+            strcpy(_messageId, _mId.c_str());
+            BLINKER_LOG_ALL(BLINKER_F("_messageId: "), _mId);
+        }
+    }
+
     BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
     BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
 
@@ -1189,39 +1207,32 @@ int BlinkerPROESP::bPrint(char * name, const String & data)
 
 int BlinkerPROESP::aliPrint(const String & data)
 {
-    // String payload;
-
-    // payload = BLINKER_F("{\"data\":");
-    // payload += data;
-    // payload += BLINKER_F(",\"fromDevice\":\"");
-    // payload += MQTT_DEVICEID_PRO;
-    // payload += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
-    // payload += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
-
-    // uint8_t num = strlen(data);
-    // for(uint8_t c_num = num; c_num > 0; c_num--)
-    // {
-    //     data[c_num+7] = data[c_num-1];
-    // }
-
     String data_add = BLINKER_F("{\"data\":");
-    // for(uint8_t c_num = 0; c_num < 8; c_num++)
-    // {
-    //     data[c_num] = data_add[c_num];
-    // }
+    
+    if (_use_broker == aliyun_b)
+    {
+        data_add += data;
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += data.substring(0, data.length() - 1);
+        data_add += BLINKER_F(",\"messageId\":\"");
+        data_add += STRING_format(_messageId);
+        data_add += BLINKER_F("\"}");
+    }
 
-    // data_add = BLINKER_F(",\"fromDevice\":\"");
-    // strcat(data, data_add.c_str());
-    // strcat(data, MQTT_DEVICEID_PRO);
-    // data_add = BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
-    // strcat(data, data_add.c_str());
-    // data_add = BLINKER_F(",\"deviceType\":\"vAssistant\"}");
-    // strcat(data, data_add.c_str());
-
-    data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += MQTT_DEVICEID_PRO;
-    data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+
+    if (_use_broker == aliyun_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+    }
+
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
     if (!isJson(data_add)) return false;
@@ -1270,7 +1281,18 @@ int BlinkerPROESP::aliPrint(const String & data)
 
         is_rrpc = false;
 
-        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
+        char send_data[1024];
+
+        if (_use_broker == aliyun_b)
+        {
+            strcpy(send_data, base64::encode(data_add).c_str());
+        }
+        else if (_use_broker == blinker_b)
+        {
+            strcpy(send_data, data_add.c_str());
+        }
+
+        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1303,10 +1325,51 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
 {
     String data_add = BLINKER_F("{\"data\":");
 
-    data_add += data;
+    if (report)
+    {
+        data_add += BLINKER_F("{\"report\":");
+    
+        if (_use_broker == aliyun_b)
+        {
+            data_add += data;
+        }
+        else if (_use_broker == blinker_b)
+        {
+            data_add += data.substring(0, data.length() - 1);
+            data_add += BLINKER_F(",\"messageId\":\"");
+            data_add += STRING_format(_messageId);
+            data_add += BLINKER_F("\"}");
+        }
+
+        data_add += BLINKER_F("}");
+    }
+    else
+    {
+        if (_use_broker == aliyun_b)
+        {
+            data_add += data;
+        }
+        else if (_use_broker == blinker_b)
+        {
+            data_add += data.substring(0, data.length() - 1);
+            data_add += BLINKER_F(",\"messageId\":\"");
+            data_add += STRING_format(_messageId);
+            data_add += BLINKER_F("\"}");
+        }
+    }
+
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += MQTT_DEVICEID_PRO;
-    data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+
+    if (_use_broker == aliyun_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+    }
+
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
     if (!isJson(data_add)) return false;
@@ -1349,7 +1412,18 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_PRO);
         }
 
-        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, is_rrpc ? base64::encode(data_add).c_str() : data_add.c_str()))
+        char send_data[1024];
+
+        if (_use_broker == aliyun_b)
+        {
+            strcpy(send_data, base64::encode(data_add).c_str());
+        }
+        else if (_use_broker == blinker_b)
+        {
+            strcpy(send_data, data_add.c_str());
+        }
+
+        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1385,11 +1459,31 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
 int BlinkerPROESP::miPrint(const String & data)
 {
     String data_add = BLINKER_F("{\"data\":");
+    
+    if (_use_broker == aliyun_b)
+    {
+        data_add += data;
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += data.substring(0, data.length() - 1);
+        data_add += BLINKER_F(",\"messageId\":\"");
+        data_add += STRING_format(_messageId);
+        data_add += BLINKER_F("\"}");
+    }
 
-    data_add += data;
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += MQTT_DEVICEID_PRO;
-    data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+
+    if (_use_broker == aliyun_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+    }
+
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
     if (!isJson(data_add)) return false;
@@ -1434,7 +1528,18 @@ int BlinkerPROESP::miPrint(const String & data)
 
         is_rrpc = false;
 
-        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
+        char send_data[1024];
+
+        if (_use_broker == aliyun_b)
+        {
+            strcpy(send_data, base64::encode(data_add).c_str());
+        }
+        else if (_use_broker == blinker_b)
+        {
+            strcpy(send_data, data_add.c_str());
+        }
+
+        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -2235,6 +2340,10 @@ int BlinkerPROESP::connectServer() {
         url_iot += BLINKER_F("&aliType=multi_outlet");
     #elif defined(BLINKER_ALIGENIE_SENSOR)
         url_iot += BLINKER_F("&aliType=sensor");
+    #elif defined(BLINKER_ALIGENIE_FAN)
+        url_iot += BLINKER_F("&aliType=fan");
+    #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
+        url_iot += BLINKER_F("&aliType=aircondition");
     #elif defined(BLINKER_ALIGENIE_TYPE)
         url_iot += BLINKER_ALIGENIE_TYPE;
     #endif
@@ -2247,6 +2356,10 @@ int BlinkerPROESP::connectServer() {
         url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
     #elif defined(BLINKER_DUEROS_SENSOR)
         url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+    #elif defined(BLINKER_DUEROS_FAN)
+        url_iot += BLINKER_F("&duerType=FAN");
+    #elif defined(BLINKER_DUEROS_AIRCONDITION)
+        url_iot += BLINKER_F("&duerType=AIR_CONDITION");
     #elif defined(BLINKER_DUEROS_TYPE)
         url_iot += BLINKER_DUEROS_TYPE;
     #endif
@@ -2259,6 +2372,10 @@ int BlinkerPROESP::connectServer() {
         url_iot += BLINKER_F("&miType=multi_outlet");
     #elif defined(BLINKER_MIOT_SENSOR)
         url_iot += BLINKER_F("&miType=sensor");
+    #elif defined(BLINKER_MIOT_FAN)
+        url_iot += BLINKER_F("&miType=fan");
+    #elif defined(BLINKER_MIOT_AIRCONDITION)
+        url_iot += BLINKER_F("&miType=aircondition");
     #elif defined(BLINKER_MIOT_TYPE)
         url_iot += BLINKER_MIOT_TYPE;
     #endif
@@ -2387,6 +2504,8 @@ int BlinkerPROESP::connectServer() {
         // strcpy(AUTHKEY_PRO, _authKey.c_str());
         MQTT_PORT_PRO = BLINKER_MQTT_ALIYUN_PORT;
 
+        _use_broker = aliyun_b;
+
         BLINKER_LOG_ALL(BLINKER_F("===================="));
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
@@ -2423,6 +2542,8 @@ int BlinkerPROESP::connectServer() {
         MQTT_HOST_PRO = (char*)malloc((strlen(BLINKER_MQTT_ONENET_HOST)+1)*sizeof(char));
         strcpy(MQTT_HOST_PRO, BLINKER_MQTT_ONENET_HOST);
         MQTT_PORT_PRO = BLINKER_MQTT_ONENET_PORT;
+
+        // _use_broker = blinker_b;
     }
     UUID_PRO = (char*)malloc((_uuid.length()+1)*sizeof(char));
     strcpy(UUID_PRO, _uuid.c_str());

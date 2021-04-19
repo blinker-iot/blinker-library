@@ -14,7 +14,7 @@
  * if use ESP8266 with Blinker.
  * https://github.com/esp8266/Arduino/releases
  * 
- * Make sure installed 1.0.4 or later ESP32/Arduino package,
+ * Make sure installed 1.0.5 or later ESP32/Arduino package,
  * if use ESP32 with Blinker.
  * https://github.com/espressif/arduino-esp32/releases
  * 
@@ -84,68 +84,20 @@ void miotHumi(uint8_t humi)
     BlinkerMIOT.print();
 }
 
-void miotECO(const String & state)
+void miotMode(const String & mode, const String & state)
 {
-    BLINKER_LOG("need set ECO mode state: ", state);
+    // eco ECO节能模式
+    // anion 负离子
+    // heater 辅热功能
+    // dryer 干燥功能
+    // sleep 睡眠模式
+    // soft 柔风功能
+    // uv UV杀菌
+    // unsb un-straight-blowing 防直吹
     
-    BlinkerMIOT.eco(state);
-    BlinkerMIOT.print();
-}
+    BLINKER_LOG("need set mode: ", mode, ", state:", state);
 
-void miotAnion(const String & state)
-{
-    BLINKER_LOG("need set anion mode state: ", state);
-    
-    BlinkerMIOT.anion(state);
-    BlinkerMIOT.print();
-}
-
-void miotHeater(const String & state)
-{
-    BLINKER_LOG("need set heater mode state: ", state);
-    
-    BlinkerMIOT.heater(state);
-    BlinkerMIOT.print();
-}
-
-void miotDryer(const String & state)
-{
-    BLINKER_LOG("need set dryer mode state: ", state);
-    
-    BlinkerMIOT.dryer(state);
-    BlinkerMIOT.print();
-}
-
-void miotSleep(const String & state)
-{
-    BLINKER_LOG("need set sleep mode state: ", state);
-    
-    BlinkerMIOT.sleep(state);
-    BlinkerMIOT.print();
-}
-
-void miotSoft(const String & state)
-{
-    BLINKER_LOG("need set soft mode state: ", state);
-    
-    BlinkerMIOT.soft(state);
-    BlinkerMIOT.print();
-}
-
-void miotUV(const String & state)
-{
-    BLINKER_LOG("need set UV mode state: ", state);
-    
-    BlinkerMIOT.uv(state);
-    BlinkerMIOT.print();
-}
-
-void miotUnStraightBlow(const String & state)
-{
-    BLINKER_LOG("need set UnStraightBlow mode state: ", state);
-    
-    BlinkerMIOT.unStraightBlow(state);
-    BlinkerMIOT.print();
+    BlinkerMIOT.mode(mode, state);
 }
 
 void miotHSwingState(const String & state)
@@ -291,14 +243,7 @@ void setup()
     BlinkerMIOT.attachHSwing(miotHSwingState);
     BlinkerMIOT.attachVSwing(miotVSwingState);
     BlinkerMIOT.attachLevel(miotLevel);
-    BlinkerMIOT.attachECO(miotECO);
-    BlinkerMIOT.attachAnion(miotAnion);
-    BlinkerMIOT.attachHeater(miotHeater);
-    BlinkerMIOT.attachDryer(miotDryer);
-    BlinkerMIOT.attachSleep(miotSleep);
-    BlinkerMIOT.attachSoft(miotSoft);
-    BlinkerMIOT.attachUV(miotUV);
-    BlinkerMIOT.attachUnStraightBlow(miotUnStraightBlow);
+    BlinkerMIOT.attachMode(miotMode);
     BlinkerMIOT.attachTemp(miotTemp);
     BlinkerMIOT.attachHumi(miotHumi);
     BlinkerMIOT.attachQuery(miotQuery);

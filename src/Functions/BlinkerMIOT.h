@@ -74,6 +74,11 @@ class BLINKERMIOT
             Blinker.attachMIOTSetColor(newFunction);
         }
 
+        void attachMode(blinker_callback_with_string_string_arg_t newFunction)
+        {
+            Blinker.attachMIOTSetMode(newFunction);
+        }
+
         void attachMode(blinker_callback_with_uint8_arg_t newFunction)
         {
             Blinker.attachMIOTSetMode(newFunction);
@@ -218,8 +223,28 @@ class BLINKERMIOT
         {
             String payload = BLINKER_F("\"");
             payload += STRING_format(BLINKER_CMD_MODE);
-            payload += BLINKER_F("\":");
+            payload += BLINKER_F("\":\"");
             payload += STRING_format(md);
+            payload += BLINKER_F("\"");
+
+            // Blinker.aligeniePrint(payload);
+
+            if (_fresh >> 2 & 0x01) {
+                free(aMode);
+            }
+
+            aMode = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aMode, payload.c_str());
+
+            _fresh |= 0x01 << 2;
+        }
+
+        void mode(const String & mode, const String & state)
+        {
+            String payload = BLINKER_F("\"");
+            payload += mode;
+            payload += BLINKER_F("\":");
+            payload += state;
 
             // Blinker.aligeniePrint(payload);
 
