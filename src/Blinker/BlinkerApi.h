@@ -5,6 +5,7 @@
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerUtility.h"
+#include "Blinker/BlinkerAuto.h"
 
 #include "../Widgets/BlinkerTimer.h"
 #include "../Widgets/BlinkerTimingTimer.h"
@@ -68,6 +69,9 @@ class BlinkerApi
         void loadTimer();
         void loadTiming();
     #endif
+        
+        void autoRun();
+        void autoInput(const String & key, float data);
 
     private :
         bool        _fresh = false;
@@ -110,8 +114,16 @@ class BlinkerApi
         bool timerManager(const JsonObject& data, bool _noSet = false);
     #endif
 
+        
+        uint8_t                             _aCount = 0;
+        class BlinkerAUTO *                 _AUTO[2];
+
+        void autoStart();
+        bool autoManager(const JsonObject& data);
+
     protected :
         void parse(char _data[], bool ex_data = false);
+        void beginAuto();
 
     #if defined(BLINKER_WIDGET)
         bool checkTimer();
@@ -1956,7 +1968,7 @@ void BlinkerApi<Proto>::loadTimer()
     BLINKER_LOG(BLINKER_F(
         "\n==========================================================="
         "\n================== Blinker Timer loaded! =================="
-        "\n     EEPROM address 1536-2431 is used for Blinker Timer!"
+        "\n    EEPROM address 1536-2431 is used for Blinker Timer!"
         "\n========= PLEASE AVOID USING THESE EEPROM ADDRESS! ========"
         "\n===========================================================\n"));
 
@@ -1965,5 +1977,445 @@ void BlinkerApi<Proto>::loadTimer()
     loadLoop();
 }
 #endif
+
+template <class Proto>
+void BlinkerApi<Proto>::autoRun()
+{
+    for (uint8_t _num = 0; _num < _aCount; _num++)
+    {
+        if (_AUTO[_num]->isTrigged())
+        {
+            if (static_cast<Proto*>(this)->conn.autoPrint(_AUTO[_num]->id()))
+            {
+                static_cast<Proto*>(this)->run();
+
+                BLINKER_LOG_ALL(BLINKER_F("trigged sucessed"));
+
+                _AUTO[_num]->fresh();
+            }
+            else
+            {
+                BLINKER_LOG_ALL(BLINKER_F("trigged failed"));
+            }
+
+            static_cast<Proto*>(this)->run();
+        }
+    }
+}
+
+template <class Proto>
+void BlinkerApi<Proto>::autoInput(const String & key, float data)
+{
+    // if (!_isNTPInit) return;
+
+    int32_t nowTime = static_cast<Proto*>(this)->dtime()/60;
+
+    if (nowTime == -1) return;
+
+    for (uint8_t _num = 0; _num < _aCount; _num++)
+    {
+        _AUTO[_num]->run(key, data, nowTime);
+    }
+}
+
+template <class Proto>
+void BlinkerApi<Proto>::beginAuto()
+{
+    BLINKER_LOG(BLINKER_F("======================================================="));
+    BLINKER_LOG(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
+    BLINKER_LOG(BLINKER_F("    EEPROM address 0-1279 is used for Auto Control!"));
+    BLINKER_LOG(BLINKER_F("======= PLEASE AVOID USING THESE EEPROM ADDRESS! ======"));
+    BLINKER_LOG(BLINKER_F("======================================================="));
+
+    // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
+
+    // _isAuto = true;
+    // deserialization();
+    autoStart();
+
+    // autoInit(); //TODO
+}
+
+template <class Proto>
+void BlinkerApi<Proto>::autoStart()
+{
+    // autoPull();
+
+    BLINKER_LOG_ALL(BLINKER_F("_______autoStart_______"));
+    uint8_t checkData;
+
+    EEPROM.begin(BLINKER_EEP_SIZE);
+    EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
+    if (checkData != BLINKER_CHECK_DATA)
+    {
+        for (uint16_t _addr = BLINKER_EEP_ADDR_AUTO_START;
+            _addr < BLINKER_EEP_ADDR_AUTO_START +
+            BLINKER_ONE_AUTO_DATA_SIZE * 2; _addr++)
+        {
+            EEPROM.put(_addr, "\0");
+        }
+        EEPROM.put(BLINKER_EEP_ADDR_CHECK, BLINKER_CHECK_DATA);
+        EEPROM.commit();
+        EEPROM.end();
+        return;
+    }
+    EEPROM.get(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+    if (_aCount > 2)
+    {
+        _aCount = 0;
+        EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+    }
+    EEPROM.commit();
+    EEPROM.end();
+
+    BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+
+    if (_aCount)
+    {
+        for (uint8_t _num = 0; _num < _aCount; _num++)
+        {
+            BLINKER_LOG_ALL(BLINKER_F("new BlinkerAUTO() _num: "), _num);
+
+            _AUTO[_num] = new BlinkerAUTO();
+            _AUTO[_num]->setNum(_num);
+            _AUTO[_num]->deserialization();
+        }
+    }
+}
+
+template <class Proto>
+bool BlinkerApi<Proto>::autoManager(const JsonObject& data)
+{
+    // String set;
+    bool isSet = false;
+    bool isAuto = false;
+
+    // isSet = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_SET);
+    // isAuto = STRING_contains_string(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTO);
+    isSet = data.containsKey(BLINKER_CMD_SET);
+    String aData = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO].as<String>();
+    // const char* aDataArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][0];
+
+    // if (aData.length()) isAuto = true;
+    if (aData != "null") isAuto = true;
+
+    BLINKER_LOG_ALL(BLINKER_F("autoManager begin: "), isAuto, " ", isSet);
+
+    // if (aDataArray && !isAuto)
+    if (!isAuto)
+    {
+        for (uint8_t num = 0; num < 2; num++)
+        {
+            unsigned long _autoId = data[BLINKER_CMD_AUTO][num][BLINKER_CMD_AUTOID];
+            String arrayData = data[BLINKER_CMD_AUTO][num];
+
+            if (_aCount)
+            {
+                for (uint8_t _num = 0; _num < _aCount; _num++)
+                {
+                    if (_AUTO[_num]->id() == _autoId) {
+                        // _AUTO[_num]->manager(arrayData);
+                        return true;
+                    }
+                }
+                if (_aCount == 1)
+                {
+                    _AUTO[_aCount] = new BlinkerAUTO();
+                    _AUTO[_aCount]->setNum(_aCount);
+                    // _AUTO[_aCount]->manager(arrayData);
+
+                    // _aCount = 1;
+                    _aCount++;
+                    EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                    EEPROM.commit();
+                    EEPROM.end();
+
+                    BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                    // static_cast<Proto*>(this)->_print(autoData(), false);
+                    // return true;
+                }
+                else
+                {
+                    // _AUTO[_aCount - 1]->manager(arrayData);
+                    // return true;
+                }
+            }
+            else
+            {
+                _AUTO[_aCount] = new BlinkerAUTO();
+                _AUTO[_aCount]->setNum(_aCount);
+                // _AUTO[_aCount]->manager(arrayData);
+
+                _aCount = 1;
+                // _aCount++;
+                EEPROM.begin(BLINKER_EEP_SIZE);
+                EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                EEPROM.commit();
+                EEPROM.end();
+
+                BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                // static_cast<Proto*>(this)->_print(autoData(), false);
+                // return true;
+            }
+        }
+        return true;
+    }
+    else if (isSet && isAuto)
+    {
+        // BLINKER_LOG_ALL(BLINKER_F("timerManager5 isParsed"));
+        _fresh = true;
+
+        BLINKER_LOG_ALL(BLINKER_F("get auto setting"));
+
+        // bool isDelet = STRING_contains_string(BProto::dataParse(), BLINKER_CMD_DELETID);
+        String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                                    [BLINKER_CMD_ACTION][0];
+
+        // if (isDelet)
+        // {
+        //     // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
+        //     uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE];
+
+        //     if (_aCount)
+        //     {
+        //         for (uint8_t _num = 0; _num < _aCount; _num++)
+        //         {
+        //             if (_AUTO[_num]->id() == _autoId)
+        //             {
+        //                 // _AUTO[_num]->manager(static_cast<Proto*>(this)->dataParse());
+        //                 for (uint8_t a_num = _num; a_num < _aCount; a_num++)
+        //                 {
+        //                     if (a_num < _aCount - 1)
+        //                     {
+        //                         _AUTO[a_num]->setNum(a_num + 1);
+        //                         _AUTO[a_num]->deserialization();
+        //                         _AUTO[a_num]->setNum(a_num);
+        //                         _AUTO[a_num]->serialization();
+        //                     }
+        //                     else{
+        //                         _num = _aCount;
+        //                     }
+        //                 }
+        //                 _aCount--;
+
+        //                 EEPROM.begin(BLINKER_EEP_SIZE);
+        //                 EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+        //                 EEPROM.commit();
+        //                 EEPROM.end();
+
+        //                 BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+
+        //                 return true;
+        //             }
+        //         }
+        //     }
+        // }
+        // else if(isTriggedArray != "null")
+        // {
+        //     for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
+        //     {
+        //         String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+        //                                     [BLINKER_CMD_ACTION][a_num];
+
+        //         if(_autoData_array != "null")
+        //         {
+        //             // DynamicJsonBuffer _jsonBuffer;
+        //             // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
+        //             DynamicJsonDocument jsonBuffer(1024);
+        //             deserializeJson(jsonBuffer, _autoData_array);
+        //             JsonObject _array = jsonBuffer.as<JsonObject>();
+
+        //             json_parse(_array);
+        //             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
+        //                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
+        //                 !defined(BLINKER_LOWPOWER_AIR202))
+        //             timerManager(_array, true);
+        //             #endif
+        //         }
+        //         else
+        //         {
+        //             // a_num = BLINKER_MAX_WIDGET_SIZE;
+        //             return true;
+        //         }
+        //     }
+        // }
+        if (isTriggedArray != "null")
+        {
+            BLINKER_LOG_ALL(BLINKER_F("_auto trigged action: "), isTriggedArray);
+
+            for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
+            {
+                String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
+                                            [BLINKER_CMD_ACTION][a_num];
+
+                if(_autoData_array != "null")
+                {
+                    _fresh = false;
+                    // DynamicJsonBuffer _jsonBuffer;
+                    // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
+                    DynamicJsonDocument jsonBuffer(1024);
+                    deserializeJson(jsonBuffer, _autoData_array);
+                    JsonObject _array = jsonBuffer.as<JsonObject>();
+
+                    #if defined(BLINKER_WIDGET)
+                        timerManager(_array);
+
+                        for (uint8_t wNum = 0; wNum < _wCount_str; wNum++) {
+                            strWidgetsParse(_Widgets_str[wNum]->getName(), _array);
+                        }
+                        for (uint8_t wNum = 0; wNum < _wCount_int; wNum++) {
+                            intWidgetsParse(_Widgets_int[wNum]->getName(), _array);
+                        }
+                        for (uint8_t wNum = 0; wNum < _wCount_rgb; wNum++) {
+                            rgbWidgetsParse(_Widgets_rgb[wNum]->getName(), _array);
+                        }
+                        for (uint8_t wNum = 0; wNum < _wCount_tab; wNum++) {
+                            tabWidgetsParse(_Widgets_tab[wNum]->getName(), _array);
+                        }
+                    #endif
+
+                    if (_fresh)
+                    {
+                        static_cast<Proto*>(this)->flush();
+                    }
+                    else
+                    {
+                        #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
+                            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
+                            if (_parseFunc) {
+                                if(_parseFunc(_array)) {
+                                    BLINKER_LOG_ALL(BLINKER_F("_parseFunc(_array) isParsed"));
+                                    _fresh = true;
+                                    static_cast<Proto*>(this)->flush();
+                                }
+
+                                BLINKER_LOG_ALL(BLINKER_F("run parse callback function"));
+                            }
+                        #endif
+                    }
+                }
+                else
+                {
+                    // a_num = BLINKER_MAX_WIDGET_SIZE;
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_AUTOID);
+            String get_autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_ID].as<String>();
+            String del_autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE].as<String>();
+            // _autoId = get_autoId.toInt();
+
+            BLINKER_LOG_ALL(BLINKER_F("get_autoId: "), strtoul(get_autoId.c_str(),NULL,10));
+            BLINKER_LOG_ALL(BLINKER_F("del_autoId: "), strtoul(del_autoId.c_str(),NULL,10));
+            BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+            // _aCount = 0;
+
+            if (_aCount && strtoul(del_autoId.c_str(),NULL,10) == 0)
+            {
+                for (uint8_t _num = 0; _num < _aCount; _num++)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("check _autoId: "), _AUTO[_num]->id(), " ", _AUTO[_num]->id() == strtoul(get_autoId.c_str(),NULL,10));
+                    if (_AUTO[_num]->id() == strtoul(get_autoId.c_str(),NULL,10))
+                    {
+                        _AUTO[_num]->manager(data);
+                        return true;
+                    }
+                }
+                if (_aCount == 1)
+                {
+                    _AUTO[_aCount] = new BlinkerAUTO();
+                    _AUTO[_aCount]->setNum(_aCount);
+                    _AUTO[_aCount]->manager(data);
+
+                    // _aCount = 1;
+                    _aCount++;
+                    EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                    EEPROM.commit();
+                    EEPROM.end();
+
+                    BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+
+                    // static_cast<Proto*>(this)->_print(autoData(), false);
+                    // return true;
+                }
+                else
+                {
+                    _AUTO[0]->setNum(1);
+                    _AUTO[0]->deserialization();
+                    _AUTO[0]->setNum(0);
+                    _AUTO[0]->serialization();
+
+                    _AUTO[1] = new BlinkerAUTO();
+                    _AUTO[1]->setNum(1);
+                    _AUTO[1]->manager(data);
+                    // return true;
+                }
+            }
+            else if (_aCount == 0 && strtoul(del_autoId.c_str(),NULL,10) == 0)
+            {
+                _AUTO[_aCount] = new BlinkerAUTO();
+                _AUTO[_aCount]->setNum(_aCount);
+                _AUTO[_aCount]->manager(data);
+
+                _aCount = 1;
+                // _aCount++;
+                EEPROM.begin(BLINKER_EEP_SIZE);
+                EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                EEPROM.commit();
+                EEPROM.end();
+
+                BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+
+                // static_cast<Proto*>(this)->_print(autoData(), false);
+                // return true;
+            }
+            else if (strtoul(del_autoId.c_str(),NULL,10) != 0)
+            {
+                for (uint8_t _num = 0; _num < _aCount; _num++)
+                {
+                    BLINKER_LOG_ALL(BLINKER_F("check _autoId: "), _AUTO[_num]->id(), " ", _AUTO[_num]->id() == strtoul(del_autoId.c_str(),NULL,10));
+                    if (_AUTO[_num]->id() == strtoul(del_autoId.c_str(),NULL,10))
+                    {
+                        if (_num == 0) 
+                        {
+                            _AUTO[1]->setNum(0);
+                            _AUTO[1]->serialization();
+
+                            _AUTO[0]->deserialization();
+
+                            free(_AUTO[1]);
+                            
+                            _aCount--;
+                            EEPROM.begin(BLINKER_EEP_SIZE);
+                            EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                            EEPROM.commit();
+                            EEPROM.end();
+                        }
+                        else
+                        {
+                            free(_AUTO[1]);
+                            _aCount--;
+                            EEPROM.begin(BLINKER_EEP_SIZE);
+                            EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
+                            EEPROM.commit();
+                            EEPROM.end();
+                        }
+                        
+                    }
+                }
+            }
+        }
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 
 #endif

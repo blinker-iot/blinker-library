@@ -35,6 +35,26 @@ class BLINKERDUEROS
             _DuerOSSetcModeFunc = newFunction;
         }
 
+        void attachLevel(blinker_callback_with_uint8_arg_t newFunction)
+        {
+            _DuerOSSetLevelFunc = newFunction;
+        }
+
+        void attachRelativeLevel(blinker_callback_with_int32_arg_t newFunction)
+        {
+            _DuerOSSetRelativeLevelFunc = newFunction;
+        }
+
+        void attachTemp(blinker_callback_with_uint8_arg_t newFunction)
+        {
+            _DuerOSSetTempFunc = newFunction;
+        }
+
+        void attachRelativeTemp(blinker_callback_with_int32_arg_t newFunction)
+        {
+            _DuerOSSetRelativeTempFunc = newFunction;
+        }
+
         void attachBrightness(blinker_callback_with_string_arg_t newFunction)
         {
             _DuerOSSetBrightnessFunc = newFunction;
@@ -581,6 +601,25 @@ class BLINKERDUEROS
             _fresh |= 0x01 << 11;
         }
 
+        void level(uint8_t _level)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_LEVEL);
+            payload += BLINKER_F("\":");
+            payload += STRING_format(_level);
+
+            // Blinker.DuerOSPrint(payload);
+
+            if (_fresh >> 12 & 0x01) {
+                free(aLevel);
+            }
+
+            aLevel = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aLevel, payload.c_str());
+
+            _fresh |= 0x01 << 12;
+        }
+
         void print()
         {
             if (_fresh == 0) return;
@@ -695,6 +734,15 @@ class BLINKERDUEROS
                 free(aTIME);
             }
 
+            if (_fresh >> 12 & 0x01) {
+                if (duerData.length()) duerData += BLINKER_F(",");
+                else duerData += BLINKER_F("{");
+                
+                duerData += aLevel;
+                
+                free(aLevel);
+            }
+
             duerData += BLINKER_F("}");
 
             _fresh = 0;
@@ -754,6 +802,20 @@ class BLINKERDUEROS
                     if (duerData.length()) duerData += BLINKER_F(",");
                     else duerData += BLINKER_F("{");
                     
+                    duerData += aCtemp;
+                    
+                    isCheck = true;
+                }
+                
+                free(aCtemp);
+            }
+
+            if (_fresh >> 4 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
                     duerData += aBright;
                     
                     isCheck = true;
@@ -762,7 +824,7 @@ class BLINKERDUEROS
                 free(aBright);
             }
 
-            if (_fresh >> 4 & 0x01) {
+            if (_fresh >> 5 & 0x01) {
                 if (!isCheck)
                 {
                     if (duerData.length()) duerData += BLINKER_F(",");
@@ -776,7 +838,7 @@ class BLINKERDUEROS
                 free(aTemp);
             }
 
-            if (_fresh >> 5 & 0x01) {
+            if (_fresh >> 6 & 0x01) {
                 if (!isCheck)
                 {
                     if (duerData.length()) duerData += BLINKER_F(",");
@@ -790,7 +852,7 @@ class BLINKERDUEROS
                 free(aHumi);
             }
 
-            if (_fresh >> 6 & 0x01) {
+            if (_fresh >> 7 & 0x01) {
                 if (!isCheck)
                 {
                     if (duerData.length()) duerData += BLINKER_F(",");
@@ -804,7 +866,7 @@ class BLINKERDUEROS
                 free(aPm25);
             }
 
-            if (_fresh >> 7 & 0x01) {
+            if (_fresh >> 8 & 0x01) {
                 if (!isCheck)
                 {
                     if (duerData.length()) duerData += BLINKER_F(",");
@@ -818,7 +880,7 @@ class BLINKERDUEROS
                 free(aPm10);
             }
 
-            if (_fresh >> 8 & 0x01) {
+            if (_fresh >> 9 & 0x01) {
                 if (!isCheck)
                 {
                     if (duerData.length()) duerData += BLINKER_F(",");
@@ -832,7 +894,7 @@ class BLINKERDUEROS
                 free(aCO2);
             }
 
-            if (_fresh >> 9 & 0x01) {
+            if (_fresh >> 10 & 0x01) {
                 if (!isCheck)
                 {
                     if (duerData.length()) duerData += BLINKER_F(",");
@@ -846,7 +908,7 @@ class BLINKERDUEROS
                 free(aAQI);
             }
 
-            if (_fresh >> 10 & 0x01) {
+            if (_fresh >> 11 & 0x01) {
                 if (!isCheck)
                 {
                     if (duerData.length()) duerData += BLINKER_F(",");
@@ -858,6 +920,20 @@ class BLINKERDUEROS
                 }
                 
                 free(aTIME);
+            }
+
+            if (_fresh >> 12 & 0x01) {
+                if (!isCheck)
+                {
+                    if (duerData.length()) duerData += BLINKER_F(",");
+                    else duerData += BLINKER_F("{");
+                    
+                    duerData += aLevel;
+                    
+                    isCheck = true;
+                }
+                
+                free(aLevel);
             }
 
             duerData += BLINKER_F("}");
@@ -889,19 +965,25 @@ class BLINKERDUEROS
         char * aCO2;        
         char * aAQI;
         char * aTIME;
+        
+        char * aLevel;
         uint16_t _fresh = 0;
 
         blinker_callback_with_string_uint8_arg_t    _DuerOSPowerStateFunc_m = NULL;
-        blinker_callback_with_string_arg_t      _DuerOSPowerStateFunc = NULL;
-        blinker_callback_with_int32_arg_t       _DuerOSSetColorFunc = NULL;
-        blinker_callback_with_string_arg_t      _DuerOSSetModeFunc = NULL;
-        blinker_callback_with_string_arg_t      _DuerOSSetcModeFunc = NULL;
-        blinker_callback_with_string_arg_t      _DuerOSSetBrightnessFunc = NULL;
-        blinker_callback_with_int32_arg_t       _DuerOSSetRelativeBrightnessFunc = NULL;
-        blinker_callback_with_int32_arg_t       _DuerOSSetColorTemperature = NULL;
-        blinker_callback_with_int32_arg_t       _DuerOSSetRelativeColorTemperature = NULL;
-        blinker_callback_with_int32_uint8_arg_t _DuerOSQueryFunc_m = NULL;
-        blinker_callback_with_int32_arg_t       _DuerOSQueryFunc = NULL;
+        blinker_callback_with_string_arg_t          _DuerOSPowerStateFunc = NULL;
+        blinker_callback_with_int32_arg_t           _DuerOSSetColorFunc = NULL;
+        blinker_callback_with_string_arg_t          _DuerOSSetModeFunc = NULL;
+        blinker_callback_with_string_arg_t          _DuerOSSetcModeFunc = NULL;
+        blinker_callback_with_uint8_arg_t           _DuerOSSetLevelFunc = NULL;
+        blinker_callback_with_int32_arg_t           _DuerOSSetRelativeLevelFunc = NULL;
+        blinker_callback_with_uint8_arg_t           _DuerOSSetTempFunc = NULL;
+        blinker_callback_with_int32_arg_t           _DuerOSSetRelativeTempFunc = NULL;
+        blinker_callback_with_string_arg_t          _DuerOSSetBrightnessFunc = NULL;
+        blinker_callback_with_int32_arg_t           _DuerOSSetRelativeBrightnessFunc = NULL;
+        blinker_callback_with_int32_arg_t           _DuerOSSetColorTemperature = NULL;
+        blinker_callback_with_int32_arg_t           _DuerOSSetRelativeColorTemperature = NULL;
+        blinker_callback_with_int32_uint8_arg_t     _DuerOSQueryFunc_m = NULL;
+        blinker_callback_with_int32_arg_t           _DuerOSQueryFunc = NULL;
 
         void duerParse(const String & _data)
         {
@@ -1034,6 +1116,36 @@ class BLINKERDUEROS
                     String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
 
                     if (_DuerOSSetcModeFunc) _DuerOSSetcModeFunc(setcMode);
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_LEVEL)) {
+                    String setValue = rootSet[BLINKER_CMD_LEVEL];
+
+                    if (_DuerOSSetLevelFunc) _DuerOSSetLevelFunc(setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_LEVEL_UP)) {
+                    String setValue = rootSet[BLINKER_CMD_LEVEL_UP];
+
+                    if (_DuerOSSetRelativeLevelFunc) _DuerOSSetRelativeLevelFunc(setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_LEVEL_DW)) {
+                    String setValue = rootSet[BLINKER_CMD_LEVEL_DW];
+
+                    if (_DuerOSSetRelativeLevelFunc) _DuerOSSetRelativeLevelFunc(-setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_TEMP)) {
+                    String setValue = rootSet[BLINKER_CMD_TEMP];
+
+                    if (_DuerOSSetTempFunc) _DuerOSSetTempFunc(setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_TEMP_UP)) {
+                    String setValue = rootSet[BLINKER_CMD_TEMP_UP];
+
+                    if (_DuerOSSetRelativeTempFunc) _DuerOSSetRelativeTempFunc(setValue.toInt());
+                }
+                else if (rootSet.containsKey(BLINKER_CMD_TEMP_DW)) {
+                    String setValue = rootSet[BLINKER_CMD_TEMP_DW];
+
+                    if (_DuerOSSetRelativeTempFunc) _DuerOSSetRelativeTempFunc(-setValue.toInt());
                 }
             }
         }

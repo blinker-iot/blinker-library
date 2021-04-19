@@ -57,6 +57,11 @@ enum b_configStatus_t {
     APCFG_TIMEOUT
 };
 
+enum b_broker_t {
+    aliyun_b,
+    blinker_b
+};
+
 char*       MQTT_HOST_MQTT;
 char*       MQTT_ID_MQTT;
 char*       MQTT_NAME_MQTT;
@@ -86,6 +91,7 @@ class BlinkerWiFiESP
         char * lastRead();
         void flush();
         int  print(char * data, bool needCheck = true);
+        int  autoPrint(unsigned long id);
         void subscribe();
         int  isJson(const String & data);
         bool deviceRegister();
@@ -111,7 +117,7 @@ class BlinkerWiFiESP
         bool timeSlot(const String & msg);
         void httpHeartbeat();
 
-        String toServer(uint8_t _type, const String & msg, bool state = false);
+        String httpToServer(uint8_t _type, const String & msg, bool state = false);
         
         bool checkInit()            { return isMQTTinit; }
         bool checkWlanInit();
@@ -190,6 +196,8 @@ class BlinkerWiFiESP
         bool checkAutoPull();
 
     protected :
+        b_broker_t  _use_broker = aliyun_b;
+        char        _messageId[20];
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
         bool        _isWiFiInit = false;
         // bool        _isBegin = false;
@@ -224,6 +232,7 @@ class BlinkerWiFiESP
         uint32_t    miKaTime = 0;
         bool        isMIOTAlive = false;
         bool        isMIOTAvail = false;
+        uint32_t    linkTime = 0;
 
         const char* _authKey;
 
@@ -792,6 +801,67 @@ int BlinkerWiFiESP::print(char * data, bool needCheck)
     }
 }
 
+int BlinkerWiFiESP::autoPrint(unsigned long id)
+{
+    BLINKER_LOG_ALL(BLINKER_F("autoTrigged id: "), id);
+
+    String payload = BLINKER_F("{\"data\":{\"set\":{");
+    payload += BLINKER_F("\"auto\":{\"trig\":true,");
+    payload += BLINKER_F("\"id\":");
+    payload += String(id);
+    payload += BLINKER_F("}}}");
+    payload += BLINKER_F(",\"fromDevice\":\"");
+    payload += STRING_format(DEVICE_NAME_MQTT);
+    payload += BLINKER_F("\",\"deviceType\":\"Auto\"");
+    payload += BLINKER_F(",\"toDevice\":\"serverClient\"}");
+        // "\",\"deviceType\":\"" + "type" + "\"}";
+
+    BLINKER_LOG_ALL(BLINKER_F("autoPrint..."));
+
+    if (mqtt_MQTT->connected())
+    {
+        if ((millis() - linkTime) > BLINKER_LINK_MSG_LIMIT || \
+            linkTime == 0)
+        {
+            // linkTime = millis();
+
+            // Adafruit_MQTT_Publish iotPub = Adafruit_MQTT_Publish(mqtt_MQTT, BLINKER_PUB_TOPIC_MQTT);
+
+            // if (! iotPub.publish(payload.c_str())) {
+
+            if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, payload.c_str()))
+            {
+                BLINKER_LOG_ALL(payload);
+                BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+
+                return false;
+            }
+            else
+            {
+                BLINKER_LOG_ALL(payload);
+                BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+
+                linkTime = millis();
+
+                this->latestTime = millis();
+
+                return true;
+            }
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT "), linkTime);
+
+            return false;
+        }
+    }
+    else
+    {
+        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        return false;
+    }
+}
+
 int BlinkerWiFiESP::isJson(const String & data)
 {
     BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
@@ -816,7 +886,7 @@ bool BlinkerWiFiESP::deviceRegister()
 {
     _status = DEV_REGISTER;
 
-    String payload = toServer(BLINKER_CMD_WIFI_AUTH_NUMBER, "");
+    String payload = httpToServer(BLINKER_CMD_WIFI_AUTH_NUMBER, "");
 
     BLINKER_LOG_ALL(BLINKER_F("reply was:"));
     BLINKER_LOG_ALL(BLINKER_F("=============================="));
@@ -875,6 +945,8 @@ bool BlinkerWiFiESP::deviceRegister()
         if(!isMQTTinit) MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
         strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_ALIYUN_HOST);
         MQTT_PORT_MQTT = BLINKER_MQTT_ALIYUN_PORT;
+
+        _use_broker = aliyun_b;
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
         // String id2name = _userID.subString(10, _userID.length());
@@ -910,6 +982,8 @@ bool BlinkerWiFiESP::deviceRegister()
         if(!isMQTTinit) MQTT_HOST_MQTT = (char*)malloc((_host.length()+1)*sizeof(char));
         strcpy(MQTT_HOST_MQTT, _host.c_str());
         MQTT_PORT_MQTT = _port;
+
+        _use_broker = blinker_b;
     }
     if(!isMQTTinit) UUID_MQTT = (char*)malloc((_uuid.length()+1)*sizeof(char));
     strcpy(UUID_MQTT, _uuid.c_str());
@@ -1064,7 +1138,7 @@ void BlinkerWiFiESP::freshSharers()
             data += BLINKER_F("&key=");
             data += STRING_format(_authKey);
 
-    String payload = toServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
+    String payload = httpToServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
 
     BLINKER_LOG_ALL(BLINKER_F("sharers data: "), payload);
 
@@ -1123,7 +1197,7 @@ bool BlinkerWiFiESP::sms(const T& msg)
 
     if (_msg.length() > 20) return false;
 
-    return toServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
+    return httpToServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
 }
 
 template<typename T>
@@ -1143,7 +1217,7 @@ bool BlinkerWiFiESP::sms(const T& msg, const char* cel)
 
     if (_msg.length() > 20) return false;
 
-    return toServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
+    return httpToServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
 }
 
 template<typename T>
@@ -1159,7 +1233,7 @@ bool BlinkerWiFiESP::push(const T& msg)
             data += _msg;
             data += BLINKER_F("\"}");
 
-    return toServer(BLINKER_CMD_PUSH_NUMBER, data) != "false";
+    return httpToServer(BLINKER_CMD_PUSH_NUMBER, data) != "false";
 }
 
 template<typename T>
@@ -1175,7 +1249,7 @@ bool BlinkerWiFiESP::wechat(const T& msg)
             data += _msg;
             data += BLINKER_F("\"}");
 
-    return toServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
+    return httpToServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
 }
 
 template<typename T>
@@ -1195,7 +1269,7 @@ bool BlinkerWiFiESP::wechat(const String & title, const String & state, const T&
             data += _msg;
             data += BLINKER_F("\"}");
 
-    return toServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
+    return httpToServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
 }
 
 String BlinkerWiFiESP::weather(uint32_t _city)
@@ -1214,7 +1288,7 @@ String BlinkerWiFiESP::weather(uint32_t _city)
     data += BLINKER_F("&key=");
     data += MQTT_KEY_MQTT;
 
-    return toServer(BLINKER_CMD_WEATHER_NUMBER, data);
+    return httpToServer(BLINKER_CMD_WEATHER_NUMBER, data);
 }
 
 String BlinkerWiFiESP::weatherForecast(uint32_t _city)
@@ -1233,7 +1307,7 @@ String BlinkerWiFiESP::weatherForecast(uint32_t _city)
     data += BLINKER_F("&key=");
     data += MQTT_KEY_MQTT;
 
-    return toServer(BLINKER_CMD_WEATHER_FORECAST_NUMBER, data);
+    return httpToServer(BLINKER_CMD_WEATHER_FORECAST_NUMBER, data);
 }
 
 String BlinkerWiFiESP::air(uint32_t _city)
@@ -1252,7 +1326,7 @@ String BlinkerWiFiESP::air(uint32_t _city)
     data += BLINKER_F("&key=");
     data += MQTT_KEY_MQTT;
 
-    return toServer(BLINKER_CMD_AQI_NUMBER, data);
+    return httpToServer(BLINKER_CMD_AQI_NUMBER, data);
 }
 
 bool BlinkerWiFiESP::log(const String & msg, time_t now_time)
@@ -1265,7 +1339,7 @@ bool BlinkerWiFiESP::log(const String & msg, time_t now_time)
     data += msg;
     data += BLINKER_F("\"]]}");
 
-    return toServer(BLINKER_CMD_LOG_NUMBER, data) != "false";
+    return httpToServer(BLINKER_CMD_LOG_NUMBER, data) != "false";
 }
 
 bool BlinkerWiFiESP::dataStorage(const String & msg)
@@ -1278,7 +1352,7 @@ bool BlinkerWiFiESP::dataStorage(const String & msg)
     data += msg;
     data += BLINKER_F("}}");
     
-    return toServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) != "false";
+    return httpToServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) != "false";
 }
 
 bool BlinkerWiFiESP::timeSlot(const String & msg)
@@ -1290,7 +1364,7 @@ bool BlinkerWiFiESP::timeSlot(const String & msg)
     data += msg;
     data += BLINKER_F("]}");
     
-    return toServer(BLINKER_CMD_TIME_SLOT_DATA_NUMBER, data) != "false";
+    return httpToServer(BLINKER_CMD_TIME_SLOT_DATA_NUMBER, data) != "false";
 }
 
 void BlinkerWiFiESP::httpHeartbeat()
@@ -1303,10 +1377,10 @@ void BlinkerWiFiESP::httpHeartbeat()
     data += BLINKER_F("&heartbeat=");
     data += STRING_format(BLINKER_DEVICE_HEARTBEAT_TIME);
 
-    toServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data);
+    httpToServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data);
 }
 
-String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
+String BlinkerWiFiESP::httpToServer(uint8_t _type, const String & msg, bool state)
 {
     switch (_type)
     {
@@ -1579,6 +1653,10 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
                 url_iot += BLINKER_F("&aliType=multi_outlet");
             #elif defined(BLINKER_ALIGENIE_SENSOR)
                 url_iot += BLINKER_F("&aliType=sensor");
+            #elif defined(BLINKER_ALIGENIE_FAN)
+                url_iot += BLINKER_F("&aliType=fan");
+            #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
+                url_iot += BLINKER_F("&aliType=aircondition");
             #endif
 
             #if defined(BLINKER_DUEROS_LIGHT)
@@ -1589,6 +1667,10 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
                 url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
             #elif defined(BLINKER_DUEROS_SENSOR)
                 url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+            #elif defined(BLINKER_DUEROS_FAN)
+                url_iot += BLINKER_F("&duerType=FAN");
+            #elif defined(BLINKER_DUEROS_AIRCONDITION)
+                url_iot += BLINKER_F("&duerType=AIR_CONDITION");
             #endif
 
             #if defined(BLINKER_MIOT_LIGHT)
@@ -1599,6 +1681,10 @@ String BlinkerWiFiESP::toServer(uint8_t _type, const String & msg, bool state)
                 url_iot += BLINKER_F("&miType=multi_outlet");
             #elif defined(BLINKER_MIOT_SENSOR)
                 url_iot += BLINKER_F("&miType=sensor");
+            #elif defined(BLINKER_MIOT_FAN)
+                url_iot += BLINKER_F("&miType=fan");
+            #elif defined(BLINKER_MIOT_AIRCONDITION)
+                url_iot += BLINKER_F("&miType=aircondition");
             #endif
 
             url_iot += BLINKER_F("&version=");
@@ -2267,6 +2353,17 @@ void BlinkerWiFiESP::parseData(const char* data)
     String _uuid = root["fromDevice"].as<String>();
     String dataGet = root["data"].as<String>();
 
+    if (_use_broker == blinker_b)
+    {
+        if (_uuid == "ServerSender")
+        {
+            _uuid = root["data"]["from"].as<String>();
+            String _mId = root["data"]["messageId"].as<String>();
+            strcpy(_messageId, _mId.c_str());
+            BLINKER_LOG_ALL(BLINKER_F("_messageId: "), _mId);
+        }
+    }
+
     BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
     BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
 
@@ -2304,7 +2401,7 @@ void BlinkerWiFiESP::parseData(const char* data)
         isMIOTAlive = true;
         isMIOTAvail = true;
     }
-    else if (_uuid == BLINKER_CMD_SERVERCLIENT)
+    else if (_uuid == BLINKER_CMD_SERVERCLIENT || _uuid == "senderClient1")
     {
         BLINKER_LOG_ALL(BLINKER_F("form Sever"));
 
@@ -2607,11 +2704,31 @@ bool BlinkerWiFiESP::checkAutoPull()
         if (!checkInit()) return false;
 
         String data_add = BLINKER_F("{\"data\":");
+    
+        if (_use_broker == aliyun_b)
+        {
+            data_add += data;
+        }
+        else if (_use_broker == blinker_b)
+        {
+            data_add += data.substring(0, data.length() - 1);
+            data_add += BLINKER_F(",\"messageId\":\"");
+            data_add += STRING_format(_messageId);
+            data_add += BLINKER_F("\"}");
+        }
 
-        data_add += data;
         data_add += BLINKER_F(",\"fromDevice\":\"");
         data_add += DEVICE_NAME_MQTT;
-        data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+
+        if (_use_broker == aliyun_b)
+        {
+            data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+        }
+        else if (_use_broker == blinker_b)
+        {
+            data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+        }
+
         data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
         if (!isJson(data_add)) return false;
@@ -2655,7 +2772,18 @@ bool BlinkerWiFiESP::checkAutoPull()
 
             is_rrpc = false;
 
-            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
+            char send_data[BLINKER_MAX_SEND_SIZE];
+
+            if (_use_broker == aliyun_b)
+            {
+                strcpy(send_data, base64::encode(data_add).c_str());
+            }
+            else if (_use_broker == blinker_b)
+            {
+                strcpy(send_data, data_add.c_str());
+            }
+
+            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
             {
                 BLINKER_LOG_ALL(data_add);
                 BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -2740,17 +2868,48 @@ bool BlinkerWiFiESP::checkAutoPull()
         if (report)
         {
             data_add += BLINKER_F("{\"report\":");
-            data_add += data;
+    
+            if (_use_broker == aliyun_b)
+            {
+                data_add += data;
+            }
+            else if (_use_broker == blinker_b)
+            {
+                data_add += data.substring(0, data.length() - 1);
+                data_add += BLINKER_F(",\"messageId\":\"");
+                data_add += STRING_format(_messageId);
+                data_add += BLINKER_F("\"}");
+            }
+
             data_add += BLINKER_F("}");
         }
         else
         {
-            data_add += data;
+            if (_use_broker == aliyun_b)
+            {
+                data_add += data;
+            }
+            else if (_use_broker == blinker_b)
+            {
+                data_add += data.substring(0, data.length() - 1);
+                data_add += BLINKER_F(",\"messageId\":\"");
+                data_add += STRING_format(_messageId);
+                data_add += BLINKER_F("\"}");
+            }
         }
 
         data_add += BLINKER_F(",\"fromDevice\":\"");
         data_add += DEVICE_NAME_MQTT;
-        data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+
+        if (_use_broker == aliyun_b)
+        {
+            data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+        }
+        else if (_use_broker == blinker_b)
+        {
+            data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+        }
+
         data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
         if (!isJson(data_add)) return false;
@@ -2791,17 +2950,28 @@ bool BlinkerWiFiESP::checkAutoPull()
             else
             {
                 strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
-            }        
+            }
 
-            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, is_rrpc ? base64::encode(data_add).c_str() : data_add.c_str()))
+            is_rrpc = false;
+
+            char send_data[BLINKER_MAX_SEND_SIZE];
+
+            if (_use_broker == aliyun_b)
+            {
+                strcpy(send_data, base64::encode(data_add).c_str());
+            }
+            else if (_use_broker == blinker_b)
+            {
+                strcpy(send_data, data_add.c_str());
+            }
+
+            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
             {
                 BLINKER_LOG_ALL(data_add);
                 BLINKER_LOG_ALL(BLINKER_F("...Failed"));
                 BLINKER_LOG_FreeHeap_ALL();
 
                 isDuerAlive = false;
-
-                is_rrpc = false;
                 
                 return false;
             }
@@ -2814,8 +2984,6 @@ bool BlinkerWiFiESP::checkAutoPull()
                 isDuerAlive = false;
 
                 this->latestTime = millis();
-
-                is_rrpc = false;
 
                 return true;
             }
@@ -2878,11 +3046,31 @@ bool BlinkerWiFiESP::checkAutoPull()
         if (!checkInit()) return false;
 
         String data_add = BLINKER_F("{\"data\":");
+    
+        if (_use_broker == aliyun_b)
+        {
+            data_add += data;
+        }
+        else if (_use_broker == blinker_b)
+        {
+            data_add += data.substring(0, data.length() - 1);
+            data_add += BLINKER_F(",\"messageId\":\"");
+            data_add += STRING_format(_messageId);
+            data_add += BLINKER_F("\"}");
+        }
 
-        data_add += data;
         data_add += BLINKER_F(",\"fromDevice\":\"");
         data_add += DEVICE_NAME_MQTT;
-        data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+
+        if (_use_broker == aliyun_b)
+        {
+            data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+        }
+        else if (_use_broker == blinker_b)
+        {
+            data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+        }
+
         data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
         if (!isJson(data_add)) return false;
@@ -2926,7 +3114,18 @@ bool BlinkerWiFiESP::checkAutoPull()
 
             is_rrpc = false;
 
-            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
+            char send_data[BLINKER_MAX_SEND_SIZE];
+
+            if (_use_broker == aliyun_b)
+            {
+                strcpy(send_data, base64::encode(data_add).c_str());
+            }
+            else if (_use_broker == blinker_b)
+            {
+                strcpy(send_data, data_add.c_str());
+            }
+
+            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
             {
                 BLINKER_LOG_ALL(data_add);
                 BLINKER_LOG_ALL(BLINKER_F("...Failed"));

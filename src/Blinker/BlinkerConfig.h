@@ -404,6 +404,8 @@
 
 #define BLINKER_CMD_POWERSTATE          "pState"
 
+#define BLINKER_CMD_POWERSTATE1         "pstate"
+
 #define BLINKER_CMD_NUM                 "num"
 
 #define BLINKER_CMD_BRIGHTNESS          "bright"
@@ -447,6 +449,34 @@
 #define BLINKER_CMD_MUSIC               "music"
 
 #define BLINKER_CMD_COMMON              "common"
+
+#define BLINKER_CMD_LEVEL               "level"
+
+#define BLINKER_CMD_LEVEL_UP            "upLevel"
+
+#define BLINKER_CMD_LEVEL_DW            "downLevel"
+
+#define BLINKER_CMD_TEMP_UP             "upTemp"
+
+#define BLINKER_CMD_TEMP_DW             "downTemp"
+
+#define BLINKER_CMD_HSTATE              "hsState"
+
+#define BLINKER_CMD_VSTATE              "vsState"
+
+#define BLINKER_CMD_ECO                 "eco"
+
+#define BLINKER_CMD_ANION               "anion"
+
+#define BLINKER_CMD_HEATER              "heater"
+
+#define BLINKER_CMD_DRYER               "dryer"
+
+#define BLINKER_CMD_SOFT                "soft"
+
+#define BLINKER_CMD_UV                  "uv"
+
+#define BLINKER_CMD_UNSB                "unsb"
 
 #define BLINKER_CMD_ALIGENIE_READING    "reading"
 

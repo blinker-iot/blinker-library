@@ -37,6 +37,9 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void begin();
         void run();
         void delay(unsigned long ms);
+        template <typename T>
+        void notify(T n);
+        void vibrate(uint16_t ms = 200);
         b_device_staus_t status()               { return conn.status(); }
         char * lastRead()                       { return conn.lastRead(); }
 
@@ -310,6 +313,20 @@ void BlinkerProtocol<Transp>::delay(unsigned long ms)
 
         yield();
     }
+}
+
+template <class Transp> template <typename T>
+void BlinkerProtocol<Transp>::notify(T n)
+{
+    print(BLINKER_CMD_NOTICE, STRING_format(n));
+}
+
+template <class Transp> 
+void BlinkerProtocol<Transp>::vibrate(uint16_t ms)
+{
+    if (ms > 1000) ms = 1000;
+
+    print(BLINKER_CMD_VIBRATE, ms);
 }
 
 template <class Transp> template <typename T1>
@@ -702,6 +719,7 @@ bool BlinkerProtocol<Transp>::ntpInit()
     #if defined(BLINKER_WIDGET)
         BApi::loadTiming();
     #endif
+        BApi::beginAuto();
 
         return true;
     }
