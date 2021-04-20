@@ -45,6 +45,10 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _aliType = BLINKER_F("&aliType=multi_outlet");
             #elif defined(BLINKER_ALIGENIE_SENSOR)
                 String _aliType = BLINKER_F("&aliType=sensor");
+            #elif defined(BLINKER_ALIGENIE_FAN)
+                String _aliType = BLINKER_F("&aliType=fan");
+            #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
+                String _aliType = BLINKER_F("&aliType=aircondition");
             #else
                 String _aliType = BLINKER_F("");
             #endif
@@ -57,6 +61,10 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _duerType = BLINKER_F("&duerType=MULTI_SOCKET");
             #elif defined(BLINKER_DUEROS_SENSOR)
                 String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
+            #elif defined(BLINKER_DUEROS_FAN)
+                String _duerType = BLINKER_F("&duerType=FAN");
+            #elif defined(BLINKER_DUEROS_AIRCONDITION)
+                String _duerType = BLINKER_F("&duerType=AIR_CONDITION");
             #else
                 String _duerType = BLINKER_F("");
             #endif
@@ -69,6 +77,10 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _miType = BLINKER_F("&miType=multi_outlet");
             #elif defined(BLINKER_MIOT_SENSOR)
                 String _miType = BLINKER_F("&miType=sensor");
+            #elif defined(BLINKER_MIOT_FAN)
+                String _miType = BLINKER_F("&miType=fan");
+            #elif defined(BLINKER_MIOT_AIRCONDITION)
+                String _miType = BLINKER_F("&miType=aircondition");
             #else
                 String _miType = BLINKER_F("");
             #endif
@@ -115,6 +127,10 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _aliType = BLINKER_F("&aliType=multi_outlet");
             #elif defined(BLINKER_ALIGENIE_SENSOR)
                 String _aliType = BLINKER_F("&aliType=sensor");
+            #elif defined(BLINKER_ALIGENIE_FAN)
+                String _aliType = BLINKER_F("&aliType=fan");
+            #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
+                String _aliType = BLINKER_F("&aliType=aircondition");
             #else
                 String _aliType = BLINKER_F("");
             #endif
@@ -127,6 +143,10 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _duerType = BLINKER_F("&duerType=MULTI_SOCKET");
             #elif defined(BLINKER_DUEROS_SENSOR)
                 String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
+            #elif defined(BLINKER_DUEROS_FAN)
+                String _duerType = BLINKER_F("&duerType=FAN");
+            #elif defined(BLINKER_DUEROS_AIRCONDITION)
+                String _duerType = BLINKER_F("&duerType=AIR_CONDITION");
             #else
                 String _duerType = BLINKER_F("");
             #endif
@@ -139,6 +159,10 @@ class BlinkerESPMQTT : public BlinkerApi
                 String _miType = BLINKER_F("&miType=multi_outlet");
             #elif defined(BLINKER_MIOT_SENSOR)
                 String _miType = BLINKER_F("&miType=sensor");
+            #elif defined(BLINKER_MIOT_FAN)
+                String _miType = BLINKER_F("&miType=fan");
+            #elif defined(BLINKER_MIOT_AIRCONDITION)
+                String _miType = BLINKER_F("&miType=aircondition");
             #else
                 String _miType = BLINKER_F("");
             #endif

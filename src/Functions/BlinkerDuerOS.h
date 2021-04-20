@@ -34,6 +34,26 @@ class BLINKERDUEROS
             Blinker.attachDuerOSSetcMode(newFunction);
         }
 
+        void attachLevel(blinker_callback_with_uint8_arg_t newFunction)
+        {
+            Blinker.attachDuerOSSetLevel(newFunction);
+        }
+
+        void attachRelativeLevel(blinker_callback_with_int32_arg_t newFunction)
+        {
+            Blinker.attachDuerOSRelativeLevel(newFunction);
+        }
+
+        void attachTemp(blinker_callback_with_uint8_arg_t newFunction)
+        {
+            Blinker.attachDuerOSSetTemp(newFunction);
+        }
+
+        void attachRelativeTemp(blinker_callback_with_int32_arg_t newFunction)
+        {
+            Blinker.attachDuerOSRelativeTemp(newFunction);
+        }
+
         void attachBrightness(blinker_callback_with_string_arg_t newFunction)
         {
             Blinker.attachDuerOSSetBrightness(newFunction);
@@ -559,7 +579,7 @@ class BLINKERDUEROS
             strcpy(aAQI, payload.c_str());
 
             _fresh |= 0x01 << 10;
-        }        
+        }
 
         void time(uint32_t _time)
         {
@@ -578,6 +598,25 @@ class BLINKERDUEROS
             strcpy(aTIME, payload.c_str());
 
             _fresh |= 0x01 << 11;
+        }
+
+        void level(uint8_t _level)
+        {
+            String payload = BLINKER_F("\"");
+            payload += STRING_format(BLINKER_CMD_LEVEL);
+            payload += BLINKER_F("\":");
+            payload += STRING_format(_level);
+
+            // Blinker.DuerOSPrint(payload);
+
+            if (_fresh >> 12 & 0x01) {
+                free(aLevel);
+            }
+
+            aLevel = (char*)malloc((payload.length()+1)*sizeof(char));
+            strcpy(aLevel, payload.c_str());
+
+            _fresh |= 0x01 << 12;
         }
 
         void print()
@@ -692,6 +731,15 @@ class BLINKERDUEROS
                 duerData += aTIME;
                 
                 free(aTIME);
+            }
+
+            if (_fresh >> 12 & 0x01) {
+                if (duerData.length()) duerData += BLINKER_F(",");
+                else duerData += BLINKER_F("{");
+                
+                duerData += aLevel;
+                
+                free(aLevel);
             }
 
             duerData += BLINKER_F("}");
@@ -879,6 +927,8 @@ class BLINKERDUEROS
         char * aCO2;        
         char * aAQI;
         char * aTIME;
+        
+        char * aLevel;
         uint16_t _fresh = 0;
 };
 

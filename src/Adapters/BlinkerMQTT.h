@@ -57,6 +57,11 @@ enum b_configStatus_t {
     APCFG_TIMEOUT
 };
 
+enum b_broker_t {
+    aliyun_b,
+    blinker_b
+};
+
 
 // static WiFiServer *_apServer;
 // static WiFiClient _apClient;
@@ -179,6 +184,8 @@ class BlinkerMQTT : public BlinkerStream
         bool checkConfig();
 
     protected :
+        b_broker_t  _use_broker = aliyun_b;
+        char        _messageId[20];
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
         uint8_t     _sharerCount = 0;
         uint8_t     _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
@@ -801,6 +808,17 @@ void BlinkerMQTT::parseData(const char* data)
     String _uuid = root["fromDevice"].as<String>();
     String dataGet = root["data"].as<String>();
 
+    if (_use_broker == blinker_b)
+    {
+        if (_uuid == "ServerSender")
+        {
+            _uuid = root["data"]["from"].as<String>();
+            String _mId = root["data"]["messageId"].as<String>();
+            strcpy(_messageId, _mId.c_str());
+            BLINKER_LOG_ALL(BLINKER_F("_messageId: "), _mId);
+        }
+    }
+
     BLINKER_LOG_ALL(BLINKER_F("data: "), dataGet);
     BLINKER_LOG_ALL(BLINKER_F("fromDevice: "), _uuid);
 
@@ -838,7 +856,7 @@ void BlinkerMQTT::parseData(const char* data)
         isMIOTAlive = true;
         isMIOTAvail = true;
     }
-    else if (_uuid == BLINKER_CMD_SERVERCLIENT)
+    else if (_uuid == BLINKER_CMD_SERVERCLIENT || _uuid == "senderClient1")
     {
         BLINKER_LOG_ALL(BLINKER_F("form Sever"));
 
@@ -1310,11 +1328,28 @@ int BlinkerMQTT::aliPrint(const String & data)
     if (!checkInit()) return false;
 
     String data_add = BLINKER_F("{\"data\":");
-
-    data_add += data;
+    
+    if (_use_broker == aliyun_b)
+    {
+        data_add += data;
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += data.substring(0, data.length() - 1);
+        data_add += BLINKER_F(",\"messageId\":\"");
+        data_add += STRING_format(_messageId);
+        data_add += BLINKER_F("\"}");
+    }
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += DEVICE_NAME_MQTT;
-    data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+    if (_use_broker == aliyun_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+    }
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
     if (!isJson(data_add)) return false;
@@ -1358,7 +1393,18 @@ int BlinkerMQTT::aliPrint(const String & data)
 
         is_rrpc = false;
 
-        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
+        char send_data[1024];
+
+        if (_use_broker == aliyun_b)
+        {
+            strcpy(send_data, base64::encode(data_add).c_str());
+        }
+        else if (_use_broker == blinker_b)
+        {
+            strcpy(send_data, data_add.c_str());
+        }
+
+        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1396,17 +1442,46 @@ int BlinkerMQTT::duerPrint(const String & data, bool report)
     if (report)
     {
         data_add += BLINKER_F("{\"report\":");
-        data_add += data;
+    
+        if (_use_broker == aliyun_b)
+        {
+            data_add += data;
+        }
+        else if (_use_broker == blinker_b)
+        {
+            data_add += data.substring(0, data.length() - 1);
+            data_add += BLINKER_F(",\"messageId\":\"");
+            data_add += STRING_format(_messageId);
+            data_add += BLINKER_F("\"}");
+        }
+
         data_add += BLINKER_F("}");
     }
     else
     {
-        data_add += data;
+        if (_use_broker == aliyun_b)
+        {
+            data_add += data;
+        }
+        else if (_use_broker == blinker_b)
+        {
+            data_add += data.substring(0, data.length() - 1);
+            data_add += BLINKER_F(",\"messageId\":\"");
+            data_add += STRING_format(_messageId);
+            data_add += BLINKER_F("\"}");
+        }
     }
 
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += DEVICE_NAME_MQTT;
-    data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+    if (_use_broker == aliyun_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+    }
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
     if (!isJson(data_add)) return false;
@@ -1447,9 +1522,20 @@ int BlinkerMQTT::duerPrint(const String & data, bool report)
         else
         {
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
-        }        
+        }
 
-        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, is_rrpc ? base64::encode(data_add).c_str() : data_add.c_str()))
+        char send_data[1024];
+
+        if (_use_broker == aliyun_b)
+        {
+            strcpy(send_data, base64::encode(data_add).c_str());
+        }
+        else if (_use_broker == blinker_b)
+        {
+            strcpy(send_data, data_add.c_str());
+        }
+
+        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1488,11 +1574,29 @@ int BlinkerMQTT::miPrint(const String & data)
     if (!checkInit()) return false;
 
     String data_add = BLINKER_F("{\"data\":");
-
-    data_add += data;
+    
+    if (_use_broker == aliyun_b)
+    {
+        data_add += data;
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += data.substring(0, data.length() - 1);
+        data_add += BLINKER_F(",\"messageId\":\"");
+        data_add += STRING_format(_messageId);
+        data_add += BLINKER_F("\"}");
+    }
+    
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += DEVICE_NAME_MQTT;
-    data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+    if (_use_broker == aliyun_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+    }
+    else if (_use_broker == blinker_b)
+    {
+        data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+    }
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
     if (!isJson(data_add)) return false;
@@ -1526,17 +1630,28 @@ int BlinkerMQTT::miPrint(const String & data)
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
-
-            BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
         }
         else
         {
             strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
         }
 
+        BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+
         is_rrpc = false;
 
-        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode(data_add).c_str()))
+        char send_data[1024];
+
+        if (_use_broker == aliyun_b)
+        {
+            strcpy(send_data, base64::encode(data_add).c_str());
+        }
+        else if (_use_broker == blinker_b)
+        {
+            strcpy(send_data, data_add.c_str());
+        }
+
+        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -2103,6 +2218,8 @@ int BlinkerMQTT::connectServer() {
         if(!isMQTTinit) MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
         strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_ALIYUN_HOST);
         MQTT_PORT_MQTT = BLINKER_MQTT_ALIYUN_PORT;
+
+        _use_broker = aliyun_b;
     }
     else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
         // String id2name = _userID.subString(10, _userID.length());
@@ -2138,6 +2255,8 @@ int BlinkerMQTT::connectServer() {
         if(!isMQTTinit) MQTT_HOST_MQTT = (char*)malloc((_host.length()+1)*sizeof(char));
         strcpy(MQTT_HOST_MQTT, _host.c_str());
         MQTT_PORT_MQTT = _port;
+
+        _use_broker = blinker_b;
     }
     if(!isMQTTinit) UUID_MQTT = (char*)malloc((_uuid.length()+1)*sizeof(char));
     strcpy(UUID_MQTT, _uuid.c_str());
@@ -2549,7 +2668,7 @@ int BlinkerMQTT::isJson(const String & data)
 
     // DynamicJsonBuffer jsonBuffer;
     // JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
-    DynamicJsonDocument jsonBuffer(1024);
+    DynamicJsonDocument jsonBuffer(2048);
     DeserializationError error = deserializeJson(jsonBuffer, STRING_format(data));
     JsonObject root = jsonBuffer.as<JsonObject>();
 
