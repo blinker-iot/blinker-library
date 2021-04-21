@@ -496,7 +496,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-            defined(BLINKER_PRO)
+            defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
 
             void attachRTData(char _name[], blinker_callback_t newFunction)
             {
@@ -1073,7 +1073,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-            defined(BLINKER_PRO)
+            defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
             char                                _RTDataKey[16];
             blinker_callback_t                  _RTDataFunc = NULL;
             Ticker                              _RTTicker;
@@ -1187,7 +1187,7 @@ class BlinkerApi : public BlinkerProtocol
         blinker_callback_with_string_arg_t  _dataGetFunc = NULL;
         
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-            defined(BLINKER_PRO)
+            defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
             void rtParse(const JsonObject& data);
         #endif
 
@@ -4626,7 +4626,7 @@ void BlinkerApi::run()
 }
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_PRO)
+    defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
 void BlinkerApi::rtParse(const JsonObject& data)
 {
     String get_key = data[_RTDataKey][BLINKER_CMD_GET];
@@ -4702,8 +4702,10 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
                     shareParse(root);
                     autoManager(root);
-
+                    
+                    #if !defined(BLINKER_AT_MQTT)
                     rtParse(root);
+                    #endif
                     #if !defined(BLINKER_WIFI_SUBDEVICE)
                     otaParse(root);
                     numParse(root);
@@ -6831,7 +6833,7 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
-
+    #if !defined(BLINKER_AT_MQTT)
     void BlinkerApi::RTDataStorage(char _name[], int msg)
     {
         // String _msg = STRING_format(msg);
@@ -6912,6 +6914,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
         printObject(_RTDataKey, data);
     }
+    #endif
 
 
     void BlinkerApi::timeSlotData(char _name[], int32_t _data)

@@ -1340,8 +1340,10 @@ int BlinkerMQTT::aliPrint(const String & data)
         data_add += STRING_format(_messageId);
         data_add += BLINKER_F("\"}");
     }
+
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += DEVICE_NAME_MQTT;
+
     if (_use_broker == aliyun_b)
     {
         data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
@@ -1350,6 +1352,7 @@ int BlinkerMQTT::aliPrint(const String & data)
     {
         data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
     }
+    
     data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
 
     if (!isJson(data_add)) return false;
@@ -1586,7 +1589,7 @@ int BlinkerMQTT::miPrint(const String & data)
         data_add += STRING_format(_messageId);
         data_add += BLINKER_F("\"}");
     }
-    
+
     data_add += BLINKER_F(",\"fromDevice\":\"");
     data_add += DEVICE_NAME_MQTT;
     if (_use_broker == aliyun_b)

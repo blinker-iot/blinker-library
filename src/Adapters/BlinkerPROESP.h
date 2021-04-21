@@ -1292,7 +1292,7 @@ int BlinkerPROESP::aliPrint(const String & data)
             strcpy(send_data, data_add.c_str());
         }
 
-        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
+        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1423,7 +1423,7 @@ int BlinkerPROESP::duerPrint(const String & data, bool report)
             strcpy(send_data, data_add.c_str());
         }
 
-        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
+        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
@@ -1539,7 +1539,7 @@ int BlinkerPROESP::miPrint(const String & data)
             strcpy(send_data, data_add.c_str());
         }
 
-        if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
+        if (! mqtt_PRO->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
             BLINKER_LOG_ALL(data_add);
             BLINKER_LOG_ALL(BLINKER_F("...Failed"));
