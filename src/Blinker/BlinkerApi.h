@@ -496,7 +496,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-            defined(BLINKER_PRO)
+            defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
 
             void attachRTData(char _name[], blinker_callback_t newFunction)
             {
@@ -1073,7 +1073,7 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-            defined(BLINKER_PRO)
+            defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
             char                                _RTDataKey[16];
             blinker_callback_t                  _RTDataFunc = NULL;
             Ticker                              _RTTicker;
@@ -1187,7 +1187,7 @@ class BlinkerApi : public BlinkerProtocol
         blinker_callback_with_string_arg_t  _dataGetFunc = NULL;
         
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-            defined(BLINKER_PRO)
+            defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
             void rtParse(const JsonObject& data);
         #endif
 
@@ -4626,7 +4626,7 @@ void BlinkerApi::run()
 }
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_PRO)
+    defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
 void BlinkerApi::rtParse(const JsonObject& data)
 {
     String get_key = data[_RTDataKey][BLINKER_CMD_GET];
@@ -4702,8 +4702,10 @@ void BlinkerApi::parse(char _data[], bool ex_data)
                     defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
                     shareParse(root);
                     autoManager(root);
-
+                    
+                    #if !defined(BLINKER_AT_MQTT)
                     rtParse(root);
+                    #endif
                     #if !defined(BLINKER_WIFI_SUBDEVICE)
                     otaParse(root);
                     numParse(root);
@@ -6348,6 +6350,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String data = BLINKER_F("{\"token\":\"");
         data += BProto::token();
+        data += BLINKER_F("\",\"device\":\"");
+        data += BProto::deviceName();
         data += BLINKER_F("\",\"data\":[[");
         data += STRING_format(time());
         data += BLINKER_F(",\"");
@@ -6831,7 +6835,7 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
-
+    #if !defined(BLINKER_AT_MQTT)
     void BlinkerApi::RTDataStorage(char _name[], int msg)
     {
         // String _msg = STRING_format(msg);
@@ -6912,6 +6916,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
         printObject(_RTDataKey, data);
     }
+    #endif
 
 
     void BlinkerApi::timeSlotData(char _name[], int32_t _data)
@@ -12145,9 +12150,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     case BLINKER_CMD_TEXT_DATA_NUMBER :
                         // url_iot = host;
                         #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/text");
+                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/tt");
                         #else
-                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/text");
+                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/tt");
                         #endif
 
                         #if defined(ESP8266)
@@ -12166,9 +12171,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     case BLINKER_CMD_JSON_DATA_NUMBER :
                         // url_iot = host;
                         #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/object");
+                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ot");
                         #else
-                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/object");
+                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ot");
                         #endif
 
                         #if defined(ESP8266)
