@@ -57,7 +57,7 @@ void dataRead(const String & data)
 
     uint32_t BlinkerTime = millis();
     
-    Blinker.jsonData("{\"key\":\"value\"");
+    Blinker.jsonData("{\"key\":\"value\"}");
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }

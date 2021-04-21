@@ -86,7 +86,7 @@ void miotPowerState(const String & state, uint8_t num)
 
 void miotQuery(int32_t queryCode, uint8_t num)
 {
-    BLINKER_LOG("AliGenie Query outlet: ", num,", codes: ", queryCode);
+    BLINKER_LOG("MIOT Query outlet: ", num,", codes: ", queryCode);
 
     switch (queryCode)
     {
