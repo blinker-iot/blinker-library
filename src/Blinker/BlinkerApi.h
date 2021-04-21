@@ -6350,6 +6350,8 @@ float BlinkerApi::gps(b_gps_t axis)
     {
         String data = BLINKER_F("{\"token\":\"");
         data += BProto::token();
+        data += BLINKER_F("\",\"device\":\"");
+        data += BProto::deviceName();
         data += BLINKER_F("\",\"data\":[[");
         data += STRING_format(time());
         data += BLINKER_F(",\"");
@@ -12148,9 +12150,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     case BLINKER_CMD_TEXT_DATA_NUMBER :
                         // url_iot = host;
                         #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/text");
+                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/tt");
                         #else
-                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/text");
+                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/tt");
                         #endif
 
                         #if defined(ESP8266)
@@ -12169,9 +12171,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     case BLINKER_CMD_JSON_DATA_NUMBER :
                         // url_iot = host;
                         #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/object");
+                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ot");
                         #else
-                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/object");
+                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ot");
                         #endif
 
                         #if defined(ESP8266)

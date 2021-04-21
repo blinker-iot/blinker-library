@@ -30,6 +30,8 @@
         #define BLINKER_MQTT
     #endif
 
+    #define BLINKER_PROTOCOL_HTTP_SERVER
+
     #include "BlinkerAssistant.h"
 
     #if (defined(ESP8266) || defined(ESP32)) && !defined(BLINKER_MQTT_AT)
@@ -77,6 +79,8 @@
             #define BLINKER_ESP_SMARTCONFIG
         #endif
     #endif
+
+    #define BLINKER_PROTOCOL_HTTP_SERVER
 
     #if defined(ESP8266) || defined(ESP32)
         #include "BlinkerESPPRO.h"
