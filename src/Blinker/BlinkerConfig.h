@@ -5,7 +5,7 @@
 // #include "Blinker/BlinkerUtility.h"
 #include "../Server/BlinkerServer.h"
 
-#define BLINKER_VERSION                 "0.3.7.210423"
+#define BLINKER_VERSION                 "0.3.70210426"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
