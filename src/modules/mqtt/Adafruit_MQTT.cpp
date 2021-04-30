@@ -536,45 +536,47 @@ void Adafruit_MQTT::processPackets(int16_t timeout) {
 }
 
 Adafruit_MQTT_Subscribe *Adafruit_MQTT::readSubscription(int16_t timeout) {
-  uint16_t i, topiclen, datalen;
+    uint16_t i, topiclen, datalen;
 
-  // Check if data is available to read.
-  uint16_t len = readFullPacket(buffer, MAXBUFFERSIZE, timeout); // return one full packet
-  if (!len)
-    return NULL;  // No data available, just quit.
-  DEBUG_PRINT("Packet len: "); DEBUG_PRINTLN(len); 
-  DEBUG_PRINTBUFFER(buffer, len);
-  
-  // Parse out length of packet.
-  if(len <= 129)
-    topiclen = buffer[3];
-  else
-    topiclen = buffer[4];
-  DEBUG_PRINT(F("Looking for subscription len ")); DEBUG_PRINTLN(topiclen);
+    // Check if data is available to read.
+    uint16_t len = readFullPacket(buffer, MAXBUFFERSIZE, timeout); // return one full packet
+    if (!len)
+        return NULL;  // No data available, just quit.
+    DEBUG_PRINT("Packet len: "); DEBUG_PRINTLN(len); 
+    DEBUG_PRINTBUFFER(buffer, len);
+    
+    // Parse out length of packet.
+    if (len < 3) return NULL;
 
-  // Find subscription associated with this packet.
-  for (i=0; i<MAXSUBSCRIPTIONS; i++) {
-    if (subscriptions[i]) {
-      // Skip this subscription if its name length isn't the same as the
-      // received topic name.
-      if (strlen(subscriptions[i]->topic) != topiclen)
-        continue;
-      // Stop if the subscription topic matches the received topic. Be careful
-      // to make comparison case insensitive.
-      if(len <= 129) {
-        if (strncasecmp((char*)buffer+4, subscriptions[i]->topic, topiclen) == 0) {
-          DEBUG_PRINT(F("Found sub #")); DEBUG_PRINTLN(i);
-          break;
+    if (len <= 129)
+        topiclen = buffer[3];
+    else
+        topiclen = buffer[4];
+    DEBUG_PRINT(F("Looking for subscription len ")); DEBUG_PRINTLN(topiclen);
+
+    // Find subscription associated with this packet.
+    for (i=0; i<MAXSUBSCRIPTIONS; i++) {
+        if (subscriptions[i]) {
+            // Skip this subscription if its name length isn't the same as the
+            // received topic name.
+            if (strlen(subscriptions[i]->topic) != topiclen)
+                continue;
+            // Stop if the subscription topic matches the received topic. Be careful
+            // to make comparison case insensitive.
+            if(len <= 129) {
+                if (strncasecmp((char*)buffer+4, subscriptions[i]->topic, topiclen) == 0) {
+                DEBUG_PRINT(F("Found sub #")); DEBUG_PRINTLN(i);
+                break;
+                }
+            }
+            else  {
+                if (strncasecmp((char*)buffer+5, subscriptions[i]->topic, topiclen) == 0) {
+                DEBUG_PRINT(F("Found sub #")); DEBUG_PRINTLN(i);
+                break;
+                }
+            }
         }
-      }
-      else  {
-        if (strncasecmp((char*)buffer+5, subscriptions[i]->topic, topiclen) == 0) {
-          DEBUG_PRINT(F("Found sub #")); DEBUG_PRINTLN(i);
-          break;
-        }
-      }
     }
-  }
     if (i==MAXSUBSCRIPTIONS) {
         DEBUG_PRINTLN(F("Not found sub #"));
 

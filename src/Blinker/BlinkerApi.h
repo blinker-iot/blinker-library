@@ -363,16 +363,16 @@ class BlinkerApi : public BlinkerProtocol
             time_t  startTime();
             time_t  runTime();
 
+            // template<typename T>
+            // bool sms(const T& msg);
             template<typename T>
-            bool sms(const T& msg);
+            bool sms(const T& msg, const String & cel = "");
             template<typename T>
-            bool sms(const T& msg, const char* cel);
-            template<typename T>
-            bool push(const T& msg);
+            bool push(const T& msg, const String & users = "");
             template<typename T>
             bool wechat(const T& msg);
             template<typename T>
-            bool wechat(const String & title, const String & state, const T& msg);
+            bool wechat(const String & title, const String & state, const T& msg, const String & users = "");
             #if !defined(BLINKER_AT_MQTT)
                 void weather(uint32_t _city = 0);
                 void weatherForecast(uint32_t _city = 0);
@@ -5967,54 +5967,54 @@ float BlinkerApi::gps(b_gps_t axis)
         }
     }
 
-    template<typename T>
-    bool BlinkerApi::sms(const T& msg)
-    {
-        String _msg = STRING_format(msg);
+    // template<typename T>
+    // bool BlinkerApi::sms(const T& msg)
+    // {
+    //     String _msg = STRING_format(msg);
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-            defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
-            defined(BLINKE_HTTP)
-            String data = BLINKER_F("{\"deviceName\":\"");
-            data += BProto::deviceName();
-            data += BLINKER_F("\",\"key\":\"");
-            data += BProto::authKey();
-            data += BLINKER_F("\",\"msg\":\"");
-            data += _msg;
-            data += BLINKER_F("\"}");
-        #elif defined(BLINKER_WIFI)
-            String data = BLINKER_F("{\"deviceName\":\"");
-            data += macDeviceName();
-            data += BLINKER_F("\",\"msg\":\"");
-            data += _msg;
-            data += BLINKER_F("\"}");
-        #elif defined(BLINKER_WIFI_SUBDEVICE)
-            String data = BLINKER_F("{\"sms\":\"");
-            data += _msg;
-            data += BLINKER_F("\"}");
-        #endif
+    //     #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
+    //         defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
+    //         defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
+    //         defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
+    //         defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
+    //         defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
+    //         defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
+    //         defined(BLINKE_HTTP)
+    //         String data = BLINKER_F("{\"deviceName\":\"");
+    //         data += BProto::deviceName();
+    //         data += BLINKER_F("\",\"key\":\"");
+    //         data += BProto::authKey();
+    //         data += BLINKER_F("\",\"msg\":\"");
+    //         data += _msg;
+    //         data += BLINKER_F("\"}");
+    //     #elif defined(BLINKER_WIFI)
+    //         String data = BLINKER_F("{\"deviceName\":\"");
+    //         data += macDeviceName();
+    //         data += BLINKER_F("\",\"msg\":\"");
+    //         data += _msg;
+    //         data += BLINKER_F("\"}");
+    //     #elif defined(BLINKER_WIFI_SUBDEVICE)
+    //         String data = BLINKER_F("{\"sms\":\"");
+    //         data += _msg;
+    //         data += BLINKER_F("\"}");
+    //     #endif
 
-        if (_msg.length() > 20) {
-            return false;
-        }
+    //     if (_msg.length() > 20) {
+    //         return false;
+    //     }
 
-        #if defined(BLINKER_WIFI_SUBDEVICE)
-            if (!checkSMS()) return false;
-            _smsTime = millis();
+    //     #if defined(BLINKER_WIFI_SUBDEVICE)
+    //         if (!checkSMS()) return false;
+    //         _smsTime = millis();
             
-            return BProto::subPrint(data);
-        #else
-            return blinkerServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
-        #endif
-    }
+    //         return BProto::subPrint(data);
+    //     #else
+    //         return blinkerServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
+    //     #endif
+    // }
 
     template<typename T>
-    bool BlinkerApi::sms(const T& msg, const char* cel)
+    bool BlinkerApi::sms(const T& msg, const String & cel)
     {
         String _msg = STRING_format(msg);
 
@@ -6065,7 +6065,7 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
     template<typename T>
-    bool BlinkerApi::push(const T& msg)
+    bool BlinkerApi::push(const T& msg, const String & users)
     {
         String _msg = STRING_format(msg);
 
@@ -6083,12 +6083,16 @@ float BlinkerApi::gps(b_gps_t axis)
             data += BProto::authKey();
             data += BLINKER_F("\",\"msg\":\"");
             data += _msg;
+            data += BLINKER_F("\",\"receivers\":\"");
+            data += users;
             data += BLINKER_F("\"}");
         #elif defined(BLINKER_WIFI)
             String data = BLINKER_F("{\"deviceName\":\"");
             data += macDeviceName();
             data += BLINKER_F("\",\"msg\":\"");
             data += _msg;
+            data += BLINKER_F("\",\"receivers\":\"");
+            data += users;
             data += BLINKER_F("\"}");
         #elif defined(BLINKER_WIFI_SUBDEVICE)
             String data = BLINKER_F("{\"push\":\"");
@@ -6147,7 +6151,7 @@ float BlinkerApi::gps(b_gps_t axis)
     }
 
     template<typename T>
-    bool BlinkerApi::wechat(const String & title, const String & state, const T& msg)
+    bool BlinkerApi::wechat(const String & title, const String & state, const T& msg, const String & users)
     {
         String _msg = STRING_format(msg);
 
@@ -6169,6 +6173,8 @@ float BlinkerApi::gps(b_gps_t axis)
             data += state;
             data += BLINKER_F("\",\"msg\":\"");
             data += _msg;
+            data += BLINKER_F("\",\"receivers\":\"");
+            data += users;
             data += BLINKER_F("\"}");
         #elif defined(BLINKER_WIFI)
             String data = BLINKER_F("{\"deviceName\":\"");
@@ -6179,6 +6185,8 @@ float BlinkerApi::gps(b_gps_t axis)
             data += state;
             data += BLINKER_F("\",\"msg\":\"");
             data += _msg;
+            data += BLINKER_F("\",\"receivers\":\"");
+            data += users;
             data += BLINKER_F("\"}");
         #elif defined(BLINKER_WIFI_SUBDEVICE)
             String data = BLINKER_F("{\"wechat\":\"");
