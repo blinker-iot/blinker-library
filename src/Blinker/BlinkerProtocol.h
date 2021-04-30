@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "Blinker/BlinkerApi.h"
+#include "Blinker/BlinkerOTA.h"
 
 #if defined(ESP8266) && !defined(BLINKER_BLE)
     #if defined(BLINKER_WIFI_MULTI)
@@ -42,6 +43,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void vibrate(uint16_t ms = 200);
         b_device_staus_t status()               { return conn.status(); }
         char * lastRead()                       { return conn.lastRead(); }
+        bool init()                             { return conn.init(); }
 
         template <typename T1>
         void print(T1 n1, const String &s2);
@@ -90,35 +92,26 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         time_t  startTime();
         time_t  runTime();
 
-        template<typename T>
-        bool sms(const T& msg)
-        { return conn.sms(msg); }
+        // template<typename T>
+        // bool sms(const T& msg)
+        // { return conn.sms(msg); }
 
         template<typename T>
-        bool sms(const T& msg, const char* cel)
-        { return conn.sms(msg, cel); }
+        bool sms(const T& msg, const String & cel = "");
 
         template<typename T>
-        bool push(const T& msg)
-        { return conn.push(msg); }
+        bool push(const T& msg, const String & users = "");
 
         template<typename T>
-        bool wechat(const T& msg)
-        { return conn.wechat(msg); }
+        bool wechat(const T& msg);
 
         template<typename T>
-        bool wechat(const String & title, const String & state, const T& msg)
-        { return conn.wechat(title, state, msg); }
+        bool wechat(const String & title, const String & state, const T& msg, const String & users = "");
 
-        void weather(uint32_t _city = 0)
-        { if (_weatherFunc) _weatherFunc(conn.weather(_city)); }
-        void weatherForecast(uint32_t _city = 0)
-        { if (_weather_forecast_Func) _weather_forecast_Func(conn.weatherForecast(_city)); }
-        void air(uint32_t _city = 0)
-        { if (_airFunc) _airFunc(conn.air(_city)); }
-
-        bool log(const String & msg)
-        { return conn.log(msg, time()); }
+        void weather(uint32_t _city = 0);
+        void weatherForecast(uint32_t _city = 0);
+        void air(uint32_t _city = 0);
+        bool log(const String & msg);
 
         void attachAir(blinker_callback_with_string_arg_t newFunction)
         { _airFunc = newFunction; }
@@ -151,6 +144,8 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         
         template<typename T>
         void timeSlotData(char _name[], const T& _data);
+        void textData(const String & msg);
+        void jsonData(const String & msg);
 
     private :
         void autoPrint(const String & key, const String & data);
@@ -165,6 +160,21 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         void checkDataStorage();
         bool dataUpdate();
+
+        bool dataStorage(const String & msg);
+        bool timeSlot(const String & msg);
+        void httpHeartbeat();
+
+    #if defined(BLINKER_PRO_ESP)
+        void loadOTA();
+        void ota();
+        String checkOTA();
+        bool updateOTAStatus(int8_t status, const String & msg);
+        void otaStatus(int8_t status, const String & msg);
+        void otaInit();
+        // void otaParse(const JsonObject& data);
+        BlinkerOTA                      _OTA;
+    #endif
         
         char                _sendBuf[BLINKER_MAX_SEND_SIZE];
         uint32_t            autoFormatFreshTime;
@@ -231,11 +241,42 @@ void BlinkerProtocol<Transp>::begin()
                     BLINKER_F("Download latest blinker library here!\n"),
                     BLINKER_F("=> https://github.com/blinker-iot/blinker-library\n"));
     #endif
+
+    #if defined(BLINKER_PRO_ESP) 
+        BLINKER_LOG_ALL(BLINKER_F(
+                    "\n==========================================================="
+                    "\n================= Blinker PRO mode init ! ================="
+                    "\n     EEPROM address 1280-1535 is used for PRO ESP Mode!"
+                    "\n========= PLEASE AVOID USING THESE EEPROM ADDRESS! ========"
+                    "\n===========================================================\n"));
+                    
+        #if defined(BLINKER_BUTTON)
+            #if defined(BLINKER_BUTTON_PULLDOWN)
+                BApi::buttonInit(false);
+            #else
+                BApi::buttonInit();
+            #endif
+        #endif
+
+        #if defined(BLINKER_NO_BUTTON)
+            BApi::noButtonInit();
+        #endif
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::run()
 {
+#if defined(BLINKER_PRO_ESP) 
+    #if defined(BLINKER_BUTTON)
+        BApi::tick();
+    #endif
+
+    #if defined(BLINKER_NO_BUTTON)
+        BApi::noButtonCheck();
+    #endif
+#endif
+
     if (!conn.init()) return;
 
     if (!wlanCheck()) return;
@@ -248,7 +289,7 @@ void BlinkerProtocol<Transp>::run()
     if (((millis() - _dHeartTime)/1000UL >= BLINKER_DEVICE_HEARTBEAT_TIME) && conn.checkInit())
     {
         _dHeartTime += BLINKER_DEVICE_HEARTBEAT_TIME * 1000;
-        conn.httpHeartbeat();
+        httpHeartbeat();
     }
 
     switch (state)
@@ -721,6 +762,10 @@ bool BlinkerProtocol<Transp>::ntpInit()
     #endif
         BApi::beginAuto();
 
+    #if defined(BLINKER_PRO_ESP)
+        otaInit();
+    #endif
+
         return true;
     }
     return true;
@@ -967,6 +1012,572 @@ time_t BlinkerProtocol<Transp>::runTime()
     }
 }
 
+template <class Transp> template<typename T>
+bool BlinkerProtocol<Transp>::sms(const T& msg, const String & cel)
+{
+    String _msg = STRING_format(msg);
+    
+    String  data = BLINKER_F("{\"deviceName\":\"");
+            data += conn.deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += conn.authKey();
+            data += BLINKER_F("\",\"cel\":\"");
+            data += cel;
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+
+    if (_msg.length() > 20) return false;
+
+    return conn.httpServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
+}
+
+template <class Transp> template<typename T>
+bool BlinkerProtocol<Transp>::push(const T& msg, const String & users)
+{
+    String _msg = STRING_format(msg);
+    
+    String  data = BLINKER_F("{\"deviceName\":\"");
+            data += conn.deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += conn.authKey();
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\",\"receivers\":\"");
+            data += users;
+            data += BLINKER_F("\"}");
+
+    return conn.httpServer(BLINKER_CMD_PUSH_NUMBER, data) != "false";
+}
+
+template <class Transp> template<typename T>
+bool BlinkerProtocol<Transp>::wechat(const T& msg)
+{
+    String _msg = STRING_format(msg);
+    
+    String  data = BLINKER_F("{\"deviceName\":\"");
+            data += conn.deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += conn.authKey();
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\"}");
+
+    return conn.httpServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
+}
+
+template <class Transp> template<typename T>
+bool BlinkerProtocol<Transp>::wechat(const String & title, const String & state, const T& msg, const String & users)
+{
+    String _msg = STRING_format(msg);
+
+    String  data = BLINKER_F("{\"deviceName\":\"");
+            data += conn.deviceName();
+            data += BLINKER_F("\",\"key\":\"");
+            data += conn.authKey();
+            data += BLINKER_F("\",\"title\":\"");
+            data += title;
+            data += BLINKER_F("\",\"state\":\"");
+            data += state;
+            data += BLINKER_F("\",\"msg\":\"");
+            data += _msg;
+            data += BLINKER_F("\",\"receivers\":\"");
+            data += users;
+            data += BLINKER_F("\"}");
+
+    return conn.httpServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::weather(uint32_t _city)
+{
+    String data = BLINKER_F("/weather?");
+
+    if (_city != 0)
+    {
+        data += BLINKER_F("code=");
+        data += STRING_format(_city);
+        data += BLINKER_F("&");
+    }
+
+    data += BLINKER_F("deviceName=");
+    data += conn.deviceName();
+    data += BLINKER_F("&key=");
+    data += conn.authKey();
+
+    if (_weatherFunc) _weatherFunc(conn.httpServer(BLINKER_CMD_WEATHER_NUMBER, data));
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::weatherForecast(uint32_t _city)
+{
+    String data = BLINKER_F("/forecast?");
+
+    if (_city != 0)
+    {
+        data += BLINKER_F("code=");
+        data += STRING_format(_city);
+        data += BLINKER_F("&");
+    }
+
+    data += BLINKER_F("deviceName=");
+    data += conn.deviceName();
+    data += BLINKER_F("&key=");
+    data += conn.authKey();
+
+    if (_weather_forecast_Func) _weather_forecast_Func(conn.httpServer(BLINKER_CMD_WEATHER_FORECAST_NUMBER, data));
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::air(uint32_t _city)
+{
+    String data = BLINKER_F("/air?");
+
+    if (_city != 0)
+    {
+        data += BLINKER_F("code=");
+        data += STRING_format(_city);
+        data += BLINKER_F("&");
+    }
+
+    data += BLINKER_F("deviceName=");
+    data += conn.deviceName();
+    data += BLINKER_F("&key=");
+    data += conn.authKey();
+
+    if (_airFunc) _airFunc(conn.httpServer(BLINKER_CMD_AQI_NUMBER, data));
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::log(const String & msg)
+{
+    String data = BLINKER_F("{\"token\":\"");
+    data += conn.token();
+    data += BLINKER_F("\",\"data\":[[");
+    data += STRING_format(time());
+    data += BLINKER_F(",\"");
+    data += msg;
+    data += BLINKER_F("\"]]}");
+
+    return conn.httpServer(BLINKER_CMD_LOG_NUMBER, data) != "false";
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::dataStorage(const String & msg)
+{
+    String data = BLINKER_F("{\"deviceName\":\"");
+    data += conn.deviceName();
+    data += BLINKER_F("\",\"key\":\"");
+    data += conn.authKey();
+    data += BLINKER_F("\",\"data\":{");
+    data += msg;
+    data += BLINKER_F("}}");
+    
+    return conn.httpServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) != "false";
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::timeSlot(const String & msg)
+{
+    String data = BLINKER_F("{\"device\":\"");
+    data += conn.deviceName();
+    data += BLINKER_F("\",\"key\":\"");
+    data += conn.authKey();
+    data += BLINKER_F("\",\"data\":[");
+    data += msg;
+    data += BLINKER_F("]}");
+    
+    return conn.httpServer(BLINKER_CMD_TIME_SLOT_DATA_NUMBER, data) != "false";
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::textData(const String & msg)
+{
+    String data = BLINKER_F("{");
+    data += BLINKER_F("\"device\":\"");
+    data += conn.deviceName();
+    data += BLINKER_F("\",\"key\":\"");
+    data += conn.authKey();
+    data += BLINKER_F("\",\"data\":\"");
+    data += msg;
+    data += BLINKER_F("\"}");
+
+    conn.httpServer(BLINKER_CMD_TEXT_DATA_NUMBER, data);
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::jsonData(const String & msg)
+{
+    DynamicJsonDocument jsonBuffer(1024);
+    DeserializationError error = deserializeJson(jsonBuffer, msg);
+    JsonObject root = jsonBuffer.as<JsonObject>();
+
+    // if (!root.success())
+    if (error)
+    {
+        BLINKER_ERR_LOG("Print data is not Json! ", msg);
+        return;
+    }
+
+    String data = BLINKER_F("{");
+    data += BLINKER_F("\"device\":\"");
+    data += conn.deviceName();
+    data += BLINKER_F("\",\"key\":\"");
+    data += conn.authKey();
+    data += BLINKER_F("\",\"data\":");
+    data += msg;
+    data += BLINKER_F("}");
+
+    conn.httpServer(BLINKER_CMD_JSON_DATA_NUMBER, data);
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::httpHeartbeat()
+{
+    String data = BLINKER_F("/heartbeat?");
+    data += BLINKER_F("deviceName=");
+    data += conn.deviceName();
+    data += BLINKER_F("&key=");
+    data += conn.authKey();
+    data += BLINKER_F("&heartbeat=");
+    data += STRING_format(BLINKER_DEVICE_HEARTBEAT_TIME);
+
+    conn.httpServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data);
+}
+
+#if defined(BLINKER_PRO_ESP)
+template <class Transp>
+void BlinkerProtocol<Transp>::loadOTA()
+{
+    // if (_OTA.loadOTACheck())
+    // {
+    //     if (!_OTA.loadVersion())
+    //     {
+    //         _OTA.saveVersion();
+    //     }
+    // }
+
+    ::delay(1000);
+
+    BLINKER_LOG_ALL(BLINKER_F("OTA load: "), BLINKER_OTA_VERSION_CODE);
+
+    uint8_t ota_check = _OTA.loadOTACheck();
+
+    if (ota_check == BLINKER_OTA_RUN)
+    {
+        _OTA.saveOTACheck();
+        updateOTAStatus(10, "download firmware");
+
+        String otaData = checkOTA();
+
+        if (otaData != BLINKER_CMD_FALSE)
+        {
+            // DynamicJsonBuffer jsonBuffer;
+            // JsonObject& otaJson = jsonBuffer.parseObject(otaData);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, otaData);
+            JsonObject otaJson = jsonBuffer.as<JsonObject>();
+
+            // if (!otaJson.success())
+            if (error)
+            {
+                BLINKER_ERR_LOG_ALL(BLINKER_F("check ota data error"));
+                return;
+            }
+
+            // String otaHost = otaJson["host"];
+            // String otaUrl = otaJson["url"];
+            // String otaFp = otaJson["fingerprint"];
+            // String otaMD5 = otaJson["hash"];
+
+            // _OTA.config(otaHost, otaUrl, otaFp, otaMD5);
+            _OTA.config(otaJson["host"].as<String>(), otaJson["url"].as<String>(), otaJson["fingerprint"].as<String>(), otaJson["hash"].as<String>());
+
+            if (_OTA.update())
+            {
+                // _OTA.saveVersion();
+                // _OTA.clearOTACheck();
+
+                // updateOTAStatus(100);
+
+                conn.freshAlive();
+                otaStatus(99, BLINKER_F("Firmware download sucessed"));
+                updateOTAStatus(99, BLINKER_F("Firmware download sucessed"));
+                ESP.restart();
+            }
+            else
+            {
+                _OTA.clearOTACheck();
+
+                conn.freshAlive();
+                otaStatus(-2, BLINKER_F("Firmware download failed"));
+                updateOTAStatus(-2, BLINKER_F("Firmware download failed"));
+            }
+        }
+    }
+    else if (ota_check == BLINKER_OTA_START)
+    {
+        if (!_OTA.loadVersion())
+        {
+            _OTA.saveVersion();
+            _OTA.clearOTACheck();
+
+            conn.freshAlive();
+            otaStatus(100, BLINKER_F("Firmware update success"));
+            updateOTAStatus(100, BLINKER_F("Firmware update success"));
+            // ota failed
+        }
+        else
+        {
+            // _OTA.saveVersion();
+            _OTA.clearOTACheck();
+
+            conn.freshAlive();
+            otaStatus(-2, BLINKER_F("Firmware download failed"));
+            updateOTAStatus(-2, BLINKER_F("Firmware download failed"));
+            // ota success
+        }
+    }
+    else if (ota_check == BLINKER_OTA_CLEAR)
+    {
+        // _OTA.saveVersion();
+        // _OTA.clearOTACheck();
+
+        if (!_OTA.loadVersion()) _OTA.saveVersion();
+    }
+    else
+    {
+        if (!_OTA.loadVersion())
+        {
+            if (ota_check > 0)
+            {
+                // updateOTAStatus(100);
+                _OTA.clearOTACheck();
+                _OTA.saveVersion();
+            }
+            else
+            {
+                _OTA.saveVersion();
+            }
+        }
+        else if (_OTA.loadVersion() && ota_check == 0)
+        {
+            // updateOTAStatus(-2);
+            _OTA.clearOTACheck();
+        }
+        else
+        {
+            _OTA.clearOTACheck();
+        }
+    }
+
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::ota()
+{
+    // if (checkCanOTA())
+    // {
+        _OTA.saveOTARun();
+
+        ::delay(100);
+        ESP.restart();
+
+        loadOTA();
+    // }
+}
+
+template <class Transp>
+String BlinkerProtocol<Transp>::checkOTA()
+{
+    String data = BLINKER_F("/ota/upgrade?deviceName=");// +
+    data += conn.deviceName();
+
+    return conn.httpServer(BLINKER_CMD_OTA_NUMBER, data);
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::updateOTAStatus(int8_t status, const String & msg)
+{
+    String data;
+
+    data = BLINKER_F("{\"deviceName\":\"");
+    data += conn.deviceName();
+    data += BLINKER_F("\",\"key\":\"");
+    data += conn.authKey();
+    data += BLINKER_F("\",\"upgrade\":true,\"upgradeData\":{\"step\":\"");
+    data += STRING_format(status);
+    data += BLINKER_F("\",\"desc\":\"");
+    data += msg;
+    data += BLINKER_F("\"}}");
+
+    return conn.httpServer(BLINKER_CMD_OTA_STATUS_NUMBER, data) != "false";
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::otaStatus(int8_t status, const String & msg)
+{
+    String data;
+
+    data = BLINKER_F("{\"step\":\"");
+    data += STRING_format(status);
+    data += BLINKER_F("\",\"desc\":\"");
+    data += msg;
+    data += BLINKER_F("\"}");
+
+    print(BLINKER_CMD_VERSION, BLINKER_OTA_VERSION_CODE);
+    print(BLINKER_CMD_STATE, BLINKER_CMD_ONLINE);
+    printObject(BLINKER_F("upgradeData"), data);
+    printNow();
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::otaInit()
+{
+    uint8_t ota_check = _OTA.loadOTACheck();
+
+    BLINKER_LOG_ALL(BLINKER_F("otaInit: "), ota_check);
+
+    if (ota_check == BLINKER_OTA_RUN)
+    {
+        _OTA.saveOTACheck();
+        updateOTAStatus(10, "download firmware");
+
+        String otaData = checkOTA();
+
+        if (otaData != BLINKER_CMD_FALSE)
+        {
+            // DynamicJsonBuffer jsonBuffer;
+            // JsonObject& otaJson = jsonBuffer.parseObject(otaData);
+            DynamicJsonDocument jsonBuffer(1024);
+            DeserializationError error = deserializeJson(jsonBuffer, otaData);
+            JsonObject otaJson = jsonBuffer.as<JsonObject>();
+
+            // if (!otaJson.success())
+            if (error)
+            {
+                BLINKER_ERR_LOG_ALL(BLINKER_F("check ota data error"));
+                return;
+            }
+
+            // String otaHost = otaJson["host"];
+            // String otaUrl = otaJson["url"];
+            // String otaFp = otaJson["fingerprint"];
+            // String otaMD5 = otaJson["hash"];
+
+            // _OTA.config(otaHost, otaUrl, otaFp, otaMD5);
+            _OTA.config(otaJson["host"].as<String>(), otaJson["url"].as<String>(), otaJson["fingerprint"].as<String>(), otaJson["hash"].as<String>());
+
+            if (_OTA.update())
+            {
+                // _OTA.saveVersion();
+                // _OTA.clearOTACheck();
+
+                // updateOTAStatus(100);
+
+                conn.freshAlive();
+                otaStatus(99, BLINKER_F("Firmware download sucessed"));
+                updateOTAStatus(99, BLINKER_F("Firmware download sucessed"));
+                ESP.restart();
+            }
+            else
+            {
+                _OTA.clearOTACheck();
+
+                conn.freshAlive();
+                otaStatus(-2, BLINKER_F("Firmware download failed"));
+                updateOTAStatus(-2, BLINKER_F("Firmware download failed"));
+            }
+        }
+    }
+    else if (ota_check == BLINKER_OTA_START)
+    {
+        if (!_OTA.loadVersion())
+        {
+            _OTA.saveVersion();
+            _OTA.clearOTACheck();
+
+            conn.freshAlive();
+            otaStatus(100, BLINKER_F("Firmware update success"));
+            updateOTAStatus(100, BLINKER_F("Firmware update success"));
+            // ota failed
+        }
+        else
+        {
+            // _OTA.saveVersion();
+            _OTA.clearOTACheck();
+
+            conn.freshAlive();
+            otaStatus(-2, BLINKER_F("Firmware download failed"));
+            updateOTAStatus(-2, BLINKER_F("Firmware download failed"));
+            // ota success
+        }
+    }
+    else if (ota_check == BLINKER_OTA_CLEAR)
+    {
+        // _OTA.saveVersion();
+        // _OTA.clearOTACheck();
+
+        if (!_OTA.loadVersion()) _OTA.saveVersion();
+    }
+    else
+    {
+        if (!_OTA.loadVersion())
+        {
+            if (ota_check > 0)
+            {
+                // updateOTAStatus(100);
+                _OTA.clearOTACheck();
+                _OTA.saveVersion();
+            }
+            else
+            {
+                _OTA.saveVersion();
+            }
+        }
+        else if (_OTA.loadVersion() && ota_check == 0)
+        {
+            // updateOTAStatus(-2);
+            _OTA.clearOTACheck();
+        }
+        else
+        {
+            _OTA.clearOTACheck();
+        }
+    }
+}
+#endif
+
+// template <class Transp>
+// void BlinkerProtocol<Transp>::otaParse(const JsonObject& data)
+// {
+//     if (data.containsKey(BLINKER_CMD_SET))
+//     {
+//         String value = data[BLINKER_CMD_SET];
+
+//         // DynamicJsonBuffer jsonBufferSet;
+//         // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+//         DynamicJsonDocument jsonBuffer(1024);
+//         DeserializationError error = deserializeJson(jsonBuffer, value);
+//         JsonObject rootSet = jsonBuffer.as<JsonObject>();
+
+//         // if (!rootSet.success())
+//         if (error)
+//         {
+//             // BLINKER_ERR_LOG_ALL("Json error");
+//             return;
+//         }
+
+//         if (rootSet.containsKey(BLINKER_CMD_UPGRADE))
+//         {
+//             BLINKER_LOG_ALL(BLINKER_F("otaParse isParsed"));
+//             _fresh = true;
+
+//             ota();
+//         }
+//     }
+// }
+
 template <class Transp> template <typename T>
 void BlinkerProtocol<Transp>::dataStorage(char _name[], const T& msg)
 {
@@ -1072,7 +1683,7 @@ bool BlinkerProtocol<Transp>::dataUpdate()
             }
         }
 
-        if (conn.timeSlot(data))
+        if (timeSlot(data))
         {
             for (uint8_t _num = 0; _num < data_timeSlotDataCount; _num++)
             {
@@ -1103,7 +1714,7 @@ bool BlinkerProtocol<Transp>::dataUpdate()
         BLINKER_LOG_FreeHeap_ALL();
     }
 
-    if (conn.dataStorage(data))
+    if (dataStorage(data))
     {
         for (uint8_t _num = 0; _num < data_dataCount; _num++)
         {

@@ -2,7 +2,7 @@
 #define BLINKER_AUTO_H
 
 #if (defined(ESP8266) || defined(ESP32)) && \
-    defined(BLINKER_WIFI)
+    (defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP))
 
 #if ARDUINO >= 100
     #include <Arduino.h>
@@ -36,7 +36,8 @@ class BlinkerAUTO
         void serialization();
         void setNum(uint8_t num) { a_num = num; }
         bool isTrigged() 
-        { 
+        {
+            if (_trigged) BLINKER_LOG_ALL(BLINKER_F("trigged id: "), _autoId);
             return _trigged;
             // if (_trigged)
             // {

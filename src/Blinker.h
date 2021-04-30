@@ -7,12 +7,17 @@
     #include "BlinkerWiFi.h"
 #endif
 
+#if defined(BLINKER_PRO_ESP) && (defined(ESP32) || defined(ESP8266))
+    #include "BlinkerPro.h"
+#endif
+
 #if defined(BLINKER_WIDGET)
     #include "Widgets/BlinkerButton.h"
     #include "Widgets/BlinkerImage.h"
     #include "Widgets/BlinkerNumber.h"
     #include "Widgets/BlinkerRGB.h"
     #include "Widgets/BlinkerSlider.h"
+    #include "Widgets/BlinkerSwitch.h"
     #include "Widgets/BlinkerTab.h"
     #include "Widgets/BlinkerText.h"
 #endif

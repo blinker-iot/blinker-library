@@ -120,7 +120,37 @@ class BlinkerApi
 
         void autoStart();
         bool autoManager(const JsonObject& data);
+    #if defined(BLINKER_PRO_ESP)
+        void otaParse(const JsonObject& data);
+    #endif
 
+#if defined(BLINKER_PRO_ESP) 
+    #if defined(BLINKER_BUTTON)
+        void attachClick(blinker_callback_t newFunction)
+        { _clickFunc = newFunction; }
+        void attachDoubleClick(blinker_callback_t newFunction)
+        { _doubleClickFunc = newFunction; }
+        void attachLongPressStart(blinker_callback_t newFunction)
+        { _longPressStartFunc = newFunction; }
+        void attachLongPressStop(blinker_callback_t newFunction)
+        { _longPressStopFunc = newFunction; }
+        void attachDuringLongPress(blinker_callback_t newFunction)
+        { _duringLongPressFunc = newFunction; }
+        #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+            void attachLongPressPowerdown(blinker_callback_t newFunction)
+            { _powerdownFunc = newFunction; }
+            void attachLongPressReset(blinker_callback_t newFunction)
+            { _resetFunc = newFunction; }
+
+            uint16_t pressedTime();
+        #endif
+    #endif
+
+    #if defined(BLINKER_NO_BUTTON)
+        void attachNoButtonReset(blinker_callback_t newFunction)
+        { _noButtonResetFunc = newFunction; }
+    #endif
+#endif
     protected :
         void parse(char _data[], bool ex_data = false);
         void beginAuto();
@@ -128,6 +158,269 @@ class BlinkerApi
     #if defined(BLINKER_WIDGET)
         bool checkTimer();
     #endif
+
+#if defined(BLINKER_PRO_ESP) 
+    #if defined(BLINKER_NO_BUTTON)
+        bool            _isCheckPower = false;
+        uint8_t         _power_count = 0;
+        uint32_t        _reset_countdown = 0;
+        blinker_callback_t _noButtonResetFunc;
+
+        void noButtonInit()
+        {
+            EEPROM.begin(BLINKER_EEP_SIZE);
+            EEPROM.get(BLINKER_EEP_ADDR_POWER_ON_COUNT, _power_count);
+            _power_count += 1;
+            EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, _power_count);
+            EEPROM.commit();
+            EEPROM.end();
+
+            BLINKER_LOG(BLINKER_F("_power_count: "), _power_count);
+
+            _reset_countdown = millis();
+            if (_power_count > 3)
+            {
+                if (_noButtonResetFunc) _noButtonResetFunc();
+            }
+        }
+
+        void noButtonCheck()
+        {
+            if (millis() > 5000 && !_isCheckPower)
+            {
+                _isCheckPower = true;
+                BLINKER_LOG_ALL(BLINKER_F("erase power count"));
+
+                EEPROM.begin(BLINKER_EEP_SIZE);
+                EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
+                EEPROM.commit();
+                EEPROM.end();
+            }
+
+            if (_power_count > 3)
+            {
+                if (millis() - _reset_countdown > 5000)
+                {
+                    EEPROM.begin(BLINKER_EEP_SIZE);
+                    EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
+                    EEPROM.commit();
+                    EEPROM.end();
+
+                    reset();
+                }
+            }
+        }
+    #endif
+    #if defined(BLINKER_BUTTON)
+        #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+            blinker_callback_t _powerdownFunc = NULL;
+            blinker_callback_t _resetFunc = NULL;
+        #endif
+        // OneButton   button1;
+
+        int _pin;        // hardware pin number.
+        int _debounceTicks; // number of ticks for debounce times.
+        int _clickTicks; // number of ticks that have to pass by before a click is detected
+        int _pressTicks; // number of ticks that have to pass by before a long button press is detected
+
+        int _buttonReleased;
+        int _buttonPressed;
+
+        bool _isLongPressed;
+
+        // These variables will hold functions acting as event source.
+        blinker_callback_t _clickFunc;
+        blinker_callback_t _doubleClickFunc;
+        blinker_callback_t _pressFunc;
+        blinker_callback_t _longPressStartFunc;
+        blinker_callback_t _longPressStopFunc;
+        blinker_callback_t _duringLongPressFunc;
+
+        // These variables that hold information across the upcoming tick calls.
+        // They are initialized once on program start and are updated every time the tick function is called.
+        int _state;
+        unsigned long _startTime; // will be set in state 1
+        unsigned long _stopTime; // will be set in state 2
+
+        bool isPressed = false;
+
+        void _click() { BLINKER_LOG_ALL(BLINKER_F("Button click.")); } // click
+
+        void _doubleClick() { BLINKER_LOG_ALL(BLINKER_F("Button doubleclick.")); } // doubleclick1
+
+        void _longPressStart()
+        {
+            BLINKER_LOG_ALL(BLINKER_F("Button longPress start"));
+            // _longPressStartFunc();
+            isPressed = true;
+        } // longPressStart
+
+        void _longPress()
+        {
+            if (isPressed)
+            {
+                BLINKER_LOG_ALL(BLINKER_F("Button longPress..."));
+                isPressed = false;
+            }// _duringLongPressFunc();
+        } // longPress
+
+        void _longPressStop()
+        {
+            BLINKER_LOG_ALL(BLINKER_F("Button longPress stop"));
+            // _longPressStopFunc();
+            // Bwlan.deleteConfig();
+            // Bwlan.reset();
+            // ESP.restart();
+            // reset();
+
+            uint32_t _pressedTime = millis() - _startTime;
+
+            BLINKER_LOG_ALL(BLINKER_F("_stopTime: "), millis(), BLINKER_F(" ,_startTime: "), _startTime);
+            BLINKER_LOG_ALL(BLINKER_F("long pressed time: "), _pressedTime);
+
+            #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
+                if (_pressedTime >= BLINKER_PRESSTIME_RESET) {
+                    if (_resetFunc) {
+                        _resetFunc();
+                    }
+
+                    static_cast<Proto*>(this)->reset();
+                }
+                else {
+                    BLINKER_LOG(BLINKER_F("BLINKER_PRESSTIME_POWERDOWN"));
+
+                    if (_powerdownFunc) {
+                        _powerdownFunc();
+                    }
+                }
+            #else
+                // if (_resetFunc) {
+                //     _resetFunc();
+                // }
+                
+                static_cast<Proto*>(this)->reset();
+            #endif
+        } // longPressStop
+
+        void buttonInit(int activeLow = true)
+        {
+            _pin = BLINKER_BUTTON_PIN;
+
+            _debounceTicks = 50;      // number of millisec that have to pass by before a click is assumed as safe.
+            _clickTicks = 600;        // number of millisec that have to pass by before a click is detected.
+            _pressTicks = 1000;       // number of millisec that have to pass by before a long button press is detected.
+
+            _state = 0; // starting with state 0: waiting for button to be pressed
+            _isLongPressed = false;  // Keep track of long press state
+
+            if (activeLow) {
+                // the button connects the input pin to GND when pressed.
+                _buttonReleased = HIGH; // notPressed
+                _buttonPressed = LOW;
+
+                // use the given pin as input and activate internal PULLUP resistor.
+                pinMode( _pin, INPUT_PULLUP );
+
+            } else {
+                // the button connects the input pin to VCC when pressed.
+                _buttonReleased = LOW;
+                _buttonPressed = HIGH;
+
+                // use the given pin as input
+                pinMode(_pin, INPUT);
+            } // if
+
+            _clickFunc = NULL;
+            _doubleClickFunc = NULL;
+            _pressFunc = NULL;
+            _longPressStartFunc = NULL;
+            _longPressStopFunc = NULL;
+            _duringLongPressFunc = NULL;
+
+            // attachInterrupt(BLINKER_BUTTON_PIN, checkButton, CHANGE);
+
+            BLINKER_LOG_ALL(BLINKER_F("Button initialled"));
+        }
+
+        void tick()
+        {
+            // Detect the input information
+            int buttonLevel = digitalRead(_pin); // current button signal.
+            unsigned long now = millis(); // current (relative) time in msecs.
+
+            // Implementation of the state machine
+            if (_state == 0) { // waiting for menu pin being pressed.
+                if (buttonLevel == _buttonPressed) {
+                    _state = 1; // step to state 1
+                    _startTime = now; // remember starting time
+                } // if
+
+            } else if (_state == 1) { // waiting for menu pin being released.
+
+                if ((buttonLevel == _buttonReleased) && ((unsigned long)(now - _startTime) < _debounceTicks)) {
+                    // button was released to quickly so I assume some debouncing.
+                    // go back to state 0 without calling a function.
+                    _state = 0;
+
+                } else if (buttonLevel == _buttonReleased) {
+                    _state = 2; // step to state 2
+                    _stopTime = now; // remember stopping time
+
+                } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _startTime) > _pressTicks)) {
+                    _isLongPressed = true;  // Keep track of long press state
+                    if (_pressFunc) _pressFunc();
+                    _longPressStart();
+                    if (_longPressStartFunc) _longPressStartFunc();
+                    _longPress();
+                    if (_duringLongPressFunc) _duringLongPressFunc();
+                    _state = 6; // step to state 6
+
+                } else {
+                // wait. Stay in this state.
+                } // if
+
+            } else if (_state == 2) { // waiting for menu pin being pressed the second time or timeout.
+                // if (_doubleClickFunc == NULL || (unsigned long)(now - _startTime) > _clickTicks) {
+                if ((unsigned long)(now - _startTime) > _clickTicks) {
+                    // this was only a single short click
+                    _click();
+                    if (_clickFunc) _clickFunc();
+                    _state = 0; // restart.
+
+                } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _stopTime) > _debounceTicks)) {
+                    _state = 3; // step to state 3
+                    _startTime = now; // remember starting time
+                } // if
+
+            } else if (_state == 3) { // waiting for menu pin being released finally.
+                // Stay here for at least _debounceTicks because else we might end up in state 1 if the
+                // button bounces for too long.
+                if (buttonLevel == _buttonReleased && ((unsigned long)(now - _startTime) > _debounceTicks)) {
+                    // this was a 2 click sequence.
+                    _doubleClick();
+                    if (_doubleClickFunc) _doubleClickFunc();
+                    _state = 0; // restart.
+                } // if
+
+            } else if (_state == 6) { // waiting for menu pin being release after long press.
+                if (buttonLevel == _buttonReleased) {
+                    _isLongPressed = false;  // Keep track of long press state
+                    _longPressStop();
+                    if(_longPressStopFunc) _longPressStopFunc();
+                    _state = 0; // restart.
+                } else {
+                    // button is being long pressed
+                    _isLongPressed = true; // Keep track of long press state
+                    _longPress();
+                    if (_duringLongPressFunc) _duringLongPressFunc();
+                } // if
+
+            } // if
+
+            // BLINKER_LOG("_state: ", _state);
+        }
+    #endif
+#endif
 };
 
 template <class Proto>
@@ -147,6 +440,10 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
         {
             return;
         }
+    #if defined(BLINKER_PRO_ESP)
+        otaParse(root);
+    #endif
+        autoManager(root);
 
         heartBeat(root);
 
@@ -1605,39 +1902,6 @@ bool BlinkerApi<Proto>::timerManager(const JsonObject& data, bool _noSet)
                     }
                 }
 
-//                     if (data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_DAY][0] == 7) {
-//                         if (_tmTime2 > dtime()) {
-//                             _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
-//                         }
-//                         else {
-//                             _timingDay |= (0x01 << ((wday() + 1) % 7));//timeinfo.tm_wday(uint8_t)pow(2,(timeinfo.tm_wday + 1) % 7);
-//                         }
-
-//                         _isTimingLoop = false;
-// #ifdef BLINKER_DEBUG_ALL
-//                         BLINKER_LOG(BLINKER_F("timingDay: "), _timingDay);
-// #endif
-//                     }
-//                     else {
-//                         uint8_t taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_DAY][0];
-//                         _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-// #ifdef BLINKER_DEBUG_ALL
-//                         BLINKER_LOG(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-// #endif
-
-//                         for (uint8_t day = 1;day < 7;day++) {
-//                             taskDay = data[BLINKER_CMD_SET][BLINKER_CMD_TIMING][0][BLINKER_CMD_DAY][day];
-//                             if (taskDay > 0) {
-//                                 _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-// #ifdef BLINKER_DEBUG_ALL
-//                                 BLINKER_LOG(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-// #endif
-//                             }
-//                         }
-
-//                         _isTimingLoop = true;
-//                     }
-
                 BLINKER_LOG_ALL(BLINKER_F("timingDay: "), _timingDay);
                 // BLINKER_LOG_ALL(BLINKER_F("_text: "), _text);
                 BLINKER_LOG_ALL(BLINKER_F("_tmRunState: "), _tmRunState);
@@ -1705,39 +1969,6 @@ bool BlinkerApi<Proto>::timerManager(const JsonObject& data, bool _noSet)
                         }
                     }
                 }
-
-//                     if (data[BLINKER_CMD_TIMING][0][BLINKER_CMD_DAY][0] == 7) {
-//                         if (_tmTime2 > dtime()) {
-//                             _timingDay |= (0x01 << wday());//timeinfo.tm_wday(uint8_t)pow(2,timeinfo.tm_wday);
-//                         }
-//                         else {
-//                             _timingDay |= (0x01 << ((wday() + 1) % 7));//timeinfo.tm_wday(uint8_t)pow(2,(timeinfo.tm_wday + 1) % 7);
-//                         }
-
-//                         _isTimingLoop = false;
-// #ifdef BLINKER_DEBUG_ALL
-//                         BLINKER_LOG(BLINKER_F("timingDay: "), _timingDay);
-// #endif
-//                     }
-//                     else {
-//                         uint8_t taskDay = data[BLINKER_CMD_TIMING][0][BLINKER_CMD_DAY][0];
-//                         _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-// #ifdef BLINKER_DEBUG_ALL
-//                         BLINKER_LOG(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-// #endif
-
-//                         for (uint8_t day = 1;day < 7;day++) {
-//                             taskDay = data[BLINKER_CMD_TIMING][0][BLINKER_CMD_DAY][day];
-//                             if (taskDay > 0) {
-//                                 _timingDay |= (0x01 << taskDay);//(uint8_t)pow(2,taskDay);
-// #ifdef BLINKER_DEBUG_ALL
-//                                 BLINKER_LOG(BLINKER_F("day: "), taskDay, BLINKER_F(" timingDay: "), _timingDay);
-// #endif
-//                             }
-//                         }
-
-//                         _isTimingLoop = true;
-//                     }
 
                 BLINKER_LOG_ALL(BLINKER_F("timingDay: "), _timingDay);
                 // BLINKER_LOG_ALL(BLINKER_F("_text: "), _text);
@@ -2172,74 +2403,6 @@ bool BlinkerApi<Proto>::autoManager(const JsonObject& data)
         String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
                                     [BLINKER_CMD_ACTION][0];
 
-        // if (isDelet)
-        // {
-        //     // uint32_t _autoId = STRING_find_numberic_value(static_cast<Proto*>(this)->dataParse(), BLINKER_CMD_DELETID);
-        //     uint32_t _autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE];
-
-        //     if (_aCount)
-        //     {
-        //         for (uint8_t _num = 0; _num < _aCount; _num++)
-        //         {
-        //             if (_AUTO[_num]->id() == _autoId)
-        //             {
-        //                 // _AUTO[_num]->manager(static_cast<Proto*>(this)->dataParse());
-        //                 for (uint8_t a_num = _num; a_num < _aCount; a_num++)
-        //                 {
-        //                     if (a_num < _aCount - 1)
-        //                     {
-        //                         _AUTO[a_num]->setNum(a_num + 1);
-        //                         _AUTO[a_num]->deserialization();
-        //                         _AUTO[a_num]->setNum(a_num);
-        //                         _AUTO[a_num]->serialization();
-        //                     }
-        //                     else{
-        //                         _num = _aCount;
-        //                     }
-        //                 }
-        //                 _aCount--;
-
-        //                 EEPROM.begin(BLINKER_EEP_SIZE);
-        //                 EEPROM.put(BLINKER_EEP_ADDR_AUTONUM, _aCount);
-        //                 EEPROM.commit();
-        //                 EEPROM.end();
-
-        //                 BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
-
-        //                 return true;
-        //             }
-        //         }
-        //     }
-        // }
-        // else if(isTriggedArray != "null")
-        // {
-        //     for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
-        //     {
-        //         String _autoData_array = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
-        //                                     [BLINKER_CMD_ACTION][a_num];
-
-        //         if(_autoData_array != "null")
-        //         {
-        //             // DynamicJsonBuffer _jsonBuffer;
-        //             // JsonObject& _array = _jsonBuffer.parseObject(_autoData_array);
-        //             DynamicJsonDocument jsonBuffer(1024);
-        //             deserializeJson(jsonBuffer, _autoData_array);
-        //             JsonObject _array = jsonBuffer.as<JsonObject>();
-
-        //             json_parse(_array);
-        //             #if (!defined(BLINKER_NBIOT_SIM7020) && !defined(BLINKER_GPRS_AIR202) && \
-        //                 !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-        //                 !defined(BLINKER_LOWPOWER_AIR202))
-        //             timerManager(_array, true);
-        //             #endif
-        //         }
-        //         else
-        //         {
-        //             // a_num = BLINKER_MAX_WIDGET_SIZE;
-        //             return true;
-        //         }
-        //     }
-        // }
         if (isTriggedArray != "null")
         {
             BLINKER_LOG_ALL(BLINKER_F("_auto trigged action: "), isTriggedArray);
@@ -2283,15 +2446,15 @@ bool BlinkerApi<Proto>::autoManager(const JsonObject& data)
                     {
                         #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
                             defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
-                            if (_parseFunc) {
-                                if(_parseFunc(_array)) {
-                                    BLINKER_LOG_ALL(BLINKER_F("_parseFunc(_array) isParsed"));
-                                    _fresh = true;
-                                    static_cast<Proto*>(this)->flush();
-                                }
+                            // if (_parseFunc) {
+                            //     if(_parseFunc(_array)) {
+                            //         BLINKER_LOG_ALL(BLINKER_F("_parseFunc(_array) isParsed"));
+                            //         _fresh = true;
+                            //         static_cast<Proto*>(this)->flush();
+                            //     }
 
-                                BLINKER_LOG_ALL(BLINKER_F("run parse callback function"));
-                            }
+                            //     BLINKER_LOG_ALL(BLINKER_F("run parse callback function"));
+                            // }
                         #endif
                     }
                 }
@@ -2417,5 +2580,37 @@ bool BlinkerApi<Proto>::autoManager(const JsonObject& data)
         return false;
     }
 }
+
+#if defined(BLINKER_PRO_ESP)
+template <class Proto>
+void BlinkerApi<Proto>::otaParse(const JsonObject& data)
+{
+    if (data.containsKey(BLINKER_CMD_SET))
+    {
+        String value = data[BLINKER_CMD_SET];
+
+        // DynamicJsonBuffer jsonBufferSet;
+        // JsonObject& rootSet = jsonBufferSet.parseObject(value);
+        DynamicJsonDocument jsonBuffer(1024);
+        DeserializationError error = deserializeJson(jsonBuffer, value);
+        JsonObject rootSet = jsonBuffer.as<JsonObject>();
+
+        // if (!rootSet.success())
+        if (error)
+        {
+            // BLINKER_ERR_LOG_ALL("Json error");
+            return;
+        }
+
+        if (rootSet.containsKey(BLINKER_CMD_UPGRADE))
+        {
+            BLINKER_LOG_ALL(BLINKER_F("otaParse isParsed"));
+            _fresh = true;
+
+            static_cast<Proto*>(this)->ota();
+        }
+    }
+}
+#endif
 
 #endif

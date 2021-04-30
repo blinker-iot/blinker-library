@@ -38,6 +38,7 @@
 #include "../Blinker/BlinkerDebug.h"
 // #include "../Blinker/BlinkerStream.h"
 #include "../Blinker/BlinkerUtility.h"
+#include "../Blinker/BlinkerHTTP.h"
 
 enum b_config_t {
     COMM,
@@ -97,27 +98,12 @@ class BlinkerWiFiESP
         bool deviceRegister();
         void freshSharers();
 
-        template<typename T>
-        bool sms(const T& msg);
-        template<typename T>
-        bool sms(const T& msg, const char* cel);
-        template<typename T>
-        bool push(const T& msg);
-        template<typename T>
-        bool wechat(const T& msg);
-        template<typename T>
-        bool wechat(const String & title, const String & state, const T& msg);
+        char * deviceName()             { return DEVICE_NAME_MQTT; }
+        char * authKey()                { return (char *)_authKey; }
+        char * token()                  { if (!isMQTTinit) return ""; else return MQTT_KEY_MQTT; }
 
-        String weather(uint32_t _city);
-        String weatherForecast(uint32_t _city);
-        String air(uint32_t _city);
-
-        bool log(const String & msg, time_t now_time);
-        bool dataStorage(const String & msg);
-        bool timeSlot(const String & msg);
-        void httpHeartbeat();
-
-        String httpToServer(uint8_t _type, const String & msg, bool state = false);
+        String httpServer(uint8_t _type, const String & msg, bool state = false)
+        { return httpToServer(_type, msg, state); }
         
         bool checkInit()            { return isMQTTinit; }
         bool checkWlanInit();
@@ -178,23 +164,6 @@ class BlinkerWiFiESP
 
         void parseData(const char* data);
 
-        bool checkServerLimit();
-        bool checkSMS();
-        bool checkPUSH();
-        bool checkWECHAT();
-        bool checkWEATHER();
-        bool checkWEATHERFORECAST();
-        bool checkAQI();
-        bool checkLOG();
-        bool checkCOD();
-        bool checkCUPDATE();
-        bool checkCGET();
-        bool checkCDEL();
-        bool checkDataUpdata();
-        bool checkDataGet();
-        bool checkDataDel();
-        bool checkAutoPull();
-
     protected :
         b_broker_t  _use_broker = aliyun_b;
         char        _messageId[20];
@@ -248,47 +217,26 @@ class BlinkerWiFiESP
         char        message_id[24];
         bool        is_rrpc = false;        
 
-        uint32_t    _smsTime = 0;
-        uint32_t    _pushTime = 0;
-        uint32_t    _wechatTime = 0;
-        uint32_t    _weatherTime = 0;
-        uint32_t    _weather_forecast_Time = 0;
-        uint32_t    _aqiTime = 0;
-        uint32_t    _logTime = 0;
-        uint32_t    _codTime = 0;
         uint8_t     data_dataCount = 0;
         uint8_t     data_timeSlotDataCount = 0;
         uint32_t    time_timeSlotData = 0;
         uint8_t     _aCount = 0;
         uint8_t     _bridgeCount = 0;
 
-        uint32_t    _cUpdateTime = 0;
-        uint32_t    _dUpdateTime = 0;
-        uint32_t    _cGetTime = 0;
-        uint32_t    _cDelTime = 0;
-        uint32_t    _dGetTime = 0;
-        uint32_t    _dDelTime = 0;
-        uint32_t    _autoPullTime = 0;
-
-        uint32_t    _autoUpdateTime = 0;
-
-        uint8_t     _serverTimes = 0;
-        uint32_t    _serverTime = 0;
-
         b_device_staus_t _status = WLAN_CONNECTING;
 };
 
-#if defined(ESP8266)
-    #ifndef BLINKER_WITHOUT_SSL
-        BearSSL::WiFiClientSecure   client_mqtt;
-    #else
-        WiFiClient               client_mqtt;
-    #endif
-#elif defined(ESP32)
-    WiFiClientSecure     client_s;
-#endif
+// #if defined(ESP8266)
+//     #ifndef BLINKER_WITHOUT_SSL
+//         BearSSL::WiFiClientSecure   client_mqtt;
+//     #else
+//         WiFiClient               client_mqtt;
+//     #endif
+// #elif defined(ESP32)
+//     WiFiClientSecure     client_s;
+// #endif
 
-WiFiClient               client;
+// WiFiClient               client;
 Adafruit_MQTT_Client*    mqtt_MQTT;
 Adafruit_MQTT_Subscribe* iotSub_MQTT;
 
@@ -886,7 +834,58 @@ bool BlinkerWiFiESP::deviceRegister()
 {
     _status = DEV_REGISTER;
 
-    String payload = httpToServer(BLINKER_CMD_WIFI_AUTH_NUMBER, "");
+    String urls = _authKey;
+    #if defined(BLINKER_ALIGENIE_LIGHT)
+        urls += BLINKER_F("&aliType=light");
+    #elif defined(BLINKER_ALIGENIE_OUTLET)
+        urls += BLINKER_F("&aliType=outlet");
+    #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+        urls += BLINKER_F("&aliType=multi_outlet");
+    #elif defined(BLINKER_ALIGENIE_SENSOR)
+        urls += BLINKER_F("&aliType=sensor");
+    #elif defined(BLINKER_ALIGENIE_FAN)
+        urls += BLINKER_F("&aliType=fan");
+    #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
+        urls += BLINKER_F("&aliType=aircondition");
+    #endif
+
+    #if defined(BLINKER_DUEROS_LIGHT)
+        urls += BLINKER_F("&duerType=LIGHT");
+    #elif defined(BLINKER_DUEROS_OUTLET)
+        urls += BLINKER_F("&duerType=SOCKET");
+    #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+        urls += BLINKER_F("&duerType=MULTI_SOCKET");
+    #elif defined(BLINKER_DUEROS_SENSOR)
+        urls += BLINKER_F("&duerType=AIR_MONITOR");
+    #elif defined(BLINKER_DUEROS_FAN)
+        urls += BLINKER_F("&duerType=FAN");
+    #elif defined(BLINKER_DUEROS_AIRCONDITION)
+        urls += BLINKER_F("&duerType=AIR_CONDITION");
+    #endif
+
+    #if defined(BLINKER_MIOT_LIGHT)
+        urls += BLINKER_F("&miType=light");
+    #elif defined(BLINKER_MIOT_OUTLET)
+        urls += BLINKER_F("&miType=outlet");
+    #elif defined(BLINKER_MIOT_MULTI_OUTLET)
+        urls += BLINKER_F("&miType=multi_outlet");
+    #elif defined(BLINKER_MIOT_SENSOR)
+        urls += BLINKER_F("&miType=sensor");
+    #elif defined(BLINKER_MIOT_FAN)
+        urls += BLINKER_F("&miType=fan");
+    #elif defined(BLINKER_MIOT_AIRCONDITION)
+        urls += BLINKER_F("&miType=aircondition");
+    #endif
+
+    urls += BLINKER_F("&version=");
+    urls += BLINKER_OTA_VERSION_CODE;
+    #ifndef BLINKER_WITHOUT_SSL
+    urls += BLINKER_F("&protocol=mqtts");
+    #else
+    urls += BLINKER_F("&protocol=mqtt");
+    #endif
+
+    String payload = httpToServer(BLINKER_CMD_WIFI_AUTH_NUMBER, urls);
 
     BLINKER_LOG_ALL(BLINKER_F("reply was:"));
     BLINKER_LOG_ALL(BLINKER_F("=============================="));
@@ -1179,654 +1178,6 @@ void BlinkerWiFiESP::freshSharers()
         {
             break;
         }
-    }
-}
-
-template<typename T>
-bool BlinkerWiFiESP::sms(const T& msg)
-{
-    String _msg = STRING_format(msg);
-
-    String  data = BLINKER_F("{\"deviceName\":\"");
-            data += DEVICE_NAME_MQTT;
-            data += BLINKER_F("\",\"key\":\"");
-            data += _authKey;
-            data += BLINKER_F("\",\"msg\":\"");
-            data += _msg;
-            data += BLINKER_F("\"}");
-
-    if (_msg.length() > 20) return false;
-
-    return httpToServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
-}
-
-template<typename T>
-bool BlinkerWiFiESP::sms(const T& msg, const char* cel)
-{
-    String _msg = STRING_format(msg);
-    
-    String  data = BLINKER_F("{\"deviceName\":\"");
-            data += DEVICE_NAME_MQTT;
-            data += BLINKER_F("\",\"key\":\"");
-            data += _authKey;
-            data += BLINKER_F("\",\"cel\":\"");
-            data += cel;
-            data += BLINKER_F("\",\"msg\":\"");
-            data += _msg;
-            data += BLINKER_F("\"}");
-
-    if (_msg.length() > 20) return false;
-
-    return httpToServer(BLINKER_CMD_SMS_NUMBER, data) != "false";
-}
-
-template<typename T>
-bool BlinkerWiFiESP::push(const T& msg)
-{
-    String _msg = STRING_format(msg);
-    
-    String  data = BLINKER_F("{\"deviceName\":\"");
-            data += DEVICE_NAME_MQTT;
-            data += BLINKER_F("\",\"key\":\"");
-            data += _authKey;
-            data += BLINKER_F("\",\"msg\":\"");
-            data += _msg;
-            data += BLINKER_F("\"}");
-
-    return httpToServer(BLINKER_CMD_PUSH_NUMBER, data) != "false";
-}
-
-template<typename T>
-bool BlinkerWiFiESP::wechat(const T& msg)
-{
-    String _msg = STRING_format(msg);
-    
-    String  data = BLINKER_F("{\"deviceName\":\"");
-            data += DEVICE_NAME_MQTT;
-            data += BLINKER_F("\",\"key\":\"");
-            data += _authKey;
-            data += BLINKER_F("\",\"msg\":\"");
-            data += _msg;
-            data += BLINKER_F("\"}");
-
-    return httpToServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
-}
-
-template<typename T>
-bool BlinkerWiFiESP::wechat(const String & title, const String & state, const T& msg)
-{
-    String _msg = STRING_format(msg);
-
-    String  data = BLINKER_F("{\"deviceName\":\"");
-            data += DEVICE_NAME_MQTT;
-            data += BLINKER_F("\",\"key\":\"");
-            data += _authKey;
-            data += BLINKER_F("\",\"title\":\"");
-            data += title;
-            data += BLINKER_F("\",\"state\":\"");
-            data += state;
-            data += BLINKER_F("\",\"msg\":\"");
-            data += _msg;
-            data += BLINKER_F("\"}");
-
-    return httpToServer(BLINKER_CMD_WECHAT_NUMBER, data) != "false";
-}
-
-String BlinkerWiFiESP::weather(uint32_t _city)
-{
-    String data = BLINKER_F("/weather?");
-
-    if (_city != 0)
-    {
-        data += BLINKER_F("code=");
-        data += STRING_format(_city);
-        data += BLINKER_F("&");
-    }
-
-    data += BLINKER_F("deviceName=");
-    data += DEVICE_NAME_MQTT;
-    data += BLINKER_F("&key=");
-    data += MQTT_KEY_MQTT;
-
-    return httpToServer(BLINKER_CMD_WEATHER_NUMBER, data);
-}
-
-String BlinkerWiFiESP::weatherForecast(uint32_t _city)
-{
-    String data = BLINKER_F("/forecast?");
-
-    if (_city != 0)
-    {
-        data += BLINKER_F("code=");
-        data += STRING_format(_city);
-        data += BLINKER_F("&");
-    }
-
-    data += BLINKER_F("deviceName=");
-    data += DEVICE_NAME_MQTT;
-    data += BLINKER_F("&key=");
-    data += MQTT_KEY_MQTT;
-
-    return httpToServer(BLINKER_CMD_WEATHER_FORECAST_NUMBER, data);
-}
-
-String BlinkerWiFiESP::air(uint32_t _city)
-{
-    String data = BLINKER_F("/air?");
-
-    if (_city != 0)
-    {
-        data += BLINKER_F("code=");
-        data += STRING_format(_city);
-        data += BLINKER_F("&");
-    }
-
-    data += BLINKER_F("deviceName=");
-    data += DEVICE_NAME_MQTT;
-    data += BLINKER_F("&key=");
-    data += MQTT_KEY_MQTT;
-
-    return httpToServer(BLINKER_CMD_AQI_NUMBER, data);
-}
-
-bool BlinkerWiFiESP::log(const String & msg, time_t now_time)
-{
-    String data = BLINKER_F("{\"token\":\"");
-    data += MQTT_KEY_MQTT;
-    data += BLINKER_F("\",\"data\":[[");
-    data += STRING_format(now_time);
-    data += BLINKER_F(",\"");
-    data += msg;
-    data += BLINKER_F("\"]]}");
-
-    return httpToServer(BLINKER_CMD_LOG_NUMBER, data) != "false";
-}
-
-bool BlinkerWiFiESP::dataStorage(const String & msg)
-{
-    String data = BLINKER_F("{\"deviceName\":\"");
-    data += DEVICE_NAME_MQTT;
-    data += BLINKER_F("\",\"key\":\"");
-    data += _authKey;
-    data += BLINKER_F("\",\"data\":{");
-    data += msg;
-    data += BLINKER_F("}}");
-    
-    return httpToServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) != "false";
-}
-
-bool BlinkerWiFiESP::timeSlot(const String & msg)
-{
-    String data = BLINKER_F("{\"device\":\"");
-    data += DEVICE_NAME_MQTT;
-    data += BLINKER_F("\",\"toStorage\":\"ts\"");
-    data += BLINKER_F(",\"data\":[");
-    data += msg;
-    data += BLINKER_F("]}");
-    
-    return httpToServer(BLINKER_CMD_TIME_SLOT_DATA_NUMBER, data) != "false";
-}
-
-void BlinkerWiFiESP::httpHeartbeat()
-{
-    String data = BLINKER_F("/heartbeat?");
-    data += BLINKER_F("deviceName=");
-    data += DEVICE_NAME_MQTT;
-    data += BLINKER_F("&key=");
-    data += _authKey;
-    data += BLINKER_F("&heartbeat=");
-    data += STRING_format(BLINKER_DEVICE_HEARTBEAT_TIME);
-
-    httpToServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data);
-}
-
-String BlinkerWiFiESP::httpToServer(uint8_t _type, const String & msg, bool state)
-{
-    switch (_type)
-    {
-        case BLINKER_CMD_SMS_NUMBER :
-            if (!checkSMS()) {
-                return BLINKER_CMD_FALSE;
-            }
-
-            if ((!state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE) ||
-                (state && msg.length() > BLINKER_SMS_MAX_SEND_SIZE + 15)) {
-                return BLINKER_CMD_FALSE;
-            }
-            break;
-        case BLINKER_CMD_PUSH_NUMBER :
-            if (!checkPUSH()) {
-                return BLINKER_CMD_FALSE;
-            }
-            break;
-        case BLINKER_CMD_WECHAT_NUMBER :
-            if (!checkWECHAT()) {
-                return BLINKER_CMD_FALSE;
-            }
-            break;
-        case BLINKER_CMD_WEATHER_NUMBER :
-            if (!checkWEATHER()) {
-                return BLINKER_CMD_FALSE;
-            }
-            break;
-        case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
-            if (!checkWEATHERFORECAST()) {
-                return BLINKER_CMD_FALSE;
-            }
-            break;
-        case BLINKER_CMD_AQI_NUMBER :
-            if (!checkAQI()) {
-                return BLINKER_CMD_FALSE;
-            }
-            break;
-        case BLINKER_CMD_LOG_NUMBER :
-            if (!checkLOG()) {
-                return BLINKER_CMD_FALSE;
-            }
-            break;
-        case BLINKER_CMD_DATA_STORAGE_NUMBER :
-            break;
-        case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
-            break;
-        case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
-            break;
-        case BLINKER_CMD_WIFI_AUTH_NUMBER :
-            break;
-        case BLINKER_CMD_FRESH_SHARERS_NUMBER :
-            break;
-        default :
-            return BLINKER_CMD_FALSE;
-    }
-
-    #if defined(ESP8266)
-        #ifndef BLINKER_WITHOUT_SSL
-            client_mqtt.stop();
-            
-            std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
-
-            client_s->setInsecure();
-        #else
-            WiFiClient               client_s;
-        #endif
-    #endif
-
-    HTTPClient http;
-
-    String url_iot;
-
-    int httpCode;
-
-    String host = BLINKER_F(BLINKER_SERVER_HTTPS);
-
-    String conType = BLINKER_F("Content-Type");
-    String application = BLINKER_F("application/json;charset=utf-8");
-
-    BLINKER_LOG_ALL(BLINKER_F("blinker server begin"));
-    BLINKER_LOG_FreeHeap_ALL();
-
-    switch (_type)
-    {
-        case BLINKER_CMD_SMS_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v1/user/device/sms");
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            http.addHeader(conType, application);
-            httpCode = http.POST(msg);
-            break;
-        case BLINKER_CMD_PUSH_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v1/user/device/push");
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            http.addHeader(conType, application);
-            httpCode = http.POST(msg);
-            break;
-        case BLINKER_CMD_WECHAT_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v1/user/device/wxMsg/");
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            http.addHeader(conType, application);
-            httpCode = http.POST(msg);
-            break;
-        case BLINKER_CMD_WEATHER_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v3");
-            url_iot += msg;
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            httpCode = http.GET();
-            break;
-        case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v3");
-            url_iot += msg;
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            httpCode = http.GET();
-            break;
-        case BLINKER_CMD_AQI_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v3");
-            url_iot += msg;
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            httpCode = http.GET();
-            break;
-        case BLINKER_CMD_LOG_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/logs");
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            http.addHeader(conType, application);
-            httpCode = http.POST(msg);
-            break;
-        case BLINKER_CMD_DATA_STORAGE_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v1/user/device/cloudStorage/");
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            http.addHeader(conType, application);
-            httpCode = http.POST(msg);
-            break;
-        case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
-            // url_iot = host;
-            #ifndef BLINKER_WITHOUT_SSL
-                url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ts");
-            #else
-                url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ts");
-            #endif
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            http.addHeader(conType, application);
-            httpCode = http.POST(msg);
-            break;
-        case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v1/user/device");
-            url_iot += msg;
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            httpCode = http.GET();
-            break;
-        case BLINKER_CMD_WIFI_AUTH_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
-            url_iot += _authKey;
-
-            #if defined(BLINKER_ALIGENIE_LIGHT)
-                url_iot += BLINKER_F("&aliType=light");
-            #elif defined(BLINKER_ALIGENIE_OUTLET)
-                url_iot += BLINKER_F("&aliType=outlet");
-            #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
-                url_iot += BLINKER_F("&aliType=multi_outlet");
-            #elif defined(BLINKER_ALIGENIE_SENSOR)
-                url_iot += BLINKER_F("&aliType=sensor");
-            #elif defined(BLINKER_ALIGENIE_FAN)
-                url_iot += BLINKER_F("&aliType=fan");
-            #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
-                url_iot += BLINKER_F("&aliType=aircondition");
-            #endif
-
-            #if defined(BLINKER_DUEROS_LIGHT)
-                url_iot += BLINKER_F("&duerType=LIGHT");
-            #elif defined(BLINKER_DUEROS_OUTLET)
-                url_iot += BLINKER_F("&duerType=SOCKET");
-            #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
-                url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
-            #elif defined(BLINKER_DUEROS_SENSOR)
-                url_iot += BLINKER_F("&duerType=AIR_MONITOR");
-            #elif defined(BLINKER_DUEROS_FAN)
-                url_iot += BLINKER_F("&duerType=FAN");
-            #elif defined(BLINKER_DUEROS_AIRCONDITION)
-                url_iot += BLINKER_F("&duerType=AIR_CONDITION");
-            #endif
-
-            #if defined(BLINKER_MIOT_LIGHT)
-                url_iot += BLINKER_F("&miType=light");
-            #elif defined(BLINKER_MIOT_OUTLET)
-                url_iot += BLINKER_F("&miType=outlet");
-            #elif defined(BLINKER_MIOT_MULTI_OUTLET)
-                url_iot += BLINKER_F("&miType=multi_outlet");
-            #elif defined(BLINKER_MIOT_SENSOR)
-                url_iot += BLINKER_F("&miType=sensor");
-            #elif defined(BLINKER_MIOT_FAN)
-                url_iot += BLINKER_F("&miType=fan");
-            #elif defined(BLINKER_MIOT_AIRCONDITION)
-                url_iot += BLINKER_F("&miType=aircondition");
-            #endif
-
-            url_iot += BLINKER_F("&version=");
-            url_iot += BLINKER_OTA_VERSION_CODE;
-            #ifndef BLINKER_WITHOUT_SSL
-            url_iot += BLINKER_F("&protocol=mqtts");
-            #else
-            url_iot += BLINKER_F("&protocol=mqtt");
-            #endif
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            httpCode = http.GET();
-            break;
-        case BLINKER_CMD_FRESH_SHARERS_NUMBER :
-            url_iot = host;
-            url_iot += BLINKER_F("/api/v1/user/device");
-            url_iot += msg;
-
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
-
-            httpCode = http.GET();
-            break;
-        default :
-            return BLINKER_CMD_FALSE;
-    }
-
-    BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
-
-    BLINKER_LOG_ALL(BLINKER_F("HTTPS payload: "), msg);
-
-    if (httpCode > 0)
-    {
-        BLINKER_LOG_ALL(BLINKER_F("[HTTP] status... code: "), httpCode);
-
-        String payload;
-        if (httpCode == HTTP_CODE_OK || httpCode == 201)
-        {
-            payload = http.getString();
-
-            BLINKER_LOG_ALL(payload);
-
-            DynamicJsonDocument jsonBuffer(2048);
-            DeserializationError error = deserializeJson(jsonBuffer, payload);
-            JsonObject data_rp = jsonBuffer.as<JsonObject>();
-
-            // if (data_rp.success())
-            if (!error)
-            {
-                uint16_t msg_code = data_rp[BLINKER_CMD_MESSAGE];
-                if (msg_code != 1000)
-                {
-                    String _detail = data_rp[BLINKER_CMD_DETAIL];
-                    BLINKER_ERR_LOG(_detail);
-                }
-                else
-                {
-                    switch (_type)
-                    {
-                        // case BLINKER_CMD_WIFI_AUTH_NUMBER :
-                            
-                        //     break;
-                        default:
-                            payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
-                            break;
-                    }
-
-                    BLINKER_LOG_ALL(BLINKER_F("_type: "), _type);
-                }
-            }
-
-            BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
-
-            switch (_type)
-            {
-                case BLINKER_CMD_SMS_NUMBER :
-                    _smsTime = millis();
-                    break;
-                case BLINKER_CMD_PUSH_NUMBER :
-                    _pushTime = millis();
-                    break;
-                case BLINKER_CMD_WECHAT_NUMBER :
-                    _wechatTime = millis();
-                    break;
-                case BLINKER_CMD_WEATHER_NUMBER :
-                    _weatherTime = millis();
-                    break;
-                case BLINKER_CMD_WEATHER_FORECAST_NUMBER :
-                    _weather_forecast_Time = millis();
-                    break;
-                case BLINKER_CMD_AQI_NUMBER :
-                    _aqiTime = millis();
-                    break;
-                case BLINKER_CMD_LOG_NUMBER :
-                    _logTime = millis();
-                    break;
-                case BLINKER_CMD_DATA_STORAGE_NUMBER :
-                    break;
-                case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
-                    break;
-                case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
-                    break;
-                case BLINKER_CMD_WIFI_AUTH_NUMBER :
-                    break;
-                case BLINKER_CMD_FRESH_SHARERS_NUMBER :
-                    break;
-                default :
-                    return BLINKER_CMD_FALSE;
-            }
-        }
-        http.end();
-
-        return payload;
-    }
-    else {
-        BLINKER_LOG_ALL(BLINKER_F("[HTTP] ... failed, error: "), http.errorToString(httpCode).c_str());
-        String payload = http.getString();
-        BLINKER_LOG_ALL(payload);
-
-        if (_type == BLINKER_CMD_SMS_NUMBER) {
-            _smsTime = millis();
-        }
-        
-        http.end();
-
-        return BLINKER_CMD_FALSE;
     }
 }
 
@@ -2463,6 +1814,8 @@ void BlinkerWiFiESP::parseData(const char* data)
     this->latestTime = millis();
 
     dataFrom_MQTT = BLINKER_MSG_FROM_MQTT;
+
+    if (_needCheckShare && isMQTTinit) freshSharers();
 }
 
 void BlinkerWiFiESP::checkKA() {
@@ -2518,170 +1871,6 @@ int BlinkerWiFiESP::checkPrintLimit()
         _print_times = 0;
         return true;
     }
-}
-
-bool BlinkerWiFiESP::checkServerLimit()
-{
-    if ((millis() - _serverTime) < 60 * 60 * 1000)
-    {
-        if (_serverTimes > BLINKER_PRINT_MSG_LIMIT)
-        {
-            BLINKER_ERR_LOG(BLINKER_F("SERVER NOT ALIVE OR MSG LIMIT"));
-
-            return false;
-        }
-        else
-        {
-            _serverTimes++;
-            return true;
-        }
-    }
-    else
-    {
-        _serverTimes = 0;
-        _serverTime = millis();
-        return true;
-    }
-}
-
-bool BlinkerWiFiESP::checkSMS()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _smsTime) >= BLINKER_SMS_MSG_LIMIT || \
-        _smsTime == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkPUSH()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _pushTime) >= BLINKER_PUSH_MSG_LIMIT || \
-        _pushTime == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkWECHAT()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _wechatTime) >= BLINKER_WECHAT_MSG_LIMIT || \
-        _wechatTime == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkWEATHER()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _weatherTime) >= BLINKER_WEATHER_MSG_LIMIT || \
-        _weatherTime == 0) return true;
-    else return false;
-}    
-
-
-bool BlinkerWiFiESP::checkWEATHERFORECAST()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _weather_forecast_Time) >= BLINKER_WEATHER_MSG_LIMIT || \
-        _weather_forecast_Time == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkAQI()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _aqiTime) >= BLINKER_AQI_MSG_LIMIT || \
-        _aqiTime == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkLOG()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _logTime) >= BLINKER_LOG_MSG_LIMIT || \
-        _logTime == 0) return true;
-    else return false;
-}
-
-bool BlinkerWiFiESP::checkCOD()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _codTime) >= BLINKER_COD_MSG_LIMIT || \
-        _codTime == 0) return true;
-    else return false;
-}
-
-bool BlinkerWiFiESP::checkCUPDATE()
-{
-    if ((millis() - _cUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-        _cUpdateTime == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkCGET()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _cGetTime) >= BLINKER_CONFIG_GET_LIMIT || \
-        _cGetTime == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkCDEL()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _cDelTime) >= BLINKER_CONFIG_GET_LIMIT || \
-        _cDelTime == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkDataUpdata()
-{
-    if ((millis() - _dUpdateTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-        _dUpdateTime == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkDataGet()
-{
-    if (!checkServerLimit()) return false;
-
-    if ((millis() - _dGetTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-        _dGetTime == 0) return true;
-    else return false;
-}
-
-
-bool BlinkerWiFiESP::checkDataDel()
-{
-    if (!checkServerLimit()) return false;
-    
-    if ((millis() - _dDelTime) >= BLINKER_CONFIG_UPDATE_LIMIT || \
-        _dDelTime == 0) return true;
-    else return false;
-}
-
-bool BlinkerWiFiESP::checkAutoPull()
-{
-    if ((millis() - _autoPullTime) >= 60000 || \
-        _autoPullTime == 0) return true;
-    else return false;
 }
 
 #if defined(BLINKER_ALIGENIE)
