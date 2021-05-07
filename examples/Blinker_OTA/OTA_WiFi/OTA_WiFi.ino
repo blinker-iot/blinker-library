@@ -158,6 +158,7 @@ void dataRead(const String & data)
 void setup()
 {
     Serial.begin(115200);
+    BLINKER_DEBUG.stream(Serial);
     BLINKER_DEBUG.debugAll();
 
     pinMode(LED_BUILTIN, OUTPUT);
