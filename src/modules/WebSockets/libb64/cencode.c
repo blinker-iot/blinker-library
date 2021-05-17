@@ -5,8 +5,9 @@ This is part of the libb64 project, and has been placed in the public domain.
 For details, see http://sourceforge.net/projects/libb64
 */
 
-#ifndef ESP8266
-//#include <core_esp8266_features.h>
+#ifdef ESP8266
+#include <core_esp8266_features.h>
+#endif
 
 #if defined(ESP32)
 #define CORE_HAS_LIBB64
@@ -114,7 +115,5 @@ int base64_encode_blockend(char* code_out, base64_encodestate* state_in)
 
 	return codechar - code_out;
 }
-
-#endif
 
 #endif

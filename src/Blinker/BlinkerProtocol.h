@@ -4,15 +4,17 @@
 #include <time.h>
 
 #include "Blinker/BlinkerApi.h"
-#include "Blinker/BlinkerOTA.h"
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) 
+    #include "Blinker/BlinkerOTA.h"
 
-#if defined(ESP8266) && !defined(BLINKER_BLE)
-    #if defined(BLINKER_WIFI_MULTI)
-        extern ESP8266WiFiMulti wifiMulti;
-    #endif
-#elif defined(ESP32) && !defined(BLINKER_BLE)
-    #if defined(BLINKER_WIFI_MULTI)
-        extern WiFiMulti wifiMulti;
+    #if defined(ESP8266) && !defined(BLINKER_BLE)
+        #if defined(BLINKER_WIFI_MULTI)
+            extern ESP8266WiFiMulti wifiMulti;
+        #endif
+    #elif defined(ESP32) && !defined(BLINKER_BLE)
+        #if defined(BLINKER_WIFI_MULTI)
+            extern WiFiMulti wifiMulti;
+        #endif
     #endif
 #endif
 
@@ -96,6 +98,9 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         // bool sms(const T& msg)
         // { return conn.sms(msg); }
 
+        void reset()                            { conn.reset(); }
+
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
         template<typename T>
         bool sms(const T& msg, const String & cel = "");
 
@@ -119,8 +124,6 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         { _weatherFunc = newFunction; }
         void attachWeatherForecast(blinker_callback_with_string_arg_t newFunction)
         { _weather_forecast_Func = newFunction; }
-
-        void reset()                            { conn.reset(); }
 
     #if defined(BLINKER_ALIGENIE)
         bool aliAvail()                         { return conn.aliAvail(); }
@@ -146,7 +149,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void timeSlotData(char _name[], const T& _data);
         void textData(const String & msg);
         void jsonData(const String & msg);
-
+#endif
     private :
         void autoPrint(const String & key, const String & data);
         void autoFormatData(const String & key, const String & jsonValue);
@@ -156,8 +159,10 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void _timerPrint(const String & n);
 
         bool wlanCheck();
+        bool ntpConfig();
         bool ntpInit();
 
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
         void checkDataStorage();
         bool dataUpdate();
 
@@ -175,7 +180,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         // void otaParse(const JsonObject& data);
         BlinkerOTA                      _OTA;
     #endif
-        
+#endif        
         char                _sendBuf[BLINKER_MAX_SEND_SIZE];
         uint32_t            autoFormatFreshTime;
         bool                autoFormat = false;
@@ -192,7 +197,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         Transp&             conn;
         _blinker_state_t    state;
         bool                isAvail;
-        
+    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
         blinker_callback_with_string_arg_t  _airFunc = NULL;
         blinker_callback_with_string_arg_t  _weatherFunc = NULL;
         blinker_callback_with_string_arg_t  _weather_forecast_Func = NULL;
@@ -208,6 +213,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         uint8_t                             data_dataCount = 0;
         uint8_t                             data_timeSlotDataCount = 0;
         uint32_t                            time_timeSlotData = 0;
+    #endif
 };
 
 template <class Transp>
@@ -656,122 +662,6 @@ void BlinkerProtocol<Transp>::flush()
 }
 
 template <class Transp>
-bool BlinkerProtocol<Transp>::wlanCheck()
-{
-    #if defined(BLINKER_WIFI_MULTI)
-        if (wifiMulti.run() != WL_CONNECTED)
-        {
-            if ((millis() - _reconTime) >= 10000 || \
-                _reconTime == 0 )
-            {
-                _reconTime = millis();
-                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
-            }
-
-            return false;
-        }
-    #else
-        if (WiFi.status() != WL_CONNECTED)
-        {
-            if ((millis() - _reconTime) >= 10000 || \
-                _reconTime == 0 )
-            {
-                _reconTime = millis();
-                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
-                WiFi.reconnect();
-            }
-
-            return false;
-        }
-    #endif
-
-    return true;
-}
-
-template <class Transp>
-bool BlinkerProtocol<Transp>::ntpInit()
-{
-    if (!_isNTPInit)
-    {
-        if (_isNTPInit)
-        {
-            time_t now_ntp = ::time(nullptr);
-            struct tm timeinfo;
-            #if defined(ESP8266)
-                gmtime_r(&now_ntp, &timeinfo);
-            #elif defined(ESP32)
-                localtime_r(&now_ntp, &timeinfo);
-            #endif
-        }
-
-        if ((millis() - _ntpStart) > BLINKER_NTP_TIMEOUT)
-        {
-            _ntpStart = millis();
-        }
-        else {
-            return false;
-        }
-
-        configTime((long)(_timezone * 3600), 0, 
-                    "ntp1.aliyun.com", 
-                    "120.25.108.11", 
-                    "time.pool.aliyun.com");
-
-        time_t now_ntp = ::time(nullptr);
-
-        float _com_timezone = abs(_timezone);
-        if (_com_timezone < 1.0) _com_timezone = 1.0;
-
-        if (now_ntp < _com_timezone * 3600 * 12)
-        {
-            configTime((long)(_timezone * 3600), 0, 
-                    "ntp1.aliyun.com", 
-                    "120.25.108.11", 
-                    "time.pool.aliyun.com");
-            now_ntp = ::time(nullptr);
-            if (now_ntp < _com_timezone * 3600 * 12)
-            {
-                ::delay(50);
-                now_ntp = ::time(nullptr);
-                return false;
-            }
-        }
-
-        struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
-        BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
-        #if defined(ESP8266)
-            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp);
-        #elif defined(ESP32)
-            BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp);
-        #endif
-
-        _isNTPInit = true;
-
-        _deviceStartTime = time() - millis()/1000;
-
-    #if defined(BLINKER_WIDGET)
-        BApi::loadTiming();
-    #endif
-        BApi::beginAuto();
-
-    #if defined(BLINKER_PRO_ESP)
-        otaInit();
-    #endif
-
-        return true;
-    }
-    return true;
-}
-
-template <class Transp>
 int8_t BlinkerProtocol<Transp>::second()
 {
     if (_isNTPInit)
@@ -1010,6 +900,140 @@ time_t BlinkerProtocol<Transp>::runTime()
     {
         return millis()/1000;
     }
+}
+
+
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::wlanCheck()
+{
+    #if defined(BLINKER_WIFI_MULTI)
+        if (wifiMulti.run() != WL_CONNECTED)
+        {
+            if ((millis() - _reconTime) >= 10000 || \
+                _reconTime == 0 )
+            {
+                _reconTime = millis();
+                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+            }
+
+            return false;
+        }
+    #else
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            if ((millis() - _reconTime) >= 10000 || \
+                _reconTime == 0 )
+            {
+                _reconTime = millis();
+                BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
+                WiFi.reconnect();
+            }
+
+            return false;
+        }
+    #endif
+
+    return true;
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::ntpConfig()
+{
+    configTime((long)(_timezone * 3600), 0, 
+                "ntp1.aliyun.com", 
+                "120.25.108.11", 
+                "time.pool.aliyun.com");
+
+    time_t now_ntp = ::time(nullptr);
+
+    float _com_timezone = abs(_timezone);
+    if (_com_timezone < 1.0) _com_timezone = 1.0;
+
+    if (now_ntp < _com_timezone * 3600 * 12)
+    {
+        configTime((long)(_timezone * 3600), 0, 
+                "ntp1.aliyun.com", 
+                "120.25.108.11", 
+                "time.pool.aliyun.com");
+        now_ntp = ::time(nullptr);
+        if (now_ntp < _com_timezone * 3600 * 12)
+        {
+            ::delay(50);
+            now_ntp = ::time(nullptr);
+            return false;
+        }
+    }
+
+    struct tm timeinfo;
+
+    #if defined(ESP8266)
+        time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
+        gmtime_r(&_now_ntp, &timeinfo);
+    #elif defined(ESP32)
+        localtime_r(&now_ntp, &timeinfo);
+    #endif
+
+    BLINKER_LOG_ALL(BLINKER_F("Current time: "), asctime(&timeinfo));
+    #if defined(ESP8266)
+        BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp);
+    #elif defined(ESP32)
+        BLINKER_LOG_ALL(BLINKER_F("NTP time: "), now_ntp);
+    #endif
+
+    return true;
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::ntpInit()
+{
+    if (!_isNTPInit)
+    {
+        // if (_isNTPInit)
+        // {
+        //     time_t now_ntp = ::time(nullptr);
+        //     struct tm timeinfo;
+        //     #if defined(ESP8266)
+        //         gmtime_r(&now_ntp, &timeinfo);
+        //     #elif defined(ESP32)
+        //         localtime_r(&now_ntp, &timeinfo);
+        //     #endif
+        // }
+
+        // if ((millis() - _ntpStart) > BLINKER_NTP_TIMEOUT)
+        // {
+        //     _ntpStart = millis();
+        // }
+        // else {
+        //     return false;
+        // }
+
+        if (!ntpConfig()) return false;
+
+        _ntpStart = millis();
+
+        _isNTPInit = true;
+
+        _deviceStartTime = time() - millis()/1000;
+
+    #if defined(BLINKER_WIDGET)
+        BApi::loadTiming();
+    #endif
+        BApi::beginAuto();
+
+    #if defined(BLINKER_PRO_ESP)
+        otaInit();
+    #endif
+
+        return true;
+    }
+    else if (_isNTPInit && (millis() - _ntpStart) >= 60 * 60 * 1000)
+    {
+        ntpConfig();
+        _ntpStart += 60 * 60 * 1000;
+    }
+    return true;
 }
 
 template <class Transp> template<typename T>
@@ -1548,36 +1572,6 @@ void BlinkerProtocol<Transp>::otaInit()
 }
 #endif
 
-// template <class Transp>
-// void BlinkerProtocol<Transp>::otaParse(const JsonObject& data)
-// {
-//     if (data.containsKey(BLINKER_CMD_SET))
-//     {
-//         String value = data[BLINKER_CMD_SET];
-
-//         // DynamicJsonBuffer jsonBufferSet;
-//         // JsonObject& rootSet = jsonBufferSet.parseObject(value);
-//         DynamicJsonDocument jsonBuffer(1024);
-//         DeserializationError error = deserializeJson(jsonBuffer, value);
-//         JsonObject rootSet = jsonBuffer.as<JsonObject>();
-
-//         // if (!rootSet.success())
-//         if (error)
-//         {
-//             // BLINKER_ERR_LOG_ALL("Json error");
-//             return;
-//         }
-
-//         if (rootSet.containsKey(BLINKER_CMD_UPGRADE))
-//         {
-//             BLINKER_LOG_ALL(BLINKER_F("otaParse isParsed"));
-//             _fresh = true;
-
-//             ota();
-//         }
-//     }
-// }
-
 template <class Transp> template <typename T>
 void BlinkerProtocol<Transp>::dataStorage(char _name[], const T& msg)
 {
@@ -1770,5 +1764,7 @@ void BlinkerProtocol<Transp>::timeSlotData(char _name[], const T& _data)
         BLINKER_LOG_ALL(BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
     }
 }
+
+#endif
 
 #endif

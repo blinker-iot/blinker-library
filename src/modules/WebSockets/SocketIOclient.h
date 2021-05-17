@@ -51,6 +51,16 @@ class SocketIOclient : protected WebSocketsClient {
     void begin(const char * host, uint16_t port, const char * url = "/socket.io/?EIO=3", const char * protocol = "arduino");
     void begin(String host, uint16_t port, String url = "/socket.io/?EIO=3", String protocol = "arduino");
 
+#ifdef HAS_SSL
+    void beginSSL(const char * host, uint16_t port, const char * url = "/socket.io/?EIO=3", const char * protocol = "arduino");
+    void beginSSL(String host, uint16_t port, String url = "/socket.io/?EIO=3", String protocol = "arduino");
+#ifndef SSL_AXTLS
+    void beginSSLWithCA(const char * host, uint16_t port, const char * url = "/socket.io/?EIO=3", const char * CA_cert = NULL, const char * protocol = "arduino");
+    void beginSSLWithCA(const char * host, uint16_t port, const char * url = "/socket.io/?EIO=3", BearSSL::X509List * CA_cert = NULL, const char * protocol = "arduino");
+    void setSSLClientCertKey(const char * clientCert = NULL, const char * clientPrivateKey = NULL);
+    void setSSLClientCertKey(BearSSL::X509List * clientCert = NULL, BearSSL::PrivateKey * clientPrivateKey = NULL);
+#endif
+#endif
     bool isConnected(void);
 
     void onEvent(SocketIOclientEvent cbEvent);
@@ -69,7 +79,10 @@ class SocketIOclient : protected WebSocketsClient {
 
     void loop(void);
 
+    void configureEIOping(bool disableHeartbeat = false);
+
   protected:
+    bool _disableHeartbeat  = false;
     uint64_t _lastHeartbeat = 0;
     SocketIOclientEvent _cbEvent;
     virtual void runIOCbEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
@@ -77,6 +90,8 @@ class SocketIOclient : protected WebSocketsClient {
             _cbEvent(type, payload, length);
         }
     }
+
+    void initClient(void);
 
     // Handeling events from websocket layer
     virtual void runCbEvent(WStype_t type, uint8_t * payload, size_t length) {

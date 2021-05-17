@@ -3,11 +3,9 @@
 
 #if (defined(ESP8266) || defined(ESP32))
 
-
-
 #if defined(ESP8266)
-    #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
+    #include <ESP8266mDNS.h>
     #include <ESP8266WiFiMulti.h>
     #include <ESP8266HTTPClient.h>
 
@@ -15,8 +13,8 @@
 
     ESP8266WiFiMulti wifiMulti;
 #elif defined(ESP32)
-    #include <ESPmDNS.h>
     #include <WiFi.h>
+    #include <ESPmDNS.h>
     #include <WiFiMulti.h>
     #include <HTTPClient.h>
 
@@ -91,6 +89,7 @@ class BlinkerPROESP
 
         bool init();
         void reset();
+        b_device_staus_t status()       { return _status;}
         void begin(const char* _key, const char* _type);
         bool connect();
         bool connected();
@@ -126,14 +125,14 @@ class BlinkerPROESP
 
         void checkKA();
         bool checkAliKA();
+        bool checkAliPrintSpan();
         bool checkDuerKA();
+        bool checkDuerPrintSpan();
         bool checkMIOTKA();
+        bool checkMIOTPrintSpan();
         bool checkCanPrint();
         bool checkCanBprint();
         bool checkPrintSpan();
-        bool checkAliPrintSpan();
-        bool checkDuerPrintSpan();
-        bool checkMIOTPrintSpan();
         bool pubHello();
         bool isJson(const String & data);
         void parseData(const char* data);
@@ -149,13 +148,28 @@ class BlinkerPROESP
         void wlanDisconnect();
         void wlanReset();
         bool wlanRun();
-        bwl_status_t status() { return _status; }
+        // bwl_status_t status() { return wl_status; }
 
         void softAPinit();
         void serverClient();
         void parseUrl(String data);
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
+
+    #if defined(BLINKER_ALIGENIE)
+        int aliAvail();
+        int aliPrint(const String & data);
+    #endif
+    
+    #if defined(BLINKER_DUEROS)
+        int duerAvail();
+        int duerPrint(const String & data, bool report);
+    #endif
+
+    #if defined(BLINKER_MIOT)
+        int miAvail();
+        int miPrint(const String & data);
+    #endif
 
     protected :
         char        _messageId[20];
@@ -214,7 +228,7 @@ class BlinkerPROESP
         uint32_t    connectTime;
         uint16_t    timeout;
         uint32_t    debugStatusTime;
-        bwl_status_t _status;
+        bwl_status_t wl_status;
 
         bool        _isConnBegin = false;
         time_t      _initTime;
@@ -225,6 +239,7 @@ class BlinkerPROESP
         bool        _isNew = false;
 
         void checkRegister();
+        b_device_staus_t _status = BLINKER_DEV_AUTHCHECK;
 };
 
 // #if defined(ESP8266)
@@ -1346,29 +1361,508 @@ void BlinkerPROESP::checkKA()
         isAlive = false;
 }
 
-bool BlinkerPROESP::checkAliKA()
-{
-    if (millis() - aliKaTime >= 10000)
-        return false;
-    else
-        return true;
-}
+#if defined(BLINKER_ALIGENIE)
+    int BlinkerPROESP::aliAvail()
+    {
+        if (!checkInit()) return false;
 
-bool BlinkerPROESP::checkDuerKA()
-{
-    if (millis() - duerKaTime >= 10000)
-        return false;
-    else
-        return true;
-}
+        if (isAliAvail)
+        {
+            isAliAvail = false;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 
-bool BlinkerPROESP::checkMIOTKA()
-{
-    if (millis() - miKaTime >= 10000)
-        return false;
-    else
-        return true;
-}
+    int BlinkerPROESP::aliPrint(const String & data)
+    {
+        if (!checkInit()) return false;
+
+        String data_add = BLINKER_F("{\"data\":");
+
+        // if (_use_broker == aliyun_b)
+        // {
+            data_add += data;
+        // }
+        // else if (_use_broker == blinker_b)
+        // {
+        //     data_add += data.substring(0, data.length() - 1);
+        //     data_add += BLINKER_F(",\"messageId\":\"");
+        //     data_add += STRING_format(_messageId);
+        //     data_add += BLINKER_F("\"}");
+        // }
+
+        data_add += BLINKER_F(",\"fromDevice\":\"");
+        data_add += DEVICE_NAME_MQTT;
+
+        // if (_use_broker == aliyun_b)
+        // {
+            data_add += BLINKER_F("\",\"toDevice\":\"AliGenie_r\"");
+        // }
+        // else if (_use_broker == blinker_b)
+        // {
+        //     data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+        // }
+
+        data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+        if (!isJson(data_add)) return false;
+
+        BLINKER_LOG_ALL(BLINKER_F("MQTT AliGenie Publish..."));
+        BLINKER_LOG_FreeHeap_ALL();
+
+        if (mqtt_MQTT->connected())
+        {
+            if (!checkAliKA())
+            {
+                return false;
+            }
+
+            if (!checkAliPrintSpan())
+            {
+                respAliTime = millis();
+                return false;
+            }
+            respAliTime = millis();
+
+            
+            char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+            if (is_rrpc)
+            {
+                
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+                BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+            }
+            else
+            {
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
+            }
+
+            is_rrpc = false;
+
+            char send_data[BLINKER_MAX_SEND_SIZE];
+
+            // if (_use_broker == aliyun_b)
+            // {
+                strcpy(send_data, base64::encode(data_add).c_str());
+            // }
+            // else if (_use_broker == blinker_b)
+            // {
+            //     strcpy(send_data, data_add.c_str());
+            // }
+
+            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isAliAlive = false;
+                return false;
+            }
+            else
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isAliAlive = false;
+
+                this->latestTime = millis();
+
+                return true;
+            }
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+            return false;
+        }
+    }
+
+    bool BlinkerPROESP::checkAliKA()
+    {
+        if (millis() - aliKaTime >= 10000)
+            return false;
+        else
+            return true;
+    }
+
+    bool BlinkerPROESP::checkAliPrintSpan()
+    {
+        if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2)
+            {
+                BLINKER_ERR_LOG(BLINKER_F("ALIGENIE NOT ALIVE OR MSG LIMIT"));
+                
+                return false;
+            }
+            else
+            {
+                respAliTimes++;
+                return true;
+            }
+        }
+        else
+        {
+            respAliTimes = 0;
+            return true;
+        }
+    }
+#endif
+
+#if defined(BLINKER_DUEROS)
+    int BlinkerPROESP::duerAvail()
+    {
+        if (!checkInit()) return false;
+
+        if (isDuerAvail)
+        {
+            isDuerAvail = false;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    int BlinkerPROESP::duerPrint(const String & data, bool report)
+    {
+        if (!checkInit()) return false;
+
+        String data_add = BLINKER_F("{\"data\":");
+
+        if (report)
+        {
+            data_add += BLINKER_F("{\"report\":");
+
+            // if (_use_broker == aliyun_b)
+            // {
+                data_add += data;
+            // }
+            // else if (_use_broker == blinker_b)
+            // {
+            //     data_add += data.substring(0, data.length() - 1);
+            //     data_add += BLINKER_F(",\"messageId\":\"");
+            //     data_add += STRING_format(_messageId);
+            //     data_add += BLINKER_F("\"}");
+            // }
+
+            data_add += BLINKER_F("}");
+        }
+        else
+        {
+            // if (_use_broker == aliyun_b)
+            // {
+                data_add += data;
+            // }
+            // else if (_use_broker == blinker_b)
+            // {
+            //     data_add += data.substring(0, data.length() - 1);
+            //     data_add += BLINKER_F(",\"messageId\":\"");
+            //     data_add += STRING_format(_messageId);
+            //     data_add += BLINKER_F("\"}");
+            // }
+        }
+
+        data_add += BLINKER_F(",\"fromDevice\":\"");
+        data_add += DEVICE_NAME_MQTT;
+
+        // if (_use_broker == aliyun_b)
+        // {
+            data_add += BLINKER_F("\",\"toDevice\":\"DuerOS_r\"");
+        // }
+        // else if (_use_broker == blinker_b)
+        // {
+        //     data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+        // }
+
+        data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+        if (!isJson(data_add)) return false;
+
+        BLINKER_LOG_ALL(BLINKER_F("MQTT DuerOS Publish..."));
+        BLINKER_LOG_FreeHeap_ALL();
+        BLINKER_LOG_ALL(BLINKER_F("is_rrpc: "), is_rrpc);
+
+        if (mqtt_MQTT->connected())
+        {
+            // if (!checkDuerKA())
+            // {
+            //     return false;
+            // }
+
+            if (!checkDuerPrintSpan())
+            {
+                respDuerTime = millis();
+                return false;
+            }
+            respDuerTime = millis();
+
+            
+            char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+            if (is_rrpc)
+            {
+                
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+                BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+            }
+            else
+            {
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
+            }
+
+            is_rrpc = false;
+
+            char send_data[BLINKER_MAX_SEND_SIZE];
+
+            // if (_use_broker == aliyun_b)
+            // {
+                strcpy(send_data, base64::encode(data_add).c_str());
+            // }
+            // else if (_use_broker == blinker_b)
+            // {
+            //     strcpy(send_data, data_add.c_str());
+            // }
+
+            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isDuerAlive = false;
+                
+                return false;
+            }
+            else
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isDuerAlive = false;
+
+                this->latestTime = millis();
+
+                return true;
+            }
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+            return false;
+        }
+    }
+
+    bool BlinkerPROESP::checkDuerKA()
+    {
+        if (millis() - duerKaTime >= 10000)
+            return false;
+        else
+            return true;
+    }
+
+    bool BlinkerPROESP::checkDuerPrintSpan()
+    {
+        if (millis() - respDuerTime < BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            if (respDuerTimes > BLINKER_PRINT_MSG_LIMIT/2)
+            {
+                BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+                
+                return false;
+            }
+            else
+            {
+                respDuerTimes++;
+                return true;
+            }
+        }
+        else
+        {
+            respDuerTimes = 0;
+            return true;
+        }
+    }
+#endif
+
+#if defined(BLINKER_MIOT)
+    int BlinkerPROESP::miAvail()
+    {
+        if (!checkInit()) return false;
+
+        if (isMIOTAvail)
+        {
+            isMIOTAvail = false;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    int BlinkerPROESP::miPrint(const String & data)
+    {
+        if (!checkInit()) return false;
+
+        String data_add = BLINKER_F("{\"data\":");
+
+        // if (_use_broker == aliyun_b)
+        // {
+            data_add += data;
+        // }
+        // else if (_use_broker == blinker_b)
+        // {
+        //     data_add += data.substring(0, data.length() - 1);
+        //     data_add += BLINKER_F(",\"messageId\":\"");
+        //     data_add += STRING_format(_messageId);
+        //     data_add += BLINKER_F("\"}");
+        // }
+
+        data_add += BLINKER_F(",\"fromDevice\":\"");
+        data_add += DEVICE_NAME_MQTT;
+
+        // if (_use_broker == aliyun_b)
+        // {
+            data_add += BLINKER_F("\",\"toDevice\":\"MIOT_r\"");
+        // }
+        // else if (_use_broker == blinker_b)
+        // {
+        //     data_add += BLINKER_F("\",\"toDevice\":\"ServerReceiver\"");
+        // }
+
+        data_add += BLINKER_F(",\"deviceType\":\"vAssistant\"}");
+
+        if (!isJson(data_add)) return false;
+
+        BLINKER_LOG_ALL(BLINKER_F("MQTT MIOT Publish..."));
+        BLINKER_LOG_FreeHeap_ALL();
+
+        if (mqtt_MQTT->connected())
+        {
+            if (!checkMIOTKA())
+            {
+                return false;
+            }
+
+            if (!checkMIOTPrintSpan())
+            {
+                respMIOTTime = millis();
+                return false;
+            }
+            respMIOTTime = millis();
+
+            
+            char BLINKER_RRPC_PUB_TOPIC_MQTT[128];
+
+            if (is_rrpc)
+            {
+                
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, "/sys/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, MQTT_PRODUCTINFO_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, DEVICE_NAME_MQTT);
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
+                strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
+
+                BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+            }
+            else
+            {
+                strcpy(BLINKER_RRPC_PUB_TOPIC_MQTT, BLINKER_PUB_TOPIC_MQTT);
+            }
+
+            is_rrpc = false;
+
+            char send_data[BLINKER_MAX_SEND_SIZE];
+
+            // if (_use_broker == aliyun_b)
+            // {
+                strcpy(send_data, base64::encode(data_add).c_str());
+            // }
+            // else if (_use_broker == blinker_b)
+            // {
+            //     strcpy(send_data, data_add.c_str());
+            // }
+
+            if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isMIOTAlive = false;
+                return false;
+            }
+            else
+            {
+                BLINKER_LOG_ALL(data_add);
+                BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+                BLINKER_LOG_FreeHeap_ALL();
+
+                isMIOTAlive = false;
+
+                this->latestTime = millis();
+
+                return true;
+            }
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+            return false;
+        }
+    }
+
+    bool BlinkerPROESP::checkMIOTKA()
+    {
+        if (millis() - miKaTime >= 10000)
+            return false;
+        else
+            return true;
+    }
+
+    bool BlinkerPROESP::checkMIOTPrintSpan()
+    {
+        if (millis() - respMIOTTime < BLINKER_PRINT_MSG_LIMIT/2)
+        {
+            if (respMIOTTimes > BLINKER_PRINT_MSG_LIMIT/2)
+            {
+                BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+
+                return false;
+            }
+            else
+            {
+                respMIOTTimes++;
+                return true;
+            }
+        }
+        else
+        {
+            respMIOTTimes = 0;
+            return true;
+        }
+    }
+#endif
 
 bool BlinkerPROESP::checkCanPrint()
 {
@@ -1396,29 +1890,6 @@ bool BlinkerPROESP::checkCanBprint()
     }
 }
 
-bool BlinkerPROESP::checkMIOTPrintSpan()
-{
-    if (millis() - respMIOTTime < BLINKER_PRINT_MSG_LIMIT/2)
-    {
-        if (respMIOTTimes > BLINKER_PRINT_MSG_LIMIT/2)
-        {
-            BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
-
-            return false;
-        }
-        else
-        {
-            respMIOTTimes++;
-            return true;
-        }
-    }
-    else
-    {
-        respMIOTTimes = 0;
-        return true;
-    }
-}
-
 bool BlinkerPROESP::checkPrintSpan()
 {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
@@ -1434,52 +1905,6 @@ bool BlinkerPROESP::checkPrintSpan()
     }
     else {
         respTimes = 0;
-        return true;
-    }
-}
-
-bool BlinkerPROESP::checkAliPrintSpan()
-{
-    if (millis() - respAliTime < BLINKER_PRINT_MSG_LIMIT/2)
-    {
-        if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2)
-        {
-            BLINKER_ERR_LOG(BLINKER_F("ALIGENIE NOT ALIVE OR MSG LIMIT"));
-            
-            return false;
-        }
-        else
-        {
-            respAliTimes++;
-            return true;
-        }
-    }
-    else
-    {
-        respAliTimes = 0;
-        return true;
-    }
-}
-
-bool BlinkerPROESP::checkDuerPrintSpan()
-{
-    if (millis() - respDuerTime < BLINKER_PRINT_MSG_LIMIT/2)
-    {
-        if (respDuerTimes > BLINKER_PRINT_MSG_LIMIT/2)
-        {
-            BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
-            
-            return false;
-        }
-        else
-        {
-            respDuerTimes++;
-            return true;
-        }
-    }
-    else
-    {
-        respDuerTimes = 0;
         return true;
     }
 }
@@ -1674,7 +2099,7 @@ void BlinkerPROESP::checkRegister()
 // {
 //     public :
 //         BlinkerWlan()
-//             : _status(BWL_CONFIG_CKECK)
+//             : wl_status(BWL_CONFIG_CKECK)
 //         {}
 
 //         bool checkWlanConfig();
@@ -1688,7 +2113,7 @@ void BlinkerPROESP::checkRegister()
 //         void wlanDisconnect();
 //         void wlanReset();
 //         bool wlanRun();
-//         bwl_status_t status() { return _status; }
+//         bwl_status_t status() { return wl_status; }
 
 //         void setType(const char* _type) {
 //             _deviceType = _type;
@@ -1704,7 +2129,7 @@ void BlinkerPROESP::checkRegister()
 //         void connectWiFi(String _ssid, String _pswd);
 //         void connectWiFi(const char* _ssid, const char* _pswd);
 
-//         // uint8_t status() { return _status; }
+//         // uint8_t status() { return wl_status; }
 
 //     private :
 
@@ -1714,7 +2139,7 @@ void BlinkerPROESP::checkRegister()
 //         const char* _deviceType;
 //         uint32_t connectTime;
 //         uint16_t timeout;
-//         bwl_status_t _status;
+//         bwl_status_t wl_status;
 //         uint32_t debugStatusTime;
 // };
 
@@ -1731,14 +2156,14 @@ bool BlinkerPROESP::checkWlanConfig() {
         
         BLINKER_LOG(BLINKER_F("wlan config check,fail"));
 
-        _status = BWL_CONFIG_FAIL;
+        wl_status = BWL_CONFIG_FAIL;
         return false;
     }
     else {
 
         BLINKER_LOG(BLINKER_F("wlan config check,success"));
 
-        _status = BWL_CONFIG_SUCCESS;
+        wl_status = BWL_CONFIG_SUCCESS;
         return true;
     }
 }
@@ -1805,7 +2230,8 @@ void BlinkerPROESP::smartconfigBegin(uint16_t _time) {
     WiFi.beginSmartConfig();
     connectTime = millis();
     timeout = _time;
-    _status = BWL_SMARTCONFIG_BEGIN;
+    wl_status = BWL_SMARTCONFIG_BEGIN;
+    _status = BLINKER_WLAN_SMARTCONFIG_BEGIN;
 
     BLINKER_LOG(BLINKER_F("Wait for Smartconfig"));
 }
@@ -1817,7 +2243,7 @@ bool BlinkerPROESP::smartconfigDone() {
         // WiFi.setAutoReconnect(true);
         connectTime = millis();
 
-        _status = BWL_SMARTCONFIG_DONE;
+        wl_status = BWL_SMARTCONFIG_DONE;
 
         BLINKER_LOG(BLINKER_F("SmartConfig Success"));
 #if defined(ESP8266)
@@ -1834,7 +2260,7 @@ bool BlinkerPROESP::smartconfigDone() {
 }
 
 void BlinkerPROESP::wlanConnect() {
-    switch (_status) {
+    switch (wl_status) {
         case BWL_CONFIG_SUCCESS :
             // WiFi.setAutoConnect(false);
             // WiFi.setAutoReconnect(true);
@@ -1849,7 +2275,8 @@ void BlinkerPROESP::wlanConnect() {
             free(SSID);
             free(PSWD);
 
-            _status = BWL_CONNECTING;
+            wl_status = BWL_CONNECTING;
+            _status = BLINKER_WLAN_CONNECTING;
             break;
         case BWL_DISCONNECTED :
             if (millis() - connectTime > 30000 && WiFi.status() != WL_CONNECTED) {
@@ -1877,14 +2304,15 @@ void BlinkerPROESP::wlanConnect() {
                 BLINKER_LOG(BLINKER_F("_ssid_: "), _ssid_, BLINKER_F(" _pswd_: "), _pswd_);
             }
             else if(WiFi.status() == WL_CONNECTED) {
-                _status = BWL_CONNECTED;
+                wl_status = BWL_CONNECTED;
+                _status = BLINKER_WLAN_CONNECTED;
             }
             break;
     }
 }
 
 bool BlinkerPROESP::wlanConnected() {
-    switch (_status) {
+    switch (wl_status) {
         case BWL_SMARTCONFIG_DONE :
             if (WiFi.status() != WL_CONNECTED) {
                 if (millis() - connectTime > 15000)
@@ -1892,7 +2320,7 @@ bool BlinkerPROESP::wlanConnected() {
                     BLINKER_LOG(BLINKER_F("smartConfig time out"));
                     
                     WiFi.stopSmartConfig();
-                    _status = BWL_SMARTCONFIG_TIMEOUT;
+                    wl_status = BWL_SMARTCONFIG_TIMEOUT;
                 }
                 return false;
             }
@@ -1918,7 +2346,8 @@ bool BlinkerPROESP::wlanConnected() {
                 // WiFi.setAutoConnect(true);
                 // WiFi.setAutoReconnect(true);
 
-                _status = BWL_CONNECTED_CHECK;
+                wl_status = BWL_CONNECTED_CHECK;
+                _status = BLINKER_WLAN_CONNECTED;
 
                 BLINKER_LOG_FreeHeap_ALL();
                 
@@ -1932,7 +2361,7 @@ bool BlinkerPROESP::wlanConnected() {
                     BLINKER_LOG(BLINKER_F("APConfig time out"));
                     
                     // WiFi.stopSmartConfig();
-                    _status = BWL_APCONFIG_TIMEOUT;
+                    wl_status = BWL_APCONFIG_TIMEOUT;
                 }
                 return false;
             }
@@ -1956,7 +2385,8 @@ bool BlinkerPROESP::wlanConnected() {
                 // WiFi.setAutoConnect(true);
                 // WiFi.setAutoReconnect(true);
 
-                _status = BWL_CONNECTED_CHECK;
+                wl_status = BWL_CONNECTED_CHECK;
+                _status = BLINKER_WLAN_CONNECTED;
                 return true;
             }
             break;
@@ -1968,7 +2398,8 @@ bool BlinkerPROESP::wlanConnected() {
                 BLINKER_LOG(deviceIP);
                 BLINKER_LOG(BLINKER_F("SSID: "), WiFi.SSID(), BLINKER_F(" PSWD: "), WiFi.psk());
                 
-                _status = BWL_CONNECTED_CHECK;
+                wl_status = BWL_CONNECTED_CHECK;
+                _status = BLINKER_WLAN_CONNECTED;
                 return true;
             }
             else if (WiFi.status() != WL_CONNECTED) {
@@ -1976,14 +2407,14 @@ bool BlinkerPROESP::wlanConnected() {
             }
         case BWL_CONNECTED_CHECK :
             // if (WiFi.status() != WL_CONNECTED)
-            //     _status = BWL_DISCONNECTED;
+            //     wl_status = BWL_DISCONNECTED;
             if (WiFi.status() == WL_CONNECTED)
             {
                 return true;
             }
             else
             {
-                _status = BWL_DISCONNECTED;
+                wl_status = BWL_DISCONNECTED;
                 return false;
             }
         case BWL_RESET :
@@ -1996,7 +2427,8 @@ bool BlinkerPROESP::wlanConnected() {
                 BLINKER_LOG(deviceIP);
                 BLINKER_LOG(BLINKER_F("SSID: "), WiFi.SSID(), BLINKER_F(" PSWD: "), WiFi.psk());
                 
-                _status = BWL_CONNECTED_CHECK;
+                wl_status = BWL_CONNECTED_CHECK;
+                _status = BLINKER_WLAN_CONNECTED;
                 return true;
             }
             return false;
@@ -2007,14 +2439,14 @@ bool BlinkerPROESP::wlanConnected() {
 void BlinkerPROESP::wlanDisconnect() {
     WiFi.disconnect();
     delay(100);
-    _status = BWL_DISCONNECTED;
+    wl_status = BWL_DISCONNECTED;
     BLINKER_LOG(BLINKER_F("WiFi disconnected"));
 }
 
 void BlinkerPROESP::wlanReset() {
     wlanDisconnect();
     deleteWlanConfig();
-    _status = BWL_RESET;
+    wl_status = BWL_RESET;
 }
 
 void BlinkerPROESP::softAPinit() {
@@ -2045,7 +2477,8 @@ void BlinkerPROESP::softAPinit() {
     webSocket_PRO.begin();
     webSocket_PRO.onEvent(webSocketEvent_PRO);
 
-    _status = BWL_APCONFIG_BEGIN;
+    wl_status = BWL_APCONFIG_BEGIN;
+    _status = BLINKER_WLAN_APCONFIG_BEGIN;
 
     isApCfg = true;
 
@@ -2105,7 +2538,7 @@ void BlinkerPROESP::parseUrl(String data)
     strcpy(PSWD, _pswd.c_str());
     connectWiFi(_ssid, _pswd);
     connectTime = millis();
-    _status = BWL_APCONFIG_DONE;
+    wl_status = BWL_APCONFIG_DONE;
 
     BLINKER_LOG(BLINKER_F("APConfig Success"));
 }
@@ -2159,10 +2592,10 @@ bool BlinkerPROESP::wlanRun()
     // if (millis() - debugStatusTime > 10000) {
     //     debugStatusTime = millis();
 
-    //     BLINKER_LOG_ALL("WLAN status: ", _status);
+    //     BLINKER_LOG_ALL("WLAN status: ", wl_status);
     // }
 
-    switch (_status) {
+    switch (wl_status) {
         case BWL_CONFIG_CKECK :
             checkWlanConfig();
             break;
@@ -2201,14 +2634,14 @@ bool BlinkerPROESP::wlanRun()
             else
             {
                 WiFi.stopSmartConfig();
-                _status = BWL_CONFIG_FAIL;
+                wl_status = BWL_CONFIG_FAIL;
             }
             break;
         case BWL_SMARTCONFIG_DONE :
             return wlanConnected();
             break;
         case BWL_SMARTCONFIG_TIMEOUT :
-            _status = BWL_CONFIG_FAIL;
+            wl_status = BWL_CONFIG_FAIL;
             break;
         case BWL_STACONFIG_BEGIN :
             wlanConnect();
@@ -2220,7 +2653,7 @@ bool BlinkerPROESP::wlanRun()
             return wlanConnected();
             break;
         case BWL_APCONFIG_TIMEOUT :
-            _status = BWL_CONFIG_FAIL;
+            wl_status = BWL_CONFIG_FAIL;
             break;
         case BWL_CONNECTED_CHECK :
             return wlanConnected();
@@ -2232,6 +2665,10 @@ bool BlinkerPROESP::wlanRun()
     }
     return false;
 }
+
+#else
+
+    #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
 
 #endif
 

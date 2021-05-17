@@ -6,8 +6,8 @@
 #define BLINKER_WIFI
 
 #if defined(ESP8266)
-    #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
+    #include <ESP8266mDNS.h>
     #include <ESP8266WiFiMulti.h>
     #include <ESP8266HTTPClient.h>
 
@@ -15,8 +15,8 @@
 
     ESP8266WiFiMulti wifiMulti;
 #elif defined(ESP32)
-    #include <ESPmDNS.h>
     #include <WiFi.h>
+    #include <ESPmDNS.h>
     #include <WiFiMulti.h>
     #include <HTTPClient.h>
 
@@ -223,7 +223,7 @@ class BlinkerWiFiESP
         uint8_t     _aCount = 0;
         uint8_t     _bridgeCount = 0;
 
-        b_device_staus_t _status = WLAN_CONNECTING;
+        b_device_staus_t _status = BLINKER_WLAN_CONNECTING;
 };
 
 // #if defined(ESP8266)
@@ -383,7 +383,7 @@ bool BlinkerWiFiESP::connect()
 
     if (mqtt_MQTT->connected())
     {
-        _status = DEV_CONNECTED;
+        _status = BLINKER_DEV_CONNECTED;
         return true;
     }
 
@@ -395,7 +395,7 @@ bool BlinkerWiFiESP::connect()
         return false;
     }
 
-    _status = DEV_CONNECTING;
+    _status = BLINKER_DEV_CONNECTING;
 
     BLINKER_LOG(BLINKER_F("Connecting to MQTT... "));
 
@@ -495,7 +495,7 @@ void BlinkerWiFiESP::disconnect()
 
     if (*isHandle) webSocket_MQTT.disconnect();
 
-    _status = DEV_DISCONNECTED;
+    _status = BLINKER_DEV_DISCONNECTED;
 }
 
 void BlinkerWiFiESP::ping()
@@ -832,7 +832,7 @@ int BlinkerWiFiESP::isJson(const String & data)
 
 bool BlinkerWiFiESP::deviceRegister()
 {
-    _status = DEV_REGISTER;
+    _status = BLINKER_DEV_REGISTER;
 
     String urls = _authKey;
     #if defined(BLINKER_ALIGENIE_LIGHT)
@@ -1238,7 +1238,7 @@ bool BlinkerWiFiESP::checkWlanInit()
 
                 // begin();
 
-                _status = WLAN_CONNECTED;
+                _status = BLINKER_DEV_CONNECTED;
 
                 return false;
             #if defined(BLINKER_ESP_SMARTCONFIG)
@@ -1262,7 +1262,7 @@ bool BlinkerWiFiESP::checkWlanInit()
                             // begin();
                             _configStatus = AUTO_DONE;
 
-                            _status = WLAN_CONNECTED;
+                            _status = BLINKER_DEV_CONNECTED;
 
                             return false;
                         }
@@ -1278,7 +1278,7 @@ bool BlinkerWiFiESP::checkWlanInit()
 
                             _configStatus = SMART_DONE;
 
-                            _status = WLAN_CONNECTING;
+                            _status = BLINKER_DEV_CONNECTING;
                         }
                         else return false;
                     case SMART_DONE :
@@ -1311,7 +1311,7 @@ bool BlinkerWiFiESP::checkWlanInit()
 
                             // begin();
 
-                            _status = WLAN_CONNECTED;
+                            _status = BLINKER_DEV_CONNECTED;
                             
                             return false;
                         }
@@ -1320,7 +1320,7 @@ bool BlinkerWiFiESP::checkWlanInit()
                         WiFi.beginSmartConfig();
                         _configStatus = SMART_BEGIN;
 
-                        _status = WLAN_SMARTCONFIG_BEGIN;
+                        _status = BLINKER_WLAN_SMARTCONFIG_BEGIN;
 
                         BLINKER_LOG(BLINKER_F("Waiting for SmartConfig."));
                         return false;
@@ -1349,7 +1349,7 @@ bool BlinkerWiFiESP::checkWlanInit()
                             // begin();
                             _configStatus = AUTO_DONE;
 
-                            _status = WLAN_CONNECTED;
+                            _status = BLINKER_WLAN_CONNECTED;
 
                             return false;
                         }
@@ -1381,7 +1381,7 @@ bool BlinkerWiFiESP::checkWlanInit()
                             EEPROM.commit();
                             EEPROM.end();
 
-                            _status = WLAN_CONNECTED;
+                            _status = BLINKER_WLAN_CONNECTED;
                             
                             return false;
                         }
@@ -1477,7 +1477,7 @@ void BlinkerWiFiESP::smartconfig()
 
     _configStatus = SMART_BEGIN;
 
-    _status = WLAN_SMARTCONFIG_BEGIN;
+    _status = BLINKER_WLAN_SMARTCONFIG_BEGIN;
 
     BLINKER_LOG(BLINKER_F("Waiting for SmartConfig."));
 }
@@ -1558,7 +1558,7 @@ void BlinkerWiFiESP::softAPinit()
     _configStatus = APCFG_BEGIN;
     isApCfg = true;
 
-    _status = WLAN_APCONFIG_BEGIN;
+    _status = BLINKER_WLAN_APCONFIG_BEGIN;
 
     BLINKER_LOG(BLINKER_F("Wait for APConfig"));
 }
@@ -1644,7 +1644,7 @@ void BlinkerWiFiESP::connectWiFi(const char* _ssid, const char* _pswd)
         WiFi.begin(_ssid);
     }
 
-    _status = WLAN_CONNECTING;
+    _status = BLINKER_WLAN_CONNECTING;
 }
 
 bool BlinkerWiFiESP::autoInit()
@@ -1667,7 +1667,7 @@ bool BlinkerWiFiESP::autoInit()
 
         BLINKER_LOG(BLINKER_F("Connecting to WiFi"));
 
-        _status = WLAN_CONNECTING;
+        _status = BLINKER_WLAN_CONNECTING;
         return true;
     }
 
@@ -2373,6 +2373,10 @@ int BlinkerWiFiESP::checkPrintLimit()
         }
     }
 #endif
+
+#else
+
+    #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
 
 #endif
 

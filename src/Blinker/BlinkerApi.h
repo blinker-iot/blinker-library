@@ -5,10 +5,11 @@
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerUtility.h"
-#include "Blinker/BlinkerAuto.h"
-
-#include "../Widgets/BlinkerTimer.h"
-#include "../Widgets/BlinkerTimingTimer.h"
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+    #include "Blinker/BlinkerAuto.h"
+    #include "../Widgets/BlinkerTimer.h"
+    #include "../Widgets/BlinkerTimingTimer.h"
+#endif
 
 enum b_rgb_t {
     BLINKER_R,
@@ -65,13 +66,16 @@ class BlinkerApi
         uint8_t attachWidget(const char* _name, blinker_callback_with_int32_arg_t _func);
         uint8_t attachWidget(const char* _name, blinker_callback_with_rgb_arg_t _func);
         uint8_t attachWidget(const char* _name, blinker_callback_with_table_arg_t _func, blinker_callback_t _func2);
-
+    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
         void loadTimer();
         void loadTiming();
     #endif
-        
+    #endif
+
+    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) 
         void autoRun();
         void autoInput(const String & key, float data);
+    #endif
 
     private :
         bool        _fresh = false;
@@ -91,7 +95,7 @@ class BlinkerApi
         class BlinkerWidgets_int32 *        _Widgets_int[BLINKER_MAX_WIDGET_SIZE];
         class BlinkerWidgets_rgb *          _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_table *        _Widgets_tab[BLINKER_MAX_WIDGET_SIZE];
-
+    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
         char                                _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
         char                                _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
         char                                _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
@@ -113,8 +117,9 @@ class BlinkerApi
         String getTimingCfg(uint8_t task);
         bool timerManager(const JsonObject& data, bool _noSet = false);
     #endif
+    #endif
 
-        
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
         uint8_t                             _aCount = 0;
         class BlinkerAUTO *                 _AUTO[2];
 
@@ -123,6 +128,7 @@ class BlinkerApi
     #if defined(BLINKER_PRO_ESP)
         void otaParse(const JsonObject& data);
     #endif
+#endif
 
 #if defined(BLINKER_PRO_ESP) 
     #if defined(BLINKER_BUTTON)
@@ -153,11 +159,13 @@ class BlinkerApi
 #endif
     protected :
         void parse(char _data[], bool ex_data = false);
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
         void beginAuto();
 
     #if defined(BLINKER_WIDGET)
         bool checkTimer();
     #endif
+#endif
 
 #if defined(BLINKER_PRO_ESP) 
     #if defined(BLINKER_NO_BUTTON)
@@ -837,6 +845,7 @@ void BlinkerApi<Proto>::tabWidgetsParse(const char* _wName, const JsonObject& da
     }
 }
 
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) 
 template <class Proto>
 void BlinkerApi<Proto>::saveCountDown(uint32_t _data, char _action[])
 {
@@ -2611,6 +2620,8 @@ void BlinkerApi<Proto>::otaParse(const JsonObject& data)
         }
     }
 }
+#endif
+
 #endif
 
 #endif
