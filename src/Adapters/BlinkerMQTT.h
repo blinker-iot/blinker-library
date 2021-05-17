@@ -6,8 +6,8 @@
 #define BLINKER_MQTT
 
 #if defined(ESP8266)
-    #include <ESP8266mDNS.h>
     #include <ESP8266WiFi.h>
+    #include <ESP8266mDNS.h>
     #include <ESP8266WiFiMulti.h>
     #include <ESP8266HTTPClient.h>
 
@@ -15,8 +15,8 @@
 
     ESP8266WiFiMulti wifiMulti;
 #elif defined(ESP32)
-    #include <ESPmDNS.h>
     #include <WiFi.h>
+    #include <ESPmDNS.h>
     #include <WiFiMulti.h>
     #include <HTTPClient.h>
 

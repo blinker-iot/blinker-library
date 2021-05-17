@@ -4,6 +4,7 @@
  *  Created on: May 12, 2018
  *      Author: links
  */
+
 #if defined(ESP8266) || defined(ESP32)
 
 #include "WebSockets.h"
@@ -19,11 +20,59 @@ SocketIOclient::~SocketIOclient() {
 void SocketIOclient::begin(const char * host, uint16_t port, const char * url, const char * protocol) {
     WebSocketsClient::beginSocketIO(host, port, url, protocol);
     WebSocketsClient::enableHeartbeat(60 * 1000, 90 * 1000, 5);
+    initClient();
 }
 
 void SocketIOclient::begin(String host, uint16_t port, String url, String protocol) {
     WebSocketsClient::beginSocketIO(host, port, url, protocol);
     WebSocketsClient::enableHeartbeat(60 * 1000, 90 * 1000, 5);
+    initClient();
+}
+#if defined(HAS_SSL)
+void SocketIOclient::beginSSL(const char * host, uint16_t port, const char * url, const char * protocol) {
+    WebSocketsClient::beginSocketIOSSL(host, port, url, protocol);
+    WebSocketsClient::enableHeartbeat(60 * 1000, 90 * 1000, 5);
+    initClient();
+}
+
+void SocketIOclient::beginSSL(String host, uint16_t port, String url, String protocol) {
+    WebSocketsClient::beginSocketIOSSL(host, port, url, protocol);
+    WebSocketsClient::enableHeartbeat(60 * 1000, 90 * 1000, 5);
+    initClient();
+}
+#if defined(SSL_BARESSL)
+void SocketIOclient::beginSSLWithCA(const char * host, uint16_t port, const char * url, const char * CA_cert, const char * protocol) {
+    WebSocketsClient::beginSocketIOSSLWithCA(host, port, url, CA_cert, protocol);
+    WebSocketsClient::enableHeartbeat(60 * 1000, 90 * 1000, 5);
+    initClient();
+}
+
+void SocketIOclient::beginSSLWithCA(const char * host, uint16_t port, const char * url, BearSSL::X509List * CA_cert, const char * protocol) {
+    WebSocketsClient::beginSocketIOSSLWithCA(host, port, url, CA_cert, protocol);
+    WebSocketsClient::enableHeartbeat(60 * 1000, 90 * 1000, 5);
+    initClient();
+}
+
+void SocketIOclient::setSSLClientCertKey(const char * clientCert, const char * clientPrivateKey) {
+    WebSocketsClient::setSSLClientCertKey(clientCert, clientPrivateKey);
+}
+
+void SocketIOclient::setSSLClientCertKey(BearSSL::X509List * clientCert, BearSSL::PrivateKey * clientPrivateKey) {
+    WebSocketsClient::setSSLClientCertKey(clientCert, clientPrivateKey);
+}
+
+#endif
+#endif
+
+void SocketIOclient::configureEIOping(bool disableHeartbeat) {
+    _disableHeartbeat = disableHeartbeat;
+}
+
+void SocketIOclient::initClient(void) {
+    if(_client.cUrl.indexOf("EIO=4") != -1) {
+        DEBUG_WEBSOCKETS("[wsIOc] found EIO=4 disable EIO ping on client\n");
+        configureEIOping(true);
+    }
 }
 
 /**
@@ -52,7 +101,7 @@ bool SocketIOclient::send(socketIOmessageType_t type, uint8_t * payload, size_t 
     if(length == 0) {
         length = strlen((const char *)payload);
     }
-    if(clientIsConnected(&_client)) {
+    if(clientIsConnected(&_client) && _client.status == WSC_CONNECTED) {
         if(!headerToPayload) {
             // webSocket Header
             ret = WebSocketsClient::sendFrameHeader(&_client, WSop_text, length + 2, true);
@@ -119,8 +168,8 @@ bool SocketIOclient::sendEVENT(String & payload) {
 void SocketIOclient::loop(void) {
     WebSocketsClient::loop();
     unsigned long t = millis();
-    if((t - _lastConnectionFail) > EIO_HEARTBEAT_INTERVAL) {
-        _lastConnectionFail = t;
+    if(!_disableHeartbeat && (t - _lastHeartbeat) > EIO_HEARTBEAT_INTERVAL) {
+        _lastHeartbeat = t;
         DEBUG_WEBSOCKETS("[wsIOc] send ping\n");
         WebSocketsClient::sendTXT(eIOtype_PING);
     }
@@ -136,6 +185,7 @@ void SocketIOclient::handleCbEvent(WStype_t type, uint8_t * payload, size_t leng
             DEBUG_WEBSOCKETS("[wsIOc] Connected to url: %s\n", payload);
             // send message to server when Connected
             // Engine.io upgrade confirmation message (required)
+            WebSocketsClient::sendTXT("2probe");
             WebSocketsClient::sendTXT(eIOtype_UPGRADE);
             runIOCbEvent(sIOtype_CONNECT, payload, length);
         } break;
@@ -166,6 +216,8 @@ void SocketIOclient::handleCbEvent(WStype_t type, uint8_t * payload, size_t leng
                             DEBUG_WEBSOCKETS("[wsIOc] get event (%d): %s\n", lData, data);
                             break;
                         case sIOtype_CONNECT:
+                            DEBUG_WEBSOCKETS("[wsIOc] connected (%d): %s\n", lData, data);
+                            return;
                         case sIOtype_DISCONNECT:
                         case sIOtype_ACK:
                         case sIOtype_ERROR:
