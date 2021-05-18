@@ -5,7 +5,7 @@
 // #include "Blinker/BlinkerUtility.h"
 #include "../Server/BlinkerServer.h"
 
-#define BLINKER_VERSION                 "0.3.80210517"
+#define BLINKER_VERSION                 "0.3.70210426"
 
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
@@ -1473,6 +1473,8 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     #define BLINKER_CMD_LOG_NUMBER              31
 
     #define BLINKER_CMD_COD_NUMBER              32
+
+    #define BLINKER_CMD_JSON_DATA_GET_NUMBER    33
 
     #define BLINKER_CMD_DEFAULT_NUMBER          0
 
