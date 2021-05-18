@@ -421,6 +421,7 @@ class BlinkerApi : public BlinkerProtocol
             void timeSlotData(char _name[], float msg);
             void textData(const String & msg);
             void jsonData(const String & msg);
+            void jsonDataGet();
             bool dataUpdate();
             void dataGet();
             void dataGet(const String & _type);
@@ -1355,6 +1356,11 @@ class BlinkerApi : public BlinkerProtocol
                         //     return BLINKER_CMD_FALSE;
                         // }
                         break;
+                    case BLINKER_CMD_JSON_DATA_GET_NUMBER :
+                        // if (!checkDataUpdata()) {
+                        //     return BLINKER_CMD_FALSE;
+                        // }
+                        break;
                     case BLINKER_CMD_DATA_GET_NUMBER :
                         if (!checkDataGet()) {
                             return BLINKER_CMD_FALSE;
@@ -1590,14 +1596,27 @@ class BlinkerApi : public BlinkerProtocol
                         
                         // httpCode = http.GET();
 
-                        url_iot = BLINKER_F("/api/v1/storage/object ");
-                        #ifndef BLINKER_WITHOUT_SSL
-                        http.begin("https://storage.diandeng.tech", url_iot);
-                        #else
-                        http.begin("http://storage.diandeng.tech", url_iot);
-                        #endif
+                        // url_iot = BLINKER_F("/api/v1/storage/object");
+                        // #ifndef BLINKER_WITHOUT_SSL
+                        // http.begin("https://storage.diandeng.tech", url_iot);
+                        // #else
+                        // http.begin("http://storage.diandeng.tech", url_iot);
+                        // #endif
+
+                        url_iot = BLINKER_F("/api/v1/user/device/cloud_storage/object");
+
+                        http.begin(host, url_iot);
+
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
+                        break;
+                    case BLINKER_CMD_JSON_DATA_GET_NUMBER :
+                        url_iot = BLINKER_F("/api/v1/user/device");
+                        url_iot += msg;
+
+                        http.begin(host, url_iot);
+
+                        httpCode = http.GET();
                         break;
                     case BLINKER_CMD_DATA_GET_NUMBER :
                         url_iot = BLINKER_F("/api/v1/user/device");
@@ -1830,6 +1849,9 @@ class BlinkerApi : public BlinkerProtocol
                         case BLINKER_CMD_JSON_DATA_NUMBER :
                             _dUpdateTime = millis();
                             break;
+                        case BLINKER_CMD_JSON_DATA_GET_NUMBER :
+                            _dUpdateTime = millis();
+                            break;
                         case BLINKER_CMD_DATA_GET_NUMBER :
                             _dGetTime = millis();
                             if (_dataGetFunc) _dataGetFunc(payload);
@@ -2016,6 +2038,11 @@ class BlinkerApi : public BlinkerProtocol
                         // }
                         break;
                     case BLINKER_CMD_JSON_DATA_NUMBER :
+                        // if (!checkDataUpdata()) {
+                        //     return BLINKER_CMD_FALSE;
+                        // }
+                        break;
+                    case BLINKER_CMD_JSON_DATA_GET_NUMBER :
                         // if (!checkDataUpdata()) {
                         //     return BLINKER_CMD_FALSE;
                         // }
@@ -6724,13 +6751,11 @@ float BlinkerApi::gps(b_gps_t axis)
         String _msg = STRING_format(msg);
 
         #if !defined(BLINKER_WIFI_SUBDEVICE)
-            String data = BLINKER_F("{\"deviceName\":\"");
-            data += BProto::deviceName();
-            data += BLINKER_F("\",\"key\":\"");
-            data += BProto::authKey();
-            data += BLINKER_F("\",\"config\":\"");
+            String data = BLINKER_F("{\"token\":\"");
+            data += BProto::token();
+            data += BLINKER_F("\",\"data\":");
             data += _msg;
-            data += BLINKER_F("\"}");
+            data += BLINKER_F("}");
 
             if (_msg.length() > 256) return false;
 
@@ -6751,10 +6776,8 @@ float BlinkerApi::gps(b_gps_t axis)
     void BlinkerApi::configGet()
     {
         #if !defined(BLINKER_WIFI_SUBDEVICE)
-            String data = BLINKER_F("/pull_userconfig?deviceName=");
-            data += BProto::deviceName();
-            data += BLINKER_F("&key=");
-            data += BProto::authKey();
+            String data = BLINKER_F("/cloud_storage/object?token=");
+            data += BProto::token();
 
             blinkerServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
         #else
@@ -7145,6 +7168,15 @@ float BlinkerApi::gps(b_gps_t axis)
         #else
             // return true;
         #endif
+    }
+
+
+    void BlinkerApi::jsonDataGet()
+    {
+        String data = BLINKER_F("/cloud_storage/object?token=");
+            data += BProto::token();
+
+        blinkerServer(BLINKER_CMD_JSON_DATA_GET_NUMBER, data);
     }
 
 
@@ -11485,6 +11517,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     //     return BLINKER_CMD_FALSE;
                     // }
                     break;
+                case BLINKER_CMD_JSON_DATA_GET_NUMBER :
+                    // if (!checkDataUpdata()) {
+                    //     return BLINKER_CMD_FALSE;
+                    // }
+                    break;
                 case BLINKER_CMD_DATA_GET_NUMBER :
                     if (!checkDataGet()) {
                         return BLINKER_CMD_FALSE;
@@ -12068,7 +12105,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     defined(BLINKE_HTTP)
                     case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
                         url_iot = host;
-                        url_iot += BLINKER_F("/api/v1/user/device/userconfig");
+                        url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/object");
 
                         #if defined(ESP8266)
                             #ifndef BLINKER_WITHOUT_SSL
@@ -12136,11 +12173,15 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         break;
                     case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
                         // url_iot = host;
-                        #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ts");
-                        #else
-                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ts");
-                        #endif
+                        // #ifndef BLINKER_WITHOUT_SSL
+                        //     url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ts");
+                        // #else
+                        //     url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ts");
+                        // #endif
+
+                        
+                        url_iot = host;
+                        url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/object");
 
                         #if defined(ESP8266)
                             #ifndef BLINKER_WITHOUT_SSL
@@ -12526,7 +12567,8 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_FREQ].as<String>();
                             else if (_type == BLINKER_CMD_WEATHER_FORECAST_NUMBER || \
                                     _type == BLINKER_CMD_WEATHER_NUMBER || \
-                                    _type == BLINKER_CMD_AQI_NUMBER)
+                                    _type == BLINKER_CMD_AQI_NUMBER || \
+                                    _type == BLINKER_CMD_CONFIG_GET_NUMBER)
                                 payload = data_rp[BLINKER_CMD_DETAIL].as<String>();
                             else
                                 payload = data_rp[BLINKER_CMD_DETAIL][BLINKER_CMD_DATA].as<String>();
@@ -12591,6 +12633,9 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                                 break;
                             case BLINKER_CMD_JSON_DATA_NUMBER :
                                 _dUpdateTime = millis();
+                                break;
+                            case BLINKER_CMD_JSON_DATA_GET_NUMBER :
+                                // _dUpdateTime = millis();
                                 break;
                             case BLINKER_CMD_DATA_GET_NUMBER :
                                 _dGetTime = millis();
