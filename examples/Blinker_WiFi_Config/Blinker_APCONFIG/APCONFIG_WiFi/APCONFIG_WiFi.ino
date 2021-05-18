@@ -43,59 +43,57 @@
  * 
  * *****************************************************************/
 
-#define BLINKER_GPRS_AIR202
+#define BLINKER_WIFI
+#define BLINKER_APCONFIG
 
 #include <Blinker.h>
 
-#define BLINKER_AIR202_RESET_PIN 4
+// Download OneButton library here:
+// https://github.com/mathertel/OneButton
+#include "OneButton.h"
+
+#if defined(ESP32)
+    #define BLINKER_BUTTON_PIN 4
+#else
+    #define BLINKER_BUTTON_PIN D7
+#endif
+// button trigged when pin input level is LOW
+OneButton button(BLINKER_BUTTON_PIN, true);
 
 char auth[] = "Your Device Secret Key";
 
-BlinkerButton Button1("btn-abc");
-BlinkerNumber Number1("num-abc");
-
-int counter = 0;
-
-void button1_callback(const String & state)
+void deviceReset()
 {
-    BLINKER_LOG("get button state: ", state);
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    // Reset device ,erase WiFi config.
+    Blinker.reset();
 }
 
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
-    counter++;
-    Number1.print(counter);
+
+    Blinker.vibrate();
+    
+    uint32_t BlinkerTime = millis();
+    
+    Blinker.print("millis", BlinkerTime);
 }
 
-void air202Reset()
+void setup()
 {
-    digitalWrite(BLINKER_AIR202_RESET_PIN, LOW);
-    delay(10);
-    digitalWrite(BLINKER_AIR202_RESET_PIN, HIGH);
-}
-
-void setup() {
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
-    BLINKER_DEBUG.debugAll();
-    
+
     pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, HIGH);
-
-    pinMode(BLINKER_AIR202_RESET_PIN, OUTPUT);
-    digitalWrite(BLINKER_AIR202_RESET_PIN, LOW);
-    delay(10);
-    digitalWrite(BLINKER_AIR202_RESET_PIN, HIGH);
+    digitalWrite(LED_BUILTIN, LOW);
     
-    Blinker.begin(auth, 5, 4);
+    Blinker.begin(auth);
     Blinker.attachData(dataRead);
-    Blinker.attachAir202Reset(air202Reset);
-
-    Button1.attach(button1_callback);
+    button.attachLongPressStop(deviceReset);
 }
 
-void loop() {
+void loop()
+{
     Blinker.run();
+    button.tick();
 }

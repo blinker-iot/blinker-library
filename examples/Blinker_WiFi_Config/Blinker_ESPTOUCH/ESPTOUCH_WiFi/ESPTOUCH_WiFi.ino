@@ -43,18 +43,29 @@
  * 
  * *****************************************************************/
 
-#define BLINKER_BLE
+#define BLINKER_WIFI
+#define BLINKER_ESP_SMARTCONFIG
 
 #include <Blinker.h>
 
-#define JOY_1 "JOYKey"
+// Download OneButton library here:
+// https://github.com/mathertel/OneButton
+#include "OneButton.h"
 
-BlinkerJoystick JOY1(JOY_1);
+#if defined(ESP32)
+    #define BLINKER_BUTTON_PIN 4
+#else
+    #define BLINKER_BUTTON_PIN D7
+#endif
+// button trigged when pin input level is LOW
+OneButton button(BLINKER_BUTTON_PIN, true);
 
-void joystick1_callback(uint8_t xAxis, uint8_t yAxis)
+char auth[] = "Your Device Secret Key";
+
+void deviceReset()
 {
-    BLINKER_LOG("Joystick1 X axis: ", xAxis);
-    BLINKER_LOG("Joystick1 Y axis: ", yAxis);
+    // Reset device ,erase WiFi config.
+    Blinker.reset();
 }
 
 void dataRead(const String & data)
@@ -75,14 +86,14 @@ void setup()
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
-
-    Blinker.begin();
+    
+    Blinker.begin(auth);
     Blinker.attachData(dataRead);
-
-    JOY1.attach(joystick1_callback);
+    button.attachLongPressStop(deviceReset);
 }
 
 void loop()
 {
     Blinker.run();
+    button.tick();
 }
