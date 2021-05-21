@@ -61,6 +61,8 @@
 // button trigged when pin input level is LOW
 OneButton button(BLINKER_BUTTON_PIN, true);
 
+BlinkerWiFi                 Blinker(WiFiESP);
+
 char auth[] = "Your Device Secret Key";
 time_t run_time = 0;
 

@@ -14,7 +14,7 @@
  * if use ESP8266 with Blinker.
  * https://github.com/esp8266/Arduino/releases
  * 
- * Make sure installed 1.0.4 or later ESP32/Arduino package,
+ * Make sure installed 1.0.5 or later ESP32/Arduino package,
  * if use ESP32 with Blinker.
  * https://github.com/espressif/arduino-esp32/releases
  * 
@@ -35,7 +35,7 @@
  * https://github.com/esp8266/Arduino/releases
  * 
  * 如果使用 ESP32 接入 Blinker,
- * 请确保安装了 1.0.4 或更新的 ESP32/Arduino 支持包。
+ * 请确保安装了 1.0.5 或更新的 ESP32/Arduino 支持包。
  * https://github.com/espressif/arduino-esp32/releases
  * 
  * 文档: https://diandeng.tech/doc
@@ -45,39 +45,41 @@
 
 #define BLINKER_WIFI
 #define BLINKER_WIDGET
+#define BLINKER_APCONFIG
 
 #include <Blinker.h>
 
-char auth[] = "Your Device Secret Key";
-char ssid[] = "Your WiFi network SSID or name";
-char pswd[] = "Your WiFi network WPA password or WEP key";
+// Download OneButton library here:
+// https://github.com/mathertel/OneButton
+#include "OneButton.h"
+
+#if defined(ESP32)
+    #define BLINKER_BUTTON_PIN 4
+#else
+    #define BLINKER_BUTTON_PIN D7
+#endif
+// button trigged when pin input level is LOW
+OneButton button(BLINKER_BUTTON_PIN, true);
 
 BlinkerWiFi                 Blinker(WiFiESP);
 
-void weatherData(const String & data)
-{
-    BLINKER_LOG("weather: ", data);
-}
+char auth[] = "Your Device Secret Key";
 
-void weatherForecastData(const String & data)
+void deviceReset()
 {
-    BLINKER_LOG("weather: ", data);
+    // Reset device ,erase WiFi config.
+    Blinker.reset();
 }
 
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
 
-    uint32_t BlinkerTime = millis();
-
-    Blinker.vibrate();        
-    Blinker.print("millis", BlinkerTime);
-
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    Blinker.weather();
-    Blinker.weatherForecast();
+    Blinker.vibrate();
     
-    Blinker.delay(60000);
+    uint32_t BlinkerTime = millis();
+    
+    Blinker.print("millis", BlinkerTime);
 }
 
 void setup()
@@ -87,14 +89,14 @@ void setup()
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
-
-    Blinker.begin(auth, ssid, pswd);
+    
+    Blinker.begin(auth);
     Blinker.attachData(dataRead);
-    Blinker.attachWeather(weatherData);
-    Blinker.attachWeatherForecast(weatherForecastData);
+    button.attachLongPressStop(deviceReset);
 }
 
 void loop()
 {
     Blinker.run();
+    button.tick();
 }

@@ -44,6 +44,7 @@
  * *****************************************************************/
 
 #define BLINKER_WIFI
+#define BLINKER_WIDGET
 
 #include <Blinker.h>
 
