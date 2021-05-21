@@ -74,7 +74,7 @@ void BLINKER_LOG_T(T arg,Ts... args)
         BLINKER_DEBUG.print(arg);
         BLINKER_LOG_T(args...);
     }
-    return;
+    // return;
 }
 /* BLINKER_LOG可变参数模板 */
 template <typename... Ts>
@@ -82,7 +82,7 @@ void BLINKER_LOG(Ts... args)
 {
     BLINKER_LOG_TIME();
     BLINKER_LOG_T(args...);
-    return;
+    // return;
 }
 /* BLINKER_ERR_LOG可变参数模板 */
 template <typename... Ts>
@@ -94,7 +94,7 @@ void BLINKER_ERR_LOG(Ts... args)
         BLINKER_DEBUG.print(BLINKER_DEBUG_F("ERROR: "));
         BLINKER_LOG_T(args...);
     }
-    return;
+    // return;
 }
 
 template <typename... Ts>
@@ -105,14 +105,14 @@ void BLINKER_LOG_ALL(Ts... args)
         BLINKER_LOG_TIME();
         BLINKER_LOG_T(args...);
     }
-    return;
+    // return;
 }
 
 template <typename... Ts>
 void BLINKER_ERR_LOG_ALL(Ts... args)
 {
     if (BLINKER_DEBUG.isDebugAll()) { BLINKER_ERR_LOG(args...); }
-    return;
+    // return;
 }
 
 #endif

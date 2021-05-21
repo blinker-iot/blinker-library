@@ -18,7 +18,7 @@
 #include "../Blinker/BlinkerDebug.h"
 #include "../Blinker/BlinkerUtility.h"
 
-class BlinkerBLEESP : public BlinkerStream, public BLEServerCallbacks, public BLECharacteristicCallbacks
+class BlinkerBLEESP : public BLEServerCallbacks, public BLECharacteristicCallbacks
 {
     public :
         BlinkerBLEESP()
@@ -26,6 +26,7 @@ class BlinkerBLEESP : public BlinkerStream, public BLEServerCallbacks, public BL
         {}
 
         void begin();
+        bool init()     { return true; }
         int available();
         int  read();
         int  timedRead();
@@ -59,6 +60,8 @@ class BlinkerBLEESP : public BlinkerStream, public BLEServerCallbacks, public BL
         int checkTimeOut();
         int checkPrintSpan();
 };
+
+BlinkerBLEESP   BLEESP;
 
 void BlinkerBLEESP::begin()
 {

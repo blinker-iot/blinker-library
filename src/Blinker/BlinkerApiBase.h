@@ -8,13 +8,14 @@
 template <class T>
 int8_t checkNum(const char* name, T * c, uint8_t count)
 {
-    BLINKER_LOG_ALL(BLINKER_F("checkNum count: "), count);
+    // BLINKER_LOG_ALL(BLINKER_F("checkNum count: "), count);
     for (uint8_t cNum = 0; cNum < count; cNum++)
     {
         // BLINKER_LOG_ALL(BLINKER_F("checkName: "), name, BLINKER_F(", name: "), c[cNum]->getName());
         // BLINKER_LOG_ALL(BLINKER_F("is strcmp: "), strcmp(name, c[cNum]->getName()) == 0);
         // BLINKER_LOG_ALL(BLINKER_F("is equal: "), name == c[cNum]->getName());
-        if (c[cNum]->checkName(name)) return cNum;
+        // if (c[cNum]->checkName(name)) return cNum;
+        if(strncmp(name, c[cNum]->getName(), strlen(name)) == 0) return cNum;
     }
 
     return BLINKER_OBJECT_NOT_AVAIL;
@@ -34,9 +35,9 @@ class BlinkerWidgets_num
 
         const char* getName() { return wName; }
 
-        bool checkName(const char* name) {
-            return strncmp(name, wName, strlen(name)) == 0;
-        }
+        // bool checkName(const char* name) {
+        //     return strncmp(name, wName, strlen(name)) == 0;
+        // }
 
         void setState(bool state) { autoUpdate = state; }
 
@@ -62,9 +63,9 @@ class BlinkerWidgets_string
         const char* getName() { return wName; }
         void setFunc(blinker_callback_with_string_arg_t _func) { wfunc = _func; }
         blinker_callback_with_string_arg_t getFunc() { return wfunc; }
-        bool checkName(const char* name) {
-            return strncmp(name, wName, strlen(name)) == 0;
-        }
+        // bool checkName(const char* name) {
+        //     return strncmp(name, wName, strlen(name)) == 0;
+        // }
 
     private :
         const char* wName;
@@ -86,9 +87,9 @@ class BlinkerWidgets_int32
         const char* getName() { return wName; }
         void setFunc(blinker_callback_with_int32_arg_t _func) { wfunc = _func; }
         blinker_callback_with_int32_arg_t getFunc() { return wfunc; }
-        bool checkName(const char* name) {
-            return strncmp(name, wName, strlen(name)) == 0;
-        }
+        // bool checkName(const char* name) {
+        //     return strncmp(name, wName, strlen(name)) == 0;
+        // }
 
     private :
         const char* wName;
@@ -110,9 +111,9 @@ class BlinkerWidgets_rgb
         const char* getName() { return wName; }
         void setFunc(blinker_callback_with_rgb_arg_t _func) { wfunc = _func; }
         blinker_callback_with_rgb_arg_t getFunc() { return wfunc; }
-        bool checkName(const char* name) {
-            return strncmp(name, wName, strlen(name)) == 0;
-        }
+        // bool checkName(const char* name) {
+        //     return strncmp(name, wName, strlen(name)) == 0;
+        // }
 
     private :
         const char* wName;
@@ -134,9 +135,9 @@ class BlinkerWidgets_joy
         const char* getName() { return wName; }
         void setFunc(blinker_callback_with_joy_arg_t _func) { wfunc = _func; }
         blinker_callback_with_joy_arg_t getFunc() { return wfunc; }
-        bool checkName(const char* name) {
-            return strncmp(name, wName, strlen(name)) == 0;
-        }
+        // bool checkName(const char* name) {
+        //     return strncmp(name, wName, strlen(name)) == 0;
+        // }
 
     private :
         const char* wName;
@@ -163,9 +164,9 @@ class BlinkerWidgets_table
         { wfunc = _func; wfunc2 = _func2; }
         blinker_callback_with_table_arg_t getFunc() { return wfunc; }
         blinker_callback_t getFunc2() { return wfunc2; }
-        bool checkName(const char* name) {
-            return strncmp(name, wName, strlen(name)) == 0;
-        }
+        // bool checkName(const char* name) {
+        //     return strncmp(name, wName, strlen(name)) == 0;
+        // }
 
     private :
         const char* wName;

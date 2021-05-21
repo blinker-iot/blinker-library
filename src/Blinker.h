@@ -3,6 +3,10 @@
 
 #include "Assistant/BlinkerAssistant.h"
 
+#if defined(BLINKER_BLE)
+    #include "BlinkerBLE.h"
+#endif
+
 #if defined(BLINKER_WIFI) && (defined(ESP32) || defined(ESP8266))
     #include "BlinkerWiFi.h"
 #endif
@@ -14,6 +18,7 @@
 #if defined(BLINKER_WIDGET)
     #include "Widgets/BlinkerButton.h"
     #include "Widgets/BlinkerImage.h"
+    #include "Widgets/BlinkerJoystick.h"
     #include "Widgets/BlinkerNumber.h"
     #include "Widgets/BlinkerRGB.h"
     #include "Widgets/BlinkerSlider.h"
@@ -22,11 +27,11 @@
     #include "Widgets/BlinkerText.h"
 #endif
 
-#if defined(BLINKER_ALIGENIE) && (defined(BLINKER_DUEROS) || defined(ESP8266))
+#if defined(BLINKER_ALIGENIE) && (defined(ESP32) || defined(ESP8266))
     #include "Assistant/BlinkerDuerOS.h"
 #endif
 
-#if defined(BLINKER_DUEROS) && (defined(BLINKER_DUEROS) || defined(ESP8266))
+#if defined(BLINKER_DUEROS) && (defined(ESP32) || defined(ESP8266))
     #include "Assistant/BlinkerDuerOS.h"
 #endif
 

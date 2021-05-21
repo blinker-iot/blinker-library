@@ -7,6 +7,12 @@
 
 #define BLINKER_VERSION                 "0.4.0"
 
+#if defined (__AVR__)
+#define BLINKER_JSON_BUFFER_SIZE        256
+#else
+#define BLINKER_JSON_BUFFER_SIZE        1024
+#endif
+
 #define BLINKER_CONNECT_TIMEOUT_MS      10000UL
 
 #define BLINKER_STREAM_TIMEOUT          100

@@ -148,7 +148,8 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         template<typename T>
         void timeSlotData(char _name[], const T& _data);
         void textData(const String & msg);
-        void jsonData(const String & msg);
+        void configUpdate(const String & msg);
+        void configGet();
 #endif
     private :
         void autoPrint(const String & key, const String & data);
@@ -285,18 +286,21 @@ void BlinkerProtocol<Transp>::run()
 
     if (!conn.init()) return;
 
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
     if (!wlanCheck()) return;
 
     ntpInit();
-#if defined(BLINKER_WIDGET)
-    BApi::checkTimer();
-#endif
+    
+    #if defined(BLINKER_WIDGET)
+        BApi::checkTimer();
+    #endif
 
     if (((millis() - _dHeartTime)/1000UL >= BLINKER_DEVICE_HEARTBEAT_TIME) && conn.checkInit())
     {
         _dHeartTime += BLINKER_DEVICE_HEARTBEAT_TIME * 1000;
         httpHeartbeat();
     }
+#endif
 
     switch (state)
     {
@@ -331,9 +335,9 @@ void BlinkerProtocol<Transp>::run()
         default:
             break;
     }
-
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
     checkDataStorage();
-
+#endif
     checkAutoFormat();
 }
 
@@ -1230,7 +1234,7 @@ void BlinkerProtocol<Transp>::textData(const String & msg)
 }
 
 template <class Transp>
-void BlinkerProtocol<Transp>::jsonData(const String & msg)
+void BlinkerProtocol<Transp>::configUpdate(const String & msg)
 {
     DynamicJsonDocument jsonBuffer(1024);
     DeserializationError error = deserializeJson(jsonBuffer, msg);
@@ -1239,20 +1243,27 @@ void BlinkerProtocol<Transp>::jsonData(const String & msg)
     // if (!root.success())
     if (error)
     {
-        BLINKER_ERR_LOG("Print data is not Json! ", msg);
+        BLINKER_ERR_LOG("update data is not Json! ", msg);
         return;
     }
 
     String data = BLINKER_F("{");
-    data += BLINKER_F("\"device\":\"");
-    data += conn.deviceName();
-    data += BLINKER_F("\",\"key\":\"");
-    data += conn.authKey();
+    data += BLINKER_F("\"token\":\"");
+    data += conn.token();
     data += BLINKER_F("\",\"data\":");
     data += msg;
     data += BLINKER_F("}");
 
-    conn.httpServer(BLINKER_CMD_JSON_DATA_NUMBER, data);
+    conn.httpServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data);
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::configGet()
+{
+    String data = BLINKER_F("/cloud_storage/object?token=");
+    data += conn.token();
+
+    conn.httpServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
 }
 
 template <class Transp>

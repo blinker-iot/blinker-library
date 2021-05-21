@@ -194,7 +194,9 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             break;
         case BLINKER_CMD_TEXT_DATA_NUMBER :
             break;
-        case BLINKER_CMD_JSON_DATA_NUMBER :
+        case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+            break;
+        case BLINKER_CMD_CONFIG_GET_NUMBER :
             break;
         case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
             break;
@@ -420,13 +422,9 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
-        case BLINKER_CMD_JSON_DATA_NUMBER :
-            // url_iot = host;
-            #ifndef BLINKER_WITHOUT_SSL
-                url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ot");
-            #else
-                url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ot");
-            #endif
+        case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/object");
 
             #if defined(ESP8266)
                 #ifndef BLINKER_WITHOUT_SSL
@@ -440,6 +438,23 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
+            break;
+        case BLINKER_CMD_CONFIG_GET_NUMBER :
+            url_iot = host;
+            url_iot += BLINKER_F("/api/v1/user/device");
+            url_iot += msg;
+
+            #if defined(ESP8266)
+                #ifndef BLINKER_WITHOUT_SSL
+                http.begin(*client_s, url_iot);
+                #else
+                http.begin(client_s, url_iot);
+                #endif
+            #else
+                http.begin(url_iot);
+            #endif
+
+            httpCode = http.GET();
             break;
         case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
             url_iot = host;
@@ -636,7 +651,9 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
                     break;
                 case BLINKER_CMD_TEXT_DATA_NUMBER :
                     break;
-                case BLINKER_CMD_JSON_DATA_NUMBER :
+                case BLINKER_CMD_CONFIG_UPDATE_NUMBER :
+                    break;
+                case BLINKER_CMD_CONFIG_GET_NUMBER :
                     break;
                 case BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER :
                     break;
