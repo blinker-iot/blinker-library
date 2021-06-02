@@ -1824,7 +1824,7 @@ void BlinkerWiFiESP::checkKA() {
 }
 
 int BlinkerWiFiESP::checkCanPrint() {
-    if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT && isAlive) || printTime == 0) {
+    if ((millis() - printTime >= BLINKER_MQTT_MSG_LIMIT / 2 && isAlive) || printTime == 0) {
         return true;
     }
     else {
@@ -1858,7 +1858,7 @@ int BlinkerWiFiESP::checkPrintLimit()
 {
     if ((millis() - _print_time) < 60000)
     {
-        if (_print_times < 10) return true;
+        if (_print_times < 30) return true;
         else 
         {
             BLINKER_ERR_LOG(BLINKER_F("MQTT MSG LIMIT"));
