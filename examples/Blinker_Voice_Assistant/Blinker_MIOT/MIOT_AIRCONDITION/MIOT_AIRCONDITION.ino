@@ -98,6 +98,7 @@ void miotMode(const String & mode, const String & state)
     BLINKER_LOG("need set mode: ", mode, ", state:", state);
 
     BlinkerMIOT.mode(mode, state);
+    BlinkerMIOT.print();
 }
 
 void miotHSwingState(const String & state)
