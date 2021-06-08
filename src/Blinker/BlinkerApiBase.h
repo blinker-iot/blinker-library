@@ -448,7 +448,7 @@ class BlinkerWidgets_table
                 for(uint8_t num = 0; num < BLINKER_MAX_DATA_COUNT; num++)
                 {
                     time_data[num] = 0;
-                    memcpy(data[num], "\0", 10);
+                    memset(data[num], '\0', 10);
                 }
             }
 
@@ -594,7 +594,7 @@ class BlinkerWidgets_table
             {
                 for (uint8_t num = 0; num < dataCount; num++) {
                     time_data[num] = latest_time;
-                    memcpy(data[num], "\0", 10);
+                    memset(data[num], '\0', 10);
                 }
 
                 dataCount = 0;
