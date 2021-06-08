@@ -12,11 +12,6 @@
 #include "../painlessmesh/router.hpp"
 #include "../painlessmesh/tcp.hpp"
 
-#define SYSTEM_EVENT_SCAN_DONE          ARDUINO_EVENT_WIFI_SCAN_DONE
-#define SYSTEM_EVENT_STA_START          ARDUINO_EVENT_WIFI_STA_START
-#define SYSTEM_EVENT_STA_GOT_IP         ARDUINO_EVENT_WIFI_STA_GOT_IP
-#define SYSTEM_EVENT_STA_DISCONNECTED   ARDUINO_EVENT_WIFI_STA_DISCONNECTED
-
 extern painlessmesh::logger::LogClass Log;
 
 namespace painlessmesh {
@@ -264,7 +259,7 @@ class Mesh : public painlessmesh::Mesh<MeshConnection> {
             this->semaphoreGive();
           }
         },
-        WiFiEvent_t::SYSTEM_EVENT_SCAN_DONE);
+        (WiFiEvent_t)1);//SYSTEM_EVENT_SCAN_DONE
 
     eventSTAStartHandler = WiFi.onEvent(
         [this](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -273,7 +268,7 @@ class Mesh : public painlessmesh::Mesh<MeshConnection> {
             this->semaphoreGive();
           }
         },
-        WiFiEvent_t::SYSTEM_EVENT_STA_START);
+        (WiFiEvent_t)2);//SYSTEM_EVENT_STA_START
 
     eventSTADisconnectedHandler = WiFi.onEvent(
         [this](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -287,7 +282,7 @@ class Mesh : public painlessmesh::Mesh<MeshConnection> {
             this->semaphoreGive();
           }
         },
-        WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+        (WiFiEvent_t)5);//SYSTEM_EVENT_STA_DISCONNECTED
 
     eventSTAGotIPHandler = WiFi.onEvent(
         [this](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -298,7 +293,7 @@ class Mesh : public painlessmesh::Mesh<MeshConnection> {
             this->semaphoreGive();
           }
         },
-        WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
+        (WiFiEvent_t)7);//SYSTEM_EVENT_STA_GOT_IP
 
 #elif defined(ESP8266)
     eventSTAConnectedHandler = WiFi.onStationModeConnected(
