@@ -259,7 +259,7 @@ class Mesh : public painlessmesh::Mesh<MeshConnection> {
             this->semaphoreGive();
           }
         },
-        WiFiEvent_t::SYSTEM_EVENT_SCAN_DONE);
+        (WiFiEvent_t)1);//SYSTEM_EVENT_SCAN_DONE
 
     eventSTAStartHandler = WiFi.onEvent(
         [this](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -268,7 +268,7 @@ class Mesh : public painlessmesh::Mesh<MeshConnection> {
             this->semaphoreGive();
           }
         },
-        WiFiEvent_t::SYSTEM_EVENT_STA_START);
+        (WiFiEvent_t)2);//SYSTEM_EVENT_STA_START
 
     eventSTADisconnectedHandler = WiFi.onEvent(
         [this](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -282,7 +282,7 @@ class Mesh : public painlessmesh::Mesh<MeshConnection> {
             this->semaphoreGive();
           }
         },
-        WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+        (WiFiEvent_t)5);//SYSTEM_EVENT_STA_DISCONNECTED
 
     eventSTAGotIPHandler = WiFi.onEvent(
         [this](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -293,7 +293,8 @@ class Mesh : public painlessmesh::Mesh<MeshConnection> {
             this->semaphoreGive();
           }
         },
-        WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
+        (WiFiEvent_t)7);//SYSTEM_EVENT_STA_GOT_IP
+
 #elif defined(ESP8266)
     eventSTAConnectedHandler = WiFi.onStationModeConnected(
         [&](const WiFiEventStationModeConnected &event) {
