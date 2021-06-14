@@ -3004,8 +3004,16 @@ bool BlinkerMQTT::autoInit()
 
     if (checkConfig())
     {
-
-        WiFi.begin(WiFi.SSID(), WiFi.psk());
+    #ifdef ESP8266
+        struct station_config conf;
+        wifi_station_get_config_default(&conf);
+        WiFi.begin(reinterpret_cast<char*>(conf.ssid), reinterpret_cast<char*>(conf.password));
+    #elif defined(ESP32)
+        wifi_config_t conf;
+        esp_wifi_get_config(WIFI_IF_STA, &conf);
+        WiFi.begin(reinterpret_cast<char*>(conf.sta.ssid), reinterpret_cast<char*>(conf.sta.password));
+    #endif
+        // WiFi.begin(WiFi.SSID(), WiFi.psk());
         ::delay(500);
 
         // BLINKER_LOG(BLINKER_F("Waiting for WiFi "),
