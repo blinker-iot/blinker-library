@@ -2650,7 +2650,7 @@ int BlinkerMQTT::checkPrintLimit()
 {
     if ((millis() - _print_time) < 60000)
     {
-        if (_print_times < 10) return true;
+        if (_print_times < 30) return true;
         else 
         {
             BLINKER_ERR_LOG(BLINKER_F("MQTT MSG LIMIT"));
@@ -3004,8 +3004,16 @@ bool BlinkerMQTT::autoInit()
 
     if (checkConfig())
     {
-
-        WiFi.begin();
+    #ifdef ESP8266
+        struct station_config conf;
+        wifi_station_get_config_default(&conf);
+        WiFi.begin(reinterpret_cast<char*>(conf.ssid), reinterpret_cast<char*>(conf.password));
+    #elif defined(ESP32)
+        wifi_config_t conf;
+        esp_wifi_get_config(WIFI_IF_STA, &conf);
+        WiFi.begin(reinterpret_cast<char*>(conf.sta.ssid), reinterpret_cast<char*>(conf.sta.password));
+    #endif
+        // WiFi.begin(WiFi.SSID(), WiFi.psk());
         ::delay(500);
 
         // BLINKER_LOG(BLINKER_F("Waiting for WiFi "),
@@ -3013,7 +3021,7 @@ bool BlinkerMQTT::autoInit()
         //             BLINKER_F("s, will enter SMARTCONFIG or "),
         //             BLINKER_F("APCONFIG while WiFi not connect!"));
 
-        BLINKER_LOG(BLINKER_F("Connecting to WiFi"));
+        BLINKER_LOG(BLINKER_F("Connecting to WiFi: "), WiFi.SSID());
 
         // uint8_t _times = 0;
         // while (WiFi.status() != WL_CONNECTED) {
