@@ -3237,6 +3237,7 @@ bool BlinkerWlan::connected() {
                     BLINKER_LOG(BLINKER_F("APConfig time out"));
                     
                     // WiFi.stopSmartConfig();
+                    WiFi.disconnect();
                     _status = BWL_APCONFIG_TIMEOUT;
                 }
                 return false;

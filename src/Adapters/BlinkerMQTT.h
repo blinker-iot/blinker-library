@@ -2837,6 +2837,7 @@ bool BlinkerMQTT::checkInit()
                             if (millis() - _connectTime > 15000)
                             {
                                 BLINKER_LOG(BLINKER_F("APConfig timeout."));
+                                WiFi.disconnect();
                                 _configStatus = APCFG_TIMEOUT;
                             }
                             return false;
