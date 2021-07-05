@@ -16,6 +16,15 @@
     ESP8266WiFiMulti wifiMulti;
 #elif defined(ESP32)
     #include <WiFi.h>
+
+    #if defined(ESP32)
+        extern "C" {
+            #include <esp_err.h>
+            #include <esp_wifi.h>
+            #include <esp_event.h>
+        }
+    #endif
+    
     #include <ESPmDNS.h>
     #include <WiFiMulti.h>
     #include <HTTPClient.h>

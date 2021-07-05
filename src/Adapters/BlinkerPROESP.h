@@ -11,6 +11,15 @@
     #include <base64.h>
 #elif defined(ESP32)
     #include <WiFi.h>
+
+    #if defined(ESP32)
+        extern "C" {
+            #include <esp_err.h>
+            #include <esp_wifi.h>
+            #include <esp_event.h>
+        }
+    #endif
+
     #include <ESPmDNS.h>
     #include <HTTPClient.h>
 
