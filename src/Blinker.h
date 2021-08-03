@@ -103,6 +103,8 @@
         #define BLINKER_APCONFIG
         #define BLINKER_WITHOUT_WS_REG
     #endif
+    
+    #define BLINKER_WITHOUT_WS_REG
 
     #if defined(BLINKER_WIFI_AUTO)
         #define BLINKER_PRO_ESP

@@ -64,7 +64,7 @@ enum b_broker_t {
     blinker_b
 };
 
-b_config_t  _configType = BLINKER_SMART_CONFIG;
+b_config_t  _configType = BLINKER_AP_CONFIG;
 
 class BlinkerPROESP : public BlinkerStream
 {
