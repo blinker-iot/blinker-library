@@ -25,6 +25,11 @@
 
 #elif defined(BLINKER_WIFI) || defined(BLINKER_MQTT)
 
+    #if defined(BLINKER_APCONFIG_V2)
+        #define BLINKER_APCONFIG
+        #define BLINKER_WITHOUT_WS_REG
+    #endif
+
     #if defined(BLINKER_WIFI)
         #undef BLINKER_WIFI
         #define BLINKER_MQTT
@@ -92,7 +97,12 @@
 
 #elif defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_AUTO)
 
-    #include "BlinkerAssistant.h"
+    #include "BlinkerAssistant.h"    
+
+    #if defined(BLINKER_APCONFIG_V2)
+        #define BLINKER_APCONFIG
+        #define BLINKER_WITHOUT_WS_REG
+    #endif
 
     #if defined(BLINKER_WIFI_AUTO)
         #define BLINKER_PRO_ESP

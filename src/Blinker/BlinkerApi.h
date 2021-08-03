@@ -3242,6 +3242,10 @@ void BlinkerApi::run()
                     }
                     else
                     {
+                        #if defined(BLINKER_WITHOUT_WS_REG)
+                            _getRegister = true;
+                            _isNew = true;
+                        #endif
                         _proStatus = PRO_DEV_AUTHCHECK_FAIL;
 
                         BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
@@ -3476,6 +3480,10 @@ void BlinkerApi::run()
                     }
                     else
                     {
+                        #if defined(BLINKER_WITHOUT_WS_REG)
+                            _getRegister = true;
+                            _isNew = true;
+                        #endif
                         _mqttAutoStatue = AUTO_DEV_AUTHCHECK_FAIL;
 
                         BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
