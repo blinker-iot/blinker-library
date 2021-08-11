@@ -42,7 +42,8 @@
     #if (defined(ESP8266) || defined(ESP32)) && !defined(BLINKER_MQTT_AT)
         #include "BlinkerESPMQTT.h"
 
-        BlinkerESPMQTT      Blinker;     
+        BlinkerESPMQTT      Blinker; 
+
     #else
         #define BLINKER_ESP_AT
 

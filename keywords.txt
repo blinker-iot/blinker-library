@@ -21,11 +21,13 @@ BlinkerDuerOS	KEYWORD1
 BlinkerMIOT	KEYWORD1
 BlinkerUpdater	KEYWORD1
 BlinkerEvent	KEYWORD1
+BLINKER_PROTOCOL_MQTT	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 BLINKER_TAST_INIT	KEYWORD2
+deviceName	KEYWORD2
 
 auth	KEYWORD2
 ssid	KEYWORD2

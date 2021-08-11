@@ -226,8 +226,10 @@ class BlinkerPROESP : public BlinkerStream
     WiFiClientSecure            client_s;
 #endif
 
+#define BLINKER_PROTOCOL_MQTT    mqtt_PRO
+
 WiFiClient              client;
-Adafruit_MQTT_Client*       mqtt_PRO;
+Adafruit_MQTT_Client*       mqtt_PRO = NULL;
 // Adafruit_MQTT_Publish   *iotPub;
 Adafruit_MQTT_Subscribe*    iotSub_PRO;
 
