@@ -168,7 +168,7 @@ void duringLongPress()
 
     if (pressed_time >= 5000 && Blinker.configType() != BLINKER_AP_CONFIG)
     {
-        Blinker.apConfigInit();
+        Blinker.esptouchInit();
     }
 }
 #endif

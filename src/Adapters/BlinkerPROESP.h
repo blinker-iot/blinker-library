@@ -64,7 +64,7 @@ enum b_broker_t {
     blinker_b
 };
 
-b_config_t  _configType = BLINKER_SMART_CONFIG;
+b_config_t  _configType = BLINKER_AP_CONFIG;
 
 class BlinkerPROESP : public BlinkerStream
 {
@@ -226,8 +226,10 @@ class BlinkerPROESP : public BlinkerStream
     WiFiClientSecure            client_s;
 #endif
 
+#define BLINKER_PROTOCOL_MQTT    mqtt_PRO
+
 WiFiClient              client;
-Adafruit_MQTT_Client*       mqtt_PRO;
+Adafruit_MQTT_Client*       mqtt_PRO = NULL;
 // Adafruit_MQTT_Publish   *iotPub;
 Adafruit_MQTT_Subscribe*    iotSub_PRO;
 
@@ -3237,6 +3239,7 @@ bool BlinkerWlan::connected() {
                     BLINKER_LOG(BLINKER_F("APConfig time out"));
                     
                     // WiFi.stopSmartConfig();
+                    WiFi.disconnect();
                     _status = BWL_APCONFIG_TIMEOUT;
                 }
                 return false;
