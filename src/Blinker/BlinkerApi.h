@@ -865,8 +865,8 @@ class BlinkerApi : public BlinkerProtocol
         #endif
 
         #if defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
-            void esptouchInit() { BProto::smartConfigType(); }
-            void apConfigInit() { BProto::apConfigType(); }
+            void esptouchInit() { Bwlan.checkConfig(); BProto::smartConfigType(); }
+            void apConfigInit() { Bwlan.checkConfig(); BProto::apConfigType(); }
             b_config_t configType() { return BProto::checkIsSmartConfig() ? BLINKER_SMART_CONFIG : BLINKER_AP_CONFIG; }
         #endif
 
