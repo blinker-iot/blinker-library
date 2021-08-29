@@ -3246,6 +3246,7 @@ void BlinkerApi::run()
                             _getRegister = true;
                             _isNew = true;
                         #endif
+                        _register_fresh = millis();
                         _proStatus = PRO_DEV_AUTHCHECK_FAIL;
 
                         BLINKER_LOG_ALL(BLINKER_F("not auth, conn deviceRegister"));
