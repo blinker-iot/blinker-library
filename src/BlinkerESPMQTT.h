@@ -114,6 +114,86 @@ class BlinkerESPMQTT : public BlinkerApi
             //     beginMQTT();
             // #endif
         }
+    #elif defined(BLINKER_APCONFIG_V2)    
+        void begin()
+        {
+            #if defined(BLINKER_ALIGENIE_LIGHT)
+                String _aliType = BLINKER_F("&aliType=light");
+            #elif defined(BLINKER_ALIGENIE_OUTLET)
+                String _aliType = BLINKER_F("&aliType=outlet");
+            #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
+                String _aliType = BLINKER_F("&aliType=multi_outlet");
+            #elif defined(BLINKER_ALIGENIE_SENSOR)
+                String _aliType = BLINKER_F("&aliType=sensor");
+            #elif defined(BLINKER_ALIGENIE_FAN)
+                String _aliType = BLINKER_F("&aliType=fan");
+            #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
+                String _aliType = BLINKER_F("&aliType=aircondition");
+            #else
+                String _aliType = BLINKER_F("");
+            #endif
+
+            #if defined(BLINKER_DUEROS_LIGHT)
+                String _duerType = BLINKER_F("&duerType=LIGHT");
+            #elif defined(BLINKER_DUEROS_OUTLET)
+                String _duerType = BLINKER_F("&duerType=SOCKET");
+            #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
+                String _duerType = BLINKER_F("&duerType=MULTI_SOCKET");
+            #elif defined(BLINKER_DUEROS_SENSOR)
+                String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
+            #elif defined(BLINKER_DUEROS_FAN)
+                String _duerType = BLINKER_F("&duerType=FAN");
+            #elif defined(BLINKER_DUEROS_AIRCONDITION)
+                String _duerType = BLINKER_F("&duerType=AIR_CONDITION");
+            #else
+                String _duerType = BLINKER_F("");
+            #endif
+
+            #if defined(BLINKER_MIOT_LIGHT)
+                String _miType = BLINKER_F("&miType=light");
+            #elif defined(BLINKER_MIOT_OUTLET)
+                String _miType = BLINKER_F("&miType=outlet");
+            #elif defined(BLINKER_MIOT_MULTI_OUTLET)
+                String _miType = BLINKER_F("&miType=multi_outlet");
+            #elif defined(BLINKER_MIOT_SENSOR)
+                String _miType = BLINKER_F("&miType=sensor");
+            #elif defined(BLINKER_MIOT_FAN)
+                String _miType = BLINKER_F("&miType=fan");
+            #elif defined(BLINKER_MIOT_AIRCONDITION)
+                String _miType = BLINKER_F("&miType=aircondition");
+            #else
+                String _miType = BLINKER_F("");
+            #endif
+
+            BApi::begin();
+
+            Transp.aliType(_aliType);
+            Transp.duerType(_duerType);
+            Transp.miType(_miType);
+            // Transp.begin(_auth);
+
+            transport(Transp);
+
+            // #if defined(BLINKER_ESP_SMARTCONFIG)
+            //     Transp.smartconfigBegin();
+            // #elif defined(BLINKER_APCONFIG)
+                Transp.apconfigBegin();
+            // #endif
+
+            BApi::loadTimer();
+
+            // #if defined(BLINKER_ESP_SMARTCONFIG)
+            //     smartconfigBegin(_auth, _aliType, _duerType);
+            // #elif defined(BLINKER_APCONFIG)
+            //     apconfigBegin(_auth, _aliType, _duerType);
+            // #endif
+
+            // __auth = _auth;
+
+            // #ifndef BLINKER_ESP_TASK
+            //     beginMQTT();
+            // #endif
+        }
     #else
         void begin( const char* _auth, 
                     const char* _ssid, 
