@@ -3041,7 +3041,7 @@ bool BlinkerMQTT::autoInit()
         char _auth[BLINKER_AUTHKEY_SIZE];
 
         EEPROM.begin(BLINKER_EEP_SIZE);
-        EEPROM.get(1280, _auth);
+        EEPROM.get(2448, _auth);
         EEPROM.commit();
         EEPROM.end();
         
@@ -3356,7 +3356,7 @@ bool BlinkerMQTT::parseUrl(String data)
         begin(_auth.c_str());
 
         EEPROM.begin(BLINKER_EEP_SIZE);
-        EEPROM.put(1280, _auth.c_str());
+        EEPROM.put(2448, _authKey);
         EEPROM.commit();
         EEPROM.end();
     }
