@@ -1560,9 +1560,9 @@ class BlinkerApi : public BlinkerProtocol
 
                         url_iot = BLINKER_F("/api/v1/storage/ts ");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin("https://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #else
-                        http.begin("http://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -1579,9 +1579,9 @@ class BlinkerApi : public BlinkerProtocol
 
                         url_iot = BLINKER_F("/api/v1/storage/text ");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin("https://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #else
-                        http.begin("http://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -2227,9 +2227,9 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
                         url_iot = BLINKER_F("/api/v1/storage/ts");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin("https://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #else
-                        http.begin("http://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -2237,9 +2237,9 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_TEXT_DATA_NUMBER :
                         url_iot = BLINKER_F("/api/v1/storage/text");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin("https://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #else
-                        http.begin("http://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -2247,9 +2247,9 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_JSON_DATA_NUMBER :
                         url_iot = BLINKER_F("/api/v1/storage/object");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin("https://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #else
-                        http.begin("http://storage.diandeng.tech", url_iot);
+                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -12182,15 +12182,17 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                         break;
                     case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
                         // url_iot = host;
-                        // #ifndef BLINKER_WITHOUT_SSL
-                        //     url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ts");
-                        // #else
-                        //     url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ts");
-                        // #endif
+                        #ifndef BLINKER_WITHOUT_SSL
+                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot += BLINKER_F("/api/v1/storage/ts");
+                        #else
+                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot += BLINKER_F("/api/v1/storage/ts");
+                        #endif
 
                         
-                        url_iot = host;
-                        url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/object");
+                        // url_iot = host;
+                        // url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/object");
 
                         #if defined(ESP8266)
                             #ifndef BLINKER_WITHOUT_SSL
@@ -12208,9 +12210,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     case BLINKER_CMD_TEXT_DATA_NUMBER :
                         // url_iot = host;
                         #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/tt");
+                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot += BLINKER_F("/api/v1/storage/tt");
                         #else
-                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/tt");
+                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot += BLINKER_F("/api/v1/storage/tt");
                         #endif
 
                         #if defined(ESP8266)
@@ -12229,9 +12233,11 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     case BLINKER_CMD_JSON_DATA_NUMBER :
                         // url_iot = host;
                         #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_F("https://storage.diandeng.tech/api/v1/storage/ot");
+                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot += BLINKER_F("/api/v1/storage/ot");
                         #else
-                            url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ot");
+                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot += BLINKER_F("/api/v1/storage/ot");
                         #endif
 
                         #if defined(ESP8266)
