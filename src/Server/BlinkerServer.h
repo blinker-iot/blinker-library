@@ -13,11 +13,11 @@
     #define BLINKER_SERVER_HOST         "iot.diandeng.tech"
 #endif
 
-#ifndef BLINKER_STORAGE_HTTP
+#ifndef BLINKER_STORAGE_HTTPS
     #ifndef BLINKER_WITHOUT_SSL
-        #define BLINKER_STORAGE_HTTP    "https://storage.diandeng.tech"
+        #define BLINKER_STORAGE_HTTPS   "https://storage.diandeng.tech"
     #else
-        #define BLINKER_STORAGE_HTTP    "http://storage.diandeng.tech"
+        #define BLINKER_STORAGE_HTTPS   "http://storage.diandeng.tech"
     #endif
 #endif
 

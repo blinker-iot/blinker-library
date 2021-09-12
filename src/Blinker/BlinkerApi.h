@@ -1560,9 +1560,9 @@ class BlinkerApi : public BlinkerProtocol
 
                         url_iot = BLINKER_F("/api/v1/storage/ts ");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #else
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -1579,9 +1579,9 @@ class BlinkerApi : public BlinkerProtocol
 
                         url_iot = BLINKER_F("/api/v1/storage/text ");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #else
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -2227,9 +2227,9 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
                         url_iot = BLINKER_F("/api/v1/storage/ts");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #else
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -2237,9 +2237,9 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_TEXT_DATA_NUMBER :
                         url_iot = BLINKER_F("/api/v1/storage/text");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #else
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -2247,9 +2247,9 @@ class BlinkerApi : public BlinkerProtocol
                     case BLINKER_CMD_JSON_DATA_NUMBER :
                         url_iot = BLINKER_F("/api/v1/storage/object");
                         #ifndef BLINKER_WITHOUT_SSL
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #else
-                        http.begin(BLINKER_STORAGE_HTTP, url_iot);
+                        http.begin(BLINKER_STORAGE_HTTPS, url_iot);
                         #endif
                         // http.addHeader(conType, application);
                         httpCode = http.POST(msg, conType, application);
@@ -12183,10 +12183,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     case BLINKER_CMD_TIME_SLOT_DATA_NUMBER :
                         // url_iot = host;
                         #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot = BLINKER_STORAGE_HTTPS;
                             url_iot += BLINKER_F("/api/v1/storage/ts");
                         #else
-                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot = BLINKER_STORAGE_HTTPS;
                             url_iot += BLINKER_F("/api/v1/storage/ts");
                         #endif
 
@@ -12210,10 +12210,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     case BLINKER_CMD_TEXT_DATA_NUMBER :
                         // url_iot = host;
                         #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot = BLINKER_STORAGE_HTTPS;
                             url_iot += BLINKER_F("/api/v1/storage/tt");
                         #else
-                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot = BLINKER_STORAGE_HTTPS;
                             url_iot += BLINKER_F("/api/v1/storage/tt");
                         #endif
 
@@ -12233,10 +12233,10 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                     case BLINKER_CMD_JSON_DATA_NUMBER :
                         // url_iot = host;
                         #ifndef BLINKER_WITHOUT_SSL
-                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot = BLINKER_STORAGE_HTTPS;
                             url_iot += BLINKER_F("/api/v1/storage/ot");
                         #else
-                            url_iot = BLINKER_STORAGE_HTTP;
+                            url_iot = BLINKER_STORAGE_HTTPS;
                             url_iot += BLINKER_F("/api/v1/storage/ot");
                         #endif
 
