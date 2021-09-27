@@ -13210,7 +13210,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 // else setValue = "off";                
 
                 // if (_MIOTHeaterFunc) _MIOTHeaterFunc(setValue);
-                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
+                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_HEATER, setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_DRYER)) {
                 String setValue = rootSet[BLINKER_CMD_DRYER];
@@ -13219,7 +13219,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 // else setValue = "off";                
 
                 // if (_MIOTDryerFunc) _MIOTDryerFunc(setValue);
-                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
+                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_DRYER, setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_SLEEP)) {
                 String setValue = rootSet[BLINKER_CMD_SLEEP];
@@ -13228,7 +13228,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 // else setValue = "off";                
 
                 // if (_MIOTSleepFunc) _MIOTSleepFunc(setValue);
-                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
+                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_SLEEP, setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_SOFT)) {
                 String setValue = rootSet[BLINKER_CMD_SOFT];
@@ -13237,7 +13237,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 // else setValue = "off";                
 
                 // if (_MIOTSoftFunc) _MIOTSoftFunc(setValue);
-                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
+                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_SOFT, setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_UV)) {
                 String setValue = rootSet[BLINKER_CMD_UV];
@@ -13246,7 +13246,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 // else setValue = "off";                
 
                 // if (_MIOTUVFunc) _MIOTUVFunc(setValue);
-                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
+                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_UV, setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_UNSB)) {
                 String setValue = rootSet[BLINKER_CMD_UNSB];
@@ -13255,7 +13255,7 @@ char * BlinkerApi::widgetName_tab(uint8_t num)
                 // else setValue = "off";                
 
                 // if (_MIOTUNSBFunc) _MIOTUNSBFunc(setValue);
-                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
+                if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_UNSB, setValue);
             }
             else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
                 String setValue = rootSet[BLINKER_CMD_COLOR];
