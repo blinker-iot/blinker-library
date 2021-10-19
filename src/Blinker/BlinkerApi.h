@@ -417,8 +417,8 @@ class BlinkerApi : public BlinkerProtocol
             template<typename T>
             void dataStorage(char _name[], const T& msg);
             template<typename T>
-            void RTDataStorage(char _name[], const T& msg);
-            void RTDataPrint();
+            void sendRtData(char _name[], const T& msg);
+            void printRtData();
             void timeSlotData(char _name[], int32_t msg);
             void timeSlotData(char _name[], uint32_t msg);
             void timeSlotData(char _name[], float msg);
@@ -6999,7 +6999,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
     #if !defined(BLINKER_AT_MQTT)
     template<typename T>
-    void BlinkerApi::RTDataStorage(char _name[], const T& msg)
+    void BlinkerApi::sendRtData(char _name[], const T& msg)
     {
         // String _msg = STRING_format(msg);
 
@@ -7080,7 +7080,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
     }
 
-    void BlinkerApi::RTDataPrint()
+    void BlinkerApi::printRtData()
     {
         // String data = "{\"rt\":{";
 
