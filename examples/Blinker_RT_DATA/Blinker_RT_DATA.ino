@@ -65,9 +65,9 @@ void dataRead(const String & data)
 
 void rtData()
 {
-    Blinker.RTDataStorage("data1", (int32_t)random(0,120));
-    Blinker.RTDataStorage("data2", random(0,120)/(float)1.5);
-    Blinker.RTDataPrint();
+    Blinker.sendRtData("data1", (int32_t)random(0,120));
+    Blinker.sendRtData("data2", random(0,120)/(float)1.5);
+    Blinker.printRtData();
 }
 
 void setup()
