@@ -619,8 +619,8 @@ class BlinkerWidgets_table
                 // memcpy(data,"\0",128);
                 for(uint8_t num = 0; num < 15; num++)
                 {
-                    time_data[num] = 0;
-                    data[num] = 0;
+                    // time_data[num] = 0;
+                    // data[num] = 0;
                 }
             }
 
@@ -628,77 +628,147 @@ class BlinkerWidgets_table
 
             const char* getName() { return _dname; }
 
-            bool saveData(int _data, time_t now_time) {
-                // if (dataCount > 0)
+            // bool saveData(int _data, time_t now_time) {
+            //     // if (dataCount > 0)
+            //     // {
+            //     //     if (now_time - latest_time < _limit) return false;
+            //     // }
+
+            //     latest_time = now_time;
+
+            //     if (dataCount >= BLINKER_MAX_RTDATA_DATA_SIZE)
+            //     {
+            //         full = true;
+
+            //         dataCount = dataCount % BLINKER_MAX_RTDATA_DATA_SIZE;
+
+            //         time_data[dataCount] = now_time;
+            //         data[dataCount] = _data;
+
+            //         dataCount++;
+            //         // for (uint8_t num = 0; num < dataCount - 1; num++) {
+            //         //     time_data[num] = time_data[num + 1];
+            //         //     data[num] = data[num+1];
+            //         // }
+            //         // time_data[dataCount - 1] = now_time;
+            //         // data[dataCount - 1] = _data;
+            //     }
+            //     else
+            //     {
+            //         time_data[dataCount] = now_time;
+            //         data[dataCount] = _data;
+            //         dataCount++;
+            //     }
+            //     BLINKER_LOG_ALL(BLINKER_F("saveData: "), _data);
+            //     BLINKER_LOG_ALL(BLINKER_F("saveData dataCount: "), dataCount);
+
+            //     return true;
+            // }
+
+            bool available() {
+                // if (full)
                 // {
-                //     if (now_time - latest_time < _limit) return false;
+                //     if (printCount >= BLINKER_MAX_RTDATA_DATA_SIZE)
+                //     {
+                //         return false;
+                //     } 
+                // } else {
+                //     if (printCount >= dataCount)
+                //     {
+                //         return false;
+                //     } 
                 // }
 
-                latest_time = now_time;
+                if (is_fresh) return true;
 
-                if (dataCount >= 15)
-                {
-                    dataCount = 15;
-
-                    for (uint8_t num = 0; num < dataCount - 1; num++) {
-                        time_data[num] = time_data[num + 1];
-                        data[num] = data[num+1];
-                    }
-                    time_data[dataCount - 1] = now_time;
-                    data[dataCount - 1] = _data;
-                }
-                else
-                {
-                    time_data[dataCount] = now_time;
-                    data[dataCount] = _data;
-                    dataCount++;
-                }
-                BLINKER_LOG_ALL(BLINKER_F("saveData: "), _data);
-                BLINKER_LOG_ALL(BLINKER_F("saveData dataCount: "), dataCount);
-
-                return true;
+                return false;
             }
 
-            String getData() {
-                // BLINKER_LOG_ALL(BLINKER_F("getData data: "), data);
+            // String getData() {
+            //     // full = false;
                 
-                String _data_ = BLINKER_F("[");
-                for (uint8_t num = 0; num < dataCount; num++) {
-                    _data_ += "{\"date\":";
-                    _data_ += String(time_data[num]);
-                    _data_ += ",\"value\":";
-                    _data_ += data[num];
-                    _data_ += "}";
-                    if (num + 1 < dataCount)
-                    {
-                        _data_ += ",";
-                    }
-                }
-                _data_ += BLINKER_F("]");
+            //     String _data_ = BLINKER_F("");
+                
+            //     // if (full)
+            //     // {
+            //     //     if (printCount >= BLINKER_MAX_RTDATA_DATA_SIZE)
+            //     //     {
+            //     //         _data_ = "null";
+            //     //     } 
+            //     // } else {
+            //     //     if (printCount >= dataCount)
+            //     //     {
+            //     //         _data_ = "null";
+            //     //     } 
+            //     // }
 
-                BLINKER_LOG_ALL(BLINKER_F("getData _data_: "), _data_);
+            //     if (available())
+            //     {
+            //         _data_ += "\"";
+            //         _data_ += _dname;
+            //         _data_ += "\":{\"date\":";
+            //         _data_ += String(time_data[printCount]);
+            //         _data_ += ",\"value\":";
+            //         _data_ += data[printCount];
+            //         _data_ += "}";
 
-                return _data_;
-            }
+            //         printCount++;
+            //     }
+            //     else
+            //     {
+            //         _data_ = "null";
+            //     }
+
+            //     // for (uint8_t num = 0; num < dataCount; num++) {
+            //         // _data_ += "{\"date\":";
+            //         // _data_ += String(time_data[printCount]);
+            //         // _data_ += ",\"value\":";
+            //         // _data_ += data[printCount];
+            //         // _data_ += "}";
+
+            //     // BLINKER_LOG_ALL(BLINKER_F("getData data: "), data);
+
+            //     // printCount++;
+            //     //     if (num + 1 < dataCount)
+            //     //     {
+            //     //         _data_ += ",";
+            //     //     }
+            //     // }
+            //     // _data_ += BLINKER_F("]");
+
+            //     BLINKER_LOG_ALL(BLINKER_F("getData _data_: "), _data_);
+
+            //     return _data_;
+            // }
 
             bool checkName(const char* name) { return strncmp(name, _dname, strlen(name)) == 0; }
 
-            void flush()
-            {
-                for (uint8_t num = 0; num < dataCount; num++) {
-                    time_data[num] = latest_time;
-                    data[num] = 0;
-                }
+            // void flush()
+            // {
+            //     for (uint8_t num = 0; num < dataCount; num++) {
+            //         time_data[num] = latest_time;
+            //         data[num] = 0;
+            //     }
 
-                dataCount = 0;
+            //     dataCount = 0;
+            //     printCount = 0;
+            //     full = false;
+            // }
+
+            void state(bool fresh_state)
+            {
+                is_fresh = fresh_state;
             }
 
         private :
-            uint8_t dataCount = 0;
-            time_t  latest_time = 0;
+            bool    is_fresh = false;
+            // uint8_t dataCount = 0;
+            // uint8_t printCount = 0;
+            // time_t  latest_time = 0;
             // char * data;
-            time_t  time_data[15];
-            int     data[15];
+            // time_t  time_data[15];
+            // int     data[15];
+            // bool    full = false;
             const char*   _dname;
     };
 #endif
