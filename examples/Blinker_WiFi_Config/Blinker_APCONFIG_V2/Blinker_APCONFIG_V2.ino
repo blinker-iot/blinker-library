@@ -44,45 +44,55 @@
  * *****************************************************************/
 
 #define BLINKER_WIFI
+#define BLINKER_APCONFIG_V2
 
 #include <Blinker.h>
 
-char auth[] = "Your Device Secret Key";
-char ssid[] = "Your WiFi network SSID or name";
-char pswd[] = "Your WiFi network WPA password or WEP key";
+// Download OneButton library here:
+// https://github.com/mathertel/OneButton
+#include "OneButton.h"
+
+#if defined(ESP32)
+    #define BLINKER_BUTTON_PIN 4
+#else
+    #define BLINKER_BUTTON_PIN D7
+#endif
+// button trigged when pin input level is LOW
+OneButton button(BLINKER_BUTTON_PIN, true);
+
+void deviceReset()
+{
+    // Reset device ,erase WiFi config.
+    Blinker.reset();
+}
 
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
 
+    Blinker.vibrate();
+    
     uint32_t BlinkerTime = millis();
-
-    Blinker.vibrate();        
+    
     Blinker.print("millis", BlinkerTime);
-
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-}
-
-void dataStorage()
-{
-    Blinker.dataStorage("data1", random(0,120));
-    Blinker.dataStorage("data2", random(0,120)/2.0);
 }
 
 void setup()
 {
     Serial.begin(115200);
     BLINKER_DEBUG.stream(Serial);
+    BLINKER_DEBUG.debugAll();
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
-
-    Blinker.begin(auth, ssid, pswd);
+    
+    Blinker.begin();
     Blinker.attachData(dataRead);
-    Blinker.attachDataStorage(dataStorage);
+    button.attachLongPressStop(deviceReset);
 }
 
 void loop()
 {
     Blinker.run();
+    button.tick();
 }

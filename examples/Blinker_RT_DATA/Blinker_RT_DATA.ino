@@ -63,10 +63,11 @@ void dataRead(const String & data)
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
-void dataStorage()
+void rtData()
 {
-    Blinker.dataStorage("data1", random(0,120));
-    Blinker.dataStorage("data2", random(0,120)/2.0);
+    Blinker.sendRtData("data1", (int32_t)random(0,120));
+    Blinker.sendRtData("data2", random(0,120)/(float)1.5);
+    Blinker.printRtData();
 }
 
 void setup()
@@ -79,7 +80,7 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
-    Blinker.attachDataStorage(dataStorage);
+    Blinker.attachRTData(rtData);
 }
 
 void loop()

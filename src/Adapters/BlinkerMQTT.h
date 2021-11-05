@@ -163,7 +163,7 @@ class BlinkerMQTT : public BlinkerStream
         void apconfigBegin();
         bool autoInit();
         void smartconfig();
-        #if defined(BLINKER_APCONFIG)
+        #if defined(BLINKER_APCONFIG) || defined(BLINKER_APCONFIG_V2)
         void softAPinit();
         void checkAPCFG();
         bool parseUrl(String data);
@@ -205,11 +205,11 @@ class BlinkerMQTT : public BlinkerStream
         uint32_t    _connectTime = 0;
         uint8_t     _connectTimes = 0;
         // const char* _authKey;
-        char*       _authKey;
+        // char*       _authKey;
         char*       _aliType;
         char*       _duerType;
         char*       _miType;
-        // char        _authKey[BLINKER_AUTHKEY_SIZE];
+        char        _authKey[BLINKER_AUTHKEY_SIZE];
         bool*       isHandle;// = &isConnect;
         bool        isAlive = false;
         // bool        isBavail = false;
@@ -1718,8 +1718,10 @@ void BlinkerMQTT::miType(const String & type)
 void BlinkerMQTT::begin(const char* auth) {
     // if (!checkInit()) return;
     // _authKey = auth;
-    _authKey = (char*)malloc((strlen(auth)+1)*sizeof(char));
-    strcpy(_authKey, auth);
+    // if (_authKey == NULL) {
+    //     _authKey = (char*)malloc((strlen(auth)+1)*sizeof(char));
+    // }
+    strncpy(_authKey, auth, BLINKER_AUTHKEY_SIZE);
 
     BLINKER_LOG_ALL(BLINKER_F("_authKey: "), auth);
 }
@@ -2808,7 +2810,7 @@ bool BlinkerMQTT::checkInit()
                         return false;
                 }
             case BLINKER_AP_CONFIG :
-                #if defined(BLINKER_APCONFIG)
+                #if defined(BLINKER_APCONFIG) || defined(BLINKER_APCONFIG_V2)
                 switch (_configStatus)
                 {
                     case AUTO_INIT :
@@ -2963,7 +2965,7 @@ void BlinkerMQTT::multiBegin(const char* _ssid, const char* _pswd)
 
 void BlinkerMQTT::apconfigBegin()
 {
-    #if defined(BLINKER_APCONFIG)
+    #if defined(BLINKER_APCONFIG) || defined(BLINKER_APCONFIG_V2)
     _configType = BLINKER_AP_CONFIG;
     
     if (!autoInit()) softAPinit();
@@ -3034,6 +3036,18 @@ bool BlinkerMQTT::autoInit()
         //             BLINKER_F("APCONFIG while WiFi not connect!"));
 
         BLINKER_LOG(BLINKER_F("Connecting to WiFi: "), WiFi.SSID());
+    
+#if defined(BLINKER_APCONFIG_V2)  
+        char _auth[BLINKER_AUTHKEY_SIZE];
+
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        EEPROM.get(2448, _auth);
+        EEPROM.commit();
+        EEPROM.end();
+        
+        BLINKER_LOG(BLINKER_F("_auth: "), _auth);
+        begin(_auth);
+#endif
 
         // uint8_t _times = 0;
         // while (WiFi.status() != WL_CONNECTED) {
@@ -3093,7 +3107,7 @@ void BlinkerMQTT::smartconfig()
     // BLINKER_LOG(BLINKER_F("IP Address: "));
     // BLINKER_LOG(WiFi.localIP());
 }
-#if defined(BLINKER_APCONFIG)
+#if defined(BLINKER_APCONFIG) || defined(BLINKER_APCONFIG_V2)
 void BlinkerMQTT::softAPinit()
 {
     // WiFiServer _apServer(80);
@@ -3335,7 +3349,18 @@ bool BlinkerMQTT::parseUrl(String data)
 
     BLINKER_LOG(BLINKER_F("ssid: "), _ssid);
     BLINKER_LOG(BLINKER_F("pswd: "), _pswd);
+#if defined(BLINKER_APCONFIG_V2)  
+    if (wifi_data.containsKey("auth")) {
+        String _auth = wifi_data["auth"];
+        BLINKER_LOG(BLINKER_F("_auth: "), _auth);
+        begin(_auth.c_str());
 
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        EEPROM.put(2448, _authKey);
+        EEPROM.commit();
+        EEPROM.end();
+    }
+#endif
     // free(_apServer);
     // MDNS.end();
     webSocket_MQTT.close();
