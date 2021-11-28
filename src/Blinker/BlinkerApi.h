@@ -502,10 +502,15 @@ class BlinkerApi : public BlinkerProtocol
         #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
             defined(BLINKER_PRO) || defined(BLINKER_PRO_ESP)
 
-            void attachRTData(blinker_callback_t newFunction)
+            void attachRTData(blinker_callback_t newFunction, uint8_t rt_sec = 1)
             {
                 // strcpy(_RTDataKey, _name);
                 _RTDataFunc = newFunction;
+
+                if (rt_sec > 0 && rt_sec < 9)
+                {
+                    _RTTime = rt_sec;
+                }
             }
 
         #endif
@@ -1087,6 +1092,7 @@ class BlinkerApi : public BlinkerProtocol
             blinker_callback_t                  _RTDataFunc = NULL;
             uint8_t                             _RTTimesCount = 0;
             Ticker                              _RTTicker;
+            uint8_t                            _RTTime = 1;
         #endif
 
         #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) ||\
@@ -4698,22 +4704,31 @@ void BlinkerApi::rtParse(const JsonObject& data)
 
     data_rtKeyCount = 0;
 
-    for (size_t i = 0; i < BLINKER_MAX_RTDATA_SIZE; i++)
-    {
-        String get_key = data["rt"][i];
+    if (data.containsKey("rt")) {
 
-        if (get_key != "null")
+        BLINKER_LOG_ALL(BLINKER_F("containsKey rt"));
+
+        for (size_t i = 0; i < BLINKER_MAX_RTDATA_SIZE; i++)
         {
-            BLINKER_LOG_ALL(BLINKER_F("===>rt get_key: "), get_key);
+            String get_key = data["rt"][i];
 
-            // for (size_t num = 0; num < data_rtDataCount; num++)
-            // {
-            //     if (_RTData[num]->checkName(get_key.c_str()))
-            //     {
-            //         strcpy(_RTDataKey[data_rtKeyCount], get_key.c_str());
-                    data_rtKeyCount++;
-            //     }
-            // }
+            if (get_key != "null")
+            {
+                BLINKER_LOG_ALL(BLINKER_F("===>rt get_key: "), get_key);
+
+                // for (size_t num = 0; num < data_rtDataCount; num++)
+                // {
+                //     if (_RTData[num]->checkName(get_key.c_str()))
+                //     {
+                //         strcpy(_RTDataKey[data_rtKeyCount], get_key.c_str());
+                        data_rtKeyCount++;
+                //     }
+                // }
+            }
+            else
+            {
+                break;
+            }
         }
     }
 
@@ -4774,7 +4789,7 @@ void BlinkerApi::rtParse(const JsonObject& data)
         // if (_RTDataFunc && data_rtRun == false)
         // {
         //     data_rtRun = true;
-            _RTTicker.once(1, _RTDataFunc);
+            _RTTicker.once(_RTTime, _RTDataFunc);
 
             data_rtTimes = 0;
 
@@ -7103,7 +7118,7 @@ float BlinkerApi::gps(b_gps_t axis)
 
         // printObject(_RTDataKey, data);
         
-        _RTTicker.once(1, _RTDataFunc);
+        _RTTicker.once(_RTTime, _RTDataFunc);
 
         data_rtTimes++;
 
