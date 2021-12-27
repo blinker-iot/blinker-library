@@ -3020,7 +3020,8 @@ bool BlinkerMQTT::autoInit()
     {
     #ifdef ESP8266
         struct station_config conf;
-        wifi_station_get_config_default(&conf);
+        // wifi_station_get_config_default(&conf);
+        wifi_softap_get_config(&conf);
         WiFi.begin(reinterpret_cast<char*>(conf.ssid), reinterpret_cast<char*>(conf.password));
     #elif defined(ESP32)
         wifi_config_t conf;
