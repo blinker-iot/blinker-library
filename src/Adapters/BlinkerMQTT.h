@@ -2786,9 +2786,16 @@ bool BlinkerMQTT::checkInit()
                             BLINKER_LOG(BLINKER_F("IP Address: "));
                             BLINKER_LOG(WiFi.localIP());
                             _isWiFiInit = true;
-                            _connectTime = 0;                            
+                            _connectTime = 0;      
+                            char loadssid[BLINKER_SSID_SIZE];
+                            char loadpswd[BLINKER_PSWD_SIZE];
+
+                            memcpy(loadssid, WiFi.SSID().c_str(), BLINKER_SSID_SIZE);
+                            memcpy(loadpswd, WiFi.psk().c_str(), BLINKER_PSWD_SIZE);                      
 
                             EEPROM.begin(BLINKER_EEP_SIZE);
+                            EEPROM.put(BLINKER_EEP_ADDR_SSID, loadssid);
+                            EEPROM.put(BLINKER_EEP_ADDR_PSWD, loadpswd);
                             EEPROM.put(BLINKER_EEP_ADDR_WLAN_CHECK, ok);
                             EEPROM.commit();
                             EEPROM.end();
@@ -2855,8 +2862,15 @@ bool BlinkerMQTT::checkInit()
                             _connectTime = 0;
 
                             // begin();
+                            char loadssid[BLINKER_SSID_SIZE];
+                            char loadpswd[BLINKER_PSWD_SIZE];
+
+                            memcpy(loadssid, WiFi.SSID().c_str(), BLINKER_SSID_SIZE);
+                            memcpy(loadpswd, WiFi.psk().c_str(), BLINKER_PSWD_SIZE);   
 
                             EEPROM.begin(BLINKER_EEP_SIZE);
+                            EEPROM.put(BLINKER_EEP_ADDR_SSID, loadssid);
+                            EEPROM.put(BLINKER_EEP_ADDR_PSWD, loadpswd);
                             EEPROM.put(BLINKER_EEP_ADDR_WLAN_CHECK, ok);
                             EEPROM.commit();
                             EEPROM.end();
@@ -3018,24 +3032,44 @@ bool BlinkerMQTT::autoInit()
 
     if (checkConfig())
     {
-    #ifdef ESP8266
-        struct station_config conf;
-        wifi_station_get_config_default(&conf);
-        WiFi.begin(reinterpret_cast<char*>(conf.ssid), reinterpret_cast<char*>(conf.password));
-    #elif defined(ESP32)
-        wifi_config_t conf;
-        esp_wifi_get_config(WIFI_IF_STA, &conf);
-        WiFi.begin(reinterpret_cast<char*>(conf.sta.ssid), reinterpret_cast<char*>(conf.sta.password));
-    #endif
+    // #ifdef ESP8266
+    //     // struct station_config conf;
+    //     softap_config conf;
+    //     // wifi_station_get_config_default(&conf);
+    //     wifi_softap_get_config(&conf);
+    //     WiFi.begin(reinterpret_cast<char*>(conf.ssid), reinterpret_cast<char*>(conf.password));
+    // #elif defined(ESP32)
+    //     wifi_config_t conf;
+    //     esp_wifi_get_config(WIFI_IF_STA, &conf);
+    //     WiFi.begin(reinterpret_cast<char*>(conf.sta.ssid), reinterpret_cast<char*>(conf.sta.password));
+    // #endif
         // WiFi.begin(WiFi.SSID(), WiFi.psk());
+
+        char loadssid[BLINKER_SSID_SIZE];
+        char loadpswd[BLINKER_PSWD_SIZE];
+
+        EEPROM.begin(BLINKER_EEP_SIZE);
+        EEPROM.get(BLINKER_EEP_ADDR_SSID, loadssid);
+        EEPROM.get(BLINKER_EEP_ADDR_PSWD, loadpswd);
+        // char ok[2 + 1];
+        // EEPROM.get(EEP_ADDR_WIFI_CFG + BLINKER_SSID_SIZE + BLINKER_PSWD_SIZE, ok);
+        EEPROM.commit();
+        EEPROM.end();
+
+        // strcpy(_ssid, loadssid);
+        // strcpy(_pswd, loadpswd);
+
+        BLINKER_LOG(BLINKER_F("SSID: "), loadssid, BLINKER_F(" PASWD: "), loadpswd);
         ::delay(500);
+
+        WiFi.begin(loadssid, loadpswd);
 
         // BLINKER_LOG(BLINKER_F("Waiting for WiFi "),
         //             BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
         //             BLINKER_F("s, will enter SMARTCONFIG or "),
         //             BLINKER_F("APCONFIG while WiFi not connect!"));
 
-        BLINKER_LOG(BLINKER_F("Connecting to WiFi: "), WiFi.SSID());
+        BLINKER_LOG(BLINKER_F("Connecting to WiFi: "), loadssid);
     
 #if defined(BLINKER_APCONFIG_V2)  
         char _auth[BLINKER_AUTHKEY_SIZE];

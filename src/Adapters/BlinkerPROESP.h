@@ -928,6 +928,11 @@ int BlinkerPROESP::print(char * data, bool needCheck)
         //     // payload += BLINKER_F("\",\"deviceType\":\"OwnApp\"}");
         // }
 
+        if (isMQTTinit == false) {
+            BLINKER_ERR_LOG("print fail, mqtt not init...");
+            return false;
+        }
+
         uint16_t num = strlen(data);
 
         for(uint16_t c_num = num; c_num > 0; c_num--)
