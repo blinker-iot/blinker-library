@@ -2466,6 +2466,11 @@ int BlinkerPROESP::connectServer() {
     String _userID = root[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
     String _userName = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTID];
     String _key = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTTOKEN];
+    
+    if (_key == _userName) {
+        _key = STRING_find_string(payload, "iotToken", "\"", 4);
+    }
+    
     String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
