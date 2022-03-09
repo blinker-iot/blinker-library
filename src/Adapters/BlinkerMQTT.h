@@ -2183,11 +2183,9 @@ int BlinkerMQTT::connectServer() {
     String _userID = root[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
     String _userName = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTID];
     String _key = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTTOKEN];
-    
-    if (_key == _userName) {
-        _key = STRING_find_string(payload, "iotToken", "\"", 4);
-    }
-    
+    // if (_key == _userName) {
+    //     _key = STRING_find_string(payload, "iotToken", "\"", 4);
+    // }
     String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
@@ -2197,6 +2195,11 @@ int BlinkerMQTT::connectServer() {
     BLINKER_LOG_ALL("_num: ", _num);
     if (_num > 0) _num += 3;
     _host = _host.substring(_num, _host.length());
+
+    
+    // BLINKER_LOG_ALL("_userID: ", _userID);
+    // BLINKER_LOG_ALL("_userName: ", root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTID].as<String>());
+    // BLINKER_LOG_ALL("_key: ", STRING_find_string(payload, "iotToken", "\"", 4));
 
 
     // if (isMQTTinit)

@@ -1,11 +1,11 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "ObjectFunctions.hpp"
-#include "ObjectIterator.hpp"
+#include "../Object/ObjectFunctions.hpp"
+#include "../Object/ObjectIterator.hpp"
 
 // Returns the size (in bytes) of an object with n elements.
 // Can be very handy to determine the size of a StaticMemoryPool.
@@ -22,13 +22,17 @@ class ObjectRefBase {
     return VariantConstRef(reinterpret_cast<const VariantData*>(data));
   }
 
-  template <typename Visitor>
-  FORCE_INLINE void accept(Visitor& visitor) const {
-    objectAccept(_data, visitor);
+  template <typename TVisitor>
+  typename TVisitor::result_type accept(TVisitor& visitor) const {
+    return objectAccept(_data, visitor);
   }
 
   FORCE_INLINE bool isNull() const {
     return _data == 0;
+  }
+
+  FORCE_INLINE operator bool() const {
+    return _data != 0;
   }
 
   FORCE_INLINE size_t memoryUsage() const {
@@ -60,7 +64,8 @@ class ObjectConstRef : public ObjectRefBase<const CollectionData>,
   ObjectConstRef(const CollectionData* data) : base_type(data) {}
 
   FORCE_INLINE iterator begin() const {
-    if (!_data) return iterator();
+    if (!_data)
+      return iterator();
     return iterator(_data->head());
   }
 
@@ -72,7 +77,7 @@ class ObjectConstRef : public ObjectRefBase<const CollectionData>,
   // containsKey(const String&) const
   template <typename TString>
   FORCE_INLINE bool containsKey(const TString& key) const {
-    return !getMember(key).isUndefined();
+    return !getMember(key).isUnbound();
   }
 
   // containsKey(char*) const
@@ -80,7 +85,7 @@ class ObjectConstRef : public ObjectRefBase<const CollectionData>,
   // containsKey(const __FlashStringHelper*) const
   template <typename TChar>
   FORCE_INLINE bool containsKey(TChar* key) const {
-    return !getMember(key).isUndefined();
+    return !getMember(key).isUnbound();
   }
 
   // getMember(const std::string&) const
@@ -124,7 +129,7 @@ class ObjectConstRef : public ObjectRefBase<const CollectionData>,
  private:
   template <typename TAdaptedString>
   FORCE_INLINE VariantConstRef get_impl(TAdaptedString key) const {
-    return VariantConstRef(objectGet(_data, key));
+    return VariantConstRef(objectGetMember(_data, key));
   }
 };
 
@@ -150,7 +155,8 @@ class ObjectRef : public ObjectRefBase<CollectionData>,
   }
 
   FORCE_INLINE iterator begin() const {
-    if (!_data) return iterator();
+    if (!_data)
+      return iterator();
     return iterator(_pool, _data->head());
   }
 
@@ -159,12 +165,14 @@ class ObjectRef : public ObjectRefBase<CollectionData>,
   }
 
   void clear() const {
-    if (!_data) return;
+    if (!_data)
+      return;
     _data->clear();
   }
 
   FORCE_INLINE bool set(ObjectConstRef src) {
-    if (!_data || !src._data) return false;
+    if (!_data || !src._data)
+      return false;
     return _data->copyFrom(*src._data, _pool);
   }
 
@@ -172,7 +180,7 @@ class ObjectRef : public ObjectRefBase<CollectionData>,
   // getMember(const String&) const
   template <typename TString>
   FORCE_INLINE VariantRef getMember(const TString& key) const {
-    return get_impl(adaptString(key));
+    return VariantRef(_pool, objectGetMember(_data, adaptString(key)));
   }
 
   // getMember(char*) const
@@ -180,14 +188,16 @@ class ObjectRef : public ObjectRefBase<CollectionData>,
   // getMember(const __FlashStringHelper*) const
   template <typename TChar>
   FORCE_INLINE VariantRef getMember(TChar* key) const {
-    return get_impl(adaptString(key));
+    return VariantRef(_pool, objectGetMember(_data, adaptString(key)));
   }
 
   // getOrAddMember(const std::string&) const
   // getOrAddMember(const String&) const
   template <typename TString>
   FORCE_INLINE VariantRef getOrAddMember(const TString& key) const {
-    return getOrCreate_impl(adaptString(key));
+    return VariantRef(_pool,
+                      objectGetOrAddMember(_data, adaptString(key), _pool,
+                                           getStringStoragePolicy(key)));
   }
 
   // getOrAddMember(char*) const
@@ -195,7 +205,9 @@ class ObjectRef : public ObjectRefBase<CollectionData>,
   // getOrAddMember(const __FlashStringHelper*) const
   template <typename TChar>
   FORCE_INLINE VariantRef getOrAddMember(TChar* key) const {
-    return getOrCreate_impl(adaptString(key));
+    return VariantRef(_pool,
+                      objectGetOrAddMember(_data, adaptString(key), _pool,
+                                           getStringStoragePolicy(key)));
   }
 
   FORCE_INLINE bool operator==(ObjectRef rhs) const {
@@ -203,8 +215,9 @@ class ObjectRef : public ObjectRefBase<CollectionData>,
   }
 
   FORCE_INLINE void remove(iterator it) const {
-    if (!_data) return;
-    _data->remove(it.internal());
+    if (!_data)
+      return;
+    _data->removeSlot(it.internal());
   }
 
   // remove(const std::string&) const
@@ -223,16 +236,47 @@ class ObjectRef : public ObjectRefBase<CollectionData>,
   }
 
  private:
-  template <typename TAdaptedString>
-  FORCE_INLINE VariantRef get_impl(TAdaptedString key) const {
-    return VariantRef(_pool, objectGet(_data, key));
-  }
-
-  template <typename TAdaptedString>
-  FORCE_INLINE VariantRef getOrCreate_impl(TAdaptedString key) const {
-    return VariantRef(_pool, objectGetOrCreate(_data, key, _pool));
-  }
-
   MemoryPool* _pool;
+};
+
+template <>
+struct Converter<ObjectConstRef> {
+  static void toJson(VariantConstRef src, VariantRef dst) {
+    variantCopyFrom(getData(dst), getData(src), getPool(dst));
+  }
+
+  static ObjectConstRef fromJson(VariantConstRef src) {
+    return ObjectConstRef(variantAsObject(getData(src)));
+  }
+
+  static bool checkJson(VariantConstRef src) {
+    const VariantData* data = getData(src);
+    return data && data->isObject();
+  }
+};
+
+template <>
+struct Converter<ObjectRef> {
+  static void toJson(VariantConstRef src, VariantRef dst) {
+    variantCopyFrom(getData(dst), getData(src), getPool(dst));
+  }
+
+  static ObjectRef fromJson(VariantRef src) {
+    VariantData* data = getData(src);
+    MemoryPool* pool = getPool(src);
+    return ObjectRef(pool, data != 0 ? data->asObject() : 0);
+  }
+
+  static InvalidConversion<VariantConstRef, ObjectRef> fromJson(
+      VariantConstRef);
+
+  static bool checkJson(VariantConstRef) {
+    return false;
+  }
+
+  static bool checkJson(VariantRef src) {
+    VariantData* data = getData(src);
+    return data && data->isObject();
+  }
 };
 }  // namespace ARDUINOJSON_NAMESPACE

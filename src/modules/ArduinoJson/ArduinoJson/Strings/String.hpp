@@ -1,18 +1,28 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "ConstRamStringAdapter.hpp"
+#include "../Misc/SafeBoolIdiom.hpp"
+
+#if ARDUINOJSON_ENABLE_STD_STREAM
+#  include <ostream>
+#endif
 
 namespace ARDUINOJSON_NAMESPACE {
 
-class String {
+class String : public SafeBoolIdom<String> {
  public:
-  String() : _data(0), _isStatic(true) {}
-  String(const char* data, bool isStaticData = true)
-      : _data(data), _isStatic(isStaticData) {}
+  enum Ownership { Copied, Linked };
+
+  String() : _data(0), _size(0), _ownership(Linked) {}
+
+  String(const char* data, Ownership ownership = Linked)
+      : _data(data), _size(data ? ::strlen(data) : 0), _ownership(ownership) {}
+
+  String(const char* data, size_t sz, Ownership ownership = Linked)
+      : _data(data), _size(sz), _ownership(ownership) {}
 
   const char* c_str() const {
     return _data;
@@ -22,44 +32,46 @@ class String {
     return !_data;
   }
 
-  bool isStatic() const {
-    return _isStatic;
+  bool isLinked() const {
+    return _ownership == Linked;
+  }
+
+  size_t size() const {
+    return _size;
+  }
+
+  // safe bool idiom
+  operator bool_type() const {
+    return _data ? safe_true() : safe_false();
   }
 
   friend bool operator==(String lhs, String rhs) {
-    if (lhs._data == rhs._data) return true;
-    if (!lhs._data) return false;
-    if (!rhs._data) return false;
-    return strcmp(lhs._data, rhs._data) == 0;
+    if (lhs._size != rhs._size)
+      return false;
+    if (lhs._data == rhs._data)
+      return true;
+    if (!lhs._data)
+      return false;
+    if (!rhs._data)
+      return false;
+    return memcmp(lhs._data, rhs._data, lhs._size) == 0;
   }
+
+  friend bool operator!=(String lhs, String rhs) {
+    return !(lhs == rhs);
+  }
+
+#if ARDUINOJSON_ENABLE_STD_STREAM
+  friend std::ostream& operator<<(std::ostream& lhs, const String& rhs) {
+    lhs.write(rhs.c_str(), static_cast<std::streamsize>(rhs.size()));
+    return lhs;
+  }
+#endif
 
  private:
   const char* _data;
-  bool _isStatic;
+  size_t _size;
+  Ownership _ownership;
 };
 
-class StringAdapter : public RamStringAdapter {
- public:
-  StringAdapter(const String& str)
-      : RamStringAdapter(str.c_str()), _isStatic(str.isStatic()) {}
-
-  bool isStatic() const {
-    return _isStatic;
-  }
-
-  /*  const char* save(MemoryPool* pool) const {
-      if (_isStatic) return c_str();
-      return RamStringAdapter::save(pool);
-    }*/
-
- private:
-  bool _isStatic;
-};
-
-template <>
-struct IsString<String> : true_type {};
-
-inline StringAdapter adaptString(const String& str) {
-  return StringAdapter(str);
-}
 }  // namespace ARDUINOJSON_NAMESPACE
