@@ -1,11 +1,7 @@
 #ifndef BLINKER_STREAM_H
 #define BLINKER_STREAM_H
 
-#if ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include <WProgram.h>
-#endif
+#include <Arduino.h>
 
 // #if defined(BLINKER_AT_MQTT)
 //     #include "Blinker/BlinkerMQTTATBase.h"

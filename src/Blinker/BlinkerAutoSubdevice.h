@@ -3,11 +3,7 @@
 
 #if defined(BLINKER_WIFI_SUBDEVICE)
 
-#if ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include <WProgram.h>
-#endif
+#include <Arduino.h>
 
 #include <EEPROM.h>
 

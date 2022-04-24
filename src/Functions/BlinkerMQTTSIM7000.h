@@ -1,11 +1,7 @@
 #ifndef BLINKER_MQTT_SIM7000_H
 #define BLINKER_MQTT_SIM7000_H
 
-#if ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include <WProgram.h>
-#endif
+#include <Arduino.h>
 
 #include "../Blinker/BlinkerATMaster.h"
 #include "../Blinker/BlinkerConfig.h"

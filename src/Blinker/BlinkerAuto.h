@@ -10,11 +10,7 @@
     defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
     defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)))
 
-#if ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include <WProgram.h>
-#endif
+#include <Arduino.h>
 
 #include <EEPROM.h>
 

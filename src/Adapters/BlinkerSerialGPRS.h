@@ -1,11 +1,7 @@
 #ifndef BLINKER_SERIAL_GPRS_H
 #define BLINKER_SERIAL_GPRS_H
 
-#if ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include <WProgram.h>
-#endif
+#include <Arduino.h>
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerDebug.h"

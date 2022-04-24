@@ -1,11 +1,7 @@
 #ifndef BLINKER_SERIAL_MQTT_H
 #define BLINKER_SERIAL_MQTT_H
 
-#if ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include <WProgram.h>
-#endif
+#include <Arduino.h>
 
 // #include "../Adapters/BlinkerSerialMQTT.h"
 #include "../Blinker/BlinkerConfig.h"

@@ -1,11 +1,7 @@
 #ifndef BLINKER_HTTP_SIM7020_H
 #define BLINKER_HTTP_SIM7020_H
 
-#if ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include <WProgram.h>
-#endif
+#include <Arduino.h>
 
 // #include "Adapters/BlinkerSerialMQTT.h"
 #include "../Blinker/BlinkerATMaster.h"

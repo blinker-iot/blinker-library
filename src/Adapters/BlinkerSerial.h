@@ -1,11 +1,7 @@
 #ifndef BLINKER_SERIAL_H
 #define BLINKER_SERIAL_H
 
-#if ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include <WProgram.h>
-#endif
+#include <Arduino.h>
 
 // #include "../Adapters/BlinkerSerial.h"
 #include "../Blinker/BlinkerConfig.h"
