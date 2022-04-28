@@ -2260,6 +2260,10 @@ int BlinkerPROESP::connectServer() {
         url_iot += BLINKER_F("&aliType=multi_outlet");
     #elif defined(BLINKER_ALIGENIE_SENSOR)
         url_iot += BLINKER_F("&aliType=sensor");
+    #elif defined(BLINKER_ALIGENIE_FAN)
+        url_iot += BLINKER_F("&aliType=fan");
+    #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
+        url_iot += BLINKER_F("&aliType=aircondition");
     #elif defined(BLINKER_ALIGENIE_TYPE)
         url_iot += BLINKER_ALIGENIE_TYPE;
     #endif
@@ -2272,6 +2276,10 @@ int BlinkerPROESP::connectServer() {
         url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
     #elif defined(BLINKER_DUEROS_SENSOR)
         url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+    #elif defined(BLINKER_DUEROS_FAN)
+        url_iot += BLINKER_F("&duerType=FAN");
+    #elif defined(BLINKER_DUEROS_AIRCONDITION)
+        url_iot += BLINKER_F("&duerType=AIR_CONDITION");
     #elif defined(BLINKER_DUEROS_TYPE)
         url_iot += BLINKER_DUEROS_TYPE;
     #endif
@@ -2284,6 +2292,10 @@ int BlinkerPROESP::connectServer() {
         url_iot += BLINKER_F("&miType=multi_outlet");
     #elif defined(BLINKER_MIOT_SENSOR)
         url_iot += BLINKER_F("&miType=sensor");
+    #elif defined(BLINKER_MIOT_FAN)
+        url_iot += BLINKER_F("&miType=fan");
+    #elif defined(BLINKER_MIOT_AIRCONDITION)
+        url_iot += BLINKER_F("&miType=aircondition");
     #elif defined(BLINKER_MIOT_TYPE)
         url_iot += BLINKER_MIOT_TYPE;
     #endif
