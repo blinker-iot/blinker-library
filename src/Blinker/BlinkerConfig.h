@@ -98,7 +98,7 @@
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
+    defined(BLINKER_WIFI_AT) || defined(BLINKER_WIFI_GATEWAY) || \
     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_WIFI_SUBDEVICE) || \
     defined(BLINKE_HTTP)
     #define BLINKER_MAX_WIDGET_SIZE         16
@@ -122,7 +122,7 @@
 
 #ifndef BLINKER_MAX_SEND_SIZE
     #if defined(ESP8266) || defined(ESP32)
-        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+        #if defined(BLINKER_MQTT) || defined(BLINKER_WIFI_AT) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_PRO_ESP) || \
@@ -145,7 +145,7 @@
 
 #ifndef BLINKER_MAX_SEND_BUFFER_SIZE
     #if defined(ESP8266) || defined(ESP32)
-        #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+        #if defined(BLINKER_MQTT) || defined(BLINKER_WIFI_AT) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
             defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP) || \
@@ -635,7 +635,7 @@
 // #define BLINKER_NTP_SERVER_3                    "time.pool.aliyun.com"
 
 #ifndef BLINKER_MAX_BRIDGE_SIZE
-    #if defined(BLINKER_MQTT) || defined(BLINKER_AT_MQTT) || \
+    #if defined(BLINKER_MQTT) || defined(BLINKER_WIFI_AT) || \
         defined(BLINKER_MQTT_AUTO) || defined(BLINKE_HTTP) || \
         defined(BLINKER_WIFI)
         #define BLINKER_MAX_BRIDGE_SIZE             4
@@ -684,7 +684,11 @@
 
     #define BLINKER_DUEROS_CFG_NUM              0
 
-    #define BLINKER_DUEROS_PARAM_NUM            1
+    #define BLINKER_DUEROS_PARAM_NUM            1    
+
+    #define BLINKER_MIOT_CFG_NUM                0
+
+    #define BLINKER_MIOT_PARAM_NUM              1
 
     #define BLINKER_TIMEZONE_CFG_NUM            0
 
@@ -764,7 +768,7 @@
 
     #define BLINKER_CMD_COMCONFIG               "COMCONFIG"
 
-    #define BLINKER_SERIAL_DEFAULT              9600 << 8 | 8 << 4 | 1 << 2 | 0
+    #define BLINKER_SERIAL_DEFAULT              115200 << 8 | 8 << 4 | 1 << 2 | 0
 
     #define BLINKER_SERIAL_5N1                  5 << 4 | 1 << 2 | 0
 
@@ -1411,7 +1415,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_PRO) || defined(BLINKER_AT_MQTT) || \
+    defined(BLINKER_PRO) || defined(BLINKER_WIFI_AT) || \
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
     defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
@@ -1493,7 +1497,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #endif
 
 #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-    defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
+    defined(BLINKER_WIFI_AT) || defined(BLINKER_WIFI_GATEWAY) || \
     defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
     defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
     defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
@@ -1684,7 +1688,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE) || \
     defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
     defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKER_WIFI) || \
-    defined(BLINKER_MQTT) || defined(BLINKER_WIFI)
+    defined(BLINKER_MQTT) || defined(BLINKER_WIFI) || defined(BLINKER_WIFI_AT)
 
     #ifndef BLINKER_BUTTON_PIN
         #define BLINKER_BUTTON_PIN              2
@@ -1762,7 +1766,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 #endif
 
 #if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_AT_MQTT) || defined(BLINKER_PRO) || \
+    defined(BLINKER_WIFI_AT) || defined(BLINKER_PRO) || \
     defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_MQTT_AUTO) || \
     defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE) || \
     defined(BLINKE_HTTP)

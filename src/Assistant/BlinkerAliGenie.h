@@ -1,5 +1,5 @@
-#ifndef BLINKER_DUEROS_H
-#define BLINKER_DUEROS_H
+#ifndef BLINKER_ALIGENIE_H
+#define BLINKER_ALIGENIE_H
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"

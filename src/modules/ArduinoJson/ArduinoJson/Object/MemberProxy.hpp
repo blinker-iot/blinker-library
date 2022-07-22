@@ -1,28 +1,38 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include "../Configuration.hpp"
-#include "../Operators/VariantOperators.hpp"
 #include "../Polyfills/type_traits.hpp"
+#include "../Variant/VariantOperators.hpp"
+#include "../Variant/VariantRef.hpp"
+#include "../Variant/VariantShortcuts.hpp"
+#include "../Variant/VariantTo.hpp"
 
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4522)
+#  pragma warning(push)
+#  pragma warning(disable : 4522)
 #endif
 
 namespace ARDUINOJSON_NAMESPACE {
 
 template <typename TObject, typename TStringRef>
 class MemberProxy : public VariantOperators<MemberProxy<TObject, TStringRef> >,
-                    public Visitable {
+                    public VariantShortcuts<MemberProxy<TObject, TStringRef> >,
+                    public Visitable,
+                    public VariantTag {
   typedef MemberProxy<TObject, TStringRef> this_type;
 
  public:
+  typedef VariantRef variant_type;
+
   FORCE_INLINE MemberProxy(TObject variant, TStringRef key)
       : _object(variant), _key(key) {}
+
+  FORCE_INLINE MemberProxy(const MemberProxy &src)
+      : _object(src._object), _key(src._key) {}
 
   FORCE_INLINE operator VariantConstRef() const {
     return getUpstreamMember();
@@ -57,9 +67,22 @@ class MemberProxy : public VariantOperators<MemberProxy<TObject, TStringRef> >,
     return getUpstreamMember().isNull();
   }
 
-  template <typename TValue>
-  FORCE_INLINE typename VariantAs<TValue>::type as() const {
-    return getUpstreamMember().template as<TValue>();
+  template <typename T>
+  FORCE_INLINE typename enable_if<!is_same<T, char *>::value, T>::type as()
+      const {
+    return getUpstreamMember().template as<T>();
+  }
+
+  template <typename T>
+  FORCE_INLINE typename enable_if<is_same<T, char *>::value, const char *>::type
+  ARDUINOJSON_DEPRECATED("Replace as<char*>() with as<const char*>()")
+      as() const {
+    return as<const char *>();
+  }
+
+  template <typename T>
+  FORCE_INLINE operator T() const {
+    return getUpstreamMember();
   }
 
   template <typename TValue>
@@ -96,8 +119,7 @@ class MemberProxy : public VariantOperators<MemberProxy<TObject, TStringRef> >,
   }
 
   template <typename TValue>
-  FORCE_INLINE typename enable_if<!is_array<TValue>::value, bool>::type set(
-      const TValue &value) {
+  FORCE_INLINE bool set(const TValue &value) {
     return getOrAddUpstreamMember().set(value);
   }
 
@@ -105,12 +127,12 @@ class MemberProxy : public VariantOperators<MemberProxy<TObject, TStringRef> >,
   // set(const char*) const
   // set(const __FlashStringHelper*) const
   template <typename TChar>
-  FORCE_INLINE bool set(const TChar *value) {
+  FORCE_INLINE bool set(TChar *value) {
     return getOrAddUpstreamMember().set(value);
   }
 
-  template <typename Visitor>
-  void accept(Visitor &visitor) const {
+  template <typename TVisitor>
+  typename TVisitor::result_type accept(TVisitor &visitor) const {
     return getUpstreamMember().accept(visitor);
   }
 
@@ -118,9 +140,12 @@ class MemberProxy : public VariantOperators<MemberProxy<TObject, TStringRef> >,
     return getOrAddUpstreamMember().addElement();
   }
 
-  // getElement(size_t) const
   FORCE_INLINE VariantRef getElement(size_t index) const {
     return getUpstreamMember().getElement(index);
+  }
+
+  FORCE_INLINE VariantRef getOrAddElement(size_t index) const {
+    return getOrAddUpstreamMember().getOrAddElement(index);
   }
 
   // getMember(char*) const
@@ -162,28 +187,16 @@ class MemberProxy : public VariantOperators<MemberProxy<TObject, TStringRef> >,
     return _object.getOrAddMember(_key);
   }
 
+  friend void convertToJson(const this_type &src, VariantRef dst) {
+    dst.set(src.getUpstreamMember());
+  }
+
   TObject _object;
   TStringRef _key;
 };
 
-template <typename TObject>
-template <typename TString>
-inline typename enable_if<IsString<TString>::value,
-                          MemberProxy<const TObject &, const TString &> >::type
-    ObjectShortcuts<TObject>::operator[](const TString &key) const {
-  return MemberProxy<const TObject &, const TString &>(*impl(), key);
-}
-
-template <typename TObject>
-template <typename TString>
-inline typename enable_if<IsString<TString *>::value,
-                          MemberProxy<const TObject &, TString *> >::type
-    ObjectShortcuts<TObject>::operator[](TString *key) const {
-  return MemberProxy<const TObject &, TString *>(*impl(), key);
-}
-
 }  // namespace ARDUINOJSON_NAMESPACE
 
 #ifdef _MSC_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif

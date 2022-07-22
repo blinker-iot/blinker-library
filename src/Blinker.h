@@ -11,6 +11,10 @@
     #include "BlinkerWiFi.h"
 #endif
 
+#if defined(BLINKER_WIFI_AT) && (defined(ESP32) || defined(ESP8266))
+    #include "BlinkerWiFiAT.h"
+#endif
+
 #if defined(BLINKER_PRO_ESP) && (defined(ESP32) || defined(ESP8266))
     #include "BlinkerPro.h"
 #endif
@@ -28,7 +32,7 @@
 #endif
 
 #if defined(BLINKER_ALIGENIE) && (defined(ESP32) || defined(ESP8266))
-    #include "Assistant/BlinkerDuerOS.h"
+    #include "Assistant/BlinkerAliGenie.h""
 #endif
 
 #if defined(BLINKER_DUEROS) && (defined(ESP32) || defined(ESP8266))

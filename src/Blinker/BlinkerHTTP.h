@@ -2,7 +2,8 @@
 #define BLINKER_HTTP_H
 
 #if (defined(ESP8266) || defined(ESP32)) && \
-    (defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP))
+    (defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+    defined(BLINKER_WIFI_AT))
 
 #if defined(ESP8266)
     #include <ESP8266mDNS.h>
@@ -19,6 +20,8 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerDebug.h"
 #include "../Blinker/BlinkerUtility.h"
+
+static const char *TAG_HTTP = "[BlinkerHTTP] ";
 
 #if defined(ESP8266)
     #ifndef BLINKER_WITHOUT_SSL
@@ -48,7 +51,7 @@ static bool checkServerLimit()
     {
         if (_serverTimes > BLINKER_PRINT_MSG_LIMIT)
         {
-            BLINKER_ERR_LOG(BLINKER_F("SERVER NOT ALIVE OR MSG LIMIT"));
+            BLINKER_ERR_LOG(TAG_HTTP, BLINKER_F("SERVER NOT ALIVE OR MSG LIMIT"));
 
             return false;
         }
@@ -239,7 +242,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
     String conType = BLINKER_F("Content-Type");
     String application = BLINKER_F("application/json;charset=utf-8");
 
-    BLINKER_LOG_ALL(BLINKER_F("blinker server begin"));
+    BLINKER_LOG_ALL(TAG_HTTP, BLINKER_F("blinker server begin"));
     BLINKER_LOG_FreeHeap_ALL();
 
     switch (_type)
@@ -579,20 +582,20 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             return BLINKER_CMD_FALSE;
     }
 
-    BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
+    BLINKER_LOG_ALL(TAG_HTTP, BLINKER_F("HTTPS begin: "), url_iot);
 
-    BLINKER_LOG_ALL(BLINKER_F("HTTPS payload: "), msg);
+    BLINKER_LOG_ALL(TAG_HTTP, BLINKER_F("HTTPS payload: "), msg);
 
     if (httpCode > 0)
     {
-        BLINKER_LOG_ALL(BLINKER_F("[HTTP] status... code: "), httpCode);
+        BLINKER_LOG_ALL(TAG_HTTP, BLINKER_F("[HTTP] status... code: "), httpCode);
 
         String payload;
         if (httpCode == HTTP_CODE_OK || httpCode == 201)
         {
             payload = http.getString();
 
-            BLINKER_LOG_ALL(payload);
+            BLINKER_LOG_ALL(TAG_HTTP, payload);
 
             DynamicJsonDocument jsonBuffer(2048);
             DeserializationError error = deserializeJson(jsonBuffer, payload);
@@ -605,7 +608,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
                 if (msg_code != 1000)
                 {
                     String _detail = data_rp[BLINKER_CMD_DETAIL];
-                    BLINKER_ERR_LOG(_detail);
+                    BLINKER_ERR_LOG(TAG_HTTP, _detail);
                 }
                 else
                 {
@@ -616,11 +619,11 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
                             break;
                     }
 
-                    BLINKER_LOG_ALL(BLINKER_F("_type: "), _type);
+                    BLINKER_LOG_ALL(TAG_HTTP, BLINKER_F("_type: "), _type);
                 }
             }
 
-            BLINKER_LOG_ALL(BLINKER_F("payload: "), payload);
+            BLINKER_LOG_ALL(TAG_HTTP, BLINKER_F("payload: "), payload);
 
             switch (_type)
             {
@@ -678,9 +681,9 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
         return payload;
     }
     else {
-        BLINKER_LOG_ALL(BLINKER_F("[HTTP] ... failed, error: "), http.errorToString(httpCode).c_str());
+        BLINKER_LOG_ALL(TAG_HTTP, BLINKER_F("[HTTP] ... failed, error: "), http.errorToString(httpCode).c_str());
         String payload = http.getString();
-        BLINKER_LOG_ALL(payload);
+        BLINKER_LOG_ALL(TAG_HTTP, payload);
 
         if (_type == BLINKER_CMD_SMS_NUMBER) {
             _smsTime = millis();

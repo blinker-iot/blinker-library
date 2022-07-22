@@ -5,11 +5,14 @@
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerUtility.h"
-#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+    defined(BLINKER_WIFI_AT)
     #include "Blinker/BlinkerAuto.h"
     #include "../Widgets/BlinkerTimer.h"
     #include "../Widgets/BlinkerTimingTimer.h"
 #endif
+
+static const char *TAG_API = "[BlinkerApi] ";
 
 enum b_rgb_t {
     BLINKER_R,
@@ -82,13 +85,15 @@ class BlinkerApi
         uint8_t attachWidget(const char* _name, blinker_callback_with_rgb_arg_t _func);
         uint8_t attachWidget(const char* _name, blinker_callback_with_joy_arg_t _func);
         uint8_t attachWidget(const char* _name, blinker_callback_with_table_arg_t _func, blinker_callback_t _func2);
-    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+        defined(BLINKER_WIFI_AT)
         void loadTimer();
         void loadTiming();
     #endif
     #endif
 
-    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) 
+    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+        defined(BLINKER_WIFI_AT)
         void autoRun();
         void autoInput(const String & key, float data);
     #endif
@@ -113,7 +118,8 @@ class BlinkerApi
         class BlinkerWidgets_rgb *          _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_joy *          _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_table *        _Widgets_tab[BLINKER_MAX_WIDGET_SIZE];
-    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+        defined(BLINKER_WIFI_AT)
         char                                _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
         char                                _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
         char                                _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
@@ -137,7 +143,8 @@ class BlinkerApi
     #endif
     #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+    defined(BLINKER_WIFI_AT)
         uint8_t                             _aCount = 0;
         class BlinkerAUTO *                 _AUTO[2];
 
@@ -177,7 +184,8 @@ class BlinkerApi
 #endif
     protected :
         void parse(char _data[], bool ex_data = false);
-#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+    defined(BLINKER_WIFI_AT)
         void beginAuto();
 
     #if defined(BLINKER_WIDGET)
@@ -201,7 +209,7 @@ class BlinkerApi
             EEPROM.commit();
             EEPROM.end();
 
-            BLINKER_LOG(BLINKER_F("_power_count: "), _power_count);
+            BLINKER_LOG(TAG_API, BLINKER_F("_power_count: "), _power_count);
 
             _reset_countdown = millis();
             if (_power_count > 3)
@@ -215,7 +223,7 @@ class BlinkerApi
             if (millis() > 5000 && !_isCheckPower)
             {
                 _isCheckPower = true;
-                BLINKER_LOG_ALL(BLINKER_F("erase power count"));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("erase power count"));
 
                 EEPROM.begin(BLINKER_EEP_SIZE);
                 EEPROM.put(BLINKER_EEP_ADDR_POWER_ON_COUNT, 0);
@@ -270,13 +278,13 @@ class BlinkerApi
 
         bool isPressed = false;
 
-        void _click() { BLINKER_LOG_ALL(BLINKER_F("Button click.")); } // click
+        void _click() { BLINKER_LOG_ALL(TAG_API, BLINKER_F("Button click.")); } // click
 
-        void _doubleClick() { BLINKER_LOG_ALL(BLINKER_F("Button doubleclick.")); } // doubleclick1
+        void _doubleClick() { BLINKER_LOG_ALL(TAG_API, BLINKER_F("Button doubleclick.")); } // doubleclick1
 
         void _longPressStart()
         {
-            BLINKER_LOG_ALL(BLINKER_F("Button longPress start"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("Button longPress start"));
             // _longPressStartFunc();
             isPressed = true;
         } // longPressStart
@@ -285,14 +293,14 @@ class BlinkerApi
         {
             if (isPressed)
             {
-                BLINKER_LOG_ALL(BLINKER_F("Button longPress..."));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("Button longPress..."));
                 isPressed = false;
             }// _duringLongPressFunc();
         } // longPress
 
         void _longPressStop()
         {
-            BLINKER_LOG_ALL(BLINKER_F("Button longPress stop"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("Button longPress stop"));
             // _longPressStopFunc();
             // Bwlan.deleteConfig();
             // Bwlan.reset();
@@ -301,8 +309,8 @@ class BlinkerApi
 
             uint32_t _pressedTime = millis() - _startTime;
 
-            BLINKER_LOG_ALL(BLINKER_F("_stopTime: "), millis(), BLINKER_F(" ,_startTime: "), _startTime);
-            BLINKER_LOG_ALL(BLINKER_F("long pressed time: "), _pressedTime);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("_stopTime: "), millis(), BLINKER_F(" ,_startTime: "), _startTime);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("long pressed time: "), _pressedTime);
 
             #if defined(BLINKER_BUTTON_LONGPRESS_POWERDOWN)
                 if (_pressedTime >= BLINKER_PRESSTIME_RESET) {
@@ -313,7 +321,7 @@ class BlinkerApi
                     static_cast<Proto*>(this)->reset();
                 }
                 else {
-                    BLINKER_LOG(BLINKER_F("BLINKER_PRESSTIME_POWERDOWN"));
+                    BLINKER_LOG(TAG_API, BLINKER_F("BLINKER_PRESSTIME_POWERDOWN"));
 
                     if (_powerdownFunc) {
                         _powerdownFunc();
@@ -365,7 +373,7 @@ class BlinkerApi
 
             // attachInterrupt(BLINKER_BUTTON_PIN, checkButton, CHANGE);
 
-            BLINKER_LOG_ALL(BLINKER_F("Button initialled"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("Button initialled"));
         }
 
         void tick()
@@ -452,7 +460,7 @@ class BlinkerApi
 template <class Proto>
 void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
 {
-    BLINKER_LOG_ALL(BLINKER_F("parse data: "), _data);
+    BLINKER_LOG_ALL(TAG_API, BLINKER_F("parse data: "), _data);
     
     if (!ex_data)
     {
@@ -470,14 +478,16 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
     #if defined(BLINKER_PRO_ESP)
         otaParse(root);
     #endif
-    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+        defined(BLINKER_WIFI_AT)
         autoManager(root);
     #endif
 
         heartBeat(root);
 
     #if defined(BLINKER_WIDGET)
-        #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_WIFI_AT)
             timerManager(root);
         #endif
 
@@ -503,7 +513,7 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
         arrayData += _data;
         arrayData += BLINKER_F("}");
 
-        BLINKER_LOG_ALL(BLINKER_F("ex_data parse data: "), arrayData);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("ex_data parse data: "), arrayData);
         // DynamicJsonBuffer jsonBuffer;
         // JsonObject& root = jsonBuffer.parseObject(arrayData);
         DynamicJsonDocument jsonBuffer(BLINKER_JSON_BUFFER_SIZE);
@@ -530,7 +540,8 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                     JsonObject _array = jsonBuffer.as<JsonObject>();
 
                 #if defined(BLINKER_WIDGET)
-                #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+                #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+                    defined(BLINKER_WIFI_AT)
                     timerManager(_array, true);
                 #endif
 
@@ -570,12 +581,13 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         if (state == BLINKER_CMD_STATE)
         {
         #if defined(BLINKER_WIDGET)
-        #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+        #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+            defined(BLINKER_WIFI_AT)
             String  _timer = taskCount ? "1":"0";
                     _timer += _cdState ? "1":"0";
                     _timer += _lpState ? "1":"0";
 
-            BLINKER_LOG_ALL(BLINKER_F("timer codes: "), _timer);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("timer codes: "), _timer);
             static_cast<Proto*>(this)->print(BLINKER_CMD_TIMER, _timer);
         #endif
         #endif
@@ -604,7 +616,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 _Widgets_str[_wCount_str] = new BlinkerWidgets_string(_name, _func);
                 _wCount_str++;
 
-                BLINKER_LOG_ALL(BLINKER_F("new widgets: "), _name, \
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("new widgets: "), _name, \
                             BLINKER_F(" _wCount_str: "), _wCount_str);
                 return _wCount_str;
             }
@@ -615,7 +627,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         }
         else if(num >= 0 )
         {
-            BLINKER_ERR_LOG(BLINKER_F("widgets name > "), _name, \
+            BLINKER_ERR_LOG(TAG_API, BLINKER_F("widgets name > "), _name, \
                     BLINKER_F(" < has been registered, please register another name!"));
             return 0;
         }
@@ -636,7 +648,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 _Widgets_int[_wCount_int] = new BlinkerWidgets_int32(_name, _func);
                 _wCount_int++;
 
-                BLINKER_LOG_ALL(BLINKER_F("new widgets: "), _name, \
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("new widgets: "), _name, \
                             BLINKER_F(" _wCount_int: "), _wCount_int);
 
                 return _wCount_int;
@@ -648,7 +660,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         }
         else if(num >= 0 )
         {
-            BLINKER_ERR_LOG(BLINKER_F("widgets name > "), _name, \
+            BLINKER_ERR_LOG(TAG_API, BLINKER_F("widgets name > "), _name, \
                     BLINKER_F(" < has been registered, please register another name!"));
             return 0;
         }
@@ -669,7 +681,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 _Widgets_rgb[_wCount_rgb] = new BlinkerWidgets_rgb(_name, _func);
                 _wCount_rgb++;
 
-                BLINKER_LOG_ALL(BLINKER_F("new widgets: "), _name, \
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("new widgets: "), _name, \
                             BLINKER_F(" _wCount_rgb: "), _wCount_rgb);
 
                 return _wCount_rgb;
@@ -681,7 +693,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         }
         else if(num >= 0 )
         {
-            BLINKER_ERR_LOG(BLINKER_F("widgets name > "), _name, \
+            BLINKER_ERR_LOG(TAG_API, BLINKER_F("widgets name > "), _name, \
                     BLINKER_F(" < has been registered, please register another name!"));
             return 0;
         }
@@ -702,7 +714,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 _Widgets_joy[_wCount_joy] = new BlinkerWidgets_joy(_name, _func);
                 _wCount_joy++;
 
-                BLINKER_LOG_ALL(BLINKER_F("new widgets: "), _name, \
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("new widgets: "), _name, \
                             BLINKER_F(" _wCount_joy: "), _wCount_joy);
 
                 return _wCount_joy;
@@ -714,7 +726,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         }
         else if(num >= 0 )
         {
-            BLINKER_ERR_LOG(BLINKER_F("widgets name > "), _name, \
+            BLINKER_ERR_LOG(TAG_API, BLINKER_F("widgets name > "), _name, \
                     BLINKER_F(" < has been registered, please register another name!"));
             return 0;
         }
@@ -736,7 +748,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 _Widgets_tab[_wCount_tab] = new BlinkerWidgets_table(_name, _func, _func2);
                 _wCount_tab++;
 
-                BLINKER_LOG_ALL(BLINKER_F("new widgets: "), _name, \
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("new widgets: "), _name, \
                             BLINKER_F(" _wCount_tab: "), _wCount_tab);
 
                 return _wCount_tab;
@@ -748,7 +760,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         }
         else if(num >= 0 )
         {
-            BLINKER_ERR_LOG(BLINKER_F("widgets name > "), _name, \
+            BLINKER_ERR_LOG(TAG_API, BLINKER_F("widgets name > "), _name, \
                     BLINKER_F(" < has been registered, please register another name!"));
             return 0;
         }
@@ -788,10 +800,10 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         if (data.containsKey(_wName))
         {
             String state = data[_wName];
-            BLINKER_LOG_ALL(BLINKER_F("strWidgetsParse isParsed"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("strWidgetsParse isParsed"));
             _fresh = true;
 
-            BLINKER_LOG_ALL(BLINKER_F("strWidgetsParse: "), _wName);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("strWidgetsParse: "), _wName);
 
             blinker_callback_with_string_arg_t nbFunc = _Widgets_str[num]->getFunc();
 
@@ -808,7 +820,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
         if (data.containsKey(_wName)) {
             int _number = data[_wName];
-            BLINKER_LOG_ALL(BLINKER_F("intWidgetsParse isParsed"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("intWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_with_int32_arg_t wFunc = _Widgets_int[num]->getFunc();
@@ -831,7 +843,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             uint8_t _gValue = data[_wName][BLINKER_G];
             uint8_t _bValue = data[_wName][BLINKER_B];
             uint8_t _brightValue = data[_wName][BLINKER_BRIGHT];
-            BLINKER_LOG_ALL(BLINKER_F("rgbWidgetsParse isParsed"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("rgbWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_with_rgb_arg_t wFunc = _Widgets_rgb[num]->getFunc();
@@ -850,7 +862,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         {
             int16_t jxAxisValue = data[_wName][BLINKER_J_Xaxis];
             uint8_t jyAxisValue = data[_wName][BLINKER_J_Yaxis];
-            BLINKER_LOG_ALL(BLINKER_F("joyWidgetsParse isParsed"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("joyWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_with_joy_arg_t wFunc = _Widgets_joy[num]->getFunc();
@@ -901,7 +913,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 }
             }
             
-            BLINKER_LOG_ALL(BLINKER_F("tabWidgetsParse isParsed"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("tabWidgetsParse isParsed"));
             _fresh = true;
 
             blinker_callback_t wFunc2 = _Widgets_tab[num]->getFunc2();
@@ -912,7 +924,9 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
     }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) 
+#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+    defined(BLINKER_WIFI_AT)
+    #if defined(BLINKER_WIDGET)
     template <class Proto>
     void BlinkerApi<Proto>::saveCountDown(uint32_t _data, char _action[])
     {
@@ -954,11 +968,11 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             _cdRunState = 0;
         }
 
-        BLINKER_LOG_ALL(BLINKER_F("countdown state: "), _cdState ? "true" : "false");
-        BLINKER_LOG_ALL(BLINKER_F("_cdRunState: "), _cdRunState);
-        BLINKER_LOG_ALL(BLINKER_F("_totalTime: "), _cdTime1);
-        BLINKER_LOG_ALL(BLINKER_F("_runTime: "), _cdTime2);
-        BLINKER_LOG_ALL(BLINKER_F("_action: "), _cdAction);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("countdown state: "), _cdState ? "true" : "false");
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_cdRunState: "), _cdRunState);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_totalTime: "), _cdTime1);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_runTime: "), _cdTime2);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action: "), _cdAction);
 
         if (_cdState && _cdRunState)
         {
@@ -971,7 +985,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
             _cdStart = millis();
 
-            BLINKER_LOG_ALL(BLINKER_F("countdown start!"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("countdown start!"));
         }
     }
 
@@ -992,15 +1006,15 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         _lpTime1    = _lpData >> 11 & 0x07FF;
         _lpTime2    = _lpData       & 0x07FF;
 
-        BLINKER_LOG_ALL(BLINKER_F("loop state: "), _lpState ? "true" : "false");
-        BLINKER_LOG_ALL(BLINKER_F("_lpRunState: "), _lpRunState);
-        BLINKER_LOG_ALL(BLINKER_F("_times: "), _lpTimes);
-        BLINKER_LOG_ALL(BLINKER_F("_tri_times: "), _lpTrigged_times);
-        BLINKER_LOG_ALL(BLINKER_F("_time1: "), _lpTime1);
-        BLINKER_LOG_ALL(BLINKER_F("_action1: "), _lpAction1);
-        BLINKER_LOG_ALL(BLINKER_F("_time2: "), _lpTime2);
-        BLINKER_LOG_ALL(BLINKER_F("_action2: "), _lpAction2);
-        BLINKER_LOG_ALL(BLINKER_F("_lpData: "), _lpData);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("loop state: "), _lpState ? "true" : "false");
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_lpRunState: "), _lpRunState);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_times: "), _lpTimes);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_tri_times: "), _lpTrigged_times);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_time1: "), _lpTime1);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action1: "), _lpAction1);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_time2: "), _lpTime2);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action2: "), _lpAction2);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_lpData: "), _lpData);
 
         if (_lpState && _lpRunState && (_lpTimes == 0))
         {
@@ -1015,14 +1029,14 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             _lpTime1_start = millis();
             lpTicker.once(_lpTime1_, _lp_callback);
 
-            BLINKER_LOG_ALL(BLINKER_F("loop start!"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("loop start!"));
         }
     }
 
     template <class Proto>
     void BlinkerApi<Proto>::loadTiming()
     {
-        BLINKER_LOG_ALL(BLINKER_F("load timing"));
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("load timing"));
 
         EEPROM.begin(BLINKER_EEP_SIZE);
         EEPROM.get(BLINKER_EEP_ADDR_TIMER_TIMING_COUNT, taskCount);
@@ -1033,7 +1047,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         {
             taskCount = 0;
         }
-        BLINKER_LOG_ALL(BLINKER_F("load timing taskCount: "), taskCount);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("load timing taskCount: "), taskCount);
 
         for(uint8_t task = 0; task < taskCount; task++)
         {
@@ -1044,8 +1058,8 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
             timingTask[task] = new BlinkerTimingTimer(_tmData, STRING_format(_tmAction_));
 
-            BLINKER_LOG_ALL(BLINKER_F("_tmData: "), _tmData);
-            BLINKER_LOG_ALL(BLINKER_F("_tmAction: "), STRING_format(_tmAction_));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("_tmData: "), _tmData);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("_tmAction: "), STRING_format(_tmAction_));
         }
         EEPROM.commit();
         EEPROM.end();
@@ -1059,18 +1073,18 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
     template <class Proto>
     void BlinkerApi<Proto>::checkOverlapping(uint8_t checkDays, uint16_t checkMins, uint8_t taskNum)
     {
-        BLINKER_LOG_ALL(BLINKER_F("checkMins: "), checkMins);
-        BLINKER_LOG_ALL(BLINKER_F("checkDays: "), checkDays);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("checkMins: "), checkMins);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("checkDays: "), checkDays);
 
         char _tmAction[BLINKER_TIMER_TIMING_ACTION_SIZE];
 
         for (uint8_t task = 0; task < taskCount; task++)
         {
             
-            BLINKER_LOG_ALL(BLINKER_F("getTime: "), timingTask[task]->getTime());
-            BLINKER_LOG_ALL(BLINKER_F("isLoop: "), timingTask[task]->isLoop());
-            BLINKER_LOG_ALL(BLINKER_F("state: "), timingTask[task]->state());
-            BLINKER_LOG_ALL(BLINKER_F("isTimingDay: "), timingTask[task]->isTimingDay(checkDays));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("getTime: "), timingTask[task]->getTime());
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("isLoop: "), timingTask[task]->isLoop());
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("state: "), timingTask[task]->state());
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("isTimingDay: "), timingTask[task]->isTimingDay(checkDays));
 
             if((timingTask[task]->getTime() == checkMins) && \
                 !timingTask[task]->isLoop() && \
@@ -1090,14 +1104,14 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 EEPROM.commit();
                 EEPROM.end();
 
-                BLINKER_LOG_ALL(BLINKER_F("disable timerData: "), timingTask[task]->getTimerData());
-                BLINKER_LOG_ALL(BLINKER_F("disableTask: "), task);
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("disable timerData: "), timingTask[task]->getTimerData());
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("disableTask: "), task);
 
                 strcpy(_tmAction, timingTask[task]->getAction());
 
                 if (task != taskNum)
                 {
-                    // #if defined(BLINKER_AT_MQTT)
+                    // #if defined(BLINKER_WIFI_AT)
                     //     static_cast<Proto*>(this)->serialPrint(_tmAction);
                     // #else
                         parse(_tmAction, true);
@@ -1108,13 +1122,13 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 timingTask[task]->state() && \
                 timingTask[task]->isTimingDay(checkDays))
             {
-                BLINKER_LOG(BLINKER_F("checkOverlapping, timing trigged, action is: "), _tmAction);
+                BLINKER_LOG(TAG_API, BLINKER_F("checkOverlapping, timing trigged, action is: "), _tmAction);
 
                 strcpy(_tmAction, timingTask[task]->getAction());
                 
                 if (task != taskNum)
                 {
-                    // #if defined(BLINKER_AT_MQTT)
+                    // #if defined(BLINKER_WIFI_AT)
                     //     static_cast<Proto*>(this)->serialPrint(_tmAction);
                     // #else
                         parse(_tmAction, true);
@@ -1136,7 +1150,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         uint32_t checkSeconds = BLINKER_ONE_DAY_TIME;
         uint32_t nowSeconds = static_cast<Proto*>(this)->dtime();
 
-        BLINKER_LOG_ALL(BLINKER_F("freshTiming wDay: "), wDay,
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("freshTiming wDay: "), wDay,
                         BLINKER_F(", nowMins: "), nowMins,
                         BLINKER_F(", nowSeconds: "), nowSeconds);
 
@@ -1157,11 +1171,11 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 }
             }
 
-            BLINKER_LOG_ALL(BLINKER_F("isTimingDay: "), timingTask[task]->isTimingDay(wDay));
-            BLINKER_LOG_ALL(BLINKER_F("state: "), timingTask[task]->state());
-            BLINKER_LOG_ALL(BLINKER_F("getTime: "), timingTask[task]->getTime());
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("isTimingDay: "), timingTask[task]->isTimingDay(wDay));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("state: "), timingTask[task]->state());
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("getTime: "), timingTask[task]->getTime());
 
-            BLINKER_LOG_ALL(BLINKER_F("for nextTask: "), nextTask,
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("for nextTask: "), nextTask,
                             BLINKER_F("  apartSeconds: "), apartSeconds,
                             BLINKER_F(" wDay: "), wDay);
         }
@@ -1171,7 +1185,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             apartSeconds -= nowSeconds;
 
             // apartSeconds = apartSeconds / 60 / 30;
-            BLINKER_LOG_ALL(BLINKER_F("nextTask: "), nextTask,
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("nextTask: "), nextTask,
                             BLINKER_F("  apartSeconds: "), apartSeconds,
                             BLINKER_F(" wDay: "), wDay);
 
@@ -1179,19 +1193,19 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         }
         else
         {
-            BLINKER_LOG_ALL(BLINKER_F("nextTask: "), nextTask,
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("nextTask: "), nextTask,
                             BLINKER_F("  apartSeconds: "), apartSeconds,
                             BLINKER_F(" wDay: "), wDay);
 
             cbackData = nextTask;
         }
-        BLINKER_LOG_ALL(BLINKER_F("cbackData: "), cbackData);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("cbackData: "), cbackData);
 
         if (apartSeconds > BLINKER_ONE_HOUR_TIME)
         {
             apartSeconds = BLINKER_ONE_HOUR_TIME;
 
-            BLINKER_LOG_ALL(BLINKER_F("change apartSeconds: "), apartSeconds);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("change apartSeconds: "), apartSeconds);
         }
 
         tmTicker.once(apartSeconds, timingHandle, cbackData);
@@ -1216,7 +1230,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
             taskCount--;
 
-            BLINKER_LOG_ALL(BLINKER_F("delete task: "), taskDel, BLINKER_F(" success!"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("delete task: "), taskDel, BLINKER_F(" success!"));
 
             uint8_t  wDay = static_cast<Proto*>(this)->wday();
             uint16_t nowMins = static_cast<Proto*>(this)->hour() * 60 + static_cast<Proto*>(this)->minute();
@@ -1224,15 +1238,15 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         }
         else
         {
-            BLINKER_LOG_ALL(BLINKER_F("none task to delete!"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("none task to delete!"));
         }
     }
 
     template <class Proto>
     void BlinkerApi<Proto>::addTimingTask(uint8_t taskSet, uint32_t timerData, const String & action)
     {
-        BLINKER_LOG_ALL(BLINKER_F("addTimingTask taskSet: "), taskSet);
-        BLINKER_LOG_ALL(BLINKER_F("addTimingTask timerData: "), timerData);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("addTimingTask taskSet: "), taskSet);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("addTimingTask timerData: "), timerData);
 
         if (taskSet <= taskCount && taskCount <= BLINKER_TIMING_TIMER_SIZE)
         {
@@ -1242,26 +1256,26 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             {
                 if (taskCount == BLINKER_TIMING_TIMER_SIZE)
                 {
-                    BLINKER_ERR_LOG(BLINKER_F("timing timer task is full"));
+                    BLINKER_ERR_LOG(TAG_API, BLINKER_F("timing timer task is full"));
                     return;
                 }
                 // timingTask[taskSet] = new BlinkerTimingTimer(timerData, action, text);
                 timingTask[taskSet] = new BlinkerTimingTimer(timerData, action);
                 taskCount++;
 
-                BLINKER_LOG_ALL(BLINKER_F("new BlinkerTimingTimer"));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("new BlinkerTimingTimer"));
             }
             else
             {
                 // timingTask[taskSet]->freshTimer(timerData, action, text);
                 timingTask[taskSet]->freshTimer(timerData, action);
 
-                BLINKER_LOG_ALL(BLINKER_F("freshTimer"));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("freshTimer"));
             }
 
             // if (taskSet <= taskCount) taskCount++;
 
-            BLINKER_LOG_ALL(BLINKER_F("taskCount: "), taskCount);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("taskCount: "), taskCount);
 
             uint8_t  wDay = static_cast<Proto*>(this)->wday();
             uint16_t nowMins = static_cast<Proto*>(this)->hour() * 60 + static_cast<Proto*>(this)->minute();
@@ -1269,7 +1283,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             freshTiming(wDay, nowMins);
         }
         else {
-            BLINKER_ERR_LOG(BLINKER_F("timing timer task is full"));
+            BLINKER_ERR_LOG(TAG_API, BLINKER_F("timing timer task is full"));
         }
     }
 
@@ -1314,7 +1328,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         _data += STRING_format(taskCount ? "true" : "false");
 
 
-        BLINKER_LOG_ALL(BLINKER_F("timerSetting: "), _data);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("timerSetting: "), _data);
 
         return _data;
     }
@@ -1403,7 +1417,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         }
         timingTaskStr += BLINKER_F("]}");
 
-        BLINKER_LOG_ALL(BLINKER_F("timingTaskStr: "), timingTaskStr);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("timingTaskStr: "), timingTaskStr);
 
         return timingTaskStr;
     }
@@ -1429,13 +1443,13 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 // timingDayStr += String((day < 6) ? ((timingDay >> (day + 1)) ? ",":""):"");
             }
 
-            BLINKER_LOG_ALL(BLINKER_F("timingDayStr: "), timingDayStr);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("timingDayStr: "), timingDayStr);
 
         }
         else {
             timingDayStr = BLINKER_F("0000000");
 
-            BLINKER_LOG_ALL(BLINKER_F("timingDayStr: "), timingDay);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("timingDayStr: "), timingDay);
         }
 
         String timingConfig = BLINKER_F("{\"");
@@ -1532,10 +1546,10 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
         if ((isSet || _noSet) && (isCount || isLoop || isTiming))
         {
-            BLINKER_LOG_ALL(BLINKER_F("timerManager isParsed"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("timerManager isParsed"));
             _fresh = true;
 
-            BLINKER_LOG_ALL(BLINKER_F("get timer setting"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("get timer setting"));
 
             if (isCount)
             {
@@ -1556,7 +1570,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                         _cdRunState = data[BLINKER_CMD_COUNTDOWN][BLINKER_CMD_RUN];
                     }
 
-                    BLINKER_LOG_ALL(BLINKER_F("countdown state: "), _cdState ? "true" : "false");
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("countdown state: "), _cdState ? "true" : "false");
 
                     if (isSet)
                     {
@@ -1570,7 +1584,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                         if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE)
                         {
-                            BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION TOO LONG"));
+                            BLINKER_ERR_LOG(TAG_API, BLINKER_F("TIMER ACTION TOO LONG"));
                             return true;
                         }
 
@@ -1592,7 +1606,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                         //     _cdTime2 = 0;
                         // }
 
-                        BLINKER_LOG_ALL(BLINKER_F("_cdRunState: "), _cdRunState);
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_cdRunState: "), _cdRunState);
                     }
                     else if (_noSet)
                     {
@@ -1606,7 +1620,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                         if (_action.length() > BLINKER_TIMER_COUNTDOWN_ACTION_SIZE)
                         {
-                            BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION TOO LONG"));
+                            BLINKER_ERR_LOG(TAG_API, BLINKER_F("TIMER ACTION TOO LONG"));
                             return true;
                         }
 
@@ -1626,14 +1640,14 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                         //     _cdTime2 = 0;
                         // }
 
-                        BLINKER_LOG_ALL(BLINKER_F("_cdRunState: "), _cdRunState);
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_cdRunState: "), _cdRunState);
                     }
                     _cdData = _cdState << 31 | _cdRunState << 30 | _cdTime1 << 12 | _cdTime2;
 
-                    BLINKER_LOG_ALL(BLINKER_F("_totalTime: "), _cdTime1);
-                    BLINKER_LOG_ALL(BLINKER_F("_runTime: "), _cdTime2);
-                    BLINKER_LOG_ALL(BLINKER_F("_action: "), _cdAction);
-                    BLINKER_LOG_ALL(BLINKER_F("_cdData: "), _cdData);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_totalTime: "), _cdTime1);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_runTime: "), _cdTime2);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action: "), _cdAction);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_cdData: "), _cdData);
 
                     // char _cdAction_[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
                     // strcpy(_cdAction_, _cdAction.c_str());
@@ -1659,7 +1673,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                         _cdStart = millis();
 
-                        BLINKER_LOG_ALL(BLINKER_F("countdown start! time: "), _cdTime1);
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("countdown start! time: "), _cdTime1);
                     }
                     else
                     {
@@ -1675,12 +1689,12 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                     _cdData = _cdState << 15 | _cdRunState << 14 | (_cdTime1 - _cdTime2);
 
-                    BLINKER_LOG_ALL(BLINKER_F("countdown state: "), _cdState ? "true" : "false");
-                    BLINKER_LOG_ALL(BLINKER_F("_cdRunState: "), _cdRunState);
-                    BLINKER_LOG_ALL(BLINKER_F("_totalTime: "), _cdTime1);
-                    BLINKER_LOG_ALL(BLINKER_F("_runTime: "), _cdTime2);
-                    BLINKER_LOG_ALL(BLINKER_F("_action: "), _cdAction);
-                    BLINKER_LOG_ALL(BLINKER_F("_cdData: "), _cdData);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("countdown state: "), _cdState ? "true" : "false");
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_cdRunState: "), _cdRunState);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_totalTime: "), _cdTime1);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_runTime: "), _cdTime2);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action: "), _cdAction);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_cdData: "), _cdData);
 
                     // char _cdAction_[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
                     // strcpy(_cdAction_, _cdAction.c_str());
@@ -1720,7 +1734,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                         _lpRunState = data[BLINKER_CMD_LOOP][BLINKER_CMD_RUN];
                     }
 
-                    BLINKER_LOG_ALL(BLINKER_F("loop state: "), _lpState ? "true" : "false");
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("loop state: "), _lpState ? "true" : "false");
 
                     if (isSet)
                     {
@@ -1737,13 +1751,13 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                         if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE)
                         {
-                            BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION TOO LONG"));
+                            BLINKER_ERR_LOG(TAG_API, BLINKER_F("TIMER ACTION TOO LONG"));
                             return true;
                         }
 
                         if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE)
                         {
-                            BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION TOO LONG"));
+                            BLINKER_ERR_LOG(TAG_API, BLINKER_F("TIMER ACTION TOO LONG"));
                             return true;
                         }
 
@@ -1760,7 +1774,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                             _lpTime2 = _time2;
                         }
 
-                        BLINKER_LOG_ALL(BLINKER_F("_lpRunState: "), _lpRunState);
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_lpRunState: "), _lpRunState);
 
                     }
                     else if (_noSet)
@@ -1778,13 +1792,13 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                         if (_action1.length() > BLINKER_TIMER_LOOP_ACTION1_SIZE)
                         {
-                            BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION TOO LONG"));
+                            BLINKER_ERR_LOG(TAG_API, BLINKER_F("TIMER ACTION TOO LONG"));
                             return true;
                         }
 
                         if (_action2.length() > BLINKER_TIMER_LOOP_ACTION2_SIZE)
                         {
-                            BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION TOO LONG"));
+                            BLINKER_ERR_LOG(TAG_API, BLINKER_F("TIMER ACTION TOO LONG"));
                             return true;
                         }
 
@@ -1800,20 +1814,20 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                             _lpTime2 = _time2;
                         }
 
-                        BLINKER_LOG_ALL(BLINKER_F("_lpRunState: "), _lpRunState);
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_lpRunState: "), _lpRunState);
                     }
 
                     if (_lpTimes > 100) _lpTimes = 0;
 
                     _lpData = _lpState << 31 | _lpRunState << 30 | _lpTimes << 22 | _lpTime1 << 11 | _lpTime2;
 
-                    BLINKER_LOG_ALL(BLINKER_F("_times: "), _lpTimes);
-                    BLINKER_LOG_ALL(BLINKER_F("_tri_times: "), _lpTrigged_times);
-                    BLINKER_LOG_ALL(BLINKER_F("_time1: "), _lpTime1);
-                    BLINKER_LOG_ALL(BLINKER_F("_action1: "), _lpAction1);
-                    BLINKER_LOG_ALL(BLINKER_F("_time2: "), _lpTime2);
-                    BLINKER_LOG_ALL(BLINKER_F("_action2: "), _lpAction2);
-                    BLINKER_LOG_ALL(BLINKER_F("_lpData: "), _lpData);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_times: "), _lpTimes);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_tri_times: "), _lpTrigged_times);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_time1: "), _lpTime1);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action1: "), _lpAction1);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_time2: "), _lpTime2);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action2: "), _lpAction2);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_lpData: "), _lpData);
 
                     // char _lpAction_1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
                     // char _lpAction_2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
@@ -1844,7 +1858,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                         _lpTime1_start = millis();
                         lpTicker.once(_lpTime1_, _lp_callback);
 
-                        BLINKER_LOG_ALL(BLINKER_F("loop start!"));
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("loop start!"));
                     }
                     else
                     {
@@ -1865,15 +1879,15 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                     _lpData = _lpState << 31 | _lpRunState << 30 | _lpTimes << 22 | _lpTime1 << 11 | _lpTime2;
 
-                    BLINKER_LOG_ALL(BLINKER_F("loop state: "), _lpState ? "true" : "false");
-                    BLINKER_LOG_ALL(BLINKER_F("_lpRunState: "), _lpRunState);
-                    BLINKER_LOG_ALL(BLINKER_F("_times: "), _lpTimes);
-                    BLINKER_LOG_ALL(BLINKER_F("_tri_times: "), _lpTrigged_times);
-                    BLINKER_LOG_ALL(BLINKER_F("_time1: "), _lpTime1);
-                    BLINKER_LOG_ALL(BLINKER_F("_action1: "), _lpAction1);
-                    BLINKER_LOG_ALL(BLINKER_F("_time2: "), _lpTime2);
-                    BLINKER_LOG_ALL(BLINKER_F("_action2: "), _lpAction2);
-                    BLINKER_LOG_ALL(BLINKER_F("_lpData: "), _lpData);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("loop state: "), _lpState ? "true" : "false");
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_lpRunState: "), _lpRunState);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_times: "), _lpTimes);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_tri_times: "), _lpTrigged_times);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_time1: "), _lpTime1);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action1: "), _lpAction1);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_time2: "), _lpTime2);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action2: "), _lpAction2);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_lpData: "), _lpData);
 
                     // char _lpAction_1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
                     // char _lpAction_2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
@@ -1912,7 +1926,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                     _tmRunState = data[BLINKER_CMD_TIMING][0][BLINKER_CMD_ENABLE];
                 }
 
-                BLINKER_LOG_ALL(BLINKER_F("timing state: "), _tmState ? "true" : "false");
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("timing state: "), _tmState ? "true" : "false");
 
                 int32_t _time;
                 String _action;
@@ -1933,7 +1947,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                     if (tm_action.length() > BLINKER_TIMER_TIMING_ACTION_SIZE)
                     {
-                        BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION TOO LONG"));
+                        BLINKER_ERR_LOG(TAG_API, BLINKER_F("TIMER ACTION TOO LONG"));
                         return true;
                     }
 
@@ -1958,7 +1972,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                         _isTimingLoop = false;
 
-                        BLINKER_LOG_ALL(BLINKER_F("timingDay: "), _timingDay);
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("timingDay: "), _timingDay);
                     }
                     else
                     {
@@ -1973,17 +1987,17 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                             {
                                 _timingDay |= (0x01 << day);
 
-                                BLINKER_LOG_ALL(BLINKER_F("day: "), day, BLINKER_F(" timingDay: "), _timingDay);
+                                BLINKER_LOG_ALL(TAG_API, BLINKER_F("day: "), day, BLINKER_F(" timingDay: "), _timingDay);
                             }
                         }
                     }
 
-                    BLINKER_LOG_ALL(BLINKER_F("timingDay: "), _timingDay);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("timingDay: "), _timingDay);
                     // BLINKER_LOG_ALL(BLINKER_F("_text: "), _text);
-                    BLINKER_LOG_ALL(BLINKER_F("_tmRunState: "), _tmRunState);
-                    BLINKER_LOG_ALL(BLINKER_F("_isTimingLoop: "), _isTimingLoop ? "true":"false");
-                    BLINKER_LOG_ALL(BLINKER_F("_time: "), _time);
-                    BLINKER_LOG_ALL(BLINKER_F("_action: "), _action);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_tmRunState: "), _tmRunState);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_isTimingLoop: "), _isTimingLoop ? "true":"false");
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_time: "), _time);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action: "), _action);
 
                     uint32_t _timerData = _isTimingLoop << 31 | _tmRunState << 23 | _timingDay << 11 | _time;
 
@@ -2004,7 +2018,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                     if (tm_action.length() > BLINKER_TIMER_TIMING_ACTION_SIZE)
                     {
-                        BLINKER_ERR_LOG(BLINKER_F("TIMER ACTION TOO LONG"));
+                        BLINKER_ERR_LOG(TAG_API, BLINKER_F("TIMER ACTION TOO LONG"));
                         return true;
                     }
 
@@ -2027,7 +2041,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                         _isTimingLoop = false;
 
-                        BLINKER_LOG_ALL(BLINKER_F("timingDay: "), _timingDay);
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("timingDay: "), _timingDay);
                     }
                     else
                     {
@@ -2041,17 +2055,17 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                             {
                                 _timingDay |= (0x01 << day);
 
-                                BLINKER_LOG_ALL(BLINKER_F("day: "), day, BLINKER_F(" timingDay: "), _timingDay);
+                                BLINKER_LOG_ALL(TAG_API, BLINKER_F("day: "), day, BLINKER_F(" timingDay: "), _timingDay);
                             }
                         }
                     }
 
-                    BLINKER_LOG_ALL(BLINKER_F("timingDay: "), _timingDay);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("timingDay: "), _timingDay);
                     // BLINKER_LOG_ALL(BLINKER_F("_text: "), _text);
-                    BLINKER_LOG_ALL(BLINKER_F("_tmRunState: "), _tmRunState);
-                    BLINKER_LOG_ALL(BLINKER_F("_isTimingLoop: "), _isTimingLoop ? "true":"false");
-                    BLINKER_LOG_ALL(BLINKER_F("_time: "), _time);
-                    BLINKER_LOG_ALL(BLINKER_F("_action: "), _action);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_tmRunState: "), _tmRunState);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_isTimingLoop: "), _isTimingLoop ? "true":"false");
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_time: "), _time);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_action: "), _action);
 
                     uint32_t _timerData = _isTimingLoop << 31 | _tmRunState << 23 | _timingDay << 11 | _time;
 
@@ -2078,8 +2092,8 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                     EEPROM.put(BLINKER_EEP_ADDR_TIMER_TIMING + task * BLINKER_ONE_TIMER_TIMING_SIZE +
                                 BLINKER_TIMER_TIMING_SIZE, _tmAction_);
 
-                    BLINKER_LOG_ALL(BLINKER_F("getTimerData: "), timingTask[task]->getTimerData());
-                    BLINKER_LOG_ALL(BLINKER_F("_tmAction_: "), _tmAction_);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("getTimerData: "), timingTask[task]->getTimerData());
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_tmAction_: "), _tmAction_);
                 }
                 EEPROM.commit();
                 EEPROM.end();
@@ -2100,7 +2114,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             {
                 static_cast<Proto*>(this)->_timerPrint(timerSetting());
                 static_cast<Proto*>(this)->printNow();
-                BLINKER_LOG_ALL(BLINKER_F("timerManager1 isParsed"));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("timerManager1 isParsed"));
                 _fresh = true;
                 return true;
             }
@@ -2116,7 +2130,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             {
                 static_cast<Proto*>(this)->_timerPrint(loopConfig());
                 static_cast<Proto*>(this)->printNow();
-                BLINKER_LOG_ALL(BLINKER_F("timerManager3 isParsed"));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("timerManager3 isParsed"));
                 _fresh = true;
                 return true;
             }
@@ -2124,7 +2138,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             {
                 static_cast<Proto*>(this)->_timerPrint(timingConfig());
                 static_cast<Proto*>(this)->printNow();
-                BLINKER_LOG_ALL(BLINKER_F("timerManager4 isParsed"));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("timerManager4 isParsed"));
                 _fresh = true;
                 return true;
             }
@@ -2151,11 +2165,11 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             _cdData = _cdState << 31 | _cdRunState << 30 | _cdTime1 << 12 | _cdTime2;
             saveCountDown(_cdData, _cdAction);
 
-            BLINKER_LOG_ALL(BLINKER_F("countdown trigged, action is: "), _cdAction);
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("countdown trigged, action is: "), _cdAction);
 
             // _parse(_cdAction);
 
-            // #if defined(BLINKER_AT_MQTT)
+            // #if defined(BLINKER_WIFI_AT)
             //     static_cast<Proto*>(this)->serialPrint(_cdAction);
             // #else
                 parse(_cdAction, true);
@@ -2176,10 +2190,10 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
             if (_lpRun1)
             {
-                BLINKER_LOG_ALL(BLINKER_F("loop trigged, action is: "), _lpAction2);
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("loop trigged, action is: "), _lpAction2);
                 // _parse(_lpAction2);
 
-                // #if defined(BLINKER_AT_MQTT)
+                // #if defined(BLINKER_WIFI_AT)
                 //     static_cast<Proto*>(this)->serialPrint(_lpAction2);
                 // #else
                     parse(_lpAction2, true);
@@ -2188,10 +2202,10 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             else
             {
 
-                BLINKER_LOG_ALL(BLINKER_F("loop trigged, action is: "), _lpAction1);
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("loop trigged, action is: "), _lpAction1);
                 // _parse(_lpAction1);
 
-                // #if defined(BLINKER_AT_MQTT)
+                // #if defined(BLINKER_WIFI_AT)
                 //     static_cast<Proto*>(this)->serialPrint(_lpAction1);
                 // #else
                     parse(_lpAction1, true);
@@ -2219,7 +2233,8 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
             uint8_t wDay =  static_cast<Proto*>(this)->wday();
 
-            BLINKER_LOG_ALL(static_cast<Proto*>(this)->hour(), ":", 
+            BLINKER_LOG_ALL(TAG_API,
+                            static_cast<Proto*>(this)->hour(), ":", 
                             static_cast<Proto*>(this)->minute(), ":", 
                             static_cast<Proto*>(this)->second());
 
@@ -2228,7 +2243,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             if (triggedTask < BLINKER_TIMING_TIMER_SIZE && \
                 nowMins != timingTask[triggedTask]->getTime())
             {
-                BLINKER_LOG_ALL(BLINKER_F("timing trigged, now minutes check error!"));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("timing trigged, now minutes check error!"));
 
                 freshTiming(wDay, nowMins);
 
@@ -2242,9 +2257,9 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                 strcpy(_tmAction, timingTask[triggedTask]->getAction());
 
-                BLINKER_LOG(BLINKER_F("timing trigged, action is: "), _tmAction);
+                BLINKER_LOG(TAG_API, BLINKER_F("timing trigged, action is: "), _tmAction);
 
-                // #if defined(BLINKER_AT_MQTT)
+                // #if defined(BLINKER_WIFI_AT)
                 //     static_cast<Proto*>(this)->serialPrint(_tmAction);
                 // #else
                     parse(_tmAction, true);
@@ -2258,7 +2273,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             }
             else
             {
-                BLINKER_LOG_ALL(BLINKER_F("timing trigged, none action"));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("timing trigged, none action"));
 
                 freshTiming(wDay, 0);
 
@@ -2272,7 +2287,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
     template <class Proto>
     void BlinkerApi<Proto>::loadTimer()
     {
-        BLINKER_LOG(BLINKER_F(
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F(
             "\n==========================================================="
             "\n================== Blinker Timer loaded! =================="
             "\n    EEPROM address 1536-2431 is used for Blinker Timer!"
@@ -2283,7 +2298,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         loadCountdown();
         loadLoop();
     }
-
+    #endif
     template <class Proto>
     void BlinkerApi<Proto>::autoRun()
     {
@@ -2295,13 +2310,13 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 {
                     static_cast<Proto*>(this)->run();
 
-                    BLINKER_LOG_ALL(BLINKER_F("trigged sucessed"));
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("trigged sucessed"));
 
                     _AUTO[_num]->fresh();
                 }
                 else
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("trigged failed"));
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("trigged failed"));
                 }
 
                 static_cast<Proto*>(this)->run();
@@ -2327,11 +2342,11 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
     template <class Proto>
     void BlinkerApi<Proto>::beginAuto()
     {
-        BLINKER_LOG(BLINKER_F("======================================================="));
-        BLINKER_LOG(BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
-        BLINKER_LOG(BLINKER_F("    EEPROM address 0-1279 is used for Auto Control!"));
-        BLINKER_LOG(BLINKER_F("======= PLEASE AVOID USING THESE EEPROM ADDRESS! ======"));
-        BLINKER_LOG(BLINKER_F("======================================================="));
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("======================================================="));
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("=========== Blinker Auto Control mode init! ==========="));
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("    EEPROM address 0-1279 is used for Auto Control!"));
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("======= PLEASE AVOID USING THESE EEPROM ADDRESS! ======"));
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("======================================================="));
 
         // BLINKER_LOG(BLINKER_F("Already used: "), BLINKER_ONE_AUTO_DATA_SIZE);
 
@@ -2347,7 +2362,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
     {
         // autoPull();
 
-        BLINKER_LOG_ALL(BLINKER_F("_______autoStart_______"));
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_______autoStart_______"));
         uint8_t checkData;
 
         EEPROM.begin(BLINKER_EEP_SIZE);
@@ -2374,13 +2389,13 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         EEPROM.commit();
         EEPROM.end();
 
-        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_aCount: "), _aCount);
 
         if (_aCount)
         {
             for (uint8_t _num = 0; _num < _aCount; _num++)
             {
-                BLINKER_LOG_ALL(BLINKER_F("new BlinkerAUTO() _num: "), _num);
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("new BlinkerAUTO() _num: "), _num);
 
                 _AUTO[_num] = new BlinkerAUTO();
                 _AUTO[_num]->setNum(_num);
@@ -2405,7 +2420,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         // if (aData.length()) isAuto = true;
         if (aData != "null") isAuto = true;
 
-        BLINKER_LOG_ALL(BLINKER_F("autoManager begin: "), isAuto, " ", isSet);
+        BLINKER_LOG_ALL(TAG_API, BLINKER_F("autoManager begin: "), isAuto, " ", isSet);
 
         // if (aDataArray && !isAuto)
         if (!isAuto)
@@ -2437,7 +2452,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                         EEPROM.commit();
                         EEPROM.end();
 
-                        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_aCount: "), _aCount);
                         // static_cast<Proto*>(this)->_print(autoData(), false);
                         // return true;
                     }
@@ -2460,7 +2475,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                     EEPROM.commit();
                     EEPROM.end();
 
-                    BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_aCount: "), _aCount);
                     // static_cast<Proto*>(this)->_print(autoData(), false);
                     // return true;
                 }
@@ -2472,7 +2487,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
             // BLINKER_LOG_ALL(BLINKER_F("timerManager5 isParsed"));
             _fresh = true;
 
-            BLINKER_LOG_ALL(BLINKER_F("get auto setting"));
+            BLINKER_LOG_ALL(TAG_API, BLINKER_F("get auto setting"));
 
             // bool isDelet = STRING_contains_string(BProto::dataParse(), BLINKER_CMD_DELETID);
             String isTriggedArray = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO]
@@ -2480,7 +2495,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
             if (isTriggedArray != "null")
             {
-                BLINKER_LOG_ALL(BLINKER_F("_auto trigged action: "), isTriggedArray);
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("_auto trigged action: "), isTriggedArray);
 
                 for (uint8_t a_num = 0; a_num < BLINKER_MAX_WIDGET_SIZE; a_num++)
                 {
@@ -2497,7 +2512,8 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                         JsonObject _array = jsonBuffer.as<JsonObject>();
 
                         #if defined(BLINKER_WIDGET)
-                        #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP)
+                        #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
+                            defined(BLINKER_WIFI_AT)
                             timerManager(_array);
                         #endif
 
@@ -2538,16 +2554,16 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 String del_autoId = data[BLINKER_CMD_SET][BLINKER_CMD_AUTO][BLINKER_CMD_DELETE].as<String>();
                 // _autoId = get_autoId.toInt();
 
-                BLINKER_LOG_ALL(BLINKER_F("get_autoId: "), strtoul(get_autoId.c_str(),NULL,10));
-                BLINKER_LOG_ALL(BLINKER_F("del_autoId: "), strtoul(del_autoId.c_str(),NULL,10));
-                BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("get_autoId: "), strtoul(get_autoId.c_str(),NULL,10));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("del_autoId: "), strtoul(del_autoId.c_str(),NULL,10));
+                BLINKER_LOG_ALL(TAG_API, BLINKER_F("_aCount: "), _aCount);
                 // _aCount = 0;
 
                 if (_aCount && strtoul(del_autoId.c_str(),NULL,10) == 0)
                 {
                     for (uint8_t _num = 0; _num < _aCount; _num++)
                     {
-                        BLINKER_LOG_ALL(BLINKER_F("check _autoId: "), _AUTO[_num]->id(), " ", _AUTO[_num]->id() == strtoul(get_autoId.c_str(),NULL,10));
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("check _autoId: "), _AUTO[_num]->id(), " ", _AUTO[_num]->id() == strtoul(get_autoId.c_str(),NULL,10));
                         if (_AUTO[_num]->id() == strtoul(get_autoId.c_str(),NULL,10))
                         {
                             _AUTO[_num]->manager(data);
@@ -2567,7 +2583,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                         EEPROM.commit();
                         EEPROM.end();
 
-                        BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("_aCount: "), _aCount);
 
                         // static_cast<Proto*>(this)->_print(autoData(), false);
                         // return true;
@@ -2598,7 +2614,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                     EEPROM.commit();
                     EEPROM.end();
 
-                    BLINKER_LOG_ALL(BLINKER_F("_aCount: "), _aCount);
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("_aCount: "), _aCount);
 
                     // static_cast<Proto*>(this)->_print(autoData(), false);
                     // return true;
@@ -2607,7 +2623,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                 {
                     for (uint8_t _num = 0; _num < _aCount; _num++)
                     {
-                        BLINKER_LOG_ALL(BLINKER_F("check _autoId: "), _AUTO[_num]->id(), " ", _AUTO[_num]->id() == strtoul(del_autoId.c_str(),NULL,10));
+                        BLINKER_LOG_ALL(TAG_API, BLINKER_F("check _autoId: "), _AUTO[_num]->id(), " ", _AUTO[_num]->id() == strtoul(del_autoId.c_str(),NULL,10));
                         if (_AUTO[_num]->id() == strtoul(del_autoId.c_str(),NULL,10))
                         {
                             if (_num == 0) 
@@ -2670,7 +2686,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
 
                 if (rootSet.containsKey(BLINKER_CMD_UPGRADE))
                 {
-                    BLINKER_LOG_ALL(BLINKER_F("otaParse isParsed"));
+                    BLINKER_LOG_ALL(TAG_API, BLINKER_F("otaParse isParsed"));
                     _fresh = true;
 
                     static_cast<Proto*>(this)->ota();

@@ -1,19 +1,22 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "VariantData.hpp"
+#include "../Polyfills/attributes.hpp"
+#include "../Strings/StoragePolicy.hpp"
+#include "../Variant/VariantData.hpp"
 
 namespace ARDUINOJSON_NAMESPACE {
 
-template <typename Visitor>
-inline void variantAccept(const VariantData *var, Visitor &visitor) {
+template <typename TVisitor>
+inline typename TVisitor::result_type variantAccept(const VariantData *var,
+                                                    TVisitor &visitor) {
   if (var != 0)
-    var->accept(visitor);
+    return var->accept(visitor);
   else
-    visitor.visitNull();
+    return visitor.visitNull();
 }
 
 inline const CollectionData *variantAsArray(const VariantData *var) {
@@ -30,7 +33,8 @@ inline CollectionData *variantAsObject(VariantData *var) {
 
 inline bool variantCopyFrom(VariantData *dst, const VariantData *src,
                             MemoryPool *pool) {
-  if (!dst) return false;
+  if (!dst)
+    return false;
   if (!src) {
     dst->setNull();
     return true;
@@ -38,99 +42,18 @@ inline bool variantCopyFrom(VariantData *dst, const VariantData *src,
   return dst->copyFrom(*src, pool);
 }
 
-inline bool variantEquals(const VariantData *a, const VariantData *b) {
-  if (a == b) return true;
-  if (!a || !b) return false;
-  return a->equals(*b);
-}
-
-inline bool variantIsArray(const VariantData *var) {
-  return var && var->isArray();
-}
-
-inline bool variantIsBoolean(const VariantData *var) {
-  return var && var->isBoolean();
-}
-
-template <typename T>
-inline bool variantIsInteger(const VariantData *var) {
-  return var && var->isInteger<T>();
-}
-
-inline bool variantIsFloat(const VariantData *var) {
-  return var && var->isFloat();
-}
-
-inline bool variantIsString(const VariantData *var) {
-  return var && var->isString();
-}
-
-inline bool variantIsObject(const VariantData *var) {
-  return var && var->isObject();
-}
-
-inline bool variantIsNull(const VariantData *var) {
-  return var == 0 || var->isNull();
-}
-
-inline bool variantSetBoolean(VariantData *var, bool value) {
-  if (!var) return false;
-  var->setBoolean(value);
-  return true;
-}
-
-inline bool variantSetFloat(VariantData *var, Float value) {
-  if (!var) return false;
-  var->setFloat(value);
-  return true;
-}
-
-inline bool variantSetLinkedRaw(VariantData *var,
-                                SerializedValue<const char *> value) {
-  if (!var) return false;
-  var->setLinkedRaw(value);
-  return true;
-}
-
-template <typename T>
-inline bool variantSetOwnedRaw(VariantData *var, SerializedValue<T> value,
-                               MemoryPool *pool) {
-  return var != 0 && var->setOwnedRaw(value, pool);
-}
-
-template <typename T>
-inline bool variantSetSignedInteger(VariantData *var, T value) {
-  if (!var) return false;
-  var->setSignedInteger(value);
-  return true;
-}
-
-inline bool variantSetLinkedString(VariantData *var, const char *value) {
-  if (!var) return false;
-  var->setLinkedString(value);
-  return true;
-}
+inline int variantCompare(const VariantData *a, const VariantData *b);
 
 inline void variantSetNull(VariantData *var) {
-  if (!var) return;
+  if (!var)
+    return;
   var->setNull();
 }
 
-inline bool variantSetOwnedString(VariantData *var, char *value) {
-  if (!var) return false;
-  var->setOwnedString(value);
-  return true;
-}
-
-template <typename T>
-inline bool variantSetOwnedString(VariantData *var, T value, MemoryPool *pool) {
-  return var != 0 && var->setOwnedString(value, pool);
-}
-
-inline bool variantSetUnsignedInteger(VariantData *var, UInt value) {
-  if (!var) return false;
-  var->setUnsignedInteger(value);
-  return true;
+template <typename TAdaptedString, typename TStoragePolicy>
+inline bool variantSetString(VariantData *var, TAdaptedString value,
+                             MemoryPool *pool, TStoragePolicy storage_policy) {
+  return var != 0 ? var->storeString(value, pool, storage_policy) : 0;
 }
 
 inline size_t variantSize(const VariantData *var) {
@@ -138,29 +61,49 @@ inline size_t variantSize(const VariantData *var) {
 }
 
 inline CollectionData *variantToArray(VariantData *var) {
-  if (!var) return 0;
+  if (!var)
+    return 0;
   return &var->toArray();
 }
 
 inline CollectionData *variantToObject(VariantData *var) {
-  if (!var) return 0;
+  if (!var)
+    return 0;
   return &var->toObject();
 }
 
-inline NO_INLINE VariantData *variantAdd(VariantData *var, MemoryPool *pool) {
+inline NO_INLINE VariantData *variantAddElement(VariantData *var,
+                                                MemoryPool *pool) {
   return var != 0 ? var->addElement(pool) : 0;
 }
 
+inline NO_INLINE VariantData *variantGetOrAddElement(VariantData *var,
+                                                     size_t index,
+                                                     MemoryPool *pool) {
+  return var != 0 ? var->getOrAddElement(index, pool) : 0;
+}
+
 template <typename TChar>
-NO_INLINE VariantData *variantGetOrCreate(VariantData *var, TChar *key,
-                                          MemoryPool *pool) {
-  return var != 0 ? var->getOrAddMember(adaptString(key), pool) : 0;
+NO_INLINE VariantData *variantGetOrAddMember(VariantData *var, TChar *key,
+                                             MemoryPool *pool) {
+  if (!var)
+    return 0;
+  return var->getOrAddMember(adaptString(key), pool,
+                             getStringStoragePolicy(key));
 }
 
 template <typename TString>
-NO_INLINE VariantData *variantGetOrCreate(VariantData *var, const TString &key,
-                                          MemoryPool *pool) {
-  return var != 0 ? var->getOrAddMember(adaptString(key), pool) : 0;
+NO_INLINE VariantData *variantGetOrAddMember(VariantData *var,
+                                             const TString &key,
+                                             MemoryPool *pool) {
+  if (!var)
+    return 0;
+  return var->getOrAddMember(adaptString(key), pool,
+                             getStringStoragePolicy(key));
+}
+
+inline bool variantIsNull(const VariantData *var) {
+  return var == 0 || var->isNull();
 }
 
 }  // namespace ARDUINOJSON_NAMESPACE

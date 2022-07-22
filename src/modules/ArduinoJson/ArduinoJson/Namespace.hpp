@@ -1,28 +1,26 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
+#include "Configuration.hpp"
+#include "Polyfills/preprocessor.hpp"
 #include "version.hpp"
 
-#include "Configuration.hpp"
+#ifndef ARDUINOJSON_NAMESPACE
 
-#define ARDUINOJSON_DO_CONCAT(A, B) A##B
-#define ARDUINOJSON_CONCAT2(A, B) ARDUINOJSON_DO_CONCAT(A, B)
-#define ARDUINOJSON_CONCAT3(A, B, C) \
-  ARDUINOJSON_CONCAT2(A, ARDUINOJSON_CONCAT2(B, C))
-#define ARDUINOJSON_CONCAT4(A, B, C, D) \
-  ARDUINOJSON_CONCAT2(ARDUINOJSON_CONCAT2(A, B), ARDUINOJSON_CONCAT2(C, D))
-#define ARDUINOJSON_CONCAT8(A, B, C, D, E, F, G, H)    \
-  ARDUINOJSON_CONCAT2(ARDUINOJSON_CONCAT4(A, B, C, D), \
-                      ARDUINOJSON_CONCAT4(E, F, G, H))
-#define ARDUINOJSON_CONCAT10(A, B, C, D, E, F, G, H, I, J) \
-  ARDUINOJSON_CONCAT8(A, B, C, D, E, F, G, ARDUINOJSON_CONCAT3(H, I, J))
+#  define ARDUINOJSON_NAMESPACE                                               \
+    ARDUINOJSON_CONCAT4(                                                      \
+        ARDUINOJSON_CONCAT4(ArduinoJson, ARDUINOJSON_VERSION_MAJOR,           \
+                            ARDUINOJSON_VERSION_MINOR,                        \
+                            ARDUINOJSON_VERSION_REVISION),                    \
+        _,                                                                    \
+        ARDUINOJSON_HEX_DIGIT(                                                \
+            ARDUINOJSON_ENABLE_PROGMEM, ARDUINOJSON_USE_LONG_LONG,            \
+            ARDUINOJSON_USE_DOUBLE, ARDUINOJSON_ENABLE_STRING_DEDUPLICATION), \
+        ARDUINOJSON_HEX_DIGIT(                                                \
+            ARDUINOJSON_ENABLE_NAN, ARDUINOJSON_ENABLE_INFINITY,              \
+            ARDUINOJSON_ENABLE_COMMENTS, ARDUINOJSON_DECODE_UNICODE))
 
-#define ARDUINOJSON_NAMESPACE                                            \
-  ARDUINOJSON_CONCAT10(                                                  \
-      ArduinoJson, ARDUINOJSON_VERSION_MAJOR, ARDUINOJSON_VERSION_MINOR, \
-      ARDUINOJSON_VERSION_REVISION, _, ARDUINOJSON_USE_LONG_LONG,        \
-      ARDUINOJSON_USE_DOUBLE, ARDUINOJSON_DECODE_UNICODE,                \
-      ARDUINOJSON_ENABLE_NAN, ARDUINOJSON_ENABLE_INFINITY)
+#endif

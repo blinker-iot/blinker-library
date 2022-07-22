@@ -165,7 +165,7 @@ class BlinkerWiFiESP
         void parseData(const char* data);
 
     protected :
-        b_broker_t  _use_broker = aliyun_b;
+        b_broker_t  _use_broker = blinker_b;
         char        _messageId[20];
         BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
         bool        _isWiFiInit = false;
@@ -502,7 +502,7 @@ void BlinkerWiFiESP::ping()
 {  
     if (!checkInit()) return;
 
-    BLINKER_LOG(BLINKER_F("MQTT Ping!"));
+    BLINKER_LOG_ALL(BLINKER_F("MQTT Ping!"));
 
     BLINKER_LOG_FreeHeap_ALL();
 
@@ -924,49 +924,50 @@ bool BlinkerWiFiESP::deviceRegister()
         free(iotSub_MQTT);
     }
 
-    if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
-        // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
-        #if defined(BLINKER_WITHOUT_SSL)
-            if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((24+1)*sizeof(char));
-            strcpy(DEVICE_NAME_MQTT, _userName.substring(0, 24).c_str());
-        #else
-            if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
-            strcpy(DEVICE_NAME_MQTT, _userID.c_str());
-        #endif
-        if(!isMQTTinit) MQTT_ID_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
-        strcpy(MQTT_ID_MQTT, _userID.c_str());
-        if(!isMQTTinit) MQTT_NAME_MQTT = (char*)malloc((_userName.length()+1)*sizeof(char));
-        strcpy(MQTT_NAME_MQTT, _userName.c_str());
-        if(!isMQTTinit) MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
-        strcpy(MQTT_KEY_MQTT, _key.c_str());
-        if(!isMQTTinit) MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
-        strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
-        if(!isMQTTinit) MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
-        strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_ALIYUN_HOST);
-        MQTT_PORT_MQTT = BLINKER_MQTT_ALIYUN_PORT;
+    // if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
+    //     // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
+    //     #if defined(BLINKER_WITHOUT_SSL)
+    //         if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((24+1)*sizeof(char));
+    //         strcpy(DEVICE_NAME_MQTT, _userName.substring(0, 24).c_str());
+    //     #else
+    //         if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
+    //         strcpy(DEVICE_NAME_MQTT, _userID.c_str());
+    //     #endif
+    //     if(!isMQTTinit) MQTT_ID_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
+    //     strcpy(MQTT_ID_MQTT, _userID.c_str());
+    //     if(!isMQTTinit) MQTT_NAME_MQTT = (char*)malloc((_userName.length()+1)*sizeof(char));
+    //     strcpy(MQTT_NAME_MQTT, _userName.c_str());
+    //     if(!isMQTTinit) MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
+    //     strcpy(MQTT_KEY_MQTT, _key.c_str());
+    //     if(!isMQTTinit) MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
+    //     strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
+    //     if(!isMQTTinit) MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_ALIYUN_HOST)+1)*sizeof(char));
+    //     strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_ALIYUN_HOST);
+    //     MQTT_PORT_MQTT = BLINKER_MQTT_ALIYUN_PORT;
 
-        _use_broker = aliyun_b;
-    }
-    else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
-        // String id2name = _userID.subString(10, _userID.length());
-        // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
-        if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
-        strcpy(DEVICE_NAME_MQTT, _userID.c_str());
-        String IDtest = _productInfo + _userID;
-        if(!isMQTTinit) MQTT_ID_MQTT = (char*)malloc((IDtest.length()+1)*sizeof(char));
-        strcpy(MQTT_ID_MQTT, IDtest.c_str());
-        String NAMEtest = IDtest + ";" + _userName;
-        if(!isMQTTinit) MQTT_NAME_MQTT = (char*)malloc((NAMEtest.length()+1)*sizeof(char));
-        strcpy(MQTT_NAME_MQTT, NAMEtest.c_str());
-        if(!isMQTTinit) MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
-        strcpy(MQTT_KEY_MQTT, _key.c_str());
-        if(!isMQTTinit) MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
-        strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
-        if(!isMQTTinit) MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_QCLOUD_HOST)+1)*sizeof(char));
-        strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_QCLOUD_HOST);
-        MQTT_PORT_MQTT = BLINKER_MQTT_QCLOUD_PORT;
-    }
-    else if (_broker == BLINKER_MQTT_BORKER_BLINKER) {
+    //     _use_broker = aliyun_b;
+    // }
+    // else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
+    //     // String id2name = _userID.subString(10, _userID.length());
+    //     // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
+    //     if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
+    //     strcpy(DEVICE_NAME_MQTT, _userID.c_str());
+    //     String IDtest = _productInfo + _userID;
+    //     if(!isMQTTinit) MQTT_ID_MQTT = (char*)malloc((IDtest.length()+1)*sizeof(char));
+    //     strcpy(MQTT_ID_MQTT, IDtest.c_str());
+    //     String NAMEtest = IDtest + ";" + _userName;
+    //     if(!isMQTTinit) MQTT_NAME_MQTT = (char*)malloc((NAMEtest.length()+1)*sizeof(char));
+    //     strcpy(MQTT_NAME_MQTT, NAMEtest.c_str());
+    //     if(!isMQTTinit) MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
+    //     strcpy(MQTT_KEY_MQTT, _key.c_str());
+    //     if(!isMQTTinit) MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
+    //     strcpy(MQTT_PRODUCTINFO_MQTT, _productInfo.c_str());
+    //     if(!isMQTTinit) MQTT_HOST_MQTT = (char*)malloc((strlen(BLINKER_MQTT_QCLOUD_HOST)+1)*sizeof(char));
+    //     strcpy(MQTT_HOST_MQTT, BLINKER_MQTT_QCLOUD_HOST);
+    //     MQTT_PORT_MQTT = BLINKER_MQTT_QCLOUD_PORT;
+    // }
+    // else 
+    if (_broker == BLINKER_MQTT_BORKER_BLINKER) {
         // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
         if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
         strcpy(DEVICE_NAME_MQTT, _userID.c_str());
@@ -1001,66 +1002,67 @@ bool BlinkerWiFiESP::deviceRegister()
     BLINKER_LOG_ALL(BLINKER_F("UUID_MQTT: "), UUID_MQTT);
     BLINKER_LOG_ALL(BLINKER_F("===================="));
 
-    if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
-        String PUB_TOPIC_STR = BLINKER_F("/");
-        PUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
-        PUB_TOPIC_STR += BLINKER_F("/");
-        PUB_TOPIC_STR += DEVICE_NAME_MQTT;
-        PUB_TOPIC_STR += BLINKER_F("/s");
+    // if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
+    //     String PUB_TOPIC_STR = BLINKER_F("/");
+    //     PUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
+    //     PUB_TOPIC_STR += BLINKER_F("/");
+    //     PUB_TOPIC_STR += DEVICE_NAME_MQTT;
+    //     PUB_TOPIC_STR += BLINKER_F("/s");
 
-        if(!isMQTTinit) BLINKER_PUB_TOPIC_MQTT = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
+    //     if(!isMQTTinit) BLINKER_PUB_TOPIC_MQTT = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
+    //     // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
+    //     strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
+    //     BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
 
-        String SUB_TOPIC_STR = BLINKER_F("/");
-        SUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
-        SUB_TOPIC_STR += BLINKER_F("/");
-        SUB_TOPIC_STR += DEVICE_NAME_MQTT;
-        SUB_TOPIC_STR += BLINKER_F("/r");
+    //     String SUB_TOPIC_STR = BLINKER_F("/");
+    //     SUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
+    //     SUB_TOPIC_STR += BLINKER_F("/");
+    //     SUB_TOPIC_STR += DEVICE_NAME_MQTT;
+    //     SUB_TOPIC_STR += BLINKER_F("/r");
 
-        if(!isMQTTinit) BLINKER_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
+    //     if(!isMQTTinit) BLINKER_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
+    //     // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
+    //     strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
+    //     BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
 
         
-        SUB_TOPIC_STR = BLINKER_F("/sys/");
-        SUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
-        SUB_TOPIC_STR += BLINKER_F("/");
-        SUB_TOPIC_STR += DEVICE_NAME_MQTT;
-        SUB_TOPIC_STR += BLINKER_F("/rrpc/request/");
+    //     SUB_TOPIC_STR = BLINKER_F("/sys/");
+    //     SUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
+    //     SUB_TOPIC_STR += BLINKER_F("/");
+    //     SUB_TOPIC_STR += DEVICE_NAME_MQTT;
+    //     SUB_TOPIC_STR += BLINKER_F("/rrpc/request/");
 
-        if(!isMQTTinit) BLINKER_RRPC_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_RRPC_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
-    }
-    else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
-        String PUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
-        PUB_TOPIC_STR += BLINKER_F("/");
-        PUB_TOPIC_STR += _userID;
-        PUB_TOPIC_STR += BLINKER_F("/s");
+    //     if(!isMQTTinit) BLINKER_RRPC_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
+    //     // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
+    //     strcpy(BLINKER_RRPC_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
+    // }
+    // else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
+    //     String PUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
+    //     PUB_TOPIC_STR += BLINKER_F("/");
+    //     PUB_TOPIC_STR += _userID;
+    //     PUB_TOPIC_STR += BLINKER_F("/s");
 
-        if(!isMQTTinit) BLINKER_PUB_TOPIC_MQTT = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
+    //     if(!isMQTTinit) BLINKER_PUB_TOPIC_MQTT = (char*)malloc((PUB_TOPIC_STR.length() + 1)*sizeof(char));
+    //     // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
+    //     strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
+    //     BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
 
-        String SUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
-        SUB_TOPIC_STR += BLINKER_F("/");
-        SUB_TOPIC_STR += _userID;
-        SUB_TOPIC_STR += BLINKER_F("/r");
+    //     String SUB_TOPIC_STR = MQTT_PRODUCTINFO_MQTT;
+    //     SUB_TOPIC_STR += BLINKER_F("/");
+    //     SUB_TOPIC_STR += _userID;
+    //     SUB_TOPIC_STR += BLINKER_F("/r");
 
-        if(!isMQTTinit) BLINKER_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
-        // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
-        strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
+    //     if(!isMQTTinit) BLINKER_SUB_TOPIC_MQTT = (char*)malloc((SUB_TOPIC_STR.length() + 1)*sizeof(char));
+    //     // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
+    //     strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
-    }
-    else if (_broker == BLINKER_MQTT_BORKER_BLINKER) {
+    //     BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
+    // }
+    // else 
+    if (_broker == BLINKER_MQTT_BORKER_BLINKER) {
         String PUB_TOPIC_STR = BLINKER_F("/device");
         // PUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
         PUB_TOPIC_STR += BLINKER_F("/");
@@ -1086,21 +1088,22 @@ bool BlinkerWiFiESP::deviceRegister()
         BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
     }
 
-    if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
-        #if defined(ESP8266)
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
-        #elif defined(ESP32)
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
-        #endif
-    }
-    else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
-        #if defined(ESP8266)
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
-        #elif defined(ESP32)
-            mqtt_MQTT = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
-        #endif
-    }
-    else if (_broker == BLINKER_MQTT_BORKER_BLINKER) {
+    // if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
+    //     #if defined(ESP8266)
+    //         mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+    //     #elif defined(ESP32)
+    //         mqtt_MQTT = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+    //     #endif
+    // }
+    // else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
+    //     #if defined(ESP8266)
+    //         mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+    //     #elif defined(ESP32)
+    //         mqtt_MQTT = new Adafruit_MQTT_Client(&client_s, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
+    //     #endif
+    // }
+    // else 
+    if (_broker == BLINKER_MQTT_BORKER_BLINKER) {
         #if defined(ESP8266)
             mqtt_MQTT = new Adafruit_MQTT_Client(&client_mqtt, MQTT_HOST_MQTT, MQTT_PORT_MQTT, MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT);
         #elif defined(ESP32)
@@ -1435,13 +1438,13 @@ void BlinkerWiFiESP::commonBegin(const char* _ssid, const char* _pswd)
 {
     _configType = COMM;
 
-    connectWiFi(_ssid, _pswd);
-
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
     #elif defined(ESP32)
         BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
     #endif
+
+    connectWiFi(_ssid, _pswd);
 }
 
 #if defined(BLINKER_ESP_SMARTCONFIG)
@@ -1450,14 +1453,14 @@ void BlinkerWiFiESP::smartconfigBegin()
 {
     _configType = BLINKER_SMART_CONFIG;
 
-    if (!autoInit()) smartconfig();
-    // else _configStatus = SMART_DONE;
-
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
     #elif defined(ESP32)
         BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
     #endif
+
+    if (!autoInit()) smartconfig();
+    // else _configStatus = SMART_DONE;
 }
 
 void BlinkerWiFiESP::smartconfig()
@@ -1488,6 +1491,12 @@ void BlinkerWiFiESP::multiBegin(const char* _ssid, const char* _pswd)
 {
     _configType = BLINKER_MULTI;
 
+    #if defined(ESP8266)
+        BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
+    #elif defined(ESP32)
+        BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
+    #endif
+
     WiFi.mode(WIFI_STA);
     String _hostname = BLINKER_F("DiyArduinoMQTT_");
     _hostname += macDeviceName();
@@ -1501,12 +1510,6 @@ void BlinkerWiFiESP::multiBegin(const char* _ssid, const char* _pswd)
     wifiMulti.addAP(_ssid, _pswd);
 
     BLINKER_LOG(BLINKER_F("wifiMulti add "), _ssid);
-
-    #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
-    #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
-    #endif
 }
 
 #elif defined(BLINKER_APCONFIG)
@@ -1515,15 +1518,15 @@ void BlinkerWiFiESP::apconfigBegin()
 {
     #if defined(BLINKER_APCONFIG)
     _configType = BLINKER_AP_CONFIG;
-    
-    if (!autoInit()) softAPinit();
-    // else _configStatus = APCFG_DONE;
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
     #elif defined(ESP32)
         BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
     #endif
+    
+    if (!autoInit()) softAPinit();
+    // else _configStatus = APCFG_DONE;
     #endif
 }
 
@@ -1625,7 +1628,7 @@ void BlinkerWiFiESP::connectWiFi(const char* _ssid, const char* _pswd)
 {
     uint32_t _connectTime = millis();
 
-    BLINKER_LOG(BLINKER_F("Connecting to "), _ssid);
+    BLINKER_LOG(BLINKER_F("Connecting to ["), _ssid, "]...");
 
     WiFi.mode(WIFI_STA);
     String _hostname = BLINKER_F("DiyArduinoMQTT_");

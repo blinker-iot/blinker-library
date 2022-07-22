@@ -1,14 +1,14 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "../Polyfills/type_traits.hpp"
+#include "type_traits.hpp"
 
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4310)
+#  pragma warning(push)
+#  pragma warning(disable : 4310)
 #endif
 
 namespace ARDUINOJSON_NAMESPACE {
@@ -41,5 +41,5 @@ struct numeric_limits<
 }  // namespace ARDUINOJSON_NAMESPACE
 
 #ifdef _MSC_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif

@@ -1,12 +1,14 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#ifdef ARDUINOJSON_DEBUG
-#include <assert.h>
-#define ARDUINOJSON_ASSERT(X) assert(X)
+#include "../Configuration.hpp"
+
+#if ARDUINOJSON_DEBUG
+#  include <assert.h>
+#  define ARDUINOJSON_ASSERT(X) assert(X)
 #else
-#define ARDUINOJSON_ASSERT(X) ((void)0)
+#  define ARDUINOJSON_ASSERT(X) ((void)0)
 #endif
