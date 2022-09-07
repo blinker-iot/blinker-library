@@ -5,7 +5,7 @@
 #include "Blinker/BlinkerUtility.h"
 #include "../Server/BlinkerServer.h"
 
-#define BLINKER_VERSION                 "0.4.0"
+#define BLINKER_VERSION                 "0.4.220907"
 
 #if defined (__AVR__)
 #define BLINKER_JSON_BUFFER_SIZE        256
@@ -756,7 +756,7 @@
 
     #define BLINKER_CMD_WEATHER_FORECAST_AT     "WEATHER_FORECAST"
 
-    #define BLINKER_CMD_AQI_AT                  "AQI"
+    #define BLINKER_CMD_AIR_AT                  "AIR"
 
     #define BLINKER_CMD_NOTICE_AT               "NOTIFY"
 

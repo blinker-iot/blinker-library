@@ -250,15 +250,24 @@ void BlinkerProtocol<Transp>::begin()
     Serial.println(BLINKER_F(""));
     Serial.print(BLINKER_F("blinker lib version: "));
     Serial.println(BLINKER_VERSION);
+    #if defined(ESP8266)
     Serial.print(BLINKER_F("package version: "));
     Serial.println(ESP.getCoreVersion());
+    #elif defined(ESP32)
+    Serial.print(BLINKER_F("package version: "));
+    Serial.println(ESP.getSdkVersion());
+    #endif
     Serial.print(BLINKER_F("board type: "));
     Serial.println(ARDUINO_BOARD);
     #else
     BLINKER_LOG(TAG_PROTO, BLINKER_F(""));
 
     BLINKER_LOG(TAG_PROTO, BLINKER_F("blinker lib version: "), BLINKER_VERSION);
+    #if defined(ESP8266)
     BLINKER_LOG(TAG_PROTO, BLINKER_F("package version: "), ESP.getCoreVersion());
+    #elif defined(ESP32)
+    BLINKER_LOG(TAG_PROTO, BLINKER_F("package version: "), ESP.getSdkVersion());
+    #endif
     BLINKER_LOG(TAG_PROTO, BLINKER_F("board type: "), ARDUINO_BOARD);
     #endif
 
@@ -1202,9 +1211,21 @@ void BlinkerProtocol<Transp>::weather(uint32_t _city)
     data += BLINKER_F("deviceName=");
     data += conn.deviceName();
     data += BLINKER_F("&key=");
-    data += conn.authKey();
+    data += conn.token();
 
-    if (_weatherFunc) _weatherFunc(conn.httpServer(BLINKER_CMD_WEATHER_NUMBER, data));
+    #if defined(BLINKER_WIFI_AT)
+        String reqData;
+
+        reqData = BLINKER_F("+");
+        reqData += BLINKER_CMD_WEATHER_AT;
+        reqData += BLINKER_F(":");
+        reqData += conn.httpServer(BLINKER_CMD_WEATHER_NUMBER, data);
+
+        serialPrint(reqData);
+        serialPrint(BLINKER_CMD_OK);
+    #else
+        if (_weatherFunc) _weatherFunc(conn.httpServer(BLINKER_CMD_WEATHER_NUMBER, data));
+    #endif
 }
 
 template <class Transp>
@@ -1222,9 +1243,21 @@ void BlinkerProtocol<Transp>::weatherForecast(uint32_t _city)
     data += BLINKER_F("deviceName=");
     data += conn.deviceName();
     data += BLINKER_F("&key=");
-    data += conn.authKey();
+    data += conn.token();
 
-    if (_weather_forecast_Func) _weather_forecast_Func(conn.httpServer(BLINKER_CMD_WEATHER_FORECAST_NUMBER, data));
+    #if defined(BLINKER_WIFI_AT)
+        String reqData;
+
+        reqData = BLINKER_F("+");
+        reqData += BLINKER_CMD_WEATHER_FORECAST_AT;
+        reqData += BLINKER_F(":");
+        reqData += conn.httpServer(BLINKER_CMD_WEATHER_FORECAST_NUMBER, data);
+
+        serialPrint(reqData);
+        serialPrint(BLINKER_CMD_OK);
+    #else
+        if (_weather_forecast_Func) _weather_forecast_Func(conn.httpServer(BLINKER_CMD_WEATHER_FORECAST_NUMBER, data));
+    #endif
 }
 
 template <class Transp>
@@ -1242,9 +1275,21 @@ void BlinkerProtocol<Transp>::air(uint32_t _city)
     data += BLINKER_F("deviceName=");
     data += conn.deviceName();
     data += BLINKER_F("&key=");
-    data += conn.authKey();
+    data += conn.token();
 
-    if (_airFunc) _airFunc(conn.httpServer(BLINKER_CMD_AQI_NUMBER, data));
+    #if defined(BLINKER_WIFI_AT)
+        String reqData;
+
+        reqData = BLINKER_F("+");
+        reqData += BLINKER_CMD_AIR_AT;
+        reqData += BLINKER_F(":");
+        reqData += conn.httpServer(BLINKER_CMD_AQI_NUMBER, data);
+
+        serialPrint(reqData);
+        serialPrint(BLINKER_CMD_OK);
+    #else
+        if (_airFunc) _airFunc(conn.httpServer(BLINKER_CMD_AQI_NUMBER, data));
+    #endif
 }
 
 template <class Transp>
@@ -2734,28 +2779,45 @@ void BlinkerProtocol<Transp>::parseATdata()
         serialPrint(reqData);
         serialPrint(BLINKER_CMD_OK);
     }
-    // else if (_slaverAT->cmd() == BLINKER_CMD_WEATHER_AT && _slaverAT->state() == AT_SETTING) {
-    //     if (1 != _slaverAT->paramNum()) return;
+    else if (_slaverAT->cmd() == BLINKER_CMD_WEATHER_AT && _slaverAT->state() == AT_SETTING) {
+        if (1 != _slaverAT->paramNum()) return;
 
-    //     reqData = BLINKER_F("+");
-    //     reqData += BLINKER_CMD_WEATHER_AT;
-    //     reqData += BLINKER_F(":");
-    //     reqData += STRING_format(weather(_slaverAT->getParam(0).toInt()));
+        // reqData = BLINKER_F("+");
+        // reqData += BLINKER_CMD_WEATHER_AT;
+        // reqData += BLINKER_F(":");
+        // reqData += STRING_format(weather(_slaverAT->getParam(0).toInt()));
 
-    //     serialPrint(reqData);
-    //     serialPrint(BLINKER_CMD_OK);
-    // }
-    // else if (_slaverAT->cmd() == BLINKER_CMD_AQI_AT && _slaverAT->state() == AT_SETTING) {
-    //     if (1 != _slaverAT->paramNum()) return;
+        // serialPrint(reqData);
+        // serialPrint(BLINKER_CMD_OK);
 
-    //     reqData = BLINKER_F("+");
-    //     reqData += BLINKER_CMD_AQI_AT;
-    //     reqData += BLINKER_F(":");
-    //     reqData += STRING_format(air(_slaverAT->getParam(0).toInt()));
+        weather(_slaverAT->getParam(0).toInt());
+    }
+    else if (_slaverAT->cmd() == BLINKER_CMD_WEATHER_FORECAST_AT && _slaverAT->state() == AT_SETTING) {
+        if (1 != _slaverAT->paramNum()) return;
 
-    //     serialPrint(reqData);
-    //     serialPrint(BLINKER_CMD_OK);
-    // }
+        // reqData = BLINKER_F("+");
+        // reqData += BLINKER_CMD_WEATHER_FORECAST_AT;
+        // reqData += BLINKER_F(":");
+        // reqData += STRING_format(weatherForecast(_slaverAT->getParam(0).toInt()));
+
+        // serialPrint(reqData);
+        // serialPrint(BLINKER_CMD_OK);
+
+        weatherForecast(_slaverAT->getParam(0).toInt());
+    }
+    else if (_slaverAT->cmd() == BLINKER_CMD_AIR_AT && _slaverAT->state() == AT_SETTING) {
+        if (1 != _slaverAT->paramNum()) return;
+
+        // reqData = BLINKER_F("+");
+        // reqData += BLINKER_CMD_AIR_AT;
+        // reqData += BLINKER_F(":");
+        // reqData += STRING_format(air(_slaverAT->getParam(0).toInt()));
+
+        // serialPrint(reqData);
+        // serialPrint(BLINKER_CMD_OK);
+
+        air(_slaverAT->getParam(0).toInt());
+    }
     else if (_slaverAT->cmd() == BLINKER_CMD_NOTICE_AT && _slaverAT->state() == AT_SETTING) {
         if (1 != _slaverAT->paramNum()) return;
 
