@@ -5,7 +5,9 @@
 #include "Blinker/BlinkerUtility.h"
 #include "../Server/BlinkerServer.h"
 
-#define BLINKER_VERSION                 "0.4.220907"
+#define BLINKER_VERSION                 "0.4.220909"
+
+#define BLINKER_ESPTOUCH_CRYPT_KEY      NULL
 
 #if defined (__AVR__)
 #define BLINKER_JSON_BUFFER_SIZE        256
@@ -1734,7 +1736,11 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_WLAN_CHECK_SIZE         3
 
-    #define BLINKER_EEP_ADDR_AUUID          (BLINKER_EEP_ADDR_WLAN_CHECK + BLINKER_WLAN_CHECK_SIZE)
+    #define BLINKER_EEP_ADDR_AUTHKEY        (BLINKER_EEP_ADDR_WLAN_CHECK + BLINKER_WLAN_CHECK_SIZE)
+
+    #define BLINKER_AUTHKEY_SIZE            33
+
+    #define BLINKER_EEP_ADDR_AUUID          (BLINKER_EEP_ADDR_AUTHKEY + BLINKER_AUTHKEY_SIZE)
 
     #define BLINKER_AUUID_SIZE              34
 

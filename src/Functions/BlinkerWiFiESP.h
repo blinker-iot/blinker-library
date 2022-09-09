@@ -43,6 +43,7 @@
 enum b_config_t {
     COMM,
     BLINKER_SMART_CONFIG,
+    BLINKER_SMART_CONFIG_V2,
     BLINKER_AP_CONFIG,
     BLINKER_MULTI
 };
@@ -108,7 +109,7 @@ class BlinkerWiFiESP
         bool checkInit()            { return isMQTTinit; }
         bool checkWlanInit();
         void commonBegin(const char* _ssid, const char* _pswd);
-        #if defined(BLINKER_ESP_SMARTCONFIG)
+        #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_ESP_SMARTCONFIG_V2)
         void smartconfigBegin();
         void smartconfig();
         #elif defined(BLINKER_WIFI_MULTI)
@@ -314,6 +315,85 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
             break;
     }
 }
+
+#if defined(BLINKER_ESP_SMARTCONFIG_V2)
+b_configStatus_t _esptouch_v2_status = SMART_BEGIN;
+char get_key[33] = { 0 };
+
+void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
+{
+    char log_buf[64] = { 0 };
+    sprintf(log_buf, "[WiFi-event] event: %d", event);
+    BLINKER_LOG_ALL(log_buf);
+
+    switch (event) {
+
+        case ARDUINO_EVENT_SC_SCAN_DONE:
+        {
+            BLINKER_LOG_ALL("Scan done");
+        }
+        break;
+
+        case ARDUINO_EVENT_SC_FOUND_CHANNEL:
+        {
+            BLINKER_LOG_ALL("Found channel");
+
+        }
+        break;
+
+        case ARDUINO_EVENT_SC_GOT_SSID_PSWD:
+        {
+            BLINKER_LOG_ALL("Got SSID and password");
+
+            uint8_t ssid[33] = { 0 };
+            uint8_t password[65] = { 0 };
+
+            uint8_t rvd_data[33] = { 0 };
+
+            memcpy(ssid, info.sc_got_ssid_pswd.ssid, sizeof(info.sc_got_ssid_pswd.ssid));
+            memcpy(password, info.sc_got_ssid_pswd.password, sizeof(info.sc_got_ssid_pswd.password));
+
+            BLINKER_LOG_ALL("SSID: ", (char*)ssid);
+            BLINKER_LOG_ALL("PASSWORD: ", (char*)password);
+
+            if (info.sc_got_ssid_pswd.type == SC_TYPE_ESPTOUCH_V2) {
+                ESP_ERROR_CHECK( esp_smartconfig_get_rvd_data(rvd_data, sizeof(rvd_data)) );
+
+                // Serial.println("RVD_DATA");
+                // Serial.write(rvd_data, 33);
+                // Serial.printf("\n");
+
+                char data_to_char[1] ={0};
+                for (int i = 0; i < 33; i++) {
+                    // sprintf(data_to_char, "%02x ", rvd_data[i]);
+                    // Serial.printf("%02x ", rvd_data[i]);
+                    get_key[i] = (char)rvd_data[i];
+                }
+                // Serial.printf("\n");
+            }
+
+            BLINKER_LOG("RVD_DATA: ", get_key);
+            // Serial.println((char*)rvd_data);
+            _esptouch_v2_status = SMART_DONE;
+        }
+        break;
+
+        case ARDUINO_EVENT_SC_SEND_ACK_DONE:
+        {
+            BLINKER_LOG_ALL("SC_EVENT_SEND_ACK_DONE");
+        }
+        break;
+
+        default:
+        {
+            // Serial.printf("no case event: %d\n", event);
+            sprintf(log_buf, "no case event: %d", event);
+            BLINKER_LOG_ALL(log_buf);
+        }
+        break;
+    }
+}
+#endif
 
 BlinkerWiFiESP  WiFiESP;
 
@@ -1331,6 +1411,97 @@ bool BlinkerWiFiESP::checkWlanInit()
                         yield();
                         return false;
                 }
+            #elif defined(BLINKER_ESP_SMARTCONFIG_V2)
+            case BLINKER_SMART_CONFIG_V2 :
+                switch (_configStatus)
+                {
+                    case AUTO_INIT :
+                        if (WiFi.status() != WL_CONNECTED) {
+                            ::delay(500);
+                            return false;
+                        }
+                        else {
+                            BLINKER_LOG(BLINKER_F("WiFi Connected."));
+                            BLINKER_LOG(BLINKER_F("IP Address: "));
+                            BLINKER_LOG(WiFi.localIP());
+
+                            _isWiFiInit = true;
+                            _connectTime = 0;
+                            // _isWiFiInit = true;
+
+                            // begin();
+                            _configStatus = AUTO_DONE;
+
+                            _status = BLINKER_DEV_CONNECTED;
+
+                            return false;
+                        }
+                    case SMART_BEGIN :
+                        if(_configStatus != _esptouch_v2_status)
+                        {
+                            BLINKER_LOG(BLINKER_F("SmartConfig Done."));
+                            _configStatus = _esptouch_v2_status;
+                            _connectTime = millis();
+                        }
+                        return false;
+                    case SMART_DONE :
+                        if (WiFi.status() != WL_CONNECTED)
+                        {
+                            if (millis() - _connectTime > 15000)
+                            {
+                                BLINKER_LOG(BLINKER_F("SmartConfig timeout."));
+                                WiFi.stopSmartConfig();
+                                _configStatus = SMART_TIMEOUT;
+
+                                _esptouch_v2_status = SMART_BEGIN;
+                            }
+                            return false;
+                        }
+                        else if (WiFi.status() == WL_CONNECTED)
+                        {
+                            // WiFi.stopSmartConfig();
+
+                            BLINKER_LOG(BLINKER_F("WiFi Connected."));
+                            BLINKER_LOG(BLINKER_F("IP Address: "));
+                            BLINKER_LOG(WiFi.localIP());
+                            _isWiFiInit = true;
+                            _connectTime = 0;                            
+
+                            EEPROM.begin(BLINKER_EEP_SIZE);
+                            EEPROM.put(BLINKER_EEP_ADDR_WLAN_CHECK, ok);
+                            EEPROM.put(BLINKER_EEP_ADDR_AUTHKEY, get_key);
+                            EEPROM.commit();
+                            EEPROM.end();
+
+                            // BLINKER_LOG(BLINKER_F("Save wlan config"));
+
+                            // begin();
+
+                            _status = BLINKER_DEV_CONNECTED;
+
+                            begin(get_key);
+                            
+                            return false;
+                        }
+                    case SMART_TIMEOUT :
+                        if (BLINKER_ESPTOUCH_CRYPT_KEY != NULL)
+                        {
+                            WiFi.beginSmartConfig(SC_TYPE_ESPTOUCH_V2, BLINKER_ESPTOUCH_CRYPT_KEY);
+                        }
+                        else
+                        {
+                            WiFi.beginSmartConfig(SC_TYPE_ESPTOUCH_V2);
+                        }
+                        _configStatus = SMART_BEGIN;
+
+                        _status = BLINKER_WLAN_SMARTCONFIG_BEGIN;
+
+                        BLINKER_LOG(BLINKER_F("Waiting for SmartConfig."));
+                        return false;
+                    default :
+                        yield();
+                        return false;
+                }
             #elif defined(BLINKER_APCONFIG)
             case BLINKER_AP_CONFIG :
                 switch (_configStatus)
@@ -1447,11 +1618,15 @@ void BlinkerWiFiESP::commonBegin(const char* _ssid, const char* _pswd)
     connectWiFi(_ssid, _pswd);
 }
 
-#if defined(BLINKER_ESP_SMARTCONFIG)
+#if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_ESP_SMARTCONFIG_V2)
 
 void BlinkerWiFiESP::smartconfigBegin()
 {
+    #if defined(BLINKER_ESP_SMARTCONFIG_V2)
+    _configType = BLINKER_SMART_CONFIG_V2;
+    #else
     _configType = BLINKER_SMART_CONFIG;
+    #endif
 
     #if defined(ESP8266)
         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
@@ -1465,7 +1640,12 @@ void BlinkerWiFiESP::smartconfigBegin()
 
 void BlinkerWiFiESP::smartconfig()
 {
+    #if defined(BLINKER_ESP_SMARTCONFIG_V2)
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.onEvent(WiFiEvent);
+    #else
     WiFi.mode(WIFI_STA);
+    #endif
 
     String _hostname = BLINKER_F("DiyArduino_");
     _hostname += macDeviceName();
@@ -1476,7 +1656,18 @@ void BlinkerWiFiESP::smartconfig()
         WiFi.setHostname(_hostname.c_str());
     #endif
 
+    #if defined(BLINKER_ESP_SMARTCONFIG_V2)
+    if (BLINKER_ESPTOUCH_CRYPT_KEY != NULL)
+    {
+        WiFi.beginSmartConfig(SC_TYPE_ESPTOUCH_V2, BLINKER_ESPTOUCH_CRYPT_KEY);
+    }
+    else
+    {
+        WiFi.beginSmartConfig(SC_TYPE_ESPTOUCH_V2);
+    }
+    #else
     WiFi.beginSmartConfig();
+    #endif
 
     _configStatus = SMART_BEGIN;
 
@@ -1683,6 +1874,7 @@ bool BlinkerWiFiESP::checkConfig() {
     char ok[2 + 1];
     EEPROM.begin(BLINKER_EEP_SIZE);
     EEPROM.get(BLINKER_EEP_ADDR_WLAN_CHECK, ok);
+    EEPROM.get(BLINKER_EEP_ADDR_AUTHKEY, get_key);
     EEPROM.commit();
     EEPROM.end();
 
@@ -1694,6 +1886,7 @@ bool BlinkerWiFiESP::checkConfig() {
     else {
 
         BLINKER_LOG(BLINKER_F("wlan config check,success"));
+        begin(get_key);
         return true;
     }
 }

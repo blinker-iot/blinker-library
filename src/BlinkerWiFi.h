@@ -32,6 +32,7 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
         #endif
         }
 
+    #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_APCONFIG)
         void begin( const char* _auth)
         {
             Base::begin();
@@ -47,6 +48,21 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
             Base::loadTimer();
         #endif
         }
+    #endif
+
+    #if defined(BLINKER_ESP_SMARTCONFIG_V2)
+        void begin()
+        {
+            Base::begin();
+            // this->conn.begin();
+
+            this->conn.smartconfigBegin();
+        
+        #if defined(BLINKER_WIDGET)
+            Base::loadTimer();
+        #endif
+        }
+    #endif
 
     #if defined(BLINKER_WIFI_MULTI)
         void addAP( const char* _ssid, 
