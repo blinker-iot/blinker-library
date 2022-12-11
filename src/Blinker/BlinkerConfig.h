@@ -5,7 +5,7 @@
 #include "Blinker/BlinkerUtility.h"
 #include "../Server/BlinkerServer.h"
 
-#define BLINKER_VERSION                 "0.4.220909"
+#define BLINKER_VERSION                 "0.4.01220212"
 
 #define BLINKER_ESPTOUCH_CRYPT_KEY      NULL
 

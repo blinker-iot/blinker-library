@@ -75,6 +75,7 @@ char*       BLINKER_PUB_TOPIC_MQTT;
 char*       BLINKER_SUB_TOPIC_MQTT;
 // char*       BLINKER_RRPC_PUB_TOPIC_MQTT;
 char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
+char*       UUID_EXTRA;
 uint16_t    MQTT_PORT_MQTT;
 
 class BlinkerWiFiESP
@@ -739,7 +740,10 @@ int BlinkerWiFiESP::print(char * data, bool needCheck)
         
         if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
         {
-            strcat(data, _sharers[_sharerFrom]->uuid());
+            // strcat(data, _sharers[_sharerFrom]->uuid());
+            strcat(data, UUID_EXTRA);
+
+            free(UUID_EXTRA);
         }
         else
         {
@@ -1959,44 +1963,51 @@ void BlinkerWiFiESP::parseData(const char* data)
     }
     else
     {
-        BLINKER_LOG_ALL(BLINKER_F("_sharerCount: "), _sharerCount);
-        if (_sharerCount)
-        {
-            for (uint8_t num = 0; num < _sharerCount; num++)
-            {
-                if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
-                {
-                    _sharerFrom = num;
+        _sharerFrom = 0;
 
-                    kaTime = millis();
+        BLINKER_LOG_ALL(BLINKER_F("form extra uuid"), _uuid);
 
-                    BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
-                    BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+        UUID_EXTRA = (char*)malloc((_uuid.length()+1)*sizeof(char));
+        strcpy(UUID_EXTRA, _uuid.c_str());
+        
+        // BLINKER_LOG_ALL(BLINKER_F("_sharerCount: "), _sharerCount);
+        // if (_sharerCount)
+        // {
+        //     for (uint8_t num = 0; num < _sharerCount; num++)
+        //     {
+        //         if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+        //         {
+        //             _sharerFrom = num;
+
+        //             kaTime = millis();
+
+        //             BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+        //             BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
                     
-                    _needCheckShare = false;
+        //             _needCheckShare = false;
 
-                    dataGet = root["data"].as<String>();
+        //             dataGet = root["data"].as<String>();
 
-                    break;
-                }
-                else
-                {
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
+        //             break;
+        //         }
+        //         else
+        //         {
+        //             BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
-                    _needCheckShare = true;
+        //             _needCheckShare = true;
 
-                    dataGet = data;
-                }
-            }
-        }
-        else
-        {
-            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority&share uuid found, check is from bridge/share device, data: "), dataGet);
+        //             dataGet = data;
+        //         }
+        //     }
+        // }
+        // else
+        // {
+        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority&share uuid found, check is from bridge/share device, data: "), dataGet);
 
-            _needCheckShare = true;
+        //     _needCheckShare = true;
 
-            dataGet = data;
-        }
+        //     dataGet = data;
+        // }
 
         isAvail_MQTT = true;
         isAlive = true;

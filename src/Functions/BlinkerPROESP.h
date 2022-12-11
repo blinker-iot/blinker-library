@@ -74,6 +74,7 @@ char*       MQTT_DEVICEID_PRO;
 char*       BLINKER_PUB_TOPIC_PRO;
 char*       BLINKER_SUB_TOPIC_PRO;
 char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
+char*       UUID_EXTRA_PRO;
 uint16_t    MQTT_PORT_PRO;
 
 b_config_t  _configType = BLINKER_SMART_CONFIG;
@@ -742,7 +743,10 @@ bool BlinkerPROESP::print(char * data, bool needCheck)
         strcat(data, data_add.c_str());
         if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
         {
-            strcat(data, _sharers[_sharerFrom]->uuid());
+            // strcat(data, _sharers[_sharerFrom]->uuid());
+            strcat(data, UUID_EXTRA_PRO);
+
+            free(UUID_EXTRA_PRO);
         }
         else
         {
@@ -1995,41 +1999,48 @@ void BlinkerPROESP::parseData(const char* data)
     }
     else
     {
-        if (_sharerCount)
-        {
-            for (uint8_t num = 0; num < _sharerCount; num++)
-            {
-                if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
-                {
-                    _sharerFrom = num;
+        _sharerFrom = 0;
 
-                    kaTime = millis();
+        BLINKER_LOG_ALL(BLINKER_F("form extra uuid"), _uuid);
 
-                    BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
-                    BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+        UUID_EXTRA_PRO = (char*)malloc((_uuid.length()+1)*sizeof(char));
+        strcpy(UUID_EXTRA_PRO, _uuid.c_str());
+
+        // if (_sharerCount)
+        // {
+        //     for (uint8_t num = 0; num < _sharerCount; num++)
+        //     {
+        //         if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+        //         {
+        //             _sharerFrom = num;
+
+        //             kaTime = millis();
+
+        //             BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+        //             BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
                     
-                    _needCheckShare = false;
+        //             _needCheckShare = false;
 
-                    dataGet = root["data"].as<String>();
+        //             dataGet = root["data"].as<String>();
 
-                    break;
-                }
-                else
-                {
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
+        //             break;
+        //         }
+        //         else
+        //         {
+        //             BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
-                    _needCheckShare = true;
+        //             _needCheckShare = true;
 
-                    dataGet = data;
-                }
-            }
-        }
-        else
-        {
-            _needCheckShare = true;
+        //             dataGet = data;
+        //         }
+        //     }
+        // }
+        // else
+        // {
+        //     _needCheckShare = true;
 
-            dataGet = data;
-        }
+        //     dataGet = data;
+        // }
 
         isAvail_PRO = true;
         isAlive = true;
