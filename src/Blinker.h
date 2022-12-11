@@ -349,9 +349,9 @@
     {
         for(;;) {
             Blinker.run();
-            esp_task_wdt_feed();
+            // esp_task_wdt_feed();
             vTaskDelay(1);
-            esp_task_wdt_feed();
+            // esp_task_wdt_feed();
         }
     }
 
