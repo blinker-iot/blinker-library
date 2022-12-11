@@ -52,6 +52,9 @@ char*       MQTT_DEVICEID_PRO;
 char*       BLINKER_PUB_TOPIC_PRO;
 char*       BLINKER_SUB_TOPIC_PRO;
 char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
+
+char*       UUID_EXTRA_PRO;
+
 uint16_t    MQTT_PORT_PRO;
 
 enum b_config_t {
@@ -790,36 +793,46 @@ void BlinkerPROESP::parseData(const char* data)
     }
     else
     {
-        if (_sharerCount)
-        {
-            for (uint8_t num = 0; num < _sharerCount; num++)
-            {
-                if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
-                {
-                    _sharerFrom = num;
+        _sharerFrom = 0;
 
-                    kaTime = millis();
+        BLINKER_LOG_ALL(BLINKER_F("form extra uuid"), _uuid);
 
-                    BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
-                    BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+        UUID_EXTRA_PRO = (char*)malloc((_uuid.length()+1)*sizeof(char));
+        strcpy(UUID_EXTRA_PRO, _uuid.c_str());
+
+        // dataGet = data;
+
+        // if (_sharerCount)
+        // {
+        //     for (uint8_t num = 0; num < _sharerCount; num++)
+        //     {
+        //         if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+        //         {
+        //             _sharerFrom = num;
+
+        //             kaTime = millis();
+
+        //             BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+        //             BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
                     
-                    _needCheckShare = false;
+        //             _needCheckShare = false;
 
-                    break;
-                }
-                else
-                {
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
+        //             break;
+        //         }
+        //         else
+        //         {
+        //             BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
-                    _needCheckShare = true;
-                    dataGet = data;
-                }
-            }
-        }
-        else
-        {
-            dataGet = data;
-        }
+        //             _needCheckShare = true;
+        //             dataGet = data;
+        //         }
+        //     }
+        // }
+        // else
+        // {
+        //     dataGet = data;
+        // }
+
             // dataGet = String((char *)iotSub_PRO->lastread);
             // root.printTo(dataGet);
             // serializeJson(root, dataGet);
@@ -956,7 +969,10 @@ int BlinkerPROESP::print(char * data, bool needCheck)
         strcat(data, data_add.c_str());
         if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
         {
-            strcat(data, _sharers[_sharerFrom]->uuid());
+            // strcat(data, _sharers[_sharerFrom]->uuid());
+            strcat(data, UUID_EXTRA_PRO);
+
+            free(UUID_EXTRA_PRO);
         }
         else
         {
@@ -1005,17 +1021,17 @@ int BlinkerPROESP::print(char * data, bool needCheck)
 
         if (mqtt_PRO->connected())
         {
-            if (needCheck)
-            {
-                if (!checkCanPrint())
-                {
-                    if (!_alive)
-                    {
-                        isAlive = false;
-                    }
-                    return false;
-                }
-            }
+            // if (needCheck)
+            // {
+            //     if (!checkCanPrint())
+            //     {
+            //         if (!_alive)
+            //         {
+            //             isAlive = false;
+            //         }
+            //         return false;
+            //     }
+            // }
 
             if (! mqtt_PRO->publish(BLINKER_PUB_TOPIC_PRO, data))
             {
@@ -2260,6 +2276,10 @@ int BlinkerPROESP::connectServer() {
         url_iot += BLINKER_F("&aliType=multi_outlet");
     #elif defined(BLINKER_ALIGENIE_SENSOR)
         url_iot += BLINKER_F("&aliType=sensor");
+    #elif defined(BLINKER_ALIGENIE_FAN)
+        url_iot += BLINKER_F("&aliType=fan");
+    #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
+        url_iot += BLINKER_F("&aliType=aircondition");
     #elif defined(BLINKER_ALIGENIE_TYPE)
         url_iot += BLINKER_ALIGENIE_TYPE;
     #endif
@@ -2272,6 +2292,10 @@ int BlinkerPROESP::connectServer() {
         url_iot += BLINKER_F("&duerType=MULTI_SOCKET");
     #elif defined(BLINKER_DUEROS_SENSOR)
         url_iot += BLINKER_F("&duerType=AIR_MONITOR");
+    #elif defined(BLINKER_DUEROS_FAN)
+        url_iot += BLINKER_F("&duerType=FAN");
+    #elif defined(BLINKER_DUEROS_AIRCONDITION)
+        url_iot += BLINKER_F("&duerType=AIR_CONDITION");
     #elif defined(BLINKER_DUEROS_TYPE)
         url_iot += BLINKER_DUEROS_TYPE;
     #endif
@@ -2284,6 +2308,10 @@ int BlinkerPROESP::connectServer() {
         url_iot += BLINKER_F("&miType=multi_outlet");
     #elif defined(BLINKER_MIOT_SENSOR)
         url_iot += BLINKER_F("&miType=sensor");
+    #elif defined(BLINKER_MIOT_FAN)
+        url_iot += BLINKER_F("&miType=fan");
+    #elif defined(BLINKER_MIOT_AIRCONDITION)
+        url_iot += BLINKER_F("&miType=aircondition");
     #elif defined(BLINKER_MIOT_TYPE)
         url_iot += BLINKER_MIOT_TYPE;
     #endif
@@ -2466,11 +2494,6 @@ int BlinkerPROESP::connectServer() {
     String _userID = root[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
     String _userName = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTID];
     String _key = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTTOKEN];
-    
-    if (_key == _userName) {
-        _key = STRING_find_string(payload, "iotToken", "\"", 4);
-    }
-    
     String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
@@ -2904,6 +2927,7 @@ int BlinkerPROESP::checkCanPrint() {
         checkKA();
 
         return false;
+        // return true;
     }
 }
 
@@ -2915,6 +2939,7 @@ int BlinkerPROESP::checkCanBprint() {
         BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
         
         return false;
+        // return true;
     }
 }
 
@@ -3190,7 +3215,11 @@ void BlinkerWlan::smartconfigBegin(uint16_t _time) {
 #if defined(ESP8266)
     WiFi.hostname(softAP_ssid);
 #elif defined(ESP32)
+    // WiFi.setHostname(softAP_ssid.c_str());
+
+    WiFi.mode(WIFI_MODE_NULL);
     WiFi.setHostname(softAP_ssid.c_str());
+    WiFi.mode(WIFI_STA);
 #endif
 
     WiFi.beginSmartConfig();
@@ -3581,7 +3610,9 @@ void BlinkerWlan::connectWiFi(const char* _ssid, const char* _pswd)
     #if defined(ESP8266)
         WiFi.hostname(_hostname);
     #elif defined(ESP32)
+        WiFi.mode(WIFI_MODE_NULL);
         WiFi.setHostname(_hostname.c_str());
+        WiFi.mode(WIFI_STA);
     #endif
 
     if (_pswd && strlen(_pswd)) {

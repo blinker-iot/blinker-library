@@ -1,13 +1,13 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include "../Configuration.hpp"
+#include "JsonSerializer.hpp"
 #include "../Serialization/measure.hpp"
 #include "../Serialization/serialize.hpp"
-#include "JsonSerializer.hpp"
 
 namespace ARDUINOJSON_NAMESPACE {
 
@@ -16,44 +16,50 @@ class PrettyJsonSerializer : public JsonSerializer<TWriter> {
   typedef JsonSerializer<TWriter> base;
 
  public:
-  PrettyJsonSerializer(TWriter &writer) : base(writer), _nesting(0) {}
+  PrettyJsonSerializer(TWriter writer) : base(writer), _nesting(0) {}
 
-  void visitArray(const CollectionData &array) {
+  size_t visitArray(const CollectionData &array) {
     VariantSlot *slot = array.head();
-    if (!slot) return base::write("[]");
+    if (slot) {
+      base::write("[\r\n");
+      _nesting++;
+      while (slot != 0) {
+        indent();
+        slot->data()->accept(*this);
 
-    base::write("[\r\n");
-    _nesting++;
-    while (slot != 0) {
+        slot = slot->next();
+        base::write(slot ? ",\r\n" : "\r\n");
+      }
+      _nesting--;
       indent();
-      slot->data()->accept(*this);
-
-      slot = slot->next();
-      base::write(slot ? ",\r\n" : "\r\n");
+      base::write("]");
+    } else {
+      base::write("[]");
     }
-    _nesting--;
-    indent();
-    base::write("]");
+    return this->bytesWritten();
   }
 
-  void visitObject(const CollectionData &object) {
+  size_t visitObject(const CollectionData &object) {
     VariantSlot *slot = object.head();
-    if (!slot) return base::write("{}");
+    if (slot) {
+      base::write("{\r\n");
+      _nesting++;
+      while (slot != 0) {
+        indent();
+        base::visitString(slot->key());
+        base::write(": ");
+        slot->data()->accept(*this);
 
-    base::write("{\r\n");
-    _nesting++;
-    while (slot != 0) {
+        slot = slot->next();
+        base::write(slot ? ",\r\n" : "\r\n");
+      }
+      _nesting--;
       indent();
-      base::visitString(slot->key());
-      base::write(": ");
-      slot->data()->accept(*this);
-
-      slot = slot->next();
-      base::write(slot ? ",\r\n" : "\r\n");
+      base::write("}");
+    } else {
+      base::write("{}");
     }
-    _nesting--;
-    indent();
-    base::write("}");
+    return this->bytesWritten();
   }
 
  private:
@@ -70,7 +76,7 @@ size_t serializeJsonPretty(const TSource &source, TDestination &destination) {
 }
 
 template <typename TSource>
-size_t serializeJsonPretty(const TSource &source, char *buffer,
+size_t serializeJsonPretty(const TSource &source, void *buffer,
                            size_t bufferSize) {
   return serialize<PrettyJsonSerializer>(source, buffer, bufferSize);
 }

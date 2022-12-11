@@ -101,6 +101,9 @@ char*       BLINKER_PUB_TOPIC_MQTT;
 char*       BLINKER_SUB_TOPIC_MQTT;
 // char*       BLINKER_RRPC_PUB_TOPIC_MQTT;
 char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
+
+char*       UUID_EXTRA;
+
 uint16_t    MQTT_PORT_MQTT;
 
 class BlinkerMQTT : public BlinkerStream
@@ -878,44 +881,50 @@ void BlinkerMQTT::parseData(const char* data)
     }
     else
     {
-        BLINKER_LOG_ALL(BLINKER_F("_sharerCount: "), _sharerCount);
-        if (_sharerCount)
-        {
-            for (uint8_t num = 0; num < _sharerCount; num++)
-            {
-                if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
-                {
-                    _sharerFrom = num;
+        _sharerFrom = 0;
 
-                    kaTime = millis();
+        BLINKER_LOG_ALL(BLINKER_F("form extra uuid"), _uuid);
 
-                    BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
-                    BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
+        UUID_EXTRA = (char*)malloc((_uuid.length()+1)*sizeof(char));
+        strcpy(UUID_EXTRA, _uuid.c_str());
+        // BLINKER_LOG_ALL(BLINKER_F("_sharerCount: "), _sharerCount);
+        // if (_sharerCount)
+        // {
+        //     for (uint8_t num = 0; num < _sharerCount; num++)
+        //     {
+        //         if (strcmp(_uuid.c_str(), _sharers[num]->uuid()) == 0)
+        //         {
+        //             _sharerFrom = num;
+
+        //             kaTime = millis();
+
+        //             BLINKER_LOG_ALL(BLINKER_F("From sharer: "), _uuid);
+        //             BLINKER_LOG_ALL(BLINKER_F("sharer num: "), num);
                     
-                    _needCheckShare = false;
+        //             _needCheckShare = false;
 
-                    dataGet = root["data"].as<String>();
+        //             dataGet = root["data"].as<String>();
 
-                    break;
-                }
-                else
-                {
-                    BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
+        //             break;
+        //         }
+        //         else
+        //         {
+        //             BLINKER_ERR_LOG_ALL(BLINKER_F("No authority uuid found, check is from bridge/share device, data: "), dataGet);
 
-                    _needCheckShare = true;
+        //             _needCheckShare = true;
 
-                    dataGet = data;
-                }
-            }
-        }
-        else
-        {
-            BLINKER_ERR_LOG_ALL(BLINKER_F("No authority&share uuid found, check is from bridge/share device, data: "), dataGet);
+        //             dataGet = data;
+        //         }
+        //     }
+        // }
+        // else
+        // {
+        //     BLINKER_ERR_LOG_ALL(BLINKER_F("No authority&share uuid found, check is from bridge/share device, data: "), dataGet);
 
-            _needCheckShare = true;
+        //     _needCheckShare = true;
 
-            dataGet = data;
-        }
+        //     dataGet = data;
+        // }
             // dataGet = String((char *)iotSub_MQTT->lastread);
             // root.printTo(dataGet);
             // serializeJson(root, dataGet);
@@ -1054,7 +1063,10 @@ int BlinkerMQTT::print(char * data, bool needCheck)
         
         if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
         {
-            strcat(data, _sharers[_sharerFrom]->uuid());
+            // strcat(data, _sharers[_sharerFrom]->uuid());
+            strcat(data, UUID_EXTRA);
+
+            free(UUID_EXTRA);
         }
         else
         {
@@ -2183,11 +2195,9 @@ int BlinkerMQTT::connectServer() {
     String _userID = root[BLINKER_CMD_DETAIL][BLINKER_CMD_DEVICENAME];
     String _userName = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTID];
     String _key = root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTTOKEN];
-    
-    if (_key == _userName) {
-        _key = STRING_find_string(payload, "iotToken", "\"", 4);
-    }
-    
+    // if (_key == _userName) {
+    //     _key = STRING_find_string(payload, "iotToken", "\"", 4);
+    // }
     String _productInfo = root[BLINKER_CMD_DETAIL][BLINKER_CMD_PRODUCTKEY];
     String _broker = root[BLINKER_CMD_DETAIL][BLINKER_CMD_BROKER];
     String _uuid = root[BLINKER_CMD_DETAIL][BLINKER_CMD_UUID];
@@ -2197,6 +2207,11 @@ int BlinkerMQTT::connectServer() {
     BLINKER_LOG_ALL("_num: ", _num);
     if (_num > 0) _num += 3;
     _host = _host.substring(_num, _host.length());
+
+    
+    // BLINKER_LOG_ALL("_userID: ", _userID);
+    // BLINKER_LOG_ALL("_userName: ", root[BLINKER_CMD_DETAIL][BLINKER_CMD_IOTID].as<String>());
+    // BLINKER_LOG_ALL("_key: ", STRING_find_string(payload, "iotToken", "\"", 4));
 
 
     // if (isMQTTinit)
@@ -2968,7 +2983,9 @@ void BlinkerMQTT::multiBegin(const char* _ssid, const char* _pswd)
     #if defined(ESP8266)
         WiFi.hostname(_hostname.c_str());
     #elif defined(ESP32)
+        WiFi.mode(WIFI_MODE_NULL);
         WiFi.setHostname(_hostname.c_str());
+        WiFi.mode(WIFI_STA);
     #endif
 
     wifiMulti.addAP(_ssid, _pswd);
@@ -3032,7 +3049,9 @@ bool BlinkerMQTT::autoInit()
     #if defined(ESP8266)
         WiFi.hostname(_hostname.c_str());
     #elif defined(ESP32)
+        WiFi.mode(WIFI_MODE_NULL);
         WiFi.setHostname(_hostname.c_str());
+        WiFi.mode(WIFI_STA);
     #endif
 
     if (checkConfig())
@@ -3122,7 +3141,9 @@ void BlinkerMQTT::smartconfig()
     #if defined(ESP8266)
         WiFi.hostname(_hostname.c_str());
     #elif defined(ESP32)
+        WiFi.mode(WIFI_MODE_NULL);
         WiFi.setHostname(_hostname.c_str());
+        WiFi.mode(WIFI_STA);
     #endif
 
     WiFi.beginSmartConfig();
@@ -3423,13 +3444,16 @@ void BlinkerMQTT::connectWiFi(const char* _ssid, const char* _pswd)
     BLINKER_LOG(BLINKER_F("Connecting to "), _ssid);
 
     WiFi.mode(WIFI_STA);
+
     String _hostname = BLINKER_F("DiyArduinoMQTT_");
     _hostname += macDeviceName();
 
     #if defined(ESP8266)
         WiFi.hostname(_hostname.c_str());
     #elif defined(ESP32)
+        WiFi.mode(WIFI_MODE_NULL);
         WiFi.setHostname(_hostname.c_str());
+        WiFi.mode(WIFI_STA);
     #endif
 
     if (_pswd && strlen(_pswd)) {
