@@ -22,12 +22,19 @@ jobs:
           format: YYYY.MM.DD
           utcOffset: "+08:00"
       
-      - name: install-zip
-        uses: montudor/action-zip@v1
+      # - name: install-zip
+      #   uses: montudor/action-zip@v1
 
-      - name: Zip output
-        run: zip -qq -r blinker-library-${{steps.version.outputs.prop}}.zip ../blinker-library -x .github/* -x .git/*         
-        working-directory: ${{ github.workspace }}
+      # - name: Zip output
+      #   run: zip -qq -r blinker-library-${{steps.version.outputs.prop}}.zip ../blinker-library -x .github/* -x .git/*         
+      #   working-directory: ${{ github.workspace }}
+      - name: Archive Release
+        uses: thedoctor0/zip-release@0.7.2
+        with:
+          type: 'zip'
+          filename: 'blinker-library-${{steps.version.outputs.prop}}.zip'
+          directory: '${{ github.workspace }}'
+          path: '../'
       
       - name: create json
         id: jsonfile
