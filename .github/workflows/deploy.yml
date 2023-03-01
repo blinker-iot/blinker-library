@@ -28,10 +28,14 @@ jobs:
       # - name: Zip output
       #   run: zip -qq -r blinker-library-${{steps.version.outputs.prop}}.zip ../blinker-library -x .github/* -x .git/*         
       #   working-directory: ${{ github.workspace }}
+      
+      - name: set env
+        run: export RUNNER_OS="Windows"
+
       - name: Archive Release
         uses: thedoctor0/zip-release@0.7.2
         with:
-          type: '7zip'
+          type: 'zip'
           filename: 'blinker-library-${{steps.version.outputs.prop}}.zip'
           directory: '${{ github.workspace }}'
           path: '../'
