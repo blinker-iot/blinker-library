@@ -22,7 +22,9 @@ jobs:
           format: YYYY.MM.DD
           utcOffset: "+08:00"
       
-      - run: cp -r ../workspace blinker-library
+      - name: list file
+      - run: |
+          ls ${{ github.workspace }}
       
       - name: action-zip
         uses: montudor/action-zip@v0.1.1
