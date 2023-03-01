@@ -22,40 +22,36 @@ jobs:
           format: YYYY.MM.DD
           utcOffset: "+08:00"
       
-      - run: |
-          ls ${{ github.workspace }}
-        
-      - run: |
-          ls ../
-      
-      # - name: action-zip
-      #   uses: montudor/action-zip@v0.1.1
-      #   with:
-      #     args: zip -qq -r blinker-library-${{steps.version.outputs.prop}}.zip ../blinker-library -x .github/* -x .git/*
-      
-      # - name: create json
-      #   id: jsonfile
-      #   uses: jsdaniell/create-json@1.1.2
-      #   with:
-      #     name: "arduino.json"
-      #     json: '{"img": "assets/sdk/arduino.png", "text": "Arduino (C++)", "update": "${{ steps.current-time.outputs.formattedTime}}", "version": "${{steps.version.outputs.prop}}", "github": "https://github.com/blinker-iot/blinker-library", "document": "https://diandeng.tech/doc/arduino-support", "download": "sdk/blinker-library-${{steps.version.outputs.prop}}.zip" }'
+      - name: install-zip
+        uses: montudor/action-zip@v1
 
-      # - name: upload zip
-      #   uses: garygrossgarten/github-action-scp@v0.5.3
-      #   with:
-      #     local: blinker-library-${{steps.version.outputs.prop}}.zip
-      #     remote: ${{ secrets.REMOTE_PATH }}/blinker-library-${{steps.version.outputs.prop}}.zip
-      #     host: ${{ secrets.SERVER_IP }}
-      #     username: ubuntu
-      #     privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     recursive: true
+      - name: Zip output
+        run: zip -qq -r blinker-library-${{steps.version.outputs.prop}}.zip ../blinker-library -x .github/* -x .git/*         
+        working-directory: ${{ github.workspace }}
       
-      # - name: upload json
-      #   uses: garygrossgarten/github-action-scp@v0.5.3
-      #   with:
-      #     local: arduino.json
-      #     remote: ${{ secrets.REMOTE_PATH }}/arduino.json
-      #     host: ${{ secrets.SERVER_IP }}
-      #     username: ubuntu
-      #     privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     recursive: true
+      - name: create json
+        id: jsonfile
+        uses: jsdaniell/create-json@1.1.2
+        with:
+          name: "arduino.json"
+          json: '{"img": "assets/sdk/arduino.png", "text": "Arduino (C++)", "update": "${{ steps.current-time.outputs.formattedTime}}", "version": "${{steps.version.outputs.prop}}", "github": "https://github.com/blinker-iot/blinker-library", "document": "https://diandeng.tech/doc/arduino-support", "download": "sdk/blinker-library-${{steps.version.outputs.prop}}.zip" }'
+
+      - name: upload zip
+        uses: garygrossgarten/github-action-scp@v0.5.3
+        with:
+          local: blinker-library-${{steps.version.outputs.prop}}.zip
+          remote: ${{ secrets.REMOTE_PATH }}/blinker-library-${{steps.version.outputs.prop}}.zip
+          host: ${{ secrets.SERVER_IP }}
+          username: ubuntu
+          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          recursive: true
+      
+      - name: upload json
+        uses: garygrossgarten/github-action-scp@v0.5.3
+        with:
+          local: arduino.json
+          remote: ${{ secrets.REMOTE_PATH }}/arduino.json
+          host: ${{ secrets.SERVER_IP }}
+          username: ubuntu
+          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          recursive: true
