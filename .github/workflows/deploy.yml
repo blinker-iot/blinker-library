@@ -22,7 +22,6 @@ jobs:
           format: YYYY.MM.DD
           utcOffset: "+08:00"
       
-      - name: list file
       - run: |
           ls ${{ github.workspace }}
       
