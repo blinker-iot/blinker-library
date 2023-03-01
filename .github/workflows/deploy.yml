@@ -31,7 +31,7 @@ jobs:
       - name: Archive Release
         uses: thedoctor0/zip-release@0.7.2
         with:
-          type: 'zip'
+          type: '7zip'
           filename: 'blinker-library-${{steps.version.outputs.prop}}.zip'
           directory: '${{ github.workspace }}'
           path: '../'
