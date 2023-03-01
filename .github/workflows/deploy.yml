@@ -22,10 +22,12 @@ jobs:
           format: YYYY.MM.DD
           utcOffset: "+08:00"
       
+      - run: cp -r ${{ github.workspace }} blinker-library
+      
       - name: action-zip
         uses: montudor/action-zip@v0.1.1
         with:
-          args: zip -qq -r blinker-library-${{steps.version.outputs.prop}}.zip ../ -x .github/* -x .git/*
+          args: zip -qq -r blinker-library-${{steps.version.outputs.prop}}.zip ../blinker-library -x .github/* -x .git/*
       
       - name: create json
         id: jsonfile
