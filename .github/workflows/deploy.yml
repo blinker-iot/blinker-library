@@ -28,17 +28,20 @@ jobs:
       # - name: Zip output
       #   run: zip -qq -r blinker-library-${{steps.version.outputs.prop}}.zip ../blinker-library -x .github/* -x .git/*         
       #   working-directory: ${{ github.workspace }}
-      
-      - name: set env
-        run: export RUNNER_OS="Windows"
 
-      - name: Archive Release
-        uses: thedoctor0/zip-release@0.7.2
+      # - name: Archive Release
+      #   uses: thedoctor0/zip-release@0.7.2
+      #   with:
+      #     type: 'zip'
+      #     filename: 'blinker-library-${{steps.version.outputs.prop}}.zip'
+      #     directory: '${{ github.workspace }}'
+      #     path: '../'
+
+      - name: download zip
+        uses: carlosperate/download-file-action@v2.0.0
         with:
-          type: 'zip'
-          filename: 'blinker-library-${{steps.version.outputs.prop}}.zip'
-          directory: '${{ github.workspace }}'
-          path: '../'
+          file-url: 'https://api.github.com/repos/blinker-iot/blinker-library/zipball'
+          file-name: 'blinker-library-${{steps.version.outputs.prop}}.zip'
       
       - name: create json
         id: jsonfile
