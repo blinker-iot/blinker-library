@@ -1,5 +1,6 @@
 # blinker-library
 Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.  
+![](https://img.shields.io/github/downloads/blinker-iot/blinker-library/total?style=flat-square&color=informational)
 
 # Why named blinker
 When we learn a new embedded hardware, we usually started with the sketch **Blink**.  
