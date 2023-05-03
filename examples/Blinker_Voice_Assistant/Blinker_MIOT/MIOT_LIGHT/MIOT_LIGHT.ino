@@ -123,7 +123,7 @@ void miotPowerState(const String & state)
 
         wsState = false;
         
-        colorW == 0;
+        colorW = 0;
     }
 
     pixelShow();
