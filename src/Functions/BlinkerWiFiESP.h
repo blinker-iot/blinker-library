@@ -77,6 +77,7 @@ char*       BLINKER_SUB_TOPIC_MQTT;
 char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
 char*       UUID_EXTRA;
 uint16_t    MQTT_PORT_MQTT;
+char get_key[33] = { 0 };
 
 class BlinkerWiFiESP
 {
@@ -319,7 +320,6 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
 
 #if defined(BLINKER_ESP_SMARTCONFIG_V2)
 b_configStatus_t _esptouch_v2_status = SMART_BEGIN;
-char get_key[33] = { 0 };
 
 void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 {
