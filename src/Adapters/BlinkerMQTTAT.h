@@ -2166,6 +2166,12 @@ int BlinkerMQTTAT::connectServer() {
         url_iot += BLINKER_F("&duerType=AIR_MONITOR");
     }
 
+    #ifndef BLINKER_WITHOUT_SSL
+    url_iot += BLINKER_F("&protocol=mqtts");
+    #else
+    url_iot += BLINKER_F("&protocol=mqtt");
+    #endif
+
     url_iot = "https://" + host + url_iot;
 
     BLINKER_LOG_ALL(BLINKER_F("[HTTP] GET... url_iot: "), url_iot);
