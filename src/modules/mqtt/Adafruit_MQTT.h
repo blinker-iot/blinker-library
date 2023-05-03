@@ -175,7 +175,11 @@ class Adafruit_MQTT {
   // connect(). This returns a __FlashStringHelper*, which points to a
   // string stored in flash, but can be directly passed to e.g.
   // Serial.println without any further processing.
+  #if defined(ESP32)
+  const char* connectErrorString(int8_t code);
+  #else
   const __FlashStringHelper* connectErrorString(int8_t code);
+  #endif
 
   // Sends MQTT disconnect packet and calls disconnectServer()
   bool disconnect();
