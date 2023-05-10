@@ -13,7 +13,7 @@
         "type": "git",
         "url": "https://github.com/blinker-iot/blinker-library.git"
     },
-    "version": "0.3.10",
+    "version": "0.3.10230510",
     "homepage": "https://diandeng.tech/home",
     "export": {
         "exclude": [
