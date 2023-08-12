@@ -3,6 +3,10 @@
 
 #if defined(ESP8266) || defined(ESP32)
 
+#if defined(BLINKER_ESPTOUCH_V2)
+    #define BLINKER_ESP_SMARTCONFIG_V2
+#endif
+
 #include "Functions/BlinkerWiFiESP.h"
 #include "Blinker/BlinkerProtocol.h"
 #include "modules/ArduinoJson/ArduinoJson.h"

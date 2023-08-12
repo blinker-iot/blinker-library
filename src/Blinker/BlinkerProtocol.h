@@ -318,6 +318,12 @@ void BlinkerProtocol<Transp>::begin()
         #if defined(BLINKER_NO_BUTTON)
             BApi::noButtonInit();
         #endif
+    #elif defined(BLINKER_WIFI)
+        #if defined(BLINKER_BUTTON_PULLDOWN)
+            BApi::buttonInit(false);
+        #else
+            BApi::buttonInit();
+        #endif
     #endif
 }
 
@@ -332,6 +338,8 @@ void BlinkerProtocol<Transp>::run()
     #if defined(BLINKER_NO_BUTTON)
         BApi::noButtonCheck();
     #endif
+#elif defined(BLINKER_WIFI)
+    BApi::tick();
 #endif
 
 #if defined(BLINKER_WIFI_AT)

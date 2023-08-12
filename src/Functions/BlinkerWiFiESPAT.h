@@ -1238,7 +1238,8 @@ char * BlinkerWiFiESPAT::lastRead()
 void BlinkerWiFiESPAT::flush()
 {
     if (isFresh_MQTT_AT)
-    {        
+    {   
+        free(msgBuf_MQTT_AT);     
         isFresh_MQTT_AT = false; isAvail_MQTT_AT = false;
         isAliAvail = false; isDuerAvail = false; isMIOTAvail = false;//isBavail = false;
         

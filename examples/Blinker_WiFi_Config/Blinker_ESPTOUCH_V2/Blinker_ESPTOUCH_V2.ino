@@ -45,7 +45,7 @@
 
 #define BLINKER_WIFI
 #define BLINKER_WIDGET
-#define BLINKER_ESP_SMARTCONFIG_V2
+#define BLINKER_ESPTOUCH_V2
 
 #include <Blinker.h>
 

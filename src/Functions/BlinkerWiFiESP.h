@@ -638,8 +638,8 @@ char * BlinkerWiFiESP::lastRead()
 void BlinkerWiFiESP::flush()
 {
     if (isFresh_MQTT)
-    {        
-        isFresh_MQTT = false; isAvail_MQTT = false;
+    {
+        free(msgBuf_MQTT); isFresh_MQTT = false; isAvail_MQTT = false;
         isAliAvail = false; isDuerAvail = false; isMIOTAvail = false;//isBavail = false;
         
         BLINKER_LOG_ALL(BLINKER_F("flush"));
@@ -1008,7 +1008,12 @@ bool BlinkerWiFiESP::deviceRegister()
         free(iotSub_MQTT);
     }
 
-    // if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
+    if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
+        BLINKER_LOG_ALL(BLINKER_F("===================="));
+        BLINKER_LOG_ALL(BLINKER_F(" Error! Not Blinker Broker device!"));
+        BLINKER_LOG_ALL(BLINKER_F("Only support Blinker Broker device!"));
+        BLINKER_LOG_ALL(BLINKER_F("===================="));
+        return false;
     //     // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);
     //     #if defined(BLINKER_WITHOUT_SSL)
     //         if(!isMQTTinit) DEVICE_NAME_MQTT = (char*)malloc((24+1)*sizeof(char));
@@ -1030,7 +1035,7 @@ bool BlinkerWiFiESP::deviceRegister()
     //     MQTT_PORT_MQTT = BLINKER_MQTT_ALIYUN_PORT;
 
     //     _use_broker = aliyun_b;
-    // }
+    }
     // else if (_broker == BLINKER_MQTT_BORKER_QCLOUD) {
     //     // String id2name = _userID.subString(10, _userID.length());
     //     // memcpy(DEVICE_NAME_MQTT, _userID.c_str(), 12);

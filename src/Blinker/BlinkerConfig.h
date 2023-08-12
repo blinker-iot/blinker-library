@@ -1696,6 +1696,14 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
         #define BLINKER_BUTTON_PIN              2
     #endif
 
+    #ifndef BLINKER_RESET_PIN
+        #if defined(ESP32)
+            #define BLINKER_RESET_PIN              0
+        #else
+            #define BLINKER_RESET_PIN              2
+        #endif
+    #endif
+
     #define BLINKER_CMD_REGISTER            "register"
 
     #define BLINKER_DIY_DEVICE              "DiyArduino"
