@@ -51,21 +51,21 @@ jobs:
           json: '{"img": "assets/sdk/arduino.png", "text": "Arduino (C++)", "update": "${{ steps.current-time.outputs.formattedTime}}", "version": "${{steps.version.outputs.prop}}", "github": "https://github.com/blinker-iot/blinker-library", "document": "https://diandeng.tech/doc/arduino-support", "download": "sdk/blinker-library-${{steps.version.outputs.prop}}.zip" }'
 
       - name: upload zip
-        uses: garygrossgarten/github-action-scp@v0.5.3
+        uses: garygrossgarten/github-action-scp@release
         with:
           local: blinker-library-${{steps.version.outputs.prop}}.zip
           remote: ${{ secrets.REMOTE_PATH }}/blinker-library-${{steps.version.outputs.prop}}.zip
           host: ${{ secrets.SERVER_IP }}
           username: ubuntu
-          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SERVER_PASSWD }}
           recursive: true
       
       - name: upload json
-        uses: garygrossgarten/github-action-scp@v0.5.3
+        uses: garygrossgarten/github-action-scp@release
         with:
           local: arduino.json
           remote: ${{ secrets.REMOTE_PATH }}/arduino.json
           host: ${{ secrets.SERVER_IP }}
           username: ubuntu
-          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SERVER_PASSWD }}
           recursive: true
