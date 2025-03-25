@@ -272,7 +272,7 @@ void BlinkerBLE::onDisconnect(BLEServer* pServer)
 
 void BlinkerBLE::onWrite(BLECharacteristic *pCharacteristic)
 {
-    std::string value = pCharacteristic->getValue();
+    String value = pCharacteristic->getValue().c_str();
     int vlen = value.length();
 
     if (vlen > 0)
