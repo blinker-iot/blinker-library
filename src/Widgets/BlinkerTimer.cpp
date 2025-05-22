@@ -1,5 +1,3 @@
-#if defined(ESP8266) || defined(ESP32)
-
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 #include "BlinkerTimer.h"
@@ -140,4 +138,3 @@ void timingHandle(uint8_t cbackData)
     triggedTask = task;
 }
 
-#endif

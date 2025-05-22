@@ -1,8 +1,6 @@
 #ifndef BLINKER_BLE_ESP_H
 #define BLINKER_BLE_ESP_H
 
-#if defined(ESP32)
-
 #if ARDUINO >= 100
     #include <Arduino.h>
 #else
@@ -267,7 +265,7 @@ void BlinkerBLEESP::onDisconnect(BLEServer* pServer)
 
 void BlinkerBLEESP::onWrite(BLECharacteristic *pCharacteristic)
 {
-    std::string value = pCharacteristic->getValue();
+    String value = pCharacteristic->getValue().c_str();
     int vlen = value.length();
 
     if (vlen > 0)
@@ -332,9 +330,5 @@ int BlinkerBLEESP::checkPrintSpan()
         return true;
     }
 }
-
-#else
-    #error This code is intended to run on the ESP32 platform! Please check your Tools->Board setting.
-#endif
 
 #endif

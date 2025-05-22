@@ -1,8 +1,6 @@
 #ifndef BLINKER_WIFI_H
 #define BLINKER_WIFI_H
 
-#if defined(ESP8266) || defined(ESP32)
-
 #if defined(BLINKER_ESPTOUCH_V2)
     #define BLINKER_ESP_SMARTCONFIG_V2
 #endif
@@ -92,7 +90,5 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
     private :
 
 };
-
-#endif
 
 #endif

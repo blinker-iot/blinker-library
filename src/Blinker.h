@@ -1,22 +1,24 @@
 #ifndef BLINKER_H
 #define BLINKER_H
 
+#if defined(ESP32)
+    #if ARDUINO >= 100
+        #include <Arduino.h>
+    #else
+        #include <WProgram.h>
+    #endif
+#else
+    #error This code is intended to run on the ESP32 platform! Please check your Tools->Board setting.
+#endif
+
 #include "Assistant/BlinkerAssistant.h"
 
 #if defined(BLINKER_BLE)
     #include "BlinkerBLE.h"
 #endif
 
-#if defined(BLINKER_WIFI) && (defined(ESP32) || defined(ESP8266))
+#if defined(BLINKER_WIFI)
     #include "BlinkerWiFi.h"
-#endif
-
-#if defined(BLINKER_WIFI_AT) && (defined(ESP32) || defined(ESP8266))
-    #include "BlinkerWiFiAT.h"
-#endif
-
-#if defined(BLINKER_PRO_ESP) && (defined(ESP32) || defined(ESP8266))
-    #include "BlinkerPro.h"
 #endif
 
 #if defined(BLINKER_WIDGET)
@@ -31,15 +33,15 @@
     #include "Widgets/BlinkerText.h"
 #endif
 
-#if defined(BLINKER_ALIGENIE) && (defined(ESP32) || defined(ESP8266))
+#if defined(BLINKER_ALIGENIE)
     #include "Assistant/BlinkerAliGenie.h""
 #endif
 
-#if defined(BLINKER_DUEROS) && (defined(ESP32) || defined(ESP8266))
+#if defined(BLINKER_DUEROS)
     #include "Assistant/BlinkerDuerOS.h"
 #endif
 
-#if defined(BLINKER_MIOT) && (defined(ESP32) || defined(ESP8266))
+#if defined(BLINKER_MIOT)
     #include "Assistant/BlinkerMIOT.h"
 #endif
 

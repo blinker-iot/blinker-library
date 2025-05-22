@@ -1,7 +1,6 @@
 #ifndef BLINKER_TIMING_TIMER_H
 #define BLINKER_TIMING_TIMER_H
 
-#if defined(ESP8266) || defined(ESP32)
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
@@ -106,7 +105,5 @@ class BlinkerTimingTimer
         bool     timerState;
         bool     isLoopTask;
 };
-
-#endif
 
 #endif

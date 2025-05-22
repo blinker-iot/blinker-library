@@ -1,21 +1,12 @@
 #ifndef BLINKER_HTTP_H
 #define BLINKER_HTTP_H
 
-#if (defined(ESP8266) || defined(ESP32)) && \
-    (defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-    defined(BLINKER_WIFI_AT))
+#if defined(ESP32) && defined(BLINKER_WIFI)
 
-#if defined(ESP8266)
-    #include <ESP8266mDNS.h>
-    #include <ESP8266WiFi.h>
-    #include <ESP8266WiFiMulti.h>
-    #include <ESP8266HTTPClient.h>
-#elif defined(ESP32)
-    #include <ESPmDNS.h>
-    #include <WiFi.h>
-    #include <WiFiMulti.h>
-    #include <HTTPClient.h>
-#endif
+#include <ESPmDNS.h>
+#include <WiFi.h>
+#include <WiFiMulti.h>
+#include <HTTPClient.h>
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerDebug.h"
@@ -23,15 +14,7 @@
 
 static const char *TAG_HTTP = "[BlinkerHTTP] ";
 
-#if defined(ESP8266)
-    #ifndef BLINKER_WITHOUT_SSL
-        BearSSL::WiFiClientSecure   client_mqtt;
-    #else
-        WiFiClient               client_mqtt;
-    #endif
-#elif defined(ESP32)
-    WiFiClientSecure     client_s;
-#endif
+WiFiClientSecure     client_s;
 
 static uint32_t    _smsTime = 0;
 static uint32_t    _pushTime = 0;
@@ -219,18 +202,6 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             return BLINKER_CMD_FALSE;
     }
 
-    #if defined(ESP8266)
-        #ifndef BLINKER_WITHOUT_SSL
-            client_mqtt.stop();
-            
-            std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
-
-            client_s->setInsecure();
-        #else
-            WiFiClient               client_s;
-        #endif
-    #endif
-
     HTTPClient http;
 
     String url_iot;
@@ -251,15 +222,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/sms");
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
@@ -268,15 +231,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/push");
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
@@ -285,15 +240,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/wxMsg/");
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
@@ -303,15 +250,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v3");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -320,15 +259,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v3");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -337,15 +268,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v3");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -353,15 +276,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/logs");
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
@@ -370,15 +285,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/cloudStorage/");
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
@@ -391,15 +298,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
                 url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/ts");
             #endif
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
@@ -412,15 +311,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
                 url_iot = BLINKER_F("http://storage.diandeng.tech/api/v1/storage/tt");
             #endif
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
@@ -429,15 +320,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/object");
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
@@ -447,15 +330,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -464,15 +339,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -481,15 +348,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -498,15 +357,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             // url_iot += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -515,15 +366,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             // url_iot += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -532,15 +375,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -549,15 +384,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device");
             url_iot += msg;
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             httpCode = http.GET();
             break;
@@ -565,15 +392,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot = host;
             url_iot += BLINKER_F("/api/v1/user/device/ota/upgrade_status");
 
-            #if defined(ESP8266)
-                #ifndef BLINKER_WITHOUT_SSL
-                http.begin(*client_s, url_iot);
-                #else
-                http.begin(client_s, url_iot);
-                #endif
-            #else
-                http.begin(url_iot);
-            #endif
+            http.begin(url_iot);
 
             http.addHeader(conType, application);
             httpCode = http.POST(msg);

@@ -1,29 +1,16 @@
 #ifndef BLINKER_WIFI_ESP_H
 #define BLINKER_WIFI_ESP_H
 
-#if (defined(ESP8266) || defined(ESP32))
-
 #define BLINKER_WIFI
 
-#if defined(ESP8266)
-    #include <ESP8266WiFi.h>
-    #include <ESP8266mDNS.h>
-    #include <ESP8266WiFiMulti.h>
-    #include <ESP8266HTTPClient.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
+#include <WiFiMulti.h>
+#include <HTTPClient.h>
 
-    #include <base64.h>
+#include <base64.h>
 
-    ESP8266WiFiMulti wifiMulti;
-#elif defined(ESP32)
-    #include <WiFi.h>
-    #include <ESPmDNS.h>
-    #include <WiFiMulti.h>
-    #include <HTTPClient.h>
-
-    #include <base64.h>
-
-    WiFiMulti  wifiMulti;
-#endif
+WiFiMulti  wifiMulti;
 
 #include <EEPROM.h>
 
@@ -2584,12 +2571,6 @@ int BlinkerWiFiESP::checkPrintLimit()
             return true;
         }
     }
-#endif
-
-#else
-
-    #error This code is intended to run on the ESP8266/ESP32 platform! Please check your Tools->Board setting.
-
 #endif
 
 #endif
