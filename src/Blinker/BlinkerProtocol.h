@@ -156,11 +156,13 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         int  _print(char * n, bool needCheckLength = true);
         void _timerPrint(const String & n);
 
+#if defined(BLINKER_WIFI)
         bool wlanCheck();
+    #if defined(ESP32)
         bool ntpConfig();
         bool ntpInit();
+    #endif
 
-#if defined(BLINKER_WIFI)
         void checkDataStorage();
         bool dataUpdate();
 
@@ -210,8 +212,8 @@ void BlinkerProtocol<Transp>::begin()
     Serial.print(BLINKER_F("package version: "));
     Serial.println(ESP.getSdkVersion());
     #endif
-    Serial.print(BLINKER_F("board type: "));
-    Serial.println(ARDUINO_BOARD);
+    // Serial.print(BLINKER_F("board type: "));
+    // Serial.println(ARDUINO_BOARD);
     #else
     BLINKER_LOG(TAG_PROTO, BLINKER_F(""));
 
@@ -221,7 +223,7 @@ void BlinkerProtocol<Transp>::begin()
     #elif defined(ESP32)
     BLINKER_LOG(TAG_PROTO, BLINKER_F("package version: "), ESP.getSdkVersion());
     #endif
-    BLINKER_LOG(TAG_PROTO, BLINKER_F("board type: "), ARDUINO_BOARD);
+    // BLINKER_LOG(TAG_PROTO, BLINKER_F("board type: "), ARDUINO_BOARD);
     #endif
 
     #if defined(BLINKER_NO_LOGO)
@@ -272,7 +274,7 @@ void BlinkerProtocol<Transp>::run()
 
 #if defined(BLINKER_WIFI)
     if (!wlanCheck()) return;
-
+#if defined(ESP32)
     ntpInit();
     
     #if defined(BLINKER_WIDGET)
@@ -284,6 +286,7 @@ void BlinkerProtocol<Transp>::run()
         _dHeartTime += BLINKER_DEVICE_HEARTBEAT_TIME * 1000;
         httpHeartbeat();
     }
+#endif
 #endif
 
     switch (state)
@@ -917,7 +920,9 @@ bool BlinkerProtocol<Transp>::wlanCheck()
             {
                 _reconTime = millis();
                 BLINKER_LOG(BLINKER_F("WiFi disconnected! reconnecting!"));
-                WiFi.reconnect();
+                #if defined(ESP32)
+                    WiFi.reconnect();
+                #endif
             }
 
             return false;
@@ -927,6 +932,7 @@ bool BlinkerProtocol<Transp>::wlanCheck()
     return true;
 }
 
+#if defined(ESP32)
 template <class Transp>
 bool BlinkerProtocol<Transp>::ntpConfig()
 {
@@ -1020,6 +1026,7 @@ bool BlinkerProtocol<Transp>::ntpInit()
     }
     return true;
 }
+#endif
 
 template <class Transp> template<typename T>
 bool BlinkerProtocol<Transp>::sms(const T& msg, const String & cel)

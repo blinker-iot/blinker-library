@@ -48,11 +48,11 @@
 
 #include <Blinker.h>
 
-char auth[] = "Your Device Secret Key";
-char ssid[] = "Your WiFi network SSID or name";
-char pswd[] = "Your WiFi network WPA password or WEP key";
+char auth[] = "ee299706f46e";
+char ssid[] = "CMCC-jy2S";
+char pswd[] = "hyh123456789";
 
-BlinkerWiFi                 Blinker(WiFiESP);
+BlinkerWiFi                 Blinker(WiFiUNO);
 // 新建组件对象
 BlinkerButton<BlinkerWiFi>  Button1(Blinker, "btn-abc");
 BlinkerNumber<BlinkerWiFi>  Number1(Blinker, "num-abc");

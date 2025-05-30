@@ -99,10 +99,7 @@
     #define BLINKER_PRESSTIME_RESET         10000UL
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
-    defined(BLINKER_WIFI_AT) || defined(BLINKER_WIFI_GATEWAY) || \
-    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_WIFI_SUBDEVICE) || \
-    defined(BLINKE_HTTP)
+#if defined(BLINKER_WIFI)
     #define BLINKER_MAX_WIDGET_SIZE         16
 #else
     #define BLINKER_MAX_WIDGET_SIZE         6
@@ -111,7 +108,7 @@
 #define BLINKER_OBJECT_NOT_AVAIL        -1
 
 #ifndef BLINKER_MAX_READ_SIZE
-    #if defined(ESP8266) || defined(ESP32)
+    #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RENESAS_UNO)
         #define BLINKER_MAX_READ_SIZE       1024
     #else
         // #if defined(BLINKER_MQTT_AT)
@@ -123,7 +120,7 @@
 #endif
 
 #ifndef BLINKER_MAX_SEND_SIZE
-    #if defined(ESP8266) || defined(ESP32)
+    #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RENESAS_UNO)
         #if defined(BLINKER_MQTT) || defined(BLINKER_WIFI_AT) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
@@ -146,7 +143,7 @@
 #endif
 
 #ifndef BLINKER_MAX_SEND_BUFFER_SIZE
-    #if defined(ESP8266) || defined(ESP32)
+    #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RENESAS_UNO)
         #if defined(BLINKER_MQTT) || defined(BLINKER_WIFI_AT) || \
             defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
             defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
@@ -170,7 +167,7 @@
 
 #define BLINKER_AUTHKEY_SIZE            14
 
-#if defined(ESP8266) || defined(ESP32)
+#if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RENESAS_UNO)
     #define BLINKER_LOGO_3D    
 #else
     #define BLINKER_NO_LOGO

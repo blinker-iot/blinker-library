@@ -1,7 +1,13 @@
 #ifndef BLINKER_H
 #define BLINKER_H
 
-#if defined(ESP32)
+#if defined(ESP32) && (defined(BLINKER_WIFI) || defined(BLINKER_BLE))
+    #if ARDUINO >= 100
+        #include <Arduino.h>
+    #else
+        #include <WProgram.h>
+    #endif
+#elif defined(ARDUINO_ARCH_RENESAS_UNO) && defined(BLINKER_WIFI)
     #if ARDUINO >= 100
         #include <Arduino.h>
     #else

@@ -31,6 +31,8 @@ uint32_t BLINKER_FreeHeap()
         extern int __heap_start, *__brkval;
         int v;
         return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+    #elif defined(ARDUINO_ARCH_RENESAS_UNO)
+        return 0;
     #else
         return 0;
     #endif

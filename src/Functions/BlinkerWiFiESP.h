@@ -51,20 +51,8 @@ enum b_broker_t {
     blinker_b
 };
 
-char*       MQTT_HOST_MQTT;
-char*       MQTT_ID_MQTT;
-char*       MQTT_NAME_MQTT;
-char*       MQTT_KEY_MQTT;
-char*       MQTT_PRODUCTINFO_MQTT;
-char*       UUID_MQTT;
-char*       DEVICE_NAME_MQTT;
-char*       BLINKER_PUB_TOPIC_MQTT;
-char*       BLINKER_SUB_TOPIC_MQTT;
-// char*       BLINKER_RRPC_PUB_TOPIC_MQTT;
-char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
-char*       UUID_EXTRA;
-uint16_t    MQTT_PORT_MQTT;
-char get_key[33] = { 0 };
+class BlinkerWiFiESP;
+BlinkerWiFiESP* BlinkerWiFiESP_instance = nullptr;
 
 class BlinkerWiFiESP
 {
@@ -98,6 +86,14 @@ class BlinkerWiFiESP
         bool checkInit()            { return isMQTTinit; }
         bool checkWlanInit();
         void commonBegin(const char* _ssid, const char* _pswd);
+
+        // 添加回调函数处理方法声明
+        void webSocketEventHandler(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
+        
+        #if defined(BLINKER_ESP_SMARTCONFIG_V2)
+        void wifiEventHandler(WiFiEvent_t event, WiFiEventInfo_t info);
+        #endif
+
         #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_ESP_SMARTCONFIG_V2)
         void smartconfigBegin();
         void smartconfig();
@@ -214,37 +210,64 @@ class BlinkerWiFiESP
         uint8_t     _bridgeCount = 0;
 
         b_device_staus_t _status = BLINKER_WLAN_CONNECTING;
+        
+        char*    msgBuf_MQTT;
+        bool     isFresh_MQTT = false;
+        bool     isConnect_MQTT = false;
+        bool     isAvail_MQTT = false;
+        bool     isApCfg = false;
+        uint8_t  ws_num_MQTT = 0;
+        uint8_t  dataFrom_MQTT = BLINKER_MSG_FROM_MQTT;
+
+        Adafruit_MQTT_Client*    mqtt_MQTT;
+        Adafruit_MQTT_Subscribe* iotSub_MQTT;
+
+        char*       MQTT_HOST_MQTT;
+        char*       MQTT_ID_MQTT;
+        char*       MQTT_NAME_MQTT;
+        char*       MQTT_KEY_MQTT;
+        char*       MQTT_PRODUCTINFO_MQTT;
+        char*       UUID_MQTT;
+        char*       DEVICE_NAME_MQTT;
+        char*       BLINKER_PUB_TOPIC_MQTT;
+        char*       BLINKER_SUB_TOPIC_MQTT;
+        // char*       BLINKER_RRPC_PUB_TOPIC_MQTT;
+        char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
+        char*       UUID_EXTRA;
+        uint16_t    MQTT_PORT_MQTT;
+        char get_key[33] = { 0 };
 };
-
-// #if defined(ESP8266)
-//     #ifndef BLINKER_WITHOUT_SSL
-//         BearSSL::WiFiClientSecure   client_mqtt;
-//     #else
-//         WiFiClient               client_mqtt;
-//     #endif
-// #elif defined(ESP32)
-//     WiFiClientSecure     client_s;
-// #endif
-
-// WiFiClient               client;
-Adafruit_MQTT_Client*    mqtt_MQTT;
-Adafruit_MQTT_Subscribe* iotSub_MQTT;
 
 #define WS_SERVERPORT       81
 WebSocketsServer webSocket_MQTT = WebSocketsServer(WS_SERVERPORT);
 
-char*    msgBuf_MQTT;
-bool     isFresh_MQTT = false;
-bool     isConnect_MQTT = false;
-bool     isAvail_MQTT = false;
-bool     isApCfg = false;
-uint8_t  ws_num_MQTT = 0;
-uint8_t  dataFrom_MQTT = BLINKER_MSG_FROM_MQTT;
-
-void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
-                    uint8_t * payload, size_t length)
+void webSocketEvent_MQTT(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
 {
+    if (BlinkerWiFiESP_instance) {
+        BlinkerWiFiESP_instance->webSocketEventHandler(num, type, payload, length);
+    }
+}
 
+#if defined(BLINKER_ESP_SMARTCONFIG_V2)
+b_configStatus_t _esptouch_v2_status = SMART_BEGIN;
+
+void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
+{
+    if (BlinkerWiFiESP_instance) {
+        BlinkerWiFiESP_instance->wifiEventHandler(event, info);
+    }
+}
+#endif
+
+BlinkerWiFiESP  WiFiESP;
+
+BlinkerWiFiESP::BlinkerWiFiESP() { 
+    isHandle = &isConnect_MQTT; 
+    BlinkerWiFiESP_instance = this;
+}
+
+void BlinkerWiFiESP::webSocketEventHandler(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
+{
     switch(type)
     {
         case WStype_DISCONNECTED:
@@ -306,9 +329,7 @@ void webSocketEvent_MQTT(uint8_t num, WStype_t type, \
 }
 
 #if defined(BLINKER_ESP_SMARTCONFIG_V2)
-b_configStatus_t _esptouch_v2_status = SMART_BEGIN;
-
-void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
+void BlinkerWiFiESP::wifiEventHandler(WiFiEvent_t event, WiFiEventInfo_t info)
 {
     char log_buf[64] = { 0 };
     sprintf(log_buf, "[WiFi-event] event: %d", event);
@@ -383,18 +404,47 @@ void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)
 }
 #endif
 
-BlinkerWiFiESP  WiFiESP;
-
-BlinkerWiFiESP::BlinkerWiFiESP() { isHandle = &isConnect_MQTT; }
-
-void BlinkerWiFiESP::begin(const char* auth)
+#if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_ESP_SMARTCONFIG_V2)
+void BlinkerWiFiESP::smartconfig()
 {
-    // _authKey = (char*)malloc((strlen(auth)+1)*sizeof(char));
-    // strcpy(_authKey, auth);
-    _authKey = auth;
+    #if defined(BLINKER_ESP_SMARTCONFIG_V2)
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info) {
+        this->wifiEventHandler(event, info);
+    });
+    #else
+    WiFi.mode(WIFI_STA);
+    #endif
 
-    BLINKER_LOG_ALL(BLINKER_F("_authKey: "), _authKey);
+    String _hostname = BLINKER_F("DiyArduino_");
+    _hostname += macDeviceName();
+
+    #if defined(ESP8266)
+        WiFi.hostname(_hostname.c_str());
+    #elif defined(ESP32)
+        WiFi.setHostname(_hostname.c_str());
+    #endif
+
+    #if defined(BLINKER_ESP_SMARTCONFIG_V2)
+    if (BLINKER_ESPTOUCH_CRYPT_KEY != NULL)
+    {
+        WiFi.beginSmartConfig(SC_TYPE_ESPTOUCH_V2, BLINKER_ESPTOUCH_CRYPT_KEY);
+    }
+    else
+    {
+        WiFi.beginSmartConfig(SC_TYPE_ESPTOUCH_V2);
+    }
+    #else
+    WiFi.beginSmartConfig();
+    #endif
+
+    _configStatus = SMART_BEGIN;
+
+    _status = BLINKER_WLAN_SMARTCONFIG_BEGIN;
+
+    BLINKER_LOG(BLINKER_F("Waiting for SmartConfig."));
 }
+#endif
 
 bool BlinkerWiFiESP::init()
 {
@@ -1638,7 +1688,9 @@ void BlinkerWiFiESP::smartconfig()
 {
     #if defined(BLINKER_ESP_SMARTCONFIG_V2)
     WiFi.mode(WIFI_AP_STA);
-    WiFi.onEvent(WiFiEvent);
+    WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info) {
+        this->wifiEventHandler(event, info);
+    });
     #else
     WiFi.mode(WIFI_STA);
     #endif
@@ -2573,4 +2625,11 @@ int BlinkerWiFiESP::checkPrintLimit()
     }
 #endif
 
+void BlinkerWiFiESP::begin(const char* auth)
+{
+    _authKey = auth;
+    
+    BLINKER_LOG(BLINKER_F("Blinker WiFi ESP begin..."));
+    BLINKER_LOG(BLINKER_F("AuthKey: "), auth);
+}
 #endif

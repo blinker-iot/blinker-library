@@ -1,20 +1,30 @@
 #ifndef BLINKER_HTTP_H
 #define BLINKER_HTTP_H
 
-#if defined(ESP32) && defined(BLINKER_WIFI)
+#if defined(BLINKER_WIFI)
 
+#if defined(ESP32)
 #include <ESPmDNS.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
+
+WiFiClientSecure     client_s;
+
+#elif defined(ARDUINO_ARCH_RENESAS_UNO)
+// #include <R4HttpClient.h>
+
+// static WiFiSSLClient       client;
+#include "BlinkerR4HTTP.h"
+
+
+#endif
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerDebug.h"
 #include "../Blinker/BlinkerUtility.h"
 
 static const char *TAG_HTTP = "[BlinkerHTTP] ";
-
-WiFiClientSecure     client_s;
 
 static uint32_t    _smsTime = 0;
 static uint32_t    _pushTime = 0;
@@ -202,7 +212,11 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             return BLINKER_CMD_FALSE;
     }
 
+// #if defined(ESP32)
     HTTPClient http;
+// #elif defined(ARDUINO_ARCH_RENESAS_UNO)
+    // R4HttpClient http;
+// #endif
 
     String url_iot;
 
@@ -232,7 +246,6 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device/push");
 
             http.begin(url_iot);
-
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
@@ -241,7 +254,6 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device/wxMsg/");
 
             http.begin(url_iot);
-
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
@@ -277,7 +289,6 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/logs");
 
             http.begin(url_iot);
-
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
@@ -286,7 +297,6 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device/cloudStorage/");
 
             http.begin(url_iot);
-
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
@@ -299,7 +309,6 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             #endif
 
             http.begin(url_iot);
-
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
@@ -312,7 +321,6 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             #endif
 
             http.begin(url_iot);
-
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
@@ -321,7 +329,6 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device/cloud_storage/object");
 
             http.begin(url_iot);
-
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;
@@ -393,7 +400,6 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
             url_iot += BLINKER_F("/api/v1/user/device/ota/upgrade_status");
 
             http.begin(url_iot);
-
             http.addHeader(conType, application);
             httpCode = http.POST(msg);
             break;

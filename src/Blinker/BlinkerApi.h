@@ -5,8 +5,7 @@
 #include "Blinker/BlinkerConfig.h"
 #include "Blinker/BlinkerDebug.h"
 #include "Blinker/BlinkerUtility.h"
-#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-    defined(BLINKER_WIFI_AT)
+#if defined(BLINKER_WIFI) && defined(ESP32)
     #include "Blinker/BlinkerAuto.h"
     #include "../Widgets/BlinkerTimer.h"
     #include "../Widgets/BlinkerTimingTimer.h"
@@ -85,15 +84,13 @@ class BlinkerApi
         uint8_t attachWidget(const char* _name, blinker_callback_with_rgb_arg_t _func);
         uint8_t attachWidget(const char* _name, blinker_callback_with_joy_arg_t _func);
         uint8_t attachWidget(const char* _name, blinker_callback_with_table_arg_t _func, blinker_callback_t _func2);
-    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-        defined(BLINKER_WIFI_AT)
+    #if defined(BLINKER_WIFI) && defined(ESP32)
         void loadTimer();
         void loadTiming();
     #endif
     #endif
 
-    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-        defined(BLINKER_WIFI_AT)
+    #if defined(BLINKER_WIFI) && defined(ESP32)
         void autoRun();
         void autoInput(const String & key, float data);
     #endif
@@ -118,8 +115,7 @@ class BlinkerApi
         class BlinkerWidgets_rgb *          _Widgets_rgb[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_joy *          _Widgets_joy[BLINKER_MAX_WIDGET_SIZE/2];
         class BlinkerWidgets_table *        _Widgets_tab[BLINKER_MAX_WIDGET_SIZE];
-    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-        defined(BLINKER_WIFI_AT)
+    #if defined(BLINKER_WIFI) && defined(ESP32)
         char                                _cdAction[BLINKER_TIMER_COUNTDOWN_ACTION_SIZE];
         char                                _lpAction1[BLINKER_TIMER_LOOP_ACTION1_SIZE];
         char                                _lpAction2[BLINKER_TIMER_LOOP_ACTION2_SIZE];
@@ -143,8 +139,7 @@ class BlinkerApi
     #endif
     #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-    defined(BLINKER_WIFI_AT)
+#if defined(BLINKER_WIFI) && defined(ESP32)
         uint8_t                             _aCount = 0;
         class BlinkerAUTO *                 _AUTO[2];
 
@@ -184,8 +179,7 @@ class BlinkerApi
 #endif
     protected :
         void parse(char _data[], bool ex_data = false);
-#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-    defined(BLINKER_WIFI_AT)
+#if defined(BLINKER_WIFI) && defined(ESP32)
         void beginAuto();
 
     #if defined(BLINKER_WIDGET)
@@ -686,16 +680,14 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
     #if defined(BLINKER_PRO_ESP)
         otaParse(root);
     #endif
-    #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-        defined(BLINKER_WIFI_AT)
+    #if defined(BLINKER_WIFI) && defined(ESP32)
         autoManager(root);
     #endif
 
         heartBeat(root);
 
     #if defined(BLINKER_WIDGET)
-        #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_AT)
+        #if defined(BLINKER_WIFI) && defined(ESP32)
             timerManager(root);
         #endif
 
@@ -748,8 +740,7 @@ void BlinkerApi<Proto>::parse(char _data[], bool ex_data)
                     JsonObject _array = jsonBuffer.as<JsonObject>();
 
                 #if defined(BLINKER_WIDGET)
-                #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-                    defined(BLINKER_WIFI_AT)
+                #if defined(BLINKER_WIFI) && defined(ESP32)
                     timerManager(_array, true);
                 #endif
 
@@ -789,8 +780,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
         if (state == BLINKER_CMD_STATE)
         {
         #if defined(BLINKER_WIDGET)
-        #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_AT)
+        #if defined(BLINKER_WIFI) && defined(ESP32)
             String  _timer = taskCount ? "1":"0";
                     _timer += _cdState ? "1":"0";
                     _timer += _lpState ? "1":"0";
@@ -1132,8 +1122,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
     }
 #endif
 
-#if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-    defined(BLINKER_WIFI_AT)
+#if defined(BLINKER_WIFI) && defined(ESP32)
     #if defined(BLINKER_WIDGET)
     template <class Proto>
     void BlinkerApi<Proto>::saveCountDown(uint32_t _data, char _action[])
@@ -2720,8 +2709,7 @@ void BlinkerApi<Proto>::heartBeat(const JsonObject& data)
                         JsonObject _array = jsonBuffer.as<JsonObject>();
 
                         #if defined(BLINKER_WIDGET)
-                        #if defined(BLINKER_WIFI) || defined(BLINKER_PRO_ESP) || \
-                            defined(BLINKER_WIFI_AT)
+                        #if defined(BLINKER_WIFI) && defined(ESP32)
                             timerManager(_array);
                         #endif
 

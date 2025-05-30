@@ -357,7 +357,11 @@ class BlinkerWidgets_table
                 BLINKER_LOG_FreeHeap_ALL();
 
                 String _data = BLINKER_F("{\"date\":");
+                #if defined(ESP8266) || defined(ESP32)
                 _data += STRING_format(time_data);
+                #elif defined(ARDUINO_ARCH_RENESAS_UNO)
+                _data += STRING_format((unsigned long)time_data);
+                #endif
 
                 for(uint8_t num = 0; num < key_count; num++)
                 {
@@ -538,7 +542,7 @@ class BlinkerWidgets_table
                 // _data_ += STRING_format(data);
                 for (uint8_t num = 0; num < dataCount; num++) {
                     _data_ += "[";
-                    _data_ += String(time_data[num]);
+                    _data_ += String((unsigned long)time_data[num]);
                     _data_ += ",";
                     _data_ += data[num];
                     _data_ += "]";
