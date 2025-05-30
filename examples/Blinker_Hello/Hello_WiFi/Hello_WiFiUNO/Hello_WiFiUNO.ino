@@ -48,9 +48,9 @@
 
 #include <Blinker.h>
 
-char auth[] = "ee299706f46e";
-char ssid[] = "CMCC-jy2S";
-char pswd[] = "hyh123456789";
+char auth[] = "Your Device Secret Key";
+char ssid[] = "Your WiFi network SSID or name";
+char pswd[] = "Your WiFi network WPA password or WEP key";
 
 BlinkerWiFi                 Blinker(WiFiUNO);
 // 新建组件对象
