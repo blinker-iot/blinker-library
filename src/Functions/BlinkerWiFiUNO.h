@@ -4,7 +4,6 @@
 #define BLINKER_WIFI
 
 #include <WiFiS3.h>
-#include <R4HttpClient.h>
 #include "WiFiSSLClient.h"
 
 #include <EEPROM.h>
@@ -294,6 +293,11 @@ bool BlinkerWiFiUNO::connect() {
     
     // disconnect();
 
+    if (_status == BLINKER_DEV_CONNECTED)
+    {
+        return true;
+    }
+
     if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
     {
         yield();
@@ -475,15 +479,15 @@ void BlinkerWiFiUNO::flush() {
 int BlinkerWiFiUNO::print(char* data, bool needCheck) {
     if (!checkInit()) return false;
 
-    if (!mqtt_MQTT->connected()) {
-        // return false;
-        if (mqtt_MQTT->connect(MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT) == 0)
-        {
-            BLINKER_LOG(BLINKER_F("MQTT not connected"));
-            return false;
-        }
-        mqtt_MQTT->subscribe(BLINKER_SUB_TOPIC_MQTT);
-    }
+    // if (!mqtt_MQTT->connected()) {
+    //     // return false;
+    //     if (mqtt_MQTT->connect(MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT) == 0)
+    //     {
+    //         BLINKER_LOG(BLINKER_F("MQTT not connected"));
+    //         return false;
+    //     }
+    //     mqtt_MQTT->subscribe(BLINKER_SUB_TOPIC_MQTT);
+    // }
 
     uint16_t num = strlen(data);
 
@@ -904,6 +908,7 @@ bool BlinkerWiFiUNO::checkWlanInit() {
         return true;
     } else {
         BLINKER_ERR_LOG(BLINKER_F("WiFi not connected!"));
+        ::delay(1000);
         return false;
     }
 }
