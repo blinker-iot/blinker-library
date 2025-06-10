@@ -9,7 +9,7 @@ For details, see http://sourceforge.net/projects/libb64
 #include <core_esp8266_features.h>
 #endif
 
-#if defined(ESP32)
+#if defined(ESP32) || defined(ARDUINO_ARCH_RP2040) || defined(WIO_TERMINAL) || defined(SEEED_XIAO_M0)
 #define CORE_HAS_LIBB64
 #endif
 

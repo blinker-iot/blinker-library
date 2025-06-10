@@ -24,8 +24,6 @@
 
 #include "WebSockets.h"
 
-#if defined(ESP8266) || defined(ESP32)
-
 #ifdef ESP8266
 #include <core_esp8266_features.h>
 #endif
@@ -44,7 +42,11 @@ extern "C" {
 #include <esp_system.h>
 
 #if ESP_IDF_VERSION_MAJOR >= 4
+#if(ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(1, 0, 6))
+#include "sha/sha_parallel_engine.h"
+#else
 #include <esp32/sha.h>
+#endif
 #else
 #include <hwcrypto/sha.h>
 #endif
@@ -470,7 +472,7 @@ void WebSockets::handleWebsocketPayloadCb(WSclient_t * client, bool ok, uint8_t 
             payload[header->payloadLen] = 0x00;
 
             if(header->mask) {
-                //decode XOR
+                // decode XOR
                 for(size_t i = 0; i < header->payloadLen; i++) {
                     payload[i] = (payload[i] ^ header->maskKey[i % 4]);
                 }
@@ -480,7 +482,7 @@ void WebSockets::handleWebsocketPayloadCb(WSclient_t * client, bool ok, uint8_t 
         switch(header->opCode) {
             case WSop_text:
                 DEBUG_WEBSOCKETS("[WS][%d][handleWebsocket] text: %s\n", client->num, payload);
-                // no break here!
+                // fallthrough
             case WSop_binary:
             case WSop_continuation:
                 messageReceived(client, header->opCode, payload, header->payloadLen, header->fin);
@@ -524,7 +526,7 @@ void WebSockets::handleWebsocketPayloadCb(WSclient_t * client, bool ok, uint8_t 
         // reset input
         client->cWsRXsize = 0;
 #if(WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266_ASYNC)
-        //register callback for next message
+        // register callback for next message
         handleWebsocketWaitFor(client, 2);
 #endif
 
@@ -569,6 +571,7 @@ String WebSockets::acceptKey(String & clientKey) {
  */
 String WebSockets::base64_encode(uint8_t * data, size_t length) {
     size_t size   = ((length * 1.6f) + 1);
+    size          = std::max(size, (size_t)5);    // minimum buffer size
     char * buffer = (char *)malloc(size);
     if(buffer) {
         base64_encodestate _state;
@@ -642,9 +645,9 @@ bool WebSockets::readCb(WSclient_t * client, uint8_t * out, size_t n, WSreadWait
             t = millis();
             out += len;
             n -= len;
-            //DEBUG_WEBSOCKETS("Receive %d left %d!\n", len, n);
+            // DEBUG_WEBSOCKETS("Receive %d left %d!\n", len, n);
         } else {
-            //DEBUG_WEBSOCKETS("Receive %d left %d!\n", len, n);
+            // DEBUG_WEBSOCKETS("Receive %d left %d!\n", len, n);
         }
         if(n > 0) {
             WEBSOCKETS_YIELD();
@@ -696,7 +699,7 @@ size_t WebSockets::write(WSclient_t * client, uint8_t * out, size_t n) {
             out += len;
             n -= len;
             total += len;
-            //DEBUG_WEBSOCKETS("write %d left %d!\n", len, n);
+            // DEBUG_WEBSOCKETS("write %d left %d!\n", len, n);
         } else {
             DEBUG_WEBSOCKETS("WS write %d failed left %d!\n", len, n);
         }
@@ -747,7 +750,7 @@ void WebSockets::handleHBTimeout(WSclient_t * client) {
                 client->pongTimeoutCount++;
                 client->lastPing = millis() - client->pingInterval - 500;    // force ping on the next run
 
-                DEBUG_WEBSOCKETS("[HBtimeout] pong TIMEOUT! lp=%d millis=%d pi=%d count=%d\n", client->lastPing, millis(), pi, client->pongTimeoutCount);
+                DEBUG_WEBSOCKETS("[HBtimeout] pong TIMEOUT! lp=%d millis=%lu pi=%d count=%d\n", client->lastPing, millis(), pi, client->pongTimeoutCount);
 
                 if(client->disconnectTimeoutCount && client->pongTimeoutCount >= client->disconnectTimeoutCount) {
                     DEBUG_WEBSOCKETS("[HBtimeout] count=%d, DISCONNECTING\n", client->pongTimeoutCount);
@@ -757,5 +760,3 @@ void WebSockets::handleHBTimeout(WSclient_t * client) {
         }
     }
 }
-
-#endif

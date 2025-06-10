@@ -28,25 +28,29 @@
 #include <WebSocketsServer.h>
 #include <ESP8266WebServer.h>
 
-#if defined(ESP8266) || defined(ESP32)
-
-#if WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266 && WEBSERVER_HAS_HOOK
+#if((WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266) || (WEBSOCKETS_NETWORK_TYPE == NETWORK_RP2040)) && WEBSERVER_HAS_HOOK
 
 class WebSockets4WebServer : public WebSocketsServerCore {
+#if defined(ESP8266)
+    using WebServerClass = ESP8266WebServer;
+#else
+    using WebServerClass = WebServer;
+#endif
+
   public:
     WebSockets4WebServer(const String & origin = "", const String & protocol = "arduino")
         : WebSocketsServerCore(origin, protocol) {
         begin();
     }
 
-    ESP8266WebServer::HookFunction hookForWebserver(const String & wsRootDir, WebSocketServerEvent event) {
+    WebServerClass::HookFunction hookForWebserver(const String & wsRootDir, WebSocketServerEvent event) {
         onEvent(event);
 
-        return [&, wsRootDir](const String & method, const String & url, WiFiClient * tcpClient, ESP8266WebServer::ContentTypeFunction contentType) {
+        return [&, wsRootDir](const String & method, const String & url, WiFiClient * tcpClient, WebServerClass::ContentTypeFunction contentType) {
             (void)contentType;
 
             if(!(method == "GET" && url.indexOf(wsRootDir) == 0)) {
-                return ESP8266WebServer::CLIENT_REQUEST_CAN_CONTINUE;
+                return WebServerClass::CLIENT_REQUEST_CAN_CONTINUE;
             }
 
             // allocate a WiFiClient copy (like in WebSocketsServer::handleNewClients())
@@ -65,7 +69,7 @@ class WebSockets4WebServer : public WebSocketsServerCore {
             }
 
             // tell webserver to not close but forget about this client
-            return ESP8266WebServer::CLIENT_IS_GIVEN;
+            return WebServerClass::CLIENT_IS_GIVEN;
         };
     }
 };
@@ -78,7 +82,5 @@ class WebSockets4WebServer : public WebSocketsServerCore {
 #endif
 
 #endif    // WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266 && WEBSERVER_HAS_HOOK
-
-#endif
 
 #endif    // __WEBSOCKETS4WEBSERVER_H

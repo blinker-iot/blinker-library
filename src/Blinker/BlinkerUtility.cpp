@@ -34,6 +34,22 @@ String macDeviceName()
     //BLINKER_LOG("MACADDR: ", macStr_l);
     return macStr_l;
 }
+#elif defined(ARDUINO_ARCH_RENESAS_UNO)
+#include <WiFiS3.h>
+#include <WiFiClient.h>
+
+String macDeviceName()
+{
+    uint8_t mac[4];
+    char macStr[13] = { 0 };
+    WiFi.macAddress(mac);
+
+    sprintf(macStr, "%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3]);
+    String macStr_l = STRING_format(macStr);
+    //macStr_l.toLowerCase();
+    //BLINKER_LOG("MACADDR: ", macStr_l);
+    return macStr_l;
+}
 #endif
 
 

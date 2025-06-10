@@ -3,7 +3,7 @@
 
 #if defined(ESP32)
 
-#if defined(BLINKER_ESPTOUCH_V2)
+#if defined(BLINKER_ESPTOUCH_V2) || !defined(BLINKER_DEFAULT_CONFIG)
     #define BLINKER_ESP_SMARTCONFIG_V2
 #endif
 
@@ -36,23 +36,23 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
         #endif
         }
 
-    #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_APCONFIG)
-        void begin( const char* _auth)
-        {
-            Base::begin();
-            this->conn.begin(_auth);
+    // #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_APCONFIG)
+    //     void begin( const char* _auth)
+    //     {
+    //         Base::begin();
+    //         this->conn.begin(_auth);
 
-        #if defined(BLINKER_ESP_SMARTCONFIG)
-            this->conn.smartconfigBegin();
-        #elif defined(BLINKER_APCONFIG)
-            this->conn.apconfigBegin();
-        #endif
+    //     #if defined(BLINKER_ESP_SMARTCONFIG)
+    //         this->conn.smartconfigBegin();
+    //     #elif defined(BLINKER_APCONFIG)
+    //         this->conn.apconfigBegin();
+    //     #endif
         
-        #if defined(BLINKER_WIDGET)
-            Base::loadTimer();
-        #endif
-        }
-    #endif
+    //     #if defined(BLINKER_WIDGET)
+    //         Base::loadTimer();
+    //     #endif
+    //     }
+    // #endif
 
     #if defined(BLINKER_ESP_SMARTCONFIG_V2)
         void begin()
@@ -68,26 +68,26 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
         }
     #endif
 
-    #if defined(BLINKER_WIFI_MULTI)
-        void addAP( const char* _ssid, 
-                    const char* _pswd)
-        {
-            BLINKER_LOG(BLINKER_F("wifiMulti add "), _ssid);
-            wifiMulti.addAP(_ssid, _pswd);
-        }
+    // #if defined(BLINKER_WIFI_MULTI)
+    //     void addAP( const char* _ssid, 
+    //                 const char* _pswd)
+    //     {
+    //         BLINKER_LOG(BLINKER_F("wifiMulti add "), _ssid);
+    //         wifiMulti.addAP(_ssid, _pswd);
+    //     }
     
-        void existAP(   const char* _ssid, 
-                        const char* _pswd)
-        {
-            BLINKER_LOG(BLINKER_F("wifiMulti existAP "), _ssid);
-            wifiMulti.existsAP(_ssid, _pswd);
-        }
+    //     void existAP(   const char* _ssid, 
+    //                     const char* _pswd)
+    //     {
+    //         BLINKER_LOG(BLINKER_F("wifiMulti existAP "), _ssid);
+    //         wifiMulti.existsAP(_ssid, _pswd);
+    //     }
     
-        void cleanAPlist()
-        {
-            wifiMulti.cleanAPlist();
-        }
-    #endif
+    //     void cleanAPlist()
+    //     {
+    //         wifiMulti.cleanAPlist();
+    //     }
+    // #endif
 
     private :
 

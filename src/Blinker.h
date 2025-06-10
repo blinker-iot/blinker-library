@@ -21,10 +21,18 @@
 
 #if defined(BLINKER_BLE)
     #include "BlinkerBLE.h"
+    #if defined(ESP32)
+        BlinkerBLE                  Blinker(BLEESP);
+    #endif
 #endif
 
 #if defined(BLINKER_WIFI)
     #include "BlinkerWiFi.h"
+    #if defined(ESP32)
+        BlinkerWiFi                 Blinker(WiFiESP);
+    #elif defined(ARDUINO_ARCH_RENESAS_UNO)
+        BlinkerWiFi                 Blinker(WiFiUNO);
+    #endif
 #endif
 
 #if defined(BLINKER_WIDGET)

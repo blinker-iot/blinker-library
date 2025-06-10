@@ -176,11 +176,11 @@ enum b_device_staus_t {
 template<class T>
 String STRING_format(T p) { return String(p); }
 
-#if defined(ESP8266) || defined(ESP32)
+// #if defined(ESP8266) || defined(ESP32)
 String macDeviceName();
 // #elif defined(ESP32)
 // String macDeviceName();
-#endif
+// #endif
 
 template<class T>
 const T& BlinkerMin(const T& a, const T& b) { return (b < a) ? b : a; }

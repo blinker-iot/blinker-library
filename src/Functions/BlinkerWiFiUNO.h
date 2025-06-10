@@ -4,10 +4,13 @@
 #define BLINKER_WIFI
 
 #include <WiFiS3.h>
+#include <WiFiUdp.h>
 #include "WiFiSSLClient.h"
 
 #include <EEPROM.h>
 
+#include "../modules/ArduinoMDNS/ArduinoMDNS.h"
+#include "../modules/WebSockets/WebSocketsServer.h"
 #include "../modules/pubsubclient/PubSubClient.h"
 #ifndef ARDUINOJSON_VERSION_MAJOR
 #include "../modules/ArduinoJson/ArduinoJson.h"
@@ -26,6 +29,9 @@ enum b_broker_t {
 
 class BlinkerWiFiUNO;
 BlinkerWiFiUNO* BlinkerWiFiUNO_instance = nullptr;
+
+WiFiUDP udp;
+MDNS mdns(udp);
 
 class BlinkerWiFiUNO
 {
@@ -71,6 +77,8 @@ class BlinkerWiFiUNO
         bool checkWlanInit();
         void commonBegin(const char* _ssid, const char* _pswd);
 
+        void webSocketEventHandler(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
+
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
 
@@ -92,6 +100,8 @@ class BlinkerWiFiUNO
         void subcribeEventHandler(char* topic, byte* payload, unsigned int length);
 
     private :
+        String createTextRecord(const String& key, const String& value);
+        void mDNSInit();
         // bool autoInit();
         // bool checkConfig();
 
@@ -124,7 +134,7 @@ class BlinkerWiFiUNO
         // bool        _isBegin = false;
         bool        isMQTTinit = false;
         uint32_t    latestTime;
-        // bool*       isHandle;
+        bool*       isHandle;
         bool        isAlive = false;
         bool        _needCheckShare = false;
         uint8_t     _sharerCount = 0;
@@ -208,6 +218,16 @@ class BlinkerWiFiUNO
         char get_key[33] = { 0 };
 };
 
+#define WS_SERVERPORT       81
+WebSocketsServer webSocket_MQTT = WebSocketsServer(WS_SERVERPORT);
+
+void webSocketEvent_MQTT(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
+{
+    if (BlinkerWiFiUNO_instance) {
+        BlinkerWiFiUNO_instance->webSocketEventHandler(num, type, payload, length);
+    }
+}
+
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     if (BlinkerWiFiUNO_instance) {
         BlinkerWiFiUNO_instance->subcribeEventHandler(topic, payload, length);
@@ -217,8 +237,69 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
 BlinkerWiFiUNO WiFiUNO;
 
 BlinkerWiFiUNO::BlinkerWiFiUNO() {
-    // isHandle = &isConnect_MQTT;
+    isHandle = &isConnect_MQTT;
     BlinkerWiFiUNO_instance = this;
+}
+
+void BlinkerWiFiUNO::webSocketEventHandler(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
+{
+    switch(type)
+    {
+        case WStype_DISCONNECTED:
+            // BLINKER_LOG_ALL(BLINKER_F("Disconnected! "), num);
+
+            if (!isApCfg) isConnect_MQTT = false;
+            break;
+        case WStype_CONNECTED:
+            {
+                // IPAddress ip = webSocket_MQTT.remoteIP(num);
+
+                BLINKER_LOG_ALL(BLINKER_F("num: "), num,
+                                BLINKER_F(", url: "), (char *)payload);
+
+                // send message to client
+                webSocket_MQTT.sendTXT(num, "{\"state\":\"connected\"}\n");
+
+                ws_num_MQTT = num;
+
+                if (!isApCfg) isConnect_MQTT = true;
+            }
+            break;
+        case WStype_TEXT:
+            BLINKER_LOG_ALL(BLINKER_F("num: "), num,
+                            BLINKER_F(", get Text: "), (char *)payload,
+                            BLINKER_F(", length: "), length);
+
+            if (length < BLINKER_MAX_READ_SIZE) {
+                if (isFresh_MQTT) free(msgBuf_MQTT);
+                msgBuf_MQTT = (char*)malloc((length+1)*sizeof(char));
+                strcpy(msgBuf_MQTT, (char*)payload);
+                isAvail_MQTT = true;
+                isFresh_MQTT = true;
+
+                BLINKER_LOG_ALL(BLINKER_F("isAvail_MQTT: "), isAvail_MQTT);
+            }
+
+            if (!isApCfg) dataFrom_MQTT = BLINKER_MSG_FROM_WS;
+
+            ws_num_MQTT = num;
+
+            // send message to client
+            // webSocket_MQTT.sendTXT(num, "message here");
+
+            // send data to all connected clients
+            // webSocket_MQTT.broadcastTXT("message here");
+            break;
+        case WStype_BIN:
+            // BLINKER_LOG("num: ", num, " get binary length: ", length);
+            // hexdump(payload, length);
+
+            // send message to client
+            // webSocket_MQTT.sendBIN(num, payload, length);
+            break;
+        default :
+            break;
+    }
 }
 
 void BlinkerWiFiUNO::subcribeEventHandler(char* topic, byte* payload, unsigned int length) {
@@ -252,7 +333,7 @@ bool BlinkerWiFiUNO::init() {
             _connectTime = millis();
             if (deviceRegister()) {
                 _connectTimes = 0;
-                // mDNSInit();
+                mDNSInit();
                 isMQTTinit = true;
                 // _isBegin = true;
                 return true;
@@ -283,7 +364,7 @@ bool BlinkerWiFiUNO::connect() {
 
     int8_t ret;
 
-    // webSocket_MQTT.loop();
+    webSocket_MQTT.loop();
 
     // if (mqtt_MQTT->connected())
     // {
@@ -410,6 +491,8 @@ void BlinkerWiFiUNO::disconnect() {
 
     if (mqtt_MQTT->connected()) mqtt_MQTT->disconnect();
 
+    if (*isHandle) webSocket_MQTT.disconnect();
+
     _status = BLINKER_DEV_DISCONNECTED;
 }
 
@@ -432,6 +515,10 @@ void BlinkerWiFiUNO::ping() {
 
 bool BlinkerWiFiUNO::available() {
     if (!checkInit()) return false;
+
+    webSocket_MQTT.loop();
+
+    mdns.run();
 
     if ((millis() - latestTime) > BLINKER_MQTT_PING_TIMEOUT)
     {
@@ -489,106 +576,132 @@ int BlinkerWiFiUNO::print(char* data, bool needCheck) {
     //     mqtt_MQTT->subscribe(BLINKER_SUB_TOPIC_MQTT);
     // }
 
-    uint16_t num = strlen(data);
-
-    for(uint16_t c_num = num; c_num > 0; c_num--)
-    {
-        data[c_num+7] = data[c_num-1];
-    }
-
-    data[num+8] = '\0';        
-
-    char data_add[20] = "{\"data\":";
-    for(uint8_t c_num = 0; c_num < 8; c_num++)
-    {
-        data[c_num] = data_add[c_num];
-    }
-    
-    strcat(data, ",\"fromDevice\":\"");
-    strcat(data, DEVICE_NAME_MQTT);
-    strcat(data, "\",\"toDevice\":\"");
-
-    if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
-    {
-        // strcat(data, _sharers[_sharerFrom]->uuid());
-        strcat(data, UUID_EXTRA);
-
-        free(UUID_EXTRA);
-    }
-    else
-    {
-        strcat(data, UUID_MQTT);
-    }
-
-    strcat(data, "\",\"deviceType\":\"OwnApp\"}");
-
-    _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
-
-    if (!isJson(STRING_format(data))) return false;
-
-    BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
-    BLINKER_LOG_FreeHeap_ALL();
-
-    bool _alive = isAlive;
-
-    if (needCheck)
-    {
-        if (!checkPrintSpan())
-        {
-            return false;
-        }
-        respTime = millis();
-    }
-
-    if (mqtt_MQTT->connected())
+    if (*isHandle && dataFrom_MQTT == BLINKER_MSG_FROM_WS)
     {
         if (needCheck)
         {
-            if (!checkCanPrint())
+            if (!checkPrintSpan())
             {
-                if (!_alive) isAlive = false;
+                respTime = millis();
                 return false;
             }
-
-            if (!checkPrintLimit())
-            {
-                return false;
-            }
-
-            _print_times++;
-
-            BLINKER_LOG_ALL(BLINKER_F("_print_times: "), _print_times);
         }
 
-        if (mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data))
-        {
-            BLINKER_LOG_ALL(BLINKER_F("MQTT Publish Success!"));
-            BLINKER_LOG_FreeHeap_ALL();
-            if (needCheck) printTime = millis();
+        respTime = millis();
 
-            if (!_alive)
-            {
-                isAlive = false;
-            }
+        BLINKER_LOG_ALL(BLINKER_F("WS response: "));
+        BLINKER_LOG_ALL(data);
+        BLINKER_LOG_ALL(BLINKER_F("Success..."));
 
-            this->latestTime = millis();
-            return num + 8;
-        }
-        else
-        {
-            if (!_alive)
-            {
-                isAlive = false;
-            }
-            BLINKER_LOG(BLINKER_F("MQTT Publish Failed!"));
-            return false;
-        }
+        strcat(data, BLINKER_CMD_NEWLINE);
+
+        webSocket_MQTT.sendTXT(ws_num_MQTT, data);
+
+        return true;
     }
     else
     {
-        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
-        isAlive = false;
-        return false;
+        uint16_t num = strlen(data);
+
+        for(uint16_t c_num = num; c_num > 0; c_num--)
+        {
+            data[c_num+7] = data[c_num-1];
+        }
+
+        data[num+8] = '\0';        
+
+        char data_add[20] = "{\"data\":";
+        for(uint8_t c_num = 0; c_num < 8; c_num++)
+        {
+            data[c_num] = data_add[c_num];
+        }
+        
+        strcat(data, ",\"fromDevice\":\"");
+        strcat(data, DEVICE_NAME_MQTT);
+        strcat(data, "\",\"toDevice\":\"");
+
+        if (_sharerFrom < BLINKER_MQTT_MAX_SHARERS_NUM)
+        {
+            // strcat(data, _sharers[_sharerFrom]->uuid());
+            strcat(data, UUID_EXTRA);
+
+            free(UUID_EXTRA);
+        }
+        else
+        {
+            strcat(data, UUID_MQTT);
+        }
+
+        strcat(data, "\",\"deviceType\":\"OwnApp\"}");
+
+        _sharerFrom = BLINKER_MQTT_FROM_AUTHER;
+
+        if (!isJson(STRING_format(data))) return false;
+
+        BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
+        BLINKER_LOG_FreeHeap_ALL();
+
+        bool _alive = isAlive;
+
+        if (needCheck)
+        {
+            if (!checkPrintSpan())
+            {
+                return false;
+            }
+            respTime = millis();
+        }
+
+        if (mqtt_MQTT->connected())
+        {
+            if (needCheck)
+            {
+                if (!checkCanPrint())
+                {
+                    if (!_alive) isAlive = false;
+                    return false;
+                }
+
+                if (!checkPrintLimit())
+                {
+                    return false;
+                }
+
+                _print_times++;
+
+                BLINKER_LOG_ALL(BLINKER_F("_print_times: "), _print_times);
+            }
+
+            if (mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data))
+            {
+                BLINKER_LOG_ALL(BLINKER_F("MQTT Publish Success!"));
+                BLINKER_LOG_FreeHeap_ALL();
+                if (needCheck) printTime = millis();
+
+                if (!_alive)
+                {
+                    isAlive = false;
+                }
+
+                this->latestTime = millis();
+                return num + 8;
+            }
+            else
+            {
+                if (!_alive)
+                {
+                    isAlive = false;
+                }
+                BLINKER_LOG(BLINKER_F("MQTT Publish Failed!"));
+                return false;
+            }
+        }
+        else
+        {
+            BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+            isAlive = false;
+            return false;
+        }
     }
 }
 
@@ -777,8 +890,8 @@ bool BlinkerWiFiUNO::deviceRegister() {
         strcpy(DEVICE_NAME_MQTT, _userID.c_str());
         if(!isMQTTinit) MQTT_ID_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
         strcpy(MQTT_ID_MQTT, _userID.c_str());
-        if(!isMQTTinit) MQTT_NAME_MQTT = (char*)malloc((_userName.length()+1)*sizeof(char));
-        strcpy(MQTT_NAME_MQTT, _userName.c_str());
+        if(!isMQTTinit) MQTT_NAME_MQTT = (char*)malloc((_userID.length()+1)*sizeof(char));
+        strcpy(MQTT_NAME_MQTT, _userID.c_str());
         if(!isMQTTinit) MQTT_KEY_MQTT = (char*)malloc((_key.length()+1)*sizeof(char));
         strcpy(MQTT_KEY_MQTT, _key.c_str());
         if(!isMQTTinit) MQTT_PRODUCTINFO_MQTT = (char*)malloc((_productInfo.length()+1)*sizeof(char));
@@ -897,6 +1010,27 @@ void BlinkerWiFiUNO::freshSharers() {
             break;
         }
     }
+}
+
+String BlinkerWiFiUNO::createTextRecord(const String& key, const String& value) {
+    String record = key + "=" + value;
+    char lengthByte = (char)record.length();
+    return String(lengthByte) + record;
+}
+
+void BlinkerWiFiUNO::mDNSInit() {
+    mdns.begin(WiFi.localIP(), DEVICE_NAME_MQTT);
+    String serviceName = String(BLINKER_MDNS_SERVICE_BLINKER) + "._blinker";
+
+    String textRecord = createTextRecord("deviceName", DEVICE_NAME_MQTT) + 
+                        createTextRecord("mac", macDeviceName());
+    
+    mdns.addServiceRecord(serviceName.c_str(), WS_SERVERPORT, MDNSServiceTCP, textRecord.c_str());
+
+    webSocket_MQTT.begin();
+    webSocket_MQTT.onEvent(webSocketEvent_MQTT);
+    BLINKER_LOG(BLINKER_F("WebSocket server started on port "), WS_SERVERPORT);
+    BLINKER_LOG(BLINKER_F("Connect to: ws://"), DEVICE_NAME_MQTT, BLINKER_F(":"), WS_SERVERPORT);
 }
 
 bool BlinkerWiFiUNO::checkWlanInit() {

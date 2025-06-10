@@ -13,7 +13,7 @@ class BlinkerNumber
                 name(_name)
             {}
         
-        void icon(const String & _icon)
+        BlinkerNumber& icon(const String & _icon)
         {
             if (_fresh >> 0 & 0x01) free(nicon);
 
@@ -21,9 +21,10 @@ class BlinkerNumber
             strcpy(nicon, _icon.c_str());
 
             _fresh |= 0x01 << 0;
+            return *this;
         }
 
-        void color(const String & _clr)
+        BlinkerNumber& color(const String & _clr)
         {
             if (_fresh >> 1 & 0x01) free(ncolor);
 
@@ -31,9 +32,10 @@ class BlinkerNumber
             strcpy(ncolor, _clr.c_str());
 
             _fresh |= 0x01 << 1;
+            return *this;
         }
 
-        void unit(const String & _unit)
+        BlinkerNumber& unit(const String & _unit)
         {
             if (_fresh >> 2 & 0x01) free(nunit);
 
@@ -41,10 +43,11 @@ class BlinkerNumber
             strcpy(nunit, _unit.c_str());
 
             _fresh |= 0x01 << 2;
+            return *this;
         }
 
         template <typename T>
-        void text(T _text)
+        BlinkerNumber& text(T _text)
         {
             if (_fresh >> 3 & 0x01) free(ntext);
 
@@ -53,6 +56,7 @@ class BlinkerNumber
             strcpy(ntext, _ntext.c_str());
 
             _fresh |= 0x01 << 3;
+            return *this;
         }
         
         void print(char value)              { _print(STRING_format(value)); }
@@ -67,9 +71,9 @@ class BlinkerNumber
     private :
         Functions&  func;
         const char* name;
-        char *      nicon;// = "";
-        char *      ncolor;// = "";
-        char *      nunit;// = "";
+        char *      nicon;
+        char *      ncolor;
+        char *      nunit;
         char *      ntext;
         uint8_t     _fresh = 0;
 

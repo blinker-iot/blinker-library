@@ -48,11 +48,6 @@
 
 #include <Blinker.h>
 
-#if defined(ESP32)
-BlinkerBLE                  Blinker(BLEESP);
-#else
-BlinkerBLE                  Blinker(BLESerial);
-#endif
 // 新建组件对象
 BlinkerButton<BlinkerBLE>   Button1(Blinker, "btn-abc");
 BlinkerNumber<BlinkerBLE>   Number1(Blinker, "num-abc");

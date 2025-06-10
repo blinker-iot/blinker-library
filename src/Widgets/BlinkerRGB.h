@@ -16,13 +16,49 @@ class BlinkerRGB
             wNum = func.attachWidget(name, _func);
         }
 
-        void attach(blinker_callback_with_rgb_arg_t _func)
+        BlinkerRGB& attach(blinker_callback_with_rgb_arg_t _func)
         {
             if (wNum == 0) wNum = func.attachWidget(name, _func);
             else func.freshAttachWidget(name, _func);
+            return *this;
         }
 
-        void brightness(uint8_t _bright) { rgbrightness = _bright; }
+        BlinkerRGB& brightness(uint8_t _bright) 
+        { 
+            rgbrightness = _bright; 
+            return *this;
+        }
+
+        BlinkerRGB& red(uint8_t _r)
+        {
+            rgbRed = _r;
+            return *this;
+        }
+
+        BlinkerRGB& green(uint8_t _g)
+        {
+            rgbGreen = _g;
+            return *this;
+        }
+
+        BlinkerRGB& blue(uint8_t _b)
+        {
+            rgbBlue = _b;
+            return *this;
+        }
+
+        BlinkerRGB& color(uint8_t _r, uint8_t _g, uint8_t _b)
+        {
+            rgbRed = _r;
+            rgbGreen = _g;
+            rgbBlue = _b;
+            return *this;
+        }
+
+        void print()
+        {
+            print(rgbRed, rgbGreen, rgbBlue);
+        }
 
         void print(uint8_t _r, uint8_t _g, uint8_t _b)
         {
@@ -65,6 +101,9 @@ class BlinkerRGB
         const char* name;
         uint8_t     wNum;
         uint8_t     rgbrightness = 0;
+        uint8_t     rgbRed = 0;
+        uint8_t     rgbGreen = 0;
+        uint8_t     rgbBlue = 0;
 };
 
 #endif

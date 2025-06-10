@@ -16,13 +16,14 @@ class BlinkerSlider
             wNum = func.attachWidget(name, _func);
         }
 
-        void attach(blinker_callback_with_int32_arg_t _func)
+        BlinkerSlider& attach(blinker_callback_with_int32_arg_t _func)
         {
             if (wNum == 0) wNum = func.attachWidget(name, _func);
             else func.freshAttachWidget(name, _func);
+            return *this;
         }
         
-        void color(const String & _clr)
+        BlinkerSlider& color(const String & _clr)
         {
             if (_fresh >> 0 & 0x01) free(textClr);
 
@@ -30,6 +31,7 @@ class BlinkerSlider
             strcpy(textClr, _clr.c_str());
 
             _fresh |= 0x01 << 0;
+            return *this;
         }
         
         void print(char value)              { _print(STRING_format(value)); }

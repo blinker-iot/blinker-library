@@ -23,9 +23,9 @@ class BlinkerText
             textData += BLINKER_F("\":\"");
             textData += STRING_format(_text);
             textData += BLINKER_F("\"");
+            
             if (_fresh >> 0 & 0x01)
             {
-                
                 textData += BLINKER_F(",\"");
                 textData += BLINKER_F(BLINKER_CMD_ICON);
                 textData += BLINKER_F("\":\"");
@@ -70,7 +70,6 @@ class BlinkerText
 
             if (_fresh >> 0 & 0x01)
             {
-                
                 textData += BLINKER_F(",\"");
                 textData += BLINKER_F(BLINKER_CMD_ICON);
                 textData += BLINKER_F("\":\"");
@@ -98,7 +97,7 @@ class BlinkerText
             func.printArray(name, textData);
         }
 
-        void icon(const String & _icon)
+        BlinkerText& icon(const String & _icon)
         {
             if (_fresh >> 0 & 0x01) free(nicon);
 
@@ -106,9 +105,10 @@ class BlinkerText
             strcpy(nicon, _icon.c_str());
 
             _fresh |= 0x01 << 0;
+            return *this;
         }
 
-        void color(const String & _clr)
+        BlinkerText& color(const String & _clr)
         {
             if (_fresh >> 1 & 0x01) free(ncolor);
 
@@ -116,13 +116,14 @@ class BlinkerText
             strcpy(ncolor, _clr.c_str());
 
             _fresh |= 0x01 << 1;
+            return *this;
         }
 
     private :
         Functions&  func;
         const char* name;
-        char *      nicon;// = "";
-        char *      ncolor;// = "";
+        char *      nicon;
+        char *      ncolor;
         uint8_t     _fresh = 0;
 };
 

@@ -16,13 +16,14 @@ class BlinkerButton
             wNum = func.attachWidget(name, _func);
         }
 
-        void attach(blinker_callback_with_string_arg_t _func)
+        BlinkerButton& attach(blinker_callback_with_string_arg_t _func)
         {
             if (wNum == 0) wNum = func.attachWidget(name, _func);
             else func.freshAttachWidget(name, _func);
+            return *this;
         }
 
-        void icon(const String & _icon)
+        BlinkerButton& icon(const String & _icon)
         {
             if (_fresh >> 0 & 0x01) free(bicon);
 
@@ -30,9 +31,10 @@ class BlinkerButton
             strcpy(bicon, _icon.c_str());
 
             _fresh |= 0x01 << 0;
+            return *this;
         }
 
-        void color(const String & _clr)
+        BlinkerButton& color(const String & _clr)
         {
             if (_fresh >> 1 & 0x01) free(iconClr);
 
@@ -40,10 +42,11 @@ class BlinkerButton
             strcpy(iconClr, _clr.c_str());
 
             _fresh |= 0x01 << 1;
+            return *this;
         }
 
         template <typename T>
-        void content(T _con)
+        BlinkerButton& content(T _con)
         {
             if (_fresh >> 2 & 0x01) free(bcon);
 
@@ -52,10 +55,11 @@ class BlinkerButton
             strcpy(bcon, _bcon.c_str());
 
             _fresh |= 0x01 << 2;
+            return *this;
         }
 
         template <typename T>
-        void text(T _text)
+        BlinkerButton& text(T _text)
         {
             if (_fresh >> 3 & 0x01) free(btext);
 
@@ -64,10 +68,11 @@ class BlinkerButton
             strcpy(btext, _btext.c_str());
 
             _fresh |= 0x01 << 3;
+            return *this;
         }
 
         template <typename T1, typename T2>
-        void text(T1 _text1, T2 _text2)
+        BlinkerButton& text(T1 _text1, T2 _text2)
         {
             if (_fresh >> 3 & 0x01) free(btext);
 
@@ -84,9 +89,10 @@ class BlinkerButton
             strcpy(btext1, _btext.c_str());
 
             _fresh |= 0x01 << 4;
+            return *this;
         }
 
-        void textColor(const String & _clr)
+        BlinkerButton& textColor(const String & _clr)
         {
             if (_fresh >> 5 & 0x01) free(textClr);
 
@@ -94,13 +100,23 @@ class BlinkerButton
             strcpy(textClr, _clr.c_str());
 
             _fresh |= 0x01 << 5;
+            return *this;
+        }
+
+        // 添加新的 state 方法支持链式调用
+        BlinkerButton& state(const String & _state)
+        {
+            currentState = _state;
+            return *this;
         }
 
         void print() { print(""); }
 
         void print(const String & _state)
         {
-            if ((_fresh == 0 && _state.length() == 0) || \
+            String stateToUse = _state.length() ? _state : currentState;
+            
+            if ((_fresh == 0 && stateToUse.length() == 0) || \
                 wNum == 0)
             {
                 return;
@@ -108,12 +124,12 @@ class BlinkerButton
 
             String buttonData;
 
-            if (_state.length())
+            if (stateToUse.length())
             {
                 buttonData += BLINKER_F("{\"");
                 buttonData += BLINKER_F(BLINKER_CMD_SWITCH);
                 buttonData += BLINKER_F("\":\"");
-                buttonData += (_state);
+                buttonData += (stateToUse);
                 buttonData += BLINKER_F("\"");
             }
             
@@ -204,6 +220,7 @@ class BlinkerButton
             buttonData += BLINKER_F("}");
 
             _fresh = 0;
+            currentState = ""; // 清空状态
 
             func.printArray(name, buttonData);
         }
@@ -219,5 +236,6 @@ class BlinkerButton
         char *      btext1;
         char *      textClr;
         uint8_t     _fresh = 0;
+        String      currentState = ""; // 新增状态存储
 };
 #endif
