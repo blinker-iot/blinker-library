@@ -22,6 +22,7 @@ class BlinkerBLEESP : public BLEServerCallbacks, public BLECharacteristicCallbac
         BlinkerBLEESP()
             : deviceConnected(false), isAvail(false)
         {}
+        ~BlinkerBLEESP();
 
         void begin();
         bool init()     { return true; }
@@ -38,16 +39,16 @@ class BlinkerBLEESP : public BLEServerCallbacks, public BLECharacteristicCallbac
 
     private :
         bool                    deviceConnected;
-        char*                   BLEBuf;//[BLINKER_MAX_READ_SIZE];
+        char*                   BLEBuf = nullptr;//[BLINKER_MAX_READ_SIZE];
         bool                    _isFresh = false;
-        bool                    isAvail;
-        bool                    isFresh;
-        uint32_t                _bufLen;
-        uint32_t                freshTime;
-        BLEServer               *pServer;
-        BLEService              *pService;
-        BLECharacteristic       *pCharacteristic;
-        BLEAdvertising          *pAdvertising;
+        bool                    isAvail = false;
+        bool                    isFresh = false;
+        uint32_t                _bufLen = 0;
+        uint32_t                freshTime = 0;
+        BLEServer               *pServer = nullptr;
+        BLEService              *pService = nullptr;
+        BLECharacteristic       *pCharacteristic = nullptr;
+        BLEAdvertising          *pAdvertising = nullptr;
         BLEAdvertisementData    pAdvertisementData;
         uint8_t                 respTimes = 0;
         uint32_t                respTime = 0;
@@ -60,6 +61,35 @@ class BlinkerBLEESP : public BLEServerCallbacks, public BLECharacteristicCallbac
 };
 
 BlinkerBLEESP   BLEESP;
+
+BlinkerBLEESP::~BlinkerBLEESP()
+{
+    if (pCharacteristic) {
+        pCharacteristic->setCallbacks(nullptr);
+        pCharacteristic = nullptr;
+    }
+    
+    if (pService) {
+        pService->stop();
+        pService = nullptr;
+    }
+
+    if (pServer) {
+        pServer->setCallbacks(nullptr);
+        BLEDevice::deinit();
+        pServer = nullptr;
+    }
+
+    if (pAdvertising) {
+        BLEDevice::getAdvertising()->stop();
+        pAdvertising = nullptr;
+    }
+
+    if (BLEBuf) {
+        free(BLEBuf);
+        BLEBuf = nullptr;
+    }
+}
 
 void BlinkerBLEESP::begin()
 {

@@ -37,6 +37,7 @@ class BlinkerWiFiUNO
 {
     public :
         BlinkerWiFiUNO();
+        ~BlinkerWiFiUNO();
 
         void begin(const char* auth);
         bool init();
@@ -129,12 +130,12 @@ class BlinkerWiFiUNO
     protected :
         b_broker_t  _use_broker = blinker_b;
         char        _messageId[20];
-        BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM];
+        BlinkerSharer * _sharers[BLINKER_MQTT_MAX_SHARERS_NUM] = { nullptr };
         bool        _isWiFiInit = false;
         // bool        _isBegin = false;
         bool        isMQTTinit = false;
         uint32_t    latestTime;
-        bool*       isHandle;
+        bool*       isHandle = nullptr;
         bool        isAlive = false;
         bool        _needCheckShare = false;
         uint8_t     _sharerCount = 0;
@@ -187,8 +188,8 @@ class BlinkerWiFiUNO
         uint8_t     _bridgeCount = 0;
 
         b_device_staus_t _status = BLINKER_WLAN_CONNECTING;
-     
-        char*    msgBuf_MQTT;
+
+        char*    msgBuf_MQTT = nullptr;
         bool     isFresh_MQTT = false;
         bool     isConnect_MQTT = false;
         bool     isAvail_MQTT = false;
@@ -200,20 +201,20 @@ class BlinkerWiFiUNO
     #else
         WiFiSSLClient wifiClient;
     #endif
-        PubSubClient* mqtt_MQTT;
+        PubSubClient* mqtt_MQTT = nullptr;
 
-        char*       MQTT_HOST_MQTT;
-        char*       MQTT_ID_MQTT;
-        char*       MQTT_NAME_MQTT;
-        char*       MQTT_KEY_MQTT;
-        char*       MQTT_PRODUCTINFO_MQTT;
-        char*       UUID_MQTT;
-        char*       DEVICE_NAME_MQTT;
-        char*       BLINKER_PUB_TOPIC_MQTT;
-        char*       BLINKER_SUB_TOPIC_MQTT;
+        char*       MQTT_HOST_MQTT = nullptr;
+        char*       MQTT_ID_MQTT = nullptr;
+        char*       MQTT_NAME_MQTT = nullptr;
+        char*       MQTT_KEY_MQTT = nullptr;
+        char*       MQTT_PRODUCTINFO_MQTT = nullptr;
+        char*       UUID_MQTT = nullptr;
+        char*       DEVICE_NAME_MQTT = nullptr;
+        char*       BLINKER_PUB_TOPIC_MQTT = nullptr;
+        char*       BLINKER_SUB_TOPIC_MQTT = nullptr;
         // char*       BLINKER_RRPC_PUB_TOPIC_MQTT;
-        char*       BLINKER_RRPC_SUB_TOPIC_MQTT;
-        char*       UUID_EXTRA;
+        char*       BLINKER_RRPC_SUB_TOPIC_MQTT = nullptr;
+        char*       UUID_EXTRA = nullptr;
         uint16_t    MQTT_PORT_MQTT;
         char get_key[33] = { 0 };
 };
@@ -239,6 +240,78 @@ BlinkerWiFiUNO WiFiUNO;
 BlinkerWiFiUNO::BlinkerWiFiUNO() {
     isHandle = &isConnect_MQTT;
     BlinkerWiFiUNO_instance = this;
+}
+
+BlinkerWiFiUNO::~BlinkerWiFiUNO() {
+    disconnect();
+
+    if (mqtt_MQTT) {
+        delete mqtt_MQTT;
+        mqtt_MQTT = nullptr;
+    }
+    // if (iotSub_MQTT) {
+    //     delete iotSub_MQTT;
+    //     iotSub_MQTT = nullptr;
+    // }
+    if (MQTT_HOST_MQTT) {
+        free(MQTT_HOST_MQTT);
+        MQTT_HOST_MQTT = nullptr;
+    }
+    if (MQTT_ID_MQTT) {
+        free(MQTT_ID_MQTT);
+        MQTT_ID_MQTT = nullptr;
+    }
+    if (MQTT_NAME_MQTT) {
+        free(MQTT_NAME_MQTT);
+        MQTT_NAME_MQTT = nullptr;
+    }
+    if (MQTT_KEY_MQTT) {
+        free(MQTT_KEY_MQTT);
+        MQTT_KEY_MQTT = nullptr;
+    }
+    if (MQTT_PRODUCTINFO_MQTT) {
+        free(MQTT_PRODUCTINFO_MQTT);
+        MQTT_PRODUCTINFO_MQTT = nullptr;
+    }
+    if (UUID_MQTT) {
+        free(UUID_MQTT);
+        UUID_MQTT = nullptr;
+    }
+    if (DEVICE_NAME_MQTT) {
+        free(DEVICE_NAME_MQTT);
+        DEVICE_NAME_MQTT = nullptr;
+    }
+    if (BLINKER_PUB_TOPIC_MQTT) {
+        free(BLINKER_PUB_TOPIC_MQTT);
+        BLINKER_PUB_TOPIC_MQTT = nullptr;
+    }
+    if (BLINKER_SUB_TOPIC_MQTT) {
+        free(BLINKER_SUB_TOPIC_MQTT);
+        BLINKER_SUB_TOPIC_MQTT = nullptr;
+    }
+    if (BLINKER_RRPC_SUB_TOPIC_MQTT) {
+        free(BLINKER_RRPC_SUB_TOPIC_MQTT);
+        BLINKER_RRPC_SUB_TOPIC_MQTT = nullptr;
+    }
+    if (UUID_EXTRA) {
+        free(UUID_EXTRA);
+        UUID_EXTRA = nullptr;
+    }
+    if (msgBuf_MQTT) {
+        free(msgBuf_MQTT);
+        msgBuf_MQTT = nullptr;
+    }
+    
+    isHandle = nullptr;
+    
+    BlinkerWiFiUNO_instance = nullptr;
+
+    for (uint8_t i = 0; i < BLINKER_MQTT_MAX_SHARERS_NUM; i++) {
+        if (_sharers[i]) {
+            delete _sharers[i];
+            _sharers[i] = nullptr;
+        }
+    }
 }
 
 void BlinkerWiFiUNO::webSocketEventHandler(uint8_t num, WStype_t type, uint8_t * payload, size_t length)
@@ -552,6 +625,7 @@ char * BlinkerWiFiUNO::lastRead() {
 void BlinkerWiFiUNO::flush() {
     if (isFresh_MQTT) {
         free(msgBuf_MQTT);
+        msgBuf_MQTT = nullptr;
         isFresh_MQTT = false;
         isAvail_MQTT = false;
         isAliAvail = false;
@@ -1029,8 +1103,8 @@ void BlinkerWiFiUNO::mDNSInit() {
 
     webSocket_MQTT.begin();
     webSocket_MQTT.onEvent(webSocketEvent_MQTT);
-    BLINKER_LOG(BLINKER_F("WebSocket server started on port "), WS_SERVERPORT);
-    BLINKER_LOG(BLINKER_F("Connect to: ws://"), DEVICE_NAME_MQTT, BLINKER_F(":"), WS_SERVERPORT);
+    BLINKER_LOG(BLINKER_F("WebSocket server started"));
+    // BLINKER_LOG(BLINKER_F("Connect to: ws://"), DEVICE_NAME_MQTT, BLINKER_F(":"), WS_SERVERPORT);
 }
 
 bool BlinkerWiFiUNO::checkWlanInit() {

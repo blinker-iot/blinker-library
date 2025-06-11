@@ -1,6 +1,10 @@
 #ifndef BLINKER_WIFI_H
 #define BLINKER_WIFI_H
 
+#if !defined(BLINKER_WIFI)
+    #error "BLINKER_WIFI must be defined to use WiFi functionality!"
+#endif
+
 #if defined(ESP32)
 
 #if defined(BLINKER_ESPTOUCH_V2) || !defined(BLINKER_DEFAULT_CONFIG)
@@ -93,7 +97,10 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
 
 };
 
-#elif defined(ARDUINO_ARCH_RENESAS_UNO)
+// ========================================
+// Arduino UNO R4 WiFi 平台实现
+// ========================================
+#elif defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_UNOR4_WIFI)
 
 #include "Functions/BlinkerWiFiUNO.h"
 #include "Blinker/BlinkerProtocol.h"
@@ -120,8 +127,11 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiUNO>
         }
 };
 
+// ========================================
+// 不支持的平台错误
+// ========================================
 #else
-    #error This code is intended to run on the ESP32 or Renesas UNO R4 platform! Please check your Tools->Board setting.
+    #error "WiFi is not supported on this platform! Supported platforms: ESP32, Arduino UNO R4 WiFi"
 #endif
 
 #endif

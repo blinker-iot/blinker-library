@@ -21,8 +21,7 @@
 
 #define FIND_KEY_VALUE_FAILED               -1000
 
-#if defined(BLINKER_ARDUINOJSON) || defined(ESP32) || \
-    defined(ESP8266) || defined(BLINKER_PRO_ESP)
+#if defined(BLINKER_ARDUINOJSON) || defined(BLINKER_WIFI) || defined(BLINKER_BLE)
     #ifndef ARDUINOJSON_VERSION_MAJOR
     #include "modules/ArduinoJson/ArduinoJson.h"
     #endif
