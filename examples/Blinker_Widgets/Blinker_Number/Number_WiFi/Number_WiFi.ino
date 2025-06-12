@@ -66,10 +66,12 @@ void dataRead(const String & data)
     
     Blinker.print("millis", BlinkerTime);
 
-    Number1.icon("icon_1");
-    Number1.color("#FFFFFF");
-    Number1.unit("ms");
-    Number1.print(BlinkerTime);
+    Number1.icon("far fa-clock")
+           .color("#00AA00")
+           .unit("ms")
+           .text("运行时间")
+           .value(BlinkerTime)
+           .print();
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }

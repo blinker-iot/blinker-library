@@ -3,21 +3,20 @@
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
+#include "BlinkerWidgets.h"
 
-class BlinkerRGB
+class BlinkerRGB : public BlinkerWidget
 {
     public :
         BlinkerRGB(const char* _name, 
             blinker_callback_with_rgb_arg_t _func = NULL)
-            : name(_name)
+            : BlinkerWidget(_name)
         {
-            wNum = Blinker.attachWidget(name, _func);
-        }
-
-        BlinkerRGB& attach(blinker_callback_with_rgb_arg_t _func)
+            wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
+        }        BlinkerRGB& attach(blinker_callback_with_rgb_arg_t _func)
         {
-            if (wNum == 0) wNum = Blinker.attachWidget(name, _func);
-            else Blinker.freshAttachWidget(name, _func);
+            if (wNum == 0) wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
+            else Blinker.freshAttachWidget(const_cast<char*>(name), _func);
             return *this;
         }
 
@@ -51,9 +50,7 @@ class BlinkerRGB
             rgbGreen = _g;
             rgbBlue = _b;
             return *this;
-        }
-
-        void print()
+        }        void print() override
         {
             print(rgbRed, rgbGreen, rgbBlue);
         }
@@ -72,7 +69,7 @@ class BlinkerRGB
             rgbData += STRING_format(rgbrightness);
             rgbData += BLINKER_F("]");
 
-            Blinker.printArray(name, rgbData);
+            Blinker.printArray(const_cast<char*>(name), rgbData);
         }
 
         void print(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _bright)
@@ -89,12 +86,10 @@ class BlinkerRGB
             rgbData += STRING_format(_bright);
             rgbData += BLINKER_F("]");
 
-            Blinker.printArray(name, rgbData);
+            Blinker.printArray(const_cast<char*>(name), rgbData);
         }
 
     private :
-        const char* name;
-        uint8_t     wNum = 0;
         uint8_t     rgbrightness = 0;
         uint8_t     rgbRed = 0;
         uint8_t     rgbGreen = 0;

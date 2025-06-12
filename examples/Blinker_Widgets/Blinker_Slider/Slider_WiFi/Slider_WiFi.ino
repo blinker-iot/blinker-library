@@ -72,8 +72,10 @@ void dataRead(const String & data)
     
     Blinker.print("millis", BlinkerTime);
 
-    Slider1.color("#FFFFFF");
-    Slider1.print(random(0, 128));
+    // 使用新的方法链API
+    Slider1.color("#FFFFFF")
+           .value(random(0, 128))
+           .print();
 }
 
 void setup()

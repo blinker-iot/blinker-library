@@ -57,13 +57,37 @@ void button1_callback(const String & state)
 {
     BLINKER_LOG("get button state: ", state);
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    
+    if (digitalRead(LED_BUILTIN)) {
+        Button1.icon("far fa-lightbulb")
+               .color("#FFAA00")
+               .text("LED ON")
+               .print();
+    }
+    else {
+        Button1.icon("far fa-lightbulb")
+               .color("#000000")
+               .text("LED OFF")
+               .print();
+    }
 }
 
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
     counter++;
-    Number1.print(counter);
+    
+    Number1.icon("far fa-swords")
+           .color("#0066FF")
+           .unit("次")
+           .text("计数器")
+           .value(counter)
+           .print();
+}
+           .unit("次")
+           .text("计数器")
+           .value(counter)
+           .print();
 }
 
 void setup()

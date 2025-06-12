@@ -75,8 +75,10 @@ void dataRead(const String & data)
     
     Blinker.print("millis", BlinkerTime);
 
-    RGB1.brightness(random(0, 255));
-    RGB1.print(random(0, 255), random(0, 255), random(0, 255));
+    // 使用新的方法链API
+    RGB1.brightness(random(0, 255))
+        .color(random(0, 255), random(0, 255), random(0, 255))
+        .print();
 }
 
 void setup()

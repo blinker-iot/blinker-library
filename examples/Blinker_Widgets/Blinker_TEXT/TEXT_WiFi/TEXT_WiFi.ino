@@ -66,7 +66,11 @@ void dataRead(const String & data)
     
     Blinker.print("millis", BlinkerTime);
 
-    Text1.print("os time", BlinkerTime);
+    // 使用新的方法链API - 双行文本显示
+    Text1.text("os time", String(BlinkerTime))
+         .icon("fa-clock")
+         .color("#00AA00")
+         .print();
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }

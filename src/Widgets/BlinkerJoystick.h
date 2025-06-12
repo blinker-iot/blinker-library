@@ -3,27 +3,29 @@
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
+#include "BlinkerWidgets.h"
 
-class BlinkerJoystick
+class BlinkerJoystick : public BlinkerWidget
 {
     public :
         BlinkerJoystick(const char* _name, 
             blinker_callback_with_joy_arg_t _func = NULL)
-            : name(_name)
+            : BlinkerWidget(_name)
         {
-            wNum = Blinker.attachWidget(name, _func);
+            wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
         }
 
         BlinkerJoystick& attach(blinker_callback_with_joy_arg_t _func)
         {
-            if (wNum == 0) wNum = Blinker.attachWidget(name, _func);
-            else Blinker.freshAttachWidget(name, _func);
+            if (wNum == 0) wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
+            else Blinker.freshAttachWidget(const_cast<char*>(name), _func);
             return *this;
         }
 
-    private :
-        const char* name;
-        uint8_t     wNum = 0;
+        void print() override
+        {
+            // Joystick通常不需要主动print，只接收数据
+        }
 };
 
 #endif

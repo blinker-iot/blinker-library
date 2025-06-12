@@ -3,234 +3,180 @@
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
+#include "BlinkerWidgets.h"
 
-class BlinkerButton
+class BlinkerButton : public BlinkerWidget
 {
     public :
         BlinkerButton(const char* _name, 
             blinker_callback_with_string_arg_t _func = NULL)
-            : name(_name)
+            : BlinkerWidget(_name)
         {
-            wNum = Blinker.attachWidget(name, _func);
+            wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
+            bcon = nullptr;
+            textClr = nullptr;
+        }
+
+        ~BlinkerButton()
+        {
+            if (bcon) free(bcon);
+            if (textClr) free(textClr);
         }
 
         BlinkerButton& attach(blinker_callback_with_string_arg_t _func)
         {
-            if (wNum == 0) wNum = Blinker.attachWidget(name, _func);
-            else Blinker.freshAttachWidget(name, _func);
+            if (wNum == 0) wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
+            else Blinker.freshAttachWidget(const_cast<char*>(name), _func);
             return *this;
         }
 
-        BlinkerButton& icon(const String & _icon)
+        // 重写父类的icon方法以返回BlinkerButton类型
+        BlinkerButton& icon(const String& _icon)
         {
-            if (_fresh >> 0 & 0x01) free(bicon);
-
-            bicon = (char*)malloc((_icon.length()+1)*sizeof(char));
-            strcpy(bicon, _icon.c_str());
-
-            _fresh |= 0x01 << 0;
+            BlinkerWidget::icon(_icon);
             return *this;
         }
 
-        BlinkerButton& color(const String & _clr)
+        // 重写父类的color方法以返回BlinkerButton类型
+        BlinkerButton& color(const String& _color)
         {
-            if (_fresh >> 1 & 0x01) free(iconClr);
-
-            iconClr = (char*)malloc((_clr.length()+1)*sizeof(char));
-            strcpy(iconClr, _clr.c_str());
-
-            _fresh |= 0x01 << 1;
+            BlinkerWidget::color(_color);
             return *this;
         }
 
-        template <typename T>
-        BlinkerButton& content(T _con)
-        {
-            if (_fresh >> 2 & 0x01) free(bcon);
-
-            String _bcon = STRING_format(_con);
-            bcon = (char*)malloc((_bcon.length()+1)*sizeof(char));
-            strcpy(bcon, _bcon.c_str());
-
-            _fresh |= 0x01 << 2;
-            return *this;
-        }
-
+        // 重写父类的text方法以返回BlinkerButton类型
         template <typename T>
         BlinkerButton& text(T _text)
         {
-            if (_fresh >> 3 & 0x01) free(btext);
-
-            String _btext = STRING_format(_text);
-            btext = (char*)malloc((_btext.length()+1)*sizeof(char));
-            strcpy(btext, _btext.c_str());
-
-            _fresh |= 0x01 << 3;
+            BlinkerWidget::text(STRING_format(_text));
             return *this;
         }
 
         template <typename T1, typename T2>
         BlinkerButton& text(T1 _text1, T2 _text2)
         {
-            if (_fresh >> 3 & 0x01) free(btext);
-
-            String _btext = STRING_format(_text1);
-            btext = (char*)malloc((_btext.length()+1)*sizeof(char));
-            strcpy(btext, _btext.c_str());
-
-            _fresh |= 0x01 << 3;
-
-            if (_fresh >> 4 & 0x01) free(btext1);
-
-            _btext = STRING_format(_text2);
-            btext1 = (char*)malloc((_btext.length()+1)*sizeof(char));
-            strcpy(btext1, _btext.c_str());
-
-            _fresh |= 0x01 << 4;
+            BlinkerWidget::text(STRING_format(_text1), STRING_format(_text2));
             return *this;
         }
 
-        BlinkerButton& textColor(const String & _clr)
+        // 重写父类的state方法以返回BlinkerButton类型
+        BlinkerButton& state(const String& _state)
         {
-            if (_fresh >> 5 & 0x01) free(textClr);
+            BlinkerWidget::state(_state);
+            return *this;
+        }
+
+        // Button特有的content方法
+        template <typename T>
+        BlinkerButton& content(T _con)
+        {
+            if (_fresh >> 7 & 0x01) free(bcon);
+
+            String _bcon = STRING_format(_con);
+            bcon = (char*)malloc((_bcon.length()+1)*sizeof(char));
+            strcpy(bcon, _bcon.c_str());
+
+            _fresh |= 0x01 << 7;
+            return *this;
+        }
+
+        // Button特有的textColor方法
+        BlinkerButton& textColor(const String& _clr)
+        {
+            if (_fresh >> 8 & 0x01) free(textClr);
 
             textClr = (char*)malloc((_clr.length()+1)*sizeof(char));
             strcpy(textClr, _clr.c_str());
 
-            _fresh |= 0x01 << 5;
+            _fresh |= 0x01 << 8;
             return *this;
         }
 
-        BlinkerButton& state(const String & _state)
+        // 实现父类的纯虚函数
+        void print() override
         {
-            currentState = _state;
-            return *this;
-        }
-
-        void print() { print(""); }
-
-        void print(const String & _state)
-        {
-            String stateToUse = _state.length() ? _state : currentState;
-            
-            if ((_fresh == 0 && stateToUse.length() == 0) || wNum == 0)
+            if (_fresh == 0 || wNum == 0)
             {
                 return;
             }
 
             String buttonData;
+            bool hasContent = false;
 
-            if (stateToUse.length())
+            // 添加状态信息
+            if (nstate)
             {
                 buttonData += BLINKER_F("{\"");
                 buttonData += BLINKER_F(BLINKER_CMD_SWITCH);
                 buttonData += BLINKER_F("\":\"");
-                buttonData += (stateToUse);
+                buttonData += nstate;
                 buttonData += BLINKER_F("\"");
+                hasContent = true;
             }
             
-            if (_fresh >> 0 & 0x01)
+            // 添加父类的通用属性
+            if (_fresh & 0x3F) // 检查前6位（父类属性）
             {
-                if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData += BLINKER_F("{");
-                
-                buttonData += BLINKER_F("\"");
-                buttonData += BLINKER_F(BLINKER_CMD_ICON);
-                buttonData += BLINKER_F("\":\"");
-                buttonData += (bicon);
-                buttonData += BLINKER_F("\"");
-                
-                free(bicon);
+                String parentData = buildJsonData();
+                if (parentData.length() > 2) // 不是空的"{}"
+                {
+                    // 移除父类JSON的大括号
+                    parentData = parentData.substring(1, parentData.length() - 1);
+                    
+                    if (hasContent) buttonData += BLINKER_F(",");
+                    else buttonData += BLINKER_F("{");
+                    
+                    buttonData += parentData;
+                    hasContent = true;
+                }
             }
             
-            if (_fresh >> 1 & 0x01)
+            // 添加Button特有的content属性
+            if (_fresh >> 7 & 0x01)
             {
-                if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData += STRING_format(BLINKER_F("{"));
-                
-                buttonData += BLINKER_F("\"");
-                buttonData += BLINKER_F(BLINKER_CMD_COLOR);
-                buttonData += BLINKER_F("\":\"");
-                buttonData += (iconClr);
-                buttonData += BLINKER_F("\"");
-                
-                free(iconClr);
-            }
-            
-            if (_fresh >> 2 & 0x01)
-            {
-                if (buttonData.length()) buttonData += BLINKER_F(",");
+                if (hasContent) buttonData += BLINKER_F(",");
                 else buttonData += BLINKER_F("{");
                 
                 buttonData += BLINKER_F("\"");
                 buttonData += BLINKER_F(BLINKER_CMD_CONTENT);
                 buttonData += BLINKER_F("\":\"");
-                buttonData += (bcon);
+                buttonData += bcon;
                 buttonData += BLINKER_F("\"");
                 
                 free(bcon);
+                bcon = nullptr;
+                hasContent = true;
             }
             
-            if (_fresh >> 3 & 0x01)
+            // 添加Button特有的textColor属性
+            if (_fresh >> 8 & 0x01)
             {
-                if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData += BLINKER_F("{");
-
-                buttonData += BLINKER_F("\"");
-                buttonData += BLINKER_F(BLINKER_CMD_TEXT);
-                buttonData += BLINKER_F("\":\"");
-                buttonData += (btext);
-                buttonData += BLINKER_F("\"");
-                
-                free(btext);
-            }
-            
-            if (_fresh >> 4 & 0x01)
-            {
-                if (buttonData.length()) buttonData += BLINKER_F(",");
-                else buttonData += BLINKER_F("{");
-                
-                buttonData += BLINKER_F("\"");
-                buttonData += BLINKER_F(BLINKER_CMD_TEXT1);
-                buttonData += BLINKER_F("\":\"");
-                buttonData += (btext1);
-                buttonData += BLINKER_F("\"");
-                
-                free(btext1);
-            }
-            
-            if (_fresh >> 5 & 0x01)
-            {
-                if (buttonData.length()) buttonData += BLINKER_F(",");
+                if (hasContent) buttonData += BLINKER_F(",");
                 else buttonData += BLINKER_F("{");
                 
                 buttonData += BLINKER_F("\"");
                 buttonData += BLINKER_F(BLINKER_CMD_TEXTCOLOR);
                 buttonData += BLINKER_F("\":\"");
-                buttonData += (textClr);
+                buttonData += textClr;
                 buttonData += BLINKER_F("\"");
                 
                 free(textClr);
+                textClr = nullptr;
+                hasContent = true;
             }
 
-            buttonData += BLINKER_F("}");
+            if (hasContent) buttonData += BLINKER_F("}");
 
+            // 清理所有数据
+            clearData();
             _fresh = 0;
-            currentState = "";
 
-            Blinker.printArray(name, buttonData);
+            if (hasContent) Blinker.printArray(const_cast<char*>(name), buttonData);
         }
 
     private :
-        const char* name;
-        uint8_t     wNum = 0;
-        char *      bicon = nullptr;
-        char *      iconClr = nullptr;
-        char *      bcon = nullptr;
-        char *      btext = nullptr;
-        char *      btext1 = nullptr;
-        char *      textClr = nullptr;
-        uint8_t     _fresh = 0;
-        String      currentState = "";
+        char*       bcon = nullptr;     // 按钮内容
+        char*       textClr = nullptr;  // 文本颜色
 };
+
 #endif

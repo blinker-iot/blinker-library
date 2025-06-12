@@ -3,19 +3,19 @@
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
+#include "BlinkerWidgets.h"
 
-class BlinkerSwitch
+class BlinkerSwitch : public BlinkerWidget
 {
     public :
         BlinkerSwitch(blinker_callback_with_string_arg_t _func = NULL)
+            : BlinkerWidget(BLINKER_CMD_BUILTIN_SWITCH)
         {
-            wNum = Blinker.attachWidget(BLINKER_CMD_BUILTIN_SWITCH, _func);
-        }
-
-        BlinkerSwitch& attach(blinker_callback_with_string_arg_t _func)
+            wNum = Blinker.attachWidget(const_cast<char*>(BLINKER_CMD_BUILTIN_SWITCH), _func);
+        }        BlinkerSwitch& attach(blinker_callback_with_string_arg_t _func)
         {
-            if (wNum == 0) wNum = Blinker.attachWidget(BLINKER_CMD_BUILTIN_SWITCH, _func);
-            else Blinker.freshAttachWidget(BLINKER_CMD_BUILTIN_SWITCH, _func);
+            if (wNum == 0) wNum = Blinker.attachWidget(const_cast<char*>(BLINKER_CMD_BUILTIN_SWITCH), _func);
+            else Blinker.freshAttachWidget(const_cast<char*>(BLINKER_CMD_BUILTIN_SWITCH), _func);
             return *this;
         }
 
@@ -29,7 +29,7 @@ class BlinkerSwitch
             Blinker.print(BLINKER_CMD_BUILTIN_SWITCH, _state);
         }
 
-        void print()
+        void print() override
         {
             print(currentState);
         }
@@ -41,7 +41,6 @@ class BlinkerSwitch
         }
 
     private :
-        uint8_t     wNum = 0;
         String      currentState = "";
 };
 

@@ -3,23 +3,22 @@
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
+#include "BlinkerWidgets.h"
 
-class BlinkerTab
+class BlinkerTab : public BlinkerWidget
 {
     public :
         BlinkerTab(const char* _name,
             blinker_callback_with_table_arg_t _func = NULL,
             blinker_callback_t _func2 = NULL)
-            : name(_name)
+            : BlinkerWidget(_name)
         {
-            wNum = Blinker.attachWidget(name, _func, _func2);
-        }
-
-        BlinkerTab& attach(blinker_callback_with_table_arg_t _func, 
+            wNum = Blinker.attachWidget(const_cast<char*>(name), _func, _func2);
+        }        BlinkerTab& attach(blinker_callback_with_table_arg_t _func, 
             blinker_callback_t _func2)
         {
-            if (wNum == 0) wNum = Blinker.attachWidget(name, _func, _func2);
-            else Blinker.freshAttachWidget(name, _func, _func2);
+            if (wNum == 0) wNum = Blinker.attachWidget(const_cast<char*>(name), _func, _func2);
+            else Blinker.freshAttachWidget(const_cast<char*>(name), _func, _func2);
             return *this;
         }
 
@@ -51,9 +50,7 @@ class BlinkerTab
         void tab_1() { tabSet |= 1 << 3; }
         void tab_2() { tabSet |= 1 << 2; }
         void tab_3() { tabSet |= 1 << 1; }
-        void tab_4() { tabSet |= 1 << 0; }
-
-        void print()
+        void tab_4() { tabSet |= 1 << 0; }        void print() override
         {
             if (wNum == 0) return;
 
@@ -82,12 +79,8 @@ class BlinkerTab
 
             tabSet = 0;
 
-            Blinker.printArray(name, tabData);
-        }
-
-    private :
-        const char* name;
-        uint8_t     wNum = 0;
+            Blinker.printArray(const_cast<char*>(name), tabData);
+        }    private :
         uint8_t     tabSet = 0;
 };
 
