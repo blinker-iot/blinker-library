@@ -84,11 +84,6 @@ void dataRead(const String & data)
            .value(counter)
            .print();
 }
-           .unit("次")
-           .text("计数器")
-           .value(counter)
-           .print();
-}
 
 void setup()
 {
