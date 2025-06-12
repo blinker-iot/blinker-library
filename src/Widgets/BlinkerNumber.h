@@ -4,14 +4,12 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
 class BlinkerNumber
 {
     public :
-        BlinkerNumber(Functions& nFunc, const char* _name)
-            :   func(nFunc),
-                name(_name)
-            {}
+        BlinkerNumber(const char* _name)
+            : name(_name)
+        {}
         
         BlinkerNumber& icon(const String & _icon)
         {
@@ -69,12 +67,11 @@ class BlinkerNumber
         void print()                        { _print(""); }
 
     private :
-        Functions&  func;
         const char* name;
-        char *      nicon;
-        char *      ncolor;
-        char *      nunit;
-        char *      ntext;
+        char *      nicon = nullptr;
+        char *      ncolor = nullptr;
+        char *      nunit = nullptr;
+        char *      ntext = nullptr;
         uint8_t     _fresh = 0;
 
         void _print(const String & value)
@@ -89,8 +86,8 @@ class BlinkerNumber
                 numberData += BLINKER_F(BLINKER_CMD_VALUE);
                 numberData += BLINKER_F("\":");
                 numberData += value;
-                
-                func.printArray(name, value);
+
+                // Blinker.printArray(name, value);
             }
 
             if (_fresh >> 0 & 0x01)
@@ -153,7 +150,7 @@ class BlinkerNumber
 
             _fresh = 0;
 
-            func.printArray(name, numberData);
+            Blinker.printArray(name, numberData);
         }
 };
 

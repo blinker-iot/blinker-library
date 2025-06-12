@@ -54,8 +54,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 #define Slider_1 "SliderKey"
 
-BlinkerWiFi                 Blinker(WiFiESP);
-BlinkerSlider<BlinkerWiFi>  Slider1(Blinker, Slider_1);
+BlinkerSlider Slider1(Slider_1);
 
 void slider1_callback(int32_t value)
 {

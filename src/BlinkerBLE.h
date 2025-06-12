@@ -14,8 +14,29 @@
     {
         typedef BlinkerProtocol<BlinkerBLEESP> Base;
 
-        public :
-            BlinkerBLE(BlinkerBLEESP &transp) : Base(transp) {}
+        private:
+            static BlinkerBLE* instance;
+            BlinkerBLEESP* transport;
+
+            BlinkerBLE(BlinkerBLEESP &transp) : Base(transp), transport(&transp) {}
+
+            BlinkerBLE(const BlinkerBLE&) = delete;
+            BlinkerBLE& operator=(const BlinkerBLE&) = delete;
+
+        public:
+            static BlinkerBLE& getInstance(BlinkerBLEESP &transp) 
+            {
+                if (instance == nullptr) {
+                    instance = new BlinkerBLE(transp);
+                }
+                return *instance;
+            }
+            static BlinkerBLE& getInstance() 
+            {
+                if (instance == nullptr) {
+                }
+                return *instance;
+            }
 
             void begin()
             {
@@ -23,9 +44,13 @@
                 this->conn.begin();
             }
 
-        private :
-
+            ~BlinkerBLE() 
+            {
+                instance = nullptr;
+            }
     };
+
+    BlinkerBLE* BlinkerBLE::instance = nullptr;
     
 #elif defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_UNOR4_WIFI)
     #include "Functions/BlinkerBLEUNO.h"
@@ -36,8 +61,30 @@
     {
         typedef BlinkerProtocol<BlinkerBLEUNO> Base;
 
-        public :
-            BlinkerBLE(BlinkerBLEUNO &transp) : Base(transp) {}
+        private:
+            static BlinkerBLE* instance;
+            BlinkerBLEUNO* transport;
+
+            BlinkerBLE(BlinkerBLEUNO &transp) : Base(transp), transport(&transp) {}
+
+            BlinkerBLE(const BlinkerBLE&) = delete;
+            BlinkerBLE& operator=(const BlinkerBLE&) = delete;
+
+        public:
+            static BlinkerBLE& getInstance(BlinkerBLEUNO &transp) 
+            {
+                if (instance == nullptr) {
+                    instance = new BlinkerBLE(transp);
+                }
+                return *instance;
+            }
+
+            static BlinkerBLE& getInstance() 
+            {
+                if (instance == nullptr) {
+                }
+                return *instance;
+            }
 
             void begin()
             {
@@ -45,9 +92,14 @@
                 this->conn.begin();
             }
 
-        private :
+            ~BlinkerBLE() 
+            {
+                instance = nullptr;
+            }
+    };
 
-    };    
+    BlinkerBLE* BlinkerBLE::instance = nullptr;
+    
 #else
     #error "BLE is not supported on this platform! Supported platforms: ESP32, Arduino UNO R4 WiFi"
 #endif

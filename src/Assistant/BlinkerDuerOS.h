@@ -4,11 +4,13 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
+#if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
+#endif
+
 class BLINKERDUEROS
 {
     public :
-        BLINKERDUEROS(Functions& nFunc) : func(nFunc) {}
+        BLINKERDUEROS() {}
 
         void attachPowerState(blinker_callback_with_string_uint8_arg_t newFunction)
         {
@@ -101,8 +103,6 @@ class BLINKERDUEROS
                 payload += BLINKER_F("\"");
             }
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 0 & 0x01) {
                 free(aState);
             }
@@ -120,8 +120,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":\"");
             payload += state;
             payload += BLINKER_F("\"");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 0 & 0x01) {
                 free(aState);
@@ -146,8 +144,6 @@ class BLINKERDUEROS
             payload += clr;
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 1 & 0x01) {
                 free(aColor);
             }
@@ -165,8 +161,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":[\"\",\"");
             payload += now_md;
             payload += BLINKER_F("\"]");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 2 & 0x01) {
                 free(aMode);
@@ -188,8 +182,6 @@ class BLINKERDUEROS
             payload += now_md;
             payload += BLINKER_F("\"]");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 2 & 0x01) {
                 free(aMode);
             }
@@ -208,8 +200,6 @@ class BLINKERDUEROS
             payload += STRING_format(clrTemp);
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 3 & 0x01) {
                 free(aCtemp);
             }
@@ -227,8 +217,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":[\"\",");
             payload += STRING_format(now_bright);
             payload += BLINKER_F("]");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 4 & 0x01) {
                 free(aBright);
@@ -250,8 +238,6 @@ class BLINKERDUEROS
             payload += STRING_format(now_bright);
             payload += BLINKER_F("]");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 4 & 0x01) {
                 free(aBright);
             }
@@ -269,8 +255,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_temp);
             payload += BLINKER_F("\"");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 5 & 0x01) {
                 free(aTemp);
@@ -290,8 +274,6 @@ class BLINKERDUEROS
             payload += STRING_format(_temp);
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 5 & 0x01) {
                 free(aTemp);
             }
@@ -309,8 +291,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_temp);
             payload += BLINKER_F("\"");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 5 & 0x01) {
                 free(aTemp);
@@ -330,8 +310,6 @@ class BLINKERDUEROS
             payload += STRING_format(_humi);
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 6 & 0x01) {
                 free(aHumi);
             }
@@ -349,8 +327,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_humi);
             payload += BLINKER_F("\"");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 6 & 0x01) {
                 free(aHumi);
@@ -370,8 +346,6 @@ class BLINKERDUEROS
             payload += STRING_format(_humi);
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 6 & 0x01) {
                 free(aHumi);
             }
@@ -389,8 +363,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_pm25);
             payload += BLINKER_F("\"");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 7 & 0x01) {
                 free(aPm25);
@@ -410,8 +382,6 @@ class BLINKERDUEROS
             payload += STRING_format(_pm25);
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 7 & 0x01) {
                 free(aPm25);
             }
@@ -429,8 +399,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_pm25);
             payload += BLINKER_F("\"");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 7 & 0x01) {
                 free(aPm25);
@@ -450,8 +418,6 @@ class BLINKERDUEROS
             payload += STRING_format(_pm10);
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 8 & 0x01) {
                 free(aPm10);
             }
@@ -469,8 +435,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_pm10);
             payload += BLINKER_F("\"");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 8 & 0x01) {
                 free(aPm10);
@@ -490,8 +454,6 @@ class BLINKERDUEROS
             payload += STRING_format(_pm10);
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 8 & 0x01) {
                 free(aPm10);
             }
@@ -509,8 +471,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_co2);
             payload += BLINKER_F("\"");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 9 & 0x01) {
                 free(aCO2);
@@ -530,8 +490,6 @@ class BLINKERDUEROS
             payload += STRING_format(_co2);
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 9 & 0x01) {
                 free(aCO2);
             }
@@ -549,8 +507,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_co2);
             payload += BLINKER_F("\"");
-
-            // func.DuerOSPrint(payload);
 
             if (_fresh >> 9 & 0x01) {
                 free(aCO2);
@@ -570,8 +526,6 @@ class BLINKERDUEROS
             payload += STRING_format(_aqi);
             payload += BLINKER_F("\"");
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 10 & 0x01) {
                 free(aAQI);
             }
@@ -589,8 +543,6 @@ class BLINKERDUEROS
             payload += BLINKER_F("\":");
             payload += STRING_format(_time/1000);
 
-            // func.DuerOSPrint(payload);
-
             if (_fresh >> 11 & 0x01) {
                 free(aTIME);
             }
@@ -607,8 +559,6 @@ class BLINKERDUEROS
             payload += STRING_format(BLINKER_CMD_LEVEL);
             payload += BLINKER_F("\":");
             payload += STRING_format(_level);
-
-            // Blinker.DuerOSPrint(payload);
 
             if (_fresh >> 12 & 0x01) {
                 free(aLevel);
@@ -747,7 +697,7 @@ class BLINKERDUEROS
 
             _fresh = 0;
 
-            func.duerPrint(duerData);
+            Blinker.duerPrint(duerData);
         }
 
         void report()
@@ -940,19 +890,18 @@ class BLINKERDUEROS
 
             _fresh = 0;
 
-            func.duerPrint(duerData, true);
+            Blinker.duerPrint(duerData, true);
         }
 
         void run()
         {
-            if (func.duerAvail())
+            if (Blinker.duerAvail())
             {
-                duerParse(func.lastRead());
+                duerParse(Blinker.lastRead());
             }
         }
 
     private :
-        Functions&  func;
         char * aState;
         char * aColor;
         char * aMode;
@@ -965,7 +914,6 @@ class BLINKERDUEROS
         char * aCO2;        
         char * aAQI;
         char * aTIME;
-        
         char * aLevel;
         uint16_t _fresh = 0;
 
@@ -989,13 +937,10 @@ class BLINKERDUEROS
         {
             BLINKER_LOG_ALL(BLINKER_F("DuerOS parse data: "), _data);
 
-            // DynamicJsonBuffer jsonBuffer;
-            // JsonObject& root = jsonBuffer.parseObject(_data);
             DynamicJsonDocument jsonBuffer(1024);
             DeserializationError error = deserializeJson(jsonBuffer, _data);
             JsonObject root = jsonBuffer.as<JsonObject>();
 
-            // if (!root.success()) return;
             if (error) return;
 
             if (root.containsKey(BLINKER_CMD_GET))
@@ -1045,20 +990,14 @@ class BLINKERDUEROS
             else if (root.containsKey(BLINKER_CMD_SET)) {
                 String value = root[BLINKER_CMD_SET];
 
-                // DynamicJsonBuffer jsonBufferSet;
-                // JsonObject& rootSet = jsonBufferSet.parseObject(value);
                 DynamicJsonDocument jsonBuffer(1024);
                 DeserializationError error = deserializeJson(jsonBuffer, value);
                 JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
-                // if (!rootSet.success())
                 if (error)
                 {
-                    // BLINKER_ERR_LOG_ALL("Json error");
                     return;
                 }
-
-                // BLINKER_LOG_ALL("Json parse success");
 
                 if (rootSet.containsKey(BLINKER_CMD_POWERSTATE)) {
                     String setValue = rootSet[BLINKER_CMD_POWERSTATE];

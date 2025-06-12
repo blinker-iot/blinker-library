@@ -54,8 +54,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 #define Tab_1 "TabKey"
 
-BlinkerWiFi                 Blinker(WiFiESP);
-BlinkerTab<BlinkerWiFi>     Tab1(Blinker, Tab_1);
+BlinkerTab Tab1(Tab_1);
 
 bool tab[5] = { false };
 

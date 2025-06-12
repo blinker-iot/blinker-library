@@ -4,28 +4,26 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
 class BlinkerJoystick
 {
     public :
-        BlinkerJoystick(Functions& nFunc, const char* _name, 
+        BlinkerJoystick(const char* _name, 
             blinker_callback_with_joy_arg_t _func = NULL)
-            :   func(nFunc),
-                name(_name)
-            {
-                wNum = func.attachWidget(name, _func);
-            }
-
-        void attach(blinker_callback_with_joy_arg_t _func)
+            : name(_name)
         {
-            if (wNum == 0) wNum = func.attachWidget(name, _func);
-            else func.freshAttachWidget(name, _func);
+            wNum = Blinker.attachWidget(name, _func);
+        }
+
+        BlinkerJoystick& attach(blinker_callback_with_joy_arg_t _func)
+        {
+            if (wNum == 0) wNum = Blinker.attachWidget(name, _func);
+            else Blinker.freshAttachWidget(name, _func);
+            return *this;
         }
 
     private :
-        Functions&  func;
         const char* name;
-        uint8_t     wNum;
+        uint8_t     wNum = 0;
 };
 
 #endif

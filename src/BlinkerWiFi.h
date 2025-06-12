@@ -19,8 +19,30 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
 {
     typedef BlinkerProtocol<BlinkerWiFiESP> Base;
 
-    public :
-        BlinkerWiFi(BlinkerWiFiESP &transp) : Base(transp) {}
+    private:
+        static BlinkerWiFi* instance;
+        BlinkerWiFiESP* transport;
+
+        BlinkerWiFi(BlinkerWiFiESP &transp) : Base(transp), transport(&transp) {}
+
+        BlinkerWiFi(const BlinkerWiFi&) = delete;
+        BlinkerWiFi& operator=(const BlinkerWiFi&) = delete;
+
+    public:
+        static BlinkerWiFi& getInstance(BlinkerWiFiESP &transp) 
+        {
+            if (instance == nullptr) {
+                instance = new BlinkerWiFi(transp);
+            }
+            return *instance;
+        }
+
+        static BlinkerWiFi& getInstance() 
+        {
+            if (instance == nullptr) {
+            }
+            return *instance;
+        }
 
         void begin( const char* _auth, 
                     const char* _ssid, 
@@ -40,30 +62,10 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
         #endif
         }
 
-    // #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_APCONFIG)
-    //     void begin( const char* _auth)
-    //     {
-    //         Base::begin();
-    //         this->conn.begin(_auth);
-
-    //     #if defined(BLINKER_ESP_SMARTCONFIG)
-    //         this->conn.smartconfigBegin();
-    //     #elif defined(BLINKER_APCONFIG)
-    //         this->conn.apconfigBegin();
-    //     #endif
-        
-    //     #if defined(BLINKER_WIDGET)
-    //         Base::loadTimer();
-    //     #endif
-    //     }
-    // #endif
-
     #if defined(BLINKER_ESP_SMARTCONFIG_V2)
         void begin()
         {
             Base::begin();
-            // this->conn.begin();
-
             this->conn.smartconfigBegin();
         
         #if defined(BLINKER_WIDGET)
@@ -72,35 +74,15 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
         }
     #endif
 
-    // #if defined(BLINKER_WIFI_MULTI)
-    //     void addAP( const char* _ssid, 
-    //                 const char* _pswd)
-    //     {
-    //         BLINKER_LOG(BLINKER_F("wifiMulti add "), _ssid);
-    //         wifiMulti.addAP(_ssid, _pswd);
-    //     }
-    
-    //     void existAP(   const char* _ssid, 
-    //                     const char* _pswd)
-    //     {
-    //         BLINKER_LOG(BLINKER_F("wifiMulti existAP "), _ssid);
-    //         wifiMulti.existsAP(_ssid, _pswd);
-    //     }
-    
-    //     void cleanAPlist()
-    //     {
-    //         wifiMulti.cleanAPlist();
-    //     }
-    // #endif
-
-    private :
-
+        ~BlinkerWiFi() 
+        {
+            instance = nullptr;
+        }
 };
 
-// ========================================
-// Arduino UNO R4 WiFi 平台实现
-// ========================================
-#elif defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_UNOR4_WIFI)
+BlinkerWiFi* BlinkerWiFi::instance = nullptr;
+
+#elif defined(ARDUINO_UNOR4_WIFI)
 
 #include "Functions/BlinkerWiFiUNO.h"
 #include "Blinker/BlinkerProtocol.h"
@@ -110,8 +92,30 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiUNO>
 {
     typedef BlinkerProtocol<BlinkerWiFiUNO> Base;
 
-    public :
-        BlinkerWiFi(BlinkerWiFiUNO &transp) : Base(transp) {}
+    private:
+        static BlinkerWiFi* instance;
+        BlinkerWiFiUNO* transport;
+
+        BlinkerWiFi(BlinkerWiFiUNO &transp) : Base(transp), transport(&transp) {}
+
+        BlinkerWiFi(const BlinkerWiFi&) = delete;
+        BlinkerWiFi& operator=(const BlinkerWiFi&) = delete;
+
+    public:
+        static BlinkerWiFi& getInstance(BlinkerWiFiUNO &transp) 
+        {
+            if (instance == nullptr) {
+                instance = new BlinkerWiFi(transp);
+            }
+            return *instance;
+        }
+
+        static BlinkerWiFi& getInstance() 
+        {
+            if (instance == nullptr) {
+            }
+            return *instance;
+        }
 
         void begin( const char* _auth, 
                     const char* _ssid, 
@@ -125,11 +129,15 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiUNO>
             // Base::loadTimer();
         #endif
         }
+
+        ~BlinkerWiFi() 
+        {
+            instance = nullptr;
+        }
 };
 
-// ========================================
-// 不支持的平台错误
-// ========================================
+BlinkerWiFi* BlinkerWiFi::instance = nullptr;
+
 #else
     #error "WiFi is not supported on this platform! Supported platforms: ESP32, Arduino UNO R4 WiFi"
 #endif

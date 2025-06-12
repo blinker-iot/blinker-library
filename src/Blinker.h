@@ -4,7 +4,7 @@
 
 #if defined(ESP32)
     #define BLINKER_PLATFORM_SUPPORTED
-#elif defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_UNOR4_WIFI)
+#elif defined(ARDUINO_UNOR4_WIFI)
     #define BLINKER_PLATFORM_SUPPORTED
     #define ARDUINO_ARCH_RENESAS_UNO
 #else
@@ -20,7 +20,7 @@
     #else
         #error "ESP32 platform requires BLINKER_WIFI or BLINKER_BLE to be defined!"
     #endif
-#elif defined(ARDUINO_ARCH_RENESAS_UNO)
+#elif defined(ARDUINO_UNOR4_WIFI)
     #if defined(BLINKER_WIFI) || defined(BLINKER_BLE)
     #else
         #error "Arduino UNO R4 WiFi platform requires BLINKER_WIFI or BLINKER_BLE to be defined!"
@@ -40,10 +40,10 @@
     
     #if defined(ESP32)
         extern BlinkerBLEESP BLEESP;
-        BlinkerBLE Blinker(BLEESP);
-    #elif defined(ARDUINO_ARCH_RENESAS_UNO)
+        #define Blinker BlinkerBLE::getInstance(BLEESP)
+    #elif defined(ARDUINO_UNOR4_WIFI)
         extern BlinkerBLEUNO BLEUNO;
-        BlinkerBLE Blinker(BLEUNO);
+        #define Blinker BlinkerBLE::getInstance(BLEUNO)
     #else
         #error "BLE is not supported on this platform!"
     #endif
@@ -54,10 +54,10 @@
     
     #if defined(ESP32)
         extern BlinkerWiFiESP WiFiESP;
-        BlinkerWiFi Blinker(WiFiESP);
-    #elif defined(ARDUINO_ARCH_RENESAS_UNO)
+        #define Blinker BlinkerWiFi::getInstance(WiFiESP)
+    #elif defined(ARDUINO_UNOR4_WIFI)
         extern BlinkerWiFiUNO WiFiUNO;
-        BlinkerWiFi Blinker(WiFiUNO);
+        #define Blinker BlinkerWiFi::getInstance(WiFiUNO)
     #else
         #error "WiFi is not supported on this platform!"
     #endif
@@ -97,7 +97,7 @@
 
 #if defined(ESP32)
     #pragma message("Compiling for ESP32 platform")
-#elif defined(ARDUINO_ARCH_RENESAS_UNO)
+#elif defined(ARDUINO_UNOR4_WIFI)
     #pragma message("Compiling for Arduino UNO R4 WiFi platform")
 #endif
 

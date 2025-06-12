@@ -54,8 +54,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 #define RGB_1 "RGBKey"
 
-BlinkerWiFi                 Blinker(WiFiESP);
-BlinkerRGB<BlinkerWiFi>     RGB1(Blinker, RGB_1);
+BlinkerRGB RGB1(RGB_1);
 
 void rgb1_callback(uint8_t r_value, uint8_t g_value, uint8_t b_value, uint8_t bright_value)
 {

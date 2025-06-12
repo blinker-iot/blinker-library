@@ -4,11 +4,10 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
 class BLINKERMIOT
 {
     public :
-        BLINKERMIOT(Functions& nFunc) : func(nFunc) {}
+        BLINKERMIOT() {}
 
         void attachPowerState(blinker_callback_with_string_uint8_arg_t newFunction)
         {
@@ -50,42 +49,23 @@ class BLINKERMIOT
             _MIOTSetLevelFunc = newFunction;
         }
 
-        // void attachCancelMode(blinker_callback_with_string_arg_t newFunction)
-        // {
-        //     func.attachMIOTSetcMode(newFunction);
-        // }
-
         void attachBrightness(blinker_callback_with_string_arg_t newFunction)
         {
-            // func.attachMIOTSetBrightness(newFunction);
             _MIOTSetBrightnessFunc = newFunction;
         }
 
-        // void attachRelativeBrightness(blinker_callback_with_int32_arg_t newFunction)
-        // {
-        //     func.attachMIOTRelativeBrightness(newFunction);
-        // }
-
         void attachColorTemperature(blinker_callback_with_int32_arg_t newFunction)
         {
-            // func.attachMIOTSetColorTemperature(newFunction);
             _MIOTSetColorTemperature = newFunction;
         }
 
-        // void attachRelativeColorTemperature(blinker_callback_with_int32_arg_t newFunction)
-        // {
-        //     func.attachMIOTRelativeColorTemperature(newFunction);
-        // }
-
         void attachQuery(blinker_callback_with_int32_uint8_arg_t newFunction)
         {
-            // func.attachMIOTQuery(newFunction);
             _MIOTQueryFunc_m = newFunction;
         }
 
         void attachQuery(blinker_callback_with_int32_arg_t newFunction)
         {
-            // func.attachMIOTQuery(newFunction);
             _MIOTQueryFunc = newFunction;
         }
 
@@ -107,8 +87,6 @@ class BLINKERMIOT
                 payload += BLINKER_F("");
             }            
 
-            // func.aligeniePrint(payload);
-
             if (_fresh >> 0 & 0x01) {
                 free(aState);
             }
@@ -126,19 +104,6 @@ class BLINKERMIOT
             payload += BLINKER_F("\":\"");
             payload += state;
             payload += BLINKER_F("\"");
-
-            // if (state == "on")
-            // {
-            //     payload += "true";
-            // }
-            // else
-            // {
-            //     payload += "false";
-            // }
-            
-            // payload += BLINKER_F("\"");
-
-            // func.aligeniePrint(payload);
 
             if (_fresh >> 0 & 0x01) {
                 free(aState);
@@ -162,8 +127,6 @@ class BLINKERMIOT
             payload += BLINKER_F("\":");
             payload += STRING_format(clr);
 
-            // func.aligeniePrint(payload);
-
             if (_fresh >> 1 & 0x01) {
                 free(aColor);
             }
@@ -180,8 +143,6 @@ class BLINKERMIOT
             payload += STRING_format(BLINKER_CMD_MODE);
             payload += BLINKER_F("\":");
             payload += STRING_format(md);
-
-            // func.aligeniePrint(payload);
 
             if (_fresh >> 2 & 0x01) {
                 free(aMode);
@@ -201,8 +162,6 @@ class BLINKERMIOT
             payload += STRING_format(clrTemp);
             payload += BLINKER_F("\"");
 
-            // func.aligeniePrint(payload);
-
             if (_fresh >> 3 & 0x01) {
                 free(aCtemp);
             }
@@ -220,8 +179,6 @@ class BLINKERMIOT
             payload += BLINKER_F("\":\"");
             payload += STRING_format(bright);
             payload += BLINKER_F("\"");
-
-            // func.aligeniePrint(payload);
 
             if (_fresh >> 4 & 0x01) {
                 free(aBright);
@@ -241,8 +198,6 @@ class BLINKERMIOT
             payload += STRING_format(_temp);
             payload += BLINKER_F("\"");
 
-            // func.aligeniePrint(payload);
-
             if (_fresh >> 5 & 0x01) {
                 free(aTemp);
             }
@@ -260,8 +215,6 @@ class BLINKERMIOT
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_temp);
             payload += BLINKER_F("\"");
-
-            // func.aligeniePrint(payload);
 
             if (_fresh >> 5 & 0x01) {
                 free(aTemp);
@@ -281,8 +234,6 @@ class BLINKERMIOT
             payload += STRING_format(_temp);
             payload += BLINKER_F("\"");
 
-            // func.aligeniePrint(payload);
-
             if (_fresh >> 5 & 0x01) {
                 free(aTemp);
             }
@@ -300,8 +251,6 @@ class BLINKERMIOT
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_humi);
             payload += BLINKER_F("\"");
-
-            // func.aligeniePrint(payload);
 
             if (_fresh >> 6 & 0x01) {
                 free(aHumi);
@@ -321,8 +270,6 @@ class BLINKERMIOT
             payload += STRING_format(_pm25);
             payload += BLINKER_F("\"");
 
-            // func.aligeniePrint(payload);
-
             if (_fresh >> 7 & 0x01) {
                 free(aPm25);
             }
@@ -341,8 +288,6 @@ class BLINKERMIOT
             payload += STRING_format(_pm25);
             payload += BLINKER_F("\"");
 
-            // func.aligeniePrint(payload);
-
             if (_fresh >> 7 & 0x01) {
                 free(aPm25);
             }
@@ -360,8 +305,6 @@ class BLINKERMIOT
             payload += BLINKER_F("\":\"");
             payload += STRING_format(_pm25);
             payload += BLINKER_F("\"");
-
-            // func.aligeniePrint(payload);
 
             if (_fresh >> 7 & 0x01) {
                 free(aPm25);
@@ -453,19 +396,6 @@ class BLINKERMIOT
             payload += state;
             payload += BLINKER_F("\"");
 
-            // if (state == "on")
-            // {
-            //     payload += "true";
-            // }
-            // else
-            // {
-            //     payload += "false";
-            // }
-            
-            // payload += BLINKER_F("\"");
-
-            // Blinker.aligeniePrint(payload);
-
             if (_fresh >> 10 & 0x01) {
                 free(ahState);
             }
@@ -483,19 +413,6 @@ class BLINKERMIOT
             payload += BLINKER_F("\":\"");
             payload += state;
             payload += BLINKER_F("\"");
-
-            // if (state == "on")
-            // {
-            //     payload += "true";
-            // }
-            // else
-            // {
-            //     payload += "false";
-            // }
-            
-            // payload += BLINKER_F("\"");
-
-            // Blinker.aligeniePrint(payload);
 
             if (_fresh >> 11 & 0x01) {
                 free(avState);
@@ -515,19 +432,6 @@ class BLINKERMIOT
             payload += state;
             payload += BLINKER_F("\"");
 
-            // if (state == "on")
-            // {
-            //     payload += "true";
-            // }
-            // else
-            // {
-            //     payload += "false";
-            // }
-            
-            // payload += BLINKER_F("\"");
-
-            // Blinker.aligeniePrint(payload);
-
             if (_fresh >> 12 & 0x01) {
                 free(ecoState);
             }
@@ -546,19 +450,6 @@ class BLINKERMIOT
             payload += state;
             payload += BLINKER_F("\"");
 
-            // if (state == "on")
-            // {
-            //     payload += "true";
-            // }
-            // else
-            // {
-            //     payload += "false";
-            // }
-            
-            // payload += BLINKER_F("\"");
-
-            // Blinker.aligeniePrint(payload);
-
             if (_fresh >> 13 & 0x01) {
                 free(anionState);
             }
@@ -576,19 +467,6 @@ class BLINKERMIOT
             payload += BLINKER_F("\":\"");
             payload += state;
             payload += BLINKER_F("\"");
-
-            // if (state == "on")
-            // {
-            //     payload += "true";
-            // }
-            // else
-            // {
-            //     payload += "false";
-            // }
-            
-            // payload += BLINKER_F("\"");
-
-            // Blinker.aligeniePrint(payload);
 
             if (_fresh >> 14 & 0x01) {
                 free(heaterState);
@@ -880,19 +758,18 @@ class BLINKERMIOT
 
             _fresh = 0;
 
-            func.miotPrint(miData);
+            Blinker.miotPrint(miData);
         }
 
         void run()
         {
-            if (func.miotAvail())
+            if (Blinker.miotAvail())
             {
-                miotParse(func.lastRead());
+                miotParse(Blinker.lastRead());
             }
         }
 
     private :
-        Functions&  func;
         char *      aState;
         char *      aColor;
         char *      aMode;
@@ -926,11 +803,8 @@ class BLINKERMIOT
         blinker_callback_with_uint8_arg_t           _MIOTSetLevelFunc = NULL;
         blinker_callback_with_uint8_arg_t           _MIOTSetTempFunc = NULL;
         blinker_callback_with_uint8_arg_t           _MIOTSetHumiFunc = NULL;
-        // blinker_callback_with_string_arg_t       _MIOTSetcModeFunc = NULL;
         blinker_callback_with_string_arg_t          _MIOTSetBrightnessFunc = NULL;
-        // blinker_callback_with_int32_arg_t        _MIOTSetRelativeBrightnessFunc = NULL;
         blinker_callback_with_int32_arg_t           _MIOTSetColorTemperature = NULL;
-        // blinker_callback_with_int32_arg_t        _MIOTSetRelativeColorTemperature = NULL;
         blinker_callback_with_int32_uint8_arg_t     _MIOTQueryFunc_m = NULL;
         blinker_callback_with_int32_arg_t           _MIOTQueryFunc = NULL;
 
@@ -938,13 +812,10 @@ class BLINKERMIOT
         {
             BLINKER_LOG_ALL(BLINKER_F("MIOT parse data: "), _data);
 
-            // DynamicJsonBuffer jsonBuffer;
-            // JsonObject& root = jsonBuffer.parseObject(_data);
             DynamicJsonDocument jsonBuffer(1024);
             DeserializationError error = deserializeJson(jsonBuffer, _data);
             JsonObject root = jsonBuffer.as<JsonObject>();
 
-            // if (!root.success()) return;
             if (error) return;
 
             if (root.containsKey(BLINKER_CMD_GET))
@@ -999,27 +870,18 @@ class BLINKERMIOT
             else if (root.containsKey(BLINKER_CMD_SET)) {
                 String value = root[BLINKER_CMD_SET];
 
-                // DynamicJsonBuffer jsonBufferSet;
-                // JsonObject& rootSet = jsonBufferSet.parseObject(value);
                 DynamicJsonDocument jsonBuffer(1024);
                 DeserializationError error = deserializeJson(jsonBuffer, value);
                 JsonObject rootSet = jsonBuffer.as<JsonObject>();
 
-                // if (!rootSet.success())
                 if (error)
                 {
-                    // BLINKER_ERR_LOG_ALL("Json error");
                     return;
                 }
-
-                // BLINKER_LOG_ALL("Json parse success");
 
                 if (rootSet.containsKey(BLINKER_CMD_POWERSTATE1)) {
                     String setValue = rootSet[BLINKER_CMD_POWERSTATE1];
                     uint8_t setNum = rootSet[BLINKER_CMD_NUM];
-
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
 
                     if (_MIOTPowerStateFunc) _MIOTPowerStateFunc(setValue);
                     if (_MIOTPowerStateFunc_m) _MIOTPowerStateFunc_m(setValue, setNum);
@@ -1027,89 +889,51 @@ class BLINKERMIOT
                 else if (rootSet.containsKey(BLINKER_CMD_HSTATE)) {
                     String setValue = rootSet[BLINKER_CMD_HSTATE];
 
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
-
                     if (_MIOTHSwingStateFunc) _MIOTHSwingStateFunc(setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_VSTATE)) {
                     String setValue = rootSet[BLINKER_CMD_VSTATE];
-
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
 
                     if (_MIOTVSwingStateFunc) _MIOTVSwingStateFunc(setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_ECO)) {
                     String setValue = rootSet[BLINKER_CMD_ECO];
 
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
-
-                    // if (_MIOTECOFunc) _MIOTECOFunc(setValue);
                     if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_ANION)) {
                     String setValue = rootSet[BLINKER_CMD_ANION];
 
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
-
-                    // if (_MIOTAnionFunc) _MIOTAnionFunc(setValue);
                     if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_HEATER)) {
                     String setValue = rootSet[BLINKER_CMD_HEATER];
 
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
-
-                    // if (_MIOTHeaterFunc) _MIOTHeaterFunc(setValue);
                     if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_DRYER)) {
                     String setValue = rootSet[BLINKER_CMD_DRYER];
 
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
-
-                    // if (_MIOTDryerFunc) _MIOTDryerFunc(setValue);
                     if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_SLEEP)) {
                     String setValue = rootSet[BLINKER_CMD_SLEEP];
 
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
-
-                    // if (_MIOTSleepFunc) _MIOTSleepFunc(setValue);
                     if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_SOFT)) {
                     String setValue = rootSet[BLINKER_CMD_SOFT];
 
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
-
-                    // if (_MIOTSoftFunc) _MIOTSoftFunc(setValue);
                     if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_UV)) {
                     String setValue = rootSet[BLINKER_CMD_UV];
 
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
-
-                    // if (_MIOTUVFunc) _MIOTUVFunc(setValue);
                     if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_UNSB)) {
                     String setValue = rootSet[BLINKER_CMD_UNSB];
 
-                    // if (setValue == "true") setValue = "on";
-                    // else setValue = "off";                
-
-                    // if (_MIOTUNSBFunc) _MIOTUNSBFunc(setValue);
                     if (_MIOTSetModeFunc_m) _MIOTSetModeFunc_m(BLINKER_CMD_ECO, setValue);
                 }
                 else if (rootSet.containsKey(BLINKER_CMD_COLOR)) {
@@ -1127,31 +951,11 @@ class BLINKERMIOT
 
                     if (_MIOTSetBrightnessFunc) _MIOTSetBrightnessFunc(setValue);
                 }
-                // else if (rootSet.containsKey(BLINKER_CMD_UPBRIGHTNESS)) {
-                //     String setValue = rootSet[BLINKER_CMD_UPBRIGHTNESS];
-
-                //     if (_MIOTSetRelativeBrightnessFunc) _MIOTSetRelativeBrightnessFunc(setValue.toInt());
-                // }
-                // else if (rootSet.containsKey(BLINKER_CMD_DOWNBRIGHTNESS)) {
-                //     String setValue = rootSet[BLINKER_CMD_DOWNBRIGHTNESS];
-
-                //     if (_MIOTSetRelativeBrightnessFunc) _MIOTSetRelativeBrightnessFunc(- setValue.toInt());
-                // }
                 else if (rootSet.containsKey(BLINKER_CMD_COLORTEMP)) {
                     String setValue = rootSet[BLINKER_CMD_COLORTEMP];
 
                     if (_MIOTSetColorTemperature) _MIOTSetColorTemperature(setValue.toInt());
                 }
-                // else if (rootSet.containsKey(BLINKER_CMD_UPCOLORTEMP)) {
-                //     String setValue = rootSet[BLINKER_CMD_UPCOLORTEMP];
-
-                //     if (_MIOTSetRelativeColorTemperature) _MIOTSetRelativeColorTemperature(setValue.toInt());
-                // }
-                // else if (rootSet.containsKey(BLINKER_CMD_DOWNCOLORTEMP)) {
-                //     String setValue = rootSet[BLINKER_CMD_DOWNCOLORTEMP];
-
-                //     if (_MIOTSetRelativeColorTemperature) _MIOTSetRelativeColorTemperature(- setValue.toInt());
-                // }
                 else if (rootSet.containsKey(BLINKER_CMD_MODE)) {
                     String setMode = rootSet[BLINKER_CMD_MODE];
 
@@ -1172,11 +976,6 @@ class BLINKERMIOT
 
                     if (_MIOTSetHumiFunc) _MIOTSetHumiFunc(setHumi.toInt());
                 }
-                // else if (rootSet.containsKey(BLINKER_CMD_CANCELMODE)) {
-                //     String setcMode = rootSet[BLINKER_CMD_CANCELMODE];
-
-                //     if (_MIOTSetcModeFunc) _MIOTSetcModeFunc(setcMode);
-                // }
             }
         }
 };

@@ -4,37 +4,45 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
 class BlinkerSwitch
 {
     public :
-        BlinkerSwitch(Functions& nFunc, 
-            blinker_callback_with_string_arg_t _func = NULL)
-            :   func(nFunc)
+        BlinkerSwitch(blinker_callback_with_string_arg_t _func = NULL)
         {
-            wNum = func.attachWidget(BLINKER_CMD_BUILTIN_SWITCH, _func);
+            wNum = Blinker.attachWidget(BLINKER_CMD_BUILTIN_SWITCH, _func);
         }
 
-        void attach(blinker_callback_with_string_arg_t _func)
+        BlinkerSwitch& attach(blinker_callback_with_string_arg_t _func)
         {
-            if (wNum == 0) wNum = func.attachWidget(BLINKER_CMD_BUILTIN_SWITCH, _func);
-            else func.freshAttachWidget(BLINKER_CMD_BUILTIN_SWITCH, _func);
+            if (wNum == 0) wNum = Blinker.attachWidget(BLINKER_CMD_BUILTIN_SWITCH, _func);
+            else Blinker.freshAttachWidget(BLINKER_CMD_BUILTIN_SWITCH, _func);
+            return *this;
         }
 
         void print(const String & _state)
         {
-            if (_state.length() == 0 || \
-                wNum == 0)
+            if (_state.length() == 0 || wNum == 0)
             {
                 return;
             }
 
-            func.print(BLINKER_CMD_BUILTIN_SWITCH, _state);
+            Blinker.print(BLINKER_CMD_BUILTIN_SWITCH, _state);
+        }
+
+        void print()
+        {
+            print(currentState);
+        }
+
+        BlinkerSwitch& state(const String & _state)
+        {
+            currentState = _state;
+            return *this;
         }
 
     private :
-        Functions&  func;
-        uint8_t     wNum;
+        uint8_t     wNum = 0;
+        String      currentState = "";
 };
 
 #endif

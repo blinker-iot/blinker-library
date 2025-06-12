@@ -52,11 +52,9 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-BlinkerWiFi                 Blinker(WiFiESP);
-
-BlinkerButton<BlinkerWiFi>  Button1(Blinker, "btn-abc");
-BlinkerNumber<BlinkerWiFi>  Number1(Blinker, "num-abc");
-BlinkerImage<BlinkerWiFi>   Image1(Blinker, "img_abc");
+BlinkerButton Button1("btn-abc");
+BlinkerNumber Number1("num-abc");
+BlinkerImage Image1("img_abc");
 
 int counter = 0;
 

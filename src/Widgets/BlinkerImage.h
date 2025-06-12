@@ -4,22 +4,21 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
 class BlinkerImage
 {
     public :
-        BlinkerImage(Functions& nFunc, const char* _name, 
+        BlinkerImage(const char* _name, 
             blinker_callback_with_int32_arg_t _func = NULL)
-            :   func(nFunc),
-                name(_name)
+            : name(_name)
         {
-            wNum = func.attachWidget(name, _func);
+            wNum = Blinker.attachWidget(name, _func);
         }
 
-        void attach(blinker_callback_with_int32_arg_t _func)
+        BlinkerImage& attach(blinker_callback_with_int32_arg_t _func)
         {
-            if (wNum == 0) wNum = func.attachWidget(name, _func);
-            else func.freshAttachWidget(name, _func);
+            if (wNum == 0) wNum = Blinker.attachWidget(name, _func);
+            else Blinker.freshAttachWidget(name, _func);
+            return *this;
         }
 
         void print(uint8_t _num)
@@ -28,14 +27,12 @@ class BlinkerImage
             ImageData += STRING_format(_num);
             ImageData += BLINKER_F("}");
 
-            // Blinker.printArray(numName, ImageData);
-            func.printArray(name, ImageData);
+            Blinker.printArray(name, ImageData);
         }
 
     private :
-        Functions&  func;
         const char* name;
-        uint8_t     wNum;
+        uint8_t     wNum = 0;
 };
 
 #endif

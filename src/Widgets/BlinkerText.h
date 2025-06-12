@@ -4,13 +4,11 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
 class BlinkerText
 {
     public :
-        BlinkerText(Functions& nFunc, const char* _name)
-            :   func(nFunc),
-                name(_name)
+        BlinkerText(const char* _name)
+            : name(_name)
         {}
         
         template <typename T>
@@ -50,7 +48,7 @@ class BlinkerText
 
             _fresh = 0;
 
-            func.printArray(name, textData);
+            Blinker.printArray(name, textData);
         }
 
         template <typename T1, typename T2>
@@ -94,7 +92,7 @@ class BlinkerText
 
             _fresh = 0;
 
-            func.printArray(name, textData);
+            Blinker.printArray(name, textData);
         }
 
         BlinkerText& icon(const String & _icon)
@@ -120,10 +118,9 @@ class BlinkerText
         }
 
     private :
-        Functions&  func;
         const char* name;
-        char *      nicon;
-        char *      ncolor;
+        char *      nicon = nullptr;
+        char *      ncolor = nullptr;
         uint8_t     _fresh = 0;
 };
 

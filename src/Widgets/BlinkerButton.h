@@ -4,22 +4,20 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
 class BlinkerButton
 {
     public :
-        BlinkerButton(Functions& nFunc, const char* _name, 
+        BlinkerButton(const char* _name, 
             blinker_callback_with_string_arg_t _func = NULL)
-            :   func(nFunc),
-                name(_name)
+            : name(_name)
         {
-            wNum = func.attachWidget(name, _func);
+            wNum = Blinker.attachWidget(name, _func);
         }
 
         BlinkerButton& attach(blinker_callback_with_string_arg_t _func)
         {
-            if (wNum == 0) wNum = func.attachWidget(name, _func);
-            else func.freshAttachWidget(name, _func);
+            if (wNum == 0) wNum = Blinker.attachWidget(name, _func);
+            else Blinker.freshAttachWidget(name, _func);
             return *this;
         }
 
@@ -103,7 +101,6 @@ class BlinkerButton
             return *this;
         }
 
-        // 添加新的 state 方法支持链式调用
         BlinkerButton& state(const String & _state)
         {
             currentState = _state;
@@ -116,8 +113,7 @@ class BlinkerButton
         {
             String stateToUse = _state.length() ? _state : currentState;
             
-            if ((_fresh == 0 && stateToUse.length() == 0) || \
-                wNum == 0)
+            if ((_fresh == 0 && stateToUse.length() == 0) || wNum == 0)
             {
                 return;
             }
@@ -220,22 +216,21 @@ class BlinkerButton
             buttonData += BLINKER_F("}");
 
             _fresh = 0;
-            currentState = ""; // 清空状态
+            currentState = "";
 
-            func.printArray(name, buttonData);
+            Blinker.printArray(name, buttonData);
         }
 
     private :
-        Functions&  func;
         const char* name;
-        uint8_t     wNum;
-        char *      bicon;
-        char *      iconClr;
-        char *      bcon;
-        char *      btext;
-        char *      btext1;
-        char *      textClr;
+        uint8_t     wNum = 0;
+        char *      bicon = nullptr;
+        char *      iconClr = nullptr;
+        char *      bcon = nullptr;
+        char *      btext = nullptr;
+        char *      btext1 = nullptr;
+        char *      textClr = nullptr;
         uint8_t     _fresh = 0;
-        String      currentState = ""; // 新增状态存储
+        String      currentState = "";
 };
 #endif

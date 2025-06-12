@@ -52,8 +52,6 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-BlinkerWiFi                 Blinker(WiFiESP);
-
 void airData(const String & data)
 {
     BLINKER_LOG("air: ", data);

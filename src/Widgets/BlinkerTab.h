@@ -4,24 +4,23 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
 class BlinkerTab
 {
     public :
-        BlinkerTab(Functions& nFunc, const char* _name,
+        BlinkerTab(const char* _name,
             blinker_callback_with_table_arg_t _func = NULL,
             blinker_callback_t _func2 = NULL)
-            :   func(nFunc),
-                name(_name)
+            : name(_name)
         {
-            wNum = func.attachWidget(name, _func, _func2);
+            wNum = Blinker.attachWidget(name, _func, _func2);
         }
 
-        void attach(blinker_callback_with_table_arg_t _func, 
+        BlinkerTab& attach(blinker_callback_with_table_arg_t _func, 
             blinker_callback_t _func2)
         {
-            if (wNum == 0) wNum = func.attachWidget(name, _func, _func2);
-            else func.freshAttachWidget(name, _func, _func2);
+            if (wNum == 0) wNum = Blinker.attachWidget(name, _func, _func2);
+            else Blinker.freshAttachWidget(name, _func, _func2);
+            return *this;
         }
 
         void tab(uint8_t num)
@@ -63,7 +62,7 @@ class BlinkerTab
             tabData += BLINKER_F("{\"");
             tabData += BLINKER_F(BLINKER_CMD_VALUE);
             tabData += BLINKER_F("\":\"");
-            // tabData += (_state);
+            
             if (tabSet & 1 << 4) tabData += BLINKER_F("1");
             else tabData += BLINKER_F("0");
             
@@ -83,14 +82,13 @@ class BlinkerTab
 
             tabSet = 0;
 
-            func.printArray(name, tabData);
+            Blinker.printArray(name, tabData);
         }
 
     private :
-        Functions&  func;
         const char* name;
-        uint8_t     wNum;
-        uint8_t     tabSet;
+        uint8_t     wNum = 0;
+        uint8_t     tabSet = 0;
 };
 
 #endif

@@ -4,11 +4,15 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
+// 前置声明 Blinker 宏定义
+#if defined(BLINKER_BLE) || defined(BLINKER_WIFI)
+    // Blinker 宏在 Blinker.h 中已定义
+#endif
+
 class BLINKERALIGENIE
 {
     public :
-        BLINKERALIGENIE(Functions& nFunc) : func(nFunc) {}
+        BLINKERALIGENIE() {}
 
         void attachPowerState(blinker_callback_with_string_uint8_arg_t newFunction)
         {
@@ -572,25 +576,22 @@ class BLINKERALIGENIE
                 aliData += avState;
                 
                 free(avState);
-            }
-
-            aliData += BLINKER_F("}");
+            }            aliData += BLINKER_F("}");
 
             _fresh = 0;
 
-            func.aliPrint(aliData);
+            Blinker.aliPrint(aliData);
         }
 
         void run()
         {
-            if (func.aliAvail())
+            if (Blinker.aliAvail())
             {
-                aliParse(func.lastRead());
+                aliParse(Blinker.lastRead());
             }
         }
 
     private :
-        Functions&  func;
         char * aState;
         char * aColor;
         char * aMode;

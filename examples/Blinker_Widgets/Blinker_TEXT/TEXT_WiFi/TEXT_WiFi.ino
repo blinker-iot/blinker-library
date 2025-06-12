@@ -54,8 +54,7 @@ char pswd[] = "Your WiFi network WPA password or WEP key";
 
 #define TEXTE_1 "TextKey"
 
-BlinkerWiFi                 Blinker(WiFiESP);
-BlinkerText<BlinkerWiFi>    Text1(Blinker, TEXTE_1);
+BlinkerText Text1(TEXTE_1);
 
 void dataRead(const String & data)
 {

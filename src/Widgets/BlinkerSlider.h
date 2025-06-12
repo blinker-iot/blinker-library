@@ -4,22 +4,20 @@
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
-template <class Functions>
 class BlinkerSlider
 {
     public :
-        BlinkerSlider(Functions& nFunc, const char* _name, 
+        BlinkerSlider(const char* _name, 
             blinker_callback_with_int32_arg_t _func = NULL)
-            :   func(nFunc),
-                name(_name)
+            : name(_name)
         {
-            wNum = func.attachWidget(name, _func);
+            wNum = Blinker.attachWidget(name, _func);
         }
 
         BlinkerSlider& attach(blinker_callback_with_int32_arg_t _func)
         {
-            if (wNum == 0) wNum = func.attachWidget(name, _func);
-            else func.freshAttachWidget(name, _func);
+            if (wNum == 0) wNum = Blinker.attachWidget(name, _func);
+            else Blinker.freshAttachWidget(name, _func);
             return *this;
         }
         
@@ -44,16 +42,14 @@ class BlinkerSlider
         void print()                        { _print(""); }
 
     private :
-        Functions&  func;
         const char* name;
-        uint8_t     wNum;
-        char *      textClr;
+        uint8_t     wNum = 0;
+        char *      textClr = nullptr;
         uint8_t     _fresh = 0;
 
         void _print(const String & n)
         {
-            if ((_fresh == 0 && n.length() == 0) || \
-                wNum == 0)
+            if ((_fresh == 0 && n.length() == 0) || wNum == 0)
             {
                 return;
             }
@@ -86,7 +82,7 @@ class BlinkerSlider
 
             _fresh = 0;
 
-            func.printArray(name, sliderData);
+            Blinker.printArray(name, sliderData);
         }
 };
 
