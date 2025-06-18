@@ -52,7 +52,7 @@
 
     BlinkerBLE* BlinkerBLE::instance = nullptr;
     
-#elif defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_UNOR4_WIFI)
+#elif defined(ARDUINO_ARCH_RENESAS)
     #include "Functions/BlinkerBLEUNO.h"
     #include "Blinker/BlinkerProtocol.h"
     #include "modules/ArduinoJson/ArduinoJson.h"

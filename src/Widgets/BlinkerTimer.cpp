@@ -1,4 +1,4 @@
-#if defined(ESP32)
+#if defined(ESP32) || defined(ARDUINO_ARCH_RENESAS)
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 #include "BlinkerTimer.h"
@@ -69,8 +69,9 @@ void _cd_callback()
     }
     // _cdState = false;
     _cdTrigged = true;
-    
+#if defined(ESP32)
     BLINKER_LOG_ALL(BLINKER_F("countdown trigged!"));
+#endif
 }
 
 void _lp_callback()
@@ -126,8 +127,9 @@ void _lp_callback()
         lpTicker.once(_lpTime2 * 60, _lp_callback);
     }
     _lpTrigged = true;
-
+#if defined(ESP32)
     BLINKER_LOG_ALL(BLINKER_F("loop trigged!"));
+#endif
 }
 
 void timingHandle(uint8_t cbackData)

@@ -82,7 +82,7 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
 
 BlinkerWiFi* BlinkerWiFi::instance = nullptr;
 
-#elif defined(ARDUINO_UNOR4_WIFI)
+#elif defined(ARDUINO_ARCH_RENESAS)
 
 #include "Functions/BlinkerWiFiUNO.h"
 #include "Blinker/BlinkerProtocol.h"

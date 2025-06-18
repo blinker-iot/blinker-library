@@ -13,7 +13,8 @@ class BlinkerSlider : public BlinkerWidget
             : BlinkerWidget(_name)
         {
             wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
-        }        BlinkerSlider& attach(blinker_callback_with_int32_arg_t _func)
+        }
+        BlinkerSlider& attach(blinker_callback_with_int32_arg_t _func)
         {
             if (wNum == 0) wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
             else Blinker.freshAttachWidget(const_cast<char*>(name), _func);

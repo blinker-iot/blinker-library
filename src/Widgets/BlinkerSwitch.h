@@ -8,12 +8,17 @@
 class BlinkerSwitch : public BlinkerWidget
 {
     public :
-        BlinkerSwitch(blinker_callback_with_string_arg_t _func = NULL)
-            : BlinkerWidget(BLINKER_CMD_BUILTIN_SWITCH)
+        static BlinkerSwitch& getInstance()
         {
-            wNum = Blinker.attachWidget(const_cast<char*>(BLINKER_CMD_BUILTIN_SWITCH), _func);
-        }        BlinkerSwitch& attach(blinker_callback_with_string_arg_t _func)
+            static BlinkerSwitch instance;
+            return instance;
+        }
+
+        BlinkerSwitch(const BlinkerSwitch&) = delete;
+        BlinkerSwitch& operator=(const BlinkerSwitch&) = delete;
+        BlinkerSwitch& attach(blinker_callback_with_string_arg_t _func)
         {
+            ensureInitialized();
             if (wNum == 0) wNum = Blinker.attachWidget(const_cast<char*>(BLINKER_CMD_BUILTIN_SWITCH), _func);
             else Blinker.freshAttachWidget(const_cast<char*>(BLINKER_CMD_BUILTIN_SWITCH), _func);
             return *this;
@@ -21,6 +26,7 @@ class BlinkerSwitch : public BlinkerWidget
 
         void print(const String & _state)
         {
+            ensureInitialized();
             if (_state.length() == 0 || wNum == 0)
             {
                 return;
@@ -41,7 +47,23 @@ class BlinkerSwitch : public BlinkerWidget
         }
 
     private :
+        BlinkerSwitch() : BlinkerWidget(BLINKER_CMD_BUILTIN_SWITCH)
+        {
+        }
+
         String      currentState = "";
+        bool        isInitialized = false;        void ensureInitialized()
+        {
+            if (!isInitialized)
+            {
+                // 使用明确的类型转换避免重载歧义
+                blinker_callback_with_string_arg_t nullCallback = nullptr;
+                wNum = Blinker.attachWidget(const_cast<char*>(BLINKER_CMD_BUILTIN_SWITCH), nullCallback);
+                isInitialized = true;
+            }
+        }
 };
+
+#define BLINKER_BUILTIN_SWITCH BlinkerSwitch::getInstance()
 
 #endif

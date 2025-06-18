@@ -108,37 +108,22 @@
 #define BLINKER_OBJECT_NOT_AVAIL        -1
 
 #ifndef BLINKER_MAX_READ_SIZE
-    #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RENESAS_UNO)
+    #if defined(ESP8266) || defined(ESP32)
         #define BLINKER_MAX_READ_SIZE       1024
     #else
         // #if defined(BLINKER_MQTT_AT)
         //     #define BLINKER_MAX_READ_SIZE       256
         // #else
-            #define BLINKER_MAX_READ_SIZE       128
+        #define BLINKER_MAX_READ_SIZE       512
         // #endif
     #endif
 #endif
 
 #ifndef BLINKER_MAX_SEND_SIZE
-    #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RENESAS_UNO)
-        #if defined(BLINKER_MQTT) || defined(BLINKER_WIFI_AT) || \
-            defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_PRO_SIM7020) || \
-            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKE_HTTP) || defined(BLINKER_WIFI)
-            #define BLINKER_MAX_SEND_SIZE       1024
-        #else
-            #define BLINKER_MAX_SEND_SIZE       512
-        #endif
+    #if defined(ESP8266) || defined(ESP32)
+        #define BLINKER_MAX_SEND_SIZE       1024
     #else
-        #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
-            defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
-            #define BLINKER_MAX_SEND_SIZE       512
-        #else
-            #define BLINKER_MAX_SEND_SIZE       128
-        #endif
+        #define BLINKER_MAX_SEND_SIZE       512
     #endif
 #endif
 
@@ -1556,7 +1541,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
-#if defined(ESP8266) || defined(ESP32)
+// #if defined(ESP8266) || defined(ESP32)
 
     #define BLINKER_TIMING_TIMER_SIZE       10
 
@@ -1678,7 +1663,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     // #define BLINKER_AUTOID_SUB_SIZE         4
     
-#endif
+// #endif
 
 #if defined(BLINKER_PRO) || defined(BLINKER_GPRS_AIR202) || \
     defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
@@ -1804,7 +1789,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
 #endif
 
-#if defined(ESP8266) || defined(ESP32)
+// #if defined(ESP8266) || defined(ESP32)
 
     #define BLINKER_ACTION_SIZE                     30
 
@@ -1907,7 +1892,7 @@ Success--[AT+MIPLDISCOVERRSP=0,22903,1,24,"5850;5851;5852;5853;5750"]
 
     #define BLINKER_SERIALCFG_SIZE              4
 
-#endif
+// #endif
 
 #if defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_AIR202) || \
     defined(BLINKER_LOWPOWER_AIR202)

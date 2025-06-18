@@ -5,10 +5,15 @@
 
 #include "Blinker/BlinkerApi.h"
 #if defined(BLINKER_WIFI)
-    #if defined(ESP32) && !defined(BLINKER_BLE)
+    #if defined(ESP32)
         #if defined(BLINKER_WIFI_MULTI)
             extern WiFiMulti wifiMulti;
         #endif
+    #elif defined(ARDUINO_ARCH_RENESAS)
+        #include "RTC.h"
+        #include <NTPClient.h>
+        #include <WiFiS3.h>
+        #include <WiFiUdp.h>
     #endif
 #endif
 
@@ -31,6 +36,9 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         BlinkerProtocol(Transp& transp)
             : BApi()
+#if defined(BLINKER_WIFI) && defined(ARDUINO_ARCH_RENESAS)
+            , timeClient(_Udp)
+#endif
             , conn(transp) {}
             
         void begin();
@@ -157,11 +165,15 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void _timerPrint(const String & n);
 
 #if defined(BLINKER_WIFI)
+        #if defined(ARDUINO_ARCH_RENESAS)
+            WiFiUDP _Udp;
+            NTPClient timeClient;
+        #endif
         bool wlanCheck();
-    #if defined(ESP32)
+    // #if defined(ESP32)
         bool ntpConfig();
         bool ntpInit();
-    #endif
+    // #endif
 
         void checkDataStorage();
         bool dataUpdate();
@@ -184,7 +196,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
     protected :
         Transp&             conn;
-        _blinker_state_t    state;
+        _blinker_state_t    _state = CONNECTING;
         bool                isAvail;
     #if defined(BLINKER_WIFI)
         blinker_callback_with_string_arg_t  _airFunc = NULL;
@@ -274,34 +286,34 @@ void BlinkerProtocol<Transp>::run()
 
 #if defined(BLINKER_WIFI)
     if (!wlanCheck()) return;
-#if defined(ESP32)
+
+    #if defined(ESP32) || defined(ARDUINO_ARCH_RENESAS)
     ntpInit();
-    
-    #if defined(BLINKER_WIDGET)
-        BApi::checkTimer();
-    #endif
+    // #if defined(BLINKER_WIDGET) && (defined(ESP32) || defined(ARDUINO_ARCH_RENESAS))
+    BApi::checkTimer();
+    // #endif
 
     if (((millis() - _dHeartTime)/1000UL >= BLINKER_DEVICE_HEARTBEAT_TIME) && conn.checkInit())
     {
         _dHeartTime += BLINKER_DEVICE_HEARTBEAT_TIME * 1000;
         httpHeartbeat();
     }
-#endif
+    #endif
 #endif
 
-    switch (state)
+    switch (_state)
     {
         case CONNECTING :
             if (conn.connect())
             {
-                state = CONNECTED;
+                _state = CONNECTED;
             }
             break;
 
         case CONNECTED :
             if (!conn.connect())
             {
-                state = DISCONNECTED;
+                _state = DISCONNECTED;
             }
             else if (conn.available())
             {
@@ -317,10 +329,11 @@ void BlinkerProtocol<Transp>::run()
         
         case DISCONNECTED :
             conn.disconnect();
-            state = CONNECTING;
+            _state = CONNECTING;
             break;
 
         default:
+            _state = CONNECTING;
             break;
     }
 #if defined(BLINKER_WIFI)
@@ -658,20 +671,18 @@ int8_t BlinkerProtocol<Transp>::second()
 {
     if (_isNTPInit)
     {
+#if defined(ESP32)
         time_t _ntpGetTime;
 
         time_t now_ntp = ::time(nullptr);
-
         struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
+        localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_sec;
+#elif defined(ARDUINO_ARCH_RENESAS)
+        auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+        RTCTime currentTime = RTCTime(unixTime);
+        return currentTime.getSeconds();
+#endif
     }
     return -1;
 }
@@ -681,20 +692,18 @@ int8_t BlinkerProtocol<Transp>::minute()
 {
     if (_isNTPInit)
     {
+#if defined(ESP32)
         time_t _ntpGetTime;
 
         time_t now_ntp = ::time(nullptr);
-
         struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
+        localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_min;
+#elif defined(ARDUINO_ARCH_RENESAS)
+        auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+        RTCTime currentTime = RTCTime(unixTime);
+        return currentTime.getMinutes();
+#endif
     }
     return -1;
 }
@@ -704,20 +713,18 @@ int8_t BlinkerProtocol<Transp>::hour()
 {
     if (_isNTPInit)
     {
+#if defined(ESP32)
         time_t _ntpGetTime;
 
         time_t now_ntp = ::time(nullptr);
-
         struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
+        localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_hour;
+#elif defined(ARDUINO_ARCH_RENESAS)
+        auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+        RTCTime currentTime = RTCTime(unixTime);
+        return currentTime.getHour();
+#endif
     }
     return -1;
 }
@@ -727,20 +734,18 @@ int8_t BlinkerProtocol<Transp>::mday()
 {
     if (_isNTPInit)
     {
+#if defined(ESP32)
         time_t _ntpGetTime;
 
         time_t now_ntp = ::time(nullptr);
-
         struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
+        localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_mday;
+#elif defined(ARDUINO_ARCH_RENESAS)
+        auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+        RTCTime currentTime = RTCTime(unixTime);
+        return currentTime.getDayOfMonth();
+#endif
     }
     return -1;
 }
@@ -750,20 +755,18 @@ int8_t BlinkerProtocol<Transp>::wday()
 {
     if (_isNTPInit)
     {
+#if defined(ESP32)
         time_t _ntpGetTime;
 
         time_t now_ntp = ::time(nullptr);
-
         struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
+        localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_wday;
+#elif defined(ARDUINO_ARCH_RENESAS)
+        auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+        RTCTime currentTime = RTCTime(unixTime);
+        return static_cast<int8_t>(currentTime.getDayOfWeek());
+#endif
     }
     return -1;
 }
@@ -773,20 +776,18 @@ int8_t BlinkerProtocol<Transp>::month()
 {
     if (_isNTPInit)
     {
+#if defined(ESP32)
         time_t _ntpGetTime;
 
         time_t now_ntp = ::time(nullptr);
-
         struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
+        localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_mon + 1;
+#elif defined(ARDUINO_ARCH_RENESAS)
+        auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+        RTCTime currentTime = RTCTime(unixTime);
+        return currentTime.getMonth();
+#endif
     }
     return -1;
 }
@@ -796,20 +797,18 @@ int16_t BlinkerProtocol<Transp>::year()
 {
     if (_isNTPInit)
     {
+#if defined(ESP32)
         time_t _ntpGetTime;
 
         time_t now_ntp = ::time(nullptr);
-
         struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
+        localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_year + 1900;
+#elif defined(ARDUINO_ARCH_RENESAS)
+        auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+        RTCTime currentTime = RTCTime(unixTime);
+        return currentTime.getYear();
+#endif
     }
     return -1;
 }
@@ -819,20 +818,44 @@ int16_t BlinkerProtocol<Transp>::yday()
 {
     if (_isNTPInit)
     {
+#if defined(ESP32)
         time_t _ntpGetTime;
 
         time_t now_ntp = ::time(nullptr);
-
         struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
+        localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_yday + 1;
+#elif defined(ARDUINO_ARCH_RENESAS)
+        auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+        RTCTime currentTime = RTCTime(unixTime);
+        
+        int year = currentTime.getYear();
+        int month = currentTime.getMonth();
+        int day = currentTime.getDayOfMonth();
+        
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+            return -1;
+        }
+
+        const int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+        int monthDays[12];
+        memcpy(monthDays, daysInMonth, sizeof(daysInMonth));
+        
+        bool isLeapYear = ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0));
+        if (isLeapYear) {
+            monthDays[1] = 29;
+        }
+        if (day > monthDays[month - 1]) {
+            return -1;
+        }
+        int dayOfYear = day;
+        
+        for (int i = 0; i < month - 1; i++) {
+            dayOfYear += monthDays[i];
+        }
+        
+        return dayOfYear;
+#endif
     }
     return -1;
 }
@@ -856,20 +879,18 @@ int32_t BlinkerProtocol<Transp>::dtime()
 {
     if (_isNTPInit)
     {
+#if defined(ESP32)
         time_t _ntpGetTime;
 
         time_t now_ntp = ::time(nullptr);
-
         struct tm timeinfo;
-
-        #if defined(ESP8266)
-            time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-            gmtime_r(&_now_ntp, &timeinfo);
-        #elif defined(ESP32)
-            localtime_r(&now_ntp, &timeinfo);
-        #endif
-
+        localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
+#elif defined(ARDUINO_ARCH_RENESAS)
+        auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+        RTCTime currentTime = RTCTime(unixTime);
+        return currentTime.getHour() * 60 * 60 + currentTime.getMinutes() * 60 + currentTime.getSeconds();
+#endif
     }
     return -1;
 }
@@ -932,15 +953,16 @@ bool BlinkerProtocol<Transp>::wlanCheck()
     return true;
 }
 
-#if defined(ESP32)
 template <class Transp>
 bool BlinkerProtocol<Transp>::ntpConfig()
 {
+    // BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("NTP Config"));
+#if defined(ESP32)
     configTime((long)(_timezone * 3600), 0, 
                 "ntp1.aliyun.com", 
                 "120.25.108.11", 
                 "time.pool.aliyun.com");
-
+    ::delay(500);
     time_t now_ntp = ::time(nullptr);
 
     float _com_timezone = abs(_timezone);
@@ -952,32 +974,35 @@ bool BlinkerProtocol<Transp>::ntpConfig()
                 "ntp1.aliyun.com", 
                 "120.25.108.11", 
                 "time.pool.aliyun.com");
+        ::delay(500);
         now_ntp = ::time(nullptr);
         if (now_ntp < _com_timezone * 3600 * 12)
         {
-            ::delay(50);
             now_ntp = ::time(nullptr);
             return false;
         }
     }
 
     struct tm timeinfo;
-
-    #if defined(ESP8266)
-        time_t _now_ntp = now_ntp + (long)(_timezone * 3600);
-        gmtime_r(&_now_ntp, &timeinfo);
-    #elif defined(ESP32)
-        localtime_r(&now_ntp, &timeinfo);
-    #endif
+    localtime_r(&now_ntp, &timeinfo);
 
     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Current time: "), asctime(&timeinfo));
-    #if defined(ESP8266)
-        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("NTP time: "), now_ntp);
-    #elif defined(ESP32)
-        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("NTP time: "), now_ntp);
-    #endif
+    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("NTP time: "), now_ntp);
 
     return true;
+#elif defined(ARDUINO_ARCH_RENESAS)
+    RTC.begin();
+
+    timeClient.begin();
+    timeClient.update();
+
+    auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
+    RTCTime timeToSet = RTCTime(unixTime);
+    RTC.setTime(timeToSet);
+    RTCTime currentTime;
+    RTC.getTime(currentTime);
+    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Current RTC time: "), String(currentTime));
+#endif
 }
 
 template <class Transp>
@@ -985,6 +1010,7 @@ bool BlinkerProtocol<Transp>::ntpInit()
 {
     if (!_isNTPInit)
     {
+        // BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("NTP Init"));
         // if (_isNTPInit)
         // {
         //     time_t now_ntp = ::time(nullptr);
@@ -1015,7 +1041,7 @@ bool BlinkerProtocol<Transp>::ntpInit()
     #if defined(BLINKER_WIDGET)
         BApi::loadTiming();
     #endif
-        BApi::beginAuto();
+        // BApi::beginAuto();
 
         return true;
     }
@@ -1026,7 +1052,6 @@ bool BlinkerProtocol<Transp>::ntpInit()
     }
     return true;
 }
-#endif
 
 template <class Transp> template<typename T>
 bool BlinkerProtocol<Transp>::sms(const T& msg, const String & cel)

@@ -6,6 +6,18 @@
 #include <Ticker.h>
 #include <EEPROM.h>
 
+#elif defined(ARDUINO_ARCH_RENESAS)
+
+#include "RenesasTicker.h"
+#include <EEPROM.h>
+
+// 为Renesas平台定义Ticker别名，确保与ESP32兼容
+typedef RenesasTicker Ticker;
+
+#endif
+
+#if defined(ESP32) || defined(ARDUINO_ARCH_RENESAS)
+
 extern Ticker cdTicker;
 extern Ticker lpTicker;
 extern Ticker tmTicker;

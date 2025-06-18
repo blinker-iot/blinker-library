@@ -13,7 +13,8 @@ class BlinkerRGB : public BlinkerWidget
             : BlinkerWidget(_name)
         {
             wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
-        }        BlinkerRGB& attach(blinker_callback_with_rgb_arg_t _func)
+        }
+        BlinkerRGB& attach(blinker_callback_with_rgb_arg_t _func)
         {
             if (wNum == 0) wNum = Blinker.attachWidget(const_cast<char*>(name), _func);
             else Blinker.freshAttachWidget(const_cast<char*>(name), _func);
