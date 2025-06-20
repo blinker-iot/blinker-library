@@ -22,6 +22,8 @@
 #include "../Blinker/BlinkerUtility.h"
 #include "../Blinker/BlinkerHTTP.h"
 
+static const char *TAG_WIFI_UNO = "[BlinkerWiFiUNO] ";
+
 enum b_broker_t {
     aliyun_b,
     blinker_b
@@ -327,7 +329,7 @@ void BlinkerWiFiUNO::webSocketEventHandler(uint8_t num, WStype_t type, uint8_t *
             {
                 // IPAddress ip = webSocket_MQTT.remoteIP(num);
 
-                BLINKER_LOG_ALL(BLINKER_F("num: "), num,
+                BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("num: "), num,
                                 BLINKER_F(", url: "), (char *)payload);
 
                 // send message to client
@@ -339,7 +341,7 @@ void BlinkerWiFiUNO::webSocketEventHandler(uint8_t num, WStype_t type, uint8_t *
             }
             break;
         case WStype_TEXT:
-            BLINKER_LOG_ALL(BLINKER_F("num: "), num,
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("num: "), num,
                             BLINKER_F(", get Text: "), (char *)payload,
                             BLINKER_F(", length: "), length);
 
@@ -350,7 +352,7 @@ void BlinkerWiFiUNO::webSocketEventHandler(uint8_t num, WStype_t type, uint8_t *
                 isAvail_MQTT = true;
                 isFresh_MQTT = true;
 
-                BLINKER_LOG_ALL(BLINKER_F("isAvail_MQTT: "), isAvail_MQTT);
+                BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("isAvail_MQTT: "), isAvail_MQTT);
             }
 
             if (!isApCfg) dataFrom_MQTT = BLINKER_MSG_FROM_WS;
@@ -382,14 +384,14 @@ void BlinkerWiFiUNO::subcribeEventHandler(char* topic, byte* payload, unsigned i
     // }
     
     String message = String((char*)payload).substring(0, length);
-    BLINKER_LOG_ALL(BLINKER_F("Received message on topic: "), topic);
-    BLINKER_LOG_ALL(BLINKER_F("Message: "), message);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("Received message on topic: "), topic);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("Message: "), message);
     
     // 对比topic是否和BLINKER_SUB_TOPIC_MQTT相同
     if (strcmp(topic, BLINKER_SUB_TOPIC_MQTT) == 0) {
-        BLINKER_LOG_ALL(BLINKER_F("Message is for this device"));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("Message is for this device"));
     } else {
-        BLINKER_LOG_ALL(BLINKER_F("Message is not for this device"));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("Message is not for this device"));
         return; // 如果不是本设备的消息，则不处理
     }
     parseData(message.c_str());
@@ -427,7 +429,7 @@ bool BlinkerWiFiUNO::init() {
 }
 
 void BlinkerWiFiUNO::reset() {
-    BLINKER_LOG(BLINKER_F("Blinker reset..."));
+    BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("Blinker reset..."));
     // todo
     NVIC_SystemReset();
 }
@@ -464,15 +466,15 @@ bool BlinkerWiFiUNO::connect() {
 
     if (!ret)
     {
-        BLINKER_LOG(BLINKER_F("ret: "), ret);    
+        BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("ret: "), ret);    
 
-        BLINKER_LOG(BLINKER_F("Connecting to MQTT... "));
+        BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("Connecting to MQTT... "));
 
-        BLINKER_LOG(BLINKER_F("reconnect_time: "), reconnect_time);
+        BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("reconnect_time: "), reconnect_time);
         
         ret = mqtt_MQTT->state();
-        BLINKER_LOG(BLINKER_F("MQTT connect failed, state: "), ret);
-        BLINKER_LOG(BLINKER_F("Retrying MQTT connection in "), \
+        BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT connect failed, state: "), ret);
+        BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("Retrying MQTT connection in "), \
                     BLINKER_MQTT_CONNECT_TIMESLOT/1000, \
                     BLINKER_F(" seconds..."));
 
@@ -496,7 +498,7 @@ bool BlinkerWiFiUNO::connect() {
                 if (millis() - _reRegister_time >= 60000 * 1) _reRegister_times = 0;
             }
 
-            BLINKER_LOG_ALL(BLINKER_F("_reRegister_times1: "), _reRegister_times);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("_reRegister_times1: "), _reRegister_times);
             return false;
         }
         else
@@ -541,9 +543,7 @@ bool BlinkerWiFiUNO::connect() {
         return true;
     }
 
-    reconnect_time = 0;
-
-    BLINKER_LOG(BLINKER_F("MQTT Connected!"));
+    BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT Connected!"));
     BLINKER_LOG_FreeHeap();
 
     if (!isMQTTinit)
@@ -551,7 +551,7 @@ bool BlinkerWiFiUNO::connect() {
         isMQTTinit = true;
 
         mqtt_MQTT->subscribe(BLINKER_SUB_TOPIC_MQTT);
-        BLINKER_LOG_ALL(BLINKER_F("MQTT subscribe: "), BLINKER_SUB_TOPIC_MQTT);
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT subscribe: "), BLINKER_SUB_TOPIC_MQTT);
     }
 
     this->latestTime = millis();
@@ -572,7 +572,7 @@ void BlinkerWiFiUNO::disconnect() {
 void BlinkerWiFiUNO::ping() {
     if (!checkInit()) return;
 
-    BLINKER_LOG_ALL(BLINKER_F("MQTT Ping!"));
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT Ping!"));
 
     BLINKER_LOG_FreeHeap_ALL();
 
@@ -604,7 +604,7 @@ bool BlinkerWiFiUNO::available() {
 
     if (isAvail_MQTT)
     {
-        BLINKER_LOG_ALL(BLINKER_F("available: "), isAvail_MQTT);
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("available: "), isAvail_MQTT);
 
         isAvail_MQTT = false;
         return true;
@@ -632,7 +632,7 @@ void BlinkerWiFiUNO::flush() {
         isDuerAvail = false;
         isMIOTAvail = false; // isBavail = false;
 
-        BLINKER_LOG_ALL(BLINKER_F("flush"));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("flush"));
         BLINKER_LOG_FreeHeap_ALL();
     }
 }
@@ -663,9 +663,9 @@ int BlinkerWiFiUNO::print(char* data, bool needCheck) {
 
         respTime = millis();
 
-        BLINKER_LOG_ALL(BLINKER_F("WS response: "));
-        BLINKER_LOG_ALL(data);
-        BLINKER_LOG_ALL(BLINKER_F("Success..."));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("WS response: "));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, data);
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("Success..."));
 
         strcat(data, BLINKER_CMD_NEWLINE);
 
@@ -712,7 +712,7 @@ int BlinkerWiFiUNO::print(char* data, bool needCheck) {
 
         if (!isJson(STRING_format(data))) return false;
 
-        BLINKER_LOG_ALL(BLINKER_F("MQTT Publish..."));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT Publish..."));
         BLINKER_LOG_FreeHeap_ALL();
 
         bool _alive = isAlive;
@@ -743,12 +743,12 @@ int BlinkerWiFiUNO::print(char* data, bool needCheck) {
 
                 _print_times++;
 
-                BLINKER_LOG_ALL(BLINKER_F("_print_times: "), _print_times);
+                BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("_print_times: "), _print_times);
             }
 
             if (mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, data))
             {
-                BLINKER_LOG_ALL(BLINKER_F("MQTT Publish Success!"));
+                BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT Publish Success!"));
                 BLINKER_LOG_FreeHeap_ALL();
                 if (needCheck) printTime = millis();
 
@@ -766,13 +766,13 @@ int BlinkerWiFiUNO::print(char* data, bool needCheck) {
                 {
                     isAlive = false;
                 }
-                BLINKER_LOG(BLINKER_F("MQTT Publish Failed!"));
+                BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT Publish Failed!"));
                 return false;
             }
         }
         else
         {
-            BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT Disconnected"));
             isAlive = false;
             return false;
         }
@@ -780,7 +780,7 @@ int BlinkerWiFiUNO::print(char* data, bool needCheck) {
 }
 
 int BlinkerWiFiUNO::autoPrint(unsigned long id) {
-    BLINKER_LOG_ALL(BLINKER_F("autoTrigged id: "), id);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("autoTrigged id: "), id);
 
     String payload = BLINKER_F("{\"data\":{\"set\":{");
     payload += BLINKER_F("\"auto\":{\"trig\":true,");
@@ -793,7 +793,7 @@ int BlinkerWiFiUNO::autoPrint(unsigned long id) {
     payload += BLINKER_F(",\"toDevice\":\"serverClient\"}");
         // "\",\"deviceType\":\"" + "type" + "\"}";
 
-    BLINKER_LOG_ALL(BLINKER_F("autoPrint..."));
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("autoPrint..."));
 
     if (mqtt_MQTT->connected())
     {
@@ -808,15 +808,15 @@ int BlinkerWiFiUNO::autoPrint(unsigned long id) {
 
             if (! mqtt_MQTT->publish(BLINKER_PUB_TOPIC_MQTT, payload.c_str()))
             {
-                BLINKER_LOG_ALL(payload);
-                BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+                BLINKER_LOG_ALL(TAG_WIFI_UNO, payload);
+                BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("...Failed"));
 
                 return false;
             }
             else
             {
-                BLINKER_LOG_ALL(payload);
-                BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+                BLINKER_LOG_ALL(TAG_WIFI_UNO, payload);
+                BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("...OK!"));
 
                 linkTime = millis();
 
@@ -827,20 +827,20 @@ int BlinkerWiFiUNO::autoPrint(unsigned long id) {
         }
         else
         {
-            BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT "), linkTime);
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT "), linkTime);
 
             return false;
         }
     }
     else
     {
-        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT Disconnected"));
         return false;
     }
 }
 
 int BlinkerWiFiUNO::isJson(const String& data) {
-    BLINKER_LOG_ALL(BLINKER_F("isJson: "), data);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("isJson: "), data);
 
     // DynamicJsonBuffer jsonBuffer;
     // JsonObject& root = jsonBuffer.parseObject(STRING_format(data));
@@ -851,7 +851,7 @@ int BlinkerWiFiUNO::isJson(const String& data) {
     // if (!root.success())
     if (error)
     {
-        BLINKER_ERR_LOG("Print data is not Json! ", data);
+        BLINKER_ERR_LOG(TAG_WIFI_UNO, "Print data is not Json! ", data);
         return false;
     }
 
@@ -925,9 +925,9 @@ bool BlinkerWiFiUNO::deviceRegister() {
 
     if (STRING_contains_string(payload, BLINKER_CMD_NOTFOUND) || error ||
         !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
-            BLINKER_ERR_LOG(BLINKER_F("Maybe you have put in the wrong AuthKey!"));
-            BLINKER_ERR_LOG(BLINKER_F("Or maybe your request is too frequently!"));
-            BLINKER_ERR_LOG(BLINKER_F("Or maybe your network is disconnected!"));
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("Maybe you have put in the wrong AuthKey!"));
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("Or maybe your request is too frequently!"));
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("Or maybe your network is disconnected!"));
 
             return false;
     }
@@ -941,7 +941,7 @@ bool BlinkerWiFiUNO::deviceRegister() {
     String _host = root["host"];
     uint32_t _port = root["port"];
     uint8_t _num = _host.indexOf("://");
-    BLINKER_LOG_ALL("_num: ", _num);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, "_num: ", _num);
     if (_num > 0) _num += 3;
     _host = _host.substring(_num, _host.length());
 
@@ -952,10 +952,10 @@ bool BlinkerWiFiUNO::deviceRegister() {
     }
 
     if (_broker == BLINKER_MQTT_BORKER_ALIYUN) {
-        BLINKER_LOG_ALL(BLINKER_F("===================="));
-        BLINKER_LOG_ALL(BLINKER_F(" Error! Not Blinker Broker device!"));
-        BLINKER_LOG_ALL(BLINKER_F("Only support Blinker Broker device!"));
-        BLINKER_LOG_ALL(BLINKER_F("===================="));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("===================="));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F(" Error! Not Blinker Broker device!"));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("Only support Blinker Broker device!"));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("===================="));
         return false;
     }
 
@@ -980,19 +980,19 @@ bool BlinkerWiFiUNO::deviceRegister() {
     if(!isMQTTinit) UUID_MQTT = (char*)malloc((_uuid.length()+1)*sizeof(char));
     strcpy(UUID_MQTT, _uuid.c_str());
 
-    BLINKER_LOG_ALL(BLINKER_F("===================="));
-    BLINKER_LOG_ALL(BLINKER_F("DEVICE_NAME_MQTT: "), DEVICE_NAME_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_PRODUCTINFO_MQTT: "), MQTT_PRODUCTINFO_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_ID_MQTT: "), MQTT_ID_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_NAME_MQTT: "), MQTT_NAME_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_KEY_MQTT: "), MQTT_KEY_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("MQTT_BROKER: "), _broker);
-    BLINKER_LOG_ALL(BLINKER_F("HOST: "), MQTT_HOST_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("PORT: "), MQTT_PORT_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("HOST: "), _host);
-    BLINKER_LOG_ALL(BLINKER_F("PORT: "), _port);
-    BLINKER_LOG_ALL(BLINKER_F("UUID_MQTT: "), UUID_MQTT);
-    BLINKER_LOG_ALL(BLINKER_F("====================")); 
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("===================="));
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("DEVICE_NAME_MQTT: "), DEVICE_NAME_MQTT);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT_PRODUCTINFO_MQTT: "), MQTT_PRODUCTINFO_MQTT);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT_ID_MQTT: "), MQTT_ID_MQTT);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT_NAME_MQTT: "), MQTT_NAME_MQTT);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT_KEY_MQTT: "), MQTT_KEY_MQTT);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT_BROKER: "), _broker);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("HOST: "), MQTT_HOST_MQTT);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("PORT: "), MQTT_PORT_MQTT);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("HOST: "), _host);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("PORT: "), _port);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("UUID_MQTT: "), UUID_MQTT);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("===================="));
 
     if (_broker == BLINKER_MQTT_BORKER_BLINKER) {
         String PUB_TOPIC_STR = BLINKER_F("/device");
@@ -1005,7 +1005,7 @@ bool BlinkerWiFiUNO::deviceRegister() {
         // memcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str(), str_len);
         strcpy(BLINKER_PUB_TOPIC_MQTT, PUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("BLINKER_PUB_TOPIC_MQTT: "), BLINKER_PUB_TOPIC_MQTT);
 
         String SUB_TOPIC_STR = BLINKER_F("/device");
         // SUB_TOPIC_STR += MQTT_PRODUCTINFO_MQTT;
@@ -1017,7 +1017,7 @@ bool BlinkerWiFiUNO::deviceRegister() {
         // memcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str(), str_len);
         strcpy(BLINKER_SUB_TOPIC_MQTT, SUB_TOPIC_STR.c_str());
 
-        BLINKER_LOG_ALL(BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("BLINKER_SUB_TOPIC_MQTT: "), BLINKER_SUB_TOPIC_MQTT);
     }
 
     if (_broker == BLINKER_MQTT_BORKER_BLINKER) {
@@ -1044,7 +1044,7 @@ void BlinkerWiFiUNO::freshSharers() {
 
     String payload = httpToServer(BLINKER_CMD_FRESH_SHARERS_NUMBER, data);
 
-    BLINKER_LOG_ALL(BLINKER_F("sharers data: "), payload);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("sharers data: "), payload);
 
     // DynamicJsonBuffer jsonBuffer;
     // JsonObject& root = jsonBuffer.parseObject(data);
@@ -1073,7 +1073,7 @@ void BlinkerWiFiUNO::freshSharers() {
 
         if (user_name.length() >= BLINKER_MQTT_USER_UUID_SIZE)
         {
-            BLINKER_LOG_ALL(BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("sharer uuid: "), user_name, BLINKER_F(", length: "), user_name.length());
 
             _sharerCount++;
 
@@ -1103,7 +1103,7 @@ void BlinkerWiFiUNO::mDNSInit() {
 
     webSocket_MQTT.begin();
     webSocket_MQTT.onEvent(webSocketEvent_MQTT);
-    BLINKER_LOG(BLINKER_F("WebSocket server started"));
+    BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("WebSocket server started"));
     // BLINKER_LOG(BLINKER_F("Connect to: ws://"), DEVICE_NAME_MQTT, BLINKER_F(":"), WS_SERVERPORT);
 }
 
@@ -1112,10 +1112,10 @@ bool BlinkerWiFiUNO::checkWlanInit() {
 
     if (WiFi.status() == WL_CONNECTED) {
         _isWiFiInit = true;
-        BLINKER_LOG_ALL(BLINKER_F("WiFi connected!"));
+        BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("WiFi connected!"));
         return true;
     } else {
-        BLINKER_ERR_LOG(BLINKER_F("WiFi not connected!"));
+        BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("WiFi not connected!"));
         ::delay(1000);
         return false;
     }
@@ -1123,7 +1123,7 @@ bool BlinkerWiFiUNO::checkWlanInit() {
 
 void BlinkerWiFiUNO::commonBegin(const char* _ssid, const char* _pswd) {
     
-    BLINKER_LOG(BLINKER_F("UNOR4_MQTT initialied..."));
+    BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("UNOR4_MQTT initialied..."));
 
     connectWiFi(_ssid, _pswd);
 }
@@ -1134,11 +1134,10 @@ void BlinkerWiFiUNO::connectWiFi(String _ssid, String _pswd) {
 
 void BlinkerWiFiUNO::connectWiFi(const char* _ssid, const char* _pswd) {
     uint32_t _connectTime = millis();
-
-    BLINKER_LOG(BLINKER_F("Connecting to ["), _ssid, "]...");
+    BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("Connecting to ["), _ssid, "]...");
 
     if (WiFi.status() == WL_NO_MODULE) {
-        BLINKER_ERR_LOG(BLINKER_F("Communication with WiFi module failed!"));
+        BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("Communication with WiFi module failed!"));
         return;
     }
 
@@ -1247,7 +1246,7 @@ int BlinkerWiFiUNO::checkCanPrint() {
         return true;
     }
     else {
-        BLINKER_ERR_LOG(BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
+        BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT NOT ALIVE OR MSG LIMIT"));
 
         checkKA();
 
@@ -1258,7 +1257,7 @@ int BlinkerWiFiUNO::checkCanPrint() {
 int BlinkerWiFiUNO::checkPrintSpan() {
     if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT) {
         if (respTimes > BLINKER_PRINT_MSG_LIMIT) {
-            BLINKER_ERR_LOG(BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("WEBSOCKETS CLIENT NOT ALIVE OR MSG LIMIT"));
 
             return false;
         }
@@ -1279,7 +1278,7 @@ int BlinkerWiFiUNO::checkPrintLimit() {
         if (_print_times < 30) return true;
         else 
         {
-            BLINKER_ERR_LOG(BLINKER_F("MQTT MSG LIMIT"));
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT MSG LIMIT"));
             return false;
         }
     }
@@ -1340,7 +1339,7 @@ int BlinkerWiFiUNO::aliPrint(const String & data)
 
     if (!isJson(data_add)) return false;
 
-    BLINKER_LOG_ALL(BLINKER_F("MQTT AliGenie Publish..."));
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT AliGenie Publish..."));
     BLINKER_LOG_FreeHeap_ALL();
 
     if (mqtt_MQTT->connected())
@@ -1370,7 +1369,7 @@ int BlinkerWiFiUNO::aliPrint(const String & data)
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
 
-            BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
         }
         else
         {
@@ -1392,8 +1391,8 @@ int BlinkerWiFiUNO::aliPrint(const String & data)
 
         if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
-            BLINKER_LOG_ALL(data_add);
-            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, data_add);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("...Failed"));
             BLINKER_LOG_FreeHeap_ALL();
 
             isAliAlive = false;
@@ -1401,8 +1400,8 @@ int BlinkerWiFiUNO::aliPrint(const String & data)
         }
         else
         {
-            BLINKER_LOG_ALL(data_add);
-            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, data_add);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("...OK!"));
             BLINKER_LOG_FreeHeap_ALL();
 
             isAliAlive = false;
@@ -1414,7 +1413,7 @@ int BlinkerWiFiUNO::aliPrint(const String & data)
     }
     else
     {
-        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT Disconnected"));
         return false;
     }
 }    
@@ -1433,7 +1432,7 @@ int BlinkerWiFiUNO::checkAliPrintSpan()
     {
         if (respAliTimes > BLINKER_PRINT_MSG_LIMIT/2)
         {
-            BLINKER_ERR_LOG(BLINKER_F("ALIGENIE NOT ALIVE OR MSG LIMIT"));
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("ALIGENIE NOT ALIVE OR MSG LIMIT"));
 
             return false;
         }
@@ -1521,9 +1520,9 @@ int BlinkerWiFiUNO::duerPrint(const String & data, bool report)
 
     if (!isJson(data_add)) return false;
 
-    BLINKER_LOG_ALL(BLINKER_F("MQTT DuerOS Publish..."));
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("MQTT DuerOS Publish..."));
     BLINKER_LOG_FreeHeap_ALL();
-    BLINKER_LOG_ALL(BLINKER_F("is_rrpc: "), is_rrpc);
+    BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("is_rrpc: "), is_rrpc);
 
     if (mqtt_MQTT->connected())
     {
@@ -1552,7 +1551,7 @@ int BlinkerWiFiUNO::duerPrint(const String & data, bool report)
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
 
-            BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
         }
         else
         {
@@ -1574,8 +1573,8 @@ int BlinkerWiFiUNO::duerPrint(const String & data, bool report)
 
         if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
-            BLINKER_LOG_ALL(data_add);
-            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, data_add);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("...Failed"));
             BLINKER_LOG_FreeHeap_ALL();
 
             isDuerAlive = false;
@@ -1584,8 +1583,8 @@ int BlinkerWiFiUNO::duerPrint(const String & data, bool report)
         }
         else
         {
-            BLINKER_LOG_ALL(data_add);
-            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, data_add);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("...OK!"));
             BLINKER_LOG_FreeHeap_ALL();
 
             isDuerAlive = false;
@@ -1597,7 +1596,7 @@ int BlinkerWiFiUNO::duerPrint(const String & data, bool report)
     }
     else
     {
-        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT Disconnected"));
         return false;
     }
 }
@@ -1615,7 +1614,7 @@ int BlinkerWiFiUNO::checkDuerPrintSpan()
     {
         if (respDuerTimes > BLINKER_PRINT_MSG_LIMIT/2)
         {
-            BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
 
             return false;
         }
@@ -1712,7 +1711,7 @@ int BlinkerWiFiUNO::miPrint(const String & data)
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, "/rrpc/response/");
             strcat(BLINKER_RRPC_PUB_TOPIC_MQTT, message_id);
 
-            BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
         }
         else
         {
@@ -1734,8 +1733,8 @@ int BlinkerWiFiUNO::miPrint(const String & data)
 
         if (! mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, send_data))
         {
-            BLINKER_LOG_ALL(data_add);
-            BLINKER_LOG_ALL(BLINKER_F("...Failed"));
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, data_add);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("...Failed"));
             BLINKER_LOG_FreeHeap_ALL();
 
             isMIOTAlive = false;
@@ -1743,8 +1742,8 @@ int BlinkerWiFiUNO::miPrint(const String & data)
         }
         else
         {
-            BLINKER_LOG_ALL(data_add);
-            BLINKER_LOG_ALL(BLINKER_F("...OK!"));
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, data_add);
+            BLINKER_LOG_ALL(TAG_WIFI_UNO, BLINKER_F("...OK!"));
             BLINKER_LOG_FreeHeap_ALL();
 
             isMIOTAlive = false;
@@ -1756,7 +1755,7 @@ int BlinkerWiFiUNO::miPrint(const String & data)
     }
     else
     {
-        BLINKER_ERR_LOG(BLINKER_F("MQTT Disconnected"));
+        BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("MQTT Disconnected"));
         return false;
     }
 }
@@ -1774,7 +1773,7 @@ int BlinkerWiFiUNO::checkMIOTPrintSpan()
     {
         if (respMIOTTimes > BLINKER_PRINT_MSG_LIMIT/2)
         {
-            BLINKER_ERR_LOG(BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
+            BLINKER_ERR_LOG(TAG_WIFI_UNO, BLINKER_F("DUEROS NOT ALIVE OR MSG LIMIT"));
 
             return false;
         }
@@ -1795,9 +1794,9 @@ int BlinkerWiFiUNO::checkMIOTPrintSpan()
 void BlinkerWiFiUNO::begin(const char* auth)
 {
     _authKey = auth;
-    
-    BLINKER_LOG(BLINKER_F("Blinker WiFi UNO R4 begin..."));
-    BLINKER_LOG(BLINKER_F("AuthKey: "), auth);
+
+    BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("Blinker WiFi UNO R4 begin..."));
+    BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("AuthKey: "), auth);
 }
 
 #endif

@@ -293,11 +293,11 @@ void BlinkerProtocol<Transp>::run()
     BApi::checkTimer();
     // #endif
 
-    if (((millis() - _dHeartTime)/1000UL >= BLINKER_DEVICE_HEARTBEAT_TIME) && conn.checkInit())
-    {
-        _dHeartTime += BLINKER_DEVICE_HEARTBEAT_TIME * 1000;
-        httpHeartbeat();
-    }
+    // if (((millis() - _dHeartTime)/1000UL >= BLINKER_DEVICE_HEARTBEAT_TIME) && conn.checkInit())
+    // {
+    //     _dHeartTime += BLINKER_DEVICE_HEARTBEAT_TIME * 1000;
+    //     httpHeartbeat();
+    // }
     #endif
 #endif
 
