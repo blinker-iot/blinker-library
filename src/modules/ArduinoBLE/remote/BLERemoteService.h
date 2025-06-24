@@ -20,6 +20,8 @@
 #ifndef _BLE_REMOTE_SERVICE_H_
 #define _BLE_REMOTE_SERVICE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "BLERemoteAttribute.h"
 #include "BLERemoteCharacteristic.h"
 
@@ -49,5 +51,7 @@ private:
 
   BLELinkedList<BLERemoteCharacteristic*> _characteristics;
 };
+
+#endif
 
 #endif

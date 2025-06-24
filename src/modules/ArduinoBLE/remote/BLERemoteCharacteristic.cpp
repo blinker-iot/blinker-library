@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "../BLEProperty.h"
 
 #include "../utility/ATT.h"
@@ -262,3 +264,5 @@ void BLERemoteCharacteristic::writeValue(BLEDevice device, const uint8_t value[]
     _valueUpdatedEventHandler(device, BLECharacteristic(this));
   }
 }
+
+#endif

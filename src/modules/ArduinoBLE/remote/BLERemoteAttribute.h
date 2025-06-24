@@ -20,6 +20,8 @@
 #ifndef _BLE_REMOTE_ATTRIBUTE_H_
 #define _BLE_REMOTE_ATTRIBUTE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 class BLERemoteAttribute
@@ -37,5 +39,7 @@ private:
   String _uuid;
   int _refCount;
 };
+
+#endif
 
 #endif

@@ -20,6 +20,8 @@
 #ifndef _HCI_H_
 #define _HCI_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 #include "bitDescriptions.h"
 
@@ -163,5 +165,7 @@ private:
 };
 
 extern HCIClass& HCI;
+
+#endif
 
 #endif

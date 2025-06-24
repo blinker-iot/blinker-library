@@ -1,5 +1,8 @@
 #ifndef _BIT_DESCRIPTIONS_H_
 #define _BIT_DESCRIPTIONS_H_
+
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 class AuthReq{
@@ -37,5 +40,7 @@ enum IOCap {
     NoInputNoOutput,
     KeyboardDisplay
 };
+
+#endif
 
 #endif

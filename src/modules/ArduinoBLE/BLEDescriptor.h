@@ -20,6 +20,8 @@
 #ifndef _BLE_DESCRIPTOR_H_
 #define _BLE_DESCRIPTOR_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <stdint.h>
 
 class BLELocalDescriptor;
@@ -69,5 +71,7 @@ private:
   BLELocalDescriptor* _local;
   BLERemoteDescriptor* _remote;
 };
+
+#endif
 
 #endif

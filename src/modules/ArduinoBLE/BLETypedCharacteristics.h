@@ -20,6 +20,8 @@
 #ifndef _BLE_TYPED_CHARACTERISTICS_H_
 #define _BLE_TYPED_CHARACTERISTICS_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "BLETypedCharacteristic.h"
 
 class BLEBoolCharacteristic : public BLETypedCharacteristic<bool> {
@@ -91,5 +93,7 @@ class BLEDoubleCharacteristic : public BLETypedCharacteristic<double> {
 public:
   BLEDoubleCharacteristic(const char* uuid, unsigned int permissions);
 };
+
+#endif
 
 #endif

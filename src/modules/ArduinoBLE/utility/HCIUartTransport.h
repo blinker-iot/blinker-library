@@ -20,6 +20,8 @@
 #ifndef _HCI_UART_TRANSPORT_H_
 #define _HCI_UART_TRANSPORT_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "HCITransport.h"
 
 class HCIUartTransportClass : public HCITransportInterface {
@@ -42,5 +44,7 @@ private:
   HardwareSerial* _uart;
   unsigned long _baudrate;
 };
+
+#endif
 
 #endif

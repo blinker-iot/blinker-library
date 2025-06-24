@@ -20,6 +20,8 @@
 #ifndef _BLE_REMOTE_CHARACTERISTIC_H_
 #define _BLE_REMOTE_CHARACTERISTIC_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "../BLECharacteristic.h"
 
 #include "BLERemoteAttribute.h"
@@ -80,5 +82,7 @@ private:
 
   BLECharacteristicEventHandler _valueUpdatedEventHandler;
 };
+
+#endif
 
 #endif

@@ -20,10 +20,14 @@
 #ifndef _ARDUINO_BLE_H_
 #define _ARDUINO_BLE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "local/BLELocalDevice.h"
 #include "BLEProperty.h"
 #include "BLEStringCharacteristic.h"
 #include "BLETypedCharacteristics.h"
 #include "utility/btct.h"
+
+#endif
 
 #endif

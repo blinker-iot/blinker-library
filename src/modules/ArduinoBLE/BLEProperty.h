@@ -22,6 +22,8 @@
 #ifndef _BLE_PROPERTY_H_
 #define _BLE_PROPERTY_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 enum BLEProperty {
   BLEBroadcast            = 0x01,
   BLERead                 = 0x02,
@@ -75,5 +77,7 @@ enum BLE_GATT_PERM_ {
   WRITE_AUTHORIZATION = 1 << 10,
 };
 
+
+#endif
 
 #endif

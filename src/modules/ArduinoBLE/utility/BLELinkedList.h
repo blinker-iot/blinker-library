@@ -20,6 +20,8 @@
 #ifndef _BLE_LINKED_LIST_
 #define _BLE_LINKED_LIST_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <stddef.h>
 
 template<class T> struct BLELinkedListNode
@@ -143,5 +145,7 @@ template <typename T> T BLELinkedList<T>::remove(unsigned int index)
 
   return result;
 }
+
+#endif
 
 #endif

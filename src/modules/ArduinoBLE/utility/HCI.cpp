@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "ATT.h"
 #include "GAP.h"
 #include "HCITransport.h"
@@ -1499,4 +1501,6 @@ void HCIClass::dumpPkt(const char* prefix, uint8_t plen, uint8_t pdata[])
 #if !defined(FAKE_HCI)
 HCIClass HCIObj;
 HCIClass& HCI = HCIObj;
+#endif
+
 #endif

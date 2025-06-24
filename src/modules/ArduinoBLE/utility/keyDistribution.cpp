@@ -1,3 +1,5 @@
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "keyDistribution.h"
 
 KeyDistribution::KeyDistribution():_octet(0){}
@@ -22,3 +24,5 @@ void KeyDistribution::setEncKey(bool state) { _octet= state? _octet|ENCKEY  : _o
 void KeyDistribution::setIdKey(bool state)  { _octet= state? _octet|IDKEY   : _octet&~IDKEY;}
 void KeyDistribution::setSignKey(bool state){ _octet= state? _octet|SIGNKEY : _octet&~SIGNKEY;}
 void KeyDistribution::setLinkKey(bool state){ _octet= state? _octet|LINKKEY : _octet&~LINKKEY;}
+
+#endif

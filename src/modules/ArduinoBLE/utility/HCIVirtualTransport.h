@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "HCITransport.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -48,3 +50,5 @@ public:
 
   virtual size_t write(const uint8_t* data, size_t length);
 };
+
+#endif

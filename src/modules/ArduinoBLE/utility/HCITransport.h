@@ -20,6 +20,8 @@
 #ifndef _HCI_TRANSPORT_INTERFACE_H_
 #define _HCI_TRANSPORT_INTERFACE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 class HCITransportInterface {
@@ -37,5 +39,7 @@ public:
 };
 
 extern HCITransportInterface& HCITransport;
+
+#endif
 
 #endif

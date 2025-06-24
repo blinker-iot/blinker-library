@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "BLEAdvertisingData.h"
 
 #define AD_FIELD_OVERHEAD (2)
@@ -350,3 +352,5 @@ bool BLEAdvertisingData::addField(BLEAdField field, const uint8_t* data, int len
   _dataLength += length;
   return true;
 }
+
+#endif

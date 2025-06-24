@@ -20,6 +20,8 @@
 #ifndef _BLE_STRING_CHARACTERISTIC_H_
 #define _BLE_STRING_CHARACTERISTIC_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 #include "BLECharacteristic.h"
@@ -35,5 +37,7 @@ public:
 
 private:
 };
+
+#endif
 
 #endif

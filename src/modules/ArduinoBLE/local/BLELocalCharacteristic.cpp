@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 #include "BLELocalDevice.h"
 
@@ -242,3 +244,5 @@ void BLELocalCharacteristic::writeCccdValue(BLEDevice device, uint16_t value)
     }
   }
 }
+
+#endif

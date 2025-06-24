@@ -20,6 +20,8 @@
 #ifndef _BLE_LOCAL_CHARACTERISTIC_H_
 #define _BLE_LOCAL_CHARACTERISTIC_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <stdint.h>
 
 #include "../BLECharacteristic.h"
@@ -92,5 +94,7 @@ private:
 
   BLECharacteristicEventHandler _eventHandlers[BLECharacteristicEventLast];
 };
+
+#endif
 
 #endif

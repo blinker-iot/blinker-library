@@ -20,6 +20,8 @@
 #ifndef _BLE_SERVICE_H_
 #define _BLE_SERVICE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "BLECharacteristic.h"
 
 class BLELocalService;
@@ -64,5 +66,7 @@ private:
   BLELocalService* _local;
   BLERemoteService* _remote;
 };
+
+#endif
 
 #endif

@@ -20,6 +20,8 @@
 #ifndef _BLE_REMOTE_DESCRIPTOR_H_
 #define _BLE_REMOTE_DESCRIPTOR_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "BLERemoteAttribute.h"
 
 class BLERemoteDescriptor : public BLERemoteAttribute {
@@ -46,5 +48,7 @@ private:
   uint8_t* _value;
   int _valueLength;
 };
+
+#endif
 
 #endif

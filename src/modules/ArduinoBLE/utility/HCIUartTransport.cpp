@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #if !defined(ARDUINO_ARCH_MBED) && !defined(ESP32) && !defined(ARDUINO_SILABS) && !defined(ARDUINO_UNOR4_WIFI) || defined(TARGET_NANO_RP2040_CONNECT) //|| defined(CORE_CM4)
 
 #include "HCIUartTransport.h"
@@ -105,5 +107,7 @@ HCIUartTransportClass HCIUartTransport(SerialHCI, 119600);
 HCIUartTransportClass HCIUartTransport(SerialHCI, 912600);
 #endif
 HCITransportInterface& HCITransport = HCIUartTransport;
+
+#endif
 
 #endif

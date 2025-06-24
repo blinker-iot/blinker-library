@@ -20,6 +20,8 @@
 #ifndef _BLE_UUID_H_
 #define _BLE_UUID_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 #define BLE_UUID_MAX_LENGTH 16
@@ -40,5 +42,7 @@ private:
   uint8_t     _data[BLE_UUID_MAX_LENGTH];
   uint8_t     _length;
 };
+
+#endif
 
 #endif

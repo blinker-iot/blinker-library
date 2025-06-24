@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <stddef.h>
 
 #include "local/BLELocalDescriptor.h"
@@ -227,3 +229,5 @@ BLELocalDescriptor* BLEDescriptor::local()
 {
   return _local;
 }
+
+#endif

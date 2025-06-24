@@ -20,6 +20,8 @@
 #ifndef _HCI_CORDIO_TRANSPORT_H_
 #define _HCI_CORDIO_TRANSPORT_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <string.h>
 
 #include "api/RingBuffer.h"
@@ -50,5 +52,7 @@ private:
   bool _begun;
   RingBufferN<256> _rxBuf;
 };
+
+#endif
 
 #endif

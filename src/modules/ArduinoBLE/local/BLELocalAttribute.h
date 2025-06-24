@@ -20,6 +20,8 @@
 #ifndef _BLE_LOCAL_ATTRIBUTE_H_
 #define _BLE_LOCAL_ATTRIBUTE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "../utility/BLEUuid.h"
 
 #define BLE_ATTRIBUTE_TYPE_SIZE 2
@@ -57,5 +59,7 @@ private:
   BLEUuid _uuid;
   int _refCount;
 };
+
+#endif
 
 #endif

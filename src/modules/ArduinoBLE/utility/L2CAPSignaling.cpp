@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "HCI.h"
 #include "ATT.h"
 #include "btct.h"
@@ -507,4 +509,6 @@ void L2CAPSignalingClass::connectionParameterUpdateResponse(uint16_t /*handle*/,
 #if !defined(FAKE_L2CAP)
 L2CAPSignalingClass L2CAPSignalingObj;
 L2CAPSignalingClass& L2CAPSignaling = L2CAPSignalingObj;
+#endif
+
 #endif

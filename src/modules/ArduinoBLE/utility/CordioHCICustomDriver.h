@@ -1,5 +1,7 @@
 #if defined(CORE_CM4)
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "CyH4TransportDriver.h"
 
 ble::vendor::cypress_ble::CyH4TransportDriver& ble_cordio_get_h4_transport_driver()
@@ -13,5 +15,7 @@ ble::vendor::cypress_ble::CyH4TransportDriver& ble_cordio_get_h4_transport_drive
 }
 
 #define CUSTOM_HCI_DRIVER
+
+#endif
 
 #endif

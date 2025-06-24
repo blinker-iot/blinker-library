@@ -20,6 +20,8 @@
 #ifndef _GATT_H_
 #define _GATT_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "../utility/BLELinkedList.h"
 
 #include "../local/BLELocalAttribute.h"
@@ -69,5 +71,7 @@ private:
 };
 
 extern GATTClass& GATT;
+
+#endif
 
 #endif

@@ -20,6 +20,8 @@
 #ifndef _BLE_LOCAL_DESCRIPTOR_H_
 #define _BLE_LOCAL_DESCRIPTOR_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <stdint.h>
 
 #include "BLELocalAttribute.h"
@@ -48,5 +50,7 @@ private:
 
   uint16_t       _handle;
 };
+
+#endif
 
 #endif

@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "BLERemoteService.h"
 
 BLERemoteService::BLERemoteService(const uint8_t uuid[], uint8_t uuidLen, uint16_t startHandle, uint16_t endHandle) :
@@ -65,3 +67,5 @@ void BLERemoteService::addCharacteristic(BLERemoteCharacteristic* characteristic
 
   _characteristics.add(characteristic);
 }
+
+#endif

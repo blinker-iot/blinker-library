@@ -20,6 +20,8 @@
 #ifndef _BLE_DEVICE_H_
 #define _BLE_DEVICE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 #include "BLEService.h"
@@ -117,5 +119,7 @@ private:
   uint8_t _eirData[31 * 2];
   int8_t _rssi;
 };
+
+#endif
 
 #endif

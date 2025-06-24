@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #if defined(ARDUINO_ARCH_MBED) && !defined(TARGET_NANO_RP2040_CONNECT) // && !defined(CORE_CM4)
 #include <Arduino.h>
 #include <mbed.h>
@@ -318,5 +320,7 @@ void HCICordioTransportClass::onDataReceived(uint8_t* data, uint8_t len)
 {
   HCICordioTransport.handleRxData(data, len);
 }
+
+#endif
 
 #endif

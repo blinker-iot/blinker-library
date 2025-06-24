@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #if defined(ESP32)
 
 #include "HCIVirtualTransport.h"
@@ -140,5 +142,7 @@ size_t HCIVirtualTransportClass::write(const uint8_t* data, size_t length)
 HCIVirtualTransportClass HCIVirtualTransport;
 
 HCITransportInterface& HCITransport = HCIVirtualTransport;
+
+#endif
 
 #endif

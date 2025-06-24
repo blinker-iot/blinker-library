@@ -20,6 +20,8 @@
 #ifndef _L2CAP_SIGNALING_H_
 #define _L2CAP_SIGNALING_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 #define SIGNALING_CID 0x0005
@@ -92,5 +94,7 @@ private:
 };
 
 extern L2CAPSignalingClass& L2CAPSignaling;
+
+#endif
 
 #endif

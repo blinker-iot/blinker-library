@@ -20,6 +20,8 @@
 #ifndef _ATT_H_
 #define _ATT_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 #include "../BLEDevice.h"
@@ -173,5 +175,7 @@ private:
 };
 
 extern ATTClass& ATT;
+
+#endif
 
 #endif

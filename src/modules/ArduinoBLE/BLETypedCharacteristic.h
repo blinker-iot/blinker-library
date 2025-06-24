@@ -20,6 +20,8 @@
 #ifndef _BLE_TYPED_CHARACTERISTIC_H_
 #define _BLE_TYPED_CHARACTERISTIC_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "BLECharacteristic.h"
 
 template<typename T> class BLETypedCharacteristic : public BLECharacteristic
@@ -98,5 +100,7 @@ template<typename T> T BLETypedCharacteristic<T>::byteSwap(T value)
 
   return result;
 }
+
+#endif
 
 #endif

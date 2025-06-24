@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #if defined(ARDUINO_SILABS)
 
 #include "HCISilabsTransport.h"
@@ -126,5 +128,7 @@ extern "C" {
 HCISilabsTransportClass HCISilabsTransport;
 
 HCITransportInterface& HCITransport = HCISilabsTransport;
+
+#endif
 
 #endif

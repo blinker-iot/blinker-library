@@ -20,6 +20,8 @@
 #ifndef _HCI_SILABS_TRANSPORT_H_
 #define _HCI_SILABS_TRANSPORT_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "HCITransport.h"
 
 class HCISilabsTransportClass : public HCITransportInterface {
@@ -38,5 +40,7 @@ public:
 
   virtual size_t write(const uint8_t* data, size_t length);
 };
+
+#endif
 
 #endif

@@ -1,5 +1,8 @@
 #ifndef _BTCT_H_
 #define _BTCT_H_
+
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 // Implementation of functions defined in BTLE standard
@@ -27,4 +30,6 @@ private:
     void padding ( unsigned char *lastb, unsigned char *pad, int length );
 };
 extern BluetoothCryptoToolbox btct;
+#endif
+
 #endif

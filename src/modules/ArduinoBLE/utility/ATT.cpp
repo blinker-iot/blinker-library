@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 #include "HCI.h"
@@ -2014,4 +2016,6 @@ int ATTClass::getPeerResolvedAddress(uint16_t connectionHandle, uint8_t resolved
 #if !defined(FAKE_ATT)
 ATTClass ATTObj;
 ATTClass& ATT = ATTObj;
+#endif
+
 #endif

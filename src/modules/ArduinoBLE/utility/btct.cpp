@@ -1,3 +1,5 @@
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "btct.h"
 #include <Arduino.h>
 #include "HCI.h"
@@ -384,3 +386,5 @@ void BluetoothCryptoToolbox::xor_128(unsigned char *a, unsigned char *b, unsigne
     }
 }
 BluetoothCryptoToolbox btct;
+
+#endif

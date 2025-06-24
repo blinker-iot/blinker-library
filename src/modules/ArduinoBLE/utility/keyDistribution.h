@@ -1,5 +1,8 @@
 #ifndef _KEY_DISTRIBUTION_H_
 #define _KEY_DISTRIBUTION_H_
+
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 
 class KeyDistribution{
@@ -25,5 +28,7 @@ private:
     uint8_t _octet;
     // 1.   IRK by the slave2.   BD ADDR by the slave3.   CSRK by the slave4.   IRK by the master5.   BD_ADDR by the master6.   CSRK by the master
 };
+
+#endif
 
 #endif

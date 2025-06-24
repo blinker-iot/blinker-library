@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "utility/ATT.h"
 #include "utility/BLEUuid.h"
 #include "utility/HCI.h"
@@ -576,3 +578,4 @@ bool BLEDevice::discovered()
   return (_advertisementTypeMask & 0x18) != 0;
 }
 
+#endif

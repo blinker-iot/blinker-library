@@ -1,3 +1,5 @@
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "bitDescriptions.h"
 
 
@@ -28,3 +30,5 @@ uint8_t _octet;
 
 void AuthReq::setOctet( uint8_t octet){_octet = octet;}
 uint8_t AuthReq::getOctet() {return _octet;}
+
+#endif

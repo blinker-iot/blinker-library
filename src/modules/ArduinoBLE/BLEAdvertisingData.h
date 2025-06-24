@@ -20,6 +20,8 @@
 #ifndef _BLE_ADVERTISING_DATA_H_
 #define _BLE_ADVERTISING_DATA_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <Arduino.h>
 #include "utility/BLEUuid.h"
 #include "BLEService.h"
@@ -116,5 +118,7 @@ private:
   const uint8_t* _serviceData;
   int _serviceDataLength;
 };
+
+#endif
 
 #endif

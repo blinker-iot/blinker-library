@@ -20,6 +20,8 @@
 #ifndef _GAP_H_
 #define _GAP_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "../utility/BLELinkedList.h"
 
 #include "../BLEDevice.h"
@@ -70,5 +72,7 @@ private:
 };
 
 extern GAPClass& GAP;
+
+#endif
 
 #endif

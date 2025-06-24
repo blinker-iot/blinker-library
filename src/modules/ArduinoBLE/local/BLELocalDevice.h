@@ -20,6 +20,8 @@
 #ifndef _BLE_LOCAL_DEVICE_H_
 #define _BLE_LOCAL_DEVICE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "../BLEDevice.h"
 #include "../BLEService.h"
 #include "../BLEAdvertisingData.h"
@@ -119,5 +121,7 @@ private:
 };
 
 extern BLELocalDevice& BLE;
+
+#endif
 
 #endif

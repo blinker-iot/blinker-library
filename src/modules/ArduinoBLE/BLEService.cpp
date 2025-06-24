@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "local/BLELocalService.h"
 #include "remote/BLERemoteService.h"
 
@@ -184,3 +186,5 @@ BLELocalService* BLEService::local()
 {
   return _local;
 }
+
+#endif

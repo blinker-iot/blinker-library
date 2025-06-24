@@ -20,6 +20,8 @@
 #ifndef _BLE_LOCAL_SERVICE_H_
 #define _BLE_LOCAL_SERVICE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "../BLECharacteristic.h"
 
 #include "BLELocalAttribute.h"
@@ -57,5 +59,7 @@ private:
 
   BLELinkedList<BLELocalCharacteristic*> _characteristics;
 };
+
+#endif
 
 #endif

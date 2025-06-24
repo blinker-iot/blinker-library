@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "BLEUuid.h"
 #include "HCI.h"
 
@@ -269,4 +271,6 @@ bool GAPClass::matchesScanFilter(const BLEDevice& device)
 #if !defined(FAKE_GAP)
 GAPClass GAPObj;
 GAPClass& GAP = GAPObj;
+#endif
+
 #endif

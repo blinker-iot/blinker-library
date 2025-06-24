@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "../utility/ATT.h"
 #include "../utility/HCI.h"
 #include "../utility/GAP.h"
@@ -488,4 +490,6 @@ void BLELocalDevice::noDebug()
 #if !defined(FAKE_BLELOCALDEVICE)
 BLELocalDevice BLEObj;
 BLELocalDevice& BLE = BLEObj;
+#endif
+
 #endif

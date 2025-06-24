@@ -17,6 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "BLEStringCharacteristic.h"
 
 BLEStringCharacteristic::BLEStringCharacteristic(const char* uuid, unsigned int properties, int valueSize) :
@@ -43,3 +45,5 @@ String BLEStringCharacteristic::value(void)
 
   return str;
 }
+
+#endif

@@ -20,6 +20,8 @@
 #ifndef _BLE_CHARACTERISTIC_H_
 #define _BLE_CHARACTERISTIC_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include <stdint.h>
 
 #include "BLEDescriptor.h"
@@ -128,5 +130,7 @@ private:
   BLELocalCharacteristic* _local;
   BLERemoteCharacteristic* _remote;
 };
+
+#endif
 
 #endif

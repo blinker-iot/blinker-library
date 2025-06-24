@@ -20,6 +20,8 @@
 #ifndef _BLE_REMOTE_DEVICE_H_
 #define _BLE_REMOTE_DEVICE_H_
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #include "../utility/BLELinkedList.h"
 
 #include "BLERemoteService.h"
@@ -39,5 +41,7 @@ public:
 private:
   BLELinkedList<BLERemoteService*> _services;
 };
+
+#endif
 
 #endif
