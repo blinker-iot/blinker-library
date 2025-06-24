@@ -443,18 +443,18 @@ bool BlinkerWiFiUNO::connect() {
 
     webSocket_MQTT.loop();
 
-    // if (mqtt_MQTT->connected())
-    // {
-    //     _status = BLINKER_DEV_CONNECTED;
-    //     return true;
-    // }
-    
-    // disconnect();
-
-    if (_status == BLINKER_DEV_CONNECTED)
+    if (mqtt_MQTT->connected())
     {
+        _status = BLINKER_DEV_CONNECTED;
         return true;
     }
+    
+    disconnect();
+
+    // if (_status == BLINKER_DEV_CONNECTED)
+    // {
+    //     return true;
+    // }
 
     if ((millis() - latestTime) < BLINKER_MQTT_CONNECT_TIMESLOT && latestTime > 0)
     {
@@ -642,15 +642,9 @@ void BlinkerWiFiUNO::flush() {
 int BlinkerWiFiUNO::print(char* data, bool needCheck) {
     if (!checkInit()) return false;
 
-    // if (!mqtt_MQTT->connected()) {
-    //     // return false;
-    //     if (mqtt_MQTT->connect(MQTT_ID_MQTT, MQTT_NAME_MQTT, MQTT_KEY_MQTT) == 0)
-    //     {
-    //         BLINKER_LOG(BLINKER_F("MQTT not connected"));
-    //         return false;
-    //     }
-    //     mqtt_MQTT->subscribe(BLINKER_SUB_TOPIC_MQTT);
-    // }
+    if (!mqtt_MQTT->connected()) {
+        return false;
+    }
 
     if (*isHandle && dataFrom_MQTT == BLINKER_MSG_FROM_WS)
     {
