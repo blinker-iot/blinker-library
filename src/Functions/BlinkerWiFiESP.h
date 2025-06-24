@@ -1,6 +1,8 @@
 #ifndef BLINKER_WIFI_ESP_H
 #define BLINKER_WIFI_ESP_H
 
+#if defined(ESP32)
+
 #define BLINKER_WIFI
 
 #include <WiFi.h>
@@ -2715,4 +2717,6 @@ void BlinkerWiFiESP::begin(const char* auth)
     BLINKER_LOG(TAG_WIFI, BLINKER_F("Blinker WiFi ESP begin..."));
     BLINKER_LOG(TAG_WIFI, BLINKER_F("AuthKey: "), auth);
 }
+#endif
+
 #endif

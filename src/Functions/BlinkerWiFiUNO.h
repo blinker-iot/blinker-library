@@ -1,6 +1,8 @@
 #ifndef BLINKER_WIFI_UNO_H
 #define BLINKER_WIFI_UNO_H
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #define BLINKER_WIFI
 
 #include <WiFiS3.h>
@@ -1798,5 +1800,7 @@ void BlinkerWiFiUNO::begin(const char* auth)
     BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("Blinker WiFi UNO R4 begin..."));
     BLINKER_LOG(TAG_WIFI_UNO, BLINKER_F("AuthKey: "), auth);
 }
+
+#endif
 
 #endif

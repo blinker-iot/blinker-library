@@ -21,7 +21,7 @@
         ]
     },
     "frameworks": "arduino",
-    "platforms": "*",
+    "platforms": "esp32,renesas_uno,renesas",
     "examples": [
         "examples/*/*/*.ino"
     ]

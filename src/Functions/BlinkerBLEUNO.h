@@ -1,13 +1,15 @@
 #ifndef BLINKER_BLE_UNO_H
 #define BLINKER_BLE_UNO_H
 
+#if defined(ARDUINO_ARCH_RENESAS)
+
 #if ARDUINO >= 100
     #include <Arduino.h>
 #else
     #include <WProgram.h>
 #endif
 
-#include <ArduinoBLE.h>
+#include "../modules/ArduinoBLE/ArduinoBLE.h"
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerDebug.h"
@@ -368,4 +370,6 @@ int BlinkerBLEUNO::checkPrintSpan()
         return true;
     }
 }
+#endif
+
 #endif

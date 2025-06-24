@@ -1,6 +1,8 @@
 #ifndef BLINKER_BLE_ESP_H
 #define BLINKER_BLE_ESP_H
 
+#if defined(ESP32)
+
 #if ARDUINO >= 100
     #include <Arduino.h>
 #else
@@ -360,5 +362,7 @@ int BlinkerBLEESP::checkPrintSpan()
         return true;
     }
 }
+
+#endif
 
 #endif

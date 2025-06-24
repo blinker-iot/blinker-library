@@ -678,7 +678,7 @@ int8_t BlinkerProtocol<Transp>::second()
         struct tm timeinfo;
         localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_sec;
-#elif defined(ARDUINO_ARCH_RENESAS)
+#elif defined(ARDUINO_ARCH_RENESAS) && defined(BLINKER_WIFI)
         auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
         RTCTime currentTime = RTCTime(unixTime);
         return currentTime.getSeconds();
@@ -699,7 +699,7 @@ int8_t BlinkerProtocol<Transp>::minute()
         struct tm timeinfo;
         localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_min;
-#elif defined(ARDUINO_ARCH_RENESAS)
+#elif defined(ARDUINO_ARCH_RENESAS) && defined(BLINKER_WIFI)
         auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
         RTCTime currentTime = RTCTime(unixTime);
         return currentTime.getMinutes();
@@ -720,7 +720,7 @@ int8_t BlinkerProtocol<Transp>::hour()
         struct tm timeinfo;
         localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_hour;
-#elif defined(ARDUINO_ARCH_RENESAS)
+#elif defined(ARDUINO_ARCH_RENESAS) && defined(BLINKER_WIFI)
         auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
         RTCTime currentTime = RTCTime(unixTime);
         return currentTime.getHour();
@@ -741,7 +741,7 @@ int8_t BlinkerProtocol<Transp>::mday()
         struct tm timeinfo;
         localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_mday;
-#elif defined(ARDUINO_ARCH_RENESAS)
+#elif defined(ARDUINO_ARCH_RENESAS) && defined(BLINKER_WIFI)
         auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
         RTCTime currentTime = RTCTime(unixTime);
         return currentTime.getDayOfMonth();
@@ -762,7 +762,7 @@ int8_t BlinkerProtocol<Transp>::wday()
         struct tm timeinfo;
         localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_wday;
-#elif defined(ARDUINO_ARCH_RENESAS)
+#elif defined(ARDUINO_ARCH_RENESAS) && defined(BLINKER_WIFI)
         auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
         RTCTime currentTime = RTCTime(unixTime);
         return static_cast<int8_t>(currentTime.getDayOfWeek());
@@ -783,7 +783,7 @@ int8_t BlinkerProtocol<Transp>::month()
         struct tm timeinfo;
         localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_mon + 1;
-#elif defined(ARDUINO_ARCH_RENESAS)
+#elif defined(ARDUINO_ARCH_RENESAS) && defined(BLINKER_WIFI)
         auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
         RTCTime currentTime = RTCTime(unixTime);
         return currentTime.getMonth();
@@ -804,7 +804,7 @@ int16_t BlinkerProtocol<Transp>::year()
         struct tm timeinfo;
         localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_year + 1900;
-#elif defined(ARDUINO_ARCH_RENESAS)
+#elif defined(ARDUINO_ARCH_RENESAS) && defined(BLINKER_WIFI)
         auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
         RTCTime currentTime = RTCTime(unixTime);
         return currentTime.getYear();
@@ -825,7 +825,7 @@ int16_t BlinkerProtocol<Transp>::yday()
         struct tm timeinfo;
         localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_yday + 1;
-#elif defined(ARDUINO_ARCH_RENESAS)
+#elif defined(ARDUINO_ARCH_RENESAS) && defined(BLINKER_WIFI)
         auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
         RTCTime currentTime = RTCTime(unixTime);
         
@@ -886,7 +886,7 @@ int32_t BlinkerProtocol<Transp>::dtime()
         struct tm timeinfo;
         localtime_r(&now_ntp, &timeinfo);
         return timeinfo.tm_hour * 60 * 60 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
-#elif defined(ARDUINO_ARCH_RENESAS)
+#elif defined(ARDUINO_ARCH_RENESAS) && defined(BLINKER_WIFI)
         auto unixTime = timeClient.getEpochTime() + (long)(_timezone * 3600);
         RTCTime currentTime = RTCTime(unixTime);
         return currentTime.getHour() * 60 * 60 + currentTime.getMinutes() * 60 + currentTime.getSeconds();
