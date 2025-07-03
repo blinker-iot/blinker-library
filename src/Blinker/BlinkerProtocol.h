@@ -146,15 +146,29 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void miotPrint(const String & _msg)     { conn.miPrint(_msg); }
     #endif
 
-        template<typename T>
-        void dataStorage(char _name[], const T& msg);
+        void chartDataUpload(const char* _name, uint8_t value);
+        void chartDataUpload(const char* _name, int8_t value);
+        void chartDataUpload(const char* _name, uint16_t value);
+        void chartDataUpload(const char* _name, int16_t value);
+        void chartDataUpload(const char* _name, uint32_t value);
+        void chartDataUpload(const char* _name, int32_t value);
+        void chartDataUpload(const char* _name, float value);
+        void chartDataUpload(const char* _name, double value);
+        
+        // template<typename T>
+        // void chartDataUpload(char _name[], const T& msg);
+        
         void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = BLINKER_DATA_UPDATE_COUNT);
         
-        template<typename T>
-        void timeSlotData(char _name[], const T& _data);
-        void textData(const String & msg);
-        void configUpdate(const String & msg);
-        void configGet();
+        // void clearDataStorage();
+        // void clearDataStorage(const char* name);
+        // size_t getDataStorageMemoryUsage();
+        // uint8_t getDataStorageCount() { return data_dataCount; }
+        // bool isDataStorageFull() { return data_dataCount >= BLINKER_MAX_BLINKER_DATA_SIZE; }
+        
+        // bool forceDataUpdate();
+        
+        // void printDataStorageStatus();
 #endif
     private :
         void autoPrint(const String & key, const String & data);
@@ -178,9 +192,12 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void checkDataStorage();
         bool dataUpdate();
 
-        bool dataStorage(const String & msg);
-        bool timeSlot(const String & msg);
-        void httpHeartbeat();
+        bool chartDataUpload(const String & msg);
+        
+        void dataStorageValueInternal(const char* _name, const BlinkerDataValue& value, BlinkerDataValueType type);
+        
+        // bool timeSlot(const String & msg);
+        // void httpHeartbeat();
 #endif        
         char                _sendBuf[BLINKER_MAX_SEND_SIZE];
         uint32_t            autoFormatFreshTime;
@@ -204,7 +221,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         blinker_callback_with_string_arg_t  _weather_forecast_Func = NULL;
 
         class BlinkerData *                 _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
-        class BlinkerTimeSlotData *         _TimeSlotData[BLINKER_MAX_BLINKER_DATA_SIZE];
+        // class BlinkerTimeSlotData *         _TimeSlotData[BLINKER_MAX_BLINKER_DATA_SIZE];
         
         blinker_callback_t                  _dataStorageFunc = NULL;
         uint32_t                            _autoStorageTime = 60;
@@ -1189,22 +1206,22 @@ void BlinkerProtocol<Transp>::air(uint32_t _city)
     if (_airFunc) _airFunc(conn.httpServer(BLINKER_CMD_AQI_NUMBER, data));
 }
 
-template <class Transp>
-bool BlinkerProtocol<Transp>::log(const String & msg)
-{
-    String data = BLINKER_F("{\"token\":\"");
-    data += conn.token();
-    data += BLINKER_F("\",\"data\":[[");
-    data += STRING_format(time());
-    data += BLINKER_F(",\"");
-    data += msg;
-    data += BLINKER_F("\"]]}");
+// template <class Transp>
+// bool BlinkerProtocol<Transp>::log(const String & msg)
+// {
+//     String data = BLINKER_F("{\"token\":\"");
+//     data += conn.token();
+//     data += BLINKER_F("\",\"data\":[[");
+//     data += STRING_format(time());
+//     data += BLINKER_F(",\"");
+//     data += msg;
+//     data += BLINKER_F("\"]]}");
 
-    return conn.httpServer(BLINKER_CMD_LOG_NUMBER, data) != "false";
-}
+//     return conn.httpServer(BLINKER_CMD_LOG_NUMBER, data) != "false";
+// }
 
 template <class Transp>
-bool BlinkerProtocol<Transp>::dataStorage(const String & msg)
+bool BlinkerProtocol<Transp>::chartDataUpload(const String & msg)
 {
     String data = BLINKER_F("{\"deviceName\":\"");
     data += conn.deviceName();
@@ -1217,138 +1234,146 @@ bool BlinkerProtocol<Transp>::dataStorage(const String & msg)
     return conn.httpServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) != "false";
 }
 
-template <class Transp>
-bool BlinkerProtocol<Transp>::timeSlot(const String & msg)
-{
-    String data = BLINKER_F("{\"device\":\"");
-    data += conn.deviceName();
-    data += BLINKER_F("\",\"key\":\"");
-    data += conn.authKey();
-    data += BLINKER_F("\",\"data\":[");
-    data += msg;
-    data += BLINKER_F("]}");
+// template <class Transp>
+// bool BlinkerProtocol<Transp>::timeSlot(const String & msg)
+// {
+//     String data = BLINKER_F("{\"device\":\"");
+//     data += conn.deviceName();
+//     data += BLINKER_F("\",\"key\":\"");
+//     data += conn.authKey();
+//     data += BLINKER_F("\",\"data\":[");
+//     data += msg;
+//     data += BLINKER_F("]}");
     
-    return conn.httpServer(BLINKER_CMD_TIME_SLOT_DATA_NUMBER, data) != "false";
+//     return conn.httpServer(BLINKER_CMD_TIME_SLOT_DATA_NUMBER, data) != "false";
+// }
+
+// template <class Transp>
+// void BlinkerProtocol<Transp>::textData(const String & msg)
+// {
+//     String data = BLINKER_F("{");
+//     data += BLINKER_F("\"device\":\"");
+//     data += conn.deviceName();
+//     data += BLINKER_F("\",\"key\":\"");
+//     data += conn.authKey();
+//     data += BLINKER_F("\",\"data\":\"");
+//     data += msg;
+//     data += BLINKER_F("\"}");
+
+//     conn.httpServer(BLINKER_CMD_TEXT_DATA_NUMBER, data);
+// }
+
+// template <class Transp>
+// void BlinkerProtocol<Transp>::configUpdate(const String & msg)
+// {
+//     DynamicJsonDocument jsonBuffer(1024);
+//     DeserializationError error = deserializeJson(jsonBuffer, msg);
+//     JsonObject root = jsonBuffer.as<JsonObject>();
+
+//     // if (!root.success())
+//     if (error)
+//     {
+//         BLINKER_ERR_LOG(TAG_PROTO, "update data is not Json! ", msg);
+//         return;
+//     }
+
+//     String data = BLINKER_F("{");
+//     data += BLINKER_F("\"token\":\"");
+//     data += conn.token();
+//     data += BLINKER_F("\",\"data\":");
+//     data += msg;
+//     data += BLINKER_F("}");
+
+//     conn.httpServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data);
+// }
+
+// template <class Transp>
+// void BlinkerProtocol<Transp>::configGet()
+// {
+//     String data = BLINKER_F("/cloud_storage/object?token=");
+//     data += conn.token();
+
+//     conn.httpServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
+// }
+
+// template <class Transp>
+// void BlinkerProtocol<Transp>::httpHeartbeat()
+// {
+//     String data = BLINKER_F("/heartbeat?");
+//     data += BLINKER_F("deviceName=");
+//     data += conn.deviceName();
+//     data += BLINKER_F("&key=");
+//     data += conn.authKey();
+//     data += BLINKER_F("&heartbeat=");
+//     data += STRING_format(BLINKER_DEVICE_HEARTBEAT_TIME);
+
+//     conn.httpServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data);
+// }
+
+// 优化的非模板数据存储实现 - 直接使用联合体，避免字符串转换
+
+template <class Transp>
+void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, uint8_t value)
+{
+    BlinkerDataValue data_value;
+    data_value.uint8_data = value;
+    dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_UINT8);
 }
 
 template <class Transp>
-void BlinkerProtocol<Transp>::textData(const String & msg)
+void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, int8_t value)
 {
-    String data = BLINKER_F("{");
-    data += BLINKER_F("\"device\":\"");
-    data += conn.deviceName();
-    data += BLINKER_F("\",\"key\":\"");
-    data += conn.authKey();
-    data += BLINKER_F("\",\"data\":\"");
-    data += msg;
-    data += BLINKER_F("\"}");
-
-    conn.httpServer(BLINKER_CMD_TEXT_DATA_NUMBER, data);
+    BlinkerDataValue data_value;
+    data_value.int8_data = value;
+    dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_INT8);
 }
 
 template <class Transp>
-void BlinkerProtocol<Transp>::configUpdate(const String & msg)
+void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, uint16_t value)
 {
-    DynamicJsonDocument jsonBuffer(1024);
-    DeserializationError error = deserializeJson(jsonBuffer, msg);
-    JsonObject root = jsonBuffer.as<JsonObject>();
-
-    // if (!root.success())
-    if (error)
-    {
-        BLINKER_ERR_LOG(TAG_PROTO, "update data is not Json! ", msg);
-        return;
-    }
-
-    String data = BLINKER_F("{");
-    data += BLINKER_F("\"token\":\"");
-    data += conn.token();
-    data += BLINKER_F("\",\"data\":");
-    data += msg;
-    data += BLINKER_F("}");
-
-    conn.httpServer(BLINKER_CMD_CONFIG_UPDATE_NUMBER, data);
+    BlinkerDataValue data_value;
+    data_value.uint16_data = value;
+    dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_UINT16);
 }
 
 template <class Transp>
-void BlinkerProtocol<Transp>::configGet()
+void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, int16_t value)
 {
-    String data = BLINKER_F("/cloud_storage/object?token=");
-    data += conn.token();
-
-    conn.httpServer(BLINKER_CMD_CONFIG_GET_NUMBER, data);
+    BlinkerDataValue data_value;
+    data_value.int16_data = value;
+    dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_INT16);
 }
 
 template <class Transp>
-void BlinkerProtocol<Transp>::httpHeartbeat()
+void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, uint32_t value)
 {
-    String data = BLINKER_F("/heartbeat?");
-    data += BLINKER_F("deviceName=");
-    data += conn.deviceName();
-    data += BLINKER_F("&key=");
-    data += conn.authKey();
-    data += BLINKER_F("&heartbeat=");
-    data += STRING_format(BLINKER_DEVICE_HEARTBEAT_TIME);
-
-    conn.httpServer(BLINKER_CMD_DEVICE_HEARTBEAT_NUMBER, data);
+    BlinkerDataValue data_value;
+    data_value.uint32_data = value;
+    dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_UINT32);
 }
 
-template <class Transp> template <typename T>
-void BlinkerProtocol<Transp>::dataStorage(char _name[], const T& msg)
+template <class Transp>
+void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, int32_t value)
 {
-    String _msg = STRING_format(msg);
+    BlinkerDataValue data_value;
+    data_value.int32_data = value;
+    dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_INT32);
+}
 
-    int8_t num = checkNum(_name, _Data, data_dataCount);
+template <class Transp>
+void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, float value)
+{
+    BlinkerDataValue data_value;
+    data_value.float_data = value;
+    dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_FLOAT);
+}
 
-    time_t _time = time();
-    uint8_t _second = second();
-    time_t now_time = _time - _second;
-
-    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("time: "), _time, BLINKER_F(",second: "), _second);
-
-    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("now_time: "), now_time);
-
-    now_time = now_time - now_time % 10;
-
-    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("dataStorage num: "), num, BLINKER_F(" ,"), now_time);
-    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("dataStorage count: "), data_dataCount);
-
-    String data_msg = String(msg);
-
-    if (data_msg.length() > 10) return;
-
-    if( num == BLINKER_OBJECT_NOT_AVAIL )
-    {
-        if (data_dataCount == BLINKER_MAX_BLINKER_DATA_SIZE)
-        {
-            return;
-        }
-        _Data[data_dataCount] = new BlinkerData();
-        _Data[data_dataCount]->name(_name);
-        // _Data[data_dataCount]->saveData(time(), _msg);
-        // if
-        _Data[data_dataCount]->saveData(data_msg, now_time, BLINKER_DATA_FREQ_TIME);
-        data_dataCount++;
-        // {
-        //     dataUpdate();
-        // }
-
-        BLINKER_LOG_ALL(TAG_PROTO, _name, BLINKER_F(" save: "), _msg, BLINKER_F(" time: "), now_time);
-        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_dataCount: "), data_dataCount);
-    }
-    else {
-        // _Data[num]->saveData(time(), _msg);
-        // if
-        _Data[num]->saveData(data_msg, now_time, BLINKER_DATA_FREQ_TIME);
-        // {
-        //     dataUpdate();
-        // }
-
-        BLINKER_LOG_ALL(TAG_PROTO, _name, BLINKER_F(" save: "), _msg, BLINKER_F(" time: "), now_time);
-        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_dataCount: "), data_dataCount);
-    }
-
-
+template <class Transp>
+void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, double value)
+{
+    BlinkerDataValue data_value;
+    data_value.float_data = (float)value;
+    dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_FLOAT);
 }
 
 template <class Transp>
@@ -1389,101 +1414,296 @@ bool BlinkerProtocol<Transp>::dataUpdate()
 {
     String data = "";
 
-    if (data_timeSlotDataCount > 0)
-    {
-        for (uint8_t _num = 0; _num < data_timeSlotDataCount; _num++) {
-            data += _TimeSlotData[_num]->getData();
-            if (_num < data_timeSlotDataCount - 1) {
-                data += BLINKER_F(",");
-            }
-        }
+    // if (data_timeSlotDataCount > 0)
+    // {
+    //     for (uint8_t _num = 0; _num < data_timeSlotDataCount; _num++) {
+    //         data += _TimeSlotData[_num]->getData();
+    //         if (_num < data_timeSlotDataCount - 1) {
+    //             data += BLINKER_F(",");
+    //         }
+    //     }
 
-        if (timeSlot(data))
-        {
-            for (uint8_t _num = 0; _num < data_timeSlotDataCount; _num++)
-            {
-                // _TimeSlotData[_num]->flush();
-                free(_TimeSlotData[_num]);
-            }
+    //     if (timeSlot(data))
+    //     {
+    //         for (uint8_t _num = 0; _num < data_timeSlotDataCount; _num++)
+    //         {
+    //             // _TimeSlotData[_num]->flush();
+    //             free(_TimeSlotData[_num]);
+    //         }
 
-            data_timeSlotDataCount = 0;
-            return true;
-        }
-        return false;
-    }
+    //         data_timeSlotDataCount = 0;
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
     if (!data_dataCount) return false;
 
+    // 预估数据长度并预分配内存
+    size_t estimatedLength = 0;
     for (uint8_t _num = 0; _num < data_dataCount; _num++) {
+        if (_Data[_num] != nullptr) {
+            estimatedLength += strlen(_Data[_num]->getName()) + 100; // 预估每个数据项的长度
+        }
+    }
+    data.reserve(estimatedLength);
+
+    // 构建JSON数据
+    bool firstItem = true;
+    for (uint8_t _num = 0; _num < data_dataCount; _num++) {
+        if (_Data[_num] == nullptr) continue;
+        
+        if (!firstItem) {
+            data += BLINKER_F(",");
+        }
+        
         data += BLINKER_F("\"");
         data += _Data[_num]->getName();
         data += BLINKER_F("\":");
         data += _Data[_num]->getData();
-        if (_num < data_dataCount - 1) {
-            data += BLINKER_F(",");
-        }
+        
+        firstItem = false;
 
-        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("num: "), _num, \
-                BLINKER_F(" name: "), _Data[_num]->getName());
-
+        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Added data for: "), _Data[_num]->getName());
         BLINKER_LOG_FreeHeap_ALL();
     }
 
-    if (dataStorage(data))
+    if (data.length() == 0) {
+        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("No valid data to send"));
+        return false;
+    }
+
+    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Sending data to storage: "), data.length(), BLINKER_F(" bytes"));
+    
+    if (chartDataUpload(data))
     {
         for (uint8_t _num = 0; _num < data_dataCount; _num++)
         {
-            _Data[_num]->flush();
+            if (_Data[_num] != nullptr) {
+                _Data[_num]->flush();
+            }
         }
-
+        
+        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Data storage update successful"));
         return true;
     }
 
+    BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("Data storage update failed"));
     return false;
 }
 
-template <class Transp> template<typename T>
-void BlinkerProtocol<Transp>::timeSlotData(char _name[], const T& _data)
+// template <class Transp> template<typename T>
+// void BlinkerProtocol<Transp>::timeSlotData(char _name[], const T& _data)
+// {
+//     uint32_t now_time = time();
+
+//     if (data_timeSlotDataCount == BLINKER_MAX_BLINKER_DATA_SIZE)
+//     {
+//         BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("BLINKER MAX DATA STORAGE LIMIT!"));
+//         return;
+//     }
+
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("timeSlotData save"));
+
+//     if (millis() - time_timeSlotData < 1000)
+//     {
+//         if (data_timeSlotDataCount != 0)
+//         {
+//             BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_timeSlotDataCount != 0"));
+//             _TimeSlotData[data_timeSlotDataCount - 1]->saveData(_name, _data, now_time);
+//         }
+//         else
+//         {
+//             BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_timeSlotDataCount == 0"));
+//             _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+//             _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+//             data_timeSlotDataCount++;
+//         }
+
+//         BLINKER_LOG_ALL(TAG_PROTO, _name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+//         BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+//     }
+//     else
+//     {
+//         time_timeSlotData = millis();
+
+//         _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
+//         _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
+//         data_timeSlotDataCount++;
+
+//         BLINKER_LOG_ALL(TAG_PROTO, _name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
+//         BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+//     }
+// }
+
+// template <class Transp>
+// void BlinkerProtocol<Transp>::clearDataStorage()
+// {
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Clearing all data storage"));
+    
+//     for (uint8_t i = 0; i < data_dataCount; i++) {
+//         if (_Data[i] != nullptr) {
+//             delete _Data[i];
+//             _Data[i] = nullptr;
+//         }
+//     }
+//     data_dataCount = 0;
+    
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Data storage cleared"));
+// }
+
+// template <class Transp>
+// void BlinkerProtocol<Transp>::clearDataStorage(const char* name)
+// {
+//     int8_t num = checkNum(name, _Data, data_dataCount);
+//     if (num != BLINKER_OBJECT_NOT_AVAIL) {
+//         BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Clearing data storage: "), name);
+        
+//         delete _Data[num];
+        
+//         // 移动后续元素向前填补空隙
+//         for (uint8_t i = num; i < data_dataCount - 1; i++) {
+//             _Data[i] = _Data[i + 1];
+//         }
+//         _Data[data_dataCount - 1] = nullptr;
+//         data_dataCount--;
+        
+//         BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Data storage cleared for: "), name);
+//     }
+// }
+
+// template <class Transp>
+// size_t BlinkerProtocol<Transp>::getDataStorageMemoryUsage()
+// {
+//     size_t totalMemory = 0;
+    
+//     for (uint8_t i = 0; i < data_dataCount; i++) {
+//         if (_Data[i] != nullptr) {
+//             totalMemory += _Data[i]->getMemoryUsage();
+//         }
+//     }
+    
+//     // 加上指针数组的内存
+//     totalMemory += sizeof(_Data);
+    
+//     return totalMemory;
+// }
+
+// template <class Transp>
+// bool BlinkerProtocol<Transp>::forceDataUpdate()
+// {
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Force data update triggered"));
+    
+//     if (data_dataCount == 0) {
+//         BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("No data to update"));
+//         return true;
+//     }
+    
+//     if (!conn.checkInit()) {
+//         BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("Connection not ready"));
+//         return false;
+//     }
+    
+//     bool result = dataUpdate();
+//     if (result) {
+//         _autoUpdateTime = millis(); // 重置自动更新时间
+//         BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Force data update successful"));
+//     } else {
+//         BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("Force data update failed"));
+//     }
+    
+//     return result;
+// }
+
+// template <class Transp>
+// void BlinkerProtocol<Transp>::printDataStorageStatus()
+// {
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("=== Data Storage Status ==="));
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Count: "), data_dataCount, BLINKER_F("/"), BLINKER_MAX_BLINKER_DATA_SIZE);
+    
+//     size_t totalMemory = getDataStorageMemoryUsage();
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Memory usage: "), totalMemory, BLINKER_F(" bytes"));
+    
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Auto storage time: "), _autoStorageTime, BLINKER_F(" seconds"));
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Data times: "), _dataTimes);
+    
+//     // 计算平均内存效率
+//     float totalEfficiency = 0.0f;
+//     uint8_t validItems = 0;
+    
+//     for (uint8_t i = 0; i < data_dataCount; i++) {
+//         if (_Data[i] != nullptr) {
+//             size_t itemMemory = _Data[i]->getMemoryUsage();
+//             float efficiency = _Data[i]->getMemoryEfficiency();
+            
+//             BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("  ["), i, BLINKER_F("] "), 
+//                             _Data[i]->getName(), BLINKER_F(" ("), 
+//                             itemMemory, BLINKER_F(" bytes, "),
+//                             (int)(efficiency * 100), BLINKER_F("% efficient)"));
+            
+//             totalEfficiency += efficiency;
+//             validItems++;
+//         }
+//     }
+    
+//     if (validItems > 0) {
+//         float avgEfficiency = totalEfficiency / validItems;
+//         BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Average efficiency: "), (int)(avgEfficiency * 100), BLINKER_F("%"));
+        
+//         // 估算节省的内存
+//         size_t oldMemoryEstimate = validItems * (sizeof(time_t) * BLINKER_MAX_DATA_COUNT + 10 * BLINKER_MAX_DATA_COUNT);
+//         size_t savedMemory = oldMemoryEstimate > totalMemory ? oldMemoryEstimate - totalMemory : 0;
+//         BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Memory saved: ~"), savedMemory, BLINKER_F(" bytes"));
+//     }
+    
+//     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("========================"));
+// }
+
+template <class Transp>
+void BlinkerProtocol<Transp>::dataStorageValueInternal(const char* _name, const BlinkerDataValue& value, BlinkerDataValueType type)
 {
-    uint32_t now_time = time();
+    time_t _time = time();
+    uint8_t _second = second();
+    time_t now_time = _time - _second;
+    now_time = now_time - now_time % 10;
 
-    if (data_timeSlotDataCount == BLINKER_MAX_BLINKER_DATA_SIZE)
-    {
-        BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("BLINKER MAX DATA STORAGE LIMIT!"));
-        return;
-    }
+    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("dataStorageValue: "), _name, BLINKER_F(" (type="), type, BLINKER_F(")"));
 
-    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("timeSlotData save"));
+    int8_t num = checkNum(_name, _Data, data_dataCount);
 
-    if (millis() - time_timeSlotData < 1000)
-    {
-        if (data_timeSlotDataCount != 0)
-        {
-            BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_timeSlotDataCount != 0"));
-            _TimeSlotData[data_timeSlotDataCount - 1]->saveData(_name, _data, now_time);
+    if (num == BLINKER_OBJECT_NOT_AVAIL) {
+        if (data_dataCount >= BLINKER_MAX_BLINKER_DATA_SIZE) {
+            BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("Max data storage reached"));
+            return;
         }
-        else
-        {
-            BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_timeSlotDataCount == 0"));
-            _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
-            _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
-            data_timeSlotDataCount++;
+        
+        _Data[data_dataCount] = new BlinkerData();
+        if (_Data[data_dataCount] == nullptr) {
+            BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("Memory allocation failed"));
+            return;
         }
-
-        BLINKER_LOG_ALL(TAG_PROTO, _name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
-        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
+        
+        _Data[data_dataCount]->name(_name);
+        bool success = _Data[data_dataCount]->saveDataValue(value, type, now_time, BLINKER_DATA_FREQ_TIME);
+        
+        if (success) {
+            data_dataCount++;
+            BLINKER_LOG_ALL(TAG_PROTO, _name, BLINKER_F(" created & saved directly"));
+        } else {
+            delete _Data[data_dataCount];
+            _Data[data_dataCount] = nullptr;
+            BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("Save failed for new data"));
+        }
+    } else {
+        bool success = _Data[num]->saveDataValue(value, type, now_time, BLINKER_DATA_FREQ_TIME);
+        if (success) {
+            BLINKER_LOG_ALL(TAG_PROTO, _name, BLINKER_F(" updated directly"));
+        } else {
+            BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Save skipped (too frequent): "), _name);
+        }
     }
-    else
-    {
-        time_timeSlotData = millis();
 
-        _TimeSlotData[data_timeSlotDataCount] = new BlinkerTimeSlotData();
-        _TimeSlotData[data_timeSlotDataCount]->saveData(_name, _data, now_time);
-        data_timeSlotDataCount++;
-
-        BLINKER_LOG_ALL(TAG_PROTO, _name, BLINKER_F(" save: "), _data, BLINKER_F(" time: "), now_time);
-        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("data_timeSlotDataCount: "), data_timeSlotDataCount);
-    }
+    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("chartDataUpload count: "), data_dataCount);
 }
 
 #endif
