@@ -17,6 +17,9 @@
     #endif
 #endif
 
+// 前向声明图表管理器类，避免循环依赖
+class BlinkerChartManager;
+
 static const char *TAG_PROTO = "[BlinkerPortocol] ";
 
 template <class Transp>
@@ -155,10 +158,17 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void chartDataUpload(const char* _name, float value);
         void chartDataUpload(const char* _name, double value);
         
-        // template<typename T>
-        // void chartDataUpload(char _name[], const T& msg);
+        // 图表管理相关接口
+        uint8_t registerChart(const char* chartName, blinker_callback_t realtimeCallback = NULL);
+        void setChartRealtimeMode(const char* chartName, bool realtime);
+        void setChartRealtimeMode(uint8_t chartId, bool realtime);
+        bool isChartRealtime(const char* chartName);
+        bool isChartRealtime(uint8_t chartId);
+        void setChartInterval(const char* chartName, uint32_t interval);
+        void setChartInterval(uint8_t chartId, uint32_t interval);
         
         void attachDataStorage(blinker_callback_t newFunction, uint32_t _time = 60, uint8_t d_times = BLINKER_DATA_UPDATE_COUNT);
+        void updateDataStorageInterval(uint32_t _time);
         
         // void clearDataStorage();
         // void clearDataStorage(const char* name);
@@ -191,6 +201,13 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         void checkDataStorage();
         bool dataUpdate();
+        
+        // 图表管理相关内部方法
+        void checkRealtimeCharts();
+        void parseRealtimeCommand(const String& data);
+        void checkRealtimeTimeout();
+        void syncChartModes();  // 安全的图表同步方法
+        int8_t findChartIndex(const char* chartName);
 
         bool chartDataUpload(const String & msg);
         
@@ -222,6 +239,19 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         class BlinkerData *                 _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
         // class BlinkerTimeSlotData *         _TimeSlotData[BLINKER_MAX_BLINKER_DATA_SIZE];
+        
+        // 图表管理数据结构
+        struct BlinkerChartInfo {
+            char name[BLINKER_MAX_WIDGET_SIZE];
+            bool isRealtimeMode;
+            uint32_t lastSendTime;
+            uint32_t sendInterval;
+            blinker_callback_t realtimeCallback;
+        };
+        BlinkerChartInfo                    _Charts[BLINKER_MAX_BLINKER_DATA_SIZE];
+        uint8_t                             chart_count = 0;
+        uint32_t                            _lastRealtimeCheck = 0;
+        uint32_t                            _lastRealtimeCommandTime = 0;  // 最后收到实时指令的时间
         
         blinker_callback_t                  _dataStorageFunc = NULL;
         uint32_t                            _autoStorageTime = 60;
@@ -335,7 +365,17 @@ void BlinkerProtocol<Transp>::run()
             else if (conn.available())
             {
                 isAvail = true;
-                BApi::parse(conn.lastRead());
+
+                char* receivedData = conn.lastRead();
+                if (receivedData && strlen(receivedData) > 0) {
+                    String dataStr = String(receivedData);
+                    
+                    // 先解析常规API指令
+                    BApi::parse(receivedData);
+                    
+                    // 然后统一处理实时图表指令
+                    parseRealtimeCommand(dataStr);
+                }
             }
 
             // else if (conn.miAvail())
@@ -355,6 +395,7 @@ void BlinkerProtocol<Transp>::run()
     }
 #if defined(BLINKER_WIFI)
     checkDataStorage();
+    checkRealtimeCharts();
 #endif
     checkAutoFormat();
 }
@@ -1388,6 +1429,21 @@ void BlinkerProtocol<Transp>::attachDataStorage(blinker_callback_t newFunction, 
 }
 
 template <class Transp>
+void BlinkerProtocol<Transp>::updateDataStorageInterval(uint32_t _time)
+{
+    if (_time < 5) _time = 5;
+    uint32_t oldTime = _autoStorageTime;
+    _autoStorageTime = _time;
+    
+    if (_time < oldTime) {
+        _autoDataTime = millis();
+    }
+    
+    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Updated data storage interval from "), oldTime, 
+                   BLINKER_F(" to "), _time, BLINKER_F(" seconds"));
+}
+
+template <class Transp>
 void BlinkerProtocol<Transp>::checkDataStorage()
 {
     if (_dataStorageFunc)
@@ -1396,14 +1452,16 @@ void BlinkerProtocol<Transp>::checkDataStorage()
         {
             _autoDataTime += _autoStorageTime * 1000;
             _dataStorageFunc();
+            
+            checkRealtimeTimeout();
         }
     }
 
-    if (millis() - _autoUpdateTime >= _autoStorageTime * _dataTimes * 1000)
+    if (millis() - _autoUpdateTime >= BLINKER_DATA_FREQ_TIME * 1000)
     {
         if ((data_dataCount || data_timeSlotDataCount) && conn.checkInit() )// && ESP.getFreeHeap() > 4000)
         {
-            if (dataUpdate()) _autoUpdateTime += _autoStorageTime * _dataTimes * 1000;
+            if (dataUpdate()) _autoUpdateTime += BLINKER_DATA_FREQ_TIME * 1000;
             else _autoUpdateTime = millis() - 100000;
         }
     }
@@ -1704,6 +1762,211 @@ void BlinkerProtocol<Transp>::dataStorageValueInternal(const char* _name, const 
     }
 
     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("chartDataUpload count: "), data_dataCount);
+}
+
+template <class Transp>
+uint8_t BlinkerProtocol<Transp>::registerChart(const char* chartName, blinker_callback_t realtimeCallback)
+{
+    if (chart_count >= BLINKER_MAX_BLINKER_DATA_SIZE) {
+        BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("Max chart count reached"));
+        return 0;
+    }
+    
+    int8_t existingIndex = findChartIndex(chartName);
+    if (existingIndex != -1) {
+        // 更新现有图表的回调
+        _Charts[existingIndex].realtimeCallback = realtimeCallback;
+        return existingIndex + 1;
+    }
+    
+    strncpy(_Charts[chart_count].name, chartName, BLINKER_MAX_WIDGET_SIZE - 1);
+    _Charts[chart_count].name[BLINKER_MAX_WIDGET_SIZE - 1] = '\0';
+    _Charts[chart_count].isRealtimeMode = false;
+    _Charts[chart_count].lastSendTime = 0;
+    _Charts[chart_count].sendInterval = 1000;  // 默认1秒
+    _Charts[chart_count].realtimeCallback = realtimeCallback;
+    
+    chart_count++;
+    
+    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Chart registered: "), chartName, 
+                    BLINKER_F(" (ID: "), chart_count, BLINKER_F(")"));
+    
+    return chart_count;
+}
+
+template <class Transp>
+int8_t BlinkerProtocol<Transp>::findChartIndex(const char* chartName)
+{
+    for (uint8_t i = 0; i < chart_count; i++) {
+        if (strcmp(_Charts[i].name, chartName) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::setChartRealtimeMode(const char* chartName, bool realtime)
+{
+    int8_t index = findChartIndex(chartName);
+    if (index != -1) {
+        setChartRealtimeMode(index, realtime);
+    }
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::setChartRealtimeMode(uint8_t chartId, bool realtime)
+{
+    if (chartId > 0 && chartId <= chart_count) {
+        uint8_t index = chartId - 1;
+        _Charts[index].isRealtimeMode = realtime;
+        _Charts[index].lastSendTime = 0;  // 重置时间
+        
+        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Chart "), _Charts[index].name, 
+                       BLINKER_F(" mode set to: "), 
+                       realtime ? BLINKER_F("realtime") : BLINKER_F("historical"));
+    }
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::isChartRealtime(const char* chartName)
+{
+    int8_t index = findChartIndex(chartName);
+    return (index != -1) ? _Charts[index].isRealtimeMode : false;
+}
+
+template <class Transp>
+bool BlinkerProtocol<Transp>::isChartRealtime(uint8_t chartId)
+{
+    return (chartId > 0 && chartId <= chart_count) ? 
+           _Charts[chartId - 1].isRealtimeMode : false;
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::setChartInterval(const char* chartName, uint32_t interval)
+{
+    int8_t index = findChartIndex(chartName);
+    if (index != -1) {
+        setChartInterval(index + 1, interval);
+    }
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::setChartInterval(uint8_t chartId, uint32_t interval)
+{
+    if (chartId > 0 && chartId <= chart_count) {
+        _Charts[chartId - 1].sendInterval = interval;
+        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Chart "), _Charts[chartId - 1].name, 
+                       BLINKER_F(" interval set to: "), interval, BLINKER_F("ms"));
+    }
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::parseRealtimeCommand(const String& data)
+{
+    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Parsing realtime command: "), data);
+    
+    DynamicJsonDocument jsonBuffer(512);
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+    
+    if (!error && jsonBuffer.containsKey("rt")) {
+        JsonArray rtArray = jsonBuffer["rt"];
+        
+        _lastRealtimeCommandTime = millis();
+        
+        for (uint8_t i = 0; i < chart_count; i++) {
+            _Charts[i].isRealtimeMode = false;
+        }
+        
+        for (JsonVariant value : rtArray) {
+            String chartName = value.as<String>();
+            int8_t index = findChartIndex(chartName.c_str());
+            if (index != -1) {
+                _Charts[index].isRealtimeMode = true;
+                _Charts[index].lastSendTime = 0;  // 重置时间
+                BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Chart "), chartName, 
+                               BLINKER_F(" switched to realtime mode"));
+            }
+        }
+        
+        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Realtime command processed"));
+        
+        syncChartModes();
+    }
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::checkRealtimeTimeout()
+{
+    const uint32_t REALTIME_TIMEOUT_MS = 2 * _autoStorageTime * 1000;
+    
+    bool hasRealtimeCharts = false;
+    for (uint8_t i = 0; i < chart_count; i++) {
+        if (_Charts[i].isRealtimeMode) {
+            hasRealtimeCharts = true;
+            break;
+        }
+    }
+    
+    if (hasRealtimeCharts && _lastRealtimeCommandTime > 0) {
+        uint32_t currentTime = millis();
+        
+        uint32_t timeDiff;
+        if (currentTime >= _lastRealtimeCommandTime) {
+            timeDiff = currentTime - _lastRealtimeCommandTime;
+        } else {
+            timeDiff = (UINT32_MAX - _lastRealtimeCommandTime) + currentTime + 1;
+        }
+        
+        if (timeDiff >= REALTIME_TIMEOUT_MS) {
+            BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Realtime timeout detected, switching all charts to historical mode"));
+            
+            for (uint8_t i = 0; i < chart_count; i++) {
+                if (_Charts[i].isRealtimeMode) {
+                    _Charts[i].isRealtimeMode = false;
+                    BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Chart "), i, BLINKER_F(" switched to historical due to timeout"));
+                }
+            }
+            
+            _lastRealtimeCommandTime = 0;
+            
+            syncChartModes();
+        }
+    }
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::syncChartModes()
+{
+    extern void (*_blinker_chart_sync_callback)(void);
+    if (_blinker_chart_sync_callback) {
+        BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Calling chart sync callback"));
+        _blinker_chart_sync_callback();
+    }
+}
+
+template <class Transp>
+void BlinkerProtocol<Transp>::checkRealtimeCharts()
+{
+    uint32_t currentTime = millis();
+    
+    if (currentTime - _lastRealtimeCheck < 10) {
+        return;
+    }
+    _lastRealtimeCheck = currentTime;
+    
+    for (uint8_t i = 0; i < chart_count; i++) {
+        if (_Charts[i].isRealtimeMode && _Charts[i].realtimeCallback) {
+            if (currentTime - _Charts[i].lastSendTime >= _Charts[i].sendInterval) {
+                _Charts[i].lastSendTime = currentTime;
+                
+                _Charts[i].realtimeCallback();
+                
+                BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Realtime callback triggered for: "), 
+                               _Charts[i].name);
+            }
+        }
+    }
 }
 
 #endif

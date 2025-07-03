@@ -77,7 +77,7 @@
     #include "Widgets/BlinkerSwitch.h"
     #include "Widgets/BlinkerTab.h"
     #include "Widgets/BlinkerText.h"
-
+    #include "Widgets/BlinkerChart.h"
 #endif
 
 #if defined(BLINKER_ALIGENIE)
