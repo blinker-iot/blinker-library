@@ -44,6 +44,16 @@ class BlinkerWiFi: public BlinkerProtocol<BlinkerWiFiESP>
             return *instance;
         }
 
+        void begin( const char* _auth)
+        {
+            Base::begin();
+            this->conn.begin(_auth);
+
+        #if defined(BLINKER_WIDGET)
+            Base::loadTimer();
+        #endif
+        }
+
         void begin( const char* _auth, 
                     const char* _ssid, 
                     const char* _pswd)

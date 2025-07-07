@@ -44,7 +44,7 @@ class BlinkerChart
             : chartName(_name)
             , isRealtimeMode(false)
             , lastUploadTime(0)
-            , uploadInterval(10000)
+            , uploadInterval(5000)
             , chartId(255)
             , _realtimeCallback(nullptr)
         {
