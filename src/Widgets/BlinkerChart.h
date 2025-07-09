@@ -1,6 +1,8 @@
 #ifndef BLINKER_CHART_H
 #define BLINKER_CHART_H
 
+#if defined(BLINKER_WIFI)
+
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 
@@ -439,5 +441,7 @@ inline void BlinkerChartManager::triggerRealtimeCallback(const char* chartName) 
         }
     }
 }
+
+#endif
 
 #endif

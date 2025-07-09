@@ -370,11 +370,10 @@ void BlinkerProtocol<Transp>::run()
                 if (receivedData && strlen(receivedData) > 0) {
                     String dataStr = String(receivedData);
                     
-                    // 先解析常规API指令
                     BApi::parse(receivedData);
-                    
-                    // 然后统一处理实时图表指令
+                #if defined(BLINKER_WIFI)
                     parseRealtimeCommand(dataStr);
+                #endif
                 }
             }
 
