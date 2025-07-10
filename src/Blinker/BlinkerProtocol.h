@@ -149,6 +149,7 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         void miotPrint(const String & _msg)     { conn.miPrint(_msg); }
     #endif
 
+#endif
         void chartDataUpload(const char* _name, uint8_t value);
         void chartDataUpload(const char* _name, int8_t value);
         void chartDataUpload(const char* _name, uint16_t value);
@@ -179,7 +180,6 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         // bool forceDataUpdate();
         
         // void printDataStorageStatus();
-#endif
     private :
         void autoPrint(const String & key, const String & data);
         void autoFormatData(const String & key, const String & jsonValue);
@@ -199,10 +199,12 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         bool ntpInit();
     // #endif
 
+        // WiFi模式专用的数据存储功能
         void checkDataStorage();
         bool dataUpdate();
-        
-        // 图表管理相关内部方法
+        void dataStorageValueInternal(const char* _name, const BlinkerDataValue& value, BlinkerDataValueType type);
+#endif        
+        // 基础图表管理相关内部方法 - 支持WiFi和BLE
         void checkRealtimeCharts();
         void parseRealtimeCommand(const String& data);
         void checkRealtimeTimeout();
@@ -211,11 +213,8 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
 
         bool chartDataUpload(const String & msg);
         
-        void dataStorageValueInternal(const char* _name, const BlinkerDataValue& value, BlinkerDataValueType type);
-        
         // bool timeSlot(const String & msg);
         // void httpHeartbeat();
-#endif        
         char                _sendBuf[BLINKER_MAX_SEND_SIZE];
         uint32_t            autoFormatFreshTime;
         bool                autoFormat = false;
@@ -232,15 +231,8 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         Transp&             conn;
         _blinker_state_t    _state = CONNECTING;
         bool                isAvail;
-    #if defined(BLINKER_WIFI)
-        blinker_callback_with_string_arg_t  _airFunc = NULL;
-        blinker_callback_with_string_arg_t  _weatherFunc = NULL;
-        blinker_callback_with_string_arg_t  _weather_forecast_Func = NULL;
-
-        class BlinkerData *                 _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
-        // class BlinkerTimeSlotData *         _TimeSlotData[BLINKER_MAX_BLINKER_DATA_SIZE];
         
-        // 图表管理数据结构
+        // 基础图表管理数据结构 - 支持WiFi和BLE
         struct BlinkerChartInfo {
             char name[BLINKER_MAX_WIDGET_SIZE];
             bool isRealtimeMode;
@@ -253,6 +245,15 @@ class BlinkerProtocol : public BlinkerApi< BlinkerProtocol<Transp> >
         uint32_t                            _lastRealtimeCheck = 0;
         uint32_t                            _lastRealtimeCommandTime = 0;  // 最后收到实时指令的时间
         
+    #if defined(BLINKER_WIFI)
+        blinker_callback_with_string_arg_t  _airFunc = NULL;
+        blinker_callback_with_string_arg_t  _weatherFunc = NULL;
+        blinker_callback_with_string_arg_t  _weather_forecast_Func = NULL;
+
+        class BlinkerData *                 _Data[BLINKER_MAX_BLINKER_DATA_SIZE];
+        // class BlinkerTimeSlotData *         _TimeSlotData[BLINKER_MAX_BLINKER_DATA_SIZE];
+        
+        // WiFi模式专用的数据存储功能
         blinker_callback_t                  _dataStorageFunc = NULL;
         uint32_t                            _autoStorageTime = 60;
         uint32_t                            _autoDataTime = 0;
@@ -371,9 +372,9 @@ void BlinkerProtocol<Transp>::run()
                     String dataStr = String(receivedData);
                     
                     BApi::parse(receivedData);
-                #if defined(BLINKER_WIFI)
+                // #if defined(BLINKER_WIFI)
                     parseRealtimeCommand(dataStr);
-                #endif
+                // #endif
                 }
             }
 
@@ -1260,9 +1261,19 @@ void BlinkerProtocol<Transp>::air(uint32_t _city)
 //     return conn.httpServer(BLINKER_CMD_LOG_NUMBER, data) != "false";
 // }
 
+#endif
+
 template <class Transp>
 bool BlinkerProtocol<Transp>::chartDataUpload(const String & msg)
 {
+#if defined(BLINKER_WIFI) || defined(BLINKER_MQTT) || \
+    defined(BLINKER_PRO) || defined(BLINKER_WIFI_AT) || \
+    defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
+    defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
+    defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
+    defined(BLINKER_PRO_ESP) || defined(BLINKER_LOWPOWER_AIR202) || \
+    defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
+    defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
     String data = BLINKER_F("{\"deviceName\":\"");
     data += conn.deviceName();
     data += BLINKER_F("\",\"key\":\"");
@@ -1272,6 +1283,11 @@ bool BlinkerProtocol<Transp>::chartDataUpload(const String & msg)
     data += BLINKER_F("}}");
     
     return conn.httpServer(BLINKER_CMD_DATA_STORAGE_NUMBER, data) != "false";
+#else
+    // BLE模式或其他不支持数据存储的模式下，直接返回false
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Chart data upload not supported in current mode"));
+    return false;
+#endif
 }
 
 // template <class Transp>
@@ -1355,81 +1371,119 @@ bool BlinkerProtocol<Transp>::chartDataUpload(const String & msg)
 template <class Transp>
 void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, uint8_t value)
 {
+    #if defined(BLINKER_WIFI)
     BlinkerDataValue data_value;
     data_value.uint8_data = value;
     dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_UINT8);
+    #else
+    // BLE模式下仅记录日志，不进行数据存储
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Chart data upload not supported in BLE mode: "), _name, BLINKER_F("="), value);
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, int8_t value)
 {
+    #if defined(BLINKER_WIFI)
     BlinkerDataValue data_value;
     data_value.int8_data = value;
     dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_INT8);
+    #else
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Chart data upload not supported in BLE mode: "), _name, BLINKER_F("="), value);
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, uint16_t value)
 {
+    #if defined(BLINKER_WIFI)
     BlinkerDataValue data_value;
     data_value.uint16_data = value;
     dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_UINT16);
+    #else
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Chart data upload not supported in BLE mode: "), _name, BLINKER_F("="), value);
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, int16_t value)
 {
+    #if defined(BLINKER_WIFI)
     BlinkerDataValue data_value;
     data_value.int16_data = value;
     dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_INT16);
+    #else
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Chart data upload not supported in BLE mode: "), _name, BLINKER_F("="), value);
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, uint32_t value)
 {
+    #if defined(BLINKER_WIFI)
     BlinkerDataValue data_value;
     data_value.uint32_data = value;
     dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_UINT32);
+    #else
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Chart data upload not supported in BLE mode: "), _name, BLINKER_F("="), value);
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, int32_t value)
 {
+    #if defined(BLINKER_WIFI)
     BlinkerDataValue data_value;
     data_value.int32_data = value;
     dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_INT32);
+    #else
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Chart data upload not supported in BLE mode: "), _name, BLINKER_F("="), value);
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, float value)
 {
+    #if defined(BLINKER_WIFI)
     BlinkerDataValue data_value;
     data_value.float_data = value;
     dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_FLOAT);
+    #else
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Chart data upload not supported in BLE mode: "), _name, BLINKER_F("="), value);
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::chartDataUpload(const char* _name, double value)
 {
+    #if defined(BLINKER_WIFI)
     BlinkerDataValue data_value;
     data_value.float_data = (float)value;
     dataStorageValueInternal(_name, data_value, BLINKER_DATA_TYPE_FLOAT);
+    #else
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Chart data upload not supported in BLE mode: "), _name, BLINKER_F("="), value);
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::attachDataStorage(blinker_callback_t newFunction, uint32_t _time, uint8_t d_times)
 {
+    #if defined(BLINKER_WIFI)
     _dataStorageFunc = newFunction;
     if (_time < 5) _time = 5;
     _autoStorageTime = _time;
     _autoDataTime = millis();
     if (d_times > BLINKER_MAX_DATA_COUNT || d_times == 0) d_times = BLINKER_DATA_UPDATE_COUNT;
     _dataTimes = d_times;
+    #else
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Data storage not supported in BLE mode"));
+    #endif
 }
 
 template <class Transp>
 void BlinkerProtocol<Transp>::updateDataStorageInterval(uint32_t _time)
 {
+    #if defined(BLINKER_WIFI)
     if (_time < 5) _time = 5;
     uint32_t oldTime = _autoStorageTime;
     _autoStorageTime = _time;
@@ -1440,8 +1494,12 @@ void BlinkerProtocol<Transp>::updateDataStorageInterval(uint32_t _time)
     
     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("Updated data storage interval from "), oldTime, 
                    BLINKER_F(" to "), _time, BLINKER_F(" seconds"));
+    #else
+    BLINKER_LOG_ALL(BLINKER_F("[BlinkerProtocol] Data storage not supported in BLE mode"));
+    #endif
 }
 
+#if defined(BLINKER_WIFI)
 template <class Transp>
 void BlinkerProtocol<Transp>::checkDataStorage()
 {
@@ -1548,6 +1606,7 @@ bool BlinkerProtocol<Transp>::dataUpdate()
     BLINKER_ERR_LOG(TAG_PROTO, BLINKER_F("Data storage update failed"));
     return false;
 }
+#endif
 
 // template <class Transp> template<typename T>
 // void BlinkerProtocol<Transp>::timeSlotData(char _name[], const T& _data)
@@ -1716,6 +1775,7 @@ bool BlinkerProtocol<Transp>::dataUpdate()
 //     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("========================"));
 // }
 
+#if defined(BLINKER_WIFI)
 template <class Transp>
 void BlinkerProtocol<Transp>::dataStorageValueInternal(const char* _name, const BlinkerDataValue& value, BlinkerDataValueType type)
 {
@@ -1762,6 +1822,7 @@ void BlinkerProtocol<Transp>::dataStorageValueInternal(const char* _name, const 
 
     BLINKER_LOG_ALL(TAG_PROTO, BLINKER_F("chartDataUpload count: "), data_dataCount);
 }
+#endif
 
 template <class Transp>
 uint8_t BlinkerProtocol<Transp>::registerChart(const char* chartName, blinker_callback_t realtimeCallback)
@@ -1897,7 +1958,11 @@ void BlinkerProtocol<Transp>::parseRealtimeCommand(const String& data)
 template <class Transp>
 void BlinkerProtocol<Transp>::checkRealtimeTimeout()
 {
+    #if defined(BLINKER_WIFI)
     const uint32_t REALTIME_TIMEOUT_MS = 2 * _autoStorageTime * 1000;
+    #else
+    const uint32_t REALTIME_TIMEOUT_MS = 2 * 60 * 1000;  // 默认120秒超时
+    #endif
     
     bool hasRealtimeCharts = false;
     for (uint8_t i = 0; i < chart_count; i++) {
@@ -1968,4 +2033,4 @@ void BlinkerProtocol<Transp>::checkRealtimeCharts()
     }
 }
 
-#endif
+// #endif

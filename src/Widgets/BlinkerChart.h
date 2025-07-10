@@ -1,7 +1,7 @@
 #ifndef BLINKER_CHART_H
 #define BLINKER_CHART_H
 
-#if defined(BLINKER_WIFI)
+// #if defined(BLINKER_WIFI)
 
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
@@ -50,7 +50,8 @@ class BlinkerChart
             , chartId(255)
             , _realtimeCallback(nullptr)
         {
-            #if defined(BLINKER_WIFI)
+            // 支持WiFi和BLE模式的图表注册
+            #if defined(BLINKER_WIFI) || defined(BLINKER_BLE)
             chartId = Blinker.registerChart(_name, nullptr);
             #endif
             
@@ -168,7 +169,8 @@ class BlinkerChart
         BlinkerChart& interval(uint32_t _interval)
         {
             uploadInterval = _interval;
-            #if defined(BLINKER_WIFI)
+            // 支持WiFi和BLE模式的间隔设置
+            #if defined(BLINKER_WIFI) || defined(BLINKER_BLE)
             if (chartId != 255) {
                 Blinker.setChartInterval(chartId, _interval);
             }
@@ -181,8 +183,12 @@ class BlinkerChart
             _realtimeCallback = newFunction;
             
             if (newFunction != nullptr) {
+                #if defined(BLINKER_WIFI)
                 BlinkerChartManager::getInstance().setupDataStorage(interval_seconds);
                 BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] "), chartName, BLINKER_F(" attached callback with interval: "), interval_seconds, BLINKER_F(" seconds"));
+                #else
+                BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Data storage not supported in BLE mode, only realtime callbacks available"));
+                #endif
             }
         }
 
@@ -191,7 +197,8 @@ class BlinkerChart
         BlinkerChart& setRealtimeMode(bool realtime)
         {
             isRealtimeMode = realtime;
-            #if defined(BLINKER_WIFI)
+            // 支持WiFi和BLE模式的实时模式设置
+            #if defined(BLINKER_WIFI) || defined(BLINKER_BLE)
             if (chartId != 255) {
                 Blinker.setChartRealtimeMode(chartId, realtime);
             }
@@ -234,7 +241,8 @@ class BlinkerChart
 
         void syncRealtimeMode()
         {
-            #if defined(BLINKER_WIFI)
+            // 支持WiFi和BLE模式的实时模式同步
+            #if defined(BLINKER_WIFI) || defined(BLINKER_BLE)
             if (chartId != 255) {
                 bool protocolMode = Blinker.isChartRealtime(chartName);
                 if (protocolMode != isRealtimeMode) {
@@ -249,65 +257,89 @@ class BlinkerChart
 
         void uploadHistorical(const char* dataKey, uint8_t value)
         {
+            // 历史数据上传仅支持WiFi模式（需要云端存储）
             #if defined(BLINKER_WIFI)
             Blinker.chartDataUpload(dataKey, value);
             BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data buffered: "), dataKey, BLINKER_F("="), value);
+            #else
+            BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data upload not supported in BLE mode"));
             #endif
         }
         
         void uploadHistorical(const char* dataKey, int8_t value)
         {
+            // 历史数据上传仅支持WiFi模式（需要云端存储）
             #if defined(BLINKER_WIFI)
             Blinker.chartDataUpload(dataKey, value);
             BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data buffered: "), dataKey, BLINKER_F("="), value);
+            #else
+            BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data upload not supported in BLE mode"));
             #endif
         }
         
         void uploadHistorical(const char* dataKey, uint16_t value)
         {
+            // 历史数据上传仅支持WiFi模式（需要云端存储）
             #if defined(BLINKER_WIFI)
             Blinker.chartDataUpload(dataKey, value);
             BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data buffered: "), dataKey, BLINKER_F("="), value);
+            #else
+            BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data upload not supported in BLE mode"));
             #endif
         }
         
         void uploadHistorical(const char* dataKey, int16_t value)
         {
+            // 历史数据上传仅支持WiFi模式（需要云端存储）
             #if defined(BLINKER_WIFI)
             Blinker.chartDataUpload(dataKey, value);
             BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data buffered: "), dataKey, BLINKER_F("="), value);
+            #else
+            BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data upload not supported in BLE mode"));
             #endif
         }
         
         void uploadHistorical(const char* dataKey, uint32_t value)
         {
+            // 历史数据上传仅支持WiFi模式（需要云端存储）
             #if defined(BLINKER_WIFI)
             Blinker.chartDataUpload(dataKey, value);
             BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data buffered: "), dataKey, BLINKER_F("="), value);
+            #else
+            BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data upload not supported in BLE mode"));
             #endif
         }
         
         void uploadHistorical(const char* dataKey, int32_t value)
         {
+            // 历史数据上传仅支持WiFi模式（需要云端存储）
             #if defined(BLINKER_WIFI)
             Blinker.chartDataUpload(dataKey, value);
             BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data buffered: "), dataKey, BLINKER_F("="), value);
+            #else
+            BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data upload not supported in BLE mode"));
             #endif
         }
         
         void uploadHistorical(const char* dataKey, float value)
         {
+            // 历史数据上传仅支持WiFi模式（需要云端存储）
             #if defined(BLINKER_WIFI)
             Blinker.chartDataUpload(dataKey, value);
             BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data buffered: "), dataKey, BLINKER_F("="), value);
+            #else
+            BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data upload not supported in BLE mode"));
             #endif
         }
         
         void uploadHistorical(const char* dataKey, double value)
         {
+            // 历史数据上传仅支持WiFi模式（需要云端存储）
             #if defined(BLINKER_WIFI)
             Blinker.chartDataUpload(dataKey, value);
             BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data buffered: "), dataKey, BLINKER_F("="), value);
+            #else
+            BLINKER_LOG_ALL(BLINKER_F("[BlinkerChart] Historical data upload not supported in BLE mode"));
             #endif
         }
         
@@ -444,4 +476,4 @@ inline void BlinkerChartManager::triggerRealtimeCallback(const char* chartName) 
 
 #endif
 
-#endif
+// #endif
