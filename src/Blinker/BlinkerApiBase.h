@@ -380,7 +380,7 @@ class BlinkerWidgets_table
     //             String _data = BLINKER_F("{\"date\":");
     //             #if defined(ESP8266) || defined(ESP32)
     //             _data += STRING_format(time_data);
-    //             #elif defined(ARDUINO_ARCH_RENESAS_UNO)
+    //             #elif defined(ARDUINO_ARCH_RENESAS)
     //             _data += STRING_format((unsigned long)time_data);
     //             #endif
 

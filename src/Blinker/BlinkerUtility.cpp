@@ -34,7 +34,7 @@ String macDeviceName()
     //BLINKER_LOG("MACADDR: ", macStr_l);
     return macStr_l;
 }
-#elif defined(ARDUINO_ARCH_RENESAS_UNO)
+#elif defined(ARDUINO_ARCH_RENESAS)
 #include <WiFiS3.h>
 #include <WiFiClient.h>
 

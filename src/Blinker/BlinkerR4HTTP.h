@@ -1,7 +1,7 @@
 #ifndef BLINKER_R4_HTTP_H
 #define BLINKER_R4_HTTP_H
 
-#if defined(ARDUINO_ARCH_RENESAS_UNO)
+#if defined(ARDUINO_ARCH_RENESAS)
 
 #include "WiFiS3.h"
 #include "WiFiSSLClient.h"
@@ -765,6 +765,6 @@ bool HTTPClient::hasHeader(const String& name)
     return _responseHeaders.indexOf(name + ":") != -1;
 }
 
-#endif // ARDUINO_ARCH_RENESAS_UNO
+#endif // ARDUINO_ARCH_RENESAS
 
 #endif // BLINKER_R4_HTTP_H

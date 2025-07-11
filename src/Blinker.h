@@ -6,7 +6,7 @@
     #define BLINKER_PLATFORM_SUPPORTED
 #elif defined(ARDUINO_ARCH_RENESAS)
     #define BLINKER_PLATFORM_SUPPORTED
-    #define ARDUINO_ARCH_RENESAS_UNO
+    #define ARDUINO_ARCH_RENESAS
 #else
     #error "Unsupported platform! Blinker only supports ESP32 and Arduino UNO R4 WiFi platforms."
 #endif

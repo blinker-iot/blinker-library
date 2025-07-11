@@ -11,7 +11,7 @@
 
 WiFiClientSecure     client_s;
 
-#elif defined(ARDUINO_ARCH_RENESAS_UNO)
+#elif defined(ARDUINO_ARCH_RENESAS)
 // #include <R4HttpClient.h>
 
 // static WiFiSSLClient       client;
@@ -214,7 +214,7 @@ String httpToServer(uint8_t _type, const String & msg, bool state = false)
 
 // #if defined(ESP32)
     HTTPClient http;
-// #elif defined(ARDUINO_ARCH_RENESAS_UNO)
+// #elif defined(ARDUINO_ARCH_RENESAS)
     // R4HttpClient http;
 // #endif
 
