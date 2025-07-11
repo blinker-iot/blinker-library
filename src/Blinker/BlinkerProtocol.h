@@ -11,7 +11,7 @@
         #endif
     #elif defined(ARDUINO_ARCH_RENESAS)
         #include "RTC.h"
-        #include <NTPClient.h>
+        #include "../modules/NTPClient/NTPClient.h"
         #include <WiFiS3.h>
         #include <WiFiUdp.h>
     #endif
