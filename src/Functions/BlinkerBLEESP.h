@@ -128,10 +128,17 @@ void BlinkerBLEESP::begin()
         macStr[cpynum+2] = (char)ble_m_address[cpynum];
     }
 
-    pAdvertisementData.setManufacturerData(macStr);
-    pAdvertising->setAdvertisementData(pAdvertisementData);
-    pAdvertising->addServiceUUID(BLEUUID((uint16_t)0xffe0));
-    pAdvertising->start();
+    BLEAdvertisementData advData;
+    BLEAdvertisementData scanRespData;
+    
+    advData.setCompleteServices(BLEUUID((uint16_t)0xffe0));
+    advData.setManufacturerData(macStr);
+    
+    pAdvertising->setAdvertisementData(advData);
+    pAdvertising->setScanResponseData(scanRespData);
+    
+    // pAdvertising->start();
+    pServer->startAdvertising();
 
     _bufLen = 0;
 }
