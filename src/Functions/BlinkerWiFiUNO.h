@@ -1019,6 +1019,7 @@ bool BlinkerWiFiUNO::deviceRegister() {
     if (_broker == BLINKER_MQTT_BORKER_BLINKER) {
         mqtt_MQTT = new PubSubClient(wifiClient);
         mqtt_MQTT->setServer(MQTT_HOST_MQTT, MQTT_PORT_MQTT);
+        mqtt_MQTT->setBufferSize(BLINKER_MAX_SEND_BUFFER_SIZE);
     }
 
     this->latestTime = millis() - BLINKER_MQTT_CONNECT_TIMESLOT;
