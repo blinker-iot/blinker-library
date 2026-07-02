@@ -1,24 +1,7 @@
 #include "BlinkerUtility.h"
+#include "BlinkerWiFiPlatform.h"
 
-#if defined(ESP8266)
-extern "C" {
-    #include <user_interface.h>
-}
-
-String macDeviceName()
-{
-    uint8_t mac[6];
-    char macStr[13] = { 0 };
-    #define STATION_IF 0x00
-    wifi_get_macaddr(STATION_IF, mac);
-
-    sprintf(macStr, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    String macStr_l = STRING_format(macStr);
-    //macStr_l.toLowerCase();
-    //BLINKER_LOG("MACADDR: ", macStr_l);
-    return macStr_l;
-}
-#elif defined(ESP32)
+#if defined(ESP32)
 #include "esp_wifi.h"
 
 String macDeviceName()
@@ -32,6 +15,18 @@ String macDeviceName()
     String macStr_l = STRING_format(macStr);
     //macStr_l.toLowerCase();
     //BLINKER_LOG("MACADDR: ", macStr_l);
+    return macStr_l;
+}
+#elif defined(BLINKER_NATIVE_WIFI)
+String macDeviceName()
+{
+    uint8_t mac[6] = { 0 };
+    char macStr[13] = { 0 };
+
+    WiFi.macAddress(mac);
+
+    sprintf(macStr, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    String macStr_l = STRING_format(macStr);
     return macStr_l;
 }
 #endif

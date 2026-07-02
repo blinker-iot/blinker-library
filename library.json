@@ -1,6 +1,6 @@
 {
     "name": "Blinker",
-    "description": "Build a easy way for your IoT project. Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.",
+    "description": "Build a easy way for your IoT project. Blinker library for embedded hardware. Works with Arduino, ESP32, Arduino UNO R4 WiFi, and Raspberry Pi Pico W.",
     "keywords": "wifi, websocket, Bluetooth, mqtt",
     "authors": [
         {

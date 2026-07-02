@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -11,34 +11,34 @@
 #  pragma warning(disable : 4310)
 #endif
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 // Differs from standard because we can't use the symbols "min" and "max"
 template <typename T, typename Enable = void>
 struct numeric_limits;
 
 template <typename T>
-struct numeric_limits<T, typename enable_if<is_unsigned<T>::value>::type> {
-  static T lowest() {
+struct numeric_limits<T, enable_if_t<is_unsigned<T>::value>> {
+  static constexpr T lowest() {
     return 0;
   }
-  static T highest() {
+  static constexpr T highest() {
     return T(-1);
   }
 };
 
 template <typename T>
 struct numeric_limits<
-    T, typename enable_if<is_integral<T>::value && is_signed<T>::value>::type> {
-  static T lowest() {
+    T, enable_if_t<is_integral<T>::value && is_signed<T>::value>> {
+  static constexpr T lowest() {
     return T(T(1) << (sizeof(T) * 8 - 1));
   }
-  static T highest() {
+  static constexpr T highest() {
     return T(~lowest());
   }
 };
 
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE
 
 #ifdef _MSC_VER
 #  pragma warning(pop)

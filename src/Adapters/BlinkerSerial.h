@@ -17,7 +17,7 @@
     #include <HardwareSerial.h>
 
     HardwareSerial *HSerialBLE;
-#elif defined (__AVR__) || defined(ESP8266)
+#elif defined (__AVR__)
     #include <SoftwareSerial.h>
 
     SoftwareSerial *SSerialBLE;
@@ -46,17 +46,13 @@ class BlinkerSerial : public BlinkerStream
         bool    isFresh;
         bool    isConnect;
         bool    isHWS = false;
-        uint8_t respTimes = 0;
-        uint32_t    respTime = 0;
-
-        int checkPrintSpan();
 };
 
 int BlinkerSerial::available()
 {
     if (!isHWS)
     {
-        #if defined(__AVR__) || defined(ESP8266)
+        #if defined(__AVR__)
             if (!SSerialBLE->isListening())
             {
                 SSerialBLE->listen();
@@ -142,16 +138,7 @@ void BlinkerSerial::flush()
 // int BlinkerSerial::print(const String & s, bool needCheck)
 int BlinkerSerial::print(char * data, bool needCheck)
 {
-    if (needCheck)
-    {
-        if (!checkPrintSpan())
-        {
-            respTime = millis();
-            return false;
-        }
-    }
-
-    respTime = millis();
+    (void)needCheck;
     
     BLINKER_LOG_ALL(BLINKER_F("Response: "), data);
 
@@ -167,29 +154,6 @@ int BlinkerSerial::print(char * data, bool needCheck)
         BLINKER_LOG_ALL(BLINKER_F("Faile... Disconnected"));
         
         return false;
-    }
-}
-
-int BlinkerSerial::checkPrintSpan()
-{
-    if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT)
-    {
-        if (respTimes > BLINKER_PRINT_MSG_LIMIT)
-        {
-            BLINKER_ERR_LOG(BLINKER_F("DEVICE NOT CONNECT OR MSG LIMIT"));
-            
-            return false;
-        }
-        else
-        {
-            respTimes++;
-            return true;
-        }
-    }
-    else
-    {
-        respTimes = 0;
-        return true;
     }
 }
 

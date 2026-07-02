@@ -1,7 +1,9 @@
 #ifndef BlinkerTimingTimer_H
 #define BlinkerTimingTimer_H
 
-#if defined(ESP8266) || defined(ESP32)
+#include "../Blinker/BlinkerPlatform.h"
+
+#if defined(BLINKER_NATIVE_WIFI)
 #include "../Blinker/BlinkerConfig.h"
 #include "../Blinker/BlinkerUtility.h"
 

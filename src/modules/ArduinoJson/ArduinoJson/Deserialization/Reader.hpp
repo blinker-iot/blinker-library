@@ -1,31 +1,34 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "../Namespace.hpp"
+#include <ArduinoJson/Namespace.hpp>
+#include <ArduinoJson/Polyfills/utility.hpp>
 
 #include <stdlib.h>  // for size_t
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-// The default reader is a simple wrapper for Readers that are not copiable
+// The default reader is a simple wrapper for Readers that are not copyable
 template <typename TSource, typename Enable = void>
 struct Reader {
  public:
-  Reader(TSource& source) : _source(&source) {}
+  Reader(TSource& source) : source_(&source) {}
 
   int read() {
-    return _source->read();  // Error here? You passed an unsupported input type
+    // clang-format off
+    return source_->read();  // Error here? See https://arduinojson.org/v7/invalid-input/
+    // clang-format on
   }
 
   size_t readBytes(char* buffer, size_t length) {
-    return _source->readBytes(buffer, length);
+    return source_->readBytes(buffer, length);
   }
 
  private:
-  TSource* _source;
+  TSource* source_;
 };
 
 template <typename TSource, typename Enable = void>
@@ -33,24 +36,39 @@ struct BoundedReader {
   // no default implementation because we need to pass the size to the
   // constructor
 };
-}  // namespace ARDUINOJSON_NAMESPACE
 
-#include "../Deserialization/Readers/IteratorReader.hpp"
-#include "../Deserialization/Readers/RamReader.hpp"
-#include "../Deserialization/Readers/VariantReader.hpp"
+ARDUINOJSON_END_PRIVATE_NAMESPACE
+
+#include <ArduinoJson/Deserialization/Readers/IteratorReader.hpp>
+#include <ArduinoJson/Deserialization/Readers/RamReader.hpp>
+#include <ArduinoJson/Deserialization/Readers/VariantReader.hpp>
 
 #if ARDUINOJSON_ENABLE_ARDUINO_STREAM
-#  include "../Deserialization/Readers/ArduinoStreamReader.hpp"
+#  include <ArduinoJson/Deserialization/Readers/ArduinoStreamReader.hpp>
 #endif
 
 #if ARDUINOJSON_ENABLE_ARDUINO_STRING
-#  include "../Deserialization/Readers/ArduinoStringReader.hpp"
+#  include <ArduinoJson/Deserialization/Readers/ArduinoStringReader.hpp>
 #endif
 
 #if ARDUINOJSON_ENABLE_PROGMEM
-#  include "../Deserialization/Readers/FlashReader.hpp"
+#  include <ArduinoJson/Deserialization/Readers/FlashReader.hpp>
 #endif
 
 #if ARDUINOJSON_ENABLE_STD_STREAM
-#  include "../Deserialization/Readers/StdStreamReader.hpp"
+#  include <ArduinoJson/Deserialization/Readers/StdStreamReader.hpp>
 #endif
+
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
+
+template <typename TInput>
+Reader<remove_reference_t<TInput>> makeReader(TInput&& input) {
+  return Reader<remove_reference_t<TInput>>{detail::forward<TInput>(input)};
+}
+
+template <typename TChar>
+BoundedReader<TChar*> makeReader(TChar* input, size_t inputSize) {
+  return BoundedReader<TChar*>{input, inputSize};
+}
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

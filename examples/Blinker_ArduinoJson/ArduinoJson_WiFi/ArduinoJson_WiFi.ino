@@ -10,9 +10,6 @@
  * It can be used in smart home, data monitoring and other fields 
  * to help users build Internet of Things projects better and faster.
  * 
- * Make sure installed 2.7.4 or later ESP8266/Arduino package,
- * if use ESP8266 with Blinker.
- * https://github.com/esp8266/Arduino/releases
  * 
  * Make sure installed 1.0.5 or later ESP32/Arduino package,
  * if use ESP32 with Blinker.
@@ -30,9 +27,6 @@
  * 服务器端支持，使用公有云服务进行数据传输存储。可用于智能家居、
  * 数据监测等领域，可以帮助用户更好更快地搭建物联网项目。
  * 
- * 如果使用 ESP8266 接入 Blinker,
- * 请确保安装了 2.7.4 或更新的 ESP8266/Arduino 支持包。
- * https://github.com/esp8266/Arduino/releases
  * 
  * 如果使用 ESP32 接入 Blinker,
  * 请确保安装了 1.0.5 或更新的 ESP32/Arduino 支持包。
@@ -51,28 +45,22 @@ char auth[] = "Your Device Secret Key";
 char ssid[] = "Your WiFi network SSID or name";
 char pswd[] = "Your WiFi network WPA password or WEP key";
 
-void weatherData(const String & data)
-{
-    BLINKER_LOG("weather: ", data);
-
-    DynamicJsonDocument jsonBuffer(1024);
-    DeserializationError error = deserializeJson(jsonBuffer, data);
-    JsonObject weather = jsonBuffer.as<JsonObject>();
-
-    if (error)
-    {
-        BLINKER_LOG(data, " , not a Json buffer!");
-    }
-
-    String weather_text = weather["cond_txt"];
-    int8_t weather_temp = weather["tmp"];
-
-    BLINKER_LOG("Local weather is: ", weather_text, " ,temperature is: ", weather_temp, "℃");
-}
-
 void dataRead(const String & data)
 {
     BLINKER_LOG("Blinker readString: ", data);
+
+    JsonDocument jsonBuffer;
+    DeserializationError error = deserializeJson(jsonBuffer, data);
+
+    if (!error)
+    {
+        JsonObject root = jsonBuffer.as<JsonObject>();
+
+        if (root.containsKey("state"))
+        {
+            BLINKER_LOG("state: ", root["state"].as<String>());
+        }
+    }
 
     uint32_t BlinkerTime = millis();
 
@@ -80,8 +68,6 @@ void dataRead(const String & data)
     Blinker.print("millis", BlinkerTime);
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    Blinker.weather();   
-
     Blinker.delay(60000);
 }
 
@@ -95,7 +81,6 @@ void setup()
 
     Blinker.begin(auth, ssid, pswd);
     Blinker.attachData(dataRead);
-    Blinker.attachWeather(weatherData);
 }
 
 void loop()

@@ -1,12 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "../Namespace.hpp"
+#include <ArduinoJson/Namespace.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 namespace Utf8 {
 template <typename TStringBuilder>
@@ -43,4 +43,4 @@ inline void encodeCodepoint(uint32_t codepoint32, TStringBuilder& str) {
   }
 }
 }  // namespace Utf8
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE

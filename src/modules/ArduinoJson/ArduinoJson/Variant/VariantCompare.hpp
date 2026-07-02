@@ -1,34 +1,31 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "../Configuration.hpp"
-#include "../Misc/Visitable.hpp"
-#include "../Numbers/arithmeticCompare.hpp"
-#include "../Polyfills/type_traits.hpp"
-#include "../Strings/StringAdapters.hpp"
-#include "../Variant/Visitor.hpp"
+#include <ArduinoJson/Configuration.hpp>
+#include <ArduinoJson/Numbers/arithmeticCompare.hpp>
+#include <ArduinoJson/Polyfills/type_traits.hpp>
+#include <ArduinoJson/Polyfills/utility.hpp>
+#include <ArduinoJson/Strings/StringAdapters.hpp>
+#include <ArduinoJson/Variant/JsonVariantVisitor.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-class CollectionData;
-
-struct ComparerBase : Visitor<CompareResult> {};
+struct ComparerBase : JsonVariantVisitor<CompareResult> {};
 
 template <typename T, typename Enable = void>
 struct Comparer;
 
 template <typename T>
-struct Comparer<T, typename enable_if<IsString<T>::value>::type>
-    : ComparerBase {
+struct Comparer<T, enable_if_t<IsString<T>::value>> : ComparerBase {
   T rhs;  // TODO: store adapted string?
 
   explicit Comparer(T value) : rhs(value) {}
 
-  CompareResult visitString(const char *lhs, size_t n) {
-    int i = stringCompare(adaptString(rhs), adaptString(lhs, n));
+  CompareResult visit(JsonString lhs) {
+    int i = stringCompare(adaptString(rhs), adaptString(lhs));
     if (i < 0)
       return COMPARE_RESULT_GREATER;
     else if (i > 0)
@@ -37,88 +34,90 @@ struct Comparer<T, typename enable_if<IsString<T>::value>::type>
       return COMPARE_RESULT_EQUAL;
   }
 
-  CompareResult visitNull() {
+  CompareResult visit(nullptr_t) {
     if (adaptString(rhs).isNull())
       return COMPARE_RESULT_EQUAL;
     else
       return COMPARE_RESULT_DIFFER;
   }
+
+  using ComparerBase::visit;
 };
 
 template <typename T>
-struct Comparer<T, typename enable_if<is_integral<T>::value ||
-                                      is_floating_point<T>::value>::type>
+struct Comparer<
+    T, enable_if_t<is_integral<T>::value || is_floating_point<T>::value>>
     : ComparerBase {
   T rhs;
 
   explicit Comparer(T value) : rhs(value) {}
 
-  CompareResult visitFloat(Float lhs) {
+  template <typename U>
+  enable_if_t<is_floating_point<U>::value || is_integral<U>::value,
+              CompareResult>
+  visit(const U& lhs) {
     return arithmeticCompare(lhs, rhs);
   }
 
-  CompareResult visitSignedInteger(Integer lhs) {
-    return arithmeticCompare(lhs, rhs);
-  }
-
-  CompareResult visitUnsignedInteger(UInt lhs) {
-    return arithmeticCompare(lhs, rhs);
-  }
-
-  CompareResult visitBoolean(bool lhs) {
-    return visitUnsignedInteger(static_cast<UInt>(lhs));
+  template <typename U>
+  enable_if_t<!is_floating_point<U>::value && !is_integral<U>::value,
+              CompareResult>
+  visit(const U& lhs) {
+    return ComparerBase::visit(lhs);
   }
 };
 
 struct NullComparer : ComparerBase {
-  CompareResult visitNull() {
+  CompareResult visit(nullptr_t) {
     return COMPARE_RESULT_EQUAL;
   }
+
+  using ComparerBase::visit;
 };
 
-#if ARDUINOJSON_HAS_NULLPTR
 template <>
-struct Comparer<decltype(nullptr), void> : NullComparer {
-  explicit Comparer(decltype(nullptr)) : NullComparer() {}
+struct Comparer<nullptr_t, void> : NullComparer {
+  explicit Comparer(nullptr_t) : NullComparer() {}
 };
-#endif
 
 struct ArrayComparer : ComparerBase {
-  const CollectionData *_rhs;
+  JsonArrayConst rhs_;
 
-  explicit ArrayComparer(const CollectionData &rhs) : _rhs(&rhs) {}
+  explicit ArrayComparer(JsonArrayConst rhs) : rhs_(rhs) {}
 
-  CompareResult visitArray(const CollectionData &lhs) {
-    if (lhs.equalsArray(*_rhs))
+  CompareResult visit(JsonArrayConst lhs) {
+    if (rhs_ == lhs)
       return COMPARE_RESULT_EQUAL;
     else
       return COMPARE_RESULT_DIFFER;
   }
+
+  using ComparerBase::visit;
 };
 
 struct ObjectComparer : ComparerBase {
-  const CollectionData *_rhs;
+  JsonObjectConst rhs_;
 
-  explicit ObjectComparer(const CollectionData &rhs) : _rhs(&rhs) {}
+  explicit ObjectComparer(JsonObjectConst rhs) : rhs_(rhs) {}
 
-  CompareResult visitObject(const CollectionData &lhs) {
-    if (lhs.equalsObject(*_rhs))
+  CompareResult visit(JsonObjectConst lhs) {
+    if (lhs == rhs_)
       return COMPARE_RESULT_EQUAL;
     else
       return COMPARE_RESULT_DIFFER;
   }
+
+  using ComparerBase::visit;
 };
 
 struct RawComparer : ComparerBase {
-  const char *_rhsData;
-  size_t _rhsSize;
+  RawString rhs_;
 
-  explicit RawComparer(const char *rhsData, size_t rhsSize)
-      : _rhsData(rhsData), _rhsSize(rhsSize) {}
+  explicit RawComparer(RawString rhs) : rhs_(rhs) {}
 
-  CompareResult visitRawJson(const char *lhsData, size_t lhsSize) {
-    size_t size = _rhsSize < lhsSize ? _rhsSize : lhsSize;
-    int n = memcmp(lhsData, _rhsData, size);
+  CompareResult visit(RawString lhs) {
+    size_t size = rhs_.size() < lhs.size() ? rhs_.size() : lhs.size();
+    int n = memcmp(lhs.data(), rhs_.data(), size);
     if (n < 0)
       return COMPARE_RESULT_LESS;
     else if (n > 0)
@@ -126,64 +125,64 @@ struct RawComparer : ComparerBase {
     else
       return COMPARE_RESULT_EQUAL;
   }
+
+  using ComparerBase::visit;
 };
 
-template <typename T>
-struct Comparer<T, typename enable_if<IsVisitable<T>::value>::type>
-    : ComparerBase {
-  T rhs;
+struct VariantComparer : ComparerBase {
+  JsonVariantConst rhs;
 
-  explicit Comparer(T value) : rhs(value) {}
+  explicit VariantComparer(JsonVariantConst value) : rhs(value) {}
 
-  CompareResult visitArray(const CollectionData &lhs) {
+  CompareResult visit(JsonArrayConst lhs) {
     ArrayComparer comparer(lhs);
-    return accept(comparer);
+    return reverseResult(comparer);
   }
 
-  CompareResult visitObject(const CollectionData &lhs) {
+  CompareResult visit(JsonObjectConst lhs) {
     ObjectComparer comparer(lhs);
-    return accept(comparer);
+    return reverseResult(comparer);
   }
 
-  CompareResult visitFloat(Float lhs) {
-    Comparer<Float> comparer(lhs);
-    return accept(comparer);
+  CompareResult visit(JsonFloat lhs) {
+    Comparer<JsonFloat> comparer(lhs);
+    return reverseResult(comparer);
   }
 
-  CompareResult visitString(const char *lhs, size_t) {
-    Comparer<const char *> comparer(lhs);
-    return accept(comparer);
+  CompareResult visit(JsonString lhs) {
+    Comparer<JsonString> comparer(lhs);
+    return reverseResult(comparer);
   }
 
-  CompareResult visitRawJson(const char *lhsData, size_t lhsSize) {
-    RawComparer comparer(lhsData, lhsSize);
-    return accept(comparer);
+  CompareResult visit(RawString value) {
+    RawComparer comparer(value);
+    return reverseResult(comparer);
   }
 
-  CompareResult visitSignedInteger(Integer lhs) {
-    Comparer<Integer> comparer(lhs);
-    return accept(comparer);
+  CompareResult visit(JsonInteger lhs) {
+    Comparer<JsonInteger> comparer(lhs);
+    return reverseResult(comparer);
   }
 
-  CompareResult visitUnsignedInteger(UInt lhs) {
-    Comparer<UInt> comparer(lhs);
-    return accept(comparer);
+  CompareResult visit(JsonUInt lhs) {
+    Comparer<JsonUInt> comparer(lhs);
+    return reverseResult(comparer);
   }
 
-  CompareResult visitBoolean(bool lhs) {
+  CompareResult visit(bool lhs) {
     Comparer<bool> comparer(lhs);
-    return accept(comparer);
+    return reverseResult(comparer);
   }
 
-  CompareResult visitNull() {
+  CompareResult visit(nullptr_t) {
     NullComparer comparer;
-    return accept(comparer);
+    return reverseResult(comparer);
   }
 
  private:
   template <typename TComparer>
-  CompareResult accept(TComparer &comparer) {
-    CompareResult reversedResult = rhs.accept(comparer);
+  CompareResult reverseResult(TComparer& comparer) {
+    CompareResult reversedResult = accept(rhs, comparer);
     switch (reversedResult) {
       case COMPARE_RESULT_GREATER:
         return COMPARE_RESULT_LESS;
@@ -195,14 +194,18 @@ struct Comparer<T, typename enable_if<IsVisitable<T>::value>::type>
   }
 };
 
-template <typename T1, typename T2>
-CompareResult compare(const T1 &lhs, const T2 &rhs) {
-  Comparer<T2> comparer(rhs);
-  return lhs.accept(comparer);
+template <typename T>
+struct Comparer<
+    T, enable_if_t<is_convertible<T, ArduinoJson::JsonVariantConst>::value>>
+    : VariantComparer {
+  explicit Comparer(const T& value)
+      : VariantComparer(static_cast<JsonVariantConst>(value)) {}
+};
+
+template <typename T>
+CompareResult compare(ArduinoJson::JsonVariantConst lhs, const T& rhs) {
+  Comparer<T> comparer(rhs);
+  return accept(lhs, comparer);
 }
 
-inline int variantCompare(const VariantData *a, const VariantData *b) {
-  return compare(VariantConstRef(a), VariantConstRef(b));
-}
-
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE

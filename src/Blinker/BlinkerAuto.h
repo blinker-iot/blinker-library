@@ -1,14 +1,9 @@
-#ifndef BLINKER_AUTO_H
+﻿#ifndef BLINKER_AUTO_H
 #define BLINKER_AUTO_H
 
-#if ((defined(ESP8266) || defined(ESP32)) && \
-    (defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-    defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-    defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_PRO_SIM7020) || \
-    defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-    defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE) || \
-    defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-    defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)))
+#include "BlinkerWiFiPlatform.h"
+
+#if (defined(BLINKER_NATIVE_WIFI) && (defined(BLINKER_MQTT) || defined(BLINKER_HTTP)))
 
 #if ARDUINO >= 100
     #include <Arduino.h>
@@ -327,7 +322,7 @@ void BlinkerAUTO::manager(const JsonObject& root)
     // JsonObject& root = jsonBuffer.parseObject(data);
     // BLINKER_LOG_ALL(BLINKER_F("auto state: "), data);
 
-    // DynamicJsonDocument jsonBuffer(1024);
+    // JsonDocument jsonBuffer;
     // deserializeJson(jsonBuffer, data);
     // JsonObject root = jsonBuffer.as<JsonObject>();
     
@@ -578,15 +573,15 @@ void BlinkerAUTO::manager(const JsonObject& root)
 void BlinkerAUTO::deserialization()
 {
     uint8_t checkData;
-    EEPROM.begin(BLINKER_EEP_SIZE);
+    blinkerEEPROMBegin(BLINKER_EEP_SIZE);
     EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
 
     if (checkData != BLINKER_CHECK_DATA)
     {
         _haveAuto  = false;
         _autoState = false;
-        EEPROM.commit();
-        EEPROM.end();
+        blinkerEEPROMCommit();
+        blinkerEEPROMEnd();
         return;
     }
 
@@ -604,8 +599,8 @@ void BlinkerAUTO::deserialization()
     //             a_num * BLINKER_ONE_AUTO_DATA_SIZE +
     //             BLINKER_EEP_ADDR_VALUE, _targetState);
 
-    // EEPROM.commit();
-    // EEPROM.end();
+    // blinkerEEPROMCommit();
+    // blinkerEEPROMEnd();
 
     _haveAuto = auto_data >> (11 + 11 + 12 + 7 + 2 + 1 + 1) & 0x01;
     _autoState = auto_data >> (11 + 11 + 12 + 7 + 2 + 1) & 0x01;
@@ -619,8 +614,8 @@ void BlinkerAUTO::deserialization()
 
     if (!_haveAuto)
     {
-        EEPROM.commit();
-        EEPROM.end();
+        blinkerEEPROMCommit();
+        blinkerEEPROMEnd();
         return;
     }
 
@@ -641,8 +636,8 @@ void BlinkerAUTO::deserialization()
                 a_num * BLINKER_ONE_AUTO_DATA_SIZE +
                 BLINKER_EEP_ADDR_VALUE, _targetState);
 
-    EEPROM.commit();
-    EEPROM.end();
+    blinkerEEPROMCommit();
+    blinkerEEPROMEnd();
 
     BLINKER_LOG_ALL(BLINKER_F("==============================================="));
     BLINKER_LOG_ALL(BLINKER_F("_autoId: "), String(_autoId));
@@ -672,8 +667,8 @@ void BlinkerAUTO::deserialization()
 
     // if (!_haveAuto)
     // {
-    //     EEPROM.commit();
-    //     EEPROM.end();
+    //     blinkerEEPROMCommit();
+    //     blinkerEEPROMEnd();
     //     return;
     // }
 
@@ -789,8 +784,8 @@ void BlinkerAUTO::deserialization()
     
     // BLINKER_LOG_ALL(BLINKER_F("==============================================="));
 
-    // EEPROM.commit();
-    // EEPROM.end();
+    // blinkerEEPROMCommit();
+    // blinkerEEPROMEnd();
     // }
 }
 
@@ -809,7 +804,7 @@ void BlinkerAUTO::serialization()
 
     uint8_t checkData;
 
-    EEPROM.begin(BLINKER_EEP_SIZE);
+    blinkerEEPROMBegin(BLINKER_EEP_SIZE);
 
     EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
 
@@ -834,14 +829,14 @@ void BlinkerAUTO::serialization()
                 a_num * BLINKER_ONE_AUTO_DATA_SIZE +
                 BLINKER_EEP_ADDR_VALUE, _targetState);
 
-    EEPROM.commit();
-    EEPROM.end();
+    blinkerEEPROMCommit();
+    blinkerEEPROMEnd();
 
     // uint8_t checkData;
     
     // _typeState = _haveAuto << 7 | _autoState << 6 | _logicType;// | _linkNum;
 
-    // EEPROM.begin(BLINKER_EEP_SIZE);
+    // blinkerEEPROMBegin(BLINKER_EEP_SIZE);
 
     // EEPROM.get(BLINKER_EEP_ADDR_CHECK, checkData);
 
@@ -914,8 +909,8 @@ void BlinkerAUTO::serialization()
     //     BLINKER_LOG_ALL(BLINKER_F("serialization _autoData: "), _autoData[1]);
     // }
 
-    // EEPROM.commit();
-    // EEPROM.end();
+    // blinkerEEPROMCommit();
+    // blinkerEEPROMEnd();
 }
 
 void BlinkerAUTO::fresh()

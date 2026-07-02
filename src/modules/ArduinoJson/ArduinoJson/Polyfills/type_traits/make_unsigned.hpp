@@ -1,11 +1,11 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include "type_identity.hpp"
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename T>
 struct make_unsigned;
@@ -33,17 +33,12 @@ struct make_unsigned<signed long> : type_identity<unsigned long> {};
 template <>
 struct make_unsigned<unsigned long> : type_identity<unsigned long> {};
 
-#if ARDUINOJSON_HAS_LONG_LONG
 template <>
 struct make_unsigned<signed long long> : type_identity<unsigned long long> {};
 template <>
 struct make_unsigned<unsigned long long> : type_identity<unsigned long long> {};
-#endif
 
-#if ARDUINOJSON_HAS_INT64
-template <>
-struct make_unsigned<signed __int64> : type_identity<unsigned __int64> {};
-template <>
-struct make_unsigned<unsigned __int64> : type_identity<unsigned __int64> {};
-#endif
-}  // namespace ARDUINOJSON_NAMESPACE
+template <typename T>
+using make_unsigned_t = typename make_unsigned<T>::type;
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

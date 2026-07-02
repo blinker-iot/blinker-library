@@ -1,16 +1,19 @@
-#ifndef BLINKER_ESP_MQTT_H
+﻿#ifndef BLINKER_ESP_MQTT_H
 #define BLINKER_ESP_MQTT_H
 
-#if defined(ESP8266) || defined(ESP32)
+#include "Blinker/BlinkerWiFiPlatform.h"
+
+#if defined(BLINKER_NATIVE_WIFI)
 
 #ifndef BLINKER_ARDUINOJSON
     #define BLINKER_ARDUINOJSON
 #endif
 
-#if defined(ESP8266)
-    #ifndef BLINKER_WITH_SSL
-        #define BLINKER_WITHOUT_SSL
-    #endif
+#if !defined(ESP32) && (defined(BLINKER_ESP_SMARTCONFIG) || \
+    defined(BLINKER_ESP_SMARTCONFIG_V2) || \
+    defined(BLINKER_BLEFI) || \
+    defined(BLINKER_WIFI_MULTI))
+    #error SMARTCONFIG/BLEFI/WIFI_MULTI currently require ESP32. Use Blinker.begin(auth, ssid, pswd) on Arduino UNO R4 WiFi and Raspberry Pi Pico W.
 #endif
 
 #include "Adapters/BlinkerMQTT.h"
@@ -19,173 +22,28 @@
 #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 
-#if defined(ESP8266)
-    #include <ESP8266mDNS.h>
-    #include <ESP8266WiFi.h>
-    // #include <ESP8266WebServer.h>
-#elif defined(ESP32)
-    #include <ESPmDNS.h>
-    #include <WiFi.h>
-    // #include <WebServer.h>
-#endif
-
 typedef BlinkerApi BApi;
 
 class BlinkerESPMQTT : public BlinkerApi
 {
     public : 
-    #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_APCONFIG)
+    #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_ESP_SMARTCONFIG_V2) || defined(BLINKER_BLEFI)
         void begin(const char* _auth)
-        {
-            #if defined(BLINKER_ALIGENIE_LIGHT)
-                String _aliType = BLINKER_F("&aliType=light");
-            #elif defined(BLINKER_ALIGENIE_OUTLET)
-                String _aliType = BLINKER_F("&aliType=outlet");
-            #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
-                String _aliType = BLINKER_F("&aliType=multi_outlet");
-            #elif defined(BLINKER_ALIGENIE_SENSOR)
-                String _aliType = BLINKER_F("&aliType=sensor");
-            #elif defined(BLINKER_ALIGENIE_FAN)
-                String _aliType = BLINKER_F("&aliType=fan");
-            #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
-                String _aliType = BLINKER_F("&aliType=aircondition");
-            #else
-                String _aliType = BLINKER_F("");
-            #endif
+        {            BApi::begin();
 
-            #if defined(BLINKER_DUEROS_LIGHT)
-                String _duerType = BLINKER_F("&duerType=LIGHT");
-            #elif defined(BLINKER_DUEROS_OUTLET)
-                String _duerType = BLINKER_F("&duerType=SOCKET");
-            #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
-                String _duerType = BLINKER_F("&duerType=MULTI_SOCKET");
-            #elif defined(BLINKER_DUEROS_SENSOR)
-                String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
-            #elif defined(BLINKER_DUEROS_FAN)
-                String _duerType = BLINKER_F("&duerType=FAN");
-            #elif defined(BLINKER_DUEROS_AIRCONDITION)
-                String _duerType = BLINKER_F("&duerType=AIR_CONDITION");
-            #else
-                String _duerType = BLINKER_F("");
-            #endif
-
-            #if defined(BLINKER_MIOT_LIGHT)
-                String _miType = BLINKER_F("&miType=light");
-            #elif defined(BLINKER_MIOT_OUTLET)
-                String _miType = BLINKER_F("&miType=outlet");
-            #elif defined(BLINKER_MIOT_MULTI_OUTLET)
-                String _miType = BLINKER_F("&miType=multi_outlet");
-            #elif defined(BLINKER_MIOT_SENSOR)
-                String _miType = BLINKER_F("&miType=sensor");
-            #elif defined(BLINKER_MIOT_FAN)
-                String _miType = BLINKER_F("&miType=fan");
-            #elif defined(BLINKER_MIOT_AIRCONDITION)
-                String _miType = BLINKER_F("&miType=aircondition");
-            #else
-                String _miType = BLINKER_F("");
-            #endif
-
-            BApi::begin();
-
-            Transp.aliType(_aliType);
-            Transp.duerType(_duerType);
-            Transp.miType(_miType);
             Transp.begin(_auth);
 
             transport(Transp);
 
-            #if defined(BLINKER_ESP_SMARTCONFIG)
+            #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_ESP_SMARTCONFIG_V2)
                 Transp.smartconfigBegin();
-            #elif defined(BLINKER_APCONFIG)
-                Transp.apconfigBegin();
+            #elif defined(BLINKER_BLEFI)
+                Transp.bleFiBegin();
             #endif
 
             BApi::loadTimer();
 
             // #if defined(BLINKER_ESP_SMARTCONFIG)
-            //     smartconfigBegin(_auth, _aliType, _duerType);
-            // #elif defined(BLINKER_APCONFIG)
-            //     apconfigBegin(_auth, _aliType, _duerType);
-            // #endif
-
-            // __auth = _auth;
-
-            // #ifndef BLINKER_ESP_TASK
-            //     beginMQTT();
-            // #endif
-        }
-    #elif defined(BLINKER_APCONFIG_V2)    
-        void begin()
-        {
-            #if defined(BLINKER_ALIGENIE_LIGHT)
-                String _aliType = BLINKER_F("&aliType=light");
-            #elif defined(BLINKER_ALIGENIE_OUTLET)
-                String _aliType = BLINKER_F("&aliType=outlet");
-            #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
-                String _aliType = BLINKER_F("&aliType=multi_outlet");
-            #elif defined(BLINKER_ALIGENIE_SENSOR)
-                String _aliType = BLINKER_F("&aliType=sensor");
-            #elif defined(BLINKER_ALIGENIE_FAN)
-                String _aliType = BLINKER_F("&aliType=fan");
-            #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
-                String _aliType = BLINKER_F("&aliType=aircondition");
-            #else
-                String _aliType = BLINKER_F("");
-            #endif
-
-            #if defined(BLINKER_DUEROS_LIGHT)
-                String _duerType = BLINKER_F("&duerType=LIGHT");
-            #elif defined(BLINKER_DUEROS_OUTLET)
-                String _duerType = BLINKER_F("&duerType=SOCKET");
-            #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
-                String _duerType = BLINKER_F("&duerType=MULTI_SOCKET");
-            #elif defined(BLINKER_DUEROS_SENSOR)
-                String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
-            #elif defined(BLINKER_DUEROS_FAN)
-                String _duerType = BLINKER_F("&duerType=FAN");
-            #elif defined(BLINKER_DUEROS_AIRCONDITION)
-                String _duerType = BLINKER_F("&duerType=AIR_CONDITION");
-            #else
-                String _duerType = BLINKER_F("");
-            #endif
-
-            #if defined(BLINKER_MIOT_LIGHT)
-                String _miType = BLINKER_F("&miType=light");
-            #elif defined(BLINKER_MIOT_OUTLET)
-                String _miType = BLINKER_F("&miType=outlet");
-            #elif defined(BLINKER_MIOT_MULTI_OUTLET)
-                String _miType = BLINKER_F("&miType=multi_outlet");
-            #elif defined(BLINKER_MIOT_SENSOR)
-                String _miType = BLINKER_F("&miType=sensor");
-            #elif defined(BLINKER_MIOT_FAN)
-                String _miType = BLINKER_F("&miType=fan");
-            #elif defined(BLINKER_MIOT_AIRCONDITION)
-                String _miType = BLINKER_F("&miType=aircondition");
-            #else
-                String _miType = BLINKER_F("");
-            #endif
-
-            BApi::begin();
-
-            Transp.aliType(_aliType);
-            Transp.duerType(_duerType);
-            Transp.miType(_miType);
-            // Transp.begin(_auth);
-
-            transport(Transp);
-
-            // #if defined(BLINKER_ESP_SMARTCONFIG)
-            //     Transp.smartconfigBegin();
-            // #elif defined(BLINKER_APCONFIG)
-                Transp.apconfigBegin();
-            // #endif
-
-            BApi::loadTimer();
-
-            // #if defined(BLINKER_ESP_SMARTCONFIG)
-            //     smartconfigBegin(_auth, _aliType, _duerType);
-            // #elif defined(BLINKER_APCONFIG)
-            //     apconfigBegin(_auth, _aliType, _duerType);
             // #endif
 
             // __auth = _auth;
@@ -198,60 +56,8 @@ class BlinkerESPMQTT : public BlinkerApi
         void begin( const char* _auth, 
                     const char* _ssid, 
                     const char* _pswd )
-        {
-            #if defined(BLINKER_ALIGENIE_LIGHT)
-                String _aliType = BLINKER_F("&aliType=light");
-            #elif defined(BLINKER_ALIGENIE_OUTLET)
-                String _aliType = BLINKER_F("&aliType=outlet");
-            #elif defined(BLINKER_ALIGENIE_MULTI_OUTLET)
-                String _aliType = BLINKER_F("&aliType=multi_outlet");
-            #elif defined(BLINKER_ALIGENIE_SENSOR)
-                String _aliType = BLINKER_F("&aliType=sensor");
-            #elif defined(BLINKER_ALIGENIE_FAN)
-                String _aliType = BLINKER_F("&aliType=fan");
-            #elif defined(BLINKER_ALIGENIE_AIRCONDITION)
-                String _aliType = BLINKER_F("&aliType=aircondition");
-            #else
-                String _aliType = BLINKER_F("");
-            #endif
+        {            BApi::begin();
 
-            #if defined(BLINKER_DUEROS_LIGHT)
-                String _duerType = BLINKER_F("&duerType=LIGHT");
-            #elif defined(BLINKER_DUEROS_OUTLET)
-                String _duerType = BLINKER_F("&duerType=SOCKET");
-            #elif defined(BLINKER_DUEROS_MULTI_OUTLET)
-                String _duerType = BLINKER_F("&duerType=MULTI_SOCKET");
-            #elif defined(BLINKER_DUEROS_SENSOR)
-                String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
-            #elif defined(BLINKER_DUEROS_FAN)
-                String _duerType = BLINKER_F("&duerType=FAN");
-            #elif defined(BLINKER_DUEROS_AIRCONDITION)
-                String _duerType = BLINKER_F("&duerType=AIR_CONDITION");
-            #else
-                String _duerType = BLINKER_F("");
-            #endif
-
-            #if defined(BLINKER_MIOT_LIGHT)
-                String _miType = BLINKER_F("&miType=light");
-            #elif defined(BLINKER_MIOT_OUTLET)
-                String _miType = BLINKER_F("&miType=outlet");
-            #elif defined(BLINKER_MIOT_MULTI_OUTLET)
-                String _miType = BLINKER_F("&miType=multi_outlet");
-            #elif defined(BLINKER_MIOT_SENSOR)
-                String _miType = BLINKER_F("&miType=sensor");
-            #elif defined(BLINKER_MIOT_FAN)
-                String _miType = BLINKER_F("&miType=fan");
-            #elif defined(BLINKER_MIOT_AIRCONDITION)
-                String _miType = BLINKER_F("&miType=aircondition");
-            #else
-                String _miType = BLINKER_F("");
-            #endif
-
-            BApi::begin();
-
-            Transp.aliType(_aliType);
-            Transp.duerType(_duerType);
-            Transp.miType(_miType);
             Transp.begin(_auth);
 
             transport(Transp);
@@ -294,32 +100,14 @@ class BlinkerESPMQTT : public BlinkerApi
     #endif
         // void beginMQTT()
         // {
-        //     #if defined(BLINKER_ALIGENIE_LIGHT)
-        //         String _aliType = BLINKER_F("&aliType=light");
-        //     #elif defined(BLINKER_ALIGENIE_OUTLET)
-        //         String _aliType = BLINKER_F("&aliType=outlet");
-        //     #elif defined(BLINKER_ALIGENIE_SENSOR)
-        //         String _aliType = BLINKER_F("&aliType=sensor");
         //     #else
-        //         String _aliType = BLINKER_F("");
         //     #endif
 
-        //     #if defined(BLINKER_DUEROS_LIGHT)
-        //         String _duerType = BLINKER_F("&duerType=LIGHT");
-        //     #elif defined(BLINKER_DUEROS_OUTLET)
-        //         String _duerType = BLINKER_F("&duerType=SOCKET");
-        //     #elif defined(BLINKER_DUEROS_SENSOR)
-        //         String _duerType = BLINKER_F("&duerType=AIR_MONITOR");
         //     #else
-        //         String _duerType = BLINKER_F("");
         //     #endif
 
         //     #if defined(BLINKER_ESP_SMARTCONFIG)
-        //         smartconfigBegin(__auth, _aliType, _duerType);
-        //     #elif defined(BLINKER_APCONFIG)
-        //         apconfigBegin(__auth, _aliType, _duerType);
         //     #else
-        //         commonBegin(__auth, __ssid, __pswd, _aliType, _duerType);
         //     #endif
         // }
 
@@ -327,16 +115,10 @@ class BlinkerESPMQTT : public BlinkerApi
         // void commonBegin(const char* _auth, 
         //                 const char* _ssid, 
         //                 const char* _pswd,
-        //                 String & _alitype,
-        //                 String & _duertype);
-        // void smartconfigBegin(const char* _auth, String & _alitype, String & _duertype);
-        // void apconfigBegin(const char* _auth, String & _alitype, String & _duertype);
 
         // bool autoInit();
         // void smartconfig();
-        // void softAPinit();
         // // void serverClient();
-        // bool parseUrl(String data);
         
         // void connectWiFi(String _ssid, String _pswd);
         // void connectWiFi(const char* _ssid, const char* _pswd);
@@ -351,67 +133,48 @@ class BlinkerESPMQTT : public BlinkerApi
 // void BlinkerESPMQTT::commonBegin(const char* _auth,
 //                                 const char* _ssid,
 //                                 const char* _pswd,
-//                                 String & _alitype,
-//                                 String & _duertype)
 // {
 //     BApi::begin();
 //     connectWiFi(_ssid, _pswd);
-//     // BApi::loadOTA();
-//     Transp.aliType(_alitype);
-//     Transp.duerType(_duertype);
 //     Transp.begin(_auth);
 //     transport(Transp);
 //     BApi::loadTimer();
 
-//     #if defined(ESP8266)
-//         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
+//     #if 0
 //     #elif defined(ESP32)
 //         BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
 //     #endif
 // }
 
-// void BlinkerESPMQTT::smartconfigBegin(const char* _auth, String & _alitype,
-//                                 String & _duertype)
 // {
 //     BApi::begin();
 //     if (!autoInit()) smartconfig();
-//     // BApi::loadOTA();
-//     Transp.aliType(_alitype);
-//     Transp.duerType(_duertype);
 //     Transp.begin(_auth);
 //     transport(Transp);
 //     BApi::loadTimer();
 
-//     #if defined(ESP8266)
-//         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
+//     #if 0
 //     #elif defined(ESP32)
 //         BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
 //     #endif
 // }
 
-// void BlinkerESPMQTT::apconfigBegin(const char* _auth, String & _alitype,
-//                                 String & _duertype)
 // {
 //     BApi::begin();
 //     if (!autoInit())
 //     {
-//         softAPinit();
 //         // while(WiFi.status() != WL_CONNECTED)
 //         // {
 //         //     serverClient();
 //         //     ::delay(10);
 //         // }
 //     }
-//     // BApi::loadOTA();
 
-//     Transp.aliType(_alitype);
-//     Transp.duerType(_duertype);
 //     Transp.begin(_auth);
 //     transport(Transp);
 //     BApi::loadTimer();
 
-//     #if defined(ESP8266)
-//         BLINKER_LOG(BLINKER_F("ESP8266_MQTT initialized..."));
+//     #if 0
 //     #elif defined(ESP32)
 //         BLINKER_LOG(BLINKER_F("ESP32_MQTT initialized..."));
 //     #endif
@@ -423,7 +186,7 @@ class BlinkerESPMQTT : public BlinkerApi
 //     String _hostname = BLINKER_F("DiyArduino_");
 //     _hostname += macDeviceName();
 
-//     #if defined(ESP8266)
+//     #if 0
 //         WiFi.hostname(_hostname.c_str());
 //     #elif defined(ESP32)
 //         WiFi.setHostname(_hostname.c_str());
@@ -433,14 +196,13 @@ class BlinkerESPMQTT : public BlinkerApi
 //     ::delay(500);
 
 //     BLINKER_LOG(BLINKER_F("Waiting for WiFi "), 
-//                 BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
+//                 BLINKER_WIFI_INIT_TIMEOUT / 1000,
 //                 BLINKER_F("s, will enter SMARTCONFIG or "),
-//                 BLINKER_F("APCONFIG while WiFi not connect!"));
 
 //     uint8_t _times = 0;
 //     while (WiFi.status() != WL_CONNECTED) {
 //         ::delay(500);
-//         if (_times > BLINKER_WIFI_AUTO_INIT_TIMEOUT / 500) break;
+//         if (_times > BLINKER_WIFI_INIT_TIMEOUT / 500) break;
 //         _times++;
 //     }
 
@@ -460,7 +222,7 @@ class BlinkerESPMQTT : public BlinkerApi
 //     String _hostname = BLINKER_F("DiyArduino_");
 //     _hostname += macDeviceName();
     
-//     #if defined(ESP8266)
+//     #if 0
 //         WiFi.hostname(_hostname.c_str());
 //     #elif defined(ESP32)
 //         WiFi.setHostname(_hostname.c_str());
@@ -486,12 +248,11 @@ class BlinkerESPMQTT : public BlinkerApi
 //     BLINKER_LOG(WiFi.localIP());
 // }
 
-// void BlinkerESPMQTT::softAPinit()
 // {
 //     WiFiServer _server(80);
 //     WiFiClient _client;
 //     IPAddress apIP(192, 168, 4, 1);
-//     #if defined(ESP8266)
+//     #if 0
 //         IPAddress netMsk(255, 255, 255, 0);
 //     #endif
 
@@ -501,12 +262,10 @@ class BlinkerESPMQTT : public BlinkerApi
 //     String softAP_ssid = BLINKER_F("DiyArduino_");
 //     softAP_ssid += macDeviceName();
 
-//     #if defined(ESP8266)
+//     #if 0
 //         WiFi.hostname(softAP_ssid.c_str());
-//         WiFi.softAPConfig(apIP, apIP, netMsk);
 //     #elif defined(ESP32)
 //         WiFi.setHostname(softAP_ssid.c_str());
-//         WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
 //     #endif
     
 //     WiFi.softAP(softAP_ssid.c_str(), ("12345678"));
@@ -556,7 +315,6 @@ class BlinkerESPMQTT : public BlinkerApi
                     
 //                     _client.stop();
 
-//                     parseUrl(data);
 //                 }
 //             }
 //         }
@@ -607,16 +365,13 @@ class BlinkerESPMQTT : public BlinkerApi
                     
 // //                     _client.stop();
 
-// //                     parseUrl(data);
 // //                 }
 // //             }
 // //         }
 // //     }
 // // }
 
-// bool BlinkerESPMQTT::parseUrl(String data)
 // {
-//     BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
 //     DynamicJsonBuffer jsonBuffer;
 //     JsonObject& wifi_data = jsonBuffer.parseObject(data);
 
@@ -650,7 +405,7 @@ class BlinkerESPMQTT : public BlinkerApi
 //     String _hostname = BLINKER_F("DiyArduinoMQTT_");
 //     _hostname += macDeviceName();
     
-//     #if defined(ESP8266)
+//     #if 0
 //         WiFi.hostname(_hostname.c_str());
 //     #elif defined(ESP32)
 //         WiFi.setHostname(_hostname.c_str());

@@ -1,14 +1,13 @@
-// #ifndef BLINKER_WLAN_H
+﻿// #ifndef BLINKER_WLAN_H
 // #define BLINKER_WLAN_H
 
-// #if defined(ESP8266) || defined(ESP32)
+// #if defined(ESP32)
 
-// // #if defined(BLINKER_PRO)
+// // #if 0
 
 // // #include "Blinker/BlinkerConfig.h"
 // // #include "modules/ArduinoJson/ArduinoJson.h"
-// // #if defined(ESP8266)
-// //     #include <ESP8266WiFi.h>
+// // #if 0
 // // #elif defined(ESP32)
 // //     #include <WiFi.h>
 // // #endif
@@ -17,7 +16,7 @@
 // // static WiFiServer *_server;
 // // static WiFiClient _client;
 // // static IPAddress apIP(192, 168, 4, 1);
-// // #if defined(ESP8266)
+// // #if 0
 // // static IPAddress netMsk(255, 255, 255, 0);
 // // #endif
 
@@ -35,8 +34,7 @@
 // #include "../modules/ArduinoJson/ArduinoJson.h"
 // #endif
 
-// #if defined(ESP8266)
-//     #include <ESP8266WiFi.h>
+// #if 0
 // #elif defined(ESP32)
 //     #include <WiFi.h>
 // #endif
@@ -46,7 +44,7 @@
 // // static WiFiServer *_server;
 // // static WiFiClient _client;
 // static IPAddress apIP(192, 168, 4, 1);
-// #if defined(ESP8266)
+// #if 0
 //     static IPAddress netMsk(255, 255, 255, 0);
 // #endif
 
@@ -63,9 +61,6 @@
 //     BWL_SMARTCONFIG_DONE,
 //     BWL_SMARTCONFIG_TIMEOUT,
 //     BWL_STACONFIG_BEGIN,
-//     BWL_APCONFIG_BEGIN,
-//     BWL_APCONFIG_DONE,
-//     BWL_APCONFIG_TIMEOUT,
 //     BWL_CONNECTED_CHECK,
 //     BWL_RESET
 // };
@@ -98,7 +93,6 @@
 // #endif
 //         }
 
-//         void softAPinit();
 //         void serverClient();
 //         void parseUrl(String data);
 //         void connectWiFi(String _ssid, String _pswd);
@@ -196,7 +190,7 @@
 //     delay(100);
 //     String softAP_ssid = STRING_format(_deviceType) + "_" + macDeviceName();
 
-// #if defined(ESP8266)
+// #if 0
 //     WiFi.hostname(softAP_ssid);
 // #elif defined(ESP32)
 //     WiFi.setHostname(softAP_ssid.c_str());
@@ -220,7 +214,7 @@
 //         _status = BWL_SMARTCONFIG_DONE;
 
 //         BLINKER_LOG(BLINKER_F("SmartConfig Success"));
-// #if defined(ESP8266)
+// #if 0
 //         BLINKER_LOG(BLINKER_F("SSID: "), WiFi.SSID(), BLINKER_F(" PSWD: "), WiFi.psk());
 //         // WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
 //         connectWiFi(WiFi.SSID().c_str(), WiFi.psk().c_str());
@@ -325,14 +319,11 @@
 //                 return true;
 //             }
 //             // break;
-//         case BWL_APCONFIG_DONE :
 //             if (WiFi.status() != WL_CONNECTED) {
 //                 if (millis() - connectTime > 15000)
 //                 {
-//                     BLINKER_LOG(BLINKER_F("APConfig time out"));
                     
 //                     // WiFi.stopSmartConfig();
-//                     _status = BWL_APCONFIG_TIMEOUT;
 //                 }
 //                 return false;
 //             }
@@ -416,22 +407,19 @@
 //     _status = BWL_RESET;
 // }
 
-// void BlinkerWlan::softAPinit() {
 //     // _server = new WiFiServer(80);
 
 //     WiFi.mode(WIFI_AP);
 //     String softAP_ssid = STRING_format(_deviceType) + "_" + macDeviceName();
     
-// #if defined(ESP8266)
+// #if 0
 //     WiFi.hostname(softAP_ssid);
 // #elif defined(ESP32)
 //     WiFi.setHostname(softAP_ssid.c_str());
 // #endif
 
-// #if defined(ESP8266)
-//     WiFi.softAPConfig(apIP, apIP, netMsk);
+// #if 0
 // #elif defined(ESP32)
-//     WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
 // #endif
 
 //     WiFi.softAP(softAP_ssid.c_str(), NULL);
@@ -442,9 +430,7 @@
 //     // BLINKER_LOG(BLINKER_F("HTTP _server started"));
 //     // BLINKER_LOG(String("URL: http://" + WiFi.softAPIP()));
 
-//     _status = BWL_APCONFIG_BEGIN;
 
-//     BLINKER_LOG(BLINKER_F("Wait for APConfig"));
 // }
 
 // void BlinkerWlan::serverClient()
@@ -496,10 +482,9 @@
 
 // void BlinkerWlan::parseUrl(String data)
 // {
-//     BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
 //     // DynamicJsonBuffer jsonBuffer;
 //     // JsonObject& wifi_data = jsonBuffer.parseObject(data);
-//     DynamicJsonDocument jsonBuffer(1024);
+//     JsonDocument jsonBuffer;
 //     DeserializationError error = deserializeJson(jsonBuffer, data);
 //     JsonObject wifi_data = jsonBuffer.as<JsonObject>();
 
@@ -524,9 +509,7 @@
 //     strcpy(PSWD, _pswd.c_str());
 //     connectWiFi(_ssid, _pswd);
 //     connectTime = millis();
-//     _status = BWL_APCONFIG_DONE;
 
-//     BLINKER_LOG(BLINKER_F("APConfig Success"));
 // }
 
 // void BlinkerWlan::connectWiFi(String _ssid, String _pswd)
@@ -543,7 +526,7 @@
 //     WiFi.mode(WIFI_STA);
 //     String _hostname = STRING_format(_deviceType) + "_" + macDeviceName();
 
-//     #if defined(ESP8266)
+//     #if 0
 //         WiFi.hostname(_hostname);
 //     #elif defined(ESP32)
 //         WiFi.setHostname(_hostname.c_str());
@@ -588,8 +571,6 @@
 //         case BWL_CONFIG_FAIL :
 //             #if defined(BLINKER_ESP_SMARTCONFIG)
 //                 smartconfigBegin();
-//             #elif defined(BLINKER_APCONFIG)
-//                 softAPinit();
 //             #endif
 //             break;
 //         case BWL_CONFIG_SUCCESS :
@@ -616,13 +597,10 @@
 //         case BWL_STACONFIG_BEGIN :
 //             connect();
 //             break;
-//         case BWL_APCONFIG_BEGIN :
 //             serverClient();
 //             break;
-//         case BWL_APCONFIG_DONE :
 //             return connected();
 //             break;
-//         case BWL_APCONFIG_TIMEOUT :
 //             _status = BWL_CONFIG_FAIL;
 //             break;
 //         case BWL_CONNECTED_CHECK :

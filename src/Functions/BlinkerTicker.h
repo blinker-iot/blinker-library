@@ -13,6 +13,7 @@
 
 extern "C" {
     typedef void (*blinker_callback_t)(void);
+    typedef void (*blinker_callback_arg_t)(uint8_t);
 }
 
 class BlinkerTicker
@@ -29,6 +30,26 @@ class BlinkerTicker
         {
             aim_time = seconds;
             tickerFunc = func;
+            tickerArgFunc = NULL;
+            os_time = millis();
+            tick_time = 0;
+
+            isRun = true;
+        }
+
+        void once(uint32_t seconds, blinker_callback_t func)
+        {
+            attach(seconds, func);
+        }
+
+        void once(uint32_t seconds, blinker_callback_arg_t func, uint8_t arg)
+        {
+            aim_time = seconds;
+            tickerFunc = NULL;
+            tickerArgFunc = func;
+            tickerArg = arg;
+            os_time = millis();
+            tick_time = 0;
 
             isRun = true;
         }
@@ -56,6 +77,7 @@ class BlinkerTicker
                     isRun = false;
 
                     if (tickerFunc) tickerFunc();
+                    if (tickerArgFunc) tickerArgFunc(tickerArg);
                 }
             }
         }
@@ -67,6 +89,8 @@ class BlinkerTicker
         bool     isRun = false;
 
         blinker_callback_t tickerFunc = NULL;
+        blinker_callback_arg_t tickerArgFunc = NULL;
+        uint8_t tickerArg = 0;
 };
 
 #endif

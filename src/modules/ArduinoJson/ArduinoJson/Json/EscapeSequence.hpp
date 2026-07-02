@@ -1,18 +1,18 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "../Namespace.hpp"
+#include <ArduinoJson/Namespace.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 class EscapeSequence {
  public:
   // Optimized for code size on a 8-bit AVR
   static char escapeChar(char c) {
-    const char *p = escapeTable(true);
+    const char* p = escapeTable(true);
     while (p[0] && p[1] != c) {
       p += 2;
     }
@@ -21,7 +21,7 @@ class EscapeSequence {
 
   // Optimized for code size on a 8-bit AVR
   static char unescapeChar(char c) {
-    const char *p = escapeTable(false);
+    const char* p = escapeTable(false);
     for (;;) {
       if (p[0] == '\0')
         return 0;
@@ -32,8 +32,9 @@ class EscapeSequence {
   }
 
  private:
-  static const char *escapeTable(bool excludeSolidus) {
-    return &"//\"\"\\\\b\bf\fn\nr\rt\t"[excludeSolidus ? 2 : 0];
+  static const char* escapeTable(bool isSerializing) {
+    return &"//''\"\"\\\\b\bf\fn\nr\rt\t"[isSerializing ? 4 : 0];
   }
 };
-}  // namespace ARDUINOJSON_NAMESPACE
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

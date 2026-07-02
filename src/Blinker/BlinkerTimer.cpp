@@ -1,4 +1,6 @@
-#if defined(ESP8266) || defined(ESP32)
+#include "BlinkerPlatform.h"
+
+#if defined(BLINKER_NATIVE_WIFI)
 
 #include "BlinkerConfig.h"
 #include "BlinkerDebug.h"

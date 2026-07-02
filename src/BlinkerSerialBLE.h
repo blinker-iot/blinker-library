@@ -11,7 +11,7 @@
 
     #if defined(ESP32)
         #include <HardwareSerial.h>    
-    #elif defined (__AVR__) || defined(ESP8266)
+    #elif defined (__AVR__)
         #include <SoftwareSerial.h>
     #endif
 #else
@@ -89,7 +89,7 @@ class BlinkerSerialBLE : public BlinkerApi
                     // this->conn.begin(*SSerialBLE, false);
                     BLINKER_LOG(BLINKER_F("SerialBLE initialized..."));
                 }
-        #elif defined(ESP8266)
+        #elif 0
             if (ss_rx_pin == RX && ss_tx_pin == TX) {
                 BApi::begin();
                 Serial.begin(ss_baud);

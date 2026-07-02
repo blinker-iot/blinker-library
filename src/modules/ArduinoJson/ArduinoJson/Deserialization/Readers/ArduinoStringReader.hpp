@@ -1,19 +1,18 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include <Arduino.h>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename TSource>
-struct Reader<TSource,
-              typename enable_if<is_base_of< ::String, TSource>::value>::type>
+struct Reader<TSource, enable_if_t<is_base_of<::String, TSource>::value>>
     : BoundedReader<const char*> {
   explicit Reader(const ::String& s)
       : BoundedReader<const char*>(s.c_str(), s.length()) {}
 };
 
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE

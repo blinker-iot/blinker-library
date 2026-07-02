@@ -1,89 +1,122 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "../Namespace.hpp"
-#include "../Polyfills/assert.hpp"
+#include <ArduinoJson/Memory/MemoryPool.hpp>
+#include <ArduinoJson/Namespace.hpp>
+#include <ArduinoJson/Polyfills/assert.hpp>
 
 #include <stddef.h>  // size_t
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-class MemoryPool;
 class VariantData;
-class VariantSlot;
+class ResourceManager;
 
-class CollectionData {
-  VariantSlot *_head;
-  VariantSlot *_tail;
+class CollectionIterator {
+  friend class CollectionData;
 
  public:
-  // Must be a POD!
-  // - no constructor
-  // - no destructor
-  // - no virtual
-  // - no inheritance
+  CollectionIterator() : slot_(nullptr), currentId_(NULL_SLOT) {}
 
-  // Array only
+  void next(const ResourceManager* resources);
 
-  VariantData *addElement(MemoryPool *pool);
-
-  VariantData *getElement(size_t index) const;
-
-  VariantData *getOrAddElement(size_t index, MemoryPool *pool);
-
-  void removeElement(size_t index);
-
-  bool equalsArray(const CollectionData &other) const;
-
-  // Object only
-
-  template <typename TAdaptedString, typename TStoragePolicy>
-  VariantData *addMember(TAdaptedString key, MemoryPool *pool, TStoragePolicy);
-
-  template <typename TAdaptedString>
-  VariantData *getMember(TAdaptedString key) const;
-
-  template <typename TAdaptedString, typename TStoragePolicy>
-  VariantData *getOrAddMember(TAdaptedString key, MemoryPool *pool,
-                              TStoragePolicy);
-
-  template <typename TAdaptedString>
-  void removeMember(TAdaptedString key) {
-    removeSlot(getSlot(key));
+  bool done() const {
+    return slot_ == nullptr;
   }
 
-  template <typename TAdaptedString>
-  bool containsKey(const TAdaptedString &key) const;
-
-  bool equalsObject(const CollectionData &other) const;
-
-  // Generic
-
-  void clear();
-  size_t memoryUsage() const;
-  size_t nesting() const;
-  size_t size() const;
-
-  VariantSlot *addSlot(MemoryPool *);
-  void removeSlot(VariantSlot *slot);
-
-  bool copyFrom(const CollectionData &src, MemoryPool *pool);
-
-  VariantSlot *head() const {
-    return _head;
+  bool operator==(const CollectionIterator& other) const {
+    return slot_ == other.slot_;
   }
 
-  void movePointers(ptrdiff_t stringDistance, ptrdiff_t variantDistance);
+  bool operator!=(const CollectionIterator& other) const {
+    return slot_ != other.slot_;
+  }
+
+  VariantData* operator->() {
+    ARDUINOJSON_ASSERT(slot_ != nullptr);
+    return data();
+  }
+
+  VariantData& operator*() {
+    ARDUINOJSON_ASSERT(slot_ != nullptr);
+    return *data();
+  }
+
+  const VariantData& operator*() const {
+    ARDUINOJSON_ASSERT(slot_ != nullptr);
+    return *data();
+  }
+
+  VariantData* data() {
+    return reinterpret_cast<VariantData*>(slot_);
+  }
+
+  const VariantData* data() const {
+    return reinterpret_cast<const VariantData*>(slot_);
+  }
 
  private:
-  VariantSlot *getSlot(size_t index) const;
+  CollectionIterator(VariantData* slot, SlotId slotId);
 
-  template <typename TAdaptedString>
-  VariantSlot *getSlot(TAdaptedString key) const;
-
-  VariantSlot *getPreviousSlot(VariantSlot *) const;
+  VariantData* slot_;
+  SlotId currentId_, nextId_;
 };
-}  // namespace ARDUINOJSON_NAMESPACE
+
+class CollectionData {
+  SlotId head_ = NULL_SLOT;
+  SlotId tail_ = NULL_SLOT;
+
+ public:
+  // Placement new
+  static void* operator new(size_t, void* p) noexcept {
+    return p;
+  }
+
+  static void operator delete(void*, void*) noexcept {}
+
+  using iterator = CollectionIterator;
+
+  iterator createIterator(const ResourceManager* resources) const;
+
+  size_t size(const ResourceManager*) const;
+  size_t nesting(const ResourceManager*) const;
+
+  void clear(ResourceManager* resources);
+
+  static void clear(CollectionData* collection, ResourceManager* resources) {
+    if (!collection)
+      return;
+    collection->clear(resources);
+  }
+
+  SlotId head() const {
+    return head_;
+  }
+
+ protected:
+  void appendOne(Slot<VariantData> slot, const ResourceManager* resources);
+  void appendPair(Slot<VariantData> key, Slot<VariantData> value,
+                  const ResourceManager* resources);
+
+  void removeOne(iterator it, ResourceManager* resources);
+  void removePair(iterator it, ResourceManager* resources);
+
+ private:
+  Slot<VariantData> getPreviousSlot(VariantData*, const ResourceManager*) const;
+};
+
+inline const VariantData* collectionToVariant(
+    const CollectionData* collection) {
+  const void* data = collection;  // prevent warning cast-align
+  return reinterpret_cast<const VariantData*>(data);
+}
+
+inline VariantData* collectionToVariant(CollectionData* collection) {
+  void* data = collection;  // prevent warning cast-align
+  return reinterpret_cast<VariantData*>(data);
+}
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -19,22 +19,21 @@
 #endif
 // clang-format on
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename From, typename To>
 struct is_convertible {
  protected:  // <- to avoid GCC's "all member functions in class are private"
-  typedef char Yes[1];
-  typedef char No[2];
+  static int probe(To);
+  static char probe(...);
 
-  static Yes &probe(To);
-  static No &probe(...);
+  static const From& from_;
 
  public:
-  static const bool value = sizeof(probe(declval<From>())) == sizeof(Yes);
+  static const bool value = sizeof(probe(from_)) == sizeof(int);
 };
 
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE
 
 #ifdef _MSC_VER
 #  pragma warning(pop)

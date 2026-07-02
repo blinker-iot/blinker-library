@@ -1,12 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "../Namespace.hpp"
+#include <ArduinoJson/Namespace.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 #ifndef isdigit
 inline bool isdigit(char c) {
@@ -17,4 +17,5 @@ inline bool isdigit(char c) {
 inline bool issign(char c) {
   return '-' == c || c == '+';
 }
-}  // namespace ARDUINOJSON_NAMESPACE
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

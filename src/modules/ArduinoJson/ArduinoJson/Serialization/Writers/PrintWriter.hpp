@@ -1,30 +1,29 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include <Arduino.h>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename TDestination>
-class Writer<
-    TDestination,
-    typename enable_if<is_base_of< ::Print, TDestination>::value>::type> {
+class Writer<TDestination,
+             enable_if_t<is_base_of<::Print, TDestination>::value>> {
  public:
-  explicit Writer(::Print& print) : _print(&print) {}
+  explicit Writer(::Print& print) : print_(&print) {}
 
   size_t write(uint8_t c) {
-    return _print->write(c);
+    return print_->write(c);
   }
 
   size_t write(const uint8_t* s, size_t n) {
-    return _print->write(s, n);
+    return print_->write(s, n);
   }
 
  private:
-  ::Print* _print;
+  ::Print* print_;
 };
 
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE

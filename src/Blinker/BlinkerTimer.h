@@ -1,9 +1,16 @@
 #ifndef BLINKER_TIMER_H
 #define BLINKER_TIMER_H
 
-#if defined(ESP8266) || defined(ESP32)
+#include "BlinkerPlatform.h"
 
-#include <Ticker.h>
+#if defined(BLINKER_NATIVE_WIFI)
+
+#if defined(ESP32)
+    #include <Ticker.h>
+#else
+    #include "../Functions/BlinkerTicker.h"
+    typedef BlinkerTicker Ticker;
+#endif
 #include <EEPROM.h>
 
 extern Ticker cdTicker;

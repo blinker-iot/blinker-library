@@ -1,28 +1,79 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "../Object/ObjectRef.hpp"
-#include "ArrayRef.hpp"
+#include <ArduinoJson/Array/ArrayData.hpp>
+#include <ArduinoJson/Variant/VariantCompare.hpp>
+#include <ArduinoJson/Variant/VariantData.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-template <typename TArray>
-inline ArrayRef ArrayShortcuts<TArray>::createNestedArray() const {
-  return impl()->addElement().template to<ArrayRef>();
+inline ArrayData::iterator ArrayData::at(
+    size_t index, const ResourceManager* resources) const {
+  auto it = createIterator(resources);
+  while (!it.done() && index) {
+    it.next(resources);
+    --index;
+  }
+  return it;
 }
 
-template <typename TArray>
-inline ObjectRef ArrayShortcuts<TArray>::createNestedObject() const {
-  return impl()->addElement().template to<ObjectRef>();
+inline VariantData* ArrayData::addElement(ResourceManager* resources) {
+  auto slot = resources->allocVariant();
+  if (!slot)
+    return nullptr;
+  CollectionData::appendOne(slot, resources);
+  return slot.ptr();
 }
 
-template <typename TArray>
-inline ElementProxy<TArray> ArrayShortcuts<TArray>::operator[](
-    size_t index) const {
-  return ElementProxy<TArray>(*impl(), index);
+inline VariantData* ArrayData::getOrAddElement(size_t index,
+                                               ResourceManager* resources) {
+  auto it = createIterator(resources);
+  while (!it.done() && index > 0) {
+    it.next(resources);
+    index--;
+  }
+  if (it.done())
+    index++;
+  VariantData* element = it.data();
+  while (index > 0) {
+    element = addElement(resources);
+    if (!element)
+      return nullptr;
+    index--;
+  }
+  return element;
 }
 
-}  // namespace ARDUINOJSON_NAMESPACE
+inline VariantData* ArrayData::getElement(
+    size_t index, const ResourceManager* resources) const {
+  return at(index, resources).data();
+}
+
+inline void ArrayData::removeElement(size_t index, ResourceManager* resources) {
+  remove(at(index, resources), resources);
+}
+
+template <typename T>
+inline bool ArrayData::addValue(const T& value, ResourceManager* resources) {
+  ARDUINOJSON_ASSERT(resources != nullptr);
+  auto slot = resources->allocVariant();
+  if (!slot)
+    return false;
+  JsonVariant variant(slot.ptr(), resources);
+  if (!variant.set(value)) {
+    resources->freeVariant(slot);
+    return false;
+  }
+  CollectionData::appendOne(slot, resources);
+  return true;
+}
+
+// Returns the size (in bytes) of an array with n elements.
+constexpr size_t sizeofArray(size_t n) {
+  return n * ResourceManager::slotSize;
+}
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

@@ -1,10 +1,16 @@
 #ifndef BLINKER_ESP_HTTP_H
 #define BLINKER_ESP_HTTP_H
 
-#if defined(ESP8266) || defined(ESP32)
+#include "Blinker/BlinkerWiFiPlatform.h"
+
+#if defined(BLINKER_NATIVE_WIFI)
 
 #ifndef BLINKER_ARDUINOJSON
     #define BLINKER_ARDUINOJSON
+#endif
+
+#if defined(BLINKER_BLEFI)
+    #error BLEFI provisioning currently supports BLINKER_WIFI/BLINKER_MQTT on ESP32. Use Blinker.begin(auth, ssid, pswd) with BLINKER_HTTP.
 #endif
 
 #include "Adapters/BlinkerHTTP.h"
@@ -13,14 +19,8 @@
 #include "modules/ArduinoJson/ArduinoJson.h"
 #endif
 
-#if defined(ESP8266)
-    #include <ESP8266mDNS.h>
-    #include <ESP8266WiFi.h>
-    // #include <ESP8266WebServer.h>
-#elif defined(ESP32)
-    #include <ESPmDNS.h>
-    #include <WiFi.h>
-    // #include <WebServer.h>
+#if !defined(ESP32) && (defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_ESP_SMARTCONFIG_V2))
+    #error SMARTCONFIG currently require ESP32. Use Blinker.begin(auth, ssid, pswd) on Arduino UNO R4 WiFi and Raspberry Pi Pico W.
 #endif
 
 typedef BlinkerApi BApi;
@@ -28,7 +28,7 @@ typedef BlinkerApi BApi;
 class BlinkerESPHTTP : public BlinkerApi
 {
     public : 
-    #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_APCONFIG)
+    #if defined(BLINKER_ESP_SMARTCONFIG) || defined(BLINKER_ESP_SMARTCONFIG_V2)
         void begin(const char* _auth)
         {
             BApi::begin();
@@ -36,11 +36,7 @@ class BlinkerESPHTTP : public BlinkerApi
 
             transport(Transp);
 
-            #if defined(BLINKER_ESP_SMARTCONFIG)
-                Transp.smartconfigBegin();
-            #elif defined(BLINKER_APCONFIG)
-                Transp.apconfigBegin();
-            #endif
+            Transp.smartconfigBegin();
         }
     #else
         void begin( const char* _auth, 

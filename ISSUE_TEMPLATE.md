@@ -31,13 +31,13 @@
 ## 设备信息
 - 硬件: [ESP-12|wifiduino|Arduino UNO]
 - 接入方式: [BLE|WIFI]
-- package版本: [esp8266-arduino-2.5.0dev|esp32-1.0.1-rc3]
+- package版本: [esp32|arduino-renesas|arduino-pico]
 - blinker库版本: [arduino 0.3.0|py 0.2.0]
 - 开发环境: [Arduino|linux]
 - 操作系统: [Windows|Ubuntu|MacOS]
 
 ## IDE 中的设置
-- Module: [Generic ESP8266 Module|Wemos D1 mini r2|Nodemcu|other]
+- Module: [ESP32 Dev Module|Arduino UNO R4 WiFi|Raspberry Pi Pico W|other]
 - Flash Mode: [qio|dio|other]
 - Flash Size: [4MB/1MB]
 - lwip Variant: [v1.4|v2 Lower Memory|Higher Bandwidth]

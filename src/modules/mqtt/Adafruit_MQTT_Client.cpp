@@ -9,8 +9,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -21,15 +21,16 @@
 // SOFTWARE.
 #include "Adafruit_MQTT_Client.h"
 
-
 bool Adafruit_MQTT_Client::connectServer() {
   // Grab server name from flash and copy to buffer for name resolution.
   memset(buffer, 0, sizeof(buffer));
   strcpy((char *)buffer, servername);
-  DEBUG_PRINT(F("Connecting to: ")); DEBUG_PRINTLN((char *)buffer);
+  DEBUG_PRINT(F("Connecting to: "));
+  DEBUG_PRINTLN((char *)buffer);
   // Connect and check for success (0 result).
   int r = client->connect((char *)buffer, portnum);
-  DEBUG_PRINT(F("Connect result: ")); DEBUG_PRINTLN(r);
+  DEBUG_PRINT(F("Connect result: "));
+  DEBUG_PRINTLN(r);
   return r != 0;
 }
 
@@ -49,26 +50,26 @@ bool Adafruit_MQTT_Client::connected() {
 
 uint16_t Adafruit_MQTT_Client::readPacket(uint8_t *buffer, uint16_t maxlen,
                                           int16_t timeout) {
-  /* Read data until either the connection is closed, or the idle timeout is reached. */
+  /* Read data until either the connection is closed, or the idle timeout is
+   * reached. */
   uint16_t len = 0;
   int16_t t = timeout;
 
+  if (maxlen == 0) { // handle zero-length packets
+    return 0;
+  }
 
   while (client->connected() && (timeout >= 0)) {
-    //DEBUG_PRINT('.');
+    // DEBUG_PRINT('.');
     while (client->available()) {
-      //DEBUG_PRINT('!');
+      // DEBUG_PRINT('!');
       char c = client->read();
-      timeout = t;  // reset the timeout
+      timeout = t; // reset the timeout
       buffer[len] = c;
-      //DEBUG_PRINTLN((uint8_t)c, HEX);
+      // DEBUG_PRINTLN((uint8_t)c, HEX);
       len++;
 
-      if (maxlen == 0) { // handle zero-length packets
-        return 0;
-      }
-
-      if (len == maxlen) {  // we read all we want, bail
+      if (len == maxlen) { // we read all we want, bail
         DEBUG_PRINT(F("Read data:\t"));
         DEBUG_PRINTBUFFER(buffer, len);
         return len;
@@ -81,28 +82,28 @@ uint16_t Adafruit_MQTT_Client::readPacket(uint8_t *buffer, uint16_t maxlen,
 }
 
 bool Adafruit_MQTT_Client::sendPacket(uint8_t *buffer, uint16_t len) {
-    uint16_t ret = 0;
+  uint16_t ret = 0;
+  uint16_t offset = 0;
+  while (len > 0) {
+    if (client->connected()) {
+      // send 250 bytes at most at a time, can adjust this later based on Client
 
-    while (len > 0) {
-        if (client->connected()) {
-            // send 250 bytes at most at a time, can adjust this later based on Client
+      uint16_t sendlen = len > 250 ? 250 : len;
+      // Serial.print("Sending: "); Serial.println(sendlen);
+      ret = client->write(buffer + offset, sendlen);
+      DEBUG_PRINT(F("Client sendPacket returned: "));
+      DEBUG_PRINTLN(ret);
+      len -= ret;
+      offset += ret;
 
-            uint16_t sendlen = len > MAXBUFFERSIZE ? MAXBUFFERSIZE : len;
-            //Serial.print("Sending: "); Serial.println(sendlen);
-            ret = client->write(buffer, sendlen);
-            DEBUG_PRINT(F("Client sendPacket returned: ")); DEBUG_PRINTLN(ret);
-            DEBUG_PRINT(F("Client sendPacket sendlen: ")); DEBUG_PRINTLN(sendlen);
-            DEBUG_PRINT(F("Client sendPacket len: ")); DEBUG_PRINTLN(len);
-            len -= ret;
-
-            if (ret != sendlen) {
-                DEBUG_PRINTLN("Failed to send packet.");
-                return false;
-            }
-        } else {
-            DEBUG_PRINTLN(F("Connection failed!"));
-            return false;
-        }
+      if (ret != sendlen) {
+        DEBUG_PRINTLN("Failed to send packet.");
+        return false;
+      }
+    } else {
+      DEBUG_PRINTLN(F("Connection failed!"));
+      return false;
     }
-    return true;
+  }
+  return true;
 }

@@ -9,8 +9,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -22,40 +22,36 @@
 #ifndef _ADAFRUIT_MQTT_CLIENT_H_
 #define _ADAFRUIT_MQTT_CLIENT_H_
 
-#include <Client.h>
 #include "Adafruit_MQTT.h"
-
+#include "Client.h"
 
 // How long to delay waiting for new data to be available in readPacket.
 #define MQTT_CLIENT_READINTERVAL_MS 10
-
 
 // MQTT client implementation for a generic Arduino Client interface.  Can work
 // with almost all Arduino network hardware like ethernet shield, wifi shield,
 // and even other platforms like ESP8266.
 class Adafruit_MQTT_Client : public Adafruit_MQTT {
- public:
+public:
   Adafruit_MQTT_Client(Client *client, const char *server, uint16_t port,
-                       const char *cid, const char *user, const char *pass):
-    Adafruit_MQTT(server, port, cid, user, pass),
-    client(client)
-  {}
+                       const char *cid, const char *user, const char *pass)
+      : Adafruit_MQTT(server, port, cid, user, pass), client(client) {}
 
   Adafruit_MQTT_Client(Client *client, const char *server, uint16_t port,
-                       const char *user="", const char *pass=""):
-    Adafruit_MQTT(server, port, user, pass),
-    client(client)
-  {}
+                       const char *user = "", const char *pass = "")
+      : Adafruit_MQTT(server, port, user, pass), client(client) {}
 
-  bool connectServer();
-  bool disconnectServer();
-  bool connected();
-  uint16_t readPacket(uint8_t *buffer, uint16_t maxlen, int16_t timeout);
-  bool sendPacket(uint8_t *buffer, uint16_t len);
+  bool connected() override;
 
- private:
-  Client* client;
+protected:
+  bool connectServer() override;
+  bool disconnectServer() override;
+  uint16_t readPacket(uint8_t *buffer, uint16_t maxlen,
+                      int16_t timeout) override;
+  bool sendPacket(uint8_t *buffer, uint16_t len) override;
+
+private:
+  Client *client;
 };
-
 
 #endif

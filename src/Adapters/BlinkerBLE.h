@@ -51,9 +51,6 @@ class BlinkerBLE : public BlinkerStream, public BLEServerCallbacks, public BLECh
         BLECharacteristic       *pCharacteristic;
         BLEAdvertising          *pAdvertising;
         BLEAdvertisementData    pAdvertisementData;
-        uint8_t                 respTimes = 0;
-        uint32_t                respTime = 0;
-
         
         // bool                    isAvailBLE = false;
         // uint8_t*                bleReadBuf;//[20];
@@ -65,7 +62,6 @@ class BlinkerBLE : public BlinkerStream, public BLEServerCallbacks, public BLECh
         void onDisconnect(BLEServer* pServer);
         void onWrite(BLECharacteristic *pCharacteristic);
         int checkTimeOut();
-        int checkPrintSpan();
 };
 
 void BlinkerBLE::begin()
@@ -214,18 +210,9 @@ void BlinkerBLE::flush()
 // bool BlinkerBLE::print(String s, bool needCheck)
 int BlinkerBLE::print(char * data, bool needCheck)
 {
-    if (needCheck)
-    {
-        if (!checkPrintSpan())
-        {
-            respTime = millis();
-            return false;
-        }
-    }
+    (void)needCheck;
 
     String s = data;
-
-    respTime = millis();
 
     BLINKER_LOG_ALL(BLINKER_F("Response: "), s);
         
@@ -314,28 +301,6 @@ int BlinkerBLE::checkTimeOut()
     // BLINKER_LOG_ALL(BLINKER_F("timeout_ms: "), timeout_ms);    
 
     return timeout_ms > 1000;
-}
-
-int BlinkerBLE::checkPrintSpan()
-{
-    if (millis() - respTime < BLINKER_PRINT_MSG_LIMIT)
-    {
-        if (respTimes > BLINKER_PRINT_MSG_LIMIT)
-        {
-            BLINKER_ERR_LOG("DEVICE NOT CONNECT OR MSG LIMIT");
-            return false;
-        }
-        else
-        {
-            respTimes++;
-            return true;
-        }
-    }
-    else
-    {
-        respTimes = 0;
-        return true;
-    }
 }
 
 #endif

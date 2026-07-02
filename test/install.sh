@@ -17,13 +17,7 @@ if [ -n "$LIB_URL" ]; then
     mkdir -p $HWLIB_PATH
     # 执行指定平台安装脚本
     echo -e "\e[93mRun the $TARGET install script\e[0m"
-    if [ "$TARGET" == "ESP8266" ]; then
-        # 从库中复制工具链索引文件
-        cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/esp8266
-        cp -R $TARGET_LIB/test/package $HWLIB_PATH/esp8266/package
-        cd $HWLIB_PATH/esp8266/tools
-        python get.py
-    elif [ "$TARGET" == "ESP32" ]; then
+    if [ "$TARGET" == "ESP32" ]; then
         # 从库中复制工具链索引文件
         mkdir -p $HWLIB_PATH
         cp -R $BUILD_HOME/$LIB_VER $HWLIB_PATH/esp32

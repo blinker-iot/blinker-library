@@ -27,7 +27,6 @@ class BlinkerProtocol
 
         void transport(BlinkerStream & bStream) { conn = &bStream; isInit = true; }
 
-    // #if defined(BLINKER_LOWPOWER_AIR202)
     //     void print(const String & data);
     //     void print(const String & key, const String & data);
     //     char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
@@ -35,7 +34,6 @@ class BlinkerProtocol
     //     int init()          { return isInit ? conn->init() : false; }
     //     void begin(const char* _key, const char* _type, String _imei)
     //     { conn->begin(_key, _type, _imei); }
-    //     int deviceRegister(){ return conn->deviceRegister(); }
     // #else
         int connect()       { return isInit ? conn->connect() : false; }
         int connected()
@@ -67,39 +65,14 @@ class BlinkerProtocol
         void print(const String & data);
         void print(const String & key, const String & data);
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT) || defined(BLINKER_MQTT_AT) || \
-            defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_GPRS_AIR202) || defined(BLINKER_PRO_SIM7020) || \
-            defined(BLINKER_PRO_AIR202) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_SUBDEVICE) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
-            int aliPrint(const String & data)   { return isInit ? conn->aliPrint(data) : false; }
-            int duerPrint(const String & data, bool report = false)  { return isInit ? conn->duerPrint(data, report) : false; }
-            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                !defined(BLINKER_QRCODE_NBIOT_SIM7020) && !defined(BLINKER_NBIOT_SIM7000) && \
-                !defined(BLINKER_QRCODE_NBIOT_SIM7000)
-            int miPrint(const String & data)  { return isInit ? conn->miPrint(data) : false; }
-            #endif
+        #if defined(BLINKER_MQTT) || defined(BLINKER_HTTP)
             // void ping() { if (isInit) conn->ping(); }
-            #if !defined(BLINKER_MQTT_AT)
-            int bPrint(char * name, const String & data) { return isInit ? conn->bPrint(name, data) : false; }
             int autoPrint(unsigned long id)  { return isInit ? conn->autoPrint(id) : false; }
             void sharers(const String & data) { if (isInit) conn->sharers(data); }
             int needFreshShare() { if (isInit) return conn->needFreshShare(); else return false; }
-            #endif
         #endif
 
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-            defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKER_QRCODE_NBIOT_SIM7020) || \
-            defined(BLINKER_NBIOT_SIM7000) || defined(BLINKER_QRCODE_NBIOT_SIM7000) || \
-            defined(BLINKE_HTTP)
+        #if defined(BLINKER_MQTT) || defined(BLINKER_HTTP)
             int toServer(char * data) { return isInit ? conn->toServer(data) : false; }
             char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
             char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
@@ -109,86 +82,6 @@ class BlinkerProtocol
             void freshAlive() { if (isInit) conn->freshAlive(); }
         #endif
 
-        #if defined(BLINKER_LOWPOWER_AIR202)
-            char * deviceName() { if (isInit) return conn->deviceName(); else return ""; }
-            char * authKey()    { if (isInit) return conn->authKey(); else return "";  }
-            char * token()    { if (isInit) return conn->token(); else return "";  }
-            int init()          { return isInit ? conn->init() : false; }
-            void begin(const char* _key, const char* _type, String _imei) { conn->begin(_key, _type, _imei); }
-            int deviceRegister(){ return conn->deviceRegister(); }
-        #endif
-
-        #if defined(BLINKER_PRO) || defined(BLINKER_MQTT_AUTO) || \
-            defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY) || \
-            defined(BLINKER_WIFI_SUBDEVICE)
-            int deviceRegister(){ return conn->deviceRegister(); }
-            int authCheck()     { return conn->authCheck(); }
-            #if defined(BLINKER_PRO)
-            void begin(const char* _deviceType) { conn->begin(_deviceType); }
-            #elif defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-                defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
-            void begin(const char* _key, const char* _type) { conn->begin(_key, _type); }
-            #endif
-        #elif defined(BLINKER_GPRS_AIR202) || defined(BLINKER_NBIOT_SIM7020) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-            defined(BLINKER_QRCODE_NBIOT_SIM7000)
-            int deviceRegister(){ return conn->deviceRegister(); }
-
-            #if defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_QRCODE_NBIOT_SIM7000)
-                void begin(const char* _authKey, const char* _deviceType, String _imei)
-                { conn->begin(_authKey, _deviceType, _imei); }
-            #else
-                void begin(const char* _deviceType, String _imei)
-                { conn->begin(_deviceType, _imei); }
-            #endif
-
-            #if defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202)
-                int authCheck()     { return conn->authCheck(); }
-            #endif
-        #endif
-
-        // #if defined(BLINKER_WIFI_SUBDEVICE)
-        //     void attachSubAvailable(blinker_callback_return_int_t func)
-        //     { if (isInit) conn->attachAvailable(func); }
-            
-        //     void attachSubRead(blinker_callback_return_string_t func)
-        //     { if (isInit) conn->attachRead(func); }
-
-        //     void attachSubPrint(blinker_callback_with_string_arg_t func)
-        //     { if (isInit) conn->attachPrint(func); }
-
-        //     void attachSubBegin(blinker_callback_t func)
-        //     { if (isInit) conn->attachBegin(func); }
-
-        //     void attachSubConnect(blinker_callback_return_int_t func)
-        //     { if (isInit) conn->attachConnect(func); }
-
-        //     void attachSubConnected(blinker_callback_return_int_t func)
-        //     { if (isInit) conn->attachConnected(func); }
-
-        //     void attachSubDisconnect(blinker_callback_t func)
-        //     { if (isInit) conn->attachDisconnect(func); }
-        // #endif
-
-        #if defined(BLINKER_WIFI_GATEWAY) || defined(BLINKER_WIFI_SUBDEVICE)
-            void meshCheck() { conn->meshCheck(); }
-            #if !defined(BLINKER_WIFI_SUBDEVICE)
-                void setTimezone(float tz) { conn->setTimezone(tz); }
-            #endif
-            #if defined(BLINKER_WIFI_SUBDEVICE)
-                int subPrint(const String & data) { return conn->subPrint(data); }
-                int meshAvail() { return conn->meshAvail(); }
-                char * meshLastRead() { return conn->meshLastRead(); }
-                void meshFlush() { conn->meshFlush(); }
-            #endif
-        #endif
-
-        #if defined(BLINKER_PRO_ESP) || defined(BLINKER_WIFI_GATEWAY)
-            void smartConfigType() { conn->setSmartConfig(); }
-            void apConfigType() { conn->setApConfig(); }
-            bool checkIsSmartConfig() { return conn->checkSmartConfig(); }
-        #endif
 
         #if defined(BLINKER_HTTP)
             void subscribe() { conn->subscribe(); }
@@ -210,48 +103,10 @@ class BlinkerProtocol
         char*               _sendBuf;
         blinker_callback_with_string_arg_t  _availableFunc = NULL;
 
-    // #if defined(BLINKER_LOWPOWER_AIR202)
     //     void checkFormat();
     //     void autoFormatData(const String & key, const String & jsonValue);
     // #else
         int checkAvail();
-        #if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-            defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-            defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-            defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-            defined(BLINKER_WIFI_SUBDEVICE) || defined(BLINKE_HTTP)
-            bool checkAliAvail()    { return conn->aligenieAvail(); }
-            bool checkDuerAvail()   { return conn->duerAvail(); }
-            #if !defined(BLINKER_GPRS_AIR202) && !defined(BLINKER_NBIOT_SIM7020) && \
-                !defined(BLINKER_PRO_SIM7020) && !defined(BLINKER_PRO_AIR202) && \
-                !defined(BLINKER_QRCODE_NBIOT_SIM7020) && !defined(BLINKER_NBIOT_SIM7000) && \
-                !defined(BLINKER_QRCODE_NBIOT_SIM7000)
-            bool checkMIOTAvail()   { return conn->miAvail(); }
-            #endif
-        #endif
-        
-        #if defined(BLINKER_AT_MQTT)
-            void begin(const char* auth) { return conn->begin(auth); }
-            int serialAvailable()   { return conn->serialAvailable(); }
-            int serialPrint(const String & s1, const String & s2, bool needCheck = true)
-            { return conn->serialPrint(s1, s2, needCheck); }
-            int serialPrint(const String & s, bool needCheck = true)
-            { return conn->serialPrint(s, needCheck); }
-            int mqttPrint(const String & data)
-            { return conn->mqttPrint(data); }
-            char * serialLastRead() { return conn->serialLastRead(); }
-            void aligenieType(blinker_at_aligenie_t _type)
-            { conn->aligenieType(_type); }
-            void duerType(blinker_at_dueros_t _type)
-            { conn->duerType(_type); }
-            char * deviceId()   { return conn->deviceId(); }
-            char * uuid()       { return conn->uuid(); }
-            void softAPinit()   { conn->softAPinit(); }
-            void smartconfig()  { conn->smartconfig(); }
-            int autoInit()      { return conn->autoInit(); }
-            void connectWiFi(String _ssid, String _pswd) { return conn->connectWiFi(_ssid, _pswd); }
-            void connectWiFi(const char* _ssid, const char* _pswd) { return conn->connectWiFi(_ssid, _pswd); }
-        #endif
         void checkFormat();
         void checkAutoFormat();
         char* dataParse()       { if (canParse) return conn->lastRead(); else return ""; }
@@ -266,7 +121,6 @@ class BlinkerProtocol
     // #endif
 };
 
-// #if !defined(BLINKER_LOWPOWER_AIR202)
 void BlinkerProtocol::flush()
 {
     if (isInit && isAvail) conn->flush();
@@ -307,7 +161,6 @@ void BlinkerProtocol::checkAutoFormat()
         {
             if (strlen(_sendBuf))
             {
-                // #if !defined(BLINKER_LOWPOWER_AIR202)
                 #if defined(BLINKER_ARDUINOJSON)
                     _print(_sendBuf);
                 #else
@@ -385,14 +238,12 @@ int BlinkerProtocol::_print(char * n, bool needCheckLength)
 
 void BlinkerProtocol::print(const String & data)
 {
-    #if !defined(BLINKER_LOWPOWER_AIR202)
     checkFormat();
     strcpy(_sendBuf, data.c_str());
     _print(_sendBuf);
     free(_sendBuf);
     autoFormat = false;
     BLINKER_LOG_FreeHeap_ALL();
-    #endif
 }
 
 void BlinkerProtocol::print(const String & key, const String & data)
@@ -427,7 +278,7 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
         {
 
             // DynamicJsonBuffer jsonSendBuffer;
-            DynamicJsonDocument jsonBuffer(1024);
+            JsonDocument jsonBuffer;
 
             if (strlen(_sendBuf)) {
                 BLINKER_LOG_ALL(BLINKER_F("add"));
@@ -509,11 +360,9 @@ void BlinkerProtocol::autoFormatData(const String & key, const String & jsonValu
     #endif
 }
 
-// #elif defined(BLINKER_LOWPOWER_AIR202)
 
 // void BlinkerProtocol::print(const String & data)
 // {
-//     #if !defined(BLINKER_LOWPOWER_AIR202)
 //     checkFormat();
 //     strcpy(_sendBuf, data.c_str());
 //     _print(_sendBuf);

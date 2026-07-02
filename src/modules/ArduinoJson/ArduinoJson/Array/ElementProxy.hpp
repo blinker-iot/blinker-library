@@ -1,193 +1,75 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include "../Configuration.hpp"
-#include "../Variant/VariantOperators.hpp"
-#include "../Variant/VariantShortcuts.hpp"
-#include "../Variant/VariantTo.hpp"
+#include <ArduinoJson/Variant/VariantRefBase.hpp>
 
-#ifdef _MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable : 4522)
-#endif
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-namespace ARDUINOJSON_NAMESPACE {
+// A proxy class to get or set an element of an array.
+// https://arduinojson.org/v7/api/jsonarray/subscript/
+template <typename TUpstream>
+class ElementProxy : public VariantRefBase<ElementProxy<TUpstream>>,
+                     public VariantOperators<ElementProxy<TUpstream>> {
+  friend class VariantAttorney;
 
-template <typename TArray>
-class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
-                     public VariantShortcuts<ElementProxy<TArray> >,
-                     public Visitable,
-                     public VariantTag {
-  typedef ElementProxy<TArray> this_type;
+  friend class VariantRefBase<ElementProxy<TUpstream>>;
+
+  template <typename, typename>
+  friend class MemberProxy;
+
+  template <typename>
+  friend class ElementProxy;
 
  public:
-  typedef VariantRef variant_type;
+  ElementProxy(TUpstream upstream, size_t index)
+      : upstream_(upstream), index_(index) {}
 
-  FORCE_INLINE ElementProxy(TArray array, size_t index)
-      : _array(array), _index(index) {}
-
-  FORCE_INLINE ElementProxy(const ElementProxy& src)
-      : _array(src._array), _index(src._index) {}
-
-  FORCE_INLINE this_type& operator=(const this_type& src) {
-    getOrAddUpstreamElement().set(src.as<VariantConstRef>());
+  ElementProxy& operator=(const ElementProxy& src) {
+    this->set(src);
     return *this;
   }
 
-  // Replaces the value
-  //
-  // operator=(const TValue&)
-  // TValue = bool, long, int, short, float, double, serialized, VariantRef,
-  //          std::string, String, ArrayRef, ObjectRef
   template <typename T>
-  FORCE_INLINE this_type& operator=(const T& src) {
-    getOrAddUpstreamElement().set(src);
-    return *this;
-  }
-  //
-  // operator=(TValue)
-  // TValue = char*, const char*, const __FlashStringHelper*
-  template <typename T>
-  FORCE_INLINE this_type& operator=(T* src) {
-    getOrAddUpstreamElement().set(src);
+  ElementProxy& operator=(const T& src) {
+    this->set(src);
     return *this;
   }
 
-  FORCE_INLINE void clear() const {
-    getUpstreamElement().clear();
-  }
-
-  FORCE_INLINE bool isNull() const {
-    return getUpstreamElement().isNull();
-  }
-
   template <typename T>
-  FORCE_INLINE typename enable_if<!is_same<T, char*>::value, T>::type as()
-      const {
-    return getUpstreamElement().template as<T>();
-  }
-
-  template <typename T>
-  FORCE_INLINE typename enable_if<is_same<T, char*>::value, const char*>::type
-  ARDUINOJSON_DEPRECATED("Replace as<char*>() with as<const char*>()")
-      as() const {
-    return as<const char*>();
-  }
-
-  template <typename T>
-  FORCE_INLINE operator T() const {
-    return getUpstreamElement();
-  }
-
-  template <typename T>
-  FORCE_INLINE bool is() const {
-    return getUpstreamElement().template is<T>();
-  }
-
-  template <typename T>
-  FORCE_INLINE typename VariantTo<T>::type to() const {
-    return getOrAddUpstreamElement().template to<T>();
-  }
-
-  // Replaces the value
-  //
-  // bool set(const TValue&)
-  // TValue = bool, long, int, short, float, double, serialized, VariantRef,
-  //          std::string, String, ArrayRef, ObjectRef
-  template <typename TValue>
-  FORCE_INLINE bool set(const TValue& value) const {
-    return getOrAddUpstreamElement().set(value);
-  }
-  //
-  // bool set(TValue)
-  // TValue = char*, const char*, const __FlashStringHelper*
-  template <typename TValue>
-  FORCE_INLINE bool set(TValue* value) const {
-    return getOrAddUpstreamElement().set(value);
-  }
-
-  template <typename TVisitor>
-  typename TVisitor::result_type accept(TVisitor& visitor) const {
-    return getUpstreamElement().accept(visitor);
-  }
-
-  FORCE_INLINE size_t size() const {
-    return getUpstreamElement().size();
-  }
-
-  template <typename TNestedKey>
-  VariantRef getMember(TNestedKey* key) const {
-    return getUpstreamElement().getMember(key);
-  }
-
-  template <typename TNestedKey>
-  VariantRef getMember(const TNestedKey& key) const {
-    return getUpstreamElement().getMember(key);
-  }
-
-  template <typename TNestedKey>
-  VariantRef getOrAddMember(TNestedKey* key) const {
-    return getOrAddUpstreamElement().getOrAddMember(key);
-  }
-
-  template <typename TNestedKey>
-  VariantRef getOrAddMember(const TNestedKey& key) const {
-    return getOrAddUpstreamElement().getOrAddMember(key);
-  }
-
-  VariantRef addElement() const {
-    return getOrAddUpstreamElement().addElement();
-  }
-
-  VariantRef getElement(size_t index) const {
-    return getOrAddUpstreamElement().getElement(index);
-  }
-
-  VariantRef getOrAddElement(size_t index) const {
-    return getOrAddUpstreamElement().getOrAddElement(index);
-  }
-
-  FORCE_INLINE void remove(size_t index) const {
-    getUpstreamElement().remove(index);
-  }
-  // remove(char*) const
-  // remove(const char*) const
-  // remove(const __FlashStringHelper*) const
-  template <typename TChar>
-  FORCE_INLINE typename enable_if<IsString<TChar*>::value>::type remove(
-      TChar* key) const {
-    getUpstreamElement().remove(key);
-  }
-  // remove(const std::string&) const
-  // remove(const String&) const
-  template <typename TString>
-  FORCE_INLINE typename enable_if<IsString<TString>::value>::type remove(
-      const TString& key) const {
-    getUpstreamElement().remove(key);
+  ElementProxy& operator=(T* src) {
+    this->set(src);
+    return *this;
   }
 
  private:
-  FORCE_INLINE VariantRef getUpstreamElement() const {
-    return _array.getElement(_index);
+  // clang-format off
+  ElementProxy(const ElementProxy& src)  // Error here? See https://arduinojson.org/v7/proxy-non-copyable/
+      : upstream_(src.upstream_), index_(src.index_) {}
+  // clang-format on
+
+  ResourceManager* getResourceManager() const {
+    return VariantAttorney::getResourceManager(upstream_);
   }
 
-  FORCE_INLINE VariantRef getOrAddUpstreamElement() const {
-    return _array.getOrAddElement(_index);
+  FORCE_INLINE VariantData* getData() const {
+    return VariantData::getElement(
+        VariantAttorney::getData(upstream_), index_,
+        VariantAttorney::getResourceManager(upstream_));
   }
 
-  friend void convertToJson(const this_type& src, VariantRef dst) {
-    dst.set(src.getUpstreamElement());
+  VariantData* getOrCreateData() const {
+    auto data = VariantAttorney::getOrCreateData(upstream_);
+    if (!data)
+      return nullptr;
+    return data->getOrAddElement(
+        index_, VariantAttorney::getResourceManager(upstream_));
   }
 
-  TArray _array;
-  const size_t _index;
+  TUpstream upstream_;
+  size_t index_;
 };
 
-}  // namespace ARDUINOJSON_NAMESPACE
-
-#ifdef _MSC_VER
-#  pragma warning(pop)
-#endif
+ARDUINOJSON_END_PRIVATE_NAMESPACE

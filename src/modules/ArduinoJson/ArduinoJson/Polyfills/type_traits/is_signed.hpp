@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -8,23 +8,19 @@
 #include "is_same.hpp"
 #include "remove_cv.hpp"
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 // clang-format off
 template <typename T>
-struct is_signed : integral_constant<bool, 
-    is_same<typename remove_cv<T>::type, char>::value ||
-    is_same<typename remove_cv<T>::type, signed char>::value ||
-    is_same<typename remove_cv<T>::type, signed short>::value ||
-    is_same<typename remove_cv<T>::type, signed int>::value ||
-    is_same<typename remove_cv<T>::type, signed long>::value ||
-#if ARDUINOJSON_HAS_LONG_LONG
-    is_same<typename remove_cv<T>::type, signed long long>::value ||
-#endif
-#if ARDUINOJSON_HAS_INT64
-    is_same<typename remove_cv<T>::type, signed __int64>::value ||
-#endif
-    is_same<typename remove_cv<T>::type, float>::value ||
-    is_same<typename remove_cv<T>::type, double>::value> {};
+struct is_signed : integral_constant<bool,
+    is_same<remove_cv_t<T>, char>::value ||
+    is_same<remove_cv_t<T>, signed char>::value ||
+    is_same<remove_cv_t<T>, signed short>::value ||
+    is_same<remove_cv_t<T>, signed int>::value ||
+    is_same<remove_cv_t<T>, signed long>::value ||
+    is_same<remove_cv_t<T>, signed long long>::value ||
+    is_same<remove_cv_t<T>, float>::value ||
+    is_same<remove_cv_t<T>, double>::value> {};
 // clang-format on
-}  // namespace ARDUINOJSON_NAMESPACE
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

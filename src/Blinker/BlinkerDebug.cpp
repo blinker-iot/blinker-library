@@ -1,7 +1,7 @@
 #include "Blinker/BlinkerDebug.h"
 
 #include <stddef.h>
-#ifdef ESP8266
+#if 0
     extern "C" {
     #include <ets_sys.h>
     #include <os_type.h>
@@ -15,7 +15,7 @@
 #if defined(ARDUINO)
     #if (defined(__AVR__))
         #include <avr/pgmspace.h>
-    #elif defined(ESP8266) || defined(ESP32)
+    #elif defined(ESP32)
         #include <pgmspace.h>
     #endif
 #endif
@@ -23,7 +23,7 @@
 uint32_t BLINKER_FreeHeap()
 {
 #if defined(ARDUINO) 
-    #if defined(ESP8266) || defined(ESP32)
+    #if defined(ESP32)
         return ESP.getFreeHeap();
 // #elif defined(ARDUINO) && defined(ESP32)
 //     return ESP.getFreeHeap();
@@ -62,7 +62,7 @@ void BlinkerDebug::time()
 // uint32_t BlinkerDebug::BLINKER_FreeHeap()
 // {
 // #if defined(ARDUINO) 
-//     #if defined(ESP8266) || defined(ESP32)
+//     #if defined(ESP32)
 //         return ESP.getFreeHeap();
 // // #elif defined(ARDUINO) && defined(ESP32)
 // //     return ESP.getFreeHeap();

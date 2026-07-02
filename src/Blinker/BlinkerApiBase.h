@@ -167,68 +167,7 @@ class BlinkerWidgets_table
         blinker_callback_t                wfunc2;
 };
 
-#if defined(BLINKER_MQTT) || defined(BLINKER_PRO) || \
-    defined(BLINKER_AT_MQTT) || defined(BLINKER_WIFI_GATEWAY) || \
-    defined(BLINKER_NBIOT_SIM7020) || defined(BLINKER_GPRS_AIR202) || \
-    defined(BLINKER_PRO_SIM7020) || defined(BLINKER_PRO_AIR202) || \
-    defined(BLINKER_MQTT_AUTO) || defined(BLINKER_PRO_ESP) || \
-    defined(BLINKER_LOWPOWER_AIR202) || defined(BLINKER_WIFI_SUBDEVICE) || \
-    defined(BLINKER_QRCODE_NBIOT_SIM7020) || defined(BLINKER_NBIOT_SIM7000) || \
-    defined(BLINKER_QRCODE_NBIOT_SIM7000) || defined(BLINKE_HTTP)
-    class BlinkerBridge_key
-    {
-        public :
-            BlinkerBridge_key(char * _key, blinker_callback_with_string_arg_t _func = NULL)
-            {
-                bKey = (char*)malloc((strlen(_key)+1)*sizeof(char));
-                strcpy(bKey, _key);
-
-                wfunc = _func;
-            }
-
-            char * getKey() { return bKey; }
-            void setFunc(blinker_callback_with_string_arg_t _func) { wfunc = _func; }
-            blinker_callback_with_string_arg_t getFunc() { return wfunc; }
-            bool checkName(char * _key) { return strcmp(_key, bKey) == 0; }
-            char * getName()
-            {
-                if (_register) return bName;
-                else return "false";
-            }
-            void name(const String & name)
-            {
-                _register = true;
-                bName = (char*)malloc((name.length()+1)*sizeof(char));
-                strcpy(bName, name.c_str());
-            }
-
-        private :
-            char *bKey;
-            char *bName;
-            bool _register = false;
-            blinker_callback_with_string_arg_t wfunc;
-        // public :
-        //     BlinkerBridge() {}
-
-        //     void name(char name[])
-        //     {
-        //         _bName = (char*)malloc((strlen(name)+1)*sizeof(char));
-        //         strcpy(_bName, name);
-        //     }
-        //     char * getName() { return _bName; }
-        //     void freshBridge(const String & name)
-        //     {
-        //         bridgeName = (char*)malloc((name.length()+1)*sizeof(char));
-        //         strcpy(bridgeName, name.c_str());
-        //     }
-        //     char * getBridge() { return bridgeName; }
-        //     bool checkName(char name[]) { return strcmp(_bName, name) == 0; }
-
-        // private :
-        //     char *_bName;
-        //     char *bridgeName;
-    };
-
+#if defined(BLINKER_MQTT) || defined(BLINKER_HTTP)
     union BlinkerDataType
     {
         int32_t     int_data;
@@ -456,12 +395,7 @@ class BlinkerWidgets_table
 
             String getName() { return _dname; }
 
-            bool saveData(const String & _data, time_t now_time, uint32_t _limit) {
-                if (dataCount > 0)
-                {
-                    if (now_time - latest_time < _limit) return false;
-                }
-
+            bool saveData(const String & _data, time_t now_time) {
                 latest_time = now_time;
 
                 if (dataCount >= BLINKER_MAX_DATA_COUNT)
@@ -550,7 +484,7 @@ class BlinkerWidgets_table
                 // _data_ += STRING_format(data);
                 for (uint8_t num = 0; num < dataCount; num++) {
                     _data_ += "[";
-                    _data_ += String(time_data[num]);
+                    _data_ += STRING_format(time_data[num]);
                     _data_ += ",";
                     _data_ += data[num];
                     _data_ += "]";
@@ -629,11 +563,6 @@ class BlinkerWidgets_table
             const char* getName() { return _dname; }
 
             // bool saveData(int _data, time_t now_time) {
-            //     // if (dataCount > 0)
-            //     // {
-            //     //     if (now_time - latest_time < _limit) return false;
-            //     // }
-
             //     latest_time = now_time;
 
             //     if (dataCount >= BLINKER_MAX_RTDATA_DATA_SIZE)

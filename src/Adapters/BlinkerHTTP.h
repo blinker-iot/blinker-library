@@ -1,25 +1,11 @@
 #ifndef BLINKER_HTTP_H
 #define BLINKER_HTTP_H
 
-#if (defined(ESP8266) || defined(ESP32))
+#include "../Blinker/BlinkerWiFiPlatform.h"
+
+#if defined(BLINKER_NATIVE_WIFI)
 
 #define BLINKER_HTTP
-
-#if defined(ESP8266)
-    #include <ESP8266mDNS.h>
-    #include <ESP8266WiFi.h>
-    #include <ESP8266HTTPClient.h>
-
-    #include <base64.h>
-#elif defined(ESP32)
-    #include <ESPmDNS.h>
-    #include <WiFi.h>
-    #include <HTTPClient.h>
-
-    #include <base64.h>
-#endif
-
-// #include <EEPROM.h>
 
 // #include "../modules/WebSockets/WebSocketsServer.h"
 // #include "../modules/mqtt/Adafruit_HTTP.h"
@@ -36,28 +22,15 @@
 enum b_config_t {
     COMM,
     BLINKER_SMART_CONFIG,
-    BLINKER_AP_CONFIG
 };
 
 enum b_configStatus_t {
     SMART_BEGIN,
     SMART_DONE,
     SMART_TIMEOUT,
-    APCFG_BEGIN,
-    APCFG_DONE,
-    APCFG_TIMEOUT
 };
 
-#if defined(ESP8266)
-    #ifndef BLINKER_WITHOUT_SSL
-        BearSSL::WiFiClientSecure   client_mqtt;
-    #else
-        WiFiClient               client_mqtt;
-    #endif
-    // WiFiClientSecure         client_mqtt;
-#elif defined(ESP32)
-    WiFiClientSecure     client_s;
-#endif
+BlinkerWiFiSecureClient client_s;
 
 WiFiClient               client;
 
@@ -85,14 +58,8 @@ class BlinkerHTTP : public BlinkerStream
         bool checkInit();
         void commonBegin(const char* _ssid, const char* _pswd);
         void smartconfigBegin();
-        void apconfigBegin();
         bool autoInit();
         void smartconfig();
-        #if defined(BLINKER_APCONFIG)
-        void softAPinit();
-        void checkAPCFG();
-        bool parseUrl(String data);
-        #endif
         void connectWiFi(String _ssid, String _pswd);
         void connectWiFi(const char* _ssid, const char* _pswd);
 
@@ -174,7 +141,7 @@ void BlinkerHTTP::subscribe()
 
     
     const int httpsPort = 443;
-#if defined(ESP8266)
+#if 0
     String host = BLINKER_F(BLINKER_SERVER_HOST);
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
@@ -182,7 +149,7 @@ void BlinkerHTTP::subscribe()
 
     #ifndef BLINKER_WITHOUT_SSL
 
-        std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+        std::unique_ptr<WiFiClientSecure>client_s(new WiFiClientSecure);
 
         // client_s->setFingerprint(fingerprint);
         client_s->setInsecure();
@@ -192,7 +159,7 @@ void BlinkerHTTP::subscribe()
 
     String url_iot = BLINKER_F("/api/v1/user/device/http/sub?token=");
     url_iot += STRING_format(MQTT_KEY_HTTP);
-    // url_iot += BLINKER_OTA_VERSION_CODE;
+    // url_iot += BLINKER_VERSION;
 
     #ifndef BLINKER_WITHOUT_SSL
         url_iot = "https://" + host + url_iot;
@@ -275,18 +242,11 @@ void BlinkerHTTP::subscribe()
     url_iot += BLINKER_F("/api/v1/user/device/http/sub?token=");
     url_iot += STRING_format(MQTT_KEY_HTTP);
 
-// #if defined(BLINKER_ALIGENIE_LIGHT)
-//     url_iot += BLINKER_F("&aliType=light");
-// #elif defined(BLINKER_ALIGENIE_OUTLET)
-//     url_iot += BLINKER_F("&aliType=outlet");
-// #elif defined(BLINKER_ALIGENIE_SWITCH)
-// #elif defined(BLINKER_ALIGENIE_SENSOR)
-//     url_iot += BLINKER_F("&aliType=sensor");
 // #endif
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 
-// #if defined(ESP8266)
+// #if 0
 //     http.begin(url_iot, fingerprint); //HTTP
 // #elif defined(ESP32)
     // http.begin(url_iot, ca); TODO
@@ -357,7 +317,7 @@ int BlinkerHTTP::print(char * data, bool needCheck)
     String application = BLINKER_F("application/json;charset=utf-8");
     
     const int httpsPort = 443;
-#if defined(ESP8266)
+#if 0
     String host = BLINKER_F(BLINKER_SERVER_HOST);
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
@@ -365,7 +325,7 @@ int BlinkerHTTP::print(char * data, bool needCheck)
 
     #ifndef BLINKER_WITHOUT_SSL
 
-        std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+        std::unique_ptr<WiFiClientSecure>client_s(new WiFiClientSecure);
 
         // client_s->setFingerprint(fingerprint);
         client_s->setInsecure();
@@ -375,7 +335,7 @@ int BlinkerHTTP::print(char * data, bool needCheck)
 
     String url_iot = BLINKER_F("/api/v1/user/device/http/pub");
     // url_iot += STRING_format(MQTT_KEY_HTTP);
-    // url_iot += BLINKER_OTA_VERSION_CODE;
+    // url_iot += BLINKER_VERSION;
 
     #ifndef BLINKER_WITHOUT_SSL
         url_iot = "https://" + host + url_iot;
@@ -461,18 +421,11 @@ int BlinkerHTTP::print(char * data, bool needCheck)
     url_iot += BLINKER_F("/api/v1/user/device/http/pub");
     url_iot += STRING_format(MQTT_KEY_HTTP);
 
-// #if defined(BLINKER_ALIGENIE_LIGHT)
-//     url_iot += BLINKER_F("&aliType=light");
-// #elif defined(BLINKER_ALIGENIE_OUTLET)
-//     url_iot += BLINKER_F("&aliType=outlet");
-// #elif defined(BLINKER_ALIGENIE_SWITCH)
-// #elif defined(BLINKER_ALIGENIE_SENSOR)
-//     url_iot += BLINKER_F("&aliType=sensor");
 // #endif
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 
-// #if defined(ESP8266)
+// #if 0
 //     http.begin(url_iot, fingerprint); //HTTP
 // #elif defined(ESP32)
     // http.begin(url_iot, ca); TODO
@@ -542,7 +495,7 @@ char * BlinkerHTTP::deviceName() { return DEVICE_NAME_HTTP;/*MQTT_ID_HTTP;*/ }
 int BlinkerHTTP::connectServer()
 {
     const int httpsPort = 443;
-#if defined(ESP8266)
+#if 0
     String host = BLINKER_F(BLINKER_SERVER_HOST);
     String fingerprint = BLINKER_F("84 5f a4 8a 70 5e 79 7e f5 b3 b4 20 45 c8 35 55 72 f6 85 5a");
 
@@ -550,7 +503,7 @@ int BlinkerHTTP::connectServer()
 
     #ifndef BLINKER_WITHOUT_SSL
 
-        std::unique_ptr<BearSSL::WiFiClientSecure>client_s(new BearSSL::WiFiClientSecure);
+        std::unique_ptr<WiFiClientSecure>client_s(new WiFiClientSecure);
 
         // client_s->setFingerprint(fingerprint);
         client_s->setInsecure();
@@ -561,13 +514,13 @@ int BlinkerHTTP::connectServer()
     String url_iot = BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
     url_iot += _authKey;
     url_iot += BLINKER_F("&version=");
-    url_iot += BLINKER_OTA_VERSION_CODE;
+    url_iot += BLINKER_VERSION;
     #ifndef BLINKER_WITHOUT_SSL
     url_iot += BLINKER_F("&protocol=https");
     #else
     url_iot += BLINKER_F("&protocol=http");
     #endif
-    // url_iot += BLINKER_OTA_VERSION_CODE;
+    // url_iot += BLINKER_VERSION;
 
     #ifndef BLINKER_WITHOUT_SSL
         url_iot = "https://" + host + url_iot;
@@ -650,21 +603,14 @@ int BlinkerHTTP::connectServer()
     url_iot += BLINKER_F("/api/v1/user/device/diy/auth?authKey=");
     url_iot += _authKey;
     url_iot += BLINKER_F("&version=");
-    url_iot += BLINKER_OTA_VERSION_CODE;
+    url_iot += BLINKER_VERSION;
     url_iot += BLINKER_F("&protocol=https");
 
-// #if defined(BLINKER_ALIGENIE_LIGHT)
-//     url_iot += BLINKER_F("&aliType=light");
-// #elif defined(BLINKER_ALIGENIE_OUTLET)
-//     url_iot += BLINKER_F("&aliType=outlet");
-// #elif defined(BLINKER_ALIGENIE_SWITCH)
-// #elif defined(BLINKER_ALIGENIE_SENSOR)
-//     url_iot += BLINKER_F("&aliType=sensor");
 // #endif
 
     BLINKER_LOG_ALL(BLINKER_F("HTTPS begin: "), url_iot);
 
-// #if defined(ESP8266)
+// #if 0
 //     http.begin(url_iot, fingerprint); //HTTP
 // #elif defined(ESP32)
     // http.begin(url_iot, ca); TODO
@@ -703,7 +649,7 @@ int BlinkerHTTP::connectServer()
 
     // DynamicJsonBuffer jsonBuffer;
     // JsonObject& root = jsonBuffer.parseObject(payload);
-    DynamicJsonDocument jsonBuffer(1024);
+    JsonDocument jsonBuffer;
     DeserializationError error = deserializeJson(jsonBuffer, payload);
     JsonObject root = jsonBuffer.as<JsonObject>();
 
@@ -711,7 +657,7 @@ int BlinkerHTTP::connectServer()
         !STRING_contains_string(payload, BLINKER_CMD_IOTID)) {
         // while(1) {
             BLINKER_ERR_LOG(BLINKER_F("Maybe you have put in the wrong AuthKey!"));
-            BLINKER_ERR_LOG(BLINKER_F("Or maybe your request is too frequently!"));
+            BLINKER_ERR_LOG(BLINKER_F("Or maybe the server rejected your request!"));
             BLINKER_ERR_LOG(BLINKER_F("Or maybe your network is disconnected!"));
             // ::delay(60000);
 
@@ -840,25 +786,28 @@ bool BlinkerHTTP::checkInit()
                 switch (_configStatus)
                 {
                     case SMART_BEGIN :
+#if defined(BLINKER_WIFI_HAS_SMARTCONFIG)
                         if (WiFi.smartConfigDone())
                         {
                             BLINKER_LOG(BLINKER_F("SmartConfig received."));
                             _connectTime = millis();
 
-                            #if defined(ESP8266)
-                                BLINKER_LOG(BLINKER_F("SSID: "), WiFi.SSID(), BLINKER_F(" PSWD: "), WiFi.psk());
-                            #endif
-
                             _configStatus = SMART_DONE;
                         }
                         else return false;
+#else
+                        _configStatus = SMART_TIMEOUT;
+                        return false;
+#endif
                     case SMART_DONE :
                         if (WiFi.status() != WL_CONNECTED)
                         {
                             if (millis() - _connectTime > 15000)
                             {
                                 BLINKER_LOG(BLINKER_F("SmartConfig timeout."));
+#if defined(BLINKER_WIFI_HAS_SMARTCONFIG)
                                 WiFi.stopSmartConfig();
+#endif
                                 _configStatus = SMART_TIMEOUT;
                             }
                             return false;
@@ -879,50 +828,19 @@ bool BlinkerHTTP::checkInit()
                         }
                         // return false;
                     case SMART_TIMEOUT :
+#if defined(BLINKER_WIFI_HAS_SMARTCONFIG)
+                        #if defined(BLINKER_ESP_SMARTCONFIG_V2)
+                        WiFi.beginSmartConfig(SC_TYPE_ESPTOUCH_V2);
+#else
                         WiFi.beginSmartConfig();
+#endif
                         _configStatus = SMART_BEGIN;
                         BLINKER_LOG(BLINKER_F("Waiting for SmartConfig."));
+#endif
                         return false;
                     default :
                         return false;
                 }
-            case BLINKER_AP_CONFIG :
-                #if defined(BLINKER_APCONFIG)
-                switch (_configStatus)
-                {
-                    case APCFG_BEGIN :
-                        checkAPCFG();
-                        return false;
-                    case APCFG_DONE :
-                        if (WiFi.status() != WL_CONNECTED)
-                        {
-                            if (millis() - _connectTime > 15000)
-                            {
-                                BLINKER_LOG(BLINKER_F("APConfig timeout."));
-                                _configStatus = APCFG_TIMEOUT;
-                            }
-                            return false;
-                        }
-                        else if (WiFi.status() == WL_CONNECTED)
-                        {
-                            BLINKER_LOG(BLINKER_F("WiFi Connected."));
-                            BLINKER_LOG(BLINKER_F("IP Address: "));
-                            BLINKER_LOG(WiFi.localIP());
-                            _isWiFiInit = true;
-                            _connectTime = 0;
-
-                            // begin();
-                            
-                            return false;
-                        }
-                        // return false;
-                    case APCFG_TIMEOUT :
-                        softAPinit();
-                        return false;
-                    default :
-                        return false;
-                }                
-                #endif
             default :
                 return false;
         }
@@ -942,11 +860,7 @@ void BlinkerHTTP::commonBegin(const char* _ssid, const char* _pswd)
 
     connectWiFi(_ssid, _pswd);
 
-    #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_HTTP initialized..."));
-    #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_HTTP initialized..."));
-    #endif
+    BLINKER_LOG(blinkerWiFiPlatformName(), BLINKER_F("_HTTP initialized..."));
 }
 
 void BlinkerHTTP::smartconfigBegin()
@@ -956,53 +870,28 @@ void BlinkerHTTP::smartconfigBegin()
     if (!autoInit()) smartconfig();
     else _configStatus = SMART_DONE;
 
-    #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_HTTP initialized..."));
-    #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_HTTP initialized..."));
-    #endif
-}
-
-void BlinkerHTTP::apconfigBegin()
-{
-    #if defined(BLINKER_APCONFIG)
-    _configType = BLINKER_AP_CONFIG;
-
-    if (!autoInit()) softAPinit();
-    else _configStatus = APCFG_DONE;
-
-    #if defined(ESP8266)
-        BLINKER_LOG(BLINKER_F("ESP8266_HTTP initialized..."));
-    #elif defined(ESP32)
-        BLINKER_LOG(BLINKER_F("ESP32_HTTP initialized..."));
-    #endif
-    #endif
+    BLINKER_LOG(blinkerWiFiPlatformName(), BLINKER_F("_HTTP initialized..."));
 }
 
 bool BlinkerHTTP::autoInit()
 {
-    WiFi.mode(WIFI_STA);
+    blinkerWiFiModeSTA();
     String _hostname = BLINKER_F("DiyArduino_");
     _hostname += macDeviceName();
 
-    #if defined(ESP8266)
-        WiFi.hostname(_hostname.c_str());
-    #elif defined(ESP32)
-        WiFi.setHostname(_hostname.c_str());
-    #endif
+    blinkerWiFiSetHostname(_hostname.c_str());
 
     WiFi.begin();
     ::delay(500);
 
     BLINKER_LOG(BLINKER_F("Waiting for WiFi "),
-                BLINKER_WIFI_AUTO_INIT_TIMEOUT / 1000,
-                BLINKER_F("s, will enter SMARTCONFIG or "),
-                BLINKER_F("APCONFIG while WiFi not connect!"));
+                BLINKER_WIFI_INIT_TIMEOUT / 1000,
+                BLINKER_F("s, will enter SMARTCONFIG while WiFi not connect!"));
 
     uint8_t _times = 0;
     while (WiFi.status() != WL_CONNECTED) {
         ::delay(500);
-        if (_times > BLINKER_WIFI_AUTO_INIT_TIMEOUT / 500) break;
+        if (_times > BLINKER_WIFI_INIT_TIMEOUT / 500) break;
         _times++;
     }
 
@@ -1021,22 +910,27 @@ bool BlinkerHTTP::autoInit()
 
 void BlinkerHTTP::smartconfig()
 {
-    WiFi.mode(WIFI_STA);
+    blinkerWiFiModeSTA();
 
     String _hostname = BLINKER_F("DiyArduino_");
     _hostname += macDeviceName();
 
-    #if defined(ESP8266)
-        WiFi.hostname(_hostname.c_str());
-    #elif defined(ESP32)
-        WiFi.setHostname(_hostname.c_str());
-    #endif
+    blinkerWiFiSetHostname(_hostname.c_str());
 
+#if defined(BLINKER_WIFI_HAS_SMARTCONFIG)
+    #if defined(BLINKER_ESP_SMARTCONFIG_V2)
+    WiFi.beginSmartConfig(SC_TYPE_ESPTOUCH_V2);
+#else
     WiFi.beginSmartConfig();
+#endif
 
     _configStatus = SMART_BEGIN;
 
     BLINKER_LOG(BLINKER_F("Waiting for SmartConfig."));
+#else
+    _configStatus = SMART_TIMEOUT;
+    BLINKER_ERR_LOG(BLINKER_F("SmartConfig is not supported on this platform."));
+#endif
     // while (!WiFi.smartConfigDone()) {
     //     ::delay(500);
     // }
@@ -1053,260 +947,6 @@ void BlinkerHTTP::smartconfig()
     // BLINKER_LOG(BLINKER_F("IP Address: "));
     // BLINKER_LOG(WiFi.localIP());
 }
-#if defined(BLINKER_APCONFIG)
-void BlinkerHTTP::softAPinit()
-{
-    // WiFiServer _apServer(80);
-    // WiFiClient _apClient;
-    IPAddress apIP(192, 168, 4, 1);
-    #if defined(ESP8266)
-        IPAddress netMsk(255, 255, 255, 0);
-    #endif
-
-    // _apServer = new WiFiServer(80);
-
-    WiFi.mode(WIFI_AP);    
-
-    delay(1000);
-
-    String softAP_ssid = BLINKER_F("DiyArduino_");
-    softAP_ssid += macDeviceName();
-
-    #if defined(ESP8266)
-        WiFi.hostname(softAP_ssid.c_str());
-        WiFi.softAPConfig(apIP, apIP, netMsk);
-    #elif defined(ESP32)
-        WiFi.setHostname(softAP_ssid.c_str());
-        WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-    #endif
-
-    WiFi.softAP(softAP_ssid.c_str(), NULL);
-    delay(100);
-
-    // _apServer->begin();
-    // BLINKER_LOG(BLINKER_F("AP IP address: "), WiFi.softAPIP());
-    // BLINKER_LOG(BLINKER_F("HTTP _apServer started"));
-    // BLINKER_LOG(BLINKER_F("URL: http://"), WiFi.softAPIP());
-
-    #if defined(ESP8266)
-    if (!MDNS.begin(softAP_ssid.c_str(), WiFi.localIP())) {
-    #elif defined(ESP32)
-    if (!MDNS.begin(softAP_ssid.c_str())) {
-    #endif
-        while(1) {
-            ::delay(100);
-        }
-    }
-
-    BLINKER_LOG(BLINKER_F("mDNS responder started"));
-
-    MDNS.addService(BLINKER_MDNS_SERVICE_BLINKER, "tcp", WS_SERVERPORT);
-    MDNS.addServiceTxt(BLINKER_MDNS_SERVICE_BLINKER, "tcp", "deviceName", macDeviceName());
-
-    webSocket_HTTP.begin();
-    webSocket_HTTP.onEvent(webSocketEvent_HTTP);
-
-    _configStatus = APCFG_BEGIN;
-    isApCfg = true;
-
-    BLINKER_LOG(BLINKER_F("Wait for APConfig"));
-
-    // while(WiFi.status() != WL_CONNECTED)
-    // {
-    //     // serverClient();
-    //     _apClient = _apServer->available();
-    //     // if (_apClient.status() == CLOSED)
-    //     if (!_apClient.connected())
-    //     {
-    //         _apClient.stop();
-    //         BLINKER_LOG(BLINKER_F("Connection closed on _apClient"));
-    //     }
-    //     else
-    //     {
-    //         if (_apClient.available())
-    //         {
-    //             String data = _apClient.readStringUntil('\r');
-
-    //             // data = data.substring(4, data.length() - 9);
-    //             _apClient.flush();
-
-    //             BLINKER_LOG(BLINKER_F("clientData: "), data);
-
-    //             if (STRING_contains_string(data, "ssid") && 
-    //                 STRING_contains_string(data, "pswd"))
-    //             {
-    //                 String msg = BLINKER_F("{\"hello\":\"world\"}");
-
-    //                 String s= BLINKER_F("HTTP/1.1 200 OK\r\n");
-    //                 s += BLINKER_F("Content-Type: application/json;");
-    //                 s += BLINKER_F("charset=utf-8\r\n");
-    //                 s += BLINKER_F("Content-Length: ");
-    //                 s += String(msg.length());
-    //                 s += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
-    //                 s += msg;
-    //                 s += BLINKER_F("\r\n");
-
-    //                 _apClient.print(s);
-
-    //                 _apClient.stop();
-
-    //                 parseUrl(data);
-    //             }
-    //         }
-    //     }
-    //     ::delay(10);
-    // }
-}
-
-void BlinkerHTTP::checkAPCFG()
-{
-    // if(WiFi.status() != WL_CONNECTED)
-    // {
-        webSocket_HTTP.loop();
-
-        #if defined(ESP8266)
-            MDNS.update();
-        #endif
-
-        if (isAvail_HTTP)
-        {
-            BLINKER_LOG(BLINKER_F("checkAPCFG: "), msgBuf_HTTP);
-
-            if (STRING_contains_string(msgBuf_HTTP, "ssid") && \
-                STRING_contains_string(msgBuf_HTTP, "pswd"))
-            {
-                parseUrl(msgBuf_HTTP);
-            }
-            isAvail_HTTP = false;
-        }
-
-        // serverClient();
-        // _apClient = _apServer->available();
-        // // if (_apClient.status() == CLOSED)
-        // if (!_apClient.connected())
-        // {
-        //     _apClient.stop();
-        //     BLINKER_LOG(BLINKER_F("Connection closed on _apClient"));
-        // }
-        // else
-        // {
-        //     if (_apClient.available())
-        //     {
-        //         String data = _apClient.readStringUntil('\r');
-
-        //         // data = data.substring(4, data.length() - 9);
-        //         _apClient.flush();
-
-        //         BLINKER_LOG(BLINKER_F("clientData: "), data);
-
-        //         if (STRING_contains_string(data, "ssid") && 
-        //             STRING_contains_string(data, "pswd"))
-        //         {
-        //             String msg = BLINKER_F("{\"hello\":\"world\"}");
-
-        //             String s= BLINKER_F("HTTP/1.1 200 OK\r\n");
-        //             s += BLINKER_F("Content-Type: application/json;");
-        //             s += BLINKER_F("charset=utf-8\r\n");
-        //             s += BLINKER_F("Content-Length: ");
-        //             s += String(msg.length());
-        //             s += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
-        //             s += msg;
-        //             s += BLINKER_F("\r\n");
-
-        //             _apClient.print(s);
-
-        //             _apClient.stop();
-
-        //             parseUrl(data);
-        //         }
-        //     }
-        // }
-        // ::delay(10);
-    // }
-}
-
-// void BlinkerHTTP::serverClient()
-// {
-//     if (!_apClient)
-//     {
-//         _apClient = _apServer->available();
-//     }
-//     else
-//     {
-//         // if (_apClient.status() == CLOSED)
-//         if (!_apClient.connected())
-//         {
-//             _apClient.stop();
-//             BLINKER_LOG(BLINKER_F("Connection closed on _apClient"));
-//         }
-//         else
-//         {
-//             if (_apClient.available())
-//             {
-//                 String data = _apClient.readStringUntil('\r');
-
-//                 // data = data.substring(4, data.length() - 9);
-//                 _apClient.flush();
-
-//                 BLINKER_LOG(BLINKER_F("clientData: "), data);
-
-//                 if (STRING_contains_string(data, "ssid") &&
-//                     STRING_contains_string(data, "pswd"))
-//                 {
-//                     String msg = BLINKER_F("{\"hello\":\"world\"}");
-
-//                     String s= BLINKER_F("HTTP/1.1 200 OK\r\n");
-//                     s += BLINKER_F("Content-Type: application/json;");
-//                     s += BLINKER_F("charset=utf-8\r\n");
-//                     s += BLINKER_F("Content-Length: ");
-//                     s += String(msg.length());
-//                     s += BLINKER_F("\r\nConnection: Keep Alive\r\n\r\n");
-//                     s += msg;
-//                     s += BLINKER_F("\r\n");
-
-//                     _apClient.print(s);
-
-//                     _apClient.stop();
-
-//                     parseUrl(data);
-//                 }
-//             }
-//         }
-//     }
-// }
-
-bool BlinkerHTTP::parseUrl(String data)
-{
-    BLINKER_LOG(BLINKER_F("APCONFIG data: "), data);
-    // DynamicJsonBuffer jsonBuffer;
-    // JsonObject& wifi_data = jsonBuffer.parseObject(data);
-    DynamicJsonDocument jsonBuffer(1024);
-    DeserializationError error = deserializeJson(jsonBuffer, data);
-    JsonObject wifi_data = jsonBuffer.as<JsonObject>();
-
-    // if (!wifi_data.success()) 
-    if (error)
-    {
-        return false;
-    }
-
-    String _ssid = wifi_data["ssid"];
-    String _pswd = wifi_data["pswd"];
-
-    BLINKER_LOG(BLINKER_F("ssid: "), _ssid);
-    BLINKER_LOG(BLINKER_F("pswd: "), _pswd);
-
-    // free(_apServer);
-    MDNS.end();
-    webSocket_HTTP.close();
-
-    connectWiFi(_ssid, _pswd);
-
-    _configStatus = APCFG_DONE;
-    _connectTime = millis();
-    return true;
-}
-#endif
 void BlinkerHTTP::connectWiFi(String _ssid, String _pswd)
 {
     connectWiFi(_ssid.c_str(), _pswd.c_str());
@@ -1318,15 +958,11 @@ void BlinkerHTTP::connectWiFi(const char* _ssid, const char* _pswd)
 
     BLINKER_LOG(BLINKER_F("Connecting to "), _ssid);
 
-    WiFi.mode(WIFI_STA);
+    blinkerWiFiModeSTA();
     String _hostname = BLINKER_F("DiyArduinoMQTT_");
     _hostname += macDeviceName();
 
-    #if defined(ESP8266)
-        WiFi.hostname(_hostname.c_str());
-    #elif defined(ESP32)
-        WiFi.setHostname(_hostname.c_str());
-    #endif
+    blinkerWiFiSetHostname(_hostname.c_str());
 
     if (_pswd && strlen(_pswd)) {
         WiFi.begin(_ssid, _pswd);

@@ -1,31 +1,30 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include <Arduino.h>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename TSource>
-struct Reader<TSource,
-              typename enable_if<is_base_of<Stream, TSource>::value>::type> {
+struct Reader<TSource, enable_if_t<is_base_of<Stream, TSource>::value>> {
  public:
-  explicit Reader(Stream& stream) : _stream(&stream) {}
+  explicit Reader(Stream& stream) : stream_(&stream) {}
 
   int read() {
-    // don't use _stream.read() as it ignores the timeout
+    // don't use stream_->read() as it ignores the timeout
     char c;
-    return _stream->readBytes(&c, 1) ? static_cast<unsigned char>(c) : -1;
+    return stream_->readBytes(&c, 1) ? static_cast<unsigned char>(c) : -1;
   }
 
   size_t readBytes(char* buffer, size_t length) {
-    return _stream->readBytes(buffer, length);
+    return stream_->readBytes(buffer, length);
   }
 
  private:
-  Stream* _stream;
+  Stream* stream_;
 };
 
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE
