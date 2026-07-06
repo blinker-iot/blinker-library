@@ -46,7 +46,6 @@ So we named this project **blinker** with this inspiration.
 [WebSockets](https://github.com/Links2004/arduinoWebSockets) - for Blinker to build up a websocket server
 [Adafruit_MQTT_Library](https://github.com/adafruit/Adafruit_MQTT_Library) - for Blinker to build up an MQTT client
 [ArduinoJson](https://github.com/bblanchon/ArduinoJson) - for Blinker to format JSON data
-[base64](https://github.com/adamvr/arduino-base64) - for Blinker to encode and decode Base64 data
 [TaskScheduler](https://github.com/arkhipenko/TaskScheduler) - for Blinker to schedule cooperative tasks
 
 Due to frequent version updates, individual items may not be added in time. If you find one, please let us know.

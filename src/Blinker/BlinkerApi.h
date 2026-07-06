@@ -2674,14 +2674,6 @@ void BlinkerApi::detachAhrs()
 
         //     _data_ += "}";
 
-        //     int encodedLen = base64_enc_len(_data_.length());
-        //     char encoded[encodedLen];
-        //     base64_encode(encoded, _data_.c_str(), _data_.length());
-        //     BLINKER_LOG_ALL(BLINKER_F("encoded: "), encoded);
-
-        //     data += encoded;
-
-        //     // data += BLINKER_F("");
         // #else
 
             String data = BLINKER_F("{\"deviceName\":\"");

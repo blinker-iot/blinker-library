@@ -657,8 +657,6 @@ void BlinkerMQTT::subscribe()
 
 
             // BLINKER_LOG_ALL(BLINKER_F("BLINKER_RRPC_PUB_TOPIC_MQTT: "), BLINKER_RRPC_PUB_TOPIC_MQTT);
-
-            // mqtt_MQTT->publish(BLINKER_RRPC_PUB_TOPIC_MQTT, base64::encode("hello blinker").c_str());
         }
     }
 }

@@ -46,7 +46,6 @@ Blinker 嵌入式硬件库。当前支持 ESP32、Arduino UNO R4 WiFi、Raspberr
 [WebSockets](https://github.com/Links2004/arduinoWebSockets) - Blinker 用这个库建立了 websocket 服务器
 [Adafruit_MQTT_Library](https://github.com/adafruit/Adafruit_MQTT_Library) - Blinker 用这个库建立了 MQTT 客户端
 [ArduinoJson](https://github.com/bblanchon/ArduinoJson) - Blinker 用这个库解析 JSON
-[base64](https://github.com/adamvr/arduino-base64) - Blinker 用这个库进行 Base64 编解码
 [TaskScheduler](https://github.com/arkhipenko/TaskScheduler) - Blinker 用这个库进行任务调度
 
 由于版本更新频繁，个别项目可能没有及时添加，望理解。如有发现，欢迎告知我们。

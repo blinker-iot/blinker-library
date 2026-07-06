@@ -13,7 +13,6 @@
 #include <HTTPClient.h>
 #include <WiFiMulti.h>
 #include <ESPmDNS.h>
-#include <base64.h>
 
 extern "C" {
     #include <esp_err.h>

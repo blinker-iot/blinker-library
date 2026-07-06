@@ -15,7 +15,6 @@
     #error Unsupported native WiFi platform.
 #endif
 
-#include "BlinkerBase64Compat.h"
 #include "BlinkerWebSocketsStub.h"
 
 #ifndef HTTP_CODE_OK
