@@ -61,16 +61,15 @@ jobs:
       #     recursive: true
 
       - name: UPload Zip
-        uses: Dylan700/sftp-upload-action@latest
+        uses: eiserv/easySFTP@v3
         with:
-          server: ${{ secrets.SERVER_IP }}
+          host: ${{ secrets.SERVER_IP }}
           username: ubuntu
-          password: ${{secrets.SERVER_PASSWD}}
-          port: 22
-          uploads: |
-            ./ =>  ${{ secrets.REMOTE_PATH }}
-          ignore: |
-            !blinker-library-${{steps.version.outputs.prop}}.zip
+          password: ${{ secrets.SERVER_PASSWD }}
+          port: "22"
+          host-key: ${{ secrets.SERVER_HOST_KEY }}
+          source: blinker-library-${{steps.version.outputs.prop}}.zip
+          target: ${{ secrets.REMOTE_PATH }}/blinker-library-${{steps.version.outputs.prop}}.zip
       
       - name: upload json
         uses: garygrossgarten/github-action-scp@release
