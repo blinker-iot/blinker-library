@@ -61,16 +61,17 @@ jobs:
       #     recursive: true
 
       - name: UPload Zip
-        uses: Dylan700/sftp-upload-action@latest
+        uses: eiserv/easySFTP@v3
         with:
-          server: ${{ secrets.SERVER_IP }}
+          host: ${{ secrets.SERVER_IP }}
           username: ubuntu
           password: ${{secrets.SERVER_PASSWD}}
           port: 22
-          uploads: |
-            ./ =>  ${{ secrets.REMOTE_PATH }}
-          ignore: |
-            !blinker-library-${{steps.version.outputs.prop}}.zip
+          source: blinker-library-${{steps.version.outputs.prop}}.zip
+          target: ${{ secrets.REMOTE_PATH }}/
+          # Same trust model as before. Once a KNOWN_HOSTS secret exists,
+          # replace this with: known-hosts: ${{ secrets.KNOWN_HOSTS }}
+          allow-any-host-key: true
       
       - name: upload json
         uses: garygrossgarten/github-action-scp@release
