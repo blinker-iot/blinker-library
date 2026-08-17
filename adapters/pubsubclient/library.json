@@ -1,0 +1,30 @@
+{
+  "name": "BlinkerPubSubClientAdapter",
+  "version": "0.1.0",
+  "description": "Optional PubSubClient adapter for BlinkerDeviceV2",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "i3water",
+      "maintainer": true
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blinker-iot/blinker-library.git"
+  },
+  "keywords": [
+    "blinker",
+    "mqtt",
+    "pubsubclient"
+  ],
+  "homepage": "https://diandeng.tech/",
+  "frameworks": [
+    "arduino"
+  ],
+  "platforms": "*",
+  "dependencies": {
+    "BlinkerDeviceV2": ">=0.1.0",
+    "PubSubClient": ">=2.8.0"
+  }
+}

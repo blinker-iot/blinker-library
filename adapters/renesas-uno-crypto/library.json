@@ -1,0 +1,16 @@
+{
+  "name": "BlinkerRenesasUnoCryptoAdapter",
+  "version": "0.1.0",
+  "description": "UNO R4 SoftwareATSE P-256 verifier for BlinkerDeviceV2",
+  "license": "MIT",
+  "authors": [{"name": "i3water", "maintainer": true}],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blinker-iot/blinker-library.git"
+  },
+  "keywords": ["blinker", "uno-r4", "p256", "ecdsa", "softwareatse"],
+  "homepage": "https://diandeng.tech/",
+  "frameworks": ["arduino"],
+  "platforms": ["renesas_uno"],
+  "dependencies": {"BlinkerDeviceV2": ">=0.1.0"}
+}

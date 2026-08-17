@@ -1,0 +1,167 @@
+#ifndef BLINKER_CORE_RESOURCE_PROFILE_H
+#define BLINKER_CORE_RESOURCE_PROFILE_H
+
+#include <stddef.h>
+
+// Resource capacities affect object layout and therefore must be identical in
+// every translation unit. Set BLINKER_RESOURCE_PROFILE as a build-wide flag,
+// or change the single default below for Arduino builders that do not expose
+// global compiler definitions. A #define in only the sketch is not sufficient.
+#define BLINKER_RESOURCE_PROFILE_SMALL 1
+#define BLINKER_RESOURCE_PROFILE_STANDARD 2
+#define BLINKER_RESOURCE_PROFILE_LARGE 3
+
+#ifndef BLINKER_RESOURCE_PROFILE
+#define BLINKER_RESOURCE_PROFILE BLINKER_RESOURCE_PROFILE_STANDARD
+#endif
+
+#if BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_SMALL
+
+#ifndef BLINKER_DEVICE_MAX_FIELDS
+#define BLINKER_DEVICE_MAX_FIELDS 24
+#endif
+#ifndef BLINKER_DEVICE_FRAME_SIZE
+#define BLINKER_DEVICE_FRAME_SIZE 256
+#endif
+#ifndef BLINKER_DEVICE_PATCH_SIZE
+#define BLINKER_DEVICE_PATCH_SIZE 192
+#endif
+#ifndef BLINKER_DEVICE_STATE_ARENA_SIZE
+#define BLINKER_DEVICE_STATE_ARENA_SIZE 192
+#endif
+
+#ifndef BLINKER_MAX_TRANSPORTS
+#define BLINKER_MAX_TRANSPORTS 2
+#endif
+#ifndef BLINKER_MAX_PEER_SESSIONS
+#define BLINKER_MAX_PEER_SESSIONS 2
+#endif
+#ifndef BLINKER_RELIABLE_RECEIVE_WINDOW
+#define BLINKER_RELIABLE_RECEIVE_WINDOW 1
+#endif
+#ifndef BLINKER_BLE_MAX_SESSIONS
+#define BLINKER_BLE_MAX_SESSIONS 1
+#endif
+#ifndef BLINKER_BLE_MAX_TX_FRAMES
+#define BLINKER_BLE_MAX_TX_FRAMES 1
+#endif
+
+#elif BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_STANDARD
+
+#ifndef BLINKER_DEVICE_MAX_FIELDS
+#define BLINKER_DEVICE_MAX_FIELDS 32
+#endif
+#ifndef BLINKER_DEVICE_FRAME_SIZE
+#define BLINKER_DEVICE_FRAME_SIZE 1024
+#endif
+#ifndef BLINKER_DEVICE_PATCH_SIZE
+#define BLINKER_DEVICE_PATCH_SIZE 512
+#endif
+#ifndef BLINKER_DEVICE_STATE_ARENA_SIZE
+#define BLINKER_DEVICE_STATE_ARENA_SIZE 512
+#endif
+
+#ifndef BLINKER_MAX_TRANSPORTS
+#define BLINKER_MAX_TRANSPORTS 3
+#endif
+#ifndef BLINKER_MAX_PEER_SESSIONS
+#define BLINKER_MAX_PEER_SESSIONS 4
+#endif
+#ifndef BLINKER_RELIABLE_RECEIVE_WINDOW
+#define BLINKER_RELIABLE_RECEIVE_WINDOW 2
+#endif
+#ifndef BLINKER_BLE_MAX_SESSIONS
+#define BLINKER_BLE_MAX_SESSIONS 2
+#endif
+#ifndef BLINKER_BLE_MAX_TX_FRAMES
+#define BLINKER_BLE_MAX_TX_FRAMES 4
+#endif
+
+#elif BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_LARGE
+
+#ifndef BLINKER_DEVICE_MAX_FIELDS
+#define BLINKER_DEVICE_MAX_FIELDS 64
+#endif
+#ifndef BLINKER_DEVICE_FRAME_SIZE
+#define BLINKER_DEVICE_FRAME_SIZE 4096
+#endif
+#ifndef BLINKER_DEVICE_PATCH_SIZE
+#define BLINKER_DEVICE_PATCH_SIZE 2048
+#endif
+#ifndef BLINKER_DEVICE_STATE_ARENA_SIZE
+#define BLINKER_DEVICE_STATE_ARENA_SIZE 2048
+#endif
+
+#ifndef BLINKER_MAX_TRANSPORTS
+#define BLINKER_MAX_TRANSPORTS 4
+#endif
+#ifndef BLINKER_MAX_PEER_SESSIONS
+#define BLINKER_MAX_PEER_SESSIONS 8
+#endif
+#ifndef BLINKER_RELIABLE_RECEIVE_WINDOW
+#define BLINKER_RELIABLE_RECEIVE_WINDOW 4
+#endif
+#ifndef BLINKER_BLE_MAX_SESSIONS
+#define BLINKER_BLE_MAX_SESSIONS 4
+#endif
+#ifndef BLINKER_BLE_MAX_TX_FRAMES
+#define BLINKER_BLE_MAX_TX_FRAMES 8
+#endif
+
+#else
+#error "BLINKER_RESOURCE_PROFILE must be SMALL, STANDARD or LARGE"
+#endif
+
+#if BLINKER_MAX_TRANSPORTS < 1 || BLINKER_MAX_TRANSPORTS > 255
+#error "BLINKER_MAX_TRANSPORTS must be between 1 and 255"
+#endif
+
+#if BLINKER_MAX_PEER_SESSIONS < 1 || BLINKER_MAX_PEER_SESSIONS > 255
+#error "BLINKER_MAX_PEER_SESSIONS must be between 1 and 255"
+#endif
+
+#if BLINKER_BLE_MAX_SESSIONS < 1 || BLINKER_BLE_MAX_SESSIONS > 255
+#error "BLINKER_BLE_MAX_SESSIONS must be between 1 and 255"
+#endif
+
+#if BLINKER_BLE_MAX_TX_FRAMES < 1 || BLINKER_BLE_MAX_TX_FRAMES > 255
+#error "BLINKER_BLE_MAX_TX_FRAMES must be between 1 and 255"
+#endif
+
+#if BLINKER_DEVICE_MAX_FIELDS < 1 || BLINKER_DEVICE_MAX_FIELDS > 65535
+#error "BLINKER_DEVICE_MAX_FIELDS must be between 1 and 65535"
+#endif
+
+#if BLINKER_DEVICE_FRAME_SIZE < 64 || BLINKER_DEVICE_FRAME_SIZE > 65535
+#error "BLINKER_DEVICE_FRAME_SIZE must be between 64 and 65535"
+#endif
+
+#if BLINKER_DEVICE_PATCH_SIZE < 16 || BLINKER_DEVICE_PATCH_SIZE > 65535
+#error "BLINKER_DEVICE_PATCH_SIZE must be between 16 and 65535"
+#endif
+
+#if BLINKER_DEVICE_STATE_ARENA_SIZE < 1 || \
+    BLINKER_DEVICE_STATE_ARENA_SIZE > 65535
+#error "BLINKER_DEVICE_STATE_ARENA_SIZE must be between 1 and 65535"
+#endif
+
+namespace blinker {
+
+// The public Device facade uses one build-wide storage layout. These values
+// must therefore follow the same translation-unit rule as the transport and
+// session limits above. Advanced Client users may still select independent
+// ClientStorage template capacities when a product has unusual value sizes.
+struct ActiveResourceProfile {
+    enum : size_t {
+        fieldCapacity = BLINKER_DEVICE_MAX_FIELDS,
+        frameSize = BLINKER_DEVICE_FRAME_SIZE,
+        patchSize = BLINKER_DEVICE_PATCH_SIZE,
+        stateArenaSize = BLINKER_DEVICE_STATE_ARENA_SIZE,
+        transportCapacity = BLINKER_MAX_TRANSPORTS,
+        peerSessionCapacity = BLINKER_MAX_PEER_SESSIONS
+    };
+};
+
+} // namespace blinker
+
+#endif

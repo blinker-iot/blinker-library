@@ -1,0 +1,19 @@
+{
+  "name": "BlinkerArduinoCryptoAdapter",
+  "version": "0.1.0",
+  "description": "Portable Crypto 0.4.0 X25519, AES-256-GCM and Ed25519 verifier for BlinkerDeviceV2",
+  "license": "MIT",
+  "authors": [{"name": "i3water", "maintainer": true}],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blinker-iot/blinker-library.git"
+  },
+  "keywords": ["blinker", "arduino", "x25519", "aes-gcm", "ed25519", "noise"],
+  "homepage": "https://diandeng.tech/",
+  "frameworks": ["arduino"],
+  "platforms": "*",
+  "dependencies": {
+    "BlinkerDeviceV2": ">=0.1.0",
+    "Crypto": "0.4.0"
+  }
+}

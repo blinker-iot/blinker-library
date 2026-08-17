@@ -1,0 +1,18 @@
+{
+  "name": "BlinkerRenesasUnoBleSecurity",
+  "version": "0.1.0",
+  "description": "UNO R4 exact-connection ArduinoBLE security probe for BlinkerDeviceV2",
+  "keywords": ["blinker", "ble", "arduino", "renesas", "security"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blinker-iot/blinker-library.git"
+  },
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "renesas-ra",
+  "dependencies": {
+    "BlinkerDeviceV2": ">=0.1.0",
+    "BlinkerArduinoBleAdapter": ">=0.1.0",
+    "ArduinoBLE": "=2.0.2"
+  }
+}

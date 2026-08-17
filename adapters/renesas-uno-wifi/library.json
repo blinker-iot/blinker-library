@@ -1,0 +1,18 @@
+{
+  "name": "BlinkerRenesasUnoWifiAdapter",
+  "version": "0.1.0",
+  "description": "UNO R4 WiFi station adapter for BlinkerDeviceV2",
+  "license": "MIT",
+  "authors": [{"name": "i3water", "maintainer": true}],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blinker-iot/blinker-library.git"
+  },
+  "keywords": ["blinker", "renesas", "uno-r4", "wifi"],
+  "homepage": "https://diandeng.tech/",
+  "frameworks": ["arduino"],
+  "platforms": ["renesas-ra"],
+  "dependencies": {
+    "BlinkerDeviceV2": ">=0.1.0"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "BlinkerRenesasUnoStorageAdapter",
+  "version": "0.1.0",
+  "description": "UNO R4 WiFi two-copy credential journal over connectivity-module Preferences",
+  "license": "MIT",
+  "authors": [{"name": "i3water", "maintainer": true}],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blinker-iot/blinker-library.git"
+  },
+  "keywords": ["blinker", "uno-r4", "preferences", "storage"],
+  "homepage": "https://diandeng.tech/",
+  "frameworks": ["arduino"],
+  "platforms": ["renesas-ra"],
+  "dependencies": {
+    "BlinkerDeviceV2": ">=0.1.0"
+  }
+}

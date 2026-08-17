@@ -1,0 +1,19 @@
+{
+  "name": "BlinkerArduinoBleAdapter",
+  "version": "0.1.0",
+  "description": "Optional ArduinoBLE adapter for BlinkerDeviceV2",
+  "license": "MIT",
+  "authors": [{"name": "i3water", "maintainer": true}],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blinker-iot/blinker-library.git"
+  },
+  "keywords": ["blinker", "ble", "arduino", "uno-r4"],
+  "homepage": "https://diandeng.tech/",
+  "frameworks": ["arduino"],
+  "platforms": ["renesas-ra"],
+  "dependencies": {
+    "BlinkerDeviceV2": ">=0.1.0",
+    "ArduinoBLE": "*"
+  }
+}

@@ -1,28 +1,27 @@
 {
-    "name": "Blinker",
-    "description": "Build a easy way for your IoT project. Blinker library for embedded hardware. Works with Arduino, ESP8266, ESP32.",
-    "keywords": "wifi, websocket, Bluetooth, mqtt",
-    "authors": [
-        {
-            "name": "i3water",
-            "url": "https://github.com/i3water",
-            "maintainer": true
-        }
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/blinker-iot/blinker-library.git"
-    },
-    "version": "0.5.01250522",
-    "homepage": "https://diandeng.tech/",
-    "export": {
-        "exclude": [
-            "tests"
-        ]
-    },
-    "frameworks": "arduino",
-    "platforms": "esp32,renesas_uno,renesas",
-    "examples": [
-        "examples/*/*/*.ino"
-    ]
+  "name": "BlinkerDeviceV2",
+  "version": "0.1.0",
+  "description": "Platform-independent Blinker device core and BBP/2 protocol",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "i3water",
+      "maintainer": true
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blinker-iot/blinker-library.git"
+  },
+  "keywords": [
+    "blinker",
+    "iot",
+    "bbp2",
+    "cbor"
+  ],
+  "homepage": "https://diandeng.tech/",
+  "frameworks": [
+    "arduino"
+  ],
+  "platforms": "*"
 }
