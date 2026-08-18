@@ -1,7 +1,7 @@
 #ifndef BLINKER_OFFICIAL_WIFI_BLE_COMPOSITION_H
 #define BLINKER_OFFICIAL_WIFI_BLE_COMPOSITION_H
 
-#include "BlinkerOfficialBleWorkspace.h"
+#include "BlinkerOfficialBleProduct.h"
 #include "BlinkerOfficialWifiCloudStack.h"
 
 #include <BlinkerV2/identity/ControllerCredentialStore.h>

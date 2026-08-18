@@ -1,18 +1,16 @@
 #ifndef BLINKER_OFFICIAL_DEVICE_KEY_WIFI_H
 #define BLINKER_OFFICIAL_DEVICE_KEY_WIFI_H
 
-#include <BlinkerV2/core/Span.h>
+#include <BlinkerV2/api/WifiDeviceKeyProfile.h>
 #include <BlinkerV2/interface/IProductLifecycle.h>
 
 namespace blinker {
 namespace integration {
 namespace official_detail {
 
-// Internal compile/resource seams. These are not release API.
-IProductLifecycle& esp32DeviceKeyWifiLifecycle(
-    StringView ssid,
-    StringView password,
-    StringView deviceKey);
+// Provisioning variants remain internal until their public begin() contracts
+// and APP/service endpoints are frozen. Manual DeviceKey WiFi binds directly
+// to integration::lifecycle(const WifiDeviceKeyProfile&).
 IProductLifecycle& esp32ProvisionedDeviceKeyWifiLifecycle(
     StringView serviceName,
     StringView proofOfPossession,
@@ -22,11 +20,6 @@ IProductLifecycle& esp32SoftApProvisionedDeviceKeyWifiBleLifecycle(
     StringView proofOfPossession,
     StringView serviceKey,
     bool forceProvisioning = false);
-IProductLifecycle& renesasUnoDeviceKeyWifiLifecycle(
-    StringView ssid,
-    StringView password,
-    StringView deviceKey);
-
 } // namespace official_detail
 } // namespace integration
 } // namespace blinker

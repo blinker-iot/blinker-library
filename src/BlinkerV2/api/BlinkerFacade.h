@@ -5,26 +5,11 @@
 
 #include "Product.h"
 #include "StateUpdate.h"
-#include "WifiOnboardingProfile.h"
+#include "WifiDeviceKeyProfile.h"
 
 namespace blinker {
 
-struct WiFiTag {
-    WifiOnboardingProfile onboard(
-        StringView ssid,
-        StringView password,
-        StringView enrollmentKey) const {
-        return WifiOnboardingProfile(
-            ssid, password, enrollmentKey, false);
-    }
-
-    WifiOnboardingProfile onboardOpen(
-        StringView ssid,
-        StringView enrollmentKey) const {
-        return WifiOnboardingProfile(
-            ssid, StringView(), enrollmentKey, true);
-    }
-};
+struct WiFiTag {};
 struct BleTag {};
 struct WiFiBleTag {};
 
@@ -32,12 +17,11 @@ constexpr WiFiTag WiFi = WiFiTag();
 constexpr BleTag BLE = BleTag();
 constexpr WiFiBleTag WiFiBLE = WiFiBleTag();
 
-// Platform packages implement only the profiles they support. Keeping this
-// seam as three overloads lets begin() select one statically without including
-// radio SDKs or constructing unused WiFi/BLE dependencies in the core facade.
+// Platform packages implement only the profiles they support. These static
+// overloads keep radio SDKs out of the facade and let the linker discard every
+// unselected product graph.
 namespace integration {
-IProductLifecycle& lifecycle(WiFiTag);
-IProductLifecycle& lifecycle(const WifiOnboardingProfile& profile);
+IProductLifecycle& lifecycle(const WifiDeviceKeyProfile& profile);
 IProductLifecycle& lifecycle(BleTag);
 IProductLifecycle& lifecycle(WiFiBleTag);
 } // namespace integration
@@ -82,22 +66,28 @@ class BlinkerClass {
 public:
     BlinkerClass() : product_(nullptr), lastError_(ErrorCode::Ok) {}
 
-    template <typename Profile, typename... Interactions>
+    // The ordinary WiFi path mirrors the familiar Arduino/Blynk ordering:
+    // mode, device credential, network, then the explicit no-heap schema.
+    template <typename... Interactions>
     bool begin(
-        Profile profile,
+        WiFiTag,
+        StringView deviceKey,
+        StringView ssid,
+        StringView password,
         Interactions&... interactions) {
-        static facade_detail::Session<Interactions...> session(
-            integration::lifecycle(profile),
+        return beginProfile(
+            WifiDeviceKeyProfile(deviceKey, ssid, password),
             interactions...);
-        Product* selected = &session.product();
-        if (product_ != nullptr && product_ != selected) {
-            return remember(Result::failure(ErrorCode::AlreadyExists));
-        }
-        if (!session.matches(interactions...)) {
-            return remember(Result::failure(ErrorCode::AlreadyExists));
-        }
-        product_ = selected;
-        return remember(product_->begin());
+    }
+
+    template <typename... Interactions>
+    bool begin(BleTag profile, Interactions&... interactions) {
+        return beginProfile(profile, interactions...);
+    }
+
+    template <typename... Interactions>
+    bool begin(WiFiBleTag profile, Interactions&... interactions) {
+        return beginProfile(profile, interactions...);
     }
 
     void run(uint32_t totalBudgetMicros = 1000U) {
@@ -151,6 +141,21 @@ public:
     }
 
 private:
+    template <typename Profile, typename... Interactions>
+    bool beginProfile(Profile profile, Interactions&... interactions) {
+        static facade_detail::Session<Interactions...> session(
+            integration::lifecycle(profile),
+            interactions...);
+        Product* selected = &session.product();
+        if (product_ != nullptr && product_ != selected) {
+            return remember(Result::failure(ErrorCode::AlreadyExists));
+        }
+        if (!session.matches(interactions...)) {
+            return remember(Result::failure(ErrorCode::AlreadyExists));
+        }
+        product_ = selected;
+        return remember(product_->begin());
+    }
     bool remember(Result result) {
         lastError_ = result.code();
         return result.ok();

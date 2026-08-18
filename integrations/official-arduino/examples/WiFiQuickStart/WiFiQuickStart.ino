@@ -1,9 +1,5 @@
 #include <Blinker.h>
 
-// For devices whose WiFi, ownership and cloud credential were installed
-// before this Sketch starts. DIY/education devices normally use the sibling
-// WiFiOnboardingQuickStart example instead.
-
 BLINKER_PROPERTY(power, bool, blinker::readWrite());
 
 void onPower(bool value) {
@@ -12,7 +8,12 @@ void onPower(bool value) {
 
 void setup() {
     power.onWrite(onPower);
-    Blinker.begin(blinker::WiFi, power);
+    Blinker.begin(
+        blinker::WiFi,
+        "REPLACE_WITH_DEVICE_KEY",
+        "YOUR_WIFI_SSID",
+        "YOUR_WIFI_PASSWORD",
+        power);
 }
 
 void loop() {

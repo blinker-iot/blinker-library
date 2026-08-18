@@ -3,7 +3,6 @@
 
 #include "BlinkerOfficialArduinoRuntime.h"
 #include "BlinkerOfficialBleProduct.h"
-#include "BlinkerOfficialBleWorkspace.h"
 
 #include <BlinkerHardwareRandomAdapter.h>
 #include <BlinkerV2/identity/ControllerCredentialStore.h>

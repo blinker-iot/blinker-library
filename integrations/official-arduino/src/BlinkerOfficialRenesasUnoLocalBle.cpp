@@ -1,5 +1,5 @@
 #include "BlinkerOfficialBleOnlyComposition.h"
-#include "BlinkerOfficialRenesasUnoBle.h"
+#include "BlinkerOfficialBleProduct.h"
 #include "BlinkerOfficialRenesasUnoBlePlatform.h"
 
 namespace blinker {

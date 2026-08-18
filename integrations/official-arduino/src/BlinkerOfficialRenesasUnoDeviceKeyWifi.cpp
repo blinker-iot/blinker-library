@@ -1,14 +1,14 @@
 #include "BlinkerOfficialDeviceKeyWifi.h"
-#include "BlinkerOfficialDeviceKeyWifiComposition.h"
+#include "BlinkerOfficialDeviceKeyWifiProduct.h"
 #include "BlinkerOfficialRenesasUnoWifiNetworkPlatform.h"
 
 namespace blinker {
 namespace integration {
-namespace official_detail {
 
 namespace {
 
-typedef DeviceKeyWifiComposition<RenesasUnoWifiNetworkPlatform>
+typedef official_detail::DeviceKeyWifiProduct<
+    official_detail::RenesasUnoWifiNetworkPlatform>
     RenesasUnoDeviceKeyWifiComposition;
 
 RenesasUnoDeviceKeyWifiComposition& composition() {
@@ -18,15 +18,14 @@ RenesasUnoDeviceKeyWifiComposition& composition() {
 
 } // namespace
 
-IProductLifecycle& renesasUnoDeviceKeyWifiLifecycle(
-    StringView ssid,
-    StringView password,
-    StringView deviceKey) {
+IProductLifecycle& lifecycle(const WifiDeviceKeyProfile& profile) {
     RenesasUnoDeviceKeyWifiComposition& selected = composition();
-    (void)selected.configure(ssid, password, deviceKey);
+    (void)selected.configure(
+        profile.ssid(),
+        profile.password(),
+        profile.deviceKey());
     return selected;
 }
 
-} // namespace official_detail
 } // namespace integration
 } // namespace blinker

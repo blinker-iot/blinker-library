@@ -1,7 +1,7 @@
 #ifndef BLINKER_OFFICIAL_ESP32_PROVISIONED_DEVICE_KEY_WIFI_COMPOSITION_H
 #define BLINKER_OFFICIAL_ESP32_PROVISIONED_DEVICE_KEY_WIFI_COMPOSITION_H
 
-#include "BlinkerOfficialDeviceKeyWifiStack.h"
+#include "BlinkerOfficialDeviceKeyWifiProduct.h"
 
 #include <BlinkerEsp32WifiProvAdapter.h>
 

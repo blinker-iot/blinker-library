@@ -1,5 +1,5 @@
 #include "BlinkerOfficialBleOnlyComposition.h"
-#include "BlinkerOfficialEsp32Ble.h"
+#include "BlinkerOfficialBleProduct.h"
 #include "BlinkerOfficialEsp32BlePlatform.h"
 
 namespace blinker {
