@@ -11,12 +11,12 @@ public:
     virtual ~IControllerCredentialSource() {}
 
     // Returns only a credential in the requested authorization domain and
-    // ownership generation. A stale generation is indistinguishable from a
-    // missing controller to authentication callers.
+    // access epoch. A stale epoch is indistinguishable from a missing group
+    // to authentication callers.
     virtual Result loadActive(
         ByteView controllerId,
         ControllerCredentialDomain domain,
-        uint32_t ownershipGeneration,
+        uint32_t accessEpoch,
         ControllerCredential& output) = 0;
     virtual StorageProtection protection() const = 0;
 };

@@ -108,10 +108,19 @@ private:
         kNamespaceCapacity = 15U,
         kHeaderSize = 16U,
         kCrcSize = 4U,
-        kMaximumPayloadSize = ControllerCredentialStore::serializedSize,
+        // Scratch capacity follows the largest routed blob, not one schema
+        // that may legitimately shrink during protocol refinement.
+        kMaximumPayloadSize = LocalSetupSagaStore::serializedSize,
         kMaximumRecordSize =
             kHeaderSize + kMaximumPayloadSize + kCrcSize
     };
+
+    static_assert(
+        ControllerCredentialStore::serializedSize <= kMaximumPayloadSize,
+        "controller store exceeds Renesas journal scratch");
+    static_assert(
+        CloudEnrollmentRecordStore::serializedSize <= kMaximumPayloadSize,
+        "cloud enrollment store exceeds Renesas journal scratch");
 
     static bool copyNamespace(const char* source, char* destination);
     static size_t maximumSize(BlobId id);

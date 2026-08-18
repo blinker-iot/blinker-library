@@ -1,6 +1,7 @@
 #ifndef BLINKER_IDENTITY_CONTROLLERCREDENTIALSTORE_H
 #define BLINKER_IDENTITY_CONTROLLERCREDENTIALSTORE_H
 
+#include "ControllerCredentialTable.h"
 #include "../interface/IControllerCredentialStore.h"
 
 namespace blinker {
@@ -9,8 +10,8 @@ class ControllerCredentialStore final
     : public IControllerCredentialStore {
 public:
     enum : size_t {
-        capacity = 4U,
-        serializedSize = 268U
+        capacity = ControllerCredentialTable::capacity,
+        serializedSize = 140U
     };
 
     explicit ControllerCredentialStore(IAtomicBlobStore& storage)
@@ -19,14 +20,11 @@ public:
     Result loadActive(
         ByteView controllerId,
         ControllerCredentialDomain domain,
-        uint32_t ownershipGeneration,
+        uint32_t accessEpoch,
         ControllerCredential& output) override;
     Result loadAt(size_t index, ControllerCredential& output);
     Result count(size_t& output);
 
-    // These methods accept only mutations already authorized by the
-    // controller control-plane. Persistence intentionally does not verify
-    // grants or transport transcripts.
     Result installVerified(
         const ControllerCredential& credential) override;
     Result rotateVerified(
@@ -35,7 +33,7 @@ public:
     Result revokeVerified(
         ByteView controllerId,
         ControllerCredentialDomain domain,
-        uint32_t ownershipGeneration,
+        uint32_t accessEpoch,
         uint32_t expectedCredentialVersion) override;
     Result clearAll() override;
 
@@ -44,20 +42,8 @@ public:
     }
 
 private:
-    static Result encode(
-        const ControllerCredential* credentials,
-        size_t count,
-        MutableByteSpan output);
-    static Result decode(
-        ByteView input,
-        ControllerCredential* credentials,
-        size_t& count);
-    Result loadTable(
-        ControllerCredential* credentials,
-        size_t& count);
-    Result replaceAndVerify(
-        const ControllerCredential* credentials,
-        size_t count);
+    Result loadTable(ControllerCredentialTable& table);
+    Result replaceAndVerify(const ControllerCredentialTable& table);
     Result clearAndVerify();
 
     IAtomicBlobStore& storage_;

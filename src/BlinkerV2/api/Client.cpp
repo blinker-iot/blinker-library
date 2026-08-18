@@ -150,6 +150,11 @@ Result Client::setAuthorizationProvider(IAuthorizationProvider* provider) {
     return runtime_.setAuthorizationProvider(provider);
 }
 
+Result Client::setControllerControlEndpoint(
+    IControllerControlEndpoint* endpoint) {
+    return runtime_.setControllerControlEndpoint(endpoint);
+}
+
 Result Client::setReliableOutbox(ReliableOutbox* outbox) {
     return runtime_.setReliableOutbox(outbox);
 }

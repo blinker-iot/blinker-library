@@ -13,7 +13,10 @@ enum class ControllerCredentialSuite : uint8_t {
 
 enum class ControllerCredentialDomain : uint8_t {
     Local = 1U,
-    Ownership = 2U
+    PlatformAccess = 2U,
+    // Source compatibility for the unpublished v2 experiments. Value 2 on
+    // persistent/wire records means platform direct access, not ownership.
+    Ownership = PlatformAccess
 };
 
 enum : size_t {
@@ -31,10 +34,9 @@ enum : uint32_t {
     kControllerPermissionAll = kAuthorizationPermissionAll
 };
 
-// One installed App/controller authentication root. App role names are not
-// persisted on the device; the verified control plane maps them to this small
-// permission mask. Local credentials use ownershipGeneration == 0. Platform
-// credentials are bound to one non-zero OwnershipRecord generation.
+// One installed direct-access authentication root. App account and sharing
+// records are not persisted on the device. Local credentials use epoch 0;
+// server-managed Admin/Shared groups bind to one non-zero access epoch.
 struct ControllerCredential {
     uint32_t ownershipGeneration;
     uint32_t credentialVersion;

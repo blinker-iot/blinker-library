@@ -2,6 +2,7 @@
 #define BLINKER_ARDUINO_CLIENT_HTTP_ADAPTER_H
 
 #include <BlinkerV2/core/SecureMemory.h>
+#include <BlinkerV2/interface/IClock.h>
 #include <BlinkerV2/interface/IHttpClient.h>
 
 #include <limits.h>
@@ -16,9 +17,13 @@ template <
     size_t HeaderLineCapacity = 128>
 class ArduinoClientHttpAdapter : public IHttpClient {
 public:
-    ArduinoClientHttpAdapter(TClient& client, HttpSecurity actualSecurity)
+    ArduinoClientHttpAdapter(
+        TClient& client,
+        HttpSecurity actualSecurity,
+        IClock& clock)
         : client_(client),
           actualSecurity_(actualSecurity),
+          clock_(clock),
           request_(),
           response_(),
           currentState_(HttpClientState::Idle),
@@ -30,6 +35,7 @@ public:
           responseSize_(0),
           headerLineSize_(0),
           contentLength_(0),
+          startedAt_(0U),
           hasContentLength_(false),
           statusParsed_(false) {
         host_[0] = '\0';
@@ -51,6 +57,8 @@ public:
             request.target.data[0] != '/' ||
             request.responseBuffer.data == nullptr ||
             request.responseBuffer.size == 0U ||
+            request.timeoutMillis == 0U ||
+            request.timeoutMillis > INT32_MAX ||
             (request.body.size != 0U && request.body.data == nullptr) ||
             (request.headerCount != 0U && request.headers == nullptr)) {
             return fail(ErrorCode::InvalidArgument);
@@ -73,6 +81,7 @@ public:
         if (!result) return result;
         currentState_ = HttpClientState::InProgress;
         phase_ = PhaseConnect;
+        startedAt_ = clock_.monotonicMillis();
         return Result::success();
     }
 
@@ -85,6 +94,12 @@ public:
 
         while (operations-- != 0U &&
                currentState_ == HttpClientState::InProgress) {
+            if (static_cast<uint32_t>(
+                    clock_.monotonicMillis() - startedAt_) >=
+                request_.timeoutMillis) {
+                fail(ErrorCode::NotConnected);
+                return;
+            }
             if (phase_ == PhaseConnect) {
                 if (!client_.connect(host_, request_.port)) {
                     fail(ErrorCode::NotConnected);
@@ -198,6 +213,7 @@ public:
         responseSize_ = 0;
         headerLineSize_ = 0;
         contentLength_ = 0;
+        startedAt_ = 0U;
         hasContentLength_ = false;
         statusParsed_ = false;
     }
@@ -462,6 +478,7 @@ private:
 
     TClient& client_;
     HttpSecurity actualSecurity_;
+    IClock& clock_;
     HttpRequest request_;
     HttpResponse response_;
     HttpClientState currentState_;
@@ -476,6 +493,7 @@ private:
     size_t responseSize_;
     size_t headerLineSize_;
     size_t contentLength_;
+    uint32_t startedAt_;
     bool hasContentLength_;
     bool statusParsed_;
 };

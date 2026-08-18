@@ -1,0 +1,18 @@
+{
+  "name": "BlinkerEsp32WifiProvAdapter",
+  "version": "0.1.0",
+  "description": "ESP32 BLE/SoftAP Network Provisioning Security1 adapter for BlinkerDeviceV2",
+  "license": "MIT",
+  "authors": [{"name": "i3water", "maintainer": true}],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blinker-iot/blinker-library.git"
+  },
+  "keywords": ["blinker", "esp32", "wifi", "provisioning"],
+  "homepage": "https://diandeng.tech/",
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32"],
+  "dependencies": {
+    "BlinkerDeviceV2": ">=0.1.0"
+  }
+}

@@ -27,8 +27,8 @@ struct HttpHeader {
     StringView name;
     StringView value;
 
-    HttpHeader() : name(), value() {}
-    HttpHeader(StringView headerName, StringView headerValue)
+    constexpr HttpHeader() : name(), value() {}
+    constexpr HttpHeader(StringView headerName, StringView headerValue)
         : name(headerName), value(headerValue) {}
 };
 

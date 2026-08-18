@@ -4,6 +4,7 @@
 #include "../core/Sha256.h"
 #include "../core/ResourceProfile.h"
 #include "../interface/IAuthorizationProvider.h"
+#include "../interface/IControllerControlEndpoint.h"
 #include "../model/EndpointRegistry.h"
 #include "../protocol/bbp2/Frame.h"
 #include "../protocol/bbp2/KeyedBody.h"
@@ -114,6 +115,8 @@ public:
     void setStateEncoder(StateEncoder encoder, void* context);
     void setStatePageEncoder(StatePageEncoder encoder, void* context);
     Result setAuthorizationProvider(IAuthorizationProvider* provider);
+    Result setControllerControlEndpoint(
+        IControllerControlEndpoint* endpoint);
     // The outbox and every slot buffer must outlive Runtime and be configured
     // before start(). It is optional when the device only receives reliable
     // COMMANDs and never originates reliable PATCHes.
@@ -298,6 +301,12 @@ private:
     Result handleStateRequest(
         const bbp2::FrameView& frame,
         const RxContext& rx);
+    Result handleControllerControlOpen(
+        const bbp2::FrameView& frame,
+        const RxContext& rx);
+    Result handleControllerMutation(
+        const bbp2::FrameView& frame,
+        const RxContext& rx);
     Result visitEndpointValue(
         StringView endpointKey,
         ByteView encodedValue,
@@ -380,6 +389,9 @@ private:
     bool authorizedFor(
         const PeerSession& session,
         uint32_t requiredPermissions) const;
+    bool explicitlyAuthorizedLocal(
+        const RxContext& rx,
+        uint32_t requiredPermissions) const;
     bool idModeReady(const RxContext& rx) const;
     bool localTransport(uint8_t transportId) const;
     uint32_t negotiatedFeatures(const RxContext& rx) const;
@@ -405,6 +417,7 @@ private:
     void* stateContext_;
     void* statePageContext_;
     IAuthorizationProvider* authorizationProvider_;
+    IControllerControlEndpoint* controllerControlEndpoint_;
     ReliableOutbox* reliableOutbox_;
     PeerSession peers_[BLINKER_MAX_PEER_SESSIONS];
     bool helloSent_[BLINKER_MAX_TRANSPORTS];

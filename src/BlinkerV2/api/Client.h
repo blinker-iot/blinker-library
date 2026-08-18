@@ -175,6 +175,8 @@ public:
         TransportCapabilities& capabilities) const;
 
     Result setAuthorizationProvider(IAuthorizationProvider* provider);
+    Result setControllerControlEndpoint(
+        IControllerControlEndpoint* endpoint);
     Result setReliableOutbox(ReliableOutbox* outbox);
     Result setStateWriteHandler(
         StateWriteTransactionHandler handler,

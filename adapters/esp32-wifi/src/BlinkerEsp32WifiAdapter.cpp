@@ -31,6 +31,9 @@ Result Esp32WifiStation::start(const WifiNetworkConfig& config) {
         // WPA2/WPA3 transition networks are also admitted by a WPA2 floor.
         minimumSecurity = WIFI_AUTH_WPA2_PSK;
     }
+    // WifiCredentialStore is the single durable source. Do not let Arduino's
+    // WiFi layer retain a second copy in the SDK WiFi NVS namespace.
+    WiFi.persistent(false);
     WiFi.setMinSecurity(minimumSecurity);
 
     char ssid[kWifiSsidMaxSize + 1U] = {};

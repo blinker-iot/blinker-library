@@ -2,19 +2,19 @@
 #define BLINKER_PROVISIONING_CONTROLLERCONTROLCOORDINATOR_H
 
 #include "ControllerGrantVerifier.h"
+#include "../interface/IAccessEpochSource.h"
 #include "../interface/IControllerCredentialStore.h"
-#include "../interface/IOwnershipSource.h"
 
 namespace blinker {
 
-// Applies one server-authorized Ownership-domain controller mutation. It has
+// Applies one server-authorized direct-access group mutation. It has
 // no transport, BLE or HTTP dependency. It retains only the current device
 // control nonce; exact mutation retries are delegated to the durable store.
 class ControllerControlCoordinator {
 public:
     ControllerControlCoordinator(
         const DeviceInstanceId& deviceInstanceId,
-        IOwnershipSource& ownership,
+        IAccessEpochSource& accessEpoch,
         IControllerCredentialStore& credentials,
         ControllerGrantVerifier& verifier);
     ~ControllerControlCoordinator();
@@ -30,19 +30,22 @@ public:
     Result beginControlWindow(ByteView controlNonce);
     void endControlWindow();
     bool controlWindowActive() const { return controlWindowActive_; }
+    ByteView controlNonce() const {
+        return controlWindowActive_
+                   ? ByteView(controlNonce_, sizeof(controlNonce_))
+                   : ByteView();
+    }
 
     Result apply(
         ByteView encodedGrant,
         ByteView controllerSecret,
-        uint64_t nowEpochSeconds,
-        bool hasTrustedTime,
         MutableByteSpan operationWorkspace,
         MutableByteSpan output,
         ByteView& receipt);
 
 private:
-    DeviceInstanceId deviceInstanceId_;
-    IOwnershipSource& ownership_;
+    const DeviceInstanceId& deviceInstanceId_;
+    IAccessEpochSource& accessEpoch_;
     IControllerCredentialStore& credentials_;
     ControllerGrantVerifier& verifier_;
     uint8_t controlNonce_[kControllerControlNonceSize];

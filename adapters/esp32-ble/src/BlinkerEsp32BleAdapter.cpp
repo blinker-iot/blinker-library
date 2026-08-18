@@ -40,6 +40,7 @@ Esp32BleLink::Esp32BleLink(const Esp32BleLinkConfig& config)
       subscribePending_(false),
       securityPending_(false),
       sessionAnnounced_(false),
+      ownsBleDevice_(false),
 #if defined(CONFIG_BLUEDROID_ENABLED)
       pendingRemoteAddress_(),
 #endif
@@ -53,6 +54,11 @@ Result Esp32BleLink::start() {
     }
     if (!validConfig()) {
         lastError_ = ErrorCode::NotConfigured;
+        state_ = BleLinkState::Error;
+        return Result::failure(lastError_);
+    }
+    if (BLEDevice::getInitialized()) {
+        lastError_ = ErrorCode::StateConflict;
         state_ = BleLinkState::Error;
         return Result::failure(lastError_);
     }
@@ -71,9 +77,16 @@ Result Esp32BleLink::start() {
 
     state_ = BleLinkState::Starting;
     BLEDevice::init(config_.deviceName);
+    ownsBleDevice_ = BLEDevice::getInitialized();
+    if (!ownsBleDevice_) {
+        lastError_ = ErrorCode::InternalError;
+        state_ = BleLinkState::Error;
+        return Result::failure(lastError_);
+    }
     if (BLEDevice::setMTU(config_.preferredMtu) != ESP_OK) {
         lastError_ = ErrorCode::NotConfigured;
-        BLEDevice::deinit(true);
+        BLEDevice::deinit(false);
+        ownsBleDevice_ = false;
         state_ = BleLinkState::Error;
         return Result::failure(lastError_);
     }
@@ -187,10 +200,13 @@ Result Esp32BleLink::start() {
 void Esp32BleLink::stop() {
     if (advertising_ != nullptr) advertising_->stop();
     if (service_ != nullptr) service_->stop();
-    if (BLEDevice::getInitialized()) {
+    if (ownsBleDevice_ && BLEDevice::getInitialized()) {
         BLEDevice::setSecurityCallbacks(nullptr);
-        BLEDevice::deinit(true);
+        // release_memory=true is irreversible until reboot. The adapter's
+        // lifecycle permits stop/start and WiFiProv -> Direct BLE handoff.
+        BLEDevice::deinit(false);
     }
+    ownsBleDevice_ = false;
     server_ = nullptr;
     service_ = nullptr;
     receive_ = nullptr;

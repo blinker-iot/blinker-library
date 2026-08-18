@@ -21,7 +21,7 @@ bool validDomainGeneration(const ControllerCredential& credential) {
     if (credential.domain == ControllerCredentialDomain::Local) {
         return credential.ownershipGeneration == 0U;
     }
-    return credential.domain == ControllerCredentialDomain::Ownership &&
+    return credential.domain == ControllerCredentialDomain::PlatformAccess &&
            credential.ownershipGeneration != 0U;
 }
 

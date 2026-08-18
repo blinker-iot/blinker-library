@@ -32,9 +32,26 @@ enum ProtocolFeature : uint32_t {
     FeatureHistory = 1UL << 4,
     FeatureAuthentication = 1UL << 5,
     FeatureReliableDelivery = 1UL << 6,
-    FeatureStateRevision = 1UL << 7
+    FeatureStateRevision = 1UL << 7,
     // bit 8 is reserved for the removed pre-freeze WidgetCatalog experiment.
+    FeatureControllerControl = 1UL << 9
 };
+
+enum : size_t {
+    kControllerControlNonceSize = 16U,
+    kControllerCredentialSecretSize = 32U,
+    kControllerGrantMaximumSize = 193U,
+    kControllerMutationReceiptMaximumSize = 145U,
+    kControllerControlOpenMaxEncodedSize = 2U,
+    kControllerControlChallengeMaxEncodedSize = 19U,
+    kControllerMutationMaxEncodedSize = 231U,
+    kControllerMutationMaximumFrameSize =
+        kBaseHeaderSize + kControllerMutationMaxEncodedSize,
+    kControllerMutationReceiptMaximumFrameSize =
+        kBaseHeaderSize + kControllerMutationReceiptMaximumSize
+};
+
+static const uint8_t kControllerControlWireVersion = 1U;
 
 struct HelloBody {
     PeerRole role;
@@ -183,6 +200,18 @@ struct AuthResultBody {
           hasPayload(false) {}
 };
 
+struct ControllerControlChallengeBody {
+    ByteView controlNonce;
+};
+
+// The signed grant and raw secret share one bounded frame. Revoke carries an
+// empty secret. The grant signs SHA-256(secret), so a modified raw secret is
+// rejected by the controller coordinator.
+struct ControllerMutationBody {
+    ByteView grant;
+    ByteView controllerSecret;
+};
+
 Result encodeHelloBody(
     const HelloBody& body,
     MutableByteSpan output,
@@ -281,6 +310,32 @@ Result encodeAuthResultBody(
 Result decodeAuthResultBody(
     ByteView encoded,
     AuthResultBody& body,
+    const cbor::Limits& limits = cbor::Limits());
+
+Result encodeControllerControlOpenBody(
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits = cbor::Limits());
+Result decodeControllerControlOpenBody(
+    ByteView encoded,
+    const cbor::Limits& limits = cbor::Limits());
+Result encodeControllerControlChallengeBody(
+    const ControllerControlChallengeBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits = cbor::Limits());
+Result decodeControllerControlChallengeBody(
+    ByteView encoded,
+    ControllerControlChallengeBody& body,
+    const cbor::Limits& limits = cbor::Limits());
+Result encodeControllerMutationBody(
+    const ControllerMutationBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits = cbor::Limits());
+Result decodeControllerMutationBody(
+    ByteView encoded,
+    ControllerMutationBody& body,
     const cbor::Limits& limits = cbor::Limits());
 
 } // namespace bbp2

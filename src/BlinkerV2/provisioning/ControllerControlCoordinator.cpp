@@ -38,11 +38,11 @@ bool overlaps(ByteView input, MutableByteSpan storage) {
 
 ControllerControlCoordinator::ControllerControlCoordinator(
     const DeviceInstanceId& deviceInstanceId,
-    IOwnershipSource& ownership,
+    IAccessEpochSource& accessEpoch,
     IControllerCredentialStore& credentials,
     ControllerGrantVerifier& verifier)
     : deviceInstanceId_(deviceInstanceId),
-      ownership_(ownership),
+      accessEpoch_(accessEpoch),
       credentials_(credentials),
       verifier_(verifier),
       controlNonce_(),
@@ -77,8 +77,6 @@ void ControllerControlCoordinator::endControlWindow() {
 Result ControllerControlCoordinator::apply(
     ByteView encodedGrant,
     ByteView controllerSecret,
-    uint64_t nowEpochSeconds,
-    bool hasTrustedTime,
     MutableByteSpan operationWorkspace,
     MutableByteSpan output,
     ByteView& receipt) {
@@ -97,11 +95,10 @@ Result ControllerControlCoordinator::apply(
     }
     secureZero(operationWorkspace);
 
-    OwnershipRecord ownership;
-    Result result = ownership_.load(ownership);
+    uint32_t accessEpoch = 0U;
+    Result result = accessEpoch_.loadAccessEpoch(accessEpoch);
     if (!result) return result;
-    if (!ownership.active()) {
-        clearOwnershipRecord(ownership);
+    if (accessEpoch == 0U) {
         return Result::failure(ErrorCode::AuthenticationRequired);
     }
 
@@ -109,11 +106,10 @@ Result ControllerControlCoordinator::apply(
     context.deviceInstanceId = ByteView(
         deviceInstanceId_.bytes,
         sizeof(deviceInstanceId_.bytes));
-    context.logicalDeviceId = ownership.logicalId();
-    context.ownershipGeneration = ownership.generation;
+    // The v2 wire name remains ownershipGeneration for compatibility; its
+    // device-side meaning is strictly the direct-access epoch.
+    context.ownershipGeneration = accessEpoch;
     context.controlNonce = ByteView(controlNonce_, sizeof(controlNonce_));
-    context.nowEpochSeconds = nowEpochSeconds;
-    context.hasTrustedTime = hasTrustedTime;
     ControllerGrant grant;
     result = verifier_.verify(
         encodedGrant,
@@ -121,16 +117,15 @@ Result ControllerControlCoordinator::apply(
         context,
         operationWorkspace,
         grant);
-    clearOwnershipRecord(ownership);
     if (!result) return result;
 
     ControllerCredential credential;
     if (grant.operation != ControllerMutationOperation::Revoke) {
-        credential.domain = grant.domain;
+        credential.domain = ControllerCredentialDomain::PlatformAccess;
         credential.ownershipGeneration = grant.ownershipGeneration;
         credential.credentialVersion = grant.credentialVersion;
         credential.permissions = grant.permissions;
-        credential.suite = grant.suite;
+        credential.suite = ControllerCredentialSuite::HmacSha256_32;
         memcpy(
             credential.controllerId,
             grant.controllerId.data,
@@ -139,24 +134,6 @@ Result ControllerControlCoordinator::apply(
             credential.secret,
             controllerSecret.data,
             sizeof(credential.secret));
-    }
-
-    if (grant.operation == ControllerMutationOperation::Install) {
-        result = credentials_.installVerified(credential);
-    } else if (grant.operation == ControllerMutationOperation::Rotate) {
-        result = credentials_.rotateVerified(
-            grant.expectedCredentialVersion,
-            credential);
-    } else {
-        result = credentials_.revokeVerified(
-            grant.controllerId,
-            grant.domain,
-            grant.ownershipGeneration,
-            grant.expectedCredentialVersion);
-    }
-    if (!result) {
-        clearControllerCredential(credential);
-        return result;
     }
 
     ControllerMutationReceipt body;
@@ -186,6 +163,24 @@ Result ControllerControlCoordinator::apply(
     }
     secureZero(MutableByteSpan(proof, sizeof(proof)));
     secureZero(operationWorkspace);
+    // Complete every fallible proof/encoding step before durable mutation.
+    // Otherwise a small output buffer or crypto failure could update storage
+    // without returning the deterministic receipt needed for recovery.
+    if (result && grant.operation == ControllerMutationOperation::Install) {
+        result = credentials_.installVerified(credential);
+    } else if (result &&
+               grant.operation == ControllerMutationOperation::Rotate) {
+        result = credentials_.rotateVerified(
+            grant.expectedCredentialVersion,
+            credential);
+    } else if (result) {
+        result = credentials_.revokeVerified(
+            grant.controllerId,
+            ControllerCredentialDomain::PlatformAccess,
+            grant.ownershipGeneration,
+            grant.expectedCredentialVersion);
+    }
+    if (!result) receipt = ByteView();
     clearControllerCredential(credential);
     return result;
 }

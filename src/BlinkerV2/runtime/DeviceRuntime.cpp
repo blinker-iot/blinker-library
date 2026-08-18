@@ -240,6 +240,7 @@ DeviceRuntime::DeviceRuntime(
       stateContext_(nullptr),
       statePageContext_(nullptr),
       authorizationProvider_(nullptr),
+      controllerControlEndpoint_(nullptr),
       reliableOutbox_(nullptr),
       peers_(),
       helloSent_(),
@@ -275,6 +276,16 @@ Result DeviceRuntime::start() {
         config_.protocolFeatures |= bbp2::FeatureAuthentication;
     } else if ((config_.protocolFeatures &
                 bbp2::FeatureAuthentication) != 0U) {
+        return Result::failure(ErrorCode::NotConfigured);
+    }
+    if (controllerControlEndpoint_ != nullptr) {
+        if (config_.maxFrameSize <
+            bbp2::kControllerMutationMaximumFrameSize) {
+            return Result::failure(ErrorCode::NotConfigured);
+        }
+        config_.protocolFeatures |= bbp2::FeatureControllerControl;
+    } else if ((config_.protocolFeatures &
+                bbp2::FeatureControllerControl) != 0U) {
         return Result::failure(ErrorCode::NotConfigured);
     }
     const bool reliableFeature =
@@ -342,6 +353,17 @@ void DeviceRuntime::stop() {
     }
     if (reliableOutbox_ != nullptr) reliableOutbox_->reset();
     for (size_t index = 0; index < BLINKER_MAX_PEER_SESSIONS; ++index) {
+        if (controllerControlEndpoint_ != nullptr &&
+            peers_[index].occupied) {
+            RxContext closed;
+            closed.transportId = peers_[index].transportId;
+            closed.sessionId = peers_[index].sessionId;
+            closed.encrypted = peers_[index].encrypted;
+            closed.bonded = peers_[index].bonded;
+            closed.authenticated =
+                peers_[index].transportAuthenticated;
+            controllerControlEndpoint_->controllerSessionClosed(closed);
+        }
         peers_[index] = PeerSession();
     }
     for (size_t index = 0; index < BLINKER_MAX_TRANSPORTS; ++index) {
@@ -474,6 +496,17 @@ Result DeviceRuntime::setAuthorizationProvider(
     return Result::success();
 }
 
+Result DeviceRuntime::setControllerControlEndpoint(
+    IControllerControlEndpoint* endpoint) {
+    if (started_) return Result::failure(ErrorCode::NotConfigured);
+    controllerControlEndpoint_ = endpoint;
+    if (endpoint == nullptr) {
+        config_.protocolFeatures &=
+            ~static_cast<uint32_t>(bbp2::FeatureControllerControl);
+    }
+    return Result::success();
+}
+
 Result DeviceRuntime::setReliableOutbox(ReliableOutbox* outbox) {
     if (started_) return Result::failure(ErrorCode::NotConfigured);
     reliableOutbox_ = outbox;
@@ -516,6 +549,9 @@ void DeviceRuntime::sessionDisconnected(const RxContext& rx) {
     if (rx.sessionId == 0U) return;
     if (reliableOutbox_ != nullptr) {
         reliableOutbox_->sessionClosed(rx);
+    }
+    if (controllerControlEndpoint_ != nullptr) {
+        controllerControlEndpoint_->controllerSessionClosed(rx);
     }
     for (size_t index = 0; index < BLINKER_MAX_PEER_SESSIONS; ++index) {
         PeerSession& session = peers_[index];
@@ -576,9 +612,15 @@ void DeviceRuntime::receive(ByteView encoded, const RxContext& rx) {
         result = handleManifestAccept(frame, rx);
     } else if (kind == bbp2::MessageKind::StateRequest) {
         result = handleStateRequest(frame, rx);
+    } else if (kind == bbp2::MessageKind::ControllerControlOpen) {
+        result = handleControllerControlOpen(frame, rx);
+    } else if (kind == bbp2::MessageKind::ControllerMutation) {
+        result = handleControllerMutation(frame, rx);
     } else if (kind == bbp2::MessageKind::Manifest ||
                kind == bbp2::MessageKind::AuthResult ||
-               kind == bbp2::MessageKind::StatePage) {
+               kind == bbp2::MessageKind::StatePage ||
+               kind == bbp2::MessageKind::ControllerControlChallenge ||
+               kind == bbp2::MessageKind::ControllerMutationReceipt) {
         // Device-originated response kinds are ignored unless the peer
         // explicitly asks for an acknowledgement.
         if ((frame.header.flags & bbp2::FlagAckRequired) != 0U) {
@@ -609,6 +651,105 @@ void DeviceRuntime::receive(ByteView encoded, const RxContext& rx) {
     }
 }
 
+Result DeviceRuntime::handleControllerControlOpen(
+    const bbp2::FrameView& frame,
+    const RxContext& rx) {
+    if (frame.header.flags != bbp2::FlagNone) {
+        return Result::failure(ErrorCode::InvalidEncoding);
+    }
+    if (controllerControlEndpoint_ == nullptr) {
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
+    if (!negotiated(rx) ||
+        (negotiatedFeatures(rx) &
+         bbp2::FeatureControllerControl) == 0U) {
+        return Result::failure(ErrorCode::NotConfigured);
+    }
+    if (!localTransport(rx.transportId) || !rx.encrypted ||
+        !explicitlyAuthorizedLocal(
+            rx,
+            kAuthorizationPermissionManageControllers)) {
+        return Result::failure(ErrorCode::AuthenticationRequired);
+    }
+    Result result = bbp2::decodeControllerControlOpenBody(frame.body);
+    ByteView nonce;
+    if (result) {
+        result = controllerControlEndpoint_->beginControlWindow(
+            rx,
+            nonce);
+    }
+    bbp2::ControllerControlChallengeBody challenge;
+    challenge.controlNonce = nonce;
+    ByteView encoded;
+    if (result) {
+        result = bbp2::encodeControllerControlChallengeBody(
+            challenge,
+            MutableByteSpan(
+                transmitBuffer_.data + bbp2::kBaseHeaderSize,
+                transmitBuffer_.size - bbp2::kBaseHeaderSize),
+            encoded);
+    }
+    return result
+               ? sendEncodedBody(
+                     bbp2::MessageKind::ControllerControlChallenge,
+                     bbp2::FlagIsResponse,
+                     frame.header.sequence,
+                     encoded.size,
+                     responseTarget(rx))
+               : result;
+}
+
+Result DeviceRuntime::handleControllerMutation(
+    const bbp2::FrameView& frame,
+    const RxContext& rx) {
+    if (frame.header.flags != bbp2::FlagNone) {
+        return Result::failure(ErrorCode::InvalidEncoding);
+    }
+    if (controllerControlEndpoint_ == nullptr) {
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
+    if (!negotiated(rx) ||
+        (negotiatedFeatures(rx) &
+         bbp2::FeatureControllerControl) == 0U) {
+        return Result::failure(ErrorCode::NotConfigured);
+    }
+    if (!localTransport(rx.transportId) || !rx.encrypted ||
+        !explicitlyAuthorizedLocal(
+            rx,
+            kAuthorizationPermissionManageControllers)) {
+        return Result::failure(ErrorCode::AuthenticationRequired);
+    }
+    bbp2::ControllerMutationBody mutation;
+    Result result = bbp2::decodeControllerMutationBody(
+        frame.body,
+        mutation);
+    const SendTarget target = responseTarget(rx);
+    const size_t maximumFrame = maximumOutboundFrameSize(target);
+    if (result && maximumFrame <
+                      bbp2::kControllerMutationReceiptMaximumFrameSize) {
+        result = Result::failure(ErrorCode::BufferTooSmall);
+    }
+    ByteView receipt;
+    if (result) {
+        result = controllerControlEndpoint_->applyControllerMutation(
+            rx,
+            mutation.grant,
+            mutation.controllerSecret,
+            MutableByteSpan(
+                transmitBuffer_.data + bbp2::kBaseHeaderSize,
+                maximumFrame - bbp2::kBaseHeaderSize),
+            receipt);
+    }
+    return result
+               ? sendEncodedBody(
+                     bbp2::MessageKind::ControllerMutationReceipt,
+                     bbp2::FlagIsResponse,
+                     frame.header.sequence,
+                     receipt.size,
+                     target)
+               : result;
+}
+
 Result DeviceRuntime::handleHello(
     const bbp2::FrameView& frame,
     const RxContext& rx) {
@@ -633,6 +774,11 @@ Result DeviceRuntime::handleHello(
     session->negotiatedFeatures =
         hello.features & config_.protocolFeatures;
     session->remoteMaxFrameSize = hello.maxFrameSize;
+    if (hello.maxFrameSize <
+        bbp2::kControllerMutationReceiptMaximumFrameSize) {
+        session->negotiatedFeatures &=
+            ~static_cast<uint32_t>(bbp2::FeatureControllerControl);
+    }
     session->stateObserved = false;
     session->snapshotCursor = 0U;
     session->snapshotNextCursor = 0U;
@@ -2125,6 +2271,21 @@ bool DeviceRuntime::authorizedFor(
            (session.transportAuthenticated ||
             (session.authorizationPermissions & requiredPermissions) ==
                 requiredPermissions);
+}
+
+bool DeviceRuntime::explicitlyAuthorizedLocal(
+    const RxContext& rx,
+    uint32_t requiredPermissions) const {
+    if (!localTransport(rx.transportId) || !rx.encrypted) return false;
+    for (size_t index = 0U; index < BLINKER_MAX_PEER_SESSIONS; ++index) {
+        const PeerSession& session = peers_[index];
+        if (session.occupied && session.transportId == rx.transportId &&
+            session.sessionId == rx.sessionId) {
+            return (session.authorizationPermissions & requiredPermissions) ==
+                   requiredPermissions;
+        }
+    }
+    return false;
 }
 
 bool DeviceRuntime::idModeReady(const RxContext& rx) const {

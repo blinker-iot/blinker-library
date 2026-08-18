@@ -30,7 +30,11 @@ enum class MessageKind : uint8_t {
     Error = 0x15,
     StatePage = 0x16,
     HistoryRequest = 0x20,
-    HistoryBatch = 0x21
+    HistoryBatch = 0x21,
+    ControllerControlOpen = 0x30,
+    ControllerControlChallenge = 0x31,
+    ControllerMutation = 0x32,
+    ControllerMutationReceipt = 0x33
 };
 
 enum FrameFlag : uint8_t {

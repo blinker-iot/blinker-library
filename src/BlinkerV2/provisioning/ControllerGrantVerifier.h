@@ -8,16 +8,11 @@ namespace blinker {
 
 struct ControllerGrantVerificationContext {
     ByteView deviceInstanceId;
-    StringView logicalDeviceId;
     uint32_t ownershipGeneration;
     ByteView controlNonce;
-    uint64_t nowEpochSeconds;
-    bool hasTrustedTime;
 
     ControllerGrantVerificationContext()
-        : ownershipGeneration(0U),
-          nowEpochSeconds(0U),
-          hasTrustedTime(false) {}
+        : ownershipGeneration(0U) {}
 };
 
 class ControllerGrantVerifier {

@@ -174,6 +174,7 @@ private:
     bool subscribePending_;
     bool securityPending_;
     bool sessionAnnounced_;
+    bool ownsBleDevice_;
 #if defined(CONFIG_BLUEDROID_ENABLED)
     uint8_t pendingRemoteAddress_[ESP_BD_ADDR_LEN];
 #endif

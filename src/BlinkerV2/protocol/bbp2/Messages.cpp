@@ -1066,5 +1066,152 @@ Result decodeAuthResultBody(
     return Result::success();
 }
 
+Result encodeControllerControlOpenBody(
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits) {
+    encoded = ByteView();
+    if (limits.maxContainerItems < 1U) {
+        return Result::failure(ErrorCode::CapacityExceeded);
+    }
+    cbor::Writer writer(output);
+    Result result = writer.beginArray(1U);
+    if (result) {
+        result = writer.writeUnsigned(kControllerControlWireVersion);
+    }
+    if (result) encoded = writer.view();
+    return result;
+}
+
+Result decodeControllerControlOpenBody(
+    ByteView encoded,
+    const cbor::Limits& limits) {
+    Result result = cbor::validate(encoded, limits);
+    cbor::Reader reader(encoded, limits);
+    size_t count = 0U;
+    uint64_t version = 0U;
+    if (result) result = reader.readArraySize(count);
+    if (result && count != 1U) {
+        result = Result::failure(ErrorCode::InvalidEncoding);
+    }
+    if (result) result = reader.readUnsigned(version);
+    if (result && version != kControllerControlWireVersion) {
+        result = Result::failure(ErrorCode::UnsupportedVersion);
+    }
+    return result ? requireFinished(reader) : result;
+}
+
+Result encodeControllerControlChallengeBody(
+    const ControllerControlChallengeBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits) {
+    encoded = ByteView();
+    if (body.controlNonce.data == nullptr ||
+        body.controlNonce.size != kControllerControlNonceSize) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    if (limits.maxContainerItems < 2U ||
+        limits.maxByteStringLength < kControllerControlNonceSize) {
+        return Result::failure(ErrorCode::CapacityExceeded);
+    }
+    cbor::Writer writer(output);
+    Result result = writer.beginArray(2U);
+    if (result) {
+        result = writer.writeUnsigned(kControllerControlWireVersion);
+    }
+    if (result) result = writer.writeBytes(body.controlNonce);
+    if (result) encoded = writer.view();
+    return result;
+}
+
+Result decodeControllerControlChallengeBody(
+    ByteView encoded,
+    ControllerControlChallengeBody& body,
+    const cbor::Limits& limits) {
+    Result result = cbor::validate(encoded, limits);
+    cbor::Reader reader(encoded, limits);
+    size_t count = 0U;
+    uint64_t version = 0U;
+    ControllerControlChallengeBody decoded;
+    if (result) result = reader.readArraySize(count);
+    if (result && count != 2U) {
+        result = Result::failure(ErrorCode::InvalidEncoding);
+    }
+    if (result) result = reader.readUnsigned(version);
+    if (result && version != kControllerControlWireVersion) {
+        result = Result::failure(ErrorCode::UnsupportedVersion);
+    }
+    if (result) result = reader.readBytes(decoded.controlNonce);
+    if (result && decoded.controlNonce.size != kControllerControlNonceSize) {
+        result = Result::failure(ErrorCode::InvalidEncoding);
+    }
+    if (result) result = requireFinished(reader);
+    if (result) body = decoded;
+    return result;
+}
+
+Result encodeControllerMutationBody(
+    const ControllerMutationBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits) {
+    encoded = ByteView();
+    const bool secretSizeValid = body.controllerSecret.empty() ||
+        body.controllerSecret.size == kControllerCredentialSecretSize;
+    if (body.grant.data == nullptr || body.grant.empty() ||
+        body.grant.size > kControllerGrantMaximumSize ||
+        !secretSizeValid ||
+        (!body.controllerSecret.empty() &&
+         body.controllerSecret.data == nullptr)) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    if (limits.maxContainerItems < 3U ||
+        limits.maxByteStringLength < body.grant.size ||
+        limits.maxByteStringLength < body.controllerSecret.size) {
+        return Result::failure(ErrorCode::CapacityExceeded);
+    }
+    cbor::Writer writer(output);
+    Result result = writer.beginArray(3U);
+    if (result) {
+        result = writer.writeUnsigned(kControllerControlWireVersion);
+    }
+    if (result) result = writer.writeBytes(body.grant);
+    if (result) result = writer.writeBytes(body.controllerSecret);
+    if (result) encoded = writer.view();
+    return result;
+}
+
+Result decodeControllerMutationBody(
+    ByteView encoded,
+    ControllerMutationBody& body,
+    const cbor::Limits& limits) {
+    Result result = cbor::validate(encoded, limits);
+    cbor::Reader reader(encoded, limits);
+    size_t count = 0U;
+    uint64_t version = 0U;
+    ControllerMutationBody decoded;
+    if (result) result = reader.readArraySize(count);
+    if (result && count != 3U) {
+        result = Result::failure(ErrorCode::InvalidEncoding);
+    }
+    if (result) result = reader.readUnsigned(version);
+    if (result && version != kControllerControlWireVersion) {
+        result = Result::failure(ErrorCode::UnsupportedVersion);
+    }
+    if (result) result = reader.readBytes(decoded.grant);
+    if (result) result = reader.readBytes(decoded.controllerSecret);
+    if (result && (decoded.grant.empty() ||
+                   decoded.grant.size > kControllerGrantMaximumSize ||
+                   (!decoded.controllerSecret.empty() &&
+                    decoded.controllerSecret.size !=
+                        kControllerCredentialSecretSize))) {
+        result = Result::failure(ErrorCode::InvalidEncoding);
+    }
+    if (result) result = requireFinished(reader);
+    if (result) body = decoded;
+    return result;
+}
+
 } // namespace bbp2
 } // namespace blinker

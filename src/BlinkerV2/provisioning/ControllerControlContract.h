@@ -4,7 +4,6 @@
 #include "../core/HmacSha256.h"
 #include "../identity/ControllerCredential.h"
 #include "../identity/DeviceInstanceId.h"
-#include "../identity/LogicalDeviceId.h"
 #include "../interface/IServerSignatureVerifier.h"
 #include "../protocol/cbor/Cbor.h"
 
@@ -17,13 +16,13 @@ enum : size_t {
     kControllerReceiptProofSize = 32U,
     kControllerCommitIdempotencyKeySize = 16U,
     kControllerGrantSignatureSize = 64U,
-    kControllerGrantMaxEncodedSize = 298U,
+    kControllerGrantMaxEncodedSize = 193U,
     kControllerReceiptMaxEncodedSize = 145U,
     kControllerCommitMaxEncodedSize = 126U,
     kControllerControlWorkspaceSize = 256U
 };
 
-static const uint8_t kControllerControlContractVersion = 1U;
+static const uint8_t kControllerControlContractVersion = 2U;
 
 enum class ControllerMutationOperation : uint8_t {
     Install = 1U,
@@ -41,24 +40,22 @@ enum class ControllerCommitVerification : uint8_t {
     AuthorizedRevoke = 2U
 };
 
-// Server-signed authorization for one Ownership-domain mutation. The secret
-// never appears in this body; only its SHA-256 digest is signed.
+// Server-signed authorization for one platform-direct mutation. The server
+// keeps account/logical-device mapping; the device binds this compact grant
+// to its unique instance, current access epoch and fresh control nonce. The
+// ownershipGeneration member name is retained only by the v2 wire contract.
+// The secret never appears in this body; only its SHA-256 digest is signed.
 struct ControllerGrant {
     ControllerMutationOperation operation;
     ByteView grantId;
     ByteView deviceInstanceId;
-    StringView logicalDeviceId;
-    ControllerCredentialDomain domain;
     uint32_t ownershipGeneration;
     ByteView controllerId;
-    ControllerCredentialSuite suite;
     uint32_t expectedCredentialVersion;
     uint32_t credentialVersion;
     uint32_t permissions;
     ByteView secretDigest;
     ByteView controlNonce;
-    uint64_t issuedAt;
-    uint64_t expiresAt;
     uint32_t serverKeyId;
     ServerSignatureAlgorithm signatureAlgorithm;
     ByteView signature;

@@ -17,7 +17,7 @@ public:
     virtual Result revokeVerified(
         ByteView controllerId,
         ControllerCredentialDomain domain,
-        uint32_t ownershipGeneration,
+        uint32_t accessEpoch,
         uint32_t expectedCredentialVersion) = 0;
     virtual Result clearAll() = 0;
 };

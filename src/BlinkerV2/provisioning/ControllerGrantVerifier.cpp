@@ -20,24 +20,12 @@ bool sameBytes(ByteView first, ByteView second) {
     return first.size == second.size && constantTimeEqual(first, second);
 }
 
-bool sameText(StringView first, StringView second) {
-    return sameBytes(
-        ByteView(
-            reinterpret_cast<const uint8_t*>(first.data),
-            first.size),
-        ByteView(
-            reinterpret_cast<const uint8_t*>(second.data),
-            second.size));
-}
-
 bool validContext(const ControllerGrantVerificationContext& context) {
     return exactNonZero(context.deviceInstanceId, kDeviceInstanceIdSize) &&
-           validateLogicalDeviceId(context.logicalDeviceId).ok() &&
            context.ownershipGeneration != 0U &&
            exactNonZero(
                context.controlNonce,
-               kControllerControlNonceSize) &&
-           (!context.hasTrustedTime || context.nowEpochSeconds != 0U);
+               kControllerControlNonceSize);
 }
 
 } // namespace
@@ -58,14 +46,8 @@ Result ControllerGrantVerifier::verify(
     Result result = decodeControllerGrant(encodedGrant, decoded);
     if (!result) return result;
     if (!sameBytes(decoded.deviceInstanceId, context.deviceInstanceId) ||
-        !sameText(decoded.logicalDeviceId, context.logicalDeviceId) ||
         decoded.ownershipGeneration != context.ownershipGeneration ||
         !sameBytes(decoded.controlNonce, context.controlNonce)) {
-        return Result::failure(ErrorCode::AuthenticationRequired);
-    }
-    if (context.hasTrustedTime &&
-        (context.nowEpochSeconds < decoded.issuedAt ||
-         context.nowEpochSeconds >= decoded.expiresAt)) {
         return Result::failure(ErrorCode::AuthenticationRequired);
     }
 
