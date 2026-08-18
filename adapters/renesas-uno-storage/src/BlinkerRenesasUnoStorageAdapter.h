@@ -116,10 +116,12 @@ private:
     };
 
     static_assert(
-        ControllerCredentialStore::serializedSize <= kMaximumPayloadSize,
+        static_cast<size_t>(ControllerCredentialStore::serializedSize) <=
+            static_cast<size_t>(kMaximumPayloadSize),
         "controller store exceeds Renesas journal scratch");
     static_assert(
-        CloudEnrollmentRecordStore::serializedSize <= kMaximumPayloadSize,
+        static_cast<size_t>(CloudEnrollmentRecordStore::serializedSize) <=
+            static_cast<size_t>(kMaximumPayloadSize),
         "cloud enrollment store exceeds Renesas journal scratch");
 
     static bool copyNamespace(const char* source, char* destination);
