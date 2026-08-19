@@ -1,7 +1,7 @@
 {
   "name": "BlinkerDeviceV2",
   "version": "0.1.0",
-  "description": "Platform-independent Blinker device core and BBP/2 protocol",
+  "description": "Unified Blinker WiFi and BLE device library using BBP/2",
   "license": "MIT",
   "authors": [
     {
@@ -23,5 +23,14 @@
   "frameworks": [
     "arduino"
   ],
-  "platforms": "*"
+  "platforms": [
+    "espressif32",
+    "renesas-ra"
+  ],
+  "dependencies": {
+    "knolleary/PubSubClient": "=2.8.0",
+    "h2zero/NimBLE-Arduino": "=2.5.0",
+    "arduino-libraries/ArduinoBLE": "=2.0.2",
+    "rweather/Crypto": "=0.4.0"
+  }
 }

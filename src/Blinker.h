@@ -1,8 +1,8 @@
 #ifndef BLINKER_H
 #define BLINKER_H
 
-// The only ordinary Sketch entry. Platform packages provide the selected
-// WiFi/BLE/WiFiBLE lifecycle without leaking their SDKs into this header.
+// Shared API declarations for advanced/library-internal use. Ordinary
+// sketches include BlinkerWiFi.h or BlinkerBLE.h to select one product.
 #include "BlinkerV2/api/BlinkerFacade.h"
 
 #endif

@@ -7,23 +7,23 @@
 #include "StateUpdate.h"
 #include "WifiDeviceKeyProfile.h"
 
+#if defined(BLINKER_PRODUCT_WIFI) && defined(BLINKER_PRODUCT_BLE)
+#error "Select exactly one Blinker product"
+#endif
+
 namespace blinker {
 
-struct WiFiTag {};
-struct BleTag {};
-struct WiFiBleTag {};
+namespace facade_detail {
 
-constexpr WiFiTag WiFi = WiFiTag();
-constexpr BleTag BLE = BleTag();
-constexpr WiFiBleTag WiFiBLE = WiFiBleTag();
+struct BleProfile {};
 
-// Platform packages implement only the profiles they support. These static
-// overloads keep radio SDKs out of the facade and let the linker discard every
-// unselected product graph.
+} // namespace facade_detail
+
+// A product package implements exactly one of these overloads. The selected
+// public entry header and its package are a compile-time product choice.
 namespace integration {
 IProductLifecycle& lifecycle(const WifiDeviceKeyProfile& profile);
-IProductLifecycle& lifecycle(BleTag);
-IProductLifecycle& lifecycle(WiFiBleTag);
+IProductLifecycle& lifecycle(facade_detail::BleProfile);
 } // namespace integration
 
 namespace facade_detail {
@@ -66,11 +66,11 @@ class BlinkerClass {
 public:
     BlinkerClass() : product_(nullptr), lastError_(ErrorCode::Ok) {}
 
-    // The ordinary WiFi path mirrors the familiar Arduino/Blynk ordering:
-    // mode, device credential, network, then the explicit no-heap schema.
+#if defined(BLINKER_PRODUCT_WIFI)
+    // BlinkerWiFi.h selects the WiFi product before compilation, so begin()
+    // only needs the device credential, network and no-heap schema.
     template <typename... Interactions>
     bool begin(
-        WiFiTag,
         StringView deviceKey,
         StringView ssid,
         StringView password,
@@ -79,16 +79,17 @@ public:
             WifiDeviceKeyProfile(deviceKey, ssid, password),
             interactions...);
     }
-
-    template <typename... Interactions>
-    bool begin(BleTag profile, Interactions&... interactions) {
-        return beginProfile(profile, interactions...);
+#elif defined(BLINKER_PRODUCT_BLE)
+    // BLE needs no connectivity arguments. DeviceSchema enforces that at
+    // least one semantic interaction is present.
+    template <typename First, typename... Rest>
+    bool begin(First& first, Rest&... rest) {
+        return beginProfile(
+            facade_detail::BleProfile(),
+            first,
+            rest...);
     }
-
-    template <typename... Interactions>
-    bool begin(WiFiBleTag profile, Interactions&... interactions) {
-        return beginProfile(profile, interactions...);
-    }
+#endif
 
     void run(uint32_t totalBudgetMicros = 1000U) {
         if (product_ != nullptr) product_->run(totalBudgetMicros);
