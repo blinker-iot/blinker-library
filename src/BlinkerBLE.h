@@ -13,6 +13,8 @@
 #elif defined(ARDUINO_ARCH_RENESAS_UNO) || \
       defined(ARDUINO_ARCH_RENESAS)
 #include "BlinkerV2/arduino/platform/uno_r4/UnoR4BLEProduct.h"
+#elif defined(SEEED_WIO_TERMINAL) || defined(WIO_TERMINAL)
+#include "BlinkerV2/arduino/platform/wio_terminal/WioTerminalBLEProduct.h"
 #endif
 
 #endif

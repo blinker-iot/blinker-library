@@ -1,58 +1,31 @@
-#ifndef BLINKER_V2_ARDUINO_UNO_R4_BLE_PLATFORM_H
-#define BLINKER_V2_ARDUINO_UNO_R4_BLE_PLATFORM_H
+#ifndef BLINKER_V2_ARDUINO_WIO_TERMINAL_BLE_PLATFORM_H
+#define BLINKER_V2_ARDUINO_WIO_TERMINAL_BLE_PLATFORM_H
 
-#include "../../ports/arduino/ArduinoBleLink.h"
+#if !defined(SEEED_WIO_TERMINAL) && !defined(WIO_TERMINAL)
+#error "WioTerminalBLEPlatform requires a Wio Terminal target"
+#endif
+
 #include "../../ports/arduino/PortableCrypto.h"
-#include "../../ports/uno_r4/UnoR4BleSecurity.h"
-#include "../../ports/uno_r4/UnoR4Storage.h"
+#include "../../ports/wio_terminal/WioTerminalRpcBle.h"
+#include "../../ports/wio_terminal/WioTerminalStorage.h"
 
-#include <BlinkerV2/security/Ed25519ServerKeyRingVerifier.h>
 #include <BlinkerV2/arduino/config/PortableServerKeys.h>
 #include <BlinkerV2/identity/OwnershipRecordStore.h>
-
-#if !defined(ARDUINO_ARCH_RENESAS_UNO) && \
-    !defined(ARDUINO_ARCH_RENESAS)
-#error "This official platform requires an Arduino Renesas target"
-#endif
-
-#if BLINKER_RESOURCE_PROFILE != BLINKER_RESOURCE_PROFILE_SMALL
-#error "This official platform is sized for the Small resource profile"
-#endif
+#include <BlinkerV2/security/Ed25519ServerKeyRingVerifier.h>
 
 namespace blinker {
 namespace integration {
 namespace official_detail {
 
-inline ArduinoBleLinkConfig renesasEncryptedBleConfig() {
-    ArduinoBleLinkConfig config;
-    config.requireEncryption = true;
-    return config;
-}
-
-class RenesasUnoBleRadio {
-public:
-    enum : size_t { maximumPacketSize = 20U };
-
-    RenesasUnoBleRadio()
-        : security_(),
-          link_(security_, renesasEncryptedBleConfig()) {}
-
-    ArduinoBleLink& link() { return link_; }
-    void stop() { link_.stop(); }
-
-private:
-    RenesasUnoBleSecuritySource security_;
-    ArduinoBleLink link_;
-};
-
 #if BLINKER_OFFICIAL_HAS_SERVER_SIGNATURE
-class RenesasUnoPlatformBlePlatform {
+class WioTerminalPlatformBlePlatform {
 public:
     enum : size_t {
-        maximumBlePacketSize = RenesasUnoBleRadio::maximumPacketSize
+        maximumBlePacketSize =
+            WioTerminalRpcBleLink::maximumPacketSize
     };
 
-    RenesasUnoPlatformBlePlatform()
+    WioTerminalPlatformBlePlatform()
         : storage_(),
           ownershipStore_(storage_.ownershipBlob()),
           crypto_(),
@@ -60,11 +33,11 @@ public:
               crypto_,
               official::serverSigningKeys,
               official::serverSigningKeysCount),
-          radio_() {}
+          link_() {}
 
     Result begin() { return storage_.begin(); }
     void end() {
-        radio_.stop();
+        link_.stop();
         storage_.end();
     }
 
@@ -87,14 +60,14 @@ public:
         return signatureVerifier_;
     }
     INoiseCryptoProvider& noiseCrypto() { return crypto_; }
-    ArduinoBleLink& bleLink() { return radio_.link(); }
+    WioTerminalRpcBleLink& bleLink() { return link_; }
 
 private:
-    RenesasUnoPreferencesBlobBank storage_;
+    WioTerminalFlashBlobBank storage_;
     OwnershipRecordStore ownershipStore_;
     ArduinoCryptoProvider crypto_;
     Ed25519ServerKeyRingVerifier signatureVerifier_;
-    RenesasUnoBleRadio radio_;
+    WioTerminalRpcBleLink link_;
 };
 #endif
 

@@ -25,12 +25,16 @@
   ],
   "platforms": [
     "espressif32",
-    "renesas-ra"
+    "renesas-ra",
+    "atmelsam"
   ],
   "dependencies": {
     "knolleary/PubSubClient": "=2.8.0",
     "h2zero/NimBLE-Arduino": "=2.5.0",
     "arduino-libraries/ArduinoBLE": "=2.0.2",
-    "rweather/Crypto": "=0.4.0"
+    "rweather/Crypto": "=0.4.0",
+    "seeed-studio/Seeed Arduino rpcWiFi": "=1.1.0",
+    "seeed-studio/Seeed Arduino rpcBLE": "=1.0.0",
+    "seeed-studio/Seeed Arduino rpcUnified": "=2.1.4"
   }
 }
