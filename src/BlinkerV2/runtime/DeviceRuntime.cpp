@@ -1804,7 +1804,13 @@ Result DeviceRuntime::sendEvent(
     if (!result) return result;
     if (target.kind != SendTargetKind::Broadcast) {
         PeerSession* targetPeer = peer(target);
-        if (targetPeer == nullptr || !targetPeer->helloComplete) {
+        const bool requireManifest = targetPeer != nullptr &&
+                                     cloudTransport(targetPeer->transportId);
+        if (targetPeer == nullptr || !targetPeer->helloComplete ||
+            (requireManifest &&
+             (((targetPeer->negotiatedFeatures &
+                bbp2::FeatureEndpointIds) == 0U) ||
+              !targetPeer->idReady))) {
             return Result::failure(ErrorCode::NotConfigured);
         }
         if (!authorizedFor(
@@ -1835,7 +1841,10 @@ Result DeviceRuntime::sendEvent(
         keyedBody.size,
         frame);
     return result
-               ? fanOutPreparedFrame(frame, bbp2::FeatureNone, nullptr)
+               ? fanOutPreparedFrame(
+                     frame,
+                     bbp2::FeatureNone,
+                     nullptr)
                : result;
 }
 
@@ -1888,13 +1897,17 @@ Result DeviceRuntime::sendPatchInternal(
     PeerSession* targetPeer = nullptr;
     if (target.kind != SendTargetKind::Broadcast) {
         targetPeer = peer(target);
+        const bool requireManifest = targetPeer != nullptr &&
+                                     cloudTransport(targetPeer->transportId);
         uint32_t requiredFeatures = bbp2::FeatureStateRevision;
-        if (idMode) requiredFeatures |= bbp2::FeatureEndpointIds;
+        if (idMode || requireManifest) {
+            requiredFeatures |= bbp2::FeatureEndpointIds;
+        }
         if (reliable) requiredFeatures |= bbp2::FeatureReliableDelivery;
         if (targetPeer == nullptr || !targetPeer->helloComplete ||
             (targetPeer->negotiatedFeatures & requiredFeatures) !=
                 requiredFeatures ||
-            (idMode && !targetPeer->idReady) ||
+            ((idMode || requireManifest) && !targetPeer->idReady) ||
             (reliable && targetPeer->remoteReliableReceiveWindow == 0U)) {
             return Result::failure(ErrorCode::NotConfigured);
         }
@@ -2048,12 +2061,17 @@ Result DeviceRuntime::fanOutPreparedFrame(
     Result firstError = Result::success();
     for (size_t index = 0; index < BLINKER_MAX_PEER_SESSIONS; ++index) {
         const PeerSession& session = peers_[index];
+        const bool manifestPending = cloudTransport(session.transportId) &&
+                                     (((session.negotiatedFeatures &
+                                        bbp2::FeatureEndpointIds) == 0U) ||
+                                      !session.idReady);
         if (!session.occupied || !session.helloComplete ||
             !authorizedFor(session, kAuthorizationPermissionObserve) ||
             (session.negotiatedFeatures & requiredFeatures) !=
                 requiredFeatures ||
             ((requiredFeatures & bbp2::FeatureEndpointIds) != 0U &&
-             !session.idReady)) {
+             !session.idReady) ||
+            manifestPending) {
             continue;
         }
         if (exclude != nullptr &&
@@ -2303,6 +2321,12 @@ bool DeviceRuntime::localTransport(uint8_t transportId) const {
     const IFrameTransport* transport = transports_.at(transportId);
     return transport != nullptr &&
            (transport->capabilities().features & TransportFeatureLocal) != 0U;
+}
+
+bool DeviceRuntime::cloudTransport(uint8_t transportId) const {
+    const IFrameTransport* transport = transports_.at(transportId);
+    return transport != nullptr &&
+           (transport->capabilities().features & TransportFeatureCloud) != 0U;
 }
 
 uint32_t DeviceRuntime::negotiatedFeatures(const RxContext& rx) const {

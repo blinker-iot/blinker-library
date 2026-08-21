@@ -26,6 +26,10 @@ public:
     TransportCapabilities capabilities() const override;
     Result send(ByteView frame, const SendTarget& target) override;
     void setReceiver(FrameReceiver receiver, void* context) override;
+    void setSessionHandlers(
+        FrameSessionHandler connected,
+        FrameSessionHandler disconnected,
+        void* context) override;
 
 private:
     Result applyCredentials();

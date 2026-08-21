@@ -146,4 +146,11 @@ void ManagedMqttTransport::setReceiver(
     mqttTransport_.setReceiver(receiver, context);
 }
 
+void ManagedMqttTransport::setSessionHandlers(
+    FrameSessionHandler connected,
+    FrameSessionHandler disconnected,
+    void* context) {
+    mqttTransport_.setSessionHandlers(connected, disconnected, context);
+}
+
 } // namespace blinker

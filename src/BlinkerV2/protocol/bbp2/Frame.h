@@ -22,6 +22,8 @@ enum class MessageKind : uint8_t {
     ManifestAccept = 0x06,
     // 0x07 and 0x08 were used by the pre-freeze device WidgetCatalog
     // experiment. They are reserved and must not be reused in BBP/2 v2.
+    Route = 0x09,
+    Delivery = 0x0A,
     StateRequest = 0x10,
     Patch = 0x11,
     Command = 0x12,

@@ -48,6 +48,10 @@ public:
     TransportCapabilities capabilities() const override;
     Result send(ByteView frame, const SendTarget& target) override;
     void setReceiver(FrameReceiver receiver, void* context) override;
+    void setSessionHandlers(
+        FrameSessionHandler connected,
+        FrameSessionHandler disconnected,
+        void* context) override;
 
 private:
     static void messageThunk(
@@ -62,6 +66,8 @@ private:
         const MqttMessageInfo& info);
 
     Result connectNow();
+    void notifyConnected();
+    void notifyDisconnected();
     void enterBackoff(uint32_t now);
     static bool isRetryable(ErrorCode error);
     static bool equal(StringView left, StringView right);
@@ -73,12 +79,16 @@ private:
     SessionCredentials credentials_;
     FrameReceiver receiver_;
     void* receiverContext_;
+    FrameSessionHandler sessionConnected_;
+    FrameSessionHandler sessionDisconnected_;
+    void* sessionContext_;
     TransportState state_;
     uint32_t lastConnectAttempt_;
     bool configured_;
     bool started_;
     bool attemptedConnect_;
     bool networkAvailable_;
+    bool sessionActive_;
     ErrorCode lastError_;
 };
 

@@ -905,6 +905,225 @@ Result decodeStatePatchBody(
     return Result::success();
 }
 
+namespace {
+
+bool hasNonZeroByte(ByteView value) {
+    if (value.data == nullptr || value.size != kRouteIdentitySize) return false;
+    for (size_t index = 0; index < value.size; ++index) {
+        if (value.data[index] != 0U) return true;
+    }
+    return false;
+}
+
+bool routableMessageKind(uint8_t kind) {
+    switch (static_cast<MessageKind>(kind)) {
+        case MessageKind::ManifestRequest:
+        case MessageKind::Manifest:
+        case MessageKind::ManifestAccept:
+        case MessageKind::StateRequest:
+        case MessageKind::Patch:
+        case MessageKind::Command:
+        case MessageKind::Event:
+        case MessageKind::Ack:
+        case MessageKind::Error:
+        case MessageKind::StatePage:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool validRoutedFlags(uint8_t flags, bool delivery) {
+    if ((flags & static_cast<uint8_t>(~kKnownFlags)) != 0U ||
+        (flags & FlagHasCrc32c) != 0U) {
+        return false;
+    }
+    return delivery || (flags & FlagIsResponse) == 0U;
+}
+
+Result encodeRoutedMessageBody(
+    const RoutedMessageBody& body,
+    bool delivery,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits) {
+    const uint8_t maximumPeerKind = static_cast<uint8_t>(
+        delivery ? RoutePeerKind::Platform : RoutePeerKind::DeviceGroup);
+    const bool requestValid = !body.hasRequestId ||
+        hasNonZeroByte(body.requestId);
+    if (static_cast<uint8_t>(body.peerKind) > maximumPeerKind ||
+        !hasNonZeroByte(body.peerId) ||
+        (!delivery && !body.hasRequestId) ||
+        !requestValid ||
+        !routableMessageKind(body.messageKind) ||
+        !validRoutedFlags(body.messageFlags, delivery) ||
+        body.messageBody.empty() || body.messageBody.data == nullptr) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    const size_t fieldCount = body.hasRequestId ? 6U : 5U;
+    if (limits.maxDepth < 2U) {
+        return Result::failure(ErrorCode::NestingTooDeep);
+    }
+    if (limits.maxContainerItems < fieldCount ||
+        limits.maxByteStringLength < kRouteIdentitySize) {
+        return Result::failure(ErrorCode::CapacityExceeded);
+    }
+    cbor::Limits innerLimits = limits;
+    --innerLimits.maxDepth;
+    Result result = cbor::validate(body.messageBody, innerLimits);
+    if (!result) return result;
+
+    cbor::Writer writer(output);
+    result = writer.beginMap(fieldCount);
+    if (result) result = writeKey(writer, 0);
+    if (result) {
+        result = writer.writeUnsigned(static_cast<uint8_t>(body.peerKind));
+    }
+    if (result) result = writeKey(writer, 1);
+    if (result) result = writer.writeBytes(body.peerId);
+    if (result && body.hasRequestId) result = writeKey(writer, 2);
+    if (result && body.hasRequestId) result = writer.writeBytes(body.requestId);
+    if (result) result = writeKey(writer, 3);
+    if (result) result = writer.writeUnsigned(body.messageKind);
+    if (result) result = writeKey(writer, 4);
+    if (result) result = writer.writeUnsigned(body.messageFlags);
+    if (result) result = writeKey(writer, 5);
+    if (result) {
+        result = writer.writeEncodedValue(body.messageBody, innerLimits);
+    }
+    if (!result) return result;
+    encoded = writer.view();
+    return Result::success();
+}
+
+Result decodeRoutedMessageBody(
+    ByteView encoded,
+    bool delivery,
+    RoutedMessageBody& body,
+    const cbor::Limits& limits) {
+    Result result = cbor::validate(encoded, limits);
+    if (!result) return result;
+    cbor::Reader reader(encoded, limits);
+    size_t count = 0U;
+    result = reader.readMapSize(count);
+    if (!result) return result;
+
+    RoutedMessageBody decoded;
+    uint8_t seen = 0U;
+    uint64_t previousKey = 0U;
+    bool hasPreviousKey = false;
+    for (size_t index = 0; index < count; ++index) {
+        uint64_t key = 0U;
+        result = readKey(reader, key);
+        if (!result) return result;
+        if (hasPreviousKey && key <= previousKey) {
+            return Result::failure(
+                key == previousKey
+                    ? ErrorCode::DuplicateField
+                    : ErrorCode::NonCanonicalEncoding);
+        }
+        previousKey = key;
+        hasPreviousKey = true;
+        if (key <= 5U) {
+            const uint8_t bit = static_cast<uint8_t>(1U << key);
+            if ((seen & bit) != 0U) {
+                return Result::failure(ErrorCode::DuplicateField);
+            }
+            seen = static_cast<uint8_t>(seen | bit);
+        }
+
+        uint64_t value = 0U;
+        if (key == 0U) {
+            result = reader.readUnsigned(value);
+            if (!result) return result;
+            const uint8_t maximumPeerKind = static_cast<uint8_t>(
+                delivery ? RoutePeerKind::Platform
+                         : RoutePeerKind::DeviceGroup);
+            if (value > maximumPeerKind) {
+                return Result::failure(ErrorCode::ValueOutOfRange);
+            }
+            decoded.peerKind = static_cast<RoutePeerKind>(value);
+        } else if (key == 1U) {
+            result = reader.readBytes(decoded.peerId);
+            if (!result) return result;
+        } else if (key == 2U) {
+            result = reader.readBytes(decoded.requestId);
+            if (!result) return result;
+            decoded.hasRequestId = true;
+        } else if (key == 3U) {
+            result = reader.readUnsigned(value);
+            if (!result) return result;
+            if (value > UINT8_MAX ||
+                !routableMessageKind(static_cast<uint8_t>(value))) {
+                return Result::failure(ErrorCode::ValueOutOfRange);
+            }
+            decoded.messageKind = static_cast<uint8_t>(value);
+        } else if (key == 4U) {
+            result = reader.readUnsigned(value);
+            if (!result) return result;
+            if (value > UINT8_MAX) {
+                return Result::failure(ErrorCode::ValueOutOfRange);
+            }
+            decoded.messageFlags = static_cast<uint8_t>(value);
+        } else if (key == 5U) {
+            result = reader.captureValue(decoded.messageBody);
+            if (!result) return result;
+        } else {
+            result = reader.skipValue();
+            if (!result) return result;
+        }
+    }
+
+    const uint8_t required = delivery ? 0x3BU : 0x3FU;
+    if ((seen & required) != required ||
+        (!delivery && !decoded.hasRequestId)) {
+        return Result::failure(ErrorCode::NotConfigured);
+    }
+    if (!hasNonZeroByte(decoded.peerId) ||
+        (decoded.hasRequestId && !hasNonZeroByte(decoded.requestId)) ||
+        !validRoutedFlags(decoded.messageFlags, delivery)) {
+        return Result::failure(ErrorCode::InvalidEncoding);
+    }
+    result = requireFinished(reader);
+    if (!result) return result;
+    body = decoded;
+    return Result::success();
+}
+
+} // namespace
+
+Result encodeRouteBody(
+    const RoutedMessageBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits) {
+    return encodeRoutedMessageBody(
+        body, false, output, encoded, limits);
+}
+
+Result decodeRouteBody(
+    ByteView encoded,
+    RoutedMessageBody& body,
+    const cbor::Limits& limits) {
+    return decodeRoutedMessageBody(encoded, false, body, limits);
+}
+
+Result encodeDeliveryBody(
+    const RoutedMessageBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits) {
+    return encodeRoutedMessageBody(
+        body, true, output, encoded, limits);
+}
+
+Result decodeDeliveryBody(
+    ByteView encoded,
+    RoutedMessageBody& body,
+    const cbor::Limits& limits) {
+    return decodeRoutedMessageBody(encoded, true, body, limits);
+}
+
 Result encodeAuthRequestBody(
     const AuthRequestBody& body,
     MutableByteSpan output,

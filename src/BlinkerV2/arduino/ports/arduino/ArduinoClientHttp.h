@@ -36,6 +36,7 @@ public:
           headerLineSize_(0),
           contentLength_(0),
           startedAt_(0U),
+          discardingHeaderLine_(false),
           hasContentLength_(false),
           statusParsed_(false) {
         host_[0] = '\0';
@@ -214,6 +215,7 @@ public:
         headerLineSize_ = 0;
         contentLength_ = 0;
         startedAt_ = 0U;
+        discardingHeaderLine_ = false;
         hasContentLength_ = false;
         statusParsed_ = false;
     }
@@ -383,14 +385,33 @@ private:
 
     Result consumeHeaderByte(uint8_t byte) {
         if (byte == static_cast<uint8_t>('\n')) {
+            if (discardingHeaderLine_) {
+                discardingHeaderLine_ = false;
+                headerLineSize_ = 0;
+                return Result::success();
+            }
             size_t size = headerLineSize_;
             if (size != 0U && headerLine_[size - 1U] == '\r') --size;
             const Result result = consumeHeaderLine(headerLine_, size);
             headerLineSize_ = 0;
             return result;
         }
+        if (discardingHeaderLine_) return Result::success();
         if (headerLineSize_ >= HeaderLineCapacity) {
-            return fail(ErrorCode::CapacityExceeded);
+            // The status line and framing headers must be parsed exactly.
+            // Other response metadata may be arbitrarily long (for example,
+            // browser-facing CORS headers) and must not force a larger MCU
+            // scratch buffer. Discard only those non-framing lines through
+            // their terminating LF.
+            if (phase_ != PhaseHeaders ||
+                startsWithIgnoreCase(
+                    headerLine_, headerLineSize_, "Content-Length:") ||
+                startsWithIgnoreCase(
+                    headerLine_, headerLineSize_, "Transfer-Encoding:")) {
+                return fail(ErrorCode::CapacityExceeded);
+            }
+            discardingHeaderLine_ = true;
+            return Result::success();
         }
         headerLine_[headerLineSize_++] = static_cast<char>(byte);
         return Result::success();
@@ -494,6 +515,7 @@ private:
     size_t headerLineSize_;
     size_t contentLength_;
     uint32_t startedAt_;
+    bool discardingHeaderLine_;
     bool hasContentLength_;
     bool statusParsed_;
 };

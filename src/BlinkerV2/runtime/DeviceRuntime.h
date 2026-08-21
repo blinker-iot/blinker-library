@@ -394,6 +394,7 @@ private:
         uint32_t requiredPermissions) const;
     bool idModeReady(const RxContext& rx) const;
     bool localTransport(uint8_t transportId) const;
+    bool cloudTransport(uint8_t transportId) const;
     uint32_t negotiatedFeatures(const RxContext& rx) const;
     void invalidateStateObservations(PeerSession* observingPeer = nullptr);
     size_t maximumOutboundFrameSize(const SendTarget& target) const;

@@ -13,6 +13,7 @@ static const uint8_t kMaxHelloVersions = 4;
 static const uint8_t kMaxAuthorizationMethods = 4;
 static const uint8_t kMaxReliableReceiveWindow = 16;
 static const uint8_t kManifestFingerprintSize = 32;
+static const uint8_t kRouteIdentitySize = 16;
 // Maximum bytes before the nested values map in a StatePatchBody:
 // map(3), keys 0..2, mode and a canonical uint32 revision.
 static const uint8_t kStatePatchEnvelopeReserve = 10;
@@ -34,7 +35,16 @@ enum ProtocolFeature : uint32_t {
     FeatureReliableDelivery = 1UL << 6,
     FeatureStateRevision = 1UL << 7,
     // bit 8 is reserved for the removed pre-freeze WidgetCatalog experiment.
-    FeatureControllerControl = 1UL << 9
+    FeatureControllerControl = 1UL << 9,
+    FeatureRouting = 1UL << 10
+};
+
+enum class RoutePeerKind : uint8_t {
+    LogicalDevice = 0,
+    CloudService = 1,
+    DeviceGroup = 2,
+    Account = 3,
+    Platform = 4
 };
 
 enum : size_t {
@@ -173,6 +183,29 @@ struct StatePatchBody {
         : mode(StatePatchMode::Report), revision(0), values() {}
 };
 
+// Route uses peer as the target and requires requestId. Delivery uses peer as
+// the Broker-authenticated source; unsolicited state/event delivery may omit
+// requestId. messageBody is one complete canonical CBOR value and is never
+// converted to JSON by the wire codec.
+struct RoutedMessageBody {
+    RoutePeerKind peerKind;
+    ByteView peerId;
+    ByteView requestId;
+    uint8_t messageKind;
+    uint8_t messageFlags;
+    ByteView messageBody;
+    bool hasRequestId;
+
+    RoutedMessageBody()
+        : peerKind(RoutePeerKind::LogicalDevice),
+          peerId(),
+          requestId(),
+          messageKind(static_cast<uint8_t>(MessageKind::Patch)),
+          messageFlags(FlagNone),
+          messageBody(),
+          hasRequestId(false) {}
+};
+
 enum class AuthStatus : uint8_t {
     Continue = 0,
     Authorized = 1,
@@ -290,6 +323,25 @@ Result encodeStatePatchBody(
 Result decodeStatePatchBody(
     ByteView encoded,
     StatePatchBody& body,
+    const cbor::Limits& limits = cbor::Limits());
+
+Result encodeRouteBody(
+    const RoutedMessageBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits = cbor::Limits());
+Result decodeRouteBody(
+    ByteView encoded,
+    RoutedMessageBody& body,
+    const cbor::Limits& limits = cbor::Limits());
+Result encodeDeliveryBody(
+    const RoutedMessageBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits = cbor::Limits());
+Result decodeDeliveryBody(
+    ByteView encoded,
+    RoutedMessageBody& body,
     const cbor::Limits& limits = cbor::Limits());
 
 Result encodeAuthRequestBody(

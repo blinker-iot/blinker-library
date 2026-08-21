@@ -7,7 +7,6 @@ Debug/
 .vscode/
 /build/
 /.build/
-/release/
 /tests/arduino/build-*/
 /tests/arduino/build/
 /tests/golden/build-*/

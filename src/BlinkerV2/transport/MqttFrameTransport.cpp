@@ -13,12 +13,16 @@ MqttFrameTransport::MqttFrameTransport(
       config_(config),
       receiver_(nullptr),
       receiverContext_(nullptr),
+      sessionConnected_(nullptr),
+      sessionDisconnected_(nullptr),
+      sessionContext_(nullptr),
       state_(TransportState::Stopped),
       lastConnectAttempt_(0),
       configured_(false),
       started_(false),
       attemptedConnect_(false),
       networkAvailable_(true),
+      sessionActive_(false),
       lastError_(ErrorCode::Ok) {
     mqtt_.setMessageHandler(&MqttFrameTransport::messageThunk, this);
 }
@@ -80,6 +84,7 @@ void MqttFrameTransport::setNetworkAvailable(bool available) {
     }
 
     if (!available) {
+        notifyDisconnected();
         mqtt_.disconnect();
         state_ = TransportState::Starting;
         lastError_ = ErrorCode::NotConnected;
@@ -113,6 +118,7 @@ Result MqttFrameTransport::start() {
 void MqttFrameTransport::stop() {
     started_ = false;
     attemptedConnect_ = false;
+    notifyDisconnected();
     mqtt_.disconnect();
     state_ = TransportState::Stopped;
     lastError_ = ErrorCode::Ok;
@@ -127,6 +133,7 @@ void MqttFrameTransport::poll(uint32_t budgetMicros) {
     const uint32_t now = clock_.monotonicMillis();
 
     if (state_ == TransportState::Online && !mqtt_.connected()) {
+        notifyDisconnected();
         enterBackoff(now);
     }
 
@@ -189,6 +196,15 @@ void MqttFrameTransport::setReceiver(
     void* context) {
     receiver_ = receiver;
     receiverContext_ = context;
+}
+
+void MqttFrameTransport::setSessionHandlers(
+    FrameSessionHandler connected,
+    FrameSessionHandler disconnected,
+    void* context) {
+    sessionConnected_ = connected;
+    sessionDisconnected_ = disconnected;
+    sessionContext_ = context;
 }
 
 void MqttFrameTransport::messageThunk(
@@ -273,7 +289,28 @@ Result MqttFrameTransport::connectNow() {
 
     state_ = TransportState::Online;
     lastError_ = ErrorCode::Ok;
+    notifyConnected();
     return Result::success();
+}
+
+void MqttFrameTransport::notifyConnected() {
+    if (sessionActive_) return;
+    sessionActive_ = true;
+    if (sessionConnected_ == nullptr) return;
+    RxContext session;
+    session.sessionId = 1U;
+    session.authenticated = true;
+    sessionConnected_(sessionContext_, session);
+}
+
+void MqttFrameTransport::notifyDisconnected() {
+    if (!sessionActive_) return;
+    sessionActive_ = false;
+    if (sessionDisconnected_ == nullptr) return;
+    RxContext session;
+    session.sessionId = 1U;
+    session.authenticated = true;
+    sessionDisconnected_(sessionContext_, session);
 }
 
 void MqttFrameTransport::enterBackoff(uint32_t now) {

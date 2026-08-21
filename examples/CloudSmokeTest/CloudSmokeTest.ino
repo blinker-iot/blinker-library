@@ -1,8 +1,9 @@
 // Cloud interoperability smoke test for the single Blinker library.
 #include <BlinkerWiFi.h>
 
-// Minimal APP/service/broker smoke test. It uses only the public Arduino API
-// while exercising DeviceKey session creation and BBP/2 state traffic.
+// Real Gateway/Broker smoke test using only the public Arduino API. It covers
+// DeviceKey login, HELLO/Manifest/State, server COMMAND and device Report.
+// The zero-dependency wire probe does not run this full state machine.
 BLINKER_PROPERTY(power, bool, blinker::readWrite());
 BLINKER_PROPERTY(uptimeSeconds, uint32_t, blinker::readOnly());
 

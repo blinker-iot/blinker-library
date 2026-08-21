@@ -11,8 +11,6 @@ on:
       - "library.json"
       - "keywords.txt"
       - "README.md"
-      - "adapters/**"
-      - "integrations/**"
       - "release/**"
       - "tools/**"
       - "docs/**"
@@ -26,8 +24,6 @@ on:
       - "library.json"
       - "keywords.txt"
       - "README.md"
-      - "adapters/**"
-      - "integrations/**"
       - "release/**"
       - "tools/**"
       - "docs/**"
@@ -56,6 +52,8 @@ jobs:
           echo "NVS_PYTHON=${RUNNER_TEMP}/blinker-nvs/bin/python" >> "${GITHUB_ENV}"
       - name: Architecture boundary
         run: python3 tests/architecture/check_device_v2.py
+      - name: Python syntax boundary
+        run: python3 -m compileall -q tools tests
       - name: ASan, UBSan, LSan and deterministic fuzz
         run: >-
           python3 tests/host/run_sanitized_tests.py
@@ -135,16 +133,23 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
-      - name: Validate package metadata and dependency isolation
-        run: python3 tools/build_device_v2_packages.py --check-only
-      - name: Build deterministic standalone archives
-        run: python3 tools/build_device_v2_packages.py --output-dir build/packages
-      - name: Verify deterministic official aggregate package
-        run: python3 tests/official-package/verify_package.py
+      - name: Validate the single Arduino release boundary
+        run: python3 tools/build_arduino_release.py --check-only
+      - name: Build the single deterministic Arduino archive twice
+        run: |
+          python3 tools/build_arduino_release.py \
+            --stage-dir build/release-a/library \
+            --output-dir build/release-a/artifacts
+          python3 tools/build_arduino_release.py \
+            --stage-dir build/release-b/library \
+            --output-dir build/release-b/artifacts
+          cmp \
+            build/release-a/artifacts/BlinkerDeviceV2-*.zip \
+            build/release-b/artifacts/BlinkerDeviceV2-*.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: device-v2-staging-packages
-          path: build/packages
+          name: blinker-device-v2-arduino
+          path: build/release-a/artifacts
 
   arduino-core:
     runs-on: ubuntu-24.04
@@ -214,7 +219,7 @@ jobs:
           - platform: uno-r4
             core: arduino:renesas_uno@1.5.3
             index: ""
-            targets: --target uno-r4-storage --target uno-r4-ble-security --target uno-r4-server-verifier --target uno-r4-factory-installer --target uno-r4-http --target uno-r4-mqtt --target uno-r4-mqtt-tls
+            targets: --target uno-r4-storage --target uno-r4-ble-security --target uno-r4-factory-installer --target uno-r4-http --target uno-r4-mqtt --target uno-r4-mqtt-tls
           - platform: esp8266
             core: esp8266:esp8266@3.1.2
             index: https://arduino.esp8266.com/stable/package_esp8266com_index.json
@@ -232,207 +237,39 @@ jobs:
       - name: Install pinned Arduino core
         if: matrix.index == ''
         run: arduino-cli core install "${{ matrix.core }}"
-      - name: Install PubSubClient reference adapter dependency
+      - name: Install PubSubClient port dependency
         run: arduino-cli lib install "PubSubClient@2.8"
-      - name: Compile platform storage, BLE security, HTTP and MQTT adapters
+      - name: Compile platform storage, BLE security, HTTP and MQTT Ports
         run: python3 tests/arduino/compile_matrix.py ${{ matrix.targets }}
 
-  arduino-official:
+  arduino-unified:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - profile: esp32-plain
-            config: tests/official-package/package.json
-            core: esp32:esp32@3.3.1
-            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
-            fqbn: esp32:esp32:esp32
-            mqtt: true
-            portable_crypto: false
-            nimble: false
-            arduino_ble: false
-            example: WiFiOnboardingQuickStart
-          - profile: esp32-tls
-            config: tests/official-package/package-tls.json
-            core: esp32:esp32@3.3.1
-            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
-            fqbn: esp32:esp32:esp32
-            mqtt: true
-            portable_crypto: false
-            nimble: false
-            arduino_ble: false
-            example: WiFiOnboardingQuickStart
-          - profile: esp32-wifi-ble-internal
-            config: tests/official-package/package-esp32-wifi-ble.json
-            core: esp32:esp32@3.3.1
-            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
-            fqbn: esp32:esp32:esp32:PartitionScheme=min_spiffs
-            mqtt: true
-            portable_crypto: false
-            nimble: true
-            arduino_ble: false
-            example: WifiBleCompositionProbe
-          - profile: esp32-device-key-wifiprov-internal
-            config: tests/official-package/package-esp32-device-key-wifiprov.json
-            core: esp32:esp32@3.3.1
-            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
-            fqbn: esp32:esp32:esp32:PartitionScheme=min_spiffs
-            mqtt: true
-            portable_crypto: false
-            nimble: false
-            arduino_ble: false
-            example: Esp32ProvisionedDeviceKeyWifiCompositionProbe
-          - profile: esp32-device-key-softap-nimble-internal
-            config: tests/official-package/package-esp32-device-key-softap-nimble.json
-            core: esp32:esp32@3.3.1
-            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
-            fqbn: esp32:esp32:esp32:PartitionScheme=min_spiffs
-            mqtt: true
-            portable_crypto: false
-            nimble: true
-            arduino_ble: false
-            example: Esp32SoftApProvisionedDeviceKeyWifiBleCompositionProbe
-          - profile: esp32-device-key-wifiprov-tls-internal
-            config: tests/official-package/package-esp32-device-key-wifiprov-tls.json
-            core: esp32:esp32@3.3.1
-            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
-            fqbn: esp32:esp32:esp32:PartitionScheme=min_spiffs
-            mqtt: true
-            portable_crypto: false
-            nimble: false
-            arduino_ble: false
-            example: Esp32ProvisionedDeviceKeyWifiCompositionProbe
-          - profile: esp32-device-key-softap-nimble-tls-internal
-            config: tests/official-package/package-esp32-device-key-softap-nimble-tls.json
-            core: esp32:esp32@3.3.1
-            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
-            fqbn: esp32:esp32:esp32:PartitionScheme=min_spiffs
-            mqtt: true
-            portable_crypto: false
-            nimble: true
-            arduino_ble: false
-            example: Esp32SoftApProvisionedDeviceKeyWifiBleCompositionProbe
-          - profile: esp32-platform-ble-internal
-            config: tests/official-package/package-esp32-platform-ble.json
-            core: esp32:esp32@3.3.1
-            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
-            fqbn: esp32:esp32:esp32
-            mqtt: false
-            portable_crypto: false
-            nimble: true
-            arduino_ble: false
-            example: Esp32PlatformBleCompositionProbe
-          - profile: esp32-local-ble-internal
-            config: tests/official-package/package-esp32-local-ble.json
-            core: esp32:esp32@3.3.1
-            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
-            fqbn: esp32:esp32:esp32
-            mqtt: false
-            portable_crypto: false
-            nimble: true
-            arduino_ble: false
-            example: Esp32LocalBleCompositionProbe
-          - profile: uno-r4-plain
-            config: tests/official-package/package-uno-r4.json
-            core: arduino:renesas_uno@1.5.3
-            index: ""
-            fqbn: arduino:renesas_uno:unor4wifi
-            mqtt: true
-            portable_crypto: true
-            nimble: false
-            arduino_ble: false
-            example: WiFiOnboardingQuickStart
-          - profile: uno-r4-tls
-            config: tests/official-package/package-uno-r4-tls.json
-            core: arduino:renesas_uno@1.5.3
-            index: ""
-            fqbn: arduino:renesas_uno:unor4wifi
-            mqtt: true
-            portable_crypto: true
-            nimble: false
-            arduino_ble: false
-            example: WiFiOnboardingQuickStart
-          - profile: uno-r4-wifi-ble-internal
-            config: tests/official-package/package-uno-r4-wifi-ble.json
-            core: arduino:renesas_uno@1.5.3
-            index: ""
-            fqbn: arduino:renesas_uno:unor4wifi
-            mqtt: true
-            portable_crypto: true
-            nimble: false
-            arduino_ble: true
-            example: UnoR4WifiBleCompositionProbe
-          - profile: uno-r4-platform-ble-internal
-            config: tests/official-package/package-uno-r4-platform-ble.json
-            core: arduino:renesas_uno@1.5.3
-            index: ""
-            fqbn: arduino:renesas_uno:unor4wifi
-            mqtt: false
-            portable_crypto: true
-            nimble: false
-            arduino_ble: true
-            example: UnoR4PlatformBleCompositionProbe
-          - profile: uno-r4-local-ble-internal
-            config: tests/official-package/package-uno-r4-local-ble.json
-            core: arduino:renesas_uno@1.5.3
-            index: ""
-            fqbn: arduino:renesas_uno:unor4wifi
-            mqtt: false
-            portable_crypto: true
-            nimble: false
-            arduino_ble: true
-            example: UnoR4LocalBleCompositionProbe
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
       - uses: arduino/setup-arduino-cli@v2
         with:
           version: "1.5.0"
-      - name: Install pinned contributed core
-        if: matrix.index != ''
+      - name: Install pinned ESP32 core
         run: >-
-          arduino-cli core install "${{ matrix.core }}"
-          --additional-urls "${{ matrix.index }}"
-      - name: Install pinned Arduino core
-        if: matrix.index == ''
-        run: arduino-cli core install "${{ matrix.core }}"
-      - name: Install pinned PubSubClient dependency
-        if: matrix.mqtt
-        run: arduino-cli lib install "PubSubClient@2.8"
-      - name: Install pinned portable crypto dependency
-        if: matrix.portable_crypto
-        run: arduino-cli lib install "Crypto@0.4.0"
-      - name: Install pinned NimBLE dependency
-        if: matrix.nimble
-        run: arduino-cli lib install "NimBLE-Arduino@2.5.0"
-      - name: Install pinned ArduinoBLE dependency
-        if: matrix.arduino_ble
-        run: arduino-cli lib install "ArduinoBLE@2.0.2"
-      - name: Stage ordinary-sketch aggregate library
+          arduino-cli core install "esp32:esp32@3.3.1"
+          --additional-urls
+          "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+      - name: Install pinned UNO R4 core
+        run: arduino-cli core install "arduino:renesas_uno@1.5.3"
+      - name: Install pinned Wio Terminal core
         run: >-
-          python3 tools/build_official_arduino_package.py
-          --config "${{ matrix.config }}"
-          --stage-dir "build/official-${{ matrix.profile }}/library"
-      - name: Compile official composition probe
-        run: >-
-          arduino-cli compile
-          --fqbn "${{ matrix.fqbn }}"
-          --clean
-          --warnings all
-          --build-path "build/official-${{ matrix.profile }}/arduino"
-          --library "build/official-${{ matrix.profile }}/library"
-          "build/official-${{ matrix.profile }}/library/examples/${{ matrix.example }}"
-      - name: Audit P6 provisioning and BLE link graph
-        if: matrix.profile == 'esp32-device-key-softap-nimble-internal' || matrix.profile == 'esp32-device-key-softap-nimble-tls-internal'
+          arduino-cli core install "Seeeduino:samd@1.8.5"
+          --additional-urls
+          "https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json"
+      - name: Build the public Arduino ZIP
         run: |
-          nm_tool="$(find "${HOME}/.arduino15/packages/esp32/tools" -type f -name xtensa-esp32-elf-nm | head -n 1)"
-          test -n "${nm_tool}"
-          tls_arg=""
-          if [ "${{ matrix.profile }}" = "esp32-device-key-softap-nimble-tls-internal" ]; then
-            tls_arg="--require-tls"
-          fi
-          python3 tests/arduino/audit_esp32_p6_elf.py \
-            --nm "${nm_tool}" \
-            --elf "build/official-${{ matrix.profile }}/arduino/${{ matrix.example }}.ino.elf" \
-            ${tls_arg}
+          python3 tools/build_arduino_release.py \
+            --stage-dir build/formal-release/library \
+            --output-dir build/formal-release/artifacts
+      - name: Install the ZIP and compile every public example/product
+        run: >-
+          python3 tests/arduino/verify_installed_release.py
+          --zip-path build/formal-release/artifacts/BlinkerDeviceV2-0.1.0.zip
+          --work-dir build/installed-zip-gate
+          --jobs 4
