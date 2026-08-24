@@ -5,6 +5,8 @@
 #include <BlinkerV2/interface/IClock.h>
 #include <BlinkerV2/interface/IHttpClient.h>
 
+#include <IPAddress.h>
+
 #include <limits.h>
 #include <string.h>
 
@@ -102,7 +104,7 @@ public:
                 return;
             }
             if (phase_ == PhaseConnect) {
-                if (!client_.connect(host_, request_.port)) {
+                if (!connectClient(client_, host_, request_.port)) {
                     fail(ErrorCode::NotConnected);
                     return;
                 }
@@ -221,6 +223,99 @@ public:
     }
 
 private:
+    static bool parseIpv4Address(const char* host, IPAddress& address) {
+        uint8_t octets[4U] = {};
+        uint8_t octet = 0U;
+        uint8_t digits = 0U;
+
+        for (const char* cursor = host;; ++cursor) {
+            const char value = *cursor;
+            if (value >= '0' && value <= '9') {
+                if (digits == 3U) return false;
+                const uint16_t next = static_cast<uint16_t>(octets[octet]) *
+                                          10U +
+                                      static_cast<uint8_t>(value - '0');
+                if (next > 255U) return false;
+                octets[octet] = static_cast<uint8_t>(next);
+                ++digits;
+                continue;
+            }
+            if (value == '.' && digits != 0U && octet < 3U) {
+                ++octet;
+                digits = 0U;
+                continue;
+            }
+            if (value != '\0' || octet != 3U || digits == 0U) {
+                return false;
+            }
+            address = IPAddress(
+                octets[0U], octets[1U], octets[2U], octets[3U]);
+            return true;
+        }
+    }
+
+    // Prefer the bounded Arduino Client overload where the platform provides
+    // it. Some network cores otherwise wait forever when packets are silently
+    // dropped. The long overload keeps compatibility with minimal Clients.
+    template <typename ClientType>
+    static auto connectHost(
+        ClientType& client,
+        const char* host,
+        uint16_t port,
+        int) -> decltype(client.connect(host, port, int32_t(250))) {
+        return client.connect(host, port, int32_t(250));
+    }
+
+    template <typename ClientType>
+    static bool connectHost(
+        ClientType& client,
+        const char* host,
+        uint16_t port,
+        long) {
+        return client.connect(host, port);
+    }
+
+    template <typename ClientType>
+    static auto connectAddress(
+        ClientType& client,
+        const IPAddress& address,
+        const char*,
+        uint16_t port,
+        int) -> decltype(client.connect(address, port, int32_t(250))) {
+        return client.connect(address, port, int32_t(250));
+    }
+
+    template <typename ClientType>
+    static auto connectAddress(
+        ClientType& client,
+        const IPAddress& address,
+        const char*,
+        uint16_t port,
+        long) -> decltype(client.connect(address, port)) {
+        return client.connect(address, port);
+    }
+
+    template <typename ClientType>
+    static bool connectAddress(
+        ClientType& client,
+        const IPAddress&,
+        const char* host,
+        uint16_t port,
+        ...) {
+        return connectHost(client, host, port, 0);
+    }
+
+    template <typename ClientType>
+    static bool connectClient(
+        ClientType& client,
+        const char* host,
+        uint16_t port) {
+        IPAddress address;
+        return parseIpv4Address(host, address)
+                   ? connectAddress(client, address, host, port, 0)
+                   : connectHost(client, host, port, 0);
+    }
+
     enum Phase : uint8_t {
         PhaseIdle = 0,
         PhaseConnect,

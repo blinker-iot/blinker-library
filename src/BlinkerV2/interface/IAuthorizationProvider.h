@@ -50,6 +50,13 @@ public:
         ByteView requestPayload,
         const AuthorizationSessionContext& session,
         AuthorizationDecision& decision) = 0;
+    // Called only after an Authorized result has been queued successfully.
+    // Providers may use this non-fallible boundary to activate prepared
+    // data-plane state. The default preserves providers without such state.
+    virtual void authorizationResultQueued(
+        const AuthorizationSessionContext& session) {
+        (void)session;
+    }
     virtual void sessionClosed(
         const AuthorizationSessionContext& session) = 0;
     virtual void resetSessions() = 0;

@@ -30,16 +30,6 @@ namespace blinker {
 namespace integration {
 namespace official_detail {
 
-IProductLifecycle& esp32WifiProvLifecycle(
-    StringView serviceName,
-    StringView proofOfPossession,
-    bool forceProvisioning = false);
-IProductLifecycle& esp32WifiBleLifecycle(
-    StringView serviceName,
-    StringView proofOfPossession,
-    StringView serviceKey,
-    bool forceProvisioning = false);
-
 inline HttpDeviceKeySessionConfig deviceKeySessionConfig() {
     HttpDeviceKeySessionConfig config;
     config.host = StringView(official::controlHost);
@@ -251,6 +241,7 @@ public:
 
     Result attach(Client& client) override {
         Result result = initialize();
+        if (result) result = client.setMonotonicClock(&stack_.clock());
         if (result) result = lifecycle_.attach(client);
         if (!result) configurationError_ = result.code();
         return result;

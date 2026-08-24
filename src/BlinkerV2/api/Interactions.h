@@ -18,12 +18,16 @@ enum class PropertyMode : uint8_t {
 struct PropertyOptions {
     PropertyMode mode;
     PropertyConstraints constraints;
+    uint32_t telemetryMinimumIntervalMs;
 
     constexpr PropertyOptions(
         PropertyMode propertyMode,
         const PropertyConstraints& propertyConstraints =
-            PropertyConstraints())
-        : mode(propertyMode), constraints(propertyConstraints) {}
+            PropertyConstraints(),
+        uint32_t minimumTelemetryIntervalMs = 0U)
+        : mode(propertyMode),
+          constraints(propertyConstraints),
+          telemetryMinimumIntervalMs(minimumTelemetryIntervalMs) {}
 };
 
 constexpr PropertyOptions property(PropertyMode mode) {
@@ -38,6 +42,16 @@ constexpr PropertyOptions readOnly() {
 
 constexpr PropertyOptions readWrite() {
     return PropertyOptions(PropertyMode::ReadWrite);
+}
+
+// Declares an on-demand sampled Property. The App/Broker still chooses the
+// active interval through a short lease; this value is the device-side floor.
+constexpr PropertyOptions realtime(
+    uint32_t minimumIntervalMs = 200U) {
+    return PropertyOptions(
+        PropertyMode::ReadOnly,
+        PropertyConstraints(),
+        minimumIntervalMs);
 }
 
 constexpr PropertyOptions rangedProperty(
@@ -121,6 +135,9 @@ struct ValueCodec<bool> {
     static Result emit(const EndpointHandle& field, bool value) {
         return field.emit(value);
     }
+    static Result sample(bbp2::IdBodyWriter& writer, uint16_t id, bool value) {
+        return writer.writeBool(id, value);
+    }
 };
 
 template <>
@@ -140,6 +157,10 @@ struct ValueCodec<int32_t> {
     }
     static Result emit(const EndpointHandle& field, int32_t value) {
         return field.emitInt(value);
+    }
+    static Result sample(
+        bbp2::IdBodyWriter& writer, uint16_t id, int32_t value) {
+        return writer.writeInt(id, value);
     }
 };
 
@@ -161,6 +182,10 @@ struct ValueCodec<uint32_t> {
     static Result emit(const EndpointHandle& field, uint32_t value) {
         return field.emitUnsigned(value);
     }
+    static Result sample(
+        bbp2::IdBodyWriter& writer, uint16_t id, uint32_t value) {
+        return writer.writeUnsigned(id, value);
+    }
 };
 
 template <>
@@ -178,6 +203,10 @@ struct ValueCodec<float> {
     static Result emit(const EndpointHandle& field, float value) {
         return field.emit(value);
     }
+    static Result sample(
+        bbp2::IdBodyWriter& writer, uint16_t id, float value) {
+        return writer.writeFloat32(id, value);
+    }
 };
 
 template <>
@@ -191,6 +220,10 @@ struct ValueCodec<double> {
     }
     static Result emit(const EndpointHandle& field, double value) {
         return field.emit(value);
+    }
+    static Result sample(
+        bbp2::IdBodyWriter& writer, uint16_t id, double value) {
+        return writer.writeFloat64(id, value);
     }
 };
 
@@ -210,6 +243,10 @@ struct ValueCodec<StringView> {
     static Result emit(const EndpointHandle& field, StringView value) {
         return field.emitText(value);
     }
+    static Result sample(
+        bbp2::IdBodyWriter& writer, uint16_t id, StringView value) {
+        return writer.writeText(id, value);
+    }
 };
 
 template <>
@@ -223,6 +260,10 @@ struct ValueCodec<ByteView> {
     }
     static Result emit(const EndpointHandle& field, ByteView value) {
         return field.emitBytes(value);
+    }
+    static Result sample(
+        bbp2::IdBodyWriter& writer, uint16_t id, ByteView value) {
+        return writer.writeBytes(id, value);
     }
 };
 
@@ -285,7 +326,8 @@ public:
               EndpointKind::Property,
               interaction_detail::ValueCodec<T>::type(),
               interaction_detail::propertyAccess(options.mode),
-              interaction_detail::constraintsOrNull(options_.constraints)) {}
+              interaction_detail::constraintsOrNull(options_.constraints),
+              options.telemetryMinimumIntervalMs) {}
 
     const FieldSpec* fieldAt(size_t index) const {
         return index == 0U ? &field_ : nullptr;
@@ -370,9 +412,13 @@ public:
     enum : size_t { fieldCount = 1U };
     typedef void (*WriteHandler)(T requestedValue);
     typedef Result (*CheckedWriteHandler)(T requestedValue);
+    typedef T (*SampleHandler)();
 
     explicit Property(const PropertySpec<T>& spec)
-        : spec_(&spec), client_(nullptr), callback_(), callbackMode_(None) {}
+        : spec_(&spec),
+          client_(nullptr),
+          callback_(),
+          callbackMode_(None) {}
 
     bool valid() const { return client_ != nullptr; }
     Result onWrite(WriteHandler handler) {
@@ -410,6 +456,21 @@ public:
     Result onWriteChecked(decltype(nullptr)) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
+    Result onSample(SampleHandler handler) {
+        if (handler == nullptr || spec_ == nullptr ||
+            spec_->field().telemetryMinimumIntervalMs == 0U) {
+            return Result::failure(ErrorCode::InvalidArgument);
+        }
+        if (client_ != nullptr) {
+            Result result = client_->endpoints()
+                                .find(spec_->field().key)
+                                .onSample(&Property::sampleThunk, this);
+            if (!result) return result;
+        }
+        callback_.sample = handler;
+        callbackMode_ = Sample;
+        return Result::success();
+    }
     Result report(T value) const {
         return client_ != nullptr && spec_ != nullptr
                    ? interaction_detail::ValueCodec<T>::report(
@@ -438,12 +499,14 @@ private:
     enum CallbackMode : uint8_t {
         None = 0U,
         Normal,
-        Checked
+        Checked,
+        Sample
     };
 
     union Callback {
         WriteHandler normal;
         CheckedWriteHandler checked;
+        SampleHandler sample;
 
         Callback() : normal(nullptr) {}
     };
@@ -479,13 +542,26 @@ private:
             value, decoded);
         return result ? property->callback_.checked(decoded) : result;
     }
+    static Result sampleThunk(
+        void* context,
+        uint16_t endpointId,
+        bbp2::IdBodyWriter& writer) {
+        Property* property = static_cast<Property*>(context);
+        if (property == nullptr || property->callbackMode_ != Sample ||
+            property->callback_.sample == nullptr) {
+            return Result::failure(ErrorCode::NotConfigured);
+        }
+        return interaction_detail::ValueCodec<T>::sample(
+            writer, endpointId, property->callback_.sample());
+    }
     Result bind(Client& client) {
         if (spec_ == nullptr) {
             return Result::failure(ErrorCode::NotConfigured);
         }
         Result result = interaction_detail::validateBinding(
             client, spec_->field(), client_);
-        if (result && callbackMode_ != None) {
+        if (result &&
+            (callbackMode_ == Normal || callbackMode_ == Checked)) {
             result = client.endpoints()
                          .find(spec_->field().key)
                          .onCommand(
@@ -493,6 +569,12 @@ private:
                                  ? &Property::voidCommandThunk
                                  : &Property::checkedCommandThunk,
                              this);
+            if (!result) client_ = nullptr;
+        }
+        if (result && callbackMode_ == Sample) {
+            result = client.endpoints()
+                         .find(spec_->field().key)
+                         .onSample(&Property::sampleThunk, this);
             if (!result) client_ = nullptr;
         }
         return result;

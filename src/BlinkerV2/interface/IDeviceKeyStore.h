@@ -6,7 +6,7 @@
 namespace blinker {
 
 // Mutation is restricted to an already-authorized provisioning/reset flow.
-// The store deliberately does not validate EnrollmentTicket policy.
+// Transport/session authorization stays outside the persistence seam.
 class IDeviceKeyStore : public IDeviceKeySource {
 public:
     virtual Result replace(const DeviceKey& key) = 0;

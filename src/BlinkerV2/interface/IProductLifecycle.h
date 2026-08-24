@@ -20,8 +20,7 @@ enum ProductCapability : uint16_t {
     ProductCapabilityNone = 0U,
     ProductCapabilityCloudData = 1U << 0,
     ProductCapabilityDirectBleData = 1U << 1,
-    ProductCapabilityBleSetup = 1U << 2,
-    ProductCapabilityOwnershipReset = 1U << 3
+    ProductCapabilityBleSetup = 1U << 2
 };
 
 struct ProductCapabilities {
@@ -60,10 +59,6 @@ public:
     virtual void stop() = 0;
     virtual ProductLifecycleStatus status() const = 0;
     virtual ProductCapabilities capabilities() const = 0;
-
-    virtual Result resetOwnership() {
-        return Result::failure(ErrorCode::UnsupportedFeature);
-    }
 };
 
 } // namespace blinker

@@ -6,6 +6,7 @@
 #include "../../ports/esp32/Esp32WiFi.h"
 
 #include <BlinkerV2/arduino/config/OfficialConfig.h>
+#include <BlinkerV2/identity/DeviceInstanceIdStore.h>
 
 #include <WiFiClient.h>
 #if BLINKER_OFFICIAL_CLOUD_SESSION_TLS || BLINKER_OFFICIAL_MQTT_TLS

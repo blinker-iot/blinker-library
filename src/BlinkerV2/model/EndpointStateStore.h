@@ -60,6 +60,10 @@ public:
         bool& changed);
 
     Result encodeSnapshot(bbp2::KeyedBodyWriter& writer) const;
+    Result encodeSelection(
+        bbp2::KeyedBodyWriter& writer,
+        ByteView selectedFields,
+        size_t selectedCount) const;
     // Encodes one complete StatePage body directly into output. cursor and
     // nextCursor are zero-based Field Manifest ordinals; ID-mode keys are the
     // corresponding one-based field IDs. Uninitialized fields are covered by
@@ -84,6 +88,10 @@ public:
         ByteView& encoded,
         cbor::Type& type) const;
     size_t initializedCount() const;
+    bool initializedAt(size_t index) const {
+        return slots_ != nullptr && index < registry_.size() &&
+               index < slotCount_ && slots_[index].initialized;
+    }
 
 private:
     struct ApplyContext {
@@ -136,6 +144,14 @@ private:
         uint16_t totalFields,
         bool idMode,
         const cbor::Limits& limits) const;
+    Result nextCanonicalIndex(
+        size_t begin,
+        size_t end,
+        ByteView selectedFields,
+        bool selectedOnly,
+        StringView previousKey,
+        bool hasPreviousKey,
+        size_t& index) const;
     Result indexOf(
         const EndpointDescriptor& endpoint,
         size_t& index) const;

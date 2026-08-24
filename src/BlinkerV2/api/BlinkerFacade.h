@@ -6,8 +6,13 @@
 #include "Product.h"
 #include "StateUpdate.h"
 #include "WifiDeviceKeyProfile.h"
+#include "../core/Diagnostics.h"
 
-#if defined(BLINKER_PRODUCT_WIFI) && defined(BLINKER_PRODUCT_BLE)
+class Print;
+
+#if (defined(BLINKER_PRODUCT_WIFI) && defined(BLINKER_PRODUCT_BLE)) || \
+    (defined(BLINKER_PRODUCT_WIFI) && defined(BLINKER_PRODUCT_WIFI_BLE)) || \
+    (defined(BLINKER_PRODUCT_BLE) && defined(BLINKER_PRODUCT_WIFI_BLE))
 #error "Select exactly one Blinker product"
 #endif
 
@@ -16,6 +21,10 @@ namespace blinker {
 namespace facade_detail {
 
 struct BleProfile {};
+struct WifiBleProfile {};
+
+Diagnostics& diagnostics();
+void observeProductStatus(const ProductStatus& status);
 
 } // namespace facade_detail
 
@@ -24,6 +33,7 @@ struct BleProfile {};
 namespace integration {
 IProductLifecycle& lifecycle(const WifiDeviceKeyProfile& profile);
 IProductLifecycle& lifecycle(facade_detail::BleProfile);
+IProductLifecycle& lifecycle(facade_detail::WifiBleProfile);
 } // namespace integration
 
 namespace facade_detail {
@@ -40,7 +50,7 @@ public:
         IProductLifecycle& lifecycle,
         Interactions&... interactions)
         : schema_(interactions...),
-          device_(schema_, DeviceConfig()),
+          device_(schema_, DeviceConfig(), &diagnostics()),
           product_(device_, lifecycle) {}
 
     Product& product() { return product_; }
@@ -89,30 +99,55 @@ public:
             first,
             rest...);
     }
+#elif defined(BLINKER_PRODUCT_WIFI_BLE)
+    // WiFi+BLE onboarding is App-driven. Sketch credentials are neither
+    // required nor accepted by this product selector.
+    template <typename First, typename... Rest>
+    bool begin(First& first, Rest&... rest) {
+        return beginProfile(
+            facade_detail::WifiBleProfile(),
+            first,
+            rest...);
+    }
 #endif
 
     void run(uint32_t totalBudgetMicros = 1000U) {
-        if (product_ != nullptr) product_->run(totalBudgetMicros);
+        if (product_ != nullptr) {
+            product_->run(totalBudgetMicros);
+            facade_detail::observeProductStatus(product_->status());
+        }
+        facade_detail::diagnostics().flush();
     }
 
     void end() {
         if (product_ != nullptr) product_->end();
         lastError_ = ErrorCode::Ok;
+        facade_detail::observeProductStatus(status());
+        facade_detail::diagnostics().flush();
     }
 
     ProductStatus status() const {
         return product_ != nullptr ? product_->status() : ProductStatus();
     }
 
-    bool resetOwnership() {
-        return remember(
-            product_ != nullptr
-                ? product_->resetOwnership()
-                : Result::failure(ErrorCode::NotConfigured));
-    }
-
     ErrorCode lastError() const { return lastError_; }
     const char* lastErrorText() const;
+    const DiagnosticCounters& diagnosticCounters() const {
+        return facade_detail::diagnostics().counters();
+    }
+    OutboundSchedulerCounters outboundCounters() const {
+        return product_ != nullptr
+                   ? product_->outboundCounters()
+                   : OutboundSchedulerCounters();
+    }
+    TelemetryCounters telemetryCounters() const {
+        return product_ != nullptr
+                   ? product_->telemetryCounters()
+                   : TelemetryCounters();
+    }
+    void debug(Print& output, LogLevel level = LogLevel::Info);
+    void noDebug();
+    void printDiagnostics(Print& output);
 
     template <typename T, typename... Rest>
     bool report(
@@ -129,6 +164,7 @@ public:
 
         StateUpdate update(*client);
         Result result = update.begin(1U + sizeof...(Rest) / 2U);
+        bool commitAttempted = false;
         if (result) {
             result = stageAll(
                 update,
@@ -137,7 +173,14 @@ public:
                 value,
                 std::forward<Rest>(rest)...);
         }
-        if (result) result = update.commit();
+        if (result) {
+            commitAttempted = true;
+            result = update.commit();
+        }
+        if (!result && !commitAttempted) {
+            facade_detail::diagnostics().recordOperation(
+                DiagnosticOperation::StateReport, result);
+        }
         return remember(result);
     }
 
@@ -155,7 +198,13 @@ private:
             return remember(Result::failure(ErrorCode::AlreadyExists));
         }
         product_ = selected;
-        return remember(product_->begin());
+        const Result result = product_->begin();
+        facade_detail::diagnostics().recordOperation(
+            DiagnosticOperation::Begin, result);
+        facade_detail::observeProductStatus(product_->status());
+        const bool succeeded = remember(result);
+        facade_detail::diagnostics().flush();
+        return succeeded;
     }
     bool remember(Result result) {
         lastError_ = result.code();

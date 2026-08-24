@@ -2,6 +2,7 @@
 #define BLINKER_API_ENDPOINTHANDLE_H
 
 #include "../model/EndpointRegistry.h"
+#include "../protocol/bbp2/KeyedBody.h"
 #include "../protocol/cbor/Cbor.h"
 #include "../transport/IFrameTransport.h"
 
@@ -40,16 +41,25 @@ typedef Result (*EndpointCommandCallback)(
     const EndpointHandle& endpoint,
     const EndpointValueView& value,
     const RxContext& rx);
+typedef Result (*EndpointSampleCallback)(
+    void* context,
+    uint16_t endpointId,
+    bbp2::IdBodyWriter& writer);
 
 // Compact mutable state supplied by ClientStorage. Field keys, types,
 // constraints and access metadata live in the application-owned immutable
 // EndpointDescriptor table and are never copied here.
 struct EndpointSlot {
-    EndpointCommandCallback command;
-    void* commandContext;
+    union Callback {
+        EndpointCommandCallback command;
+        EndpointSampleCallback sample;
+
+        Callback() : command(nullptr) {}
+    } callback;
+    void* context;
 
     EndpointSlot()
-        : command(nullptr), commandContext(nullptr) {}
+        : callback(), context(nullptr) {}
 };
 
 #if UINTPTR_MAX <= UINT32_MAX
@@ -74,6 +84,7 @@ public:
     uint16_t id() const { return valid() ? id_ : 0U; }
 
     Result onCommand(EndpointCommandCallback callback, void* context) const;
+    Result onSample(EndpointSampleCallback callback, void* context) const;
 
     // set() commits bounded authoritative state after Client::prepare().
     // When the data plane is started it also broadcasts a PATCH; offline state

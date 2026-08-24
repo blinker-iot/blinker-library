@@ -5,11 +5,13 @@
 #include "../core/ResourceProfile.h"
 #include "../interface/IAuthorizationProvider.h"
 #include "../interface/IControllerControlEndpoint.h"
+#include "../interface/IClock.h"
 #include "../model/EndpointRegistry.h"
 #include "../protocol/bbp2/Frame.h"
 #include "../protocol/bbp2/KeyedBody.h"
 #include "../protocol/bbp2/Messages.h"
 #include "ReliableOutbox.h"
+#include "TelemetryLease.h"
 #include "../transport/TransportHub.h"
 
 #if BLINKER_RELIABLE_RECEIVE_WINDOW < 1 || \
@@ -30,9 +32,13 @@ enum class WireError : uint16_t {
     InternalError = 8,
     SequenceConflict = 9,
     StateConflict = 10,
-    ManifestConflict = 11
+    ManifestConflict = 11,
+    RateLimited = 12
 };
 
+// Handlers run synchronously inside receive(). encodedValue and rx are valid
+// only for this call. Deferred work reports later state/event through the
+// normal outbound API; it cannot retain rx as an implicit reply permission.
 typedef Result (*EndpointValueHandler)(
     void* context,
     const EndpointDescriptor& endpoint,
@@ -54,6 +60,19 @@ typedef Result (*StateApplyTransactionHandler)(
     const RxContext& rx,
     bool& changed);
 
+// Ends a pending local state transaction before Runtime exposes a revision or
+// snapshot to a remote peer. exclude is non-null while answering a snapshot;
+// that peer receives the StatePage and must not receive an earlier Patch for
+// the same settlement. The callback must not poll Runtime recursively.
+typedef Result (*StateSettlementHandler)(
+    void* context,
+    const RxContext* exclude);
+typedef void (*RemoteErrorHandler)(
+    void* context,
+    WireError error,
+    uint16_t relatedSequence,
+    const RxContext& rx);
+
 // The callback begins the map and writes the current endpoint values. The
 // runtime finishes and validates the keyed body before sending it.
 typedef Result (*StateEncoder)(
@@ -72,6 +91,14 @@ typedef Result (*StatePageEncoder)(
     ByteView& encoded,
     uint16_t& nextCursor,
     uint16_t& totalFields);
+
+// Writes exactly fieldCount values to an already-begun ID map. selectedFields
+// is a Manifest-ID bitset and is borrowed for the callback duration.
+typedef Result (*TelemetrySampleEncoder)(
+    void* context,
+    ByteView selectedFields,
+    size_t fieldCount,
+    bbp2::IdBodyWriter& writer);
 
 struct DeviceRuntimeConfig {
     uint32_t protocolFeatures;
@@ -111,6 +138,10 @@ public:
     void setStateApplyTransactionHandler(
         StateApplyTransactionHandler handler,
         void* context);
+    void setStateSettlementHandler(
+        StateSettlementHandler handler,
+        void* context);
+    void setRemoteErrorHandler(RemoteErrorHandler handler, void* context);
     void setEventHandler(EventHandler handler, void* context);
     void setStateEncoder(StateEncoder encoder, void* context);
     void setStatePageEncoder(StatePageEncoder encoder, void* context);
@@ -121,6 +152,10 @@ public:
     // before start(). It is optional when the device only receives reliable
     // COMMANDs and never originates reliable PATCHes.
     Result setReliableOutbox(ReliableOutbox* outbox);
+    Result setTelemetrySampler(
+        IClock* clock,
+        TelemetrySampleEncoder encoder,
+        void* context);
 
     Result sendPatch(ByteView keyedBody, const SendTarget& target);
     Result sendPatchById(ByteView idBody, const SendTarget& target);
@@ -169,6 +204,18 @@ public:
     uint32_t duplicateCommandCount() const { return duplicateCommandCount_; }
     uint32_t duplicateRequestCount() const { return duplicateRequestCount_; }
     uint32_t sequenceConflictCount() const { return sequenceConflictCount_; }
+    size_t activeTelemetryLeases() const {
+        return telemetryLeases_.activeCount();
+    }
+    const TelemetryCounters& telemetryCounters() const {
+        return telemetryCounters_;
+    }
+    // Internal congestion response. It moves only this source's next due
+    // samples; no lease, sequence or payload is retained for replay.
+    void deferTelemetrySamples(
+        const RxContext& source,
+        uint32_t nowMillis,
+        uint32_t durationMillis);
 
 private:
     static const uint8_t kRequestFingerprintSize = 16;
@@ -301,6 +348,9 @@ private:
     Result handleStateRequest(
         const bbp2::FrameView& frame,
         const RxContext& rx);
+    Result handleTelemetryControl(
+        const bbp2::FrameView& frame,
+        const RxContext& rx);
     Result handleControllerControlOpen(
         const bbp2::FrameView& frame,
         const RxContext& rx);
@@ -362,6 +412,15 @@ private:
         ByteView encodedFrame,
         uint32_t requiredFeatures,
         const RxContext* exclude);
+    Result sendTelemetryStatus(
+        uint16_t sequence,
+        const bbp2::TelemetryStatusBody& body,
+        const SendTarget& target,
+        bool response);
+    Result sendTelemetrySample(
+        TelemetryLeaseSlot& lease,
+        uint32_t nowMillis);
+    void pollTelemetry();
     Result requestFingerprint(
         const bbp2::FrameView& frame,
         uint8_t output[kRequestFingerprintSize]) const;
@@ -411,6 +470,10 @@ private:
     void* stateApplyContext_;
     StateApplyTransactionHandler stateApplyTransactionHandler_;
     void* stateApplyTransactionContext_;
+    StateSettlementHandler stateSettlementHandler_;
+    void* stateSettlementContext_;
+    RemoteErrorHandler remoteErrorHandler_;
+    void* remoteErrorContext_;
     EventHandler eventHandler_;
     void* eventContext_;
     StateEncoder stateEncoder_;
@@ -420,14 +483,21 @@ private:
     IAuthorizationProvider* authorizationProvider_;
     IControllerControlEndpoint* controllerControlEndpoint_;
     ReliableOutbox* reliableOutbox_;
+    IClock* telemetryClock_;
+    TelemetrySampleEncoder telemetrySampleEncoder_;
+    void* telemetrySampleContext_;
+    TelemetryLeaseTable telemetryLeases_;
+    TelemetryCounters telemetryCounters_;
     PeerSession peers_[BLINKER_MAX_PEER_SESSIONS];
     bool helloSent_[BLINKER_MAX_TRANSPORTS];
     uint16_t nextSequence_;
-    uint32_t receivedFrameCount_;
-    uint32_t rejectedFrameCount_;
-    uint32_t duplicateCommandCount_;
-    uint32_t duplicateRequestCount_;
-    uint32_t sequenceConflictCount_;
+    // Runtime diagnostics saturate instead of wrapping. The public accessors
+    // remain uint32_t; protocol sequence and state revision stay full-width.
+    uint16_t receivedFrameCount_;
+    uint16_t rejectedFrameCount_;
+    uint16_t duplicateCommandCount_;
+    uint16_t duplicateRequestCount_;
+    uint16_t sequenceConflictCount_;
     uint32_t stateRevision_;
     uint8_t manifestFingerprint_[kSha256Size];
     bool hasManifestFingerprint_;

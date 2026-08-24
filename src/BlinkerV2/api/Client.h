@@ -2,8 +2,11 @@
 #define BLINKER_API_CLIENT_H
 
 #include "EndpointHandle.h"
+#include "../core/Diagnostics.h"
+#include "../interface/IClock.h"
 #include "../model/EndpointStateStore.h"
 #include "../runtime/DeviceRuntime.h"
+#include "../runtime/OutboundScheduler.h"
 
 namespace blinker {
 
@@ -29,6 +32,8 @@ struct ClientBuffers {
     EndpointStateSlot* stateSlots;
     size_t stateSlotCount;
     MutableByteSpan stateArena;
+    MutableByteSpan stateDirtyFields;
+    MutableByteSpan stateSelectedFields;
 
     ClientBuffers()
         : endpointSlots(nullptr),
@@ -39,7 +44,9 @@ struct ClientBuffers {
           patchBuffer(),
           stateSlots(nullptr),
           stateSlotCount(0),
-          stateArena() {}
+          stateArena(),
+          stateDirtyFields(),
+          stateSelectedFields() {}
 };
 
 // Snapshot of service readiness, intentionally separating a locally
@@ -86,7 +93,9 @@ public:
           frame_(),
           patch_(),
           stateSlots_(),
-          stateArena_() {
+          stateArena_(),
+          stateDirtyFields_(),
+          stateSelectedFields_() {
         static_assert(EndpointCapacity > 0U, "EndpointCapacity must be positive");
         static_assert(FrameSize >= bbp2::kBaseHeaderSize, "FrameSize is too small");
         static_assert(PatchSize > 0U, "PatchSize must be positive");
@@ -117,6 +126,10 @@ public:
         result.stateSlots = stateSlots_;
         result.stateSlotCount = EndpointCapacity;
         result.stateArena = MutableByteSpan(stateArena_, sizeof(stateArena_));
+        result.stateDirtyFields = MutableByteSpan(
+            stateDirtyFields_, sizeof(stateDirtyFields_));
+        result.stateSelectedFields = MutableByteSpan(
+            stateSelectedFields_, sizeof(stateSelectedFields_));
         return result;
     }
 
@@ -142,6 +155,8 @@ private:
     uint8_t patch_[PatchSize];
     EndpointStateSlot stateSlots_[EndpointCapacity];
     uint8_t stateArena_[StateArenaSize];
+    uint8_t stateDirtyFields_[(EndpointCapacity + 7U) / 8U];
+    uint8_t stateSelectedFields_[(EndpointCapacity + 7U) / 8U];
 };
 
 // Canonical device API. It owns only the fixed-capacity registry, transport
@@ -151,7 +166,8 @@ class Client {
 public:
     Client(
         const ClientBuffers& buffers,
-        const DeviceRuntimeConfig& config = DeviceRuntimeConfig());
+        const DeviceRuntimeConfig& config = DeviceRuntimeConfig(),
+        Diagnostics* diagnostics = nullptr);
 
     EndpointCatalog& endpoints() { return endpoints_; }
     const EndpointRegistry& endpointRegistry() const { return registry_; }
@@ -178,12 +194,19 @@ public:
     Result setControllerControlEndpoint(
         IControllerControlEndpoint* endpoint);
     Result setReliableOutbox(ReliableOutbox* outbox);
+    Result setMonotonicClock(IClock* clock);
     Result setStateWriteHandler(
         StateWriteTransactionHandler handler,
         void* context);
     void setEventHandler(EventHandler handler, void* context);
 
     const DeviceRuntime& runtime() const { return runtime_; }
+    const OutboundSchedulerCounters& outboundCounters() const {
+        return outbound_.counters();
+    }
+    const TelemetryCounters& telemetryCounters() const {
+        return runtime_.telemetryCounters();
+    }
 
 private:
     static Result commandThunk(
@@ -204,12 +227,30 @@ private:
         ByteView& encoded,
         uint16_t& nextCursor,
         uint16_t& totalFields);
+    static Result telemetrySampleEncoderThunk(
+        void* context,
+        ByteView selectedFields,
+        size_t fieldCount,
+        bbp2::IdBodyWriter& writer);
     static Result stateApplyTransactionThunk(
         void* context,
         ByteView values,
         bool idMode,
         const RxContext& rx,
         bool& changed);
+    static Result stateSettlementThunk(
+        void* context,
+        const RxContext* exclude);
+    static void remoteErrorThunk(
+        void* context,
+        WireError error,
+        uint16_t relatedSequence,
+        const RxContext& rx);
+    static Result markDirtyThunk(
+        void* context,
+        StringView endpointKey,
+        ByteView encodedValue,
+        cbor::Type valueType);
     Result dispatchCommand(
         const EndpointDescriptor& endpoint,
         ByteView encodedValue,
@@ -234,9 +275,16 @@ private:
     Result emitNull(const EndpointHandle& endpoint);
     Result beginStatePatch(PatchBuilder& builder) const;
     Result beginEventPatch(PatchBuilder& builder) const;
+    Result completeStatePatch(PatchBuilder& builder, Result result);
+    Result completeEventPatch(PatchBuilder& builder, Result result);
     Result finishStatePatch(PatchBuilder& builder);
     Result finishEventPatch(PatchBuilder& builder);
     Result commitState(ByteView values);
+    Result flushPendingState(
+        bool force,
+        bool flushAll = false,
+        const RxContext* exclude = nullptr);
+    Result encodeSelectedState(ByteView& encoded);
     Result currentState(
         const EndpointHandle& endpoint,
         ByteView& encoded,
@@ -250,6 +298,7 @@ private:
     EndpointCatalog endpoints_;
     EndpointStateStore stateStore_;
     DeviceRuntime runtime_;
+    OutboundScheduler outbound_;
     MutableByteSpan transmitBuffer_;
     MutableByteSpan patchBuffer_;
     bool prepared_;
@@ -258,6 +307,8 @@ private:
     StateWriteTransactionHandler stateWriteHandler_;
     void* stateWriteContext_;
     bool stateApplyActive_;
+    Diagnostics* diagnostics_;
+    IClock* clock_;
 
     Client(const Client&);
     Client& operator=(const Client&);

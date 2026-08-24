@@ -5,6 +5,7 @@
 #include "../interface/IAuthorizationProvider.h"
 #include "../interface/IControllerCredentialSource.h"
 #include "../interface/IRandom.h"
+#include "DirectSecureSession.h"
 
 namespace blinker {
 namespace security {
@@ -70,6 +71,7 @@ public:
     ControllerHmacSha256Authorizer(
         IControllerCredentialSource& credentials,
         IRandom& random,
+        IDirectSecureSessionController& directSessions,
         ControllerAuthSession* sessions,
         size_t sessionCapacity);
     ~ControllerHmacSha256Authorizer() override;
@@ -85,6 +87,8 @@ public:
         ByteView requestPayload,
         const AuthorizationSessionContext& session,
         AuthorizationDecision& decision) override;
+    void authorizationResultQueued(
+        const AuthorizationSessionContext& session) override;
     void sessionClosed(
         const AuthorizationSessionContext& session) override;
     void resetSessions() override;
@@ -110,6 +114,7 @@ private:
 
     IControllerCredentialSource& credentials_;
     IRandom& random_;
+    IDirectSecureSessionController& directSessions_;
     ControllerAuthSession* sessions_;
     size_t sessionCapacity_;
     uint8_t response_[kControllerAuthChallengePayloadSize];

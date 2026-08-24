@@ -7,8 +7,8 @@
 
 namespace blinker {
 
-// Atomic DeviceKey + direct-controller root used by combined cloud/direct
-// products. WiFi-only and local-only products do not need this interface.
+// Atomic optional DeviceKey + direct-controller root. Cloud/direct products
+// bootstrap both domains together; BLE-only products bootstrap only access.
 class IDeviceAccessStore :
     public IDeviceKeyStore,
     public IControllerCredentialStore,
@@ -19,8 +19,13 @@ public:
         uint32_t accessEpoch,
         const ControllerCredential& initialController) = 0;
 
-    // Physical factory reset boundary. DeviceKey clear() and controller
-    // clearAll() intentionally preserve the other access domain and epoch.
+    virtual Result bootstrapAccess(
+        uint32_t accessEpoch,
+        const ControllerCredential& initialController) = 0;
+
+    // Physical factory reset boundary. DeviceKey clear() preserves direct
+    // access. Controller clearAll() preserves a present DeviceKey, but a
+    // BLE-only access root is removed because no cloud recovery path exists.
     virtual Result eraseAccess() = 0;
 };
 

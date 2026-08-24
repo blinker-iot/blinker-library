@@ -28,15 +28,13 @@ enum ModeCapability : uint16_t {
     ModeCapabilityEnrollmentV1 = 1U << 2U,
     ModeCapabilityWifiConfigV1 = 1U << 3U,
     ModeCapabilityDirectBbp2 = 1U << 4U,
-    ModeCapabilityNoiseNnPsk0 = 1U << 5U,
-    ModeCapabilityLocalControllerPairingV1 = 1U << 6U
+    ModeCapabilityNoiseNnPsk0 = 1U << 5U
 };
 
 static const uint16_t kKnownModeCapabilities =
     ModeCapabilityFragmentedRecords | ModeCapabilityNoiseNn |
     ModeCapabilityEnrollmentV1 | ModeCapabilityWifiConfigV1 |
-    ModeCapabilityDirectBbp2 | ModeCapabilityNoiseNnPsk0 |
-    ModeCapabilityLocalControllerPairingV1;
+    ModeCapabilityDirectBbp2 | ModeCapabilityNoiseNnPsk0;
 
 struct ModeProfile {
     ApplicationMode mode;
@@ -54,11 +52,6 @@ ModeProfile makeProvisioningModeProfile(ByteView setupSessionLocator,
                                         bool acceptsWifiConfig);
 ModeProfile makePskProvisioningModeProfile(ByteView setupSessionLocator,
                                            bool acceptsWifiConfig);
-ModeProfile makeLocalControllerPairingModeProfile(
-    ByteView setupSessionLocator);
-ModeProfile makePskLocalControllerPairingModeProfile(
-    ByteView setupSessionLocator);
-
 Result provisioningNoisePattern(const ModeProfile& profile,
                                 noise::NoiseNnPattern& pattern);
 

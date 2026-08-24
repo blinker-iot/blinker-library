@@ -47,6 +47,9 @@ public:
         const DeviceKey& deviceKey,
         uint32_t accessEpoch,
         const ControllerCredential& initialController) override;
+    Result bootstrapAccess(
+        uint32_t accessEpoch,
+        const ControllerCredential& initialController) override;
     Result eraseAccess() override;
 
     StorageProtection protection() const override {

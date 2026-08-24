@@ -8,11 +8,9 @@
 
 #include <BlinkerV2/security/P256ServerKeyRingVerifier.h>
 #include <BlinkerV2/arduino/config/Esp32ServerKeys.h>
-#include <BlinkerV2/identity/ControllerCredentialStore.h>
+#include <BlinkerV2/identity/DeviceAccessStore.h>
 #include <BlinkerV2/identity/DeviceInstanceIdStore.h>
-#include <BlinkerV2/identity/OwnershipRecordStore.h>
-#include <BlinkerV2/provisioning/LocalSetupSagaStore.h>
-#include <BlinkerV2/provisioning/OwnershipClaimRecordStore.h>
+#include <BlinkerV2/provisioning/BleEnrollmentContract.h>
 
 #if !defined(ARDUINO_ARCH_ESP32)
 #error "This official platform requires an ESP32 Arduino target"
@@ -51,23 +49,10 @@ public:
               "bl_v2_id",
               "instance",
               DeviceInstanceIdStore::serializedSize)),
-          ownershipBlob_(esp32BlobStorageConfig(
-              "bl_v2_owner",
-              "binding",
-              OwnershipRecordStore::serializedSize)),
-          ownershipStore_(ownershipBlob_),
-          claimBlob_(esp32BlobStorageConfig(
-              "bl_v2_claim",
-              "journal",
-              OwnershipClaimRecordStore::serializedSize)),
-          controllerBlob_(esp32BlobStorageConfig(
-              "bl_v2_ctl",
-              "table",
-              ControllerCredentialStore::serializedSize)),
-          setupSagaBlob_(esp32BlobStorageConfig(
-              "bl_v2_setup",
-              "saga",
-              LocalSetupSagaStore::serializedSize)),
+          accessBlob_(esp32BlobStorageConfig(
+              "bl_v2_access",
+              "root",
+              DeviceAccessStore::serializedSize)),
           crypto_(),
           signatureVerifier_(
               crypto_,
@@ -77,49 +62,37 @@ public:
 
     Result begin() {
         Result result = deviceInstanceBlob_.begin();
-        if (result) result = ownershipBlob_.begin();
-        if (result) result = claimBlob_.begin();
-        if (result) result = controllerBlob_.begin();
-        if (result) result = setupSagaBlob_.begin();
+        if (result) result = accessBlob_.begin();
         if (!result) end();
         return result;
     }
 
     void end() {
         radio_.stop();
-        setupSagaBlob_.end();
-        controllerBlob_.end();
-        claimBlob_.end();
-        ownershipBlob_.end();
+        accessBlob_.end();
         deviceInstanceBlob_.end();
     }
 
     IAtomicBlobStore& deviceInstanceBlob() {
         return deviceInstanceBlob_;
     }
-    OwnershipRecordStore& ownershipStore() {
-        return ownershipStore_;
-    }
-    IAtomicBlobStore& ownershipClaimBlob() { return claimBlob_; }
-    IAtomicBlobStore& controllerCredentialBlob() {
-        return controllerBlob_;
-    }
-    IAtomicBlobStore& localSetupSagaBlob() {
-        return setupSagaBlob_;
-    }
+    IAtomicBlobStore& deviceAccessBlob() { return accessBlob_; }
     IServerSignatureVerifier& serverSignatureVerifier() {
         return signatureVerifier_;
+    }
+    BleEnrollmentApplicationConfig bleEnrollmentConfig() const {
+        BleEnrollmentApplicationConfig config;
+        config.serverKeyId = official::serverSigningKeys[0].keyId;
+        config.signatureAlgorithm =
+            ServerSignatureAlgorithm::EcdsaP256Sha256Raw;
+        return config;
     }
     INoiseCryptoProvider& noiseCrypto() { return crypto_; }
     Esp32NimBleLink& bleLink() { return radio_.link(); }
 
 private:
     Esp32NvsAtomicBlobStore deviceInstanceBlob_;
-    Esp32NvsAtomicBlobStore ownershipBlob_;
-    OwnershipRecordStore ownershipStore_;
-    Esp32NvsAtomicBlobStore claimBlob_;
-    Esp32NvsAtomicBlobStore controllerBlob_;
-    Esp32NvsAtomicBlobStore setupSagaBlob_;
+    Esp32NvsAtomicBlobStore accessBlob_;
     Esp32MbedTlsCryptoProvider crypto_;
     P256ServerKeyRingVerifier signatureVerifier_;
     Esp32NimBleRadio radio_;

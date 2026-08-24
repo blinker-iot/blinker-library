@@ -43,9 +43,13 @@ public:
     template <size_t N>
     Device(
         const FieldSpec (&fields)[N],
-        const DeviceConfig& config = DeviceConfig())
+        const DeviceConfig& config = DeviceConfig(),
+        Diagnostics* diagnostics = nullptr)
         : storage_(),
-          client_(storage_.buffers(fields), runtimeConfig(config)),
+          client_(
+              storage_.buffers(fields),
+              runtimeConfig(config),
+              diagnostics),
           schemaBinder_(nullptr),
           schemaContext_(nullptr),
           interactionsBound_(true) {
@@ -57,11 +61,13 @@ public:
     template <typename... Interactions>
     Device(
         const DeviceSchema<Interactions...>& schema,
-        const DeviceConfig& config = DeviceConfig())
+        const DeviceConfig& config = DeviceConfig(),
+        Diagnostics* diagnostics = nullptr)
         : storage_(),
           client_(
               storage_.buffers(schema.endpointTable()),
-              runtimeConfig(config)),
+              runtimeConfig(config),
+              diagnostics),
           schemaBinder_(&Device::bindSchema<Interactions...>),
           schemaContext_(&schema),
           interactionsBound_(false) {
@@ -105,6 +111,12 @@ public:
         client_.poll(totalBudgetMicros);
     }
     ClientStatus status() const { return client_.status(); }
+    const OutboundSchedulerCounters& outboundCounters() const {
+        return client_.outboundCounters();
+    }
+    const TelemetryCounters& telemetryCounters() const {
+        return client_.telemetryCounters();
+    }
     Result transportStatus(
         size_t index,
         TransportState& state,
@@ -190,21 +202,21 @@ private:
     BLINKER_DEVICE_PATCH_SIZE == 192 && \
     BLINKER_DEVICE_STATE_ARENA_SIZE == 192
 static_assert(
-    sizeof(Device) <= 1536U,
+    sizeof(Device) <= 1664U,
     "Small public Device exceeds its 32-bit default profile gate");
 #elif BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_STANDARD && \
     BLINKER_DEVICE_MAX_FIELDS == 32 && BLINKER_DEVICE_FRAME_SIZE == 1024 && \
     BLINKER_DEVICE_PATCH_SIZE == 512 && \
     BLINKER_DEVICE_STATE_ARENA_SIZE == 512
 static_assert(
-    sizeof(Device) <= 3328U,
+    sizeof(Device) <= 3448U,
     "Standard public Device exceeds its 32-bit default profile gate");
 #elif BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_LARGE && \
     BLINKER_DEVICE_MAX_FIELDS == 64 && BLINKER_DEVICE_FRAME_SIZE == 4096 && \
     BLINKER_DEVICE_PATCH_SIZE == 2048 && \
     BLINKER_DEVICE_STATE_ARENA_SIZE == 2048
 static_assert(
-    sizeof(Device) <= 12288U,
+    sizeof(Device) <= 10980U,
     "Large public Device exceeds its 32-bit default profile gate");
 #endif
 #endif

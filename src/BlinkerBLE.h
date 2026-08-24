@@ -1,8 +1,8 @@
 #ifndef BLINKER_BLE_H
 #define BLINKER_BLE_H
 
-#if defined(BLINKER_PRODUCT_WIFI)
-#error "BlinkerBLE.h and BlinkerWiFi.h cannot be used in the same build"
+#if defined(BLINKER_PRODUCT_WIFI) || defined(BLINKER_PRODUCT_WIFI_BLE)
+#error "Blinker product selectors cannot be combined"
 #endif
 
 #define BLINKER_PRODUCT_BLE 1

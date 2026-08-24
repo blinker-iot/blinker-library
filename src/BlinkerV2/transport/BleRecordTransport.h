@@ -13,6 +13,10 @@ typedef Result (*BleRecordSizeDecoder)(
     ByteView prefix,
     size_t& recordSize);
 typedef Result (*BleRecordValidator)(ByteView record);
+typedef Result (*BleRecordWriter)(
+    void* context,
+    MutableByteSpan storage,
+    ByteView& record);
 
 typedef void (*BleRecordReceiver)(
     void* context,
@@ -81,6 +85,13 @@ public:
     Result canQueue(size_t recordSize, const SendTarget& target) const;
     Result canSend(ByteView record, const SendTarget& target) const;
     Result send(ByteView record, const SendTarget& target);
+    Result sendPrepared(
+        size_t recordSize,
+        const SendTarget& target,
+        BleRecordWriter writer,
+        void* context);
+    bool hasSession(uint32_t sessionId) const;
+    void failSession(uint32_t sessionId, ErrorCode error);
     void resetSession(uint32_t sessionId);
 
     void setReceiver(BleRecordReceiver receiver, void* context);

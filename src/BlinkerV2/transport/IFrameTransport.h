@@ -23,6 +23,9 @@ struct TransportCapabilities {
     TransportCapabilities() : maxFrameSize(0), features(TransportFeatureNone) {}
 };
 
+// Identifies only the source of the current synchronous callback. It is not a
+// keepalive, authorization grant, or durable reply handle. Callers must not
+// retain a pointer/reference to it after the callback returns.
 struct RxContext {
     uint8_t transportId;
     uint32_t sessionId;
@@ -44,6 +47,8 @@ enum class SendTargetKind : uint8_t {
     Session
 };
 
+// A routing address only. Runtime must still verify that the peer exists,
+// negotiated the feature, and is authorized before sending application data.
 struct SendTarget {
     SendTargetKind kind;
     uint8_t transportId;

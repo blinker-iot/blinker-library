@@ -6,14 +6,8 @@
 #error "UnoR4Storage requires an Arduino Renesas target"
 #endif
 
-#include <BlinkerV2/identity/CloudCredentialStore.h>
-#include <BlinkerV2/identity/ControllerCredentialStore.h>
+#include <BlinkerV2/identity/DeviceAccessStore.h>
 #include <BlinkerV2/identity/DeviceInstanceIdStore.h>
-#include <BlinkerV2/identity/OwnershipRecordStore.h>
-#include <BlinkerV2/provisioning/CloudEnrollmentRecordStore.h>
-#include <BlinkerV2/provisioning/LocalSetupSagaStore.h>
-#include <BlinkerV2/provisioning/OwnershipClaimRecordStore.h>
-#include <BlinkerV2/provisioning/OwnershipReleaseRecordStore.h>
 #include <BlinkerV2/provisioning/WifiCredentialStore.h>
 #include <Preferences.h>
 
@@ -40,31 +34,19 @@ public:
     void end();
     bool opened() const { return opened_; }
 
-    IAtomicBlobStore& cloudBlob() { return cloud_; }
-    IAtomicBlobStore& ownershipBlob() { return ownership_; }
-    IAtomicBlobStore& controllerBlob() { return controller_; }
     IAtomicBlobStore& wifiSelectorBlob() { return wifiSelector_; }
     IAtomicBlobStore& wifiSlot0Blob() { return wifiSlot0_; }
     IAtomicBlobStore& wifiSlot1Blob() { return wifiSlot1_; }
     IAtomicBlobStore& deviceInstanceBlob() { return deviceInstance_; }
-    IAtomicBlobStore& ownershipClaimBlob() { return ownershipClaim_; }
-    IAtomicBlobStore& cloudEnrollmentBlob() { return cloudEnrollment_; }
-    IAtomicBlobStore& ownershipReleaseBlob() { return ownershipRelease_; }
-    IAtomicBlobStore& localSetupSagaBlob() { return localSetupSaga_; }
+    IAtomicBlobStore& deviceAccessBlob() { return deviceAccess_; }
 
 private:
     enum BlobId : uint8_t {
-        BlobCloud = 0U,
-        BlobWifiSelector,
+        BlobWifiSelector = 0U,
         BlobWifiSlot0,
         BlobWifiSlot1,
-        BlobOwnership,
-        BlobController,
         BlobDeviceInstance,
-        BlobOwnershipClaim,
-        BlobCloudEnrollment,
-        BlobOwnershipRelease,
-        BlobLocalSetupSaga,
+        BlobDeviceAccess,
         BlobCount
     };
 
@@ -110,19 +92,10 @@ private:
         kCrcSize = 4U,
         // Scratch capacity follows the largest routed blob, not one schema
         // that may legitimately shrink during protocol refinement.
-        kMaximumPayloadSize = LocalSetupSagaStore::serializedSize,
+        kMaximumPayloadSize = DeviceAccessStore::serializedSize,
         kMaximumRecordSize =
             kHeaderSize + kMaximumPayloadSize + kCrcSize
     };
-
-    static_assert(
-        static_cast<size_t>(ControllerCredentialStore::serializedSize) <=
-            static_cast<size_t>(kMaximumPayloadSize),
-        "controller store exceeds Renesas journal scratch");
-    static_assert(
-        static_cast<size_t>(CloudEnrollmentRecordStore::serializedSize) <=
-            static_cast<size_t>(kMaximumPayloadSize),
-        "cloud enrollment store exceeds Renesas journal scratch");
 
     static bool copyNamespace(const char* source, char* destination);
     static size_t maximumSize(BlobId id);
@@ -151,17 +124,11 @@ private:
 
     char namespaceName_[kNamespaceCapacity + 1U];
     Preferences preferences_;
-    BlobView cloud_;
     BlobView wifiSelector_;
     BlobView wifiSlot0_;
     BlobView wifiSlot1_;
-    BlobView ownership_;
-    BlobView controller_;
     BlobView deviceInstance_;
-    BlobView ownershipClaim_;
-    BlobView cloudEnrollment_;
-    BlobView ownershipRelease_;
-    BlobView localSetupSaga_;
+    BlobView deviceAccess_;
     bool configValid_;
     bool opened_;
 

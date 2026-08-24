@@ -10,8 +10,8 @@
 #include "../../ports/wio_terminal/WioTerminalStorage.h"
 
 #include <BlinkerV2/arduino/config/PortableServerKeys.h>
-#include <BlinkerV2/identity/OwnershipRecordStore.h>
 #include <BlinkerV2/security/Ed25519ServerKeyRingVerifier.h>
+#include <BlinkerV2/provisioning/BleEnrollmentContract.h>
 
 namespace blinker {
 namespace integration {
@@ -27,7 +27,6 @@ public:
 
     WioTerminalPlatformBlePlatform()
         : storage_(),
-          ownershipStore_(storage_.ownershipBlob()),
           crypto_(),
           signatureVerifier_(
               crypto_,
@@ -44,27 +43,23 @@ public:
     IAtomicBlobStore& deviceInstanceBlob() {
         return storage_.deviceInstanceBlob();
     }
-    OwnershipRecordStore& ownershipStore() {
-        return ownershipStore_;
-    }
-    IAtomicBlobStore& ownershipClaimBlob() {
-        return storage_.ownershipClaimBlob();
-    }
-    IAtomicBlobStore& controllerCredentialBlob() {
-        return storage_.controllerBlob();
-    }
-    IAtomicBlobStore& localSetupSagaBlob() {
-        return storage_.localSetupSagaBlob();
+    IAtomicBlobStore& deviceAccessBlob() {
+        return storage_.deviceAccessBlob();
     }
     IServerSignatureVerifier& serverSignatureVerifier() {
         return signatureVerifier_;
+    }
+    BleEnrollmentApplicationConfig bleEnrollmentConfig() const {
+        BleEnrollmentApplicationConfig config;
+        config.serverKeyId = official::serverSigningKeys[0].keyId;
+        config.signatureAlgorithm = ServerSignatureAlgorithm::Ed25519;
+        return config;
     }
     INoiseCryptoProvider& noiseCrypto() { return crypto_; }
     WioTerminalRpcBleLink& bleLink() { return link_; }
 
 private:
     WioTerminalFlashBlobBank storage_;
-    OwnershipRecordStore ownershipStore_;
     ArduinoCryptoProvider crypto_;
     Ed25519ServerKeyRingVerifier signatureVerifier_;
     WioTerminalRpcBleLink link_;

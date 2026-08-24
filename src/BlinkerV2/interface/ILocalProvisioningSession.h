@@ -6,9 +6,8 @@
 
 namespace blinker {
 
-// Minimal lifecycle used by BLE composition. The concrete canonical
-// application coordinator owns claim/proof/WiFi state; radio and mode code do
-// not need to know those details.
+// Minimal lifecycle used by BLE composition. The concrete application owns
+// enrollment state; radio and mode code do not need to know those details.
 class ILocalProvisioningSession {
 public:
     virtual ~ILocalProvisioningSession() {}
@@ -20,7 +19,7 @@ public:
 
     // Called exactly once after the responder handshake has been queued and
     // Noise has entered Transport. The borrowed 32-byte hash is the final
-    // handshake transcript used to bind EnrollmentTicket to this channel.
+    // handshake transcript used to bind BleEnrollmentGrant to this channel.
     virtual Result secureSessionReady(ByteView setupTranscriptHash) = 0;
     virtual void endSession() = 0;
 };

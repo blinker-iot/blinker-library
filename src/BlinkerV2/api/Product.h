@@ -42,11 +42,12 @@ public:
             return Result::failure(ErrorCode::AlreadyExists);
         }
 
-        Result result = device_.prepare();
-        if (result && !attached_) {
+        Result result = Result::success();
+        if (!attached_) {
             result = lifecycle_.attach(device_.client());
             if (result) attached_ = true;
         }
+        if (result) result = device_.prepare();
         const bool startAttempted = result.ok();
         if (startAttempted) result = lifecycle_.start();
         if (!result) {
@@ -90,11 +91,12 @@ public:
         return lifecycle_.capabilities();
     }
 
-    Result resetOwnership() {
-        if (!attached_) {
-            return Result::failure(ErrorCode::NotConfigured);
-        }
-        return lifecycle_.resetOwnership();
+    const OutboundSchedulerCounters& outboundCounters() const {
+        return device_.outboundCounters();
+    }
+
+    const TelemetryCounters& telemetryCounters() const {
+        return device_.telemetryCounters();
     }
 
 private:

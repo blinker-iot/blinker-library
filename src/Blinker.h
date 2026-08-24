@@ -1,8 +1,8 @@
 #ifndef BLINKER_H
 #define BLINKER_H
 
-// Shared API declarations for advanced/library-internal use. Ordinary
-// sketches include BlinkerWiFi.h or BlinkerBLE.h to select one product.
-#include "BlinkerV2/api/BlinkerFacade.h"
+// The default Arduino entry selects the WiFi product. BLE and ESP32
+// WiFi+BLE sketches select BlinkerBLE.h and BlinkerWiFiBLE.h explicitly.
+#include "BlinkerWiFi.h"
 
 #endif

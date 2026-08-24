@@ -116,24 +116,6 @@ public:
 
     BleOnlyLifecycleState state() const { return state_; }
     bool setupComplete() const { return bleSetup_.setupComplete(); }
-    Result openLocalPairingMode() {
-        if (state_ == BleOnlyLifecycleState::Stopped ||
-            state_ == BleOnlyLifecycleState::Fault) {
-            return Result::failure(ErrorCode::NotConnected);
-        }
-        Result result = bleSetup_.openLocalPairingMode();
-        if (result) updateState();
-        return result;
-    }
-    Result cancelLocalPairingMode() {
-        if (state_ == BleOnlyLifecycleState::Stopped ||
-            state_ == BleOnlyLifecycleState::Fault) {
-            return Result::failure(ErrorCode::NotConnected);
-        }
-        Result result = bleSetup_.cancelLocalPairingMode();
-        if (result) updateState();
-        return result;
-    }
 
 private:
     void updateState() {

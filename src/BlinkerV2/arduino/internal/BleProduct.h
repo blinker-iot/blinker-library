@@ -5,18 +5,13 @@
 
 #include "../ports/arduino/HardwareRandom.h"
 #include <BlinkerV2/core/ResourceProfile.h>
-#include <BlinkerV2/identity/ControllerCredentialStore.h>
+#include <BlinkerV2/identity/DeviceAccessStore.h>
 #include <BlinkerV2/identity/DeviceInstanceIdStore.h>
-#include <BlinkerV2/identity/OwnershipRecordStore.h>
 #include <BlinkerV2/interface/IProductLifecycle.h>
+#include <BlinkerV2/provisioning/BleEnrollmentApplication.h>
 #include <BlinkerV2/provisioning/BleNoiseProvisioningChannel.h>
 #include <BlinkerV2/provisioning/BleLocalProvisioningEndpoint.h>
 #include <BlinkerV2/provisioning/BleNoiseModePreparation.h>
-#include <BlinkerV2/provisioning/EnrollmentTicketVerifier.h>
-#include <BlinkerV2/provisioning/LocalSetupApplication.h>
-#include <BlinkerV2/provisioning/LocalSetupSaga.h>
-#include <BlinkerV2/provisioning/OwnershipClaimCoordinator.h>
-#include <BlinkerV2/provisioning/OwnershipClaimRecordStore.h>
 #include <BlinkerV2/runtime/BleOnlyLifecycle.h>
 #include <BlinkerV2/security/ControllerHmacSha256Authorizer.h>
 #include <BlinkerV2/transport/BleFrameTransport.h>
@@ -33,17 +28,23 @@ template <
 class BleWorkspace {
 public:
     enum : size_t {
+        directRecordSize =
+            BLINKER_DEVICE_FRAME_SIZE + security::kDirectSecureOverhead,
         directRxSize =
-            BLINKER_DEVICE_FRAME_SIZE * BLINKER_BLE_MAX_SESSIONS,
+            directRecordSize * BLINKER_BLE_MAX_SESSIONS,
         directTxSize =
-            BLINKER_DEVICE_FRAME_SIZE * BLINKER_BLE_MAX_TX_FRAMES,
+            directRecordSize * BLINKER_BLE_MAX_TX_FRAMES,
         sharedRxSize = directRxSize > kBleNoiseRecordSize
                            ? directRxSize
                            : kBleNoiseRecordSize,
         sharedTxSize = directTxSize > kBleNoiseRecordSize
                            ? directTxSize
                            : kBleNoiseRecordSize,
-        packetSize = Platform::maximumBlePacketSize
+        packetSize = Platform::maximumBlePacketSize,
+        plaintextSize =
+            BLINKER_DEVICE_FRAME_SIZE > kBleNoiseMaxTransportPayloadSize
+                ? BLINKER_DEVICE_FRAME_SIZE
+                : kBleNoiseMaxTransportPayloadSize
     };
 
     MutableByteSpan noiseRx() {
@@ -75,7 +76,7 @@ private:
     uint8_t recordRx_[sharedRxSize];
     uint8_t recordTx_[sharedTxSize];
     uint8_t packet_[packetSize];
-    uint8_t plaintext_[kBleNoiseMaxTransportPayloadSize];
+    uint8_t plaintext_[plaintextSize];
     uint8_t operation_[OperationWorkspaceSize];
     uint8_t response_[ResponseWorkspaceSize];
 };
@@ -88,7 +89,6 @@ inline BleFrameTransportConfig directBleTransportConfig() {
 
 inline BleSetupLifecycleConfig platformBleSetupConfig() {
     BleSetupLifecycleConfig config;
-    config.contract = BleSetupContract::PlatformEnrollment;
     return config;
 }
 
@@ -106,7 +106,7 @@ public:
         ArduinoClock& clock,
         PlatformHardwareRandom& random,
         Application& application,
-        ControllerCredentialStore& controllers,
+        IControllerCredentialSource& controllers,
         IBleSetupCompletion& completion,
         const BleSetupLifecycleConfig& config)
         : workspace_(),
@@ -129,9 +129,11 @@ public:
           direct_(
               platform.bleLink(),
               clock,
+              platform.noiseCrypto(),
               workspace_.directRx(),
               workspace_.directTx(),
               workspace_.packet(),
+              workspace_.plaintext(),
               directBleTransportConfig()),
           ble_(
               platform.bleLink(),
@@ -142,6 +144,7 @@ public:
           directAuthorization_(
               controllers,
               random,
+              direct_,
               authSessions_,
               BLINKER_BLE_MAX_SESSIONS),
           lifecycle_(
@@ -187,38 +190,22 @@ public:
           random_(),
           deviceInstance_(),
           deviceInstanceStore_(platform_.deviceInstanceBlob()),
-          claimJournal_(platform_.ownershipClaimBlob()),
-          claimVerifier_(platform_.serverSignatureVerifier()),
-          claim_(
-              deviceInstance_,
-              platform_.ownershipStore(),
-              claimJournal_,
-              random_,
-              claimVerifier_),
-          controllers_(platform_.controllerCredentialBlob()),
-          setupJournal_(platform_.localSetupSagaBlob()),
-          setupCompletion_(setupJournal_),
-          setupSaga_(
-              deviceInstance_,
-              platform_.ownershipStore(),
-              claim_,
-              controllers_,
-              setupJournal_,
-              clock_),
-          ticketVerifier_(platform_.serverSignatureVerifier()),
-          setupApplication_(
+          access_(platform_.deviceAccessBlob()),
+          setupCompletion_(access_),
+          grantVerifier_(platform_.serverSignatureVerifier()),
+          enrollment_(
               deviceInstance_,
               random_,
               clock_,
-              ticketVerifier_,
-              setupSaga_,
-              0U),
+              grantVerifier_,
+              access_,
+              platform_.bleEnrollmentConfig()),
           radio_(
               platform_,
               clock_,
               random_,
-              setupApplication_,
-              controllers_,
+              enrollment_,
+              access_,
               setupCompletion_,
               platformBleSetupConfig()),
           initialized_(false),
@@ -231,6 +218,7 @@ public:
 
     Result attach(Client& client) override {
         Result result = initialize();
+        if (result) result = client.setMonotonicClock(&clock_);
         if (result) result = radio_.attach(client);
         if (!result) configurationError_ = result.code();
         return result;
@@ -287,20 +275,15 @@ private:
     PlatformHardwareRandom random_;
     DeviceInstanceId deviceInstance_;
     DeviceInstanceIdStore deviceInstanceStore_;
-    OwnershipClaimRecordStore claimJournal_;
-    OwnershipClaimGrantVerifier claimVerifier_;
-    OwnershipClaimCoordinator claim_;
-    ControllerCredentialStore controllers_;
-    LocalSetupSagaStore setupJournal_;
-    LocalSetupSagaCompletion setupCompletion_;
-    LocalSetupSaga setupSaga_;
-    EnrollmentTicketVerifier ticketVerifier_;
-    LocalSetupApplication setupApplication_;
+    DeviceAccessStore access_;
+    DeviceAccessSetupCompletion setupCompletion_;
+    BleEnrollmentGrantVerifier grantVerifier_;
+    BleEnrollmentApplication enrollment_;
     BleOnlyRadio<
         Platform,
-        LocalSetupApplication,
-        kLocalSetupOperationWorkspaceSize,
-        kLocalSetupResponseMaxEncodedSize>
+        BleEnrollmentApplication,
+        kBleEnrollmentWorkspaceSize,
+        kBleEnrollmentResponseMaxEncodedSize>
         radio_;
     bool initialized_;
     ErrorCode configurationError_;

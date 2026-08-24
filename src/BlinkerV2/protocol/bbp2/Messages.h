@@ -17,6 +17,8 @@ static const uint8_t kRouteIdentitySize = 16;
 // Maximum bytes before the nested values map in a StatePatchBody:
 // map(3), keys 0..2, mode and a canonical uint32 revision.
 static const uint8_t kStatePatchEnvelopeReserve = 10;
+static const uint8_t kTelemetryDataEnvelopeReserve = 26;
+static const uint8_t kMaxTelemetryFields = 32;
 
 enum class PeerRole : uint8_t {
     Device = 0,
@@ -36,7 +38,8 @@ enum ProtocolFeature : uint32_t {
     FeatureStateRevision = 1UL << 7,
     // bit 8 is reserved for the removed pre-freeze WidgetCatalog experiment.
     FeatureControllerControl = 1UL << 9,
-    FeatureRouting = 1UL << 10
+    FeatureRouting = 1UL << 10,
+    FeatureTelemetry = 1UL << 11
 };
 
 enum class RoutePeerKind : uint8_t {
@@ -183,6 +186,77 @@ struct StatePatchBody {
         : mode(StatePatchMode::Report), revision(0), values() {}
 };
 
+enum class TelemetryControlOperation : uint8_t {
+    Open = 0,
+    Renew = 1,
+    Close = 2
+};
+
+enum class TelemetryStatusCode : uint8_t {
+    Opened = 0,
+    Renewed = 1,
+    Closed = 2,
+    Expired = 3
+};
+
+// Control maps are operation-specific:
+// open  {0:op,1:streamId,3:leaseMs,4:intervalMs,5:[fieldId...]}
+// renew {0:op,1:streamId,2:epoch,3:leaseMs}
+// close {0:op,1:streamId,2:epoch}
+// Field IDs are strictly increasing Manifest IDs. No key/string mode exists.
+struct TelemetryControlBody {
+    TelemetryControlOperation operation;
+    uint32_t streamId;
+    uint32_t streamEpoch;
+    uint32_t leaseMillis;
+    uint32_t intervalMillis;
+    uint16_t fieldIds[kMaxTelemetryFields];
+    uint8_t fieldCount;
+
+    TelemetryControlBody()
+        : operation(TelemetryControlOperation::Open),
+          streamId(0U),
+          streamEpoch(0U),
+          leaseMillis(0U),
+          intervalMillis(0U),
+          fieldIds(),
+          fieldCount(0U) {}
+};
+
+// Status always has five fields so consumers can replace local lease state
+// without operation-specific branches. leaseMillis is zero after close/expiry.
+struct TelemetryStatusBody {
+    uint32_t streamId;
+    uint32_t streamEpoch;
+    TelemetryStatusCode status;
+    uint32_t effectiveIntervalMillis;
+    uint32_t leaseMillis;
+
+    TelemetryStatusBody()
+        : streamId(0U),
+          streamEpoch(0U),
+          status(TelemetryStatusCode::Opened),
+          effectiveIntervalMillis(0U),
+          leaseMillis(0U) {}
+};
+
+// One best-effort sample per frame in v1. values is one canonical ID-keyed
+// map and the enclosing frame must carry FlagIdMode.
+struct TelemetryDataBody {
+    uint32_t streamId;
+    uint32_t streamEpoch;
+    uint32_t sampleSequence;
+    uint32_t monotonicMillis;
+    ByteView values;
+
+    TelemetryDataBody()
+        : streamId(0U),
+          streamEpoch(0U),
+          sampleSequence(0U),
+          monotonicMillis(0U),
+          values() {}
+};
+
 // Route uses peer as the target and requires requestId. Delivery uses peer as
 // the Broker-authenticated source; unsolicited state/event delivery may omit
 // requestId. messageBody is one complete canonical CBOR value and is never
@@ -323,6 +397,34 @@ Result encodeStatePatchBody(
 Result decodeStatePatchBody(
     ByteView encoded,
     StatePatchBody& body,
+    const cbor::Limits& limits = cbor::Limits());
+
+Result encodeTelemetryControlBody(
+    const TelemetryControlBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits = cbor::Limits());
+Result decodeTelemetryControlBody(
+    ByteView encoded,
+    TelemetryControlBody& body,
+    const cbor::Limits& limits = cbor::Limits());
+Result encodeTelemetryStatusBody(
+    const TelemetryStatusBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits = cbor::Limits());
+Result decodeTelemetryStatusBody(
+    ByteView encoded,
+    TelemetryStatusBody& body,
+    const cbor::Limits& limits = cbor::Limits());
+Result encodeTelemetryDataBody(
+    const TelemetryDataBody& body,
+    MutableByteSpan output,
+    ByteView& encoded,
+    const cbor::Limits& limits = cbor::Limits());
+Result decodeTelemetryDataBody(
+    ByteView encoded,
+    TelemetryDataBody& body,
     const cbor::Limits& limits = cbor::Limits());
 
 Result encodeRouteBody(

@@ -105,6 +105,9 @@ struct PropertyConstraints {
 struct FieldSpec {
     StringView key;
     const PropertyConstraints* constraints;
+    // Zero means ordinary state only. A non-zero value advertises that this
+    // readable Property may be sampled by a bounded Telemetry lease.
+    uint32_t telemetryMinimumIntervalMs;
     EndpointKind kind;
     ValueType type;
     uint8_t access;
@@ -112,6 +115,7 @@ struct FieldSpec {
     constexpr FieldSpec()
         : key(),
           constraints(nullptr),
+          telemetryMinimumIntervalMs(0U),
           kind(EndpointKind::Property),
           type(ValueType::Boolean),
           access(AccessNone) {}
@@ -121,9 +125,11 @@ struct FieldSpec {
         EndpointKind fieldKind,
         ValueType valueType,
         uint8_t accessFlags,
-        const PropertyConstraints* fieldConstraints = nullptr)
+        const PropertyConstraints* fieldConstraints = nullptr,
+        uint32_t minimumTelemetryIntervalMs = 0U)
         : key(fieldKey),
           constraints(fieldConstraints),
+          telemetryMinimumIntervalMs(minimumTelemetryIntervalMs),
           kind(fieldKind),
           type(valueType),
           access(accessFlags) {}

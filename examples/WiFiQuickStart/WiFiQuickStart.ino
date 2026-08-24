@@ -1,5 +1,5 @@
 // WiFi QuickStart for every supported board in the single Blinker library.
-#include <BlinkerWiFi.h>
+#include <Blinker.h>
 
 BLINKER_PROPERTY(power, bool, blinker::readWrite());
 

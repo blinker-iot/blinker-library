@@ -13,10 +13,7 @@ enum class ControllerCredentialSuite : uint8_t {
 
 enum class ControllerCredentialDomain : uint8_t {
     Local = 1U,
-    PlatformAccess = 2U,
-    // Source compatibility for the unpublished v2 experiments. Value 2 on
-    // persistent/wire records means platform direct access, not ownership.
-    Ownership = PlatformAccess
+    PlatformAccess = 2U
 };
 
 enum : size_t {

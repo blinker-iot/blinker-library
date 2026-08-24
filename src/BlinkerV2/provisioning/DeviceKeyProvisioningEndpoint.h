@@ -46,9 +46,9 @@ enum : uint8_t {
 };
 
 // Transport-neutral endpoint used inside an already protected physical setup
-// session. The endpoint never accepts an EnrollmentTicket as a login secret:
-// it only exposes the public instance id and installs one DeviceKey. Combined
-// cloud/direct products bootstrap DeviceKey + accessEpoch + Admin atomically.
+// session. It only exposes the public instance id and installs one DeviceKey.
+// Combined cloud/direct products bootstrap DeviceKey + accessEpoch + Admin
+// atomically.
 class DeviceKeyProvisioningEndpoint {
 public:
     DeviceKeyProvisioningEndpoint(
