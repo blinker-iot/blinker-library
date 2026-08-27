@@ -1,6 +1,7 @@
 #ifndef BLINKER_V2_ARDUINO_PORTS_BLE_LINK_H
 #define BLINKER_V2_ARDUINO_PORTS_BLE_LINK_H
 
+#include <Arduino.h>
 #include <ArduinoBLE.h>
 #include <BlinkerV2/interface/IBleConnectionSecuritySource.h>
 #include <BlinkerV2/interface/IBleModeLink.h>
@@ -15,6 +16,7 @@ struct ArduinoBleLinkConfig {
     const char* receiveUuid;
     const char* transmitUuid;
     uint16_t maxPacketSize;
+    uint32_t sessionReadyTimeoutMillis;
     bool requireEncryption;
 
     ArduinoBleLinkConfig()
@@ -23,6 +25,7 @@ struct ArduinoBleLinkConfig {
           receiveUuid(ble::kReceiveUuid),
           transmitUuid(ble::kTransmitUuid),
           maxPacketSize(20),
+          sessionReadyTimeoutMillis(15000U),
           requireEncryption(false) {}
 };
 
@@ -42,6 +45,7 @@ public:
     size_t sessionCount() const override;
     Result sessionAt(size_t index, BleSessionInfo& session) const override;
     Result sendPacket(uint32_t sessionId, ByteView packet) override;
+    Result disconnectSession(uint32_t sessionId) override;
     void setPacketReceiver(BlePacketReceiver receiver, void* context) override;
     void setSessionHandlers(
         BleSessionHandler connected,
@@ -77,6 +81,7 @@ private:
     BleSessionHandler disconnectedHandler_;
     void* sessionContext_;
     uint32_t nextSessionId_;
+    uint32_t connectedAtMillis_;
     bool connectPending_;
     bool disconnectPending_;
     bool sessionAnnounced_;

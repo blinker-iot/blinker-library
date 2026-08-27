@@ -126,6 +126,20 @@ public:
         facade_detail::diagnostics().flush();
     }
 
+    // Invalidates cloud/direct controller access without erasing network
+    // configuration, DeviceInstanceId or BLE bond state. Supported products
+    // restart in provisioning mode before this call returns successfully.
+    bool resetAccess() {
+        const Result result = product_ != nullptr
+                                  ? product_->resetAccess()
+                                  : Result::failure(
+                                        ErrorCode::NotConfigured);
+        const bool succeeded = remember(result);
+        facade_detail::observeProductStatus(status());
+        facade_detail::diagnostics().flush();
+        return succeeded;
+    }
+
     ProductStatus status() const {
         return product_ != nullptr ? product_->status() : ProductStatus();
     }

@@ -39,7 +39,9 @@ enum ProtocolFeature : uint32_t {
     // bit 8 is reserved for the removed pre-freeze WidgetCatalog experiment.
     FeatureControllerControl = 1UL << 9,
     FeatureRouting = 1UL << 10,
-    FeatureTelemetry = 1UL << 11
+    FeatureTelemetry = 1UL << 11,
+    // Account App/Broker capability; never enabled by the device runtime.
+    FeaturePresence = 1UL << 12
 };
 
 enum class RoutePeerKind : uint8_t {

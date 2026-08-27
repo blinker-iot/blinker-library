@@ -204,6 +204,15 @@ Result TransportHub::broadcast(ByteView frame) {
     return firstError;
 }
 
+Result TransportHub::disconnectSession(
+    uint8_t transportId,
+    uint32_t sessionId) {
+    if (sessionId == 0U || transportId >= count_) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    return transports_[transportId]->disconnectSession(sessionId);
+}
+
 void TransportHub::setReceiver(FrameReceiver receiver, void* context) {
     receiver_ = receiver;
     receiverContext_ = context;

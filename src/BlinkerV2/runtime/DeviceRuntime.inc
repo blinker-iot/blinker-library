@@ -430,6 +430,9 @@ void DeviceRuntime::poll(uint32_t totalBudgetMicros) {
             }
             continue;
         }
+        const bool peerInitiatesHello =
+            (transport->capabilities().features &
+             TransportFeaturePeerInitiatesHello) != 0U;
         bool hasExplicitSession = false;
         for (size_t peerIndex = 0;
              peerIndex < BLINKER_MAX_PEER_SESSIONS;
@@ -440,7 +443,7 @@ void DeviceRuntime::poll(uint32_t totalBudgetMicros) {
                 continue;
             }
             hasExplicitSession = true;
-            if (session.helloSent) continue;
+            if (session.helloSent || peerInitiatesHello) continue;
             SendTarget target;
             target.kind = SendTargetKind::Session;
             target.transportId = static_cast<uint8_t>(index);
@@ -451,7 +454,7 @@ void DeviceRuntime::poll(uint32_t totalBudgetMicros) {
                 nextSequence());
             if (result) session.helloSent = true;
         }
-        if (hasExplicitSession) continue;
+        if (hasExplicitSession || peerInitiatesHello) continue;
         if (!helloSent_[index]) {
             SendTarget target;
             target.kind = SendTargetKind::Transport;
@@ -1250,7 +1253,10 @@ Result DeviceRuntime::handleAuthenticate(
     if (!negotiated(rx)) {
         return Result::failure(ErrorCode::NotConfigured);
     }
-    if (!localTransport(rx.transportId) || !rx.encrypted) {
+    if (!localTransport(rx.transportId) ||
+        (!rx.encrypted &&
+         (authorizationProvider_ == nullptr ||
+          !authorizationProvider_->establishesSecureTransport()))) {
         return Result::failure(ErrorCode::AuthenticationRequired);
     }
     if (authorizationProvider_ != nullptr &&
@@ -1279,7 +1285,14 @@ Result DeviceRuntime::handleAuthenticate(
     response.method = request.method;
     if (session->authorizationLocked) {
         response.status = bbp2::AuthStatus::Locked;
-        return sendAuthResult(frame.header.sequence, response, rx);
+        const Result sendResult =
+            sendAuthResult(frame.header.sequence, response, rx);
+        if (sendResult) {
+            (void)transports_.disconnectSession(
+                rx.transportId,
+                rx.sessionId);
+        }
+        return sendResult;
     }
     if (session->authorizationPermissions != 0U) {
         response.status = bbp2::AuthStatus::Authorized;
@@ -1331,6 +1344,10 @@ Result DeviceRuntime::handleAuthenticate(
         }
         authorizationProvider_->authorizationResultQueued(security);
         session->authorizationPermissions = decision.permissions;
+    } else if (decision.status == bbp2::AuthStatus::Locked && result) {
+        (void)transports_.disconnectSession(
+            rx.transportId,
+            rx.sessionId);
     }
     return result;
 }

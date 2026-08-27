@@ -269,6 +269,20 @@ Result BleRecordTransport::sendPrepared(
     return enqueue(recipient, record);
 }
 
+Result BleRecordTransport::disconnectSession(
+    uint32_t sessionId,
+    ErrorCode error) {
+    RxSession* session = findRx(sessionId, false);
+    if (session == nullptr) {
+        return Result::failure(ErrorCode::NotFound);
+    }
+    const Result result = link_.disconnectSession(sessionId);
+    if (!result) return result;
+    const BleSessionInfo info = session->info;
+    retireSession(*session, error, info);
+    return Result::success();
+}
+
 bool BleRecordTransport::hasSession(uint32_t sessionId) const {
     const RxSession* admitted = findRx(sessionId);
     if (!started_ || admitted == nullptr) return false;

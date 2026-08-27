@@ -14,6 +14,10 @@
       defined(ARDUINO_ARCH_RENESAS)
 #include "BlinkerV2/arduino/platform/uno_r4/UnoR4BLEProduct.h"
 #elif defined(SEEED_WIO_TERMINAL) || defined(WIO_TERMINAL)
+#if !defined(BLINKER_ENABLE_WIO_BLE_PREVIEW) || \
+    BLINKER_ENABLE_WIO_BLE_PREVIEW != 1
+#error "Wio Terminal BLE is experimental; define BLINKER_ENABLE_WIO_BLE_PREVIEW=1 before including BlinkerBLE.h"
+#endif
 #include "BlinkerV2/arduino/platform/wio_terminal/WioTerminalBLEProduct.h"
 #endif
 

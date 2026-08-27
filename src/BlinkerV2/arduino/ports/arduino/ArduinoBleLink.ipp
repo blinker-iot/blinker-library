@@ -50,6 +50,7 @@ inline ArduinoBleLink::ArduinoBleLink(
       disconnectedHandler_(nullptr),
       sessionContext_(nullptr),
       nextSessionId_(1),
+      connectedAtMillis_(0U),
       connectPending_(false),
       disconnectPending_(false),
       sessionAnnounced_(false),
@@ -124,12 +125,15 @@ inline void ArduinoBleLink::stop() {
     if (state_ != BleLinkState::Stopped) {
         BLE.setEventHandler(BLEConnected, nullptr);
         BLE.setEventHandler(BLEDisconnected, nullptr);
+        BLE.disconnect();
+        BLE.poll();
         BLE.end();
     }
     if (active() == this) active() = nullptr;
     if (security_ != nullptr) security_->disconnected();
     session_ = BleSessionInfo();
     central_ = BLEDevice();
+    connectedAtMillis_ = 0U;
     connectPending_ = false;
     disconnectPending_ = false;
     sessionAnnounced_ = false;
@@ -155,6 +159,12 @@ inline void ArduinoBleLink::poll(uint32_t) {
         }
     }
     session_.notifyEnabled = transmit_.subscribed();
+    if (!sessionAnnounced_ &&
+        static_cast<uint32_t>(millis() - connectedAtMillis_) >=
+            config_.sessionReadyTimeoutMillis) {
+        central_.disconnect();
+        return;
+    }
     if (!sessionAnnounced_ && session_.notifyEnabled &&
         (!config_.requireEncryption || session_.encrypted)) {
         sessionAnnounced_ = true;
@@ -211,6 +221,15 @@ inline Result ArduinoBleLink::sendPacket(
                : Result::failure(ErrorCode::WouldBlock);
 }
 
+inline Result ArduinoBleLink::disconnectSession(uint32_t sessionId) {
+    if (!sessionAnnounced_ || session_.sessionId != sessionId || !central_ ||
+        !central_.connected()) {
+        return Result::failure(ErrorCode::NotFound);
+    }
+    central_.disconnect();
+    return Result::success();
+}
+
 inline void ArduinoBleLink::setPacketReceiver(
     BlePacketReceiver receiver,
     void* context) {
@@ -245,6 +264,7 @@ inline void ArduinoBleLink::updateConnection() {
         (!connected || disconnectPending_ || connectionCycle)) {
         const BleSessionInfo oldSession = session_;
         session_ = BleSessionInfo();
+        connectedAtMillis_ = 0U;
         if (sessionAnnounced_ && disconnectedHandler_ != nullptr) {
             disconnectedHandler_(sessionContext_, oldSession);
         }
@@ -260,6 +280,7 @@ inline void ArduinoBleLink::updateConnection() {
         session_.sessionId = nextSessionId();
         session_.maxPacketSize = config_.maxPacketSize;
         session_.connected = true;
+        connectedAtMillis_ = millis();
         session_.notifyEnabled = transmit_.subscribed();
     }
     connectPending_ = false;
@@ -312,6 +333,7 @@ inline bool ArduinoBleLink::validConfig() const {
            strcmp(config_.receiveUuid, ble::kReceiveUuid) == 0 &&
            strcmp(config_.transmitUuid, ble::kTransmitUuid) == 0 &&
            config_.maxPacketSize >= ble::kMinimumPacketSize &&
+           config_.sessionReadyTimeoutMillis != 0U &&
            (!config_.requireEncryption || security_ != nullptr);
 }
 

@@ -24,17 +24,15 @@ inline Esp32NimBleLink::Esp32NimBleLink(
       connectionHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingConnectHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingDisconnectHandle_(BLE_HS_CONN_HANDLE_NONE),
-      pendingMtuHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingSubscribeHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingSecurityHandle_(BLE_HS_CONN_HANDLE_NONE),
-      pendingPacketSize_(20),
       nextSessionId_(1),
+      connectedAtMillis_(0U),
       pendingNotifyEnabled_(false),
       pendingEncrypted_(false),
       pendingBonded_(false),
       connectPending_(false),
       disconnectPending_(false),
-      mtuPending_(false),
       subscribePending_(false),
       securityPending_(false),
       sessionAnnounced_(false),
@@ -65,7 +63,7 @@ inline Result Esp32NimBleLink::start() {
     }
     state_ = BleLinkState::Starting;
     if (!NimBLEDevice::init(config_.deviceName) ||
-        !NimBLEDevice::setMTU(config_.preferredMtu)) {
+        !NimBLEDevice::setMTU(BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE + 3U)) {
         NimBLEDevice::deinit(true);
         lastError_ = ErrorCode::NotConfigured;
         state_ = BleLinkState::Error;
@@ -167,17 +165,16 @@ inline void Esp32NimBleLink::stop() {
     transmit_ = nullptr;
     advertising_ = nullptr;
     session_ = BleSessionInfo();
+    connectedAtMillis_ = 0U;
     portENTER_CRITICAL(&lock_);
     clearPacketQueueLocked();
     connectionHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingConnectHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingDisconnectHandle_ = BLE_HS_CONN_HANDLE_NONE;
-    pendingMtuHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingSubscribeHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingSecurityHandle_ = BLE_HS_CONN_HANDLE_NONE;
     connectPending_ = false;
     disconnectPending_ = false;
-    mtuPending_ = false;
     subscribePending_ = false;
     securityPending_ = false;
     sessionAnnounced_ = false;
@@ -188,6 +185,14 @@ inline void Esp32NimBleLink::stop() {
 inline void Esp32NimBleLink::poll(uint32_t) {
     if (state_ != BleLinkState::Ready) return;
     processPendingEvents();
+    if (session_.connected && !sessionAnnounced_ &&
+        static_cast<uint32_t>(millis() - connectedAtMillis_) >=
+            config_.sessionReadyTimeoutMillis &&
+        server_ != nullptr &&
+        connectionHandle_ != BLE_HS_CONN_HANDLE_NONE) {
+        server_->disconnect(connectionHandle_);
+        return;
+    }
     drainPackets();
 }
 
@@ -226,6 +231,15 @@ inline Result Esp32NimBleLink::sendPacket(
                connectionHandle_)
                ? Result::success()
                : Result::failure(ErrorCode::WouldBlock);
+}
+
+inline Result Esp32NimBleLink::disconnectSession(uint32_t sessionId) {
+    if (!sessionAnnounced_ || session_.sessionId != sessionId ||
+        server_ == nullptr || connectionHandle_ == BLE_HS_CONN_HANDLE_NONE) {
+        return Result::failure(ErrorCode::NotFound);
+    }
+    server_->disconnect(connectionHandle_);
+    return Result::success();
 }
 
 inline void Esp32NimBleLink::setPacketReceiver(
@@ -296,7 +310,6 @@ inline void Esp32NimBleLink::onConnect(
         reject = true;
     } else {
         pendingConnectHandle_ = handle;
-        pendingPacketSize_ = packetSizeForMtu(connection.getMTU());
         connectPending_ = true;
     }
     portEXIT_CRITICAL(&lock_);
@@ -315,17 +328,6 @@ inline void Esp32NimBleLink::onDisconnect(
         disconnectPending_ = true;
         clearPacketQueueLocked();
     }
-    portEXIT_CRITICAL(&lock_);
-}
-
-inline void Esp32NimBleLink::onMTUChange(
-    uint16_t mtu,
-    NimBLEConnInfo& connection) {
-    const uint16_t handle = connection.getConnHandle();
-    portENTER_CRITICAL(&lock_);
-    pendingMtuHandle_ = handle;
-    pendingPacketSize_ = packetSizeForMtu(mtu);
-    mtuPending_ = true;
     portEXIT_CRITICAL(&lock_);
 }
 
@@ -384,7 +386,6 @@ inline void Esp32NimBleLink::onSubscribe(
 inline void Esp32NimBleLink::processPendingEvents() {
     bool connect = false;
     bool disconnect = false;
-    bool mtu = false;
     bool subscribe = false;
     bool security = false;
     bool notifyEnabled = false;
@@ -392,15 +393,12 @@ inline void Esp32NimBleLink::processPendingEvents() {
     bool bonded = false;
     uint16_t connectHandle = BLE_HS_CONN_HANDLE_NONE;
     uint16_t disconnectHandle = BLE_HS_CONN_HANDLE_NONE;
-    uint16_t mtuHandle = BLE_HS_CONN_HANDLE_NONE;
     uint16_t subscribeHandle = BLE_HS_CONN_HANDLE_NONE;
     uint16_t securityHandle = BLE_HS_CONN_HANDLE_NONE;
-    uint16_t packetSize = 20;
 
     portENTER_CRITICAL(&lock_);
     connect = connectPending_;
     disconnect = disconnectPending_;
-    mtu = mtuPending_;
     subscribe = subscribePending_;
     security = securityPending_;
     notifyEnabled = pendingNotifyEnabled_;
@@ -408,13 +406,10 @@ inline void Esp32NimBleLink::processPendingEvents() {
     bonded = pendingBonded_;
     connectHandle = pendingConnectHandle_;
     disconnectHandle = pendingDisconnectHandle_;
-    mtuHandle = pendingMtuHandle_;
     subscribeHandle = pendingSubscribeHandle_;
     securityHandle = pendingSecurityHandle_;
-    packetSize = pendingPacketSize_;
     connectPending_ = false;
     disconnectPending_ = false;
-    mtuPending_ = false;
     subscribePending_ = false;
     securityPending_ = false;
     portEXIT_CRITICAL(&lock_);
@@ -424,6 +419,7 @@ inline void Esp32NimBleLink::processPendingEvents() {
         session_.connected) {
         const BleSessionInfo oldSession = session_;
         session_ = BleSessionInfo();
+        connectedAtMillis_ = 0U;
         portENTER_CRITICAL(&lock_);
         connectionHandle_ = BLE_HS_CONN_HANDLE_NONE;
         portEXIT_CRITICAL(&lock_);
@@ -441,16 +437,14 @@ inline void Esp32NimBleLink::processPendingEvents() {
         portEXIT_CRITICAL(&lock_);
         session_ = BleSessionInfo();
         session_.sessionId = nextSessionId();
-        session_.maxPacketSize = packetSize;
+        session_.maxPacketSize = BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE;
         session_.connected = true;
+        connectedAtMillis_ = millis();
         if (subscribe && subscribeHandle == connectHandle) {
             session_.notifyEnabled = notifyEnabled;
         }
     }
 
-    if (mtu && session_.connected && mtuHandle == connectionHandle_) {
-        session_.maxPacketSize = packetSize;
-    }
     if (subscribe && session_.connected &&
         subscribeHandle == connectionHandle_) {
         session_.notifyEnabled = notifyEnabled;
@@ -519,15 +513,6 @@ inline uint32_t Esp32NimBleLink::nextSessionId() {
     return result;
 }
 
-inline uint16_t Esp32NimBleLink::packetSizeForMtu(uint16_t mtu) {
-    if (mtu <= 3U) return 0U;
-    uint16_t result = static_cast<uint16_t>(mtu - 3U);
-    if (result > BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE) {
-        result = BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE;
-    }
-    return result;
-}
-
 inline bool Esp32NimBleLink::validConfig() const {
     return config_.deviceName != nullptr && config_.deviceName[0] != '\0' &&
            config_.serviceUuid != nullptr && config_.serviceUuid[0] != '\0' &&
@@ -536,9 +521,7 @@ inline bool Esp32NimBleLink::validConfig() const {
            strcmp(config_.serviceUuid, ble::kServiceUuid) == 0 &&
            strcmp(config_.receiveUuid, ble::kReceiveUuid) == 0 &&
            strcmp(config_.transmitUuid, ble::kTransmitUuid) == 0 &&
-           config_.preferredMtu >= 23U &&
-           config_.preferredMtu <=
-               BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE + 3U &&
+           config_.sessionReadyTimeoutMillis != 0U &&
            config_.maxRxPacketsPerPoll != 0U;
 }
 

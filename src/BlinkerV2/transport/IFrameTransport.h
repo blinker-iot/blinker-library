@@ -13,7 +13,10 @@ enum TransportFeature : uint16_t {
     TransportFeatureLocal = 1U << 1,
     TransportFeatureCloud = 1U << 2,
     TransportFeatureAuthenticated = 1U << 3,
-    TransportFeatureFragmented = 1U << 4
+    TransportFeatureFragmented = 1U << 4,
+    // Session peer owns BBP/2 negotiation startup. The device responds to
+    // HELLO but must not race it with an unsolicited HELLO of its own.
+    TransportFeaturePeerInitiatesHello = 1U << 5
 };
 
 struct TransportCapabilities {
@@ -82,6 +85,12 @@ public:
     // callbacks; adapters defer such events until poll(). Runtime uses one
     // bounded transmit buffer and intentionally does not support send reentry.
     virtual Result send(ByteView frame, const SendTarget& target) = 0;
+    // Session transports override this to request physical peer retirement.
+    // Connectionless transports intentionally report unsupported.
+    virtual Result disconnectSession(uint32_t sessionId) {
+        (void)sessionId;
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
     virtual void setReceiver(FrameReceiver receiver, void* context) = 0;
     // Session-aware transports override this. Connectionless transports can
     // keep the default no-op and use sessionId 0.

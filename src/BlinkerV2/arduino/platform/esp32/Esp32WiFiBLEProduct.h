@@ -122,7 +122,8 @@ public:
               random,
               transport_,
               sessions_,
-              BLINKER_BLE_MAX_SESSIONS),
+              BLINKER_BLE_MAX_SESSIONS,
+              security::ControllerAuthTransportPolicy::EstablishDirectSecure),
           grantVerifier_(platform.serverSignatureVerifier()),
           controlCoordinator_(
               deviceInstance,
@@ -328,6 +329,13 @@ public:
         lastError_ = ErrorCode::Ok;
     }
 
+    Result resetAccess() override {
+        Result result = stack_.open();
+        if (result) result = platform_.deviceKeys().eraseAccess();
+        stack_.end();
+        return result;
+    }
+
     ProductLifecycleStatus status() const override {
         if (state_ == Esp32WifiBleProductState::Stopped) {
             return ProductLifecycleStatus();
@@ -349,7 +357,9 @@ public:
 
     ProductCapabilities capabilities() const override {
         return ProductCapabilities(static_cast<uint16_t>(
-            ProductCapabilityCloudData | direct_.capabilities()));
+            ProductCapabilityCloudData |
+            direct_.capabilities() |
+            ProductCapabilityAccessReset));
     }
 
 private:

@@ -72,6 +72,35 @@ public:
         lastError_ = ErrorCode::Ok;
     }
 
+    Result resetAccess() {
+        if (!attached_) {
+            lastError_ = ErrorCode::NotConfigured;
+            return Result::failure(lastError_);
+        }
+        if (!capabilities().supports(ProductCapabilityAccessReset)) {
+            lastError_ = ErrorCode::UnsupportedFeature;
+            return Result::failure(lastError_);
+        }
+
+        const bool restart = started_;
+        if (restart) {
+            lifecycle_.stop();
+            started_ = false;
+        }
+
+        Result result = lifecycle_.resetAccess();
+        if (result && restart) {
+            result = lifecycle_.start();
+            if (result) {
+                started_ = true;
+            } else {
+                lifecycle_.stop();
+            }
+        }
+        lastError_ = result.code();
+        return result;
+    }
+
     ProductStatus status() const {
         const ProductLifecycleStatus lifecycleStatus = lifecycle_.status();
         const ClientStatus clientStatus = device_.status();

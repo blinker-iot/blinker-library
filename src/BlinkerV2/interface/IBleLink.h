@@ -59,6 +59,14 @@ public:
     virtual size_t sessionCount() const = 0;
     virtual Result sessionAt(size_t index, BleSessionInfo& session) const = 0;
     virtual Result sendPacket(uint32_t sessionId, ByteView packet) = 0;
+    // Requests physical retirement of exactly one admitted connection. The
+    // matching disconnected callback remains asynchronous and must still be
+    // emitted once by the Port. Legacy/test links may report unsupported;
+    // official BLE products implement this to bound unauthenticated peers.
+    virtual Result disconnectSession(uint32_t sessionId) {
+        (void)sessionId;
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
     virtual void setPacketReceiver(BlePacketReceiver receiver, void* context) = 0;
     virtual void setSessionHandlers(
         BleSessionHandler connected,

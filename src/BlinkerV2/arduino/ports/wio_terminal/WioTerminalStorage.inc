@@ -534,6 +534,7 @@ Result WioTerminalFlashBlobBank::newest(
         uint32_t candidate = 0U;
         if (!validImage(scratch, candidate)) continue;
         if (valid && candidate == generation) {
+            if (memcmp(image, scratch, kImageSize) == 0) continue;
             return Result::failure(ErrorCode::SequenceConflict);
         }
         if (!valid || candidate > generation) {

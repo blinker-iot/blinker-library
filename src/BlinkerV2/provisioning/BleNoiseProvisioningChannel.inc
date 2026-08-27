@@ -391,6 +391,12 @@ void BleNoiseProvisioningChannel::clearSecureState(bool resetRecord) {
 void BleNoiseProvisioningChannel::failActive(ErrorCode error,
                                              const RxContext& rx) {
     clearSecureState(true);
+    if (rx.sessionId != 0U &&
+        records_.disconnectSession(rx.sessionId, error)) {
+        // Physical retirement also emits the one logical fault through the
+        // record transport. Do not report the same failure twice.
+        return;
+    }
     emitFault(error, rx);
 }
 

@@ -99,6 +99,7 @@ private:
 
     static bool copyNamespace(const char* source, char* destination);
     static size_t maximumSize(BlobId id);
+    static uint8_t legacyId(BlobId id);
     static const char* key(BlobId id, uint8_t slot);
     SlotInfo inspect(
         BlobId id,

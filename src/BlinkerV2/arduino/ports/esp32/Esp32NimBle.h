@@ -12,8 +12,11 @@
 #include <NimBLEDevice.h>
 #include <freertos/FreeRTOS.h>
 
+// BBP/2 BLE v1 fixes the bearer packet at the default ATT payload. Larger
+// packets require an explicit peer negotiation; an MTU change alone is not a
+// protocol agreement and must not change fragmentation on one endpoint.
 #ifndef BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE
-#define BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE 244
+#define BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE 20
 #endif
 
 #ifndef BLINKER_ESP32_NIMBLE_RX_QUEUE_DEPTH
@@ -27,7 +30,7 @@ struct Esp32NimBleLinkConfig {
     const char* serviceUuid;
     const char* receiveUuid;
     const char* transmitUuid;
-    uint16_t preferredMtu;
+    uint32_t sessionReadyTimeoutMillis;
     uint8_t maxRxPacketsPerPoll;
     bool bonding;
 
@@ -36,7 +39,7 @@ struct Esp32NimBleLinkConfig {
           serviceUuid(ble::kServiceUuid),
           receiveUuid(ble::kReceiveUuid),
           transmitUuid(ble::kTransmitUuid),
-          preferredMtu(247),
+          sessionReadyTimeoutMillis(15000U),
           maxRxPacketsPerPoll(4),
           bonding(true) {}
 };
@@ -59,6 +62,7 @@ public:
     size_t sessionCount() const override;
     Result sessionAt(size_t index, BleSessionInfo& session) const override;
     Result sendPacket(uint32_t sessionId, ByteView packet) override;
+    Result disconnectSession(uint32_t sessionId) override;
     void setPacketReceiver(BlePacketReceiver receiver, void* context) override;
     void setSessionHandlers(
         BleSessionHandler connected,
@@ -89,9 +93,6 @@ private:
         NimBLEServer* server,
         NimBLEConnInfo& connection,
         int reason) override;
-    void onMTUChange(
-        uint16_t mtu,
-        NimBLEConnInfo& connection) override;
     void onAuthenticationComplete(
         NimBLEConnInfo& connection) override;
     void onWrite(
@@ -106,7 +107,6 @@ private:
     void drainPackets();
     void clearPacketQueueLocked();
     uint32_t nextSessionId();
-    static uint16_t packetSizeForMtu(uint16_t mtu);
     bool validConfig() const;
 
     Esp32NimBleLinkConfig config_;
@@ -129,17 +129,15 @@ private:
     uint16_t connectionHandle_;
     uint16_t pendingConnectHandle_;
     uint16_t pendingDisconnectHandle_;
-    uint16_t pendingMtuHandle_;
     uint16_t pendingSubscribeHandle_;
     uint16_t pendingSecurityHandle_;
-    uint16_t pendingPacketSize_;
     uint32_t nextSessionId_;
+    uint32_t connectedAtMillis_;
     bool pendingNotifyEnabled_;
     bool pendingEncrypted_;
     bool pendingBonded_;
     bool connectPending_;
     bool disconnectPending_;
-    bool mtuPending_;
     bool subscribePending_;
     bool securityPending_;
     bool sessionAnnounced_;

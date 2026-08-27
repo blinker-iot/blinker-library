@@ -90,6 +90,7 @@ public:
         const SendTarget& target,
         BleRecordWriter writer,
         void* context);
+    Result disconnectSession(uint32_t sessionId, ErrorCode error);
     bool hasSession(uint32_t sessionId) const;
     void failSession(uint32_t sessionId, ErrorCode error);
     void resetSession(uint32_t sessionId);

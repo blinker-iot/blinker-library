@@ -27,6 +27,7 @@ public:
 
     Result send(ByteView frame, const SendTarget& target);
     Result broadcast(ByteView frame);
+    Result disconnectSession(uint8_t transportId, uint32_t sessionId);
 
     void setReceiver(FrameReceiver receiver, void* context);
     void setSessionHandlers(

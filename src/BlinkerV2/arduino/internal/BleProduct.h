@@ -146,7 +146,8 @@ public:
               random,
               direct_,
               authSessions_,
-              BLINKER_BLE_MAX_SESSIONS),
+              BLINKER_BLE_MAX_SESSIONS,
+              security::ControllerAuthTransportPolicy::EstablishDirectSecure),
           lifecycle_(
               ble_,
               provisioning_,
@@ -237,6 +238,11 @@ public:
         radio_.poll(budgetMicros);
     }
     void stop() override { radio_.stop(); }
+    Result resetAccess() override {
+        return initialized_
+                   ? access_.eraseAccess()
+                   : Result::failure(ErrorCode::NotConfigured);
+    }
     ProductLifecycleStatus status() const override {
         ProductLifecycleStatus current = radio_.status();
         if (configurationError_ != ErrorCode::Ok &&
@@ -247,7 +253,9 @@ public:
         return current;
     }
     ProductCapabilities capabilities() const override {
-        return radio_.capabilities();
+        return ProductCapabilities(static_cast<uint16_t>(
+            radio_.capabilities().flags |
+            ProductCapabilityAccessReset));
     }
 
 private:

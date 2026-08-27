@@ -1,5 +1,7 @@
 #include <string.h>
 
+extern T_GAP_DEV_STATE ble_gap_dev_state;
+
 namespace blinker {
 
 inline WioTerminalRpcBleLink::WioTerminalRpcBleLink(
@@ -24,42 +26,18 @@ inline WioTerminalRpcBleLink::WioTerminalRpcBleLink(
       pendingConnectionId_(0xffffU),
       connectionId_(0xffffU),
       nextSessionId_(1U),
+      connectedAtMillis_(0U),
       connectPending_(false),
       disconnectPending_(false),
       sessionAnnounced_(false),
+      gattStarted_(false),
+      advertisingConfigured_(false),
+      advertisingDeadlineAt_(0U),
+      nextAdvertisingAttemptAt_(0U),
       notifySucceeded_(true),
       state_(BleLinkState::Stopped),
       lastError_(ErrorCode::Ok),
       lock_("BlinkerBLE") {}
-
-inline bool WioTerminalRpcBleLink::configureSecurity() const {
-    uint8_t pairable = GAP_PAIRING_MODE_PAIRABLE;
-    uint16_t requirements = config_.bonding
-                                ? GAP_AUTHEN_BIT_BONDING_FLAG
-                                : GAP_AUTHEN_BIT_NONE;
-    uint8_t ioCapability = GAP_IO_CAP_NO_INPUT_NO_OUTPUT;
-    uint8_t securityRequest = 1U;
-    return gap_set_param(
-               GAP_PARAM_BOND_PAIRING_MODE,
-               sizeof(pairable),
-               &pairable) == GAP_CAUSE_SUCCESS &&
-           gap_set_param(
-               GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS,
-               sizeof(requirements),
-               &requirements) == GAP_CAUSE_SUCCESS &&
-           gap_set_param(
-               GAP_PARAM_BOND_IO_CAPABILITIES,
-               sizeof(ioCapability),
-               &ioCapability) == GAP_CAUSE_SUCCESS &&
-           le_bond_set_param(
-               GAP_PARAM_BOND_SEC_REQ_ENABLE,
-               sizeof(securityRequest),
-               &securityRequest) == GAP_CAUSE_SUCCESS &&
-           le_bond_set_param(
-               GAP_PARAM_BOND_SEC_REQ_REQUIREMENT,
-               sizeof(requirements),
-               &requirements) == GAP_CAUSE_SUCCESS;
-}
 
 inline Result WioTerminalRpcBleLink::start() {
     if (state_ != BleLinkState::Stopped) {
@@ -71,24 +49,16 @@ inline Result WioTerminalRpcBleLink::start() {
         return Result::failure(lastError_);
     }
 
-    uint8_t serviceDataBytes[ble::kModeServiceDataSize] = {};
-    ByteView serviceData;
-    Result result = ble::encodeModeServiceData(
-        profile_,
-        MutableByteSpan(serviceDataBytes, sizeof(serviceDataBytes)),
-        serviceData);
-    if (!result) return result;
-
     state_ = BleLinkState::Starting;
     BLEDevice::init(config_.deviceName);
     BLEDevice::setMTU(23U);
-    if (!BLEDevice::getInitialized() || !configureSecurity()) {
+    if (!BLEDevice::getInitialized()) {
         stop();
         lastError_ = ErrorCode::NotConfigured;
         state_ = BleLinkState::Error;
         return Result::failure(lastError_);
     }
-    server_ = BLEDevice::createServer();
+    if (server_ == nullptr) server_ = BLEDevice::createServer();
     if (server_ == nullptr) {
         stop();
         lastError_ = ErrorCode::InternalError;
@@ -96,105 +66,98 @@ inline Result WioTerminalRpcBleLink::start() {
         return Result::failure(lastError_);
     }
     server_->setCallbacks(this);
-    service_ = server_->createService(ble::kServiceUuid);
+    if (service_ == nullptr) {
+        service_ = server_->createService(ble::kServiceUuid);
+    }
     if (service_ == nullptr) {
         stop();
         lastError_ = ErrorCode::InternalError;
         state_ = BleLinkState::Error;
         return Result::failure(lastError_);
     }
-    receive_ = service_->createCharacteristic(
-        ble::kReceiveUuid,
-        BLECharacteristic::PROPERTY_WRITE |
-            BLECharacteristic::PROPERTY_WRITE_NR);
-    transmit_ = service_->createCharacteristic(
-        ble::kTransmitUuid,
-        BLECharacteristic::PROPERTY_READ |
-            BLECharacteristic::PROPERTY_NOTIFY);
+    if (receive_ == nullptr) {
+        receive_ = service_->createCharacteristic(
+            ble::kReceiveUuid,
+            BLECharacteristic::PROPERTY_WRITE |
+                BLECharacteristic::PROPERTY_WRITE_NR);
+    }
+    if (transmit_ == nullptr) {
+        transmit_ = service_->createCharacteristic(
+            ble::kTransmitUuid,
+            BLECharacteristic::PROPERTY_READ |
+                BLECharacteristic::PROPERTY_NOTIFY);
+    }
     if (receive_ == nullptr || transmit_ == nullptr) {
         stop();
         lastError_ = ErrorCode::InternalError;
         state_ = BleLinkState::Error;
         return Result::failure(lastError_);
     }
-    receive_->setAccessPermissions(GATT_PERM_WRITE_ENCRYPTED_REQ);
+    receive_->setAccessPermissions(GATT_PERM_WRITE);
     transmit_->setAccessPermissions(
-        GATT_PERM_READ_ENCRYPTED_REQ |
-        GATT_PERM_NOTIF_IND_ENCRYPTED_REQ);
+        GATT_PERM_READ | GATT_PERM_NOTIF_IND);
     receive_->setCallbacks(this);
     transmit_->setCallbacks(this);
-    notifyDescriptor_ = new BLE2902();
     if (notifyDescriptor_ == nullptr) {
-        stop();
-        lastError_ = ErrorCode::InternalError;
-        state_ = BleLinkState::Error;
-        return Result::failure(lastError_);
+        notifyDescriptor_ = new BLE2902();
+        if (notifyDescriptor_ == nullptr) {
+            stop();
+            lastError_ = ErrorCode::InternalError;
+            state_ = BleLinkState::Error;
+            return Result::failure(lastError_);
+        }
+        transmit_->addDescriptor(notifyDescriptor_);
     }
-    notifyDescriptor_->setAccessPermissions(
-        GATT_PERM_READ_ENCRYPTED_REQ |
-        GATT_PERM_WRITE_ENCRYPTED_REQ);
-    transmit_->addDescriptor(notifyDescriptor_);
-    service_->start();
+    notifyDescriptor_->setAccessPermissions(GATT_PERM_READ | GATT_PERM_WRITE);
+    notifyDescriptor_->setNotifications(false);
+    if (!gattStarted_) {
+        service_->start();
+        gattStarted_ = true;
+    }
 
-    BLEAdvertising* advertising = BLEDevice::getAdvertising();
-    if (advertising == nullptr) {
+    if (BLEDevice::getAdvertising() == nullptr) {
         stop();
         lastError_ = ErrorCode::InternalError;
         state_ = BleLinkState::Error;
         return Result::failure(lastError_);
     }
-    BLEAdvertisementData advertisement;
-    advertisement.setFlags(0x06U);
-    advertisement.setCompleteServices(BLEUUID(ble::kServiceUuid));
-    BLEAdvertisementData scanResponse;
-    scanResponse.setServiceData(
-        BLEUUID(ble::kServiceUuid),
-        std::string(
-            reinterpret_cast<const char*>(serviceData.data),
-            serviceData.size));
-    if (advertisement.getPayload().size() > 31U ||
-        scanResponse.getPayload().size() > 31U) {
-        stop();
-        lastError_ = ErrorCode::CapacityExceeded;
-        state_ = BleLinkState::Error;
-        return Result::failure(lastError_);
-    }
-    advertising->setAdvertisementData(advertisement);
-    advertising->setScanResponseData(scanResponse);
-    advertising->setScanResponse(true);
-    advertising->start();
+    advertisingConfigured_ = false;
+    advertisingDeadlineAt_ = millis() + 5000U;
+    nextAdvertisingAttemptAt_ = 0U;
+    advanceAdvertising();
     lastError_ = ErrorCode::Ok;
-    state_ = BleLinkState::Ready;
     return Result::success();
 }
 
 inline void WioTerminalRpcBleLink::stop() {
     if (BLEDevice::getInitialized()) {
         BLEDevice::stopAdvertising();
-        BLEDevice::deinit();
     }
-    server_ = nullptr;
-    service_ = nullptr;
-    receive_ = nullptr;
-    transmit_ = nullptr;
-    notifyDescriptor_ = nullptr;
     session_ = BleSessionInfo();
     if (lock_.take()) {
         clearPackets();
         pendingConnectionId_ = 0xffffU;
         connectPending_ = false;
         disconnectPending_ = false;
+        if (notifyDescriptor_ != nullptr) {
+            notifyDescriptor_->setNotifications(false);
+        }
         lock_.give();
     }
     connectionId_ = 0xffffU;
+    connectedAtMillis_ = 0U;
     sessionAnnounced_ = false;
+    advertisingConfigured_ = false;
+    advertisingDeadlineAt_ = 0U;
+    nextAdvertisingAttemptAt_ = 0U;
     state_ = BleLinkState::Stopped;
 }
 
 inline void WioTerminalRpcBleLink::poll(uint32_t) {
+    if (state_ == BleLinkState::Starting) advanceAdvertising();
     if (state_ != BleLinkState::Ready) return;
     processConnection();
-    updateSecurity();
+    updateSessionReadiness();
     drainPackets();
 }
 
@@ -216,8 +179,7 @@ inline Result WioTerminalRpcBleLink::sendPacket(
     uint32_t sessionId,
     ByteView packet) {
     if (!sessionAnnounced_ || session_.sessionId != sessionId ||
-        !session_.encrypted || !session_.notifyEnabled ||
-        transmit_ == nullptr) {
+        !session_.notifyEnabled || transmit_ == nullptr) {
         return Result::failure(ErrorCode::NotConnected);
     }
     if (packet.data == nullptr || packet.empty() ||
@@ -231,6 +193,15 @@ inline Result WioTerminalRpcBleLink::sendPacket(
     return notifySucceeded_
                ? Result::success()
                : Result::failure(ErrorCode::WouldBlock);
+}
+
+inline Result WioTerminalRpcBleLink::disconnectSession(uint32_t sessionId) {
+    if (!sessionAnnounced_ || session_.sessionId != sessionId ||
+        server_ == nullptr || connectionId_ == 0xffffU) {
+        return Result::failure(ErrorCode::NotFound);
+    }
+    server_->disconnect(connectionId_);
+    return Result::success();
 }
 
 inline void WioTerminalRpcBleLink::setPacketReceiver(
@@ -271,6 +242,9 @@ inline void WioTerminalRpcBleLink::onDisconnect(BLEServer*) {
     if (!lock_.take()) return;
     disconnectPending_ = true;
     clearPackets();
+    if (notifyDescriptor_ != nullptr) {
+        notifyDescriptor_->setNotifications(false);
+    }
     lock_.give();
 }
 
@@ -303,6 +277,79 @@ inline void WioTerminalRpcBleLink::onStatus(
     }
 }
 
+inline Result WioTerminalRpcBleLink::configureAdvertising() {
+    uint8_t serviceDataBytes[ble::kModeServiceDataSize] = {};
+    ByteView serviceData;
+    Result result = ble::encodeModeServiceData(
+        profile_,
+        MutableByteSpan(serviceDataBytes, sizeof(serviceDataBytes)),
+        serviceData);
+    if (!result) return result;
+
+    BLEAdvertising* advertising = BLEDevice::getAdvertising();
+    if (advertising == nullptr) {
+        return Result::failure(ErrorCode::InternalError);
+    }
+    BLEAdvertisementData advertisement;
+    advertisement.setFlags(0x06U);
+    advertisement.setCompleteServices(BLEUUID(ble::kServiceUuid));
+    BLEAdvertisementData scanResponse;
+    scanResponse.setServiceData(
+        BLEUUID(ble::kServiceUuid),
+        std::string(
+            reinterpret_cast<const char*>(serviceData.data),
+            serviceData.size));
+    if (advertisement.getPayload().size() > 31U ||
+        scanResponse.getPayload().size() > 31U) {
+        return Result::failure(ErrorCode::CapacityExceeded);
+    }
+    advertising->setAdvertisementData(advertisement);
+    advertising->setScanResponseData(scanResponse);
+    advertising->setScanResponse(true);
+    advertising->start();
+    return Result::success();
+}
+
+inline void WioTerminalRpcBleLink::advanceAdvertising() {
+    if (state_ != BleLinkState::Starting) return;
+    const uint32_t now = millis();
+    if (static_cast<int32_t>(now - advertisingDeadlineAt_) >= 0) {
+        lastError_ = ErrorCode::NotConnected;
+        state_ = BleLinkState::Error;
+        return;
+    }
+
+    if (!advertisingConfigured_) {
+        if (::ble_gap_dev_state.gap_adv_state != GAP_ADV_STATE_IDLE) {
+            if (static_cast<int32_t>(now - nextAdvertisingAttemptAt_) >= 0) {
+                le_adv_stop();
+                nextAdvertisingAttemptAt_ = now + 50U;
+            }
+            return;
+        }
+        const Result result = configureAdvertising();
+        if (!result) {
+            lastError_ = result.code();
+            state_ = BleLinkState::Error;
+            return;
+        }
+        advertisingConfigured_ = true;
+        nextAdvertisingAttemptAt_ = now + 50U;
+        return;
+    }
+
+    if (::ble_gap_dev_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING) {
+        lastError_ = ErrorCode::Ok;
+        state_ = BleLinkState::Ready;
+        return;
+    }
+    if (::ble_gap_dev_state.gap_adv_state == GAP_ADV_STATE_IDLE &&
+        static_cast<int32_t>(now - nextAdvertisingAttemptAt_) >= 0) {
+        le_adv_start();
+        nextAdvertisingAttemptAt_ = now + 100U;
+    }
+}
+
 inline void WioTerminalRpcBleLink::processConnection() {
     bool connect = false;
     bool disconnect = false;
@@ -315,14 +362,16 @@ inline void WioTerminalRpcBleLink::processConnection() {
         disconnectPending_ = false;
         lock_.give();
     }
-    if (disconnect && session_.connected) {
+    if (disconnect) {
         const BleSessionInfo old = session_;
+        const bool announced = sessionAnnounced_;
         session_ = BleSessionInfo();
         connectionId_ = 0xffffU;
-        if (sessionAnnounced_ && disconnectedHandler_ != nullptr) {
+        connectedAtMillis_ = 0U;
+        sessionAnnounced_ = false;
+        if (announced && disconnectedHandler_ != nullptr) {
             disconnectedHandler_(sessionContext_, old);
         }
-        sessionAnnounced_ = false;
     }
     if (connect && !disconnect && !session_.connected &&
         pendingId != 0xffffU) {
@@ -331,28 +380,32 @@ inline void WioTerminalRpcBleLink::processConnection() {
         session_.sessionId = nextSessionId();
         session_.maxPacketSize = maximumPacketSize;
         session_.connected = true;
+        connectedAtMillis_ = millis();
     }
 }
 
-inline void WioTerminalRpcBleLink::updateSecurity() {
+inline void WioTerminalRpcBleLink::updateSessionReadiness() {
     if (!session_.connected || connectionId_ == 0xffffU) return;
-    T_GAP_SEC_LEVEL level = GAP_SEC_LEVEL_NO;
-    const bool encrypted = le_bond_get_sec_level(
-                               static_cast<uint8_t>(connectionId_),
-                               &level) == GAP_CAUSE_SUCCESS &&
-                           level != GAP_SEC_LEVEL_NO;
-    session_.encrypted = encrypted;
-    // rpcBLE exposes the exact encrypted level but not an exact persisted-key
-    // query for the active peer. ControllerCredential authentication is the
-    // durable identity, so do not invent a bonded=true platform fact.
+    // RTL8720DN firmware 2.1.3 cannot restore Android RPA bonds reliably.
+    // Keep the native link unpaired and report its facts exactly. Enrollment
+    // is protected by Noise; normal traffic becomes AES-GCM DirectSecure
+    // immediately after Method 2 controller authentication.
+    const bool ready = notifyDescriptor_ != nullptr &&
+                       notifyDescriptor_->getNotifications();
+    session_.encrypted = false;
     session_.bonded = false;
-    session_.notifyEnabled = encrypted && notifyDescriptor_ != nullptr &&
-                             notifyDescriptor_->getNotifications();
-    if (sessionAnnounced_ && !encrypted) {
+    session_.notifyEnabled = ready;
+    if (!sessionAnnounced_ && !ready &&
+        static_cast<uint32_t>(millis() - connectedAtMillis_) >=
+            config_.sessionReadyTimeoutMillis) {
         if (server_ != nullptr) server_->disconnect(connectionId_);
         return;
     }
-    if (!sessionAnnounced_ && encrypted && session_.notifyEnabled) {
+    if (sessionAnnounced_ && !ready) {
+        if (server_ != nullptr) server_->disconnect(connectionId_);
+        return;
+    }
+    if (!sessionAnnounced_ && ready) {
         sessionAnnounced_ = true;
         if (connectedHandler_ != nullptr) {
             connectedHandler_(sessionContext_, session_);
@@ -361,6 +414,8 @@ inline void WioTerminalRpcBleLink::updateSecurity() {
 }
 
 inline void WioTerminalRpcBleLink::drainPackets() {
+    if (!sessionAnnounced_ || packetReceiver_ == nullptr) return;
+
     uint8_t delivered = 0U;
     while (delivered < config_.maxRxPacketsPerPoll) {
         QueuedPacket packet;
@@ -378,12 +433,10 @@ inline void WioTerminalRpcBleLink::drainPackets() {
         }
         if (!available) return;
         ++delivered;
-        if (sessionAnnounced_ && packetReceiver_ != nullptr) {
-            packetReceiver_(
-                packetContext_,
-                session_,
-                ByteView(packet.data, packet.size));
-        }
+        packetReceiver_(
+            packetContext_,
+            session_,
+            ByteView(packet.data, packet.size));
     }
 }
 
@@ -402,6 +455,7 @@ inline uint32_t WioTerminalRpcBleLink::nextSessionId() {
 
 inline bool WioTerminalRpcBleLink::validConfig() const {
     return config_.deviceName != nullptr && config_.deviceName[0] != '\0' &&
+           config_.sessionReadyTimeoutMillis != 0U &&
            config_.maxRxPacketsPerPoll != 0U;
 }
 

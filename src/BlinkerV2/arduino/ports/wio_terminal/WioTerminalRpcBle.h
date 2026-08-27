@@ -5,6 +5,7 @@
 #error "WioTerminalRpcBle requires a Wio Terminal target"
 #endif
 
+#include <Arduino.h>
 #include <BlinkerV2/interface/IBleModeLink.h>
 #include <BlinkerV2/protocol/ble/Fragment.h>
 #include <BlinkerV2/protocol/ble/Gatt.h>
@@ -16,13 +17,13 @@ namespace blinker {
 
 struct WioTerminalRpcBleConfig {
     const char* deviceName;
+    uint32_t sessionReadyTimeoutMillis;
     uint8_t maxRxPacketsPerPoll;
-    bool bonding;
 
     WioTerminalRpcBleConfig()
         : deviceName("BlinkerV2"),
-          maxRxPacketsPerPoll(4U),
-          bonding(true) {}
+          sessionReadyTimeoutMillis(15000U),
+          maxRxPacketsPerPoll(4U) {}
 };
 
 class WioTerminalRpcBleLink final : public IBleModeLink,
@@ -43,6 +44,7 @@ public:
     size_t sessionCount() const override;
     Result sessionAt(size_t index, BleSessionInfo& session) const override;
     Result sendPacket(uint32_t sessionId, ByteView packet) override;
+    Result disconnectSession(uint32_t sessionId) override;
     void setPacketReceiver(BlePacketReceiver receiver, void* context) override;
     void setSessionHandlers(
         BleSessionHandler connected,
@@ -66,9 +68,10 @@ private:
         BLECharacteristic* characteristic,
         Status status,
         uint32_t code) override;
-    bool configureSecurity() const;
+    Result configureAdvertising();
+    void advanceAdvertising();
     void processConnection();
-    void updateSecurity();
+    void updateSessionReadiness();
     void drainPackets();
     void clearPackets();
     uint32_t nextSessionId();
@@ -94,9 +97,14 @@ private:
     uint16_t pendingConnectionId_;
     uint16_t connectionId_;
     uint32_t nextSessionId_;
+    uint32_t connectedAtMillis_;
     bool connectPending_;
     bool disconnectPending_;
     bool sessionAnnounced_;
+    bool gattStarted_;
+    bool advertisingConfigured_;
+    uint32_t advertisingDeadlineAt_;
+    uint32_t nextAdvertisingAttemptAt_;
     volatile bool notifySucceeded_;
     BleLinkState state_;
     ErrorCode lastError_;

@@ -20,7 +20,8 @@ enum ProductCapability : uint16_t {
     ProductCapabilityNone = 0U,
     ProductCapabilityCloudData = 1U << 0,
     ProductCapabilityDirectBleData = 1U << 1,
-    ProductCapabilityBleSetup = 1U << 2
+    ProductCapabilityBleSetup = 1U << 2,
+    ProductCapabilityAccessReset = 1U << 3
 };
 
 struct ProductCapabilities {
@@ -57,6 +58,12 @@ public:
     virtual Result start() = 0;
     virtual void poll(uint32_t totalBudgetMicros) = 0;
     virtual void stop() = 0;
+    // Clears the durable cloud/direct access root while preserving physical
+    // transport configuration such as WiFi credentials and BLE bonds.
+    // Product stops active sessions before calling this method.
+    virtual Result resetAccess() {
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
     virtual ProductLifecycleStatus status() const = 0;
     virtual ProductCapabilities capabilities() const = 0;
 };

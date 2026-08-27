@@ -1273,6 +1273,8 @@ bool routableMessageKind(uint8_t kind) {
         case MessageKind::TelemetryControl:
         case MessageKind::TelemetryStatus:
         case MessageKind::TelemetryData:
+        case MessageKind::PresenceControl:
+        case MessageKind::Presence:
             return true;
         default:
             return false;

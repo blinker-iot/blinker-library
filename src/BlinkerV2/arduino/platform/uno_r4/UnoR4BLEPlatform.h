@@ -3,7 +3,6 @@
 
 #include "../../ports/arduino/ArduinoBleLink.h"
 #include "../../ports/arduino/PortableCrypto.h"
-#include "../../ports/uno_r4/UnoR4BleSecurity.h"
 #include "../../ports/uno_r4/UnoR4Storage.h"
 
 #include <BlinkerV2/security/Ed25519ServerKeyRingVerifier.h>
@@ -23,9 +22,13 @@ namespace blinker {
 namespace integration {
 namespace official_detail {
 
-inline ArduinoBleLinkConfig renesasEncryptedBleConfig() {
+inline ArduinoBleLinkConfig renesasBleConfig() {
     ArduinoBleLinkConfig config;
-    config.requireEncryption = true;
+    // ArduinoBLE 2.0.2 Secure Connections pairing fails interoperability
+    // with Android during DHKey Check. BBP/2 does not depend on that optional
+    // link layer: enrollment is protected by Noise NN and active sessions by
+    // Method 2 plus DirectSecureRecord.
+    config.requireEncryption = false;
     return config;
 }
 
@@ -34,14 +37,12 @@ public:
     enum : size_t { maximumPacketSize = 20U };
 
     RenesasUnoBleRadio()
-        : security_(),
-          link_(security_, renesasEncryptedBleConfig()) {}
+        : link_(renesasBleConfig()) {}
 
     ArduinoBleLink& link() { return link_; }
     void stop() { link_.stop(); }
 
 private:
-    RenesasUnoBleSecuritySource security_;
     ArduinoBleLink link_;
 };
 

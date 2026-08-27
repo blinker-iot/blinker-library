@@ -33,6 +33,11 @@ enum class ControllerAuthProofRole : uint8_t {
     App = 2U
 };
 
+enum class ControllerAuthTransportPolicy : uint8_t {
+    RequireEncrypted = 0U,
+    EstablishDirectSecure = 1U
+};
+
 struct ControllerAuthSession {
     uint32_t sessionId;
     uint32_t ownershipGeneration;
@@ -73,7 +78,9 @@ public:
         IRandom& random,
         IDirectSecureSessionController& directSessions,
         ControllerAuthSession* sessions,
-        size_t sessionCapacity);
+        size_t sessionCapacity,
+        ControllerAuthTransportPolicy transportPolicy =
+            ControllerAuthTransportPolicy::RequireEncrypted);
     ~ControllerHmacSha256Authorizer() override;
     ControllerHmacSha256Authorizer(
         const ControllerHmacSha256Authorizer&) = delete;
@@ -82,6 +89,7 @@ public:
 
     size_t methodCount() const override;
     uint16_t methodAt(size_t index) const override;
+    bool establishesSecureTransport() const override;
     Result authorize(
         uint16_t method,
         ByteView requestPayload,
@@ -117,6 +125,7 @@ private:
     IDirectSecureSessionController& directSessions_;
     ControllerAuthSession* sessions_;
     size_t sessionCapacity_;
+    ControllerAuthTransportPolicy transportPolicy_;
     uint8_t response_[kControllerAuthChallengePayloadSize];
 };
 

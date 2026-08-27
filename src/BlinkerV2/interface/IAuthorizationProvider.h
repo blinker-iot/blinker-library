@@ -40,6 +40,10 @@ public:
 
     virtual size_t methodCount() const = 0;
     virtual uint16_t methodAt(size_t index) const = 0;
+    // True only when successful authorization atomically prepares an
+    // authenticated, encrypted data plane before queued auth success can be
+    // observed by the peer. Runtime remains fail-closed by default.
+    virtual bool establishesSecureTransport() const { return false; }
 
     // decision.responsePayload is allowed only with Continue and must
     // reference provider-owned storage until the enclosing receive call

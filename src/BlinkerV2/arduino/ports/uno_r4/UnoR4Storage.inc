@@ -108,6 +108,24 @@ size_t RenesasUnoPreferencesBlobBank::maximumSize(BlobId id) {
     }
 }
 
+uint8_t RenesasUnoPreferencesBlobBank::legacyId(BlobId id) {
+    // Before the storage graph was compacted, these same keys used IDs
+    // 1, 2, 3 and 6. Accept their intact journal envelopes so a library
+    // upgrade preserves WiFi credentials and the physical device identity.
+    switch (id) {
+    case BlobWifiSelector:
+        return 1U;
+    case BlobWifiSlot0:
+        return 2U;
+    case BlobWifiSlot1:
+        return 3U;
+    case BlobDeviceInstance:
+        return 6U;
+    default:
+        return 0xFFU;
+    }
+}
+
 const char* RenesasUnoPreferencesBlobBank::key(
     BlobId id,
     uint8_t slot) {
@@ -157,9 +175,11 @@ RenesasUnoPreferencesBlobBank::inspect(
 
     const uint16_t payloadSize = readU16(scratch + 12U);
     const uint8_t state = scratch[6];
+    const uint8_t storedId = scratch[5];
     if (memcmp(scratch, kMagic, sizeof(kMagic)) != 0 ||
         scratch[4] != kSchemaVersion ||
-        scratch[5] != static_cast<uint8_t>(id) || scratch[7] != 0U ||
+        (storedId != static_cast<uint8_t>(id) &&
+         storedId != legacyId(id)) || scratch[7] != 0U ||
         scratch[14] != 0U || scratch[15] != 0U ||
         readU32(scratch + 8U) == 0U ||
         payloadSize > maximumSize(id) ||

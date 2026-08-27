@@ -34,6 +34,9 @@ enum class MessageKind : uint8_t {
     TelemetryControl = 0x17,
     TelemetryStatus = 0x18,
     TelemetryData = 0x19,
+    // Broker/App account metadata. Device runtimes do not advertise or store it.
+    PresenceControl = 0x1A,
+    Presence = 0x1B,
     HistoryRequest = 0x20,
     HistoryBatch = 0x21,
     ControllerControlOpen = 0x30,

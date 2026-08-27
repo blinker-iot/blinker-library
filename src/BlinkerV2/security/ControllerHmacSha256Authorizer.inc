@@ -154,12 +154,14 @@ ControllerHmacSha256Authorizer::ControllerHmacSha256Authorizer(
     IRandom& random,
     IDirectSecureSessionController& directSessions,
     ControllerAuthSession* sessions,
-    size_t sessionCapacity)
+    size_t sessionCapacity,
+    ControllerAuthTransportPolicy transportPolicy)
     : credentials_(credentials),
       random_(random),
       directSessions_(directSessions),
       sessions_(sessions),
       sessionCapacity_(sessionCapacity),
+      transportPolicy_(transportPolicy),
       response_() {
     resetSessions();
 }
@@ -176,6 +178,11 @@ uint16_t ControllerHmacSha256Authorizer::methodAt(size_t index) const {
     return methodCount() != 0U && index == 0U
                ? kControllerHmacSha256Method
                : 0U;
+}
+
+bool ControllerHmacSha256Authorizer::establishesSecureTransport() const {
+    return transportPolicy_ ==
+           ControllerAuthTransportPolicy::EstablishDirectSecure;
 }
 
 Result ControllerHmacSha256Authorizer::loadCredential(
@@ -249,7 +256,9 @@ Result ControllerHmacSha256Authorizer::authorize(
     if (method != kControllerHmacSha256Method) {
         return Result::failure(ErrorCode::UnsupportedFeature);
     }
-    if (!session.encrypted || session.sessionId == 0U) {
+    if (session.sessionId == 0U ||
+        (!session.encrypted &&
+         transportPolicy_ == ControllerAuthTransportPolicy::RequireEncrypted)) {
         return Result::failure(ErrorCode::AuthenticationRequired);
     }
     if (requestPayload.data == nullptr || requestPayload.empty()) {
