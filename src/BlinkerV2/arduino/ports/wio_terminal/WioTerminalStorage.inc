@@ -475,24 +475,50 @@ bool WioTerminalFlashBlobBank::validImage(
     generation = readU32(image + 8U);
     const uint32_t expected = readU32(image + 12U);
     writeU32(image + 12U, 0U);
-    const uint32_t actual = computeCrc32(ByteView(image, kImageSize));
+    const uint32_t currentCrc = computeCrc32(ByteView(image, kImageSize));
+    const uint32_t previousCrc = computeCrc32(
+        ByteView(image, kPreviousImageSize));
+    const uint32_t legacyCrc = computeCrc32(
+        ByteView(image, kLegacyImageSize));
     writeU32(image + 12U, expected);
+    const bool previous =
+        expected != currentCrc && expected == previousCrc;
+    const bool legacy =
+        expected != currentCrc && !previous && expected == legacyCrc;
     if (memcmp(image, magic, sizeof(magic)) != 0 || image[4] != 2U ||
         image[5] != 0U || image[6] != 0U || image[7] != 0U ||
-        generation == 0U || expected != actual) {
+        generation == 0U ||
+        (expected != currentCrc && !previous && !legacy)) {
         return false;
     }
     for (uint8_t current = 0U; current < BlobCount; ++current) {
         const uint8_t* item = entry(image, static_cast<BlobId>(current));
         const uint8_t state = item[0];
         const uint16_t size = readU16(item + 2U);
+        const size_t limit =
+            legacy && current == BlobDeviceAccess
+                ? DeviceAccessStore::legacySerializedSize
+                : (previous && current == BlobDeviceAccess
+                       ? DeviceAccessStore::previousSerializedSize
+                       : maximumSize(static_cast<BlobId>(current)));
         if (item[1] != 0U ||
-            size > maximumSize(static_cast<BlobId>(current)) ||
+            size > limit ||
             (state == 0U && size != 0U) ||
             (state == 1U && size == 0U) ||
             (state == 2U && size != 0U) || state > 2U) {
             return false;
         }
+    }
+    if (legacy || previous) {
+        // Normalize erased bytes beyond the old image before comparing slots
+        // or writing the next current-format snapshot.
+        const size_t oldImageSize = legacy
+            ? kLegacyImageSize
+            : kPreviousImageSize;
+        memset(
+            image + oldImageSize,
+            0,
+            kImageSize - oldImageSize);
     }
     return true;
 }

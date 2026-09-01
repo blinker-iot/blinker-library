@@ -2,6 +2,7 @@
 #define BLINKER_RUNTIME_BLESETUPLIFECYCLE_H
 
 #include "BleSetupCompletion.h"
+#include "BleDirectProfile.h"
 #include "../core/SecureMemory.h"
 #include "../interface/IRandom.h"
 #include "../transport/BleModeCoordinator.h"
@@ -27,18 +28,19 @@ public:
         ProvisioningEndpoint& provisioning,
         IBleSetupCompletion& completion,
         IRandom& random,
-        const BleSetupLifecycleConfig& config = BleSetupLifecycleConfig())
+        const BleSetupLifecycleConfig& config = BleSetupLifecycleConfig(),
+        BleDirectProfileProvider* directProfiles = nullptr)
         : ble_(ble), provisioning_(provisioning), completion_(completion),
           random_(random), observedRequests_(0U),
           acceptsWifiConfig_(config.acceptsWifiConfig),
           useProvisioningPsk_(config.useProvisioningPsk),
-          setupComplete_(false) {}
+          setupComplete_(false), directProfiles_(directProfiles) {}
 
-    Result start(bool allowDirect) {
+    Result start(bool allowDirect, uint32_t directSessionRevision = 0U) {
         Result result = refresh();
         ble::ModeProfile profile;
         if (result && setupComplete_ && allowDirect) {
-            profile = ble::makeDirectModeProfile();
+            result = makeDirectProfile(directSessionRevision, profile);
         } else if (result) {
             result = makeProvisioningProfile(profile);
         }
@@ -53,7 +55,10 @@ public:
         return Result::success();
     }
 
-    Result poll(bool allowDirect, uint32_t budgetMicros) {
+    Result poll(
+        bool allowDirect,
+        uint32_t budgetMicros,
+        uint32_t directSessionRevision = 0U) {
         ble_.poll(budgetMicros);
         if (ble_.state() == BleModeCoordinatorState::Error) {
             const ErrorCode error = ble_.lastTransitionError();
@@ -71,11 +76,23 @@ public:
 
             if (setupComplete_ && allowDirect &&
                 provisioning_.activeSessionId() == 0U) {
-                return ble_.switchTo(ble::makeDirectModeProfile());
+                ble::ModeProfile profile;
+                Result result = makeDirectProfile(
+                    directSessionRevision, profile);
+                return result ? ble_.switchTo(profile) : result;
             }
             if (provisioning_.recoveryRequired()) {
                 return ble_.restartActive();
             }
+        }
+        if (ble_.activeMode() == ble::ApplicationMode::Direct &&
+            directProfiles_ != nullptr &&
+            directProfiles_->refreshDue(
+                ble_.sessionCount(), directSessionRevision)) {
+            ble::ModeProfile profile;
+            Result result = directProfiles_->make(
+                directSessionRevision, profile);
+            return result ? ble_.switchTo(profile) : result;
         }
         return Result::success();
     }
@@ -84,6 +101,7 @@ public:
         ble_.stop();
         observedRequests_ = 0U;
         setupComplete_ = false;
+        if (directProfiles_ != nullptr) directProfiles_->reset();
     }
 
     bool setupComplete() const { return setupComplete_; }
@@ -121,6 +139,16 @@ private:
         return result;
     }
 
+    Result makeDirectProfile(
+        uint32_t sessionRevision,
+        ble::ModeProfile& profile) {
+        if (directProfiles_ == nullptr) {
+            profile = ble::makeDirectModeProfile();
+            return Result::success();
+        }
+        return directProfiles_->make(sessionRevision, profile);
+    }
+
     BleModeCoordinator& ble_;
     ProvisioningEndpoint& provisioning_;
     IBleSetupCompletion& completion_;
@@ -129,6 +157,7 @@ private:
     uint8_t acceptsWifiConfig_ : 1;
     uint8_t useProvisioningPsk_ : 1;
     uint8_t setupComplete_ : 1;
+    BleDirectProfileProvider* directProfiles_;
 };
 
 } // namespace blinker

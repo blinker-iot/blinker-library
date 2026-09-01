@@ -62,12 +62,25 @@ private:
             DeviceInstanceIdStore::serializedSize +
             WifiCredentialStore::serializedSelectorSize +
             WifiCredentialStore::serializedProfileSize * 2U +
-            DeviceAccessStore::serializedSize
+            DeviceAccessStore::serializedSize,
+        kLegacyImageSize =
+            kImageSize - DeviceAccessStore::serializedSize +
+            DeviceAccessStore::legacySerializedSize,
+        kPreviousImageSize =
+            kImageSize - DeviceAccessStore::serializedSize +
+            DeviceAccessStore::previousSerializedSize
     };
 
     static_assert(
         kImageSize <= kEraseBlockSize,
         "Wio Terminal Device V2 snapshot exceeds one QSPI sector");
+    static_assert(
+        kLegacyImageSize < kImageSize,
+        "Device access v3 must grow the Wio snapshot");
+    static_assert(
+        kLegacyImageSize < kPreviousImageSize &&
+            kPreviousImageSize < kImageSize,
+        "Wio Device access image sizes must remain ordered");
 
     static size_t maximumSize(BlobId id);
     static size_t entryOffset(BlobId id);

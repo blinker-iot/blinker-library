@@ -25,8 +25,10 @@ public:
         IFrameTransport& directBle,
         IAuthorizationProvider& directAuthorization,
         IRandom& random,
-        const BleSetupLifecycleConfig& config = BleSetupLifecycleConfig())
-        : bleSetup_(ble, provisioning, completion, random, config),
+        const BleSetupLifecycleConfig& config = BleSetupLifecycleConfig(),
+        BleDirectProfileProvider* directProfiles = nullptr)
+        : bleSetup_(
+              ble, provisioning, completion, random, config, directProfiles),
           directBle_(directBle),
           directAuthorization_(directAuthorization), client_(nullptr),
           state_(BleOnlyLifecycleState::Stopped),
@@ -61,7 +63,9 @@ public:
             return Result::failure(ErrorCode::NotConfigured);
         }
         Result result = client_->begin();
-        if (result) result = bleSetup_.start(true);
+        if (result) {
+            result = bleSetup_.start(true, directBle_.sessionRevision());
+        }
         if (!result) {
             bleSetup_.stop();
             client_->end();
@@ -79,7 +83,8 @@ public:
             return;
         }
         const uint32_t bleBudget = totalBudgetMicros / 2U;
-        Result result = bleSetup_.poll(true, bleBudget);
+        Result result = bleSetup_.poll(
+            true, bleBudget, directBle_.sessionRevision());
         if (!result) {
             enterFault(result.code());
             return;

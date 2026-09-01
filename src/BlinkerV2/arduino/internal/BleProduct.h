@@ -12,6 +12,8 @@
 #include <BlinkerV2/provisioning/BleNoiseProvisioningChannel.h>
 #include <BlinkerV2/provisioning/BleLocalProvisioningEndpoint.h>
 #include <BlinkerV2/provisioning/BleNoiseModePreparation.h>
+#include <BlinkerV2/provisioning/ControllerControlCoordinator.h>
+#include <BlinkerV2/provisioning/ControllerControlEndpoint.h>
 #include <BlinkerV2/runtime/BleOnlyLifecycle.h>
 #include <BlinkerV2/security/ControllerHmacSha256Authorizer.h>
 #include <BlinkerV2/transport/BleFrameTransport.h>
@@ -106,7 +108,9 @@ public:
         ArduinoClock& clock,
         PlatformHardwareRandom& random,
         Application& application,
-        IControllerCredentialSource& controllers,
+        const DeviceInstanceId& deviceInstance,
+        IDeviceAccessStore& access,
+        ControllerGrantVerifier& grantVerifier,
         IBleSetupCompletion& completion,
         const BleSetupLifecycleConfig& config)
         : workspace_(),
@@ -142,12 +146,27 @@ public:
               &modePreparation_),
           authSessions_(),
           directAuthorization_(
-              controllers,
+              access,
               random,
               direct_,
               authSessions_,
               BLINKER_BLE_MAX_SESSIONS,
               security::ControllerAuthTransportPolicy::EstablishDirectSecure),
+          controlCoordinator_(
+              deviceInstance,
+              access,
+              access,
+              grantVerifier,
+              &access),
+          controlEndpoint_(
+              controlCoordinator_,
+              random,
+              workspace_.operation()),
+          directProfile_(
+              deviceInstance,
+              access,
+              random,
+              clock),
           lifecycle_(
               ble_,
               provisioning_,
@@ -155,9 +174,33 @@ public:
               direct_,
               directAuthorization_,
               random,
-              config) {}
+              config,
+              &directProfile_),
+          client_(nullptr) {}
 
-    Result attach(Client& client) { return lifecycle_.attach(client); }
+    ~BleOnlyRadio() {
+        lifecycle_.stop();
+        if (client_ != nullptr) {
+            (void)client_->setControllerControlEndpoint(nullptr);
+        }
+    }
+
+    Result attach(Client& client) {
+        if (client_ != nullptr) {
+            return client_ == &client
+                       ? Result::success()
+                       : Result::failure(ErrorCode::AlreadyExists);
+        }
+        Result result = client.setControllerControlEndpoint(
+            &controlEndpoint_);
+        if (result) result = lifecycle_.attach(client);
+        if (!result) {
+            (void)client.setControllerControlEndpoint(nullptr);
+            return result;
+        }
+        client_ = &client;
+        return Result::success();
+    }
     Result start() { return lifecycle_.start(); }
     void poll(uint32_t budgetMicros) { lifecycle_.poll(budgetMicros); }
     void stop() { lifecycle_.stop(); }
@@ -179,7 +222,11 @@ private:
     security::ControllerAuthSession
         authSessions_[BLINKER_BLE_MAX_SESSIONS];
     security::ControllerHmacSha256Authorizer directAuthorization_;
+    ControllerControlCoordinator controlCoordinator_;
+    ControllerControlEndpoint controlEndpoint_;
+    BleDirectProfileProvider directProfile_;
     BleOnlyLifecycle lifecycle_;
+    Client* client_;
 };
 
 template <typename Platform>
@@ -194,6 +241,7 @@ public:
           access_(platform_.deviceAccessBlob()),
           setupCompletion_(access_),
           grantVerifier_(platform_.serverSignatureVerifier()),
+          controllerGrantVerifier_(platform_.serverSignatureVerifier()),
           enrollment_(
               deviceInstance_,
               random_,
@@ -206,7 +254,9 @@ public:
               clock_,
               random_,
               enrollment_,
+              deviceInstance_,
               access_,
+              controllerGrantVerifier_,
               setupCompletion_,
               platformBleSetupConfig()),
           initialized_(false),
@@ -286,6 +336,7 @@ private:
     DeviceAccessStore access_;
     DeviceAccessSetupCompletion setupCompletion_;
     BleEnrollmentGrantVerifier grantVerifier_;
+    ControllerGrantVerifier controllerGrantVerifier_;
     BleEnrollmentApplication enrollment_;
     BleOnlyRadio<
         Platform,

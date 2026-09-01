@@ -81,14 +81,16 @@ Result ControllerCredentialTable::decode(
     ByteView slots,
     size_t count) {
     clear();
-    if (slots.data == nullptr || slots.size != encodedSize ||
-        count > capacity) {
+    const size_t slotCapacity = slots.size / slotSize;
+    if (slots.data == nullptr || slots.size == 0U ||
+        slots.size % slotSize != 0U || slotCapacity > capacity ||
+        count > slotCapacity) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
-    for (size_t index = 0U; index < capacity; ++index) {
+    for (size_t index = 0U; index < slotCapacity; ++index) {
         const uint8_t* slot = slots.data + index * slotSize;
         if (index >= count) {
-        if (!credentialTableAllZero(ByteView(slot, slotSize))) {
+            if (!credentialTableAllZero(ByteView(slot, slotSize))) {
                 clear();
                 return Result::failure(ErrorCode::InvalidEncoding);
             }
@@ -103,9 +105,9 @@ Result ControllerCredentialTable::decode(
             static_cast<ControllerCredentialSuite>(slot[1]);
         credential.domain =
             static_cast<ControllerCredentialDomain>(slot[2]);
-    credential.ownershipGeneration = credentialTableReadU32(slot + 4U);
-    credential.credentialVersion = credentialTableReadU32(slot + 8U);
-    credential.permissions = credentialTableReadU32(slot + 12U);
+        credential.ownershipGeneration = credentialTableReadU32(slot + 4U);
+        credential.credentialVersion = credentialTableReadU32(slot + 8U);
+        credential.permissions = credentialTableReadU32(slot + 12U);
         memcpy(credential.controllerId, slot + 16U, kControllerIdSize);
         memcpy(
             credential.secret,
@@ -139,9 +141,9 @@ Result ControllerCredentialTable::encode(
         slot[0] = kActiveState;
         slot[1] = static_cast<uint8_t>(credential.suite);
         slot[2] = static_cast<uint8_t>(credential.domain);
-    credentialTableWriteU32(slot + 4U, credential.ownershipGeneration);
-    credentialTableWriteU32(slot + 8U, credential.credentialVersion);
-    credentialTableWriteU32(slot + 12U, credential.permissions);
+        credentialTableWriteU32(slot + 4U, credential.ownershipGeneration);
+        credentialTableWriteU32(slot + 8U, credential.credentialVersion);
+        credentialTableWriteU32(slot + 12U, credential.permissions);
         memcpy(slot + 16U, credential.controllerId, kControllerIdSize);
         memcpy(
             slot + 32U,

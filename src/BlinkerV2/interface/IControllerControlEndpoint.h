@@ -7,9 +7,9 @@
 
 namespace blinker {
 
-// Runtime-facing seam for the BBP/2 Controller control family. Runtime owns
-// frame validation and authorization; the endpoint owns nonce/session state
-// and applies the already-defined durable controller mutation contract.
+// Runtime-facing seam for authenticated direct-access management. Runtime
+// owns frame validation and authorization; implementations apply controller
+// grants and, when supported, strict-CAS PresenceKey mutations.
 class IControllerControlEndpoint {
 public:
     virtual ~IControllerControlEndpoint() {}
@@ -23,6 +23,18 @@ public:
         ByteView controllerSecret,
         MutableByteSpan output,
         ByteView& receipt) = 0;
+    virtual bool supportsPresenceKeyControl() const { return false; }
+    virtual Result applyPresenceKeyMutation(
+        const RxContext& rx,
+        ByteView encodedMutation,
+        MutableByteSpan output,
+        ByteView& receipt) {
+        (void)rx;
+        (void)encodedMutation;
+        (void)output;
+        receipt = ByteView();
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
     virtual void controllerSessionClosed(const RxContext& rx) = 0;
 };
 

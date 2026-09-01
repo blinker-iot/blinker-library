@@ -301,8 +301,12 @@ Result DeviceRuntime::start() {
             return Result::failure(ErrorCode::NotConfigured);
         }
         config_.protocolFeatures |= bbp2::FeatureControllerControl;
+        if (controllerControlEndpoint_->supportsPresenceKeyControl()) {
+            config_.protocolFeatures |= bbp2::FeaturePresenceKeyControl;
+        }
     } else if ((config_.protocolFeatures &
-                bbp2::FeatureControllerControl) != 0U) {
+                (bbp2::FeatureControllerControl |
+                 bbp2::FeaturePresenceKeyControl)) != 0U) {
         return Result::failure(ErrorCode::NotConfigured);
     }
     const bool reliableFeature =
@@ -543,7 +547,12 @@ Result DeviceRuntime::setControllerControlEndpoint(
     controllerControlEndpoint_ = endpoint;
     if (endpoint == nullptr) {
         config_.protocolFeatures &=
-            ~static_cast<uint32_t>(bbp2::FeatureControllerControl);
+            ~static_cast<uint32_t>(
+                bbp2::FeatureControllerControl |
+                bbp2::FeaturePresenceKeyControl);
+    } else if (!endpoint->supportsPresenceKeyControl()) {
+        config_.protocolFeatures &=
+            ~static_cast<uint32_t>(bbp2::FeaturePresenceKeyControl);
     }
     return Result::success();
 }
@@ -689,13 +698,16 @@ void DeviceRuntime::receive(ByteView encoded, const RxContext& rx) {
         result = handleControllerControlOpen(frame, rx);
     } else if (kind == bbp2::MessageKind::ControllerMutation) {
         result = handleControllerMutation(frame, rx);
+    } else if (kind == bbp2::MessageKind::PresenceKeyMutation) {
+        result = handlePresenceKeyMutation(frame, rx);
     } else if (kind == bbp2::MessageKind::Manifest ||
                kind == bbp2::MessageKind::AuthResult ||
                kind == bbp2::MessageKind::StatePage ||
                kind == bbp2::MessageKind::TelemetryStatus ||
                kind == bbp2::MessageKind::TelemetryData ||
                kind == bbp2::MessageKind::ControllerControlChallenge ||
-               kind == bbp2::MessageKind::ControllerMutationReceipt) {
+               kind == bbp2::MessageKind::ControllerMutationReceipt ||
+               kind == bbp2::MessageKind::PresenceKeyReceipt) {
         // Device-originated response kinds are ignored unless the peer
         // explicitly asks for an acknowledgement.
         if ((frame.header.flags & bbp2::FlagAckRequired) != 0U) {
@@ -743,7 +755,7 @@ Result DeviceRuntime::handleControllerControlOpen(
     if (!localTransport(rx.transportId) || !rx.encrypted ||
         !explicitlyAuthorizedLocal(
             rx,
-            kAuthorizationPermissionManageControllers)) {
+            kAuthorizationPermissionControl)) {
         return Result::failure(ErrorCode::AuthenticationRequired);
     }
     Result result = bbp2::decodeControllerControlOpenBody(frame.body);
@@ -791,7 +803,7 @@ Result DeviceRuntime::handleControllerMutation(
     if (!localTransport(rx.transportId) || !rx.encrypted ||
         !explicitlyAuthorizedLocal(
             rx,
-            kAuthorizationPermissionManageControllers)) {
+            kAuthorizationPermissionControl)) {
         return Result::failure(ErrorCode::AuthenticationRequired);
     }
     bbp2::ControllerMutationBody mutation;
@@ -818,6 +830,51 @@ Result DeviceRuntime::handleControllerMutation(
     return result
                ? sendEncodedBody(
                      bbp2::MessageKind::ControllerMutationReceipt,
+                     bbp2::FlagIsResponse,
+                     frame.header.sequence,
+                     receipt.size,
+                     target)
+               : result;
+}
+
+Result DeviceRuntime::handlePresenceKeyMutation(
+    const bbp2::FrameView& frame,
+    const RxContext& rx) {
+    if (frame.header.flags != bbp2::FlagNone) {
+        return Result::failure(ErrorCode::InvalidEncoding);
+    }
+    if (controllerControlEndpoint_ == nullptr ||
+        !controllerControlEndpoint_->supportsPresenceKeyControl()) {
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
+    if (!negotiated(rx) ||
+        (negotiatedFeatures(rx) &
+         bbp2::FeaturePresenceKeyControl) == 0U) {
+        return Result::failure(ErrorCode::NotConfigured);
+    }
+    if (!localTransport(rx.transportId) || !rx.encrypted ||
+        !explicitlyAuthorizedLocal(
+            rx,
+            kAuthorizationPermissionManageControllers)) {
+        return Result::failure(ErrorCode::AuthenticationRequired);
+    }
+    const SendTarget target = responseTarget(rx);
+    const size_t maximumFrame = maximumOutboundFrameSize(target);
+    if (maximumFrame <
+        bbp2::kBaseHeaderSize + kPresenceKeyReceiptMaxEncodedSize) {
+        return Result::failure(ErrorCode::BufferTooSmall);
+    }
+    ByteView receipt;
+    Result result = controllerControlEndpoint_->applyPresenceKeyMutation(
+        rx,
+        frame.body,
+        MutableByteSpan(
+            transmitBuffer_.data + bbp2::kBaseHeaderSize,
+            maximumFrame - bbp2::kBaseHeaderSize),
+        receipt);
+    return result
+               ? sendEncodedBody(
+                     bbp2::MessageKind::PresenceKeyReceipt,
                      bbp2::FlagIsResponse,
                      frame.header.sequence,
                      receipt.size,
@@ -853,6 +910,11 @@ Result DeviceRuntime::handleHello(
         bbp2::kControllerMutationReceiptMaximumFrameSize) {
         session->negotiatedFeatures &=
             ~static_cast<uint32_t>(bbp2::FeatureControllerControl);
+    }
+    if (hello.maxFrameSize <
+        bbp2::kPresenceKeyReceiptMaximumFrameSize) {
+        session->negotiatedFeatures &=
+            ~static_cast<uint32_t>(bbp2::FeaturePresenceKeyControl);
     }
     session->stateObserved = false;
     session->snapshotCursor = 0U;

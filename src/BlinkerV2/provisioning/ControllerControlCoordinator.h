@@ -4,6 +4,8 @@
 #include "ControllerGrantVerifier.h"
 #include "../interface/IAccessEpochSource.h"
 #include "../interface/IControllerCredentialStore.h"
+#include "../interface/IDeviceAccessStore.h"
+#include "PresenceKeyControlContract.h"
 
 namespace blinker {
 
@@ -16,7 +18,8 @@ public:
         const DeviceInstanceId& deviceInstanceId,
         IAccessEpochSource& accessEpoch,
         IControllerCredentialStore& credentials,
-        ControllerGrantVerifier& verifier);
+        ControllerGrantVerifier& verifier,
+        IDeviceAccessStore* presenceAccess = nullptr);
     ~ControllerControlCoordinator();
     ControllerControlCoordinator(
         const ControllerControlCoordinator&) = delete;
@@ -42,12 +45,20 @@ public:
         MutableByteSpan operationWorkspace,
         MutableByteSpan output,
         ByteView& receipt);
+    Result applyPresence(
+        ByteView encodedMutation,
+        MutableByteSpan output,
+        ByteView& receipt);
+    bool supportsPresenceKeyControl() const {
+        return presenceAccess_ != nullptr;
+    }
 
 private:
     const DeviceInstanceId& deviceInstanceId_;
     IAccessEpochSource& accessEpoch_;
     IControllerCredentialStore& credentials_;
     ControllerGrantVerifier& verifier_;
+    IDeviceAccessStore* presenceAccess_;
     uint8_t controlNonce_[kControllerControlNonceSize];
     bool controlWindowActive_;
 };

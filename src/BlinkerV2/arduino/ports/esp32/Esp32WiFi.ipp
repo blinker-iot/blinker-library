@@ -1,6 +1,7 @@
 #include <BlinkerV2/core/SecureMemory.h>
 #include <BlinkerV2/provisioning/WifiCredential.h>
 #include <WiFi.h>
+#include <esp_wifi.h>
 
 #include <string.h>
 
@@ -30,8 +31,10 @@ inline Result Esp32WifiStation::start(const WifiNetworkConfig& config) {
         minimumSecurity = WIFI_AUTH_WPA2_PSK;
     }
     // WifiCredentialStore is the single durable source. Do not let Arduino's
-    // WiFi layer retain a second copy in the SDK WiFi NVS namespace.
+    // WiFi layer retain a second copy in SDK NVS or run a competing retry
+    // loop; WifiConnectionLifecycle owns reconnect policy.
     WiFi.persistent(false);
+    WiFi.setAutoReconnect(false);
     WiFi.setMinSecurity(minimumSecurity);
 
     char ssid[kWifiSsidMaxSize + 1U] = {};
@@ -80,7 +83,10 @@ inline void Esp32WifiStation::poll() {
 
 inline void Esp32WifiStation::stop() {
     if (state_ != WifiStationState::Stopped) {
-        (void)WiFi.disconnectAsync(false, false);
+        // Arduino's disconnect() is a no-op until its connected bit is set,
+        // but an association attempt may still be active. Cancel it at the
+        // ESP-IDF boundary before the lifecycle starts another attempt.
+        (void)esp_wifi_disconnect();
     }
     state_ = WifiStationState::Stopped;
     lastError_ = ErrorCode::Ok;

@@ -2,18 +2,33 @@
 #include <Blinker.h>
 
 BLINKER_PROPERTY(power, bool, blinker::readWrite());
+BLINKER_PROPERTY(buttonPresses, uint32_t, blinker::readOnly());
+BLINKER_ACTION(button);
+
+bool currentPower = false;
+uint32_t pressCount = 0;
 
 void onPower(bool value) {
-    power.report(value);
+    currentPower = value;
+    power.report(currentPower);
+}
+
+void onButton() {
+    buttonPresses.report(++pressCount);
 }
 
 void setup() {
     power.onWrite(onPower);
-    Blinker.begin(
+    button.onInvoke(onButton);
+    if (Blinker.begin(
         "REPLACE_WITH_DEVICE_KEY",
         "YOUR_WIFI_SSID",
         "YOUR_WIFI_PASSWORD",
-        power);
+        power,
+        buttonPresses,
+        button)) {
+        Blinker.report(power, currentPower, buttonPresses, pressCount);
+    }
 }
 
 void loop() {

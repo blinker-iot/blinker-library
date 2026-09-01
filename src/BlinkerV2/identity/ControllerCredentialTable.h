@@ -5,12 +5,13 @@
 
 namespace blinker {
 
-// Allocation-free in-memory table and canonical 64-byte slot codec shared by
-// standalone and combined access stores. It performs no persistence itself.
+// Allocation-free in-memory table and canonical 64-byte slot codec used by
+// DeviceAccessStore. It performs no persistence itself and stores no account
+// role; the two non-admin slots are distinguished by Service metadata.
 class ControllerCredentialTable {
 public:
     enum : size_t {
-        capacity = 2U,
+        capacity = 3U,
         slotSize = 64U,
         encodedSize = capacity * slotSize
     };

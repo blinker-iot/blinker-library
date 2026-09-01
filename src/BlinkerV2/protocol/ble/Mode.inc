@@ -36,7 +36,7 @@ ModeProfile makeProvisioningProfile(
     if (setupSessionLocator.data != nullptr &&
         setupSessionLocator.size == 8U) {
         memcpy(
-            profile.setupSessionLocator,
+            profile.modeLocator,
             setupSessionLocator.data,
             8U);
     }
@@ -54,6 +54,23 @@ ModeProfile makeDirectModeProfile() {
     return profile;
 }
 
+ModeProfile makeAuthorizedDirectModeProfile(ByteView presenceLocator) {
+    ModeProfile profile;
+    profile.mode = ApplicationMode::Direct;
+    profile.wireVersion = kAuthorizedDirectBbp2WireVersion;
+    profile.capabilities = static_cast<uint16_t>(
+        ModeCapabilityFragmentedRecords | ModeCapabilityDirectBbp2 |
+        ModeCapabilityAuthorizedPresenceV1);
+    if (presenceLocator.data != nullptr &&
+        presenceLocator.size == sizeof(profile.modeLocator)) {
+        memcpy(
+            profile.modeLocator,
+            presenceLocator.data,
+            sizeof(profile.modeLocator));
+    }
+    return profile;
+}
+
 ModeProfile makeProvisioningModeProfile(
     ByteView setupSessionLocator,
     bool acceptsWifiConfig) {
@@ -61,7 +78,7 @@ ModeProfile makeProvisioningModeProfile(
         setupSessionLocator,
         acceptsWifiConfig,
         static_cast<uint16_t>(ModeCapabilityNoiseNn),
-        static_cast<uint16_t>(ModeCapabilityEnrollmentV1));
+        static_cast<uint16_t>(ModeCapabilityEnrollmentV2));
 }
 
 ModeProfile makePskProvisioningModeProfile(
@@ -71,7 +88,7 @@ ModeProfile makePskProvisioningModeProfile(
         setupSessionLocator,
         acceptsWifiConfig,
         static_cast<uint16_t>(ModeCapabilityNoiseNnPsk0),
-        static_cast<uint16_t>(ModeCapabilityEnrollmentV1));
+        static_cast<uint16_t>(ModeCapabilityEnrollmentV2));
 }
 
 Result provisioningNoisePattern(
@@ -97,12 +114,12 @@ Result validateModeProfile(const ModeProfile& profile) {
     if ((profile.capabilities & ~kKnownModeCapabilities) != 0U) {
         return Result::failure(ErrorCode::UnsupportedFeature);
     }
-    const bool setupSessionIsZero = allZero(
-        profile.setupSessionLocator,
-        sizeof(profile.setupSessionLocator));
+    const bool modeLocatorIsZero = allZero(
+        profile.modeLocator,
+        sizeof(profile.modeLocator));
     if (profile.mode == ApplicationMode::Provisioning) {
         const bool enrollment =
-            (profile.capabilities & ModeCapabilityEnrollmentV1) != 0U;
+            (profile.capabilities & ModeCapabilityEnrollmentV2) != 0U;
         const uint16_t required =
             static_cast<uint16_t>(ModeCapabilityFragmentedRecords);
         noise::NoiseNnPattern pattern;
@@ -110,7 +127,7 @@ Result validateModeProfile(const ModeProfile& profile) {
             (profile.capabilities & required) != required ||
             (profile.capabilities & ModeCapabilityDirectBbp2) != 0U ||
             !enrollment ||
-            setupSessionIsZero) {
+            modeLocatorIsZero) {
             return Result::failure(ErrorCode::InvalidArgument);
         }
         return provisioningNoisePattern(profile, pattern);
@@ -122,12 +139,20 @@ Result validateModeProfile(const ModeProfile& profile) {
         const uint16_t provisioningOnly = static_cast<uint16_t>(
             ModeCapabilityNoiseNn |
             ModeCapabilityNoiseNnPsk0 |
-            ModeCapabilityEnrollmentV1 |
+            ModeCapabilityEnrollmentV2 |
             ModeCapabilityWifiConfigV1);
-        if (profile.wireVersion != kDirectBbp2WireVersion ||
-            (profile.capabilities & required) != required ||
-            (profile.capabilities & provisioningOnly) != 0U ||
-            !setupSessionIsZero) {
+        const bool legacy =
+            profile.wireVersion == kDirectBbp2WireVersion &&
+            profile.capabilities == required &&
+            modeLocatorIsZero;
+        const uint16_t authorizedCapabilities = static_cast<uint16_t>(
+            required | ModeCapabilityAuthorizedPresenceV1);
+        const bool authorized =
+            profile.wireVersion == kAuthorizedDirectBbp2WireVersion &&
+            profile.capabilities == authorizedCapabilities &&
+            !modeLocatorIsZero;
+        if ((profile.capabilities & provisioningOnly) != 0U ||
+            (!legacy && !authorized)) {
             return Result::failure(ErrorCode::InvalidArgument);
         }
         return Result::success();
@@ -142,9 +167,9 @@ bool modeProfilesEqual(
            left.wireVersion == right.wireVersion &&
            left.capabilities == right.capabilities &&
            memcmp(
-               left.setupSessionLocator,
-               right.setupSessionLocator,
-               sizeof(left.setupSessionLocator)) == 0;
+               left.modeLocator,
+               right.modeLocator,
+               sizeof(left.modeLocator)) == 0;
 }
 
 Result encodeModeServiceData(
@@ -162,7 +187,7 @@ Result encodeModeServiceData(
     output.data[2] = profile.wireVersion;
     output.data[3] = static_cast<uint8_t>(profile.capabilities);
     output.data[4] = static_cast<uint8_t>(profile.capabilities >> 8U);
-    memcpy(output.data + 5U, profile.setupSessionLocator, 8U);
+    memcpy(output.data + 5U, profile.modeLocator, 8U);
     encoded = ByteView(output.data, kModeServiceDataSize);
     return Result::success();
 }
@@ -180,7 +205,7 @@ Result decodeModeServiceData(ByteView encoded, ModeProfile& profile) {
     profile.capabilities = static_cast<uint16_t>(
         encoded.data[3] |
         (static_cast<uint16_t>(encoded.data[4]) << 8U));
-    memcpy(profile.setupSessionLocator, encoded.data + 5U, 8U);
+    memcpy(profile.modeLocator, encoded.data + 5U, 8U);
     Result result = validateModeProfile(profile);
     if (!result) profile = ModeProfile();
     return result;

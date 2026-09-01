@@ -4,6 +4,7 @@
 #include "IAccessEpochSource.h"
 #include "IControllerCredentialStore.h"
 #include "IDeviceKeyStore.h"
+#include "../identity/DevicePresenceKey.h"
 
 namespace blinker {
 
@@ -22,6 +23,48 @@ public:
     virtual Result bootstrapAccess(
         uint32_t accessEpoch,
         const ControllerCredential& initialController) = 0;
+
+    virtual Result loadPresence(
+        uint32_t accessEpoch,
+        DevicePresenceKey& output) {
+        (void)accessEpoch;
+        clearDevicePresenceKey(output);
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
+
+    // expectedVersion=0 installs version 1. Later updates are strict CAS and
+    // must advance exactly one version. Exact retries are idempotent.
+    virtual Result replacePresenceVerified(
+        uint32_t accessEpoch,
+        uint32_t expectedVersion,
+        const DevicePresenceKey& value) {
+        (void)accessEpoch;
+        (void)expectedVersion;
+        (void)value;
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
+
+    virtual Result bootstrapWithPresence(
+        const DeviceKey& deviceKey,
+        uint32_t accessEpoch,
+        const ControllerCredential& initialController,
+        const DevicePresenceKey& presence) {
+        (void)deviceKey;
+        (void)accessEpoch;
+        (void)initialController;
+        (void)presence;
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
+
+    virtual Result bootstrapAccessWithPresence(
+        uint32_t accessEpoch,
+        const ControllerCredential& initialController,
+        const DevicePresenceKey& presence) {
+        (void)accessEpoch;
+        (void)initialController;
+        (void)presence;
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
 
     // Physical factory reset boundary. DeviceKey clear() preserves direct
     // access. Controller clearAll() preserves a present DeviceKey, but a

@@ -7,12 +7,12 @@ namespace blinker {
 
 namespace {
 
-const char kDomain[] = "blinker.ble-enrollment.v2";
+const char kDomain[] = "blinker.ble-enrollment.v3";
 
 cbor::Limits enrollmentGrantLimits() {
     cbor::Limits value;
     value.maxByteStringLength = kBleEnrollmentGrantSignatureSize;
-    value.maxContainerItems = 16U;
+    value.maxContainerItems = 18U;
     value.maxDepth = 2U;
     return value;
 }
@@ -51,6 +51,9 @@ Result validate(const BleEnrollmentGrant& grant, bool requireSignature) {
         !enrollmentGrantExactNonZero(
             grant.controllerSecretDigest, kSha256Size) ||
         grant.controllerPermissions != kControllerPermissionAll ||
+        grant.presenceKeyVersion == 0U ||
+        !enrollmentGrantExactNonZero(
+            grant.presenceKeyDigest, kSha256Size) ||
         !enrollmentGrantExactNonZero(
             grant.nonce, kBleEnrollmentGrantNonceSize) ||
         grant.issuedAt == 0U || grant.expiresAt <= grant.issuedAt ||
@@ -97,18 +100,17 @@ bool same(ByteView first, ByteView second) {
 } // namespace
 
 BleEnrollmentGrant::BleEnrollmentGrant()
-    : accessEpoch(0U), controllerPermissions(0U), issuedAt(0U),
-      expiresAt(0U),
-      securityProfile(BleEnrollmentSecurityProfile::EducationNearby),
+    : issuedAt(0U), expiresAt(0U), accessEpoch(0U),
+      controllerPermissions(0U), presenceKeyVersion(0U),
       serverKeyId(0U),
+      securityProfile(BleEnrollmentSecurityProfile::EducationNearby),
       signatureAlgorithm(ServerSignatureAlgorithm::Ed25519) {}
 
 BleEnrollmentGrantContext::BleEnrollmentGrantContext()
-    : accessEpoch(0U),
+    : nowEpochSeconds(0U), accessEpoch(0U), serverKeyId(0U),
       securityProfile(BleEnrollmentSecurityProfile::EducationNearby),
-      serverKeyId(0U),
       signatureAlgorithm(ServerSignatureAlgorithm::Ed25519),
-      nowEpochSeconds(0U), hasTrustedTime(false) {}
+      hasTrustedTime(false) {}
 
 Result encodeBleEnrollmentGrant(const BleEnrollmentGrant& grant,
                                 MutableByteSpan output,
@@ -116,7 +118,7 @@ Result encodeBleEnrollmentGrant(const BleEnrollmentGrant& grant,
     encoded = ByteView();
     Result result = validate(grant, true);
     cbor::Writer writer(output);
-    if (result) result = writer.beginMap(16U);
+    if (result) result = writer.beginMap(18U);
     if (result) result = writeKey(writer, 0U);
     if (result) result = writer.writeUnsigned(kBleEnrollmentGrantVersion);
     if (result) result = writeKey(writer, 1U);
@@ -136,24 +138,28 @@ Result encodeBleEnrollmentGrant(const BleEnrollmentGrant& grant,
     if (result) result = writeKey(writer, 8U);
     if (result) result = writer.writeUnsigned(grant.controllerPermissions);
     if (result) result = writeKey(writer, 9U);
-    if (result) result = writer.writeBytes(grant.nonce);
+    if (result) result = writer.writeUnsigned(grant.presenceKeyVersion);
     if (result) result = writeKey(writer, 10U);
-    if (result) result = writer.writeUnsigned(grant.issuedAt);
+    if (result) result = writer.writeBytes(grant.presenceKeyDigest);
     if (result) result = writeKey(writer, 11U);
-    if (result) result = writer.writeUnsigned(grant.expiresAt);
+    if (result) result = writer.writeBytes(grant.nonce);
     if (result) result = writeKey(writer, 12U);
+    if (result) result = writer.writeUnsigned(grant.issuedAt);
+    if (result) result = writeKey(writer, 13U);
+    if (result) result = writer.writeUnsigned(grant.expiresAt);
+    if (result) result = writeKey(writer, 14U);
     if (result) {
         result = writer.writeUnsigned(
             static_cast<uint8_t>(grant.securityProfile));
     }
-    if (result) result = writeKey(writer, 13U);
+    if (result) result = writeKey(writer, 15U);
     if (result) result = writer.writeUnsigned(grant.serverKeyId);
-    if (result) result = writeKey(writer, 14U);
+    if (result) result = writeKey(writer, 16U);
     if (result) {
         result = writer.writeUnsigned(
             static_cast<uint8_t>(grant.signatureAlgorithm));
     }
-    if (result) result = writeKey(writer, 15U);
+    if (result) result = writeKey(writer, 17U);
     if (result) result = writer.writeBytes(grant.signature);
     if (result) encoded = writer.view();
     return result;
@@ -170,7 +176,7 @@ Result decodeBleEnrollmentGrant(ByteView encoded,
     uint64_t algorithm = 0U;
     BleEnrollmentGrant value;
     if (result) result = reader.readMapSize(count);
-    if (result && count != 16U) result = Result::failure(ErrorCode::InvalidEncoding);
+    if (result && count != 18U) result = Result::failure(ErrorCode::InvalidEncoding);
     if (result) result = readEnrollmentGrantKey(reader, 0U);
     if (result) result = reader.readUnsigned(version);
     if (result && version != kBleEnrollmentGrantVersion) {
@@ -193,12 +199,16 @@ Result decodeBleEnrollmentGrant(ByteView encoded,
     if (result) result = readEnrollmentGrantKey(reader, 8U);
     if (result) result = u32(reader, value.controllerPermissions);
     if (result) result = readEnrollmentGrantKey(reader, 9U);
-    if (result) result = reader.readBytes(value.nonce);
+    if (result) result = u32(reader, value.presenceKeyVersion);
     if (result) result = readEnrollmentGrantKey(reader, 10U);
-    if (result) result = reader.readUnsigned(value.issuedAt);
+    if (result) result = reader.readBytes(value.presenceKeyDigest);
     if (result) result = readEnrollmentGrantKey(reader, 11U);
-    if (result) result = reader.readUnsigned(value.expiresAt);
+    if (result) result = reader.readBytes(value.nonce);
     if (result) result = readEnrollmentGrantKey(reader, 12U);
+    if (result) result = reader.readUnsigned(value.issuedAt);
+    if (result) result = readEnrollmentGrantKey(reader, 13U);
+    if (result) result = reader.readUnsigned(value.expiresAt);
+    if (result) result = readEnrollmentGrantKey(reader, 14U);
     if (result) result = reader.readUnsigned(securityProfile);
     if (result && securityProfile > UINT8_MAX) {
         result = Result::failure(ErrorCode::ValueOutOfRange);
@@ -207,9 +217,9 @@ Result decodeBleEnrollmentGrant(ByteView encoded,
         value.securityProfile =
             static_cast<BleEnrollmentSecurityProfile>(securityProfile);
     }
-    if (result) result = readEnrollmentGrantKey(reader, 13U);
+    if (result) result = readEnrollmentGrantKey(reader, 15U);
     if (result) result = u32(reader, value.serverKeyId);
-    if (result) result = readEnrollmentGrantKey(reader, 14U);
+    if (result) result = readEnrollmentGrantKey(reader, 16U);
     if (result) result = reader.readUnsigned(algorithm);
     if (result && algorithm > UINT8_MAX) {
         result = Result::failure(ErrorCode::ValueOutOfRange);
@@ -218,7 +228,7 @@ Result decodeBleEnrollmentGrant(ByteView encoded,
         value.signatureAlgorithm =
             static_cast<ServerSignatureAlgorithm>(algorithm);
     }
-    if (result) result = readEnrollmentGrantKey(reader, 15U);
+    if (result) result = readEnrollmentGrantKey(reader, 17U);
     if (result) result = reader.readBytes(value.signature);
     if (result && !reader.finished()) {
         result = Result::failure(ErrorCode::TrailingData);
@@ -234,7 +244,7 @@ Result encodeBleEnrollmentGrantTranscript(const BleEnrollmentGrant& grant,
     encoded = ByteView();
     Result result = validate(grant, false);
     cbor::Writer writer(output);
-    if (result) result = writer.beginArray(16U);
+    if (result) result = writer.beginArray(18U);
     if (result) {
         result = writer.writeText(StringView(kDomain, sizeof(kDomain) - 1U));
     }
@@ -247,6 +257,8 @@ Result encodeBleEnrollmentGrantTranscript(const BleEnrollmentGrant& grant,
     if (result) result = writer.writeBytes(grant.controllerId);
     if (result) result = writer.writeBytes(grant.controllerSecretDigest);
     if (result) result = writer.writeUnsigned(grant.controllerPermissions);
+    if (result) result = writer.writeUnsigned(grant.presenceKeyVersion);
+    if (result) result = writer.writeBytes(grant.presenceKeyDigest);
     if (result) result = writer.writeBytes(grant.nonce);
     if (result) result = writer.writeUnsigned(grant.issuedAt);
     if (result) result = writer.writeUnsigned(grant.expiresAt);

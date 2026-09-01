@@ -7,7 +7,7 @@
 
 namespace blinker {
 
-static const uint8_t kBleEnrollmentContractVersion = 1U;
+static const uint8_t kBleEnrollmentContractVersion = 2U;
 
 struct BleEnrollmentApplicationConfig {
     BleEnrollmentSecurityProfile securityProfile;
@@ -18,7 +18,7 @@ struct BleEnrollmentApplicationConfig {
 };
 
 enum : size_t {
-    kBleEnrollmentRequestMaxEncodedSize = 320U,
+    kBleEnrollmentRequestMaxEncodedSize = 384U,
     kBleEnrollmentResponseMaxEncodedSize = 160U,
     kBleEnrollmentWorkspaceSize = kControllerControlWorkspaceSize
 };
@@ -51,32 +51,32 @@ struct BleEnrollmentRequest {
     uint32_t requestId;
     ByteView grant;
     ByteView controllerSecret;
+    ByteView presenceKey;
 
     BleEnrollmentRequest()
         : type(BleEnrollmentMessageType::HelloRequest), requestId(0U) {}
 };
 
 struct BleEnrollmentResponse {
-    BleEnrollmentMessageType type;
-    uint32_t requestId;
     ByteView deviceInstanceId;
     ByteView setupSessionId;
     ByteView setupSessionLocator;
-    uint32_t accessEpoch;
-    BleEnrollmentSecurityProfile securityProfile;
-    uint32_t serverKeyId;
-    ServerSignatureAlgorithm signatureAlgorithm;
     ByteView receipt;
+    uint32_t requestId;
+    uint32_t accessEpoch;
+    uint32_t serverKeyId;
     BleEnrollmentWireError error;
+    BleEnrollmentMessageType type;
+    BleEnrollmentSecurityProfile securityProfile;
+    ServerSignatureAlgorithm signatureAlgorithm;
     BleEnrollmentRetryClass retryClass;
 
     BleEnrollmentResponse()
-        : type(BleEnrollmentMessageType::ErrorResponse), requestId(0U),
-          accessEpoch(0U),
-          securityProfile(BleEnrollmentSecurityProfile::EducationNearby),
-          serverKeyId(0U),
-          signatureAlgorithm(ServerSignatureAlgorithm::Ed25519),
+        : requestId(0U), accessEpoch(0U), serverKeyId(0U),
           error(BleEnrollmentWireError::Internal),
+          type(BleEnrollmentMessageType::ErrorResponse),
+          securityProfile(BleEnrollmentSecurityProfile::EducationNearby),
+          signatureAlgorithm(ServerSignatureAlgorithm::Ed25519),
           retryClass(BleEnrollmentRetryClass::Never) {}
 };
 
@@ -86,6 +86,7 @@ Result encodeBleEnrollmentHelloRequest(uint32_t requestId,
 Result encodeBleEnrollmentRequest(uint32_t requestId,
                                   ByteView grant,
                                   ByteView controllerSecret,
+                                  ByteView presenceKey,
                                   MutableByteSpan output,
                                   ByteView& encoded);
 Result decodeBleEnrollmentRequest(ByteView encoded,

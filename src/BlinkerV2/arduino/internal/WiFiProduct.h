@@ -53,7 +53,16 @@ inline MqttFrameTransportConfig deviceKeyMqttTransportConfig() {
 // Final lower half of the manual/education WiFi graph. Platform supplies only
 // storage, WiFi station and two Client-compatible network objects. DeviceKey
 // authentication is refreshable and does not persist MQTT credentials.
-template <typename Platform>
+enum : uint16_t {
+    kDeviceKeyMqttPacketBufferSize =
+        BLINKER_DEVICE_FRAME_SIZE +
+        kDeviceKeyMaximumTopicSize + 9U
+};
+
+template <
+    typename Platform,
+    typename Clock = ArduinoClock,
+    uint16_t MqttPacketBufferSize = kDeviceKeyMqttPacketBufferSize>
 class DeviceKeyWifiStack {
 public:
     typedef typename Platform::CloudSessionClient CloudSessionClient;
@@ -63,7 +72,14 @@ public:
 
     DeviceKeyWifiStack(
         Platform& platform,
-        IDeviceKeySource& deviceKey)
+        IDeviceKeySource& deviceKey,
+        const HttpDeviceKeySessionConfig& sessionConfig =
+            deviceKeySessionConfig(),
+        MqttSecurity mqttSecurity = official::mqttTls
+                                        ? MqttSecurity::Tls
+                                        : MqttSecurity::PlainTcp,
+        const MqttFrameTransportConfig& mqttConfig =
+            deviceKeyMqttTransportConfig())
         : platform_(platform),
           deviceKey_(deviceKey),
           clock_(),
@@ -79,9 +95,7 @@ public:
           arena_(),
           controlHttp_(
               platform_.controlNetwork(),
-              official::cloudSessionTls
-                  ? HttpSecurity::Tls
-                  : HttpSecurity::PlainTcp,
+              sessionConfig.httpSecurity,
               clock_),
           cloudSession_(
               deviceKey_,
@@ -89,22 +103,20 @@ public:
               random_,
               controlHttp_,
               clock_,
-              deviceKeySessionConfig(),
+              sessionConfig,
               arena_.requestBuffer(),
               arena_.responseBuffer(),
               arena_.credentialArena()),
           nativeMqtt_(platform_.mqttNetwork()),
           mqttAdapter_(
               nativeMqtt_,
-              official::mqttTls
-                  ? MqttSecurity::Tls
-                  : MqttSecurity::PlainTcp,
-              kMqttPacketBufferSize,
+              mqttSecurity,
+              MqttPacketBufferSize,
               1U),
           mqttTransport_(
               mqttAdapter_,
               clock_,
-              deviceKeyMqttTransportConfig()),
+              mqttConfig),
           cloudTransport_(cloudSession_, mqttTransport_),
           initialized_(false) {}
 
@@ -148,21 +160,19 @@ public:
     const DeviceInstanceId& deviceInstance() const {
         return deviceInstance_;
     }
-    ArduinoClock& clock() { return clock_; }
+    Clock& clock() { return clock_; }
     PlatformHardwareRandom& random() { return random_; }
     WifiConnectionLifecycle& wifiLifecycle() { return wifiLifecycle_; }
     ManagedMqttTransport& cloudTransport() { return cloudTransport_; }
+    HttpDeviceKeySessionProvider& sessionProvider() {
+        return cloudSession_;
+    }
+    MqttFrameTransport& mqttTransport() { return mqttTransport_; }
 
 private:
-    enum : uint16_t {
-        kMqttPacketBufferSize =
-            BLINKER_DEVICE_FRAME_SIZE +
-            kDeviceKeyMaximumTopicSize + 9U
-    };
-
     Platform& platform_;
     IDeviceKeySource& deviceKey_;
-    ArduinoClock clock_;
+    Clock clock_;
     PlatformHardwareRandom random_;
     DeviceInstanceId deviceInstance_;
     DeviceInstanceIdStore deviceInstanceStore_;

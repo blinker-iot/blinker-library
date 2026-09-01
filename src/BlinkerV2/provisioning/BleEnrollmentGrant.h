@@ -13,13 +13,13 @@ enum : size_t {
     kBleEnrollmentGrantIdSize = 16U,
     kBleEnrollmentGrantNonceSize = 16U,
     kBleEnrollmentGrantSignatureSize = 64U,
-    kBleEnrollmentGrantMaxEncodedSize = 270U,
-    kBleEnrollmentGrantTranscriptMaxEncodedSize = 217U,
+    kBleEnrollmentGrantMaxEncodedSize = 310U,
+    kBleEnrollmentGrantTranscriptMaxEncodedSize = 256U,
     kBleEnrollmentGrantWorkspaceSize =
         kBleEnrollmentGrantTranscriptMaxEncodedSize
 };
 
-static const uint8_t kBleEnrollmentGrantVersion = 2U;
+static const uint8_t kBleEnrollmentGrantVersion = 3U;
 static const uint64_t kBleEnrollmentGrantMaxLifetimeSeconds = 15U * 60U;
 
 enum class BleEnrollmentSecurityProfile : uint8_t {
@@ -35,17 +35,19 @@ struct BleEnrollmentGrant {
     ByteView deviceInstanceId;
     ByteView setupSessionId;
     ByteView setupTranscriptHash;
-    uint32_t accessEpoch;
     ByteView controllerId;
     ByteView controllerSecretDigest;
-    uint32_t controllerPermissions;
+    ByteView presenceKeyDigest;
     ByteView nonce;
+    ByteView signature;
     uint64_t issuedAt;
     uint64_t expiresAt;
-    BleEnrollmentSecurityProfile securityProfile;
+    uint32_t accessEpoch;
+    uint32_t controllerPermissions;
+    uint32_t presenceKeyVersion;
     uint32_t serverKeyId;
+    BleEnrollmentSecurityProfile securityProfile;
     ServerSignatureAlgorithm signatureAlgorithm;
-    ByteView signature;
 
     BleEnrollmentGrant();
 };
@@ -63,11 +65,11 @@ struct BleEnrollmentGrantContext {
     ByteView deviceInstanceId;
     ByteView setupSessionId;
     ByteView setupTranscriptHash;
-    uint32_t accessEpoch;
-    BleEnrollmentSecurityProfile securityProfile;
-    uint32_t serverKeyId;
-    ServerSignatureAlgorithm signatureAlgorithm;
     uint64_t nowEpochSeconds;
+    uint32_t accessEpoch;
+    uint32_t serverKeyId;
+    BleEnrollmentSecurityProfile securityProfile;
+    ServerSignatureAlgorithm signatureAlgorithm;
     bool hasTrustedTime;
 
     BleEnrollmentGrantContext();

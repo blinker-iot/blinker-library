@@ -143,16 +143,16 @@ private:
         ByteView& aad) const;
 
     DirectSecureRole role_;
+    bool sendExhausted_;
+    bool receiveExhausted_;
+    bool ready_;
+    uint32_t sendSequence_;
+    uint32_t receiveSequence_;
     uint8_t sendKey_[kAes256KeySize];
     uint8_t receiveKey_[kAes256KeySize];
     uint8_t sendNoncePrefix_[kDirectSecureNoncePrefixSize];
     uint8_t receiveNoncePrefix_[kDirectSecureNoncePrefixSize];
     uint8_t sessionBinding_[kDirectSecureBindingSize];
-    uint32_t sendSequence_;
-    uint32_t receiveSequence_;
-    bool sendExhausted_;
-    bool receiveExhausted_;
-    bool ready_;
 };
 
 } // namespace security

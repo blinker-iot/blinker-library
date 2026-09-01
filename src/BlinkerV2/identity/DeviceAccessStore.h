@@ -12,7 +12,9 @@ class DeviceAccessStore final : public IDeviceAccessStore {
 public:
     enum : size_t {
         capacity = ControllerCredentialTable::capacity,
-        serializedSize = 176U
+        legacySerializedSize = 176U,
+        previousSerializedSize = 196U,
+        serializedSize = 260U
     };
 
     explicit DeviceAccessStore(IAtomicBlobStore& storage)
@@ -50,6 +52,22 @@ public:
     Result bootstrapAccess(
         uint32_t accessEpoch,
         const ControllerCredential& initialController) override;
+    Result loadPresence(
+        uint32_t accessEpoch,
+        DevicePresenceKey& output) override;
+    Result replacePresenceVerified(
+        uint32_t accessEpoch,
+        uint32_t expectedVersion,
+        const DevicePresenceKey& value) override;
+    Result bootstrapWithPresence(
+        const DeviceKey& deviceKey,
+        uint32_t accessEpoch,
+        const ControllerCredential& initialController,
+        const DevicePresenceKey& presence) override;
+    Result bootstrapAccessWithPresence(
+        uint32_t accessEpoch,
+        const ControllerCredential& initialController,
+        const DevicePresenceKey& presence) override;
     Result eraseAccess() override;
 
     StorageProtection protection() const override {

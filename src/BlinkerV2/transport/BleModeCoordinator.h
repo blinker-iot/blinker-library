@@ -45,6 +45,7 @@ public:
     }
     ble::ApplicationMode activeMode() const { return activeProfile_.mode; }
     ble::ModeProfile activeProfile() const { return activeProfile_; }
+    size_t sessionCount() const { return link_.sessionCount(); }
     ErrorCode lastTransitionError() const { return lastTransitionError_; }
     uint32_t rollbackCount() const { return rollbackCount_; }
 

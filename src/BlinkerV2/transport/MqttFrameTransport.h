@@ -33,6 +33,22 @@ public:
 
     Result configure(const SessionCredentials& credentials);
 
+    // One product-owned side channel may share the authenticated MQTT
+    // connection and callback. Edge Hub management uses this seam so the
+    // product does not construct a second MQTT client or steal the adapter's
+    // single message callback.
+    Result subscribeSideChannel(
+        StringView topic,
+        size_t maximumPayloadSize,
+        uint8_t qos);
+    Result publishSideChannel(
+        StringView topic,
+        ByteView payload,
+        const MqttPublishOptions& options);
+    void setSideChannelHandler(
+        MqttMessageHandler handler,
+        void* context);
+
     // Product connectivity code owns WiFi/Ethernet/cellular state and updates
     // this cached gate. Keeping platform status calls outside the protocol
     // transport prevents an unavailable link from triggering blocking
@@ -46,6 +62,7 @@ public:
     TransportState state() const override;
     ErrorCode lastError() const { return lastError_; }
     TransportCapabilities capabilities() const override;
+    uint32_t connectionGeneration() const;
     Result send(ByteView frame, const SendTarget& target) override;
     void setReceiver(FrameReceiver receiver, void* context) override;
     void setSessionHandlers(
@@ -82,7 +99,10 @@ private:
     FrameSessionHandler sessionConnected_;
     FrameSessionHandler sessionDisconnected_;
     void* sessionContext_;
+    MqttMessageHandler sideChannelHandler_;
+    void* sideChannelContext_;
     TransportState state_;
+    uint32_t connectionGeneration_;
     uint32_t lastConnectAttempt_;
     bool configured_;
     bool started_;

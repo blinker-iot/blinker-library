@@ -1,19 +1,29 @@
-// ESP32 WiFi+BLE QuickStart. The App installs WiFi and device access data.
-// SoftAP WiFiProv is the portable default. On an ESP32 core built with IDF
-// NimBLE, define BLINKER_ESP32_PROVISIONING_BLE before this include to opt in
-// to BLE WiFiProv without changing begin().
-// #define BLINKER_ESP32_PROVISIONING_BLE
+// ESP32 WiFi+BLE QuickStart. The App installs WiFi and device access data over
+// the default BLE WiFiProv transport.
 #include <BlinkerWiFiBLE.h>
 
 BLINKER_PROPERTY(power, bool, blinker::readWrite());
+BLINKER_PROPERTY(buttonPresses, uint32_t, blinker::readOnly());
+BLINKER_ACTION(button);
+
+bool currentPower = false;
+uint32_t pressCount = 0;
 
 void onPower(bool value) {
-    power.report(value);
+    currentPower = value;
+    power.report(currentPower);
+}
+
+void onButton() {
+    buttonPresses.report(++pressCount);
 }
 
 void setup() {
     power.onWrite(onPower);
-    Blinker.begin(power);
+    button.onInvoke(onButton);
+    if (Blinker.begin(power, buttonPresses, button)) {
+        Blinker.report(power, currentPower, buttonPresses, pressCount);
+    }
 }
 
 void loop() {

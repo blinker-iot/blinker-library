@@ -1,5 +1,12 @@
 #include <BlinkerV2/runtime/BleSetupCompletion.inc>
+#include <BlinkerV2/runtime/ChildSessionCoordinator.inc>
+#include <BlinkerV2/runtime/BleDirectProfile.inc>
 #include <BlinkerV2/runtime/DeviceRuntime.inc>
+#include <BlinkerV2/runtime/GatewayAccessDeliveryProcessor.inc>
+#include <BlinkerV2/runtime/GatewayCloudMux.inc>
+#include <BlinkerV2/runtime/GatewayManagementClient.inc>
+#include <BlinkerV2/runtime/GatewayRouteClient.inc>
+#include <BlinkerV2/runtime/GatewayPresenceMatcher.inc>
 #include <BlinkerV2/runtime/OutboundScheduler.inc>
 #include <BlinkerV2/runtime/ReliableOutbox.inc>
 #include <BlinkerV2/runtime/TelemetryLease.inc>

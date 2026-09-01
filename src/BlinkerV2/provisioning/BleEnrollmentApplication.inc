@@ -212,6 +212,7 @@ Result BleEnrollmentApplication::handleEnrollment(
     Result result = grantVerifier_.verify(
         request.grant, context, workspace, grant);
     uint8_t secretDigest[kSha256Size] = {};
+    uint8_t presenceDigest[kSha256Size] = {};
     if (result) {
         result = sha256(
             request.controllerSecret,
@@ -222,8 +223,19 @@ Result BleEnrollmentApplication::handleEnrollment(
                       grant.controllerSecretDigest)) {
         result = Result::failure(ErrorCode::AuthenticationRequired);
     }
+    if (result) {
+        result = sha256(
+            request.presenceKey,
+            MutableByteSpan(presenceDigest, sizeof(presenceDigest)));
+    }
+    if (result && !constantTimeEqual(
+                      ByteView(presenceDigest, sizeof(presenceDigest)),
+                      grant.presenceKeyDigest)) {
+        result = Result::failure(ErrorCode::AuthenticationRequired);
+    }
 
     ControllerCredential credential;
+    DevicePresenceKey presence;
     if (result) {
         credential.ownershipGeneration = grant.accessEpoch;
         credential.credentialVersion = 1U;
@@ -236,7 +248,12 @@ Result BleEnrollmentApplication::handleEnrollment(
         memcpy(credential.secret,
                request.controllerSecret.data,
                sizeof(credential.secret));
-        result = accessStore_.bootstrapAccess(grant.accessEpoch, credential);
+        presence.version = grant.presenceKeyVersion;
+        memcpy(presence.bytes,
+               request.presenceKey.data,
+               sizeof(presence.bytes));
+        result = accessStore_.bootstrapAccessWithPresence(
+            grant.accessEpoch, credential, presence);
     }
 
     uint8_t proof[kControllerReceiptProofSize] = {};
@@ -270,7 +287,9 @@ Result BleEnrollmentApplication::handleEnrollment(
     if (result) state_ = BleEnrollmentApplicationState::Enrolled;
 
     clearControllerCredential(credential);
+    clearDevicePresenceKey(presence);
     secureZero(MutableByteSpan(secretDigest, sizeof(secretDigest)));
+    secureZero(MutableByteSpan(presenceDigest, sizeof(presenceDigest)));
     secureZero(MutableByteSpan(proof, sizeof(proof)));
     return result;
 }

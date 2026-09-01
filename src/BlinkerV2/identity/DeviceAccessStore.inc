@@ -1,5 +1,6 @@
 #include "DeviceAccessStore.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include "../core/Crc32.h"
@@ -10,30 +11,62 @@ namespace blinker {
 namespace {
 
 const uint8_t kAccessStoreMagic[4] = {'B', 'A', 'S', '2'};
-const uint8_t kAccessStoreSchemaVersion = 1U;
+const uint8_t kLegacySchemaVersion = 1U;
+const uint8_t kPreviousSchemaVersion = 2U;
+const uint8_t kSchemaVersion = 3U;
 const uint8_t kHasDeviceKey = 0x01U;
+const uint8_t kHasPresenceKey = 0x02U;
 const uint32_t kSharedPermissions =
     kControllerPermissionObserve | kControllerPermissionControl;
 const size_t kEpochOffset = 8U;
-const size_t kKeyOffset = 12U;
-const size_t kSlotsOffset = 44U;
-const size_t kAccessStoreCrcOffset = DeviceAccessStore::serializedSize - 4U;
+const size_t kDeviceKeyOffset = 12U;
+const size_t kLegacySlotsOffset = 44U;
+const size_t kPresenceVersionOffset = 44U;
+const size_t kPresenceKeyOffset = 48U;
+const size_t kSlotsOffset = 64U;
+const size_t kLegacyCrcOffset =
+    DeviceAccessStore::legacySerializedSize - 4U;
+const size_t kPreviousCrcOffset =
+    DeviceAccessStore::previousSerializedSize - 4U;
+const size_t kCrcOffset = DeviceAccessStore::serializedSize - 4U;
 
-void accessStoreWriteU32(uint8_t* output, uint32_t value) {
+struct AccessState {
+    bool hasDeviceKey;
+    DeviceKey deviceKey;
+    uint32_t accessEpoch;
+    DevicePresenceKey presence;
+    ControllerCredentialTable controllers;
+
+    AccessState()
+        : hasDeviceKey(false), deviceKey(), accessEpoch(0U),
+          presence(), controllers() {}
+
+    bool hasPresence() const { return presence.version != 0U; }
+
+    void clearSecrets() {
+        hasDeviceKey = false;
+        clearDeviceKey(deviceKey);
+        accessEpoch = 0U;
+        clearDevicePresenceKey(presence);
+        controllers.clear();
+    }
+};
+
+void writeU32(uint8_t* output, uint32_t value) {
     output[0] = static_cast<uint8_t>(value >> 24U);
     output[1] = static_cast<uint8_t>(value >> 16U);
     output[2] = static_cast<uint8_t>(value >> 8U);
     output[3] = static_cast<uint8_t>(value);
 }
 
-uint32_t accessStoreReadU32(const uint8_t* input) {
+uint32_t readU32(const uint8_t* input) {
     return (static_cast<uint32_t>(input[0]) << 24U) |
            (static_cast<uint32_t>(input[1]) << 16U) |
            (static_cast<uint32_t>(input[2]) << 8U) |
            static_cast<uint32_t>(input[3]);
 }
 
-bool accessStoreAllZero(ByteView value) {
+bool allZero(ByteView value) {
     if (value.data == nullptr || value.empty()) return true;
     uint8_t combined = 0U;
     for (size_t index = 0U; index < value.size; ++index) {
@@ -70,125 +103,178 @@ Result validateRoles(
             return Result::failure(ErrorCode::InvalidEncoding);
         }
     }
-    if (adminCount > 1U || sharedCount > 1U ||
+    if (adminCount > 1U || sharedCount > 2U ||
         (table.count() != 0U && adminCount != 1U)) {
         return Result::failure(ErrorCode::InvalidEncoding);
     }
     return Result::success();
 }
 
-Result encodeState(
-    bool hasKey,
-    const DeviceKey& key,
-    uint32_t accessEpoch,
-    const ControllerCredentialTable& table,
-    MutableByteSpan output) {
+Result validateState(const AccessState& state) {
+    if (state.accessEpoch == 0U) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    Result result = state.hasDeviceKey
+        ? validateDeviceKey(state.deviceKey)
+        : Result::success();
+    if (result && state.hasPresence()) {
+        result = validateDevicePresenceKey(state.presence);
+    }
+    if (result) result = validateRoles(state.controllers, state.accessEpoch);
+    return result;
+}
+
+Result encodeState(const AccessState& state, MutableByteSpan output) {
     if (output.data == nullptr ||
         output.size < DeviceAccessStore::serializedSize) {
         return Result::failure(ErrorCode::BufferTooSmall);
     }
-    if (accessEpoch == 0U) {
-        return Result::failure(ErrorCode::InvalidArgument);
-    }
-    Result result = hasKey ? validateDeviceKey(key) : Result::success();
-    if (result) result = validateRoles(table, accessEpoch);
+    Result result = validateState(state);
     if (!result) return result;
 
     memset(output.data, 0, DeviceAccessStore::serializedSize);
     memcpy(output.data, kAccessStoreMagic, sizeof(kAccessStoreMagic));
-    output.data[4] = kAccessStoreSchemaVersion;
+    output.data[4] = kSchemaVersion;
     output.data[5] = static_cast<uint8_t>(
         ControllerCredentialTable::capacity);
-    output.data[6] = static_cast<uint8_t>(table.count());
-    output.data[7] = hasKey ? kHasDeviceKey : 0U;
-    accessStoreWriteU32(output.data + kEpochOffset, accessEpoch);
-    if (hasKey) {
-        memcpy(output.data + kKeyOffset, key.bytes, sizeof(key.bytes));
+    output.data[6] = static_cast<uint8_t>(state.controllers.count());
+    output.data[7] = static_cast<uint8_t>(
+        (state.hasDeviceKey ? kHasDeviceKey : 0U) |
+        (state.hasPresence() ? kHasPresenceKey : 0U));
+    writeU32(output.data + kEpochOffset, state.accessEpoch);
+    if (state.hasDeviceKey) {
+        memcpy(
+            output.data + kDeviceKeyOffset,
+            state.deviceKey.bytes,
+            sizeof(state.deviceKey.bytes));
     }
-    result = table.encode(MutableByteSpan(
+    if (state.hasPresence()) {
+        writeU32(output.data + kPresenceVersionOffset, state.presence.version);
+        memcpy(
+            output.data + kPresenceKeyOffset,
+            state.presence.bytes,
+            sizeof(state.presence.bytes));
+    }
+    result = state.controllers.encode(MutableByteSpan(
         output.data + kSlotsOffset,
         ControllerCredentialTable::encodedSize));
     if (result) {
-    accessStoreWriteU32(
-        output.data + kAccessStoreCrcOffset,
-        computeCrc32(ByteView(output.data, kAccessStoreCrcOffset)));
+        writeU32(
+            output.data + kCrcOffset,
+            computeCrc32(ByteView(output.data, kCrcOffset)));
     }
     return result;
 }
 
-Result decodeState(
-    ByteView input,
-    bool& hasKey,
-    DeviceKey& key,
-    uint32_t& accessEpoch,
-    ControllerCredentialTable& table) {
-    hasKey = false;
-    clearDeviceKey(key);
-    accessEpoch = 0U;
+Result decodeState(ByteView input, AccessState& state) {
+    state.clearSecrets();
+    const bool legacySize =
+        input.size == DeviceAccessStore::legacySerializedSize;
+    const bool previousSize =
+        input.size == DeviceAccessStore::previousSerializedSize;
+    const bool currentSize =
+        input.size == DeviceAccessStore::serializedSize;
     if (input.data == nullptr ||
-        input.size != DeviceAccessStore::serializedSize ||
-        memcmp(input.data, kAccessStoreMagic, sizeof(kAccessStoreMagic)) != 0 ||
-        input.data[4] != kAccessStoreSchemaVersion ||
-        input.data[5] != static_cast<uint8_t>(
-            ControllerCredentialTable::capacity) ||
-        input.data[6] > ControllerCredentialTable::capacity ||
-        (input.data[7] & ~kHasDeviceKey) != 0U ||
-        accessStoreReadU32(input.data + kAccessStoreCrcOffset) !=
-            computeCrc32(ByteView(input.data, kAccessStoreCrcOffset))) {
+        (!legacySize && !previousSize && !currentSize) ||
+        memcmp(input.data, kAccessStoreMagic, sizeof(kAccessStoreMagic)) != 0) {
         return Result::failure(ErrorCode::InvalidEncoding);
     }
 
-    const uint32_t decodedEpoch = accessStoreReadU32(
-        input.data + kEpochOffset);
-    const bool decodedHasKey = (input.data[7] & kHasDeviceKey) != 0U;
-    if (decodedEpoch == 0U ||
-        (!decodedHasKey && !accessStoreAllZero(ByteView(
-            input.data + kKeyOffset, kDeviceKeySize)))) {
+    const bool legacy =
+        legacySize && input.data[4] == kLegacySchemaVersion;
+    const bool previous =
+        previousSize && input.data[4] == kPreviousSchemaVersion;
+    const bool current =
+        currentSize && input.data[4] == kSchemaVersion;
+    if (!legacy && !previous && !current) {
         return Result::failure(ErrorCode::InvalidEncoding);
     }
-    DeviceKey decodedKey;
-    if (decodedHasKey) {
-        memcpy(decodedKey.bytes, input.data + kKeyOffset, sizeof(decodedKey.bytes));
-        Result result = validateDeviceKey(decodedKey);
+
+    const uint8_t allowedFlags = (previous || current)
+        ? static_cast<uint8_t>(kHasDeviceKey | kHasPresenceKey)
+        : kHasDeviceKey;
+    const size_t slotsOffset = legacy ? kLegacySlotsOffset : kSlotsOffset;
+    const size_t crcOffset = legacy
+        ? kLegacyCrcOffset
+        : (previous ? kPreviousCrcOffset : kCrcOffset);
+    const size_t slotCapacity = current
+        ? ControllerCredentialTable::capacity
+        : 2U;
+    if (input.data[5] != static_cast<uint8_t>(slotCapacity) ||
+        input.data[6] > slotCapacity ||
+        (input.data[7] & ~allowedFlags) != 0U ||
+        readU32(input.data + crcOffset) !=
+            computeCrc32(ByteView(input.data, crcOffset))) {
+        return Result::failure(ErrorCode::InvalidEncoding);
+    }
+
+    state.hasDeviceKey = (input.data[7] & kHasDeviceKey) != 0U;
+    state.accessEpoch = readU32(input.data + kEpochOffset);
+    if (state.accessEpoch == 0U ||
+        (!state.hasDeviceKey && !allZero(ByteView(
+            input.data + kDeviceKeyOffset, kDeviceKeySize)))) {
+        state.clearSecrets();
+        return Result::failure(ErrorCode::InvalidEncoding);
+    }
+    if (state.hasDeviceKey) {
+        memcpy(
+            state.deviceKey.bytes,
+            input.data + kDeviceKeyOffset,
+            sizeof(state.deviceKey.bytes));
+        Result result = validateDeviceKey(state.deviceKey);
         if (!result) {
-            clearDeviceKey(decodedKey);
+            state.clearSecrets();
             return result;
         }
     }
-    Result result = table.decode(
+
+    if ((previous || current) &&
+        (input.data[7] & kHasPresenceKey) != 0U) {
+        state.presence.version = readU32(
+            input.data + kPresenceVersionOffset);
+        memcpy(
+            state.presence.bytes,
+            input.data + kPresenceKeyOffset,
+            sizeof(state.presence.bytes));
+        Result result = validateDevicePresenceKey(state.presence);
+        if (!result) {
+            state.clearSecrets();
+            return Result::failure(ErrorCode::InvalidEncoding);
+        }
+    } else if ((previous || current) &&
+               (readU32(input.data + kPresenceVersionOffset) != 0U ||
+                !allZero(ByteView(
+                    input.data + kPresenceKeyOffset,
+                    kDevicePresenceKeySize)))) {
+        state.clearSecrets();
+        return Result::failure(ErrorCode::InvalidEncoding);
+    }
+
+    Result result = state.controllers.decode(
         ByteView(
-            input.data + kSlotsOffset,
-            ControllerCredentialTable::encodedSize),
+            input.data + slotsOffset,
+            slotCapacity * ControllerCredentialTable::slotSize),
         input.data[6]);
     if (result.code() == ErrorCode::InvalidArgument) {
         result = Result::failure(ErrorCode::InvalidEncoding);
     }
-    if (result) result = validateRoles(table, decodedEpoch);
     if (result) {
-        hasKey = decodedHasKey;
-        key = decodedKey;
-        accessEpoch = decodedEpoch;
+        result = validateRoles(state.controllers, state.accessEpoch);
     }
-    clearDeviceKey(decodedKey);
-    return result;
+    if (!result) {
+        state.clearSecrets();
+        return result;
+    }
+    return Result::success();
 }
 
-Result loadState(
-    IAtomicBlobStore& storage,
-    bool& hasKey,
-    DeviceKey& key,
-    uint32_t& accessEpoch,
-    ControllerCredentialTable& table) {
+Result loadState(IAtomicBlobStore& storage, AccessState& state) {
     uint8_t encoded[DeviceAccessStore::serializedSize] = {};
     size_t written = 0U;
     Result result = storage.load(
         MutableByteSpan(encoded, sizeof(encoded)), written);
-    if (result && written != sizeof(encoded)) {
-        result = Result::failure(ErrorCode::InvalidEncoding);
-    }
     if (result) {
-        result = decodeState(
-            ByteView(encoded, written), hasKey, key, accessEpoch, table);
+        result = decodeState(ByteView(encoded, written), state);
     }
     secureZero(MutableByteSpan(encoded, sizeof(encoded)));
     return result;
@@ -206,38 +292,32 @@ bool sameTable(
     return true;
 }
 
+bool sameState(const AccessState& first, const AccessState& second) {
+    return first.hasDeviceKey == second.hasDeviceKey &&
+           first.accessEpoch == second.accessEpoch &&
+           (!first.hasDeviceKey || sameDeviceKey(
+               first.deviceKey, second.deviceKey)) &&
+           first.hasPresence() == second.hasPresence() &&
+           (!first.hasPresence() || sameDevicePresenceKey(
+               first.presence, second.presence)) &&
+           sameTable(first.controllers, second.controllers);
+}
+
 Result replaceAndVerify(
     IAtomicBlobStore& storage,
-    bool hasKey,
-    const DeviceKey& key,
-    uint32_t accessEpoch,
-    const ControllerCredentialTable& table) {
+    const AccessState& state) {
     uint8_t encoded[DeviceAccessStore::serializedSize] = {};
     Result result = encodeState(
-        hasKey,
-        key,
-        accessEpoch,
-        table,
+        state,
         MutableByteSpan(encoded, sizeof(encoded)));
     if (result) result = storage.replace(ByteView(encoded, sizeof(encoded)));
     secureZero(MutableByteSpan(encoded, sizeof(encoded)));
     if (!result) return result;
 
-    bool verifiedHasKey = false;
-    DeviceKey verifiedKey;
-    uint32_t verifiedEpoch = 0U;
-    ControllerCredentialTable verifiedTable;
-    result = loadState(
-        storage,
-        verifiedHasKey,
-        verifiedKey,
-        verifiedEpoch,
-        verifiedTable);
-    const bool same = result && verifiedHasKey == hasKey &&
-        verifiedEpoch == accessEpoch &&
-        (!hasKey || sameDeviceKey(verifiedKey, key)) &&
-        sameTable(verifiedTable, table);
-    clearDeviceKey(verifiedKey);
+    AccessState verified;
+    result = loadState(storage, verified);
+    const bool same = result && sameState(verified, state);
+    verified.clearSecrets();
     return same ? Result::success()
                 : (result ? Result::failure(ErrorCode::InternalError) : result);
 }
@@ -254,282 +334,15 @@ Result clearAndVerify(IAtomicBlobStore& storage) {
                : (result ? Result::failure(ErrorCode::InternalError) : result);
 }
 
-Result loadExisting(
-    IAtomicBlobStore& storage,
-    bool& hasKey,
-    DeviceKey& key,
-    uint32_t& accessEpoch,
-    ControllerCredentialTable& table) {
-    return loadState(storage, hasKey, key, accessEpoch, table);
-}
-
-} // namespace
-
-Result DeviceAccessStore::load(DeviceKey& output) {
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t accessEpoch = 0U;
-    ControllerCredentialTable table;
-    Result result = loadExisting(
-        storage_, hasKey, key, accessEpoch, table);
-    if (result && !hasKey) result = Result::failure(ErrorCode::NotFound);
-    if (result) output = key;
-    clearDeviceKey(key);
-    return result;
-}
-
-Result DeviceAccessStore::replace(const DeviceKey& key) {
-    Result result = validateDeviceKey(key);
-    if (!result) return result;
-    bool hasKey = false;
-    DeviceKey current;
-    uint32_t accessEpoch = 0U;
-    ControllerCredentialTable table;
-    result = loadExisting(
-        storage_, hasKey, current, accessEpoch, table);
-    if (result && hasKey && sameDeviceKey(current, key)) {
-        clearDeviceKey(current);
-        return Result::success();
-    }
-    if (result) {
-        result = replaceAndVerify(
-            storage_, true, key, accessEpoch, table);
-    }
-    clearDeviceKey(current);
-    return result;
-}
-
-Result DeviceAccessStore::clear() {
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t accessEpoch = 0U;
-    ControllerCredentialTable table;
-    Result result = loadExisting(
-        storage_, hasKey, key, accessEpoch, table);
-    if (result.code() == ErrorCode::NotFound) {
-        clearDeviceKey(key);
-        return Result::success();
-    }
-    if (result && hasKey) {
-        clearDeviceKey(key);
-        result = replaceAndVerify(
-            storage_, false, key, accessEpoch, table);
-    }
-    clearDeviceKey(key);
-    return result;
-}
-
-Result DeviceAccessStore::loadAccessEpoch(uint32_t& output) {
-    output = 0U;
-    bool hasKey = false;
-    DeviceKey key;
-    ControllerCredentialTable table;
-    Result result = loadExisting(storage_, hasKey, key, output, table);
-    clearDeviceKey(key);
-    return result;
-}
-
-Result DeviceAccessStore::loadActive(
-    ByteView controllerId,
-    ControllerCredentialDomain domain,
-    uint32_t accessEpoch,
-    ControllerCredential& output) {
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t storedEpoch = 0U;
-    ControllerCredentialTable table;
-    Result result = loadExisting(
-        storage_, hasKey, key, storedEpoch, table);
-    clearDeviceKey(key);
-    if (result && storedEpoch != accessEpoch) {
-        return Result::failure(ErrorCode::NotFound);
-    }
-    return result ? table.loadActive(
-                        controllerId, domain, accessEpoch, output)
-                  : result;
-}
-
-Result DeviceAccessStore::loadAt(
-    size_t index,
-    ControllerCredential& output) {
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t accessEpoch = 0U;
-    ControllerCredentialTable table;
-    Result result = loadExisting(
-        storage_, hasKey, key, accessEpoch, table);
-    clearDeviceKey(key);
-    if (result && index >= table.count()) {
-        result = Result::failure(ErrorCode::NotFound);
-    }
-    if (result) output = table.at(index);
-    return result;
-}
-
-Result DeviceAccessStore::count(size_t& output) {
-    output = 0U;
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t accessEpoch = 0U;
-    ControllerCredentialTable table;
-    Result result = loadExisting(
-        storage_, hasKey, key, accessEpoch, table);
-    clearDeviceKey(key);
-    if (result) output = table.count();
-    return result;
-}
-
-Result DeviceAccessStore::installVerified(
-    const ControllerCredential& credential) {
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t accessEpoch = 0U;
-    ControllerCredentialTable table;
-    Result result = loadExisting(
-        storage_, hasKey, key, accessEpoch, table);
-    bool changed = false;
-    if (result && (credential.domain !=
-                       ControllerCredentialDomain::PlatformAccess ||
-                   credential.ownershipGeneration != accessEpoch)) {
-        result = Result::failure(ErrorCode::StateConflict);
-    }
-    if (result && !isAdmin(credential) && !isShared(credential)) {
-        result = Result::failure(ErrorCode::StateConflict);
-    }
-    for (size_t index = 0U; result && index < table.count(); ++index) {
-        const ControllerCredential& installed = table.at(index);
-        const bool sameId = memcmp(
-            installed.controllerId,
-            credential.controllerId,
-            kControllerIdSize) == 0;
-        if (!sameId && isAdmin(installed) == isAdmin(credential)) {
-            result = Result::failure(ErrorCode::StateConflict);
-        }
-    }
-    if (result) result = table.install(credential, changed);
-    if (result) {
-        const Result roles = validateRoles(table, accessEpoch);
-        if (!roles) result = Result::failure(ErrorCode::StateConflict);
-    }
-    if (result && changed) {
-        result = replaceAndVerify(
-            storage_, hasKey, key, accessEpoch, table);
-    }
-    clearDeviceKey(key);
-    return result;
-}
-
-Result DeviceAccessStore::rotateVerified(
-    uint32_t expectedCredentialVersion,
-    const ControllerCredential& credential) {
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t accessEpoch = 0U;
-    ControllerCredentialTable table;
-    Result result = loadExisting(
-        storage_, hasKey, key, accessEpoch, table);
-    ControllerCredential current;
-    if (result) {
-        result = table.loadActive(
-            credential.id(),
-            credential.domain,
-            credential.ownershipGeneration,
-            current);
-    }
-    if (result && (credential.ownershipGeneration != accessEpoch ||
-                   current.permissions != credential.permissions)) {
-        result = Result::failure(ErrorCode::StateConflict);
-    }
-    bool changed = false;
-    if (result) {
-        result = table.rotate(
-            expectedCredentialVersion, credential, changed);
-    }
-    if (result && changed) {
-        result = replaceAndVerify(
-            storage_, hasKey, key, accessEpoch, table);
-    }
-    clearControllerCredential(current);
-    clearDeviceKey(key);
-    return result;
-}
-
-Result DeviceAccessStore::revokeVerified(
-    ByteView controllerId,
-    ControllerCredentialDomain domain,
-    uint32_t accessEpoch,
-    uint32_t expectedCredentialVersion) {
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t storedEpoch = 0U;
-    ControllerCredentialTable table;
-    Result result = loadExisting(
-        storage_, hasKey, key, storedEpoch, table);
-    ControllerCredential current;
-    if (result) {
-        result = table.loadActive(
-            controllerId, domain, accessEpoch, current);
-    }
-    if (result.code() == ErrorCode::NotFound) {
-        bool changed = false;
-        const Result absent = table.revoke(
-            controllerId,
-            domain,
-            accessEpoch,
-            expectedCredentialVersion,
-            changed);
-        clearControllerCredential(current);
-        clearDeviceKey(key);
-        return absent;
-    }
-    if (result && (storedEpoch != accessEpoch || isAdmin(current))) {
-        result = Result::failure(ErrorCode::StateConflict);
-    }
-    bool changed = false;
-    if (result) {
-        result = table.revoke(
-            controllerId,
-            domain,
-            accessEpoch,
-            expectedCredentialVersion,
-            changed);
-    }
-    if (result && changed) {
-        result = replaceAndVerify(
-            storage_, hasKey, key, storedEpoch, table);
-    }
-    clearControllerCredential(current);
-    clearDeviceKey(key);
-    return result;
-}
-
-Result DeviceAccessStore::clearAll() {
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t accessEpoch = 0U;
-    ControllerCredentialTable table;
-    Result result = loadExisting(
-        storage_, hasKey, key, accessEpoch, table);
-    if (result.code() == ErrorCode::NotFound) {
-        clearDeviceKey(key);
-        return Result::success();
-    }
-    if (result && !hasKey) {
-        result = clearAndVerify(storage_);
-    } else if (result && table.count() != 0U) {
-        table.clear();
-        result = replaceAndVerify(
-            storage_, hasKey, key, accessEpoch, table);
-    }
-    clearDeviceKey(key);
-    return result;
-}
-
-Result DeviceAccessStore::bootstrap(
+Result validateBootstrap(
+    bool hasDeviceKey,
     const DeviceKey& deviceKey,
     uint32_t accessEpoch,
-    const ControllerCredential& initialController) {
-    Result result = validateDeviceKey(deviceKey);
+    const ControllerCredential& initialController,
+    const DevicePresenceKey* presence) {
+    Result result = hasDeviceKey
+        ? validateDeviceKey(deviceKey)
+        : Result::success();
     if (!result || accessEpoch == 0U ||
         initialController.domain !=
             ControllerCredentialDomain::PlatformAccess ||
@@ -538,69 +351,382 @@ Result DeviceAccessStore::bootstrap(
         return Result::failure(ErrorCode::InvalidArgument);
     }
     result = validateControllerCredential(initialController);
+    if (result && presence != nullptr) {
+        result = validateDevicePresenceKey(*presence);
+    }
+    return result;
+}
+
+Result bootstrapState(
+    IAtomicBlobStore& storage,
+    bool hasDeviceKey,
+    const DeviceKey& deviceKey,
+    uint32_t accessEpoch,
+    const ControllerCredential& initialController,
+    const DevicePresenceKey* presence) {
+    Result result = validateBootstrap(
+        hasDeviceKey,
+        deviceKey,
+        accessEpoch,
+        initialController,
+        presence);
     if (!result) return result;
 
-    bool hasKey = false;
-    DeviceKey currentKey;
-    uint32_t currentEpoch = 0U;
-    ControllerCredentialTable table;
-    result = loadExisting(
-        storage_, hasKey, currentKey, currentEpoch, table);
+    AccessState state;
+    result = loadState(storage, state);
     if (result) {
-        const bool same = hasKey && sameDeviceKey(currentKey, deviceKey) &&
-            currentEpoch == accessEpoch && table.count() == 1U &&
-            sameControllerCredential(table.at(0U), initialController);
-        clearDeviceKey(currentKey);
+        const bool same =
+            state.hasDeviceKey == hasDeviceKey &&
+            (!hasDeviceKey || sameDeviceKey(state.deviceKey, deviceKey)) &&
+            state.accessEpoch == accessEpoch &&
+            state.controllers.count() == 1U &&
+            sameControllerCredential(
+                state.controllers.at(0U), initialController) &&
+            state.hasPresence() == (presence != nullptr) &&
+            (presence == nullptr || sameDevicePresenceKey(
+                state.presence, *presence));
+        state.clearSecrets();
         return same ? Result::success()
                     : Result::failure(ErrorCode::StateConflict);
     }
-    clearDeviceKey(currentKey);
+    state.clearSecrets();
     if (result.code() != ErrorCode::NotFound) return result;
 
+    state.hasDeviceKey = hasDeviceKey;
+    if (hasDeviceKey) state.deviceKey = deviceKey;
+    state.accessEpoch = accessEpoch;
+    if (presence != nullptr) state.presence = *presence;
     bool changed = false;
-    result = table.install(initialController, changed);
-    return result && changed
-               ? replaceAndVerify(
-                     storage_, true, deviceKey, accessEpoch, table)
-               : result;
+    result = state.controllers.install(initialController, changed);
+    if (result && changed) result = replaceAndVerify(storage, state);
+    state.clearSecrets();
+    return result;
+}
+
+} // namespace
+
+Result DeviceAccessStore::load(DeviceKey& output) {
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result && !state.hasDeviceKey) {
+        result = Result::failure(ErrorCode::NotFound);
+    }
+    if (result) output = state.deviceKey;
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::replace(const DeviceKey& key) {
+    Result result = validateDeviceKey(key);
+    if (!result) return result;
+    AccessState state;
+    result = loadState(storage_, state);
+    if (result && state.hasDeviceKey &&
+        sameDeviceKey(state.deviceKey, key)) {
+        state.clearSecrets();
+        return Result::success();
+    }
+    if (result) {
+        state.hasDeviceKey = true;
+        state.deviceKey = key;
+        result = replaceAndVerify(storage_, state);
+    }
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::clear() {
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result.code() == ErrorCode::NotFound) return Result::success();
+    if (result && state.hasDeviceKey) {
+        state.hasDeviceKey = false;
+        clearDeviceKey(state.deviceKey);
+        result = replaceAndVerify(storage_, state);
+    }
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::loadAccessEpoch(uint32_t& output) {
+    output = 0U;
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result) output = state.accessEpoch;
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::loadActive(
+    ByteView controllerId,
+    ControllerCredentialDomain domain,
+    uint32_t accessEpoch,
+    ControllerCredential& output) {
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result && state.accessEpoch != accessEpoch) {
+        result = Result::failure(ErrorCode::NotFound);
+    }
+    if (result) {
+        result = state.controllers.loadActive(
+            controllerId, domain, accessEpoch, output);
+    }
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::loadAt(
+    size_t index,
+    ControllerCredential& output) {
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result && index >= state.controllers.count()) {
+        result = Result::failure(ErrorCode::NotFound);
+    }
+    if (result) output = state.controllers.at(index);
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::count(size_t& output) {
+    output = 0U;
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result) output = state.controllers.count();
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::installVerified(
+    const ControllerCredential& credential) {
+    AccessState state;
+    Result result = loadState(storage_, state);
+    bool changed = false;
+    if (result && (credential.domain !=
+                       ControllerCredentialDomain::PlatformAccess ||
+                   credential.ownershipGeneration != state.accessEpoch)) {
+        result = Result::failure(ErrorCode::StateConflict);
+    }
+    if (result && !isAdmin(credential) && !isShared(credential)) {
+        result = Result::failure(ErrorCode::StateConflict);
+    }
+    for (size_t index = 0U;
+         result && index < state.controllers.count();
+         ++index) {
+        const ControllerCredential& installed = state.controllers.at(index);
+        const bool sameId = memcmp(
+            installed.controllerId,
+            credential.controllerId,
+            kControllerIdSize) == 0;
+        if (!sameId && isAdmin(installed) && isAdmin(credential)) {
+            result = Result::failure(ErrorCode::StateConflict);
+        }
+    }
+    if (result) result = state.controllers.install(credential, changed);
+    if (result) {
+        const Result roles = validateRoles(
+            state.controllers, state.accessEpoch);
+        if (!roles) result = Result::failure(ErrorCode::StateConflict);
+    }
+    if (result && changed) result = replaceAndVerify(storage_, state);
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::rotateVerified(
+    uint32_t expectedCredentialVersion,
+    const ControllerCredential& credential) {
+    AccessState state;
+    Result result = loadState(storage_, state);
+    ControllerCredential current;
+    if (result) {
+        result = state.controllers.loadActive(
+            credential.id(),
+            credential.domain,
+            credential.ownershipGeneration,
+            current);
+    }
+    if (result && (credential.ownershipGeneration != state.accessEpoch ||
+                   current.permissions != credential.permissions)) {
+        result = Result::failure(ErrorCode::StateConflict);
+    }
+    bool changed = false;
+    if (result) {
+        result = state.controllers.rotate(
+            expectedCredentialVersion, credential, changed);
+    }
+    if (result && changed) result = replaceAndVerify(storage_, state);
+    clearControllerCredential(current);
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::revokeVerified(
+    ByteView controllerId,
+    ControllerCredentialDomain domain,
+    uint32_t accessEpoch,
+    uint32_t expectedCredentialVersion) {
+    AccessState state;
+    Result result = loadState(storage_, state);
+    ControllerCredential current;
+    if (result) {
+        result = state.controllers.loadActive(
+            controllerId, domain, accessEpoch, current);
+    }
+    if (result.code() == ErrorCode::NotFound) {
+        bool changed = false;
+        const Result absent = state.controllers.revoke(
+            controllerId,
+            domain,
+            accessEpoch,
+            expectedCredentialVersion,
+            changed);
+        clearControllerCredential(current);
+        state.clearSecrets();
+        return absent;
+    }
+    if (result && (state.accessEpoch != accessEpoch || isAdmin(current))) {
+        result = Result::failure(ErrorCode::StateConflict);
+    }
+    bool changed = false;
+    if (result) {
+        result = state.controllers.revoke(
+            controllerId,
+            domain,
+            accessEpoch,
+            expectedCredentialVersion,
+            changed);
+    }
+    if (result && changed) result = replaceAndVerify(storage_, state);
+    clearControllerCredential(current);
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::clearAll() {
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result.code() == ErrorCode::NotFound) return Result::success();
+    if (result && !state.hasDeviceKey) {
+        state.clearSecrets();
+        return clearAndVerify(storage_);
+    }
+    if (result &&
+        (state.controllers.count() != 0U || state.hasPresence())) {
+        state.controllers.clear();
+        clearDevicePresenceKey(state.presence);
+        result = replaceAndVerify(storage_, state);
+    }
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::bootstrap(
+    const DeviceKey& deviceKey,
+    uint32_t accessEpoch,
+    const ControllerCredential& initialController) {
+    return bootstrapState(
+        storage_,
+        true,
+        deviceKey,
+        accessEpoch,
+        initialController,
+        nullptr);
 }
 
 Result DeviceAccessStore::bootstrapAccess(
     uint32_t accessEpoch,
     const ControllerCredential& initialController) {
-    if (accessEpoch == 0U ||
-        initialController.domain !=
-            ControllerCredentialDomain::PlatformAccess ||
-        initialController.ownershipGeneration != accessEpoch ||
-        !isAdmin(initialController)) {
+    return bootstrapState(
+        storage_,
+        false,
+        DeviceKey(),
+        accessEpoch,
+        initialController,
+        nullptr);
+}
+
+Result DeviceAccessStore::loadPresence(
+    uint32_t accessEpoch,
+    DevicePresenceKey& output) {
+    clearDevicePresenceKey(output);
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result && state.accessEpoch != accessEpoch) {
+        result = Result::failure(ErrorCode::NotFound);
+    }
+    if (result && !state.hasPresence()) {
+        result = Result::failure(ErrorCode::NotFound);
+    }
+    if (result) output = state.presence;
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::replacePresenceVerified(
+    uint32_t accessEpoch,
+    uint32_t expectedVersion,
+    const DevicePresenceKey& value) {
+    Result result = validateDevicePresenceKey(value);
+    if (!result || accessEpoch == 0U) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
-    Result result = validateControllerCredential(initialController);
-    if (!result) return result;
-
-    bool hasKey = false;
-    DeviceKey key;
-    uint32_t currentEpoch = 0U;
-    ControllerCredentialTable table;
-    result = loadExisting(
-        storage_, hasKey, key, currentEpoch, table);
-    if (result) {
-        const bool same = !hasKey && currentEpoch == accessEpoch &&
-            table.count() == 1U &&
-            sameControllerCredential(table.at(0U), initialController);
-        clearDeviceKey(key);
-        return same ? Result::success()
-                    : Result::failure(ErrorCode::StateConflict);
+    AccessState state;
+    result = loadState(storage_, state);
+    if (result && state.accessEpoch != accessEpoch) {
+        result = Result::failure(ErrorCode::StateConflict);
     }
-    clearDeviceKey(key);
-    if (result.code() != ErrorCode::NotFound) return result;
+    if (result && state.hasPresence() &&
+        sameDevicePresenceKey(state.presence, value)) {
+        const bool exactRetry =
+            expectedVersion != UINT32_MAX &&
+            value.version == expectedVersion + 1U;
+        state.clearSecrets();
+        return exactRetry
+                   ? Result::success()
+                   : Result::failure(ErrorCode::StateConflict);
+    }
+    const uint32_t currentVersion = state.hasPresence()
+        ? state.presence.version
+        : 0U;
+    if (result &&
+        (currentVersion != expectedVersion || expectedVersion == UINT32_MAX ||
+         value.version != expectedVersion + 1U)) {
+        result = Result::failure(ErrorCode::StateConflict);
+    }
+    if (result) {
+        state.presence = value;
+        result = replaceAndVerify(storage_, state);
+    }
+    state.clearSecrets();
+    return result;
+}
 
-    bool changed = false;
-    result = table.install(initialController, changed);
-    return result && changed
-               ? replaceAndVerify(
-                     storage_, false, DeviceKey(), accessEpoch, table)
-               : result;
+Result DeviceAccessStore::bootstrapWithPresence(
+    const DeviceKey& deviceKey,
+    uint32_t accessEpoch,
+    const ControllerCredential& initialController,
+    const DevicePresenceKey& presence) {
+    return bootstrapState(
+        storage_,
+        true,
+        deviceKey,
+        accessEpoch,
+        initialController,
+        &presence);
+}
+
+Result DeviceAccessStore::bootstrapAccessWithPresence(
+    uint32_t accessEpoch,
+    const ControllerCredential& initialController,
+    const DevicePresenceKey& presence) {
+    return bootstrapState(
+        storage_,
+        false,
+        DeviceKey(),
+        accessEpoch,
+        initialController,
+        &presence);
 }
 
 Result DeviceAccessStore::eraseAccess() {

@@ -33,7 +33,7 @@ Result BleNoiseModePreparation::prepareBleMode(
     }
     if (result) {
         result = session_.beginSession(ByteView(
-            profile.setupSessionLocator,
+            profile.modeLocator,
             kSetupSessionLocatorSize));
     }
     if (!result) {
@@ -52,7 +52,7 @@ Result BleNoiseModePreparation::armPsk(
     size_t written = 0U;
     Result result = provider_->loadSetupPsk(
         ByteView(
-            profile.setupSessionLocator,
+            profile.modeLocator,
             kSetupSessionLocatorSize),
         MutableByteSpan(psk, sizeof(psk)),
         written);

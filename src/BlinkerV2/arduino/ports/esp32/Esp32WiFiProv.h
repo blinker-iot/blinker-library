@@ -34,10 +34,10 @@ struct Esp32WifiProvConfig {
           serviceKey(nullptr) {}
 };
 
-// The selected implementation is included only by the WiFi+BLE Product.
-// This prevents Arduino's global .cpp dependency scan from pulling Wi-Fi into
-// BLE-only sketches. SoftAP is the portable default; IDF-NimBLE targets may
-// opt in to BLE at build time.
+// The selected implementation is included only by products that own a
+// provisioning phase. This prevents Arduino's global .cpp dependency scan
+// from pulling Wi-Fi into BLE-only sketches. ESP32 products select BLE by
+// default and may explicitly select SoftAP on constrained deployments.
 inline Esp32WifiProvConfig esp32BleWifiProvConfig(
     const char* serviceName,
     const char* proofOfPossession);
@@ -88,6 +88,7 @@ private:
         network_prov_cb_event_t event,
         void* eventData);
     Result commitCredentials(const void* eventData);
+    bool shutdownManager();
     void fail(ErrorCode error);
     static ErrorCode mapPlatformError(int error);
     static bool validText(
@@ -104,6 +105,7 @@ private:
     volatile bool wifiSucceeded_;
     volatile bool ended_;
     bool managerInitialized_;
+    bool serviceStarted_;
     bool stopRequested_;
 
     Esp32WifiProvAdapter(const Esp32WifiProvAdapter&);

@@ -21,7 +21,7 @@ struct WioTerminalRpcBleConfig {
     uint8_t maxRxPacketsPerPoll;
 
     WioTerminalRpcBleConfig()
-        : deviceName("BlinkerV2"),
+        : deviceName(ble::kLocalName),
           sessionReadyTimeoutMillis(15000U),
           maxRxPacketsPerPoll(4U) {}
 };
@@ -30,7 +30,13 @@ class WioTerminalRpcBleLink final : public IBleModeLink,
                                     private BLEServerCallbacks,
                                     private BLECharacteristicCallbacks {
 public:
-    enum : size_t { maximumPacketSize = 20U };
+    enum : size_t {
+        maximumPacketSize = 20U,
+        // The 384-byte enrollment payload plus Noise/record overhead needs
+        // at most 26 minimum-MTU fragments. rpcBLE can deliver that burst
+        // before the SAMD loop drains it, so retain one complete record.
+        maximumQueuedPackets = 32U
+    };
 
     explicit WioTerminalRpcBleLink(
         const WioTerminalRpcBleConfig& config =
@@ -70,6 +76,8 @@ private:
         uint32_t code) override;
     Result configureAdvertising();
     void advanceAdvertising();
+    Result requestDisconnect();
+    void reconcileConnection();
     void processConnection();
     void updateSessionReadiness();
     void drainPackets();
@@ -90,7 +98,7 @@ private:
     BleSessionHandler connectedHandler_;
     BleSessionHandler disconnectedHandler_;
     void* sessionContext_;
-    QueuedPacket packets_[4];
+    QueuedPacket packets_[maximumQueuedPackets];
     uint8_t packetHead_;
     uint8_t packetTail_;
     uint8_t packetCount_;
@@ -98,6 +106,7 @@ private:
     uint16_t connectionId_;
     uint32_t nextSessionId_;
     uint32_t connectedAtMillis_;
+    uint32_t nextConnectionReconcileAt_;
     bool connectPending_;
     bool disconnectPending_;
     bool sessionAnnounced_;
@@ -105,6 +114,7 @@ private:
     bool advertisingConfigured_;
     uint32_t advertisingDeadlineAt_;
     uint32_t nextAdvertisingAttemptAt_;
+    volatile bool rxObserved_;
     volatile bool notifySucceeded_;
     BleLinkState state_;
     ErrorCode lastError_;

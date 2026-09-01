@@ -14,7 +14,7 @@
 
 #if !defined(BLINKER_ESP32_PROVISIONING_BLE) && \
     !defined(BLINKER_ESP32_PROVISIONING_SOFTAP)
-#define BLINKER_ESP32_PROVISIONING_SOFTAP 1
+#define BLINKER_ESP32_PROVISIONING_BLE 1
 #endif
 
 #if defined(BLINKER_ESP32_PROVISIONING_BLE) && \
@@ -35,6 +35,7 @@
 #include <BlinkerV2/provisioning/ControllerControlCoordinator.h>
 #include <BlinkerV2/provisioning/ControllerControlEndpoint.h>
 #include <BlinkerV2/provisioning/ControllerGrantVerifier.h>
+#include <BlinkerV2/runtime/BleDirectProfile.h>
 #include <BlinkerV2/security/ControllerHmacSha256Authorizer.h>
 #include <BlinkerV2/security/P256ServerKeyRingVerifier.h>
 #include <BlinkerV2/transport/BleFrameTransport.h>
@@ -103,7 +104,13 @@ public:
         const DeviceInstanceId& deviceInstance,
         IClock& clock,
         IRandom& random)
-        : access_(platform.deviceAccessStore()),
+        : platform_(platform),
+          access_(platform.deviceAccessStore()),
+          directProfile_(
+              deviceInstance,
+              access_,
+              random,
+              clock),
           rx_(),
           tx_(),
           packet_(),
@@ -129,7 +136,8 @@ public:
               deviceInstance,
               access_,
               access_,
-              grantVerifier_),
+              grantVerifier_,
+              &access_),
           controlWorkspace_(),
           controlEndpoint_(
               controlCoordinator_,
@@ -138,6 +146,31 @@ public:
                   controlWorkspace_,
                   sizeof(controlWorkspace_))),
           client_(nullptr) {}
+
+    Result prepare() {
+        ble::ModeProfile profile;
+        Result result = directProfile_.make(
+            transport_.sessionRevision(), profile);
+        if (result) {
+            result = platform_.bleLink().configureBleProfile(profile);
+        }
+        return result;
+    }
+
+    Result poll() {
+        if (!directProfile_.refreshDue(
+                platform_.bleLink().sessionCount(),
+                transport_.sessionRevision())) {
+            return Result::success();
+        }
+        transport_.stop();
+        Result result = prepare();
+        if (result) result = transport_.start();
+        if (!result) transport_.stop();
+        return result;
+    }
+
+    void resetProfile() { directProfile_.reset(); }
 
     Result attach(Client& client) {
         if (client_ != nullptr) {
@@ -180,7 +213,9 @@ private:
         return config;
     }
 
+    Platform& platform_;
     IDeviceAccessStore& access_;
+    BleDirectProfileProvider directProfile_;
     enum : size_t {
         directRecordSize =
             BLINKER_DEVICE_FRAME_SIZE + security::kDirectSecureOverhead
@@ -209,11 +244,9 @@ enum class Esp32WifiBleProductState : uint8_t {
     Fault
 };
 
-// One ESP32 product graph: WiFiProv Security1 bootstrap, then WiFi cloud plus
-// NimBLE Direct BBP/2. SoftAP is the portable default. BLE is an opt-in setup
-// transport only when the board core already uses IDF NimBLE, preventing the
-// Bluedroid + NimBLE-Arduino dual-host image produced by classic ESP32 cores.
-// Provisioning and Direct are sequential owners of the same BLE capability.
+// One ESP32 product graph: BLE WiFiProv Security1 bootstrap, then WiFi cloud
+// plus Direct BBP/2. Provisioning and Direct are sequential owners of the
+// ESP-IDF NimBLE Host. SoftAP remains an explicit low-resource fallback.
 // The ordinary education profile deliberately uses no Sketch setup secret and
 // does not claim active-MITM resistance.
 template <typename Platform>
@@ -317,6 +350,9 @@ public:
             const ProductLifecycleStatus current = cloud_.status();
             if (current.state == ProductLifecycleState::Fault) {
                 enterFault(current.lastError);
+            } else {
+                const Result result = direct_.poll();
+                if (!result) enterFault(result.code());
             }
         }
     }
@@ -324,6 +360,7 @@ public:
     void stop() override {
         provisioner_.end();
         cloud_.stop();
+        direct_.resetProfile();
         stack_.end();
         state_ = Esp32WifiBleProductState::Stopped;
         lastError_ = ErrorCode::Ok;
@@ -393,7 +430,8 @@ private:
     }
 
     Result startActive() {
-        Result result = stack_.begin();
+        Result result = direct_.prepare();
+        if (result) result = stack_.begin();
         if (result) result = cloud_.start();
         if (!result) return failStart(result.code());
         state_ = Esp32WifiBleProductState::Active;
@@ -409,6 +447,7 @@ private:
     void enterFault(ErrorCode error) {
         provisioner_.end();
         cloud_.stop();
+        direct_.resetProfile();
         stack_.end();
         lastError_ = error == ErrorCode::Ok
                          ? ErrorCode::InternalError

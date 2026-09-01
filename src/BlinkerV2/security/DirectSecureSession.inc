@@ -222,16 +222,16 @@ Result deriveDirectSecureKeyMaterial(
 
 DirectSecureSession::DirectSecureSession()
     : role_(DirectSecureRole::Responder),
+      sendExhausted_(false),
+      receiveExhausted_(false),
+      ready_(false),
+      sendSequence_(0U),
+      receiveSequence_(0U),
       sendKey_(),
       receiveKey_(),
       sendNoncePrefix_(),
       receiveNoncePrefix_(),
-      sessionBinding_(),
-      sendSequence_(0U),
-      receiveSequence_(0U),
-      sendExhausted_(false),
-      receiveExhausted_(false),
-      ready_(false) {}
+      sessionBinding_() {}
 
 DirectSecureSession::~DirectSecureSession() {
     clear();

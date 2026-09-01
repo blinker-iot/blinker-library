@@ -91,6 +91,9 @@ public:
         (void)sessionId;
         return Result::failure(ErrorCode::UnsupportedFeature);
     }
+    // Monotonic in-process activity marker for transports whose advertising
+    // metadata must be refreshed after a completed peer session.
+    virtual uint32_t sessionRevision() const { return 0U; }
     virtual void setReceiver(FrameReceiver receiver, void* context) = 0;
     // Session-aware transports override this. Connectionless transports can
     // keep the default no-op and use sessionId 0.

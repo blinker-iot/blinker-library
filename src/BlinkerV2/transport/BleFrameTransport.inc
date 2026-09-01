@@ -14,16 +14,24 @@ BleFrameTransport::BleFrameTransport(
     : records_(
           link,
           clock,
-          frameFormat(),
+          directRecordFormat(),
           rxStorage,
           txStorage,
           packetScratch,
           recordConfig(config)),
       clock_(clock),
       crypto_(crypto),
-      plaintextScratch_(plaintextScratch),
+      plaintextScratch_(
+          plaintextScratch.data != nullptr &&
+                  plaintextScratch.size >= config.maxFrameSize
+              ? plaintextScratch.data
+              : nullptr),
       maxFrameSize_(config.maxFrameSize),
-      authenticationTimeoutMillis_(config.authenticationTimeoutMillis),
+      authenticationTimeoutMillis_(
+          config.authenticationTimeoutMillis <= 0xFFFFUL
+              ? static_cast<uint16_t>(config.authenticationTimeoutMillis)
+              : 0U),
+      sessionRevision_(0U),
       secure_(),
       receiver_(nullptr),
       receiverContext_(nullptr),
@@ -41,8 +49,7 @@ BleFrameTransport::BleFrameTransport(
 Result BleFrameTransport::start() {
     if (maxFrameSize_ < bbp2::kBaseHeaderSize ||
         authenticationTimeoutMillis_ == 0U ||
-        plaintextScratch_.data == nullptr ||
-        plaintextScratch_.size < maxFrameSize_) {
+        plaintextScratch_ == nullptr) {
         return Result::failure(ErrorCode::NotConfigured);
     }
     clearSessions();
@@ -76,7 +83,7 @@ TransportCapabilities BleFrameTransport::capabilities() const {
 Result BleFrameTransport::send(
     ByteView frame,
     const SendTarget& target) {
-    Result result = validateFrame(frame);
+    Result result = direct::validateRecord(frame);
     if (!result || frame.size > maxFrameSize_) {
         return result ? Result::failure(ErrorCode::CapacityExceeded) : result;
     }
@@ -88,7 +95,7 @@ Result BleFrameTransport::send(
     }
 
     SecureSlot* slot = findSecure(target.sessionId, false);
-    if (slot == nullptr || slot->state != SecureState::Active) {
+    if (slot == nullptr || !slot->active()) {
         return records_.send(frame, target);
     }
 
@@ -146,10 +153,10 @@ Result BleFrameTransport::prepare(
     if (slot == nullptr) {
         return Result::failure(ErrorCode::NotConfigured);
     }
-    if (slot->state == SecureState::Active) {
+    if (slot->active()) {
         return Result::failure(ErrorCode::AlreadyExists);
     }
-    if (slot->state != SecureState::Pending) {
+    if (!slot->pending()) {
         return Result::failure(ErrorCode::NotConfigured);
     }
     slot->session.clear();
@@ -161,34 +168,28 @@ Result BleFrameTransport::prepare(
         slot->session.clear();
         return result;
     }
-    slot->state = SecureState::Prepared;
     return Result::success();
 }
 
 void BleFrameTransport::commit(uint32_t sessionId) {
     SecureSlot* slot = findSecure(sessionId, false);
-    if (slot == nullptr || slot->state != SecureState::Prepared ||
-        !slot->session.ready()) {
+    if (slot == nullptr || !slot->prepared()) {
         retire(sessionId, ErrorCode::ProtocolError);
         return;
     }
-    slot->state = SecureState::Active;
+    slot->authenticationDeadlineMillis = 0U;
 }
 
 void BleFrameTransport::cancel(uint32_t sessionId) {
     SecureSlot* slot = findSecure(sessionId, false);
-    if (slot != nullptr && slot->state != SecureState::Empty) {
+    if (slot != nullptr && slot->occupied()) {
         slot->session.clear();
-        slot->state = SecureState::Pending;
+        slot->authenticationDeadlineMillis =
+            clock_.monotonicMillis() + authenticationTimeoutMillis_;
+        if (slot->authenticationDeadlineMillis == 0U) {
+            slot->authenticationDeadlineMillis = 1U;
+        }
     }
-}
-
-BleRecordFormat BleFrameTransport::frameFormat() {
-    BleRecordFormat format;
-    format.minimumHeaderSize = security::kDirectSecureHeaderSize;
-    format.decodeSize = &BleFrameTransport::decodeFrameSize;
-    format.validate = &BleFrameTransport::validateFrame;
-    return format;
 }
 
 BleRecordTransportConfig BleFrameTransport::recordConfig(
@@ -202,35 +203,6 @@ BleRecordTransportConfig BleFrameTransport::recordConfig(
     result.reassemblyTimeoutMillis = config.reassemblyTimeoutMillis;
     result.maxPacketsPerPoll = config.maxPacketsPerPoll;
     return result;
-}
-
-Result BleFrameTransport::decodeFrameSize(
-    ByteView prefix,
-    size_t& frameSize) {
-    frameSize = 0U;
-    if (prefix.data == nullptr || prefix.empty()) {
-        return Result::failure(ErrorCode::TruncatedInput);
-    }
-    if (prefix.data[0] == security::kDirectSecureMagic) {
-        return security::decodeDirectSecureRecordSize(prefix, frameSize);
-    }
-    bbp2::FrameHeader header;
-    Result result = bbp2::decodeHeader(prefix, header);
-    if (!result) return result;
-    frameSize = bbp2::encodedFrameSize(header);
-    return Result::success();
-}
-
-Result BleFrameTransport::validateFrame(ByteView frame) {
-    if (frame.data == nullptr || frame.empty()) {
-        return Result::failure(ErrorCode::InvalidArgument);
-    }
-    if (frame.data[0] == security::kDirectSecureMagic) {
-        security::DirectSecureRecordView parsed;
-        return security::parseDirectSecureRecord(frame, parsed);
-    }
-    bbp2::FrameView parsed;
-    return bbp2::parseFrame(frame, parsed);
 }
 
 void BleFrameTransport::recordThunk(
@@ -290,8 +262,7 @@ void BleFrameTransport::onRecord(
         record.data != nullptr && !record.empty() &&
         record.data[0] == security::kDirectSecureMagic;
     SecureSlot* slot = findSecure(rx.sessionId, false);
-    const bool active =
-        slot != nullptr && slot->state == SecureState::Active;
+    const bool active = slot != nullptr && slot->active();
     if (active != secureRecord) {
         retire(rx.sessionId, ErrorCode::AuthenticationRequired);
         return;
@@ -302,9 +273,9 @@ void BleFrameTransport::onRecord(
         Result result = slot->session.open(
             crypto_,
             record,
-            plaintextScratch_,
+            MutableByteSpan(plaintextScratch_, maxFrameSize_),
             frame);
-        if (result) result = validateFrame(frame);
+        if (result) result = direct::validateRecord(frame);
         if (!result || frame.size > maxFrameSize_) {
             retire(
                 rx.sessionId,
@@ -323,6 +294,8 @@ void BleFrameTransport::onRecord(
 }
 
 void BleFrameTransport::onConnected(const RxContext& rx) {
+    ++sessionRevision_;
+    if (sessionRevision_ == 0U) ++sessionRevision_;
     SecureSlot* existing = findSecure(rx.sessionId, false);
     if (existing != nullptr) existing->clear();
     SecureSlot* slot = findSecure(rx.sessionId, true);
@@ -332,15 +305,19 @@ void BleFrameTransport::onConnected(const RxContext& rx) {
             ErrorCode::CapacityExceeded);
         return;
     }
-    slot->state = SecureState::Pending;
     slot->authenticationDeadlineMillis =
         clock_.monotonicMillis() + authenticationTimeoutMillis_;
+    if (slot->authenticationDeadlineMillis == 0U) {
+        slot->authenticationDeadlineMillis = 1U;
+    }
     if (sessionConnected_ != nullptr) {
         sessionConnected_(sessionContext_, rx);
     }
 }
 
 void BleFrameTransport::onDisconnected(const RxContext& rx) {
+    ++sessionRevision_;
+    if (sessionRevision_ == 0U) ++sessionRevision_;
     SecureSlot* slot = findSecure(rx.sessionId, false);
     if (slot != nullptr) slot->clear();
     if (sessionDisconnected_ != nullptr) {
@@ -355,9 +332,7 @@ void BleFrameTransport::onFault(
     // Raw pre-authentication records are deliberately recoverable until the
     // bounded authentication deadline. Once key material is prepared or
     // active, any record fault retires the physical peer fail-closed.
-    if (slot != nullptr &&
-        (slot->state == SecureState::Prepared ||
-         slot->state == SecureState::Active)) {
+    if (slot != nullptr && slot->session.ready()) {
         retire(rx.sessionId, error);
     }
 }
@@ -375,8 +350,8 @@ void BleFrameTransport::retire(
 void BleFrameTransport::expireUnauthenticatedSessions(uint32_t nowMillis) {
     for (size_t index = 0U; index < BLINKER_BLE_MAX_SESSIONS; ++index) {
         SecureSlot& slot = secure_[index];
-        if ((slot.state == SecureState::Pending ||
-             slot.state == SecureState::Prepared) &&
+        if (slot.occupied() &&
+            slot.authenticationDeadlineMillis != 0U &&
             static_cast<int32_t>(
                 nowMillis - slot.authenticationDeadlineMillis) >= 0) {
             const uint32_t sessionId = slot.sessionId;
@@ -393,7 +368,7 @@ void BleFrameTransport::clearSessions() {
 
 bool BleFrameTransport::hasSecureSession() const {
     for (size_t index = 0U; index < BLINKER_BLE_MAX_SESSIONS; ++index) {
-        if (secure_[index].state == SecureState::Active) return true;
+        if (secure_[index].active()) return true;
     }
     return false;
 }
@@ -403,11 +378,11 @@ BleFrameTransport::SecureSlot* BleFrameTransport::findSecure(
     bool create) {
     SecureSlot* empty = nullptr;
     for (size_t index = 0U; index < BLINKER_BLE_MAX_SESSIONS; ++index) {
-        if (secure_[index].state != SecureState::Empty &&
+        if (secure_[index].occupied() &&
             secure_[index].sessionId == sessionId) {
             return &secure_[index];
         }
-        if (secure_[index].state == SecureState::Empty && empty == nullptr) {
+        if (!secure_[index].occupied() && empty == nullptr) {
             empty = &secure_[index];
         }
     }
@@ -419,7 +394,7 @@ BleFrameTransport::SecureSlot* BleFrameTransport::findSecure(
 const BleFrameTransport::SecureSlot* BleFrameTransport::findSecure(
     uint32_t sessionId) const {
     for (size_t index = 0U; index < BLINKER_BLE_MAX_SESSIONS; ++index) {
-        if (secure_[index].state != SecureState::Empty &&
+        if (secure_[index].occupied() &&
             secure_[index].sessionId == sessionId) {
             return &secure_[index];
         }

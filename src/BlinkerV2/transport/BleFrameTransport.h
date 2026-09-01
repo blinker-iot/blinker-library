@@ -2,6 +2,7 @@
 #define BLINKER_TRANSPORT_BLEFRAMETRANSPORT_H
 
 #include "../protocol/bbp2/Frame.h"
+#include "../protocol/DirectRecord.h"
 #include "../security/DirectSecureSession.h"
 #include "BleRecordTransport.h"
 
@@ -43,6 +44,9 @@ public:
     TransportCapabilities capabilities() const override;
     Result send(ByteView frame, const SendTarget& target) override;
     Result disconnectSession(uint32_t sessionId) override;
+    uint32_t sessionRevision() const override {
+        return static_cast<uint32_t>(sessionRevision_);
+    }
     void setReceiver(FrameReceiver receiver, void* context) override;
     void setSessionHandlers(
         FrameSessionHandler connected,
@@ -65,27 +69,37 @@ public:
     }
 
 private:
-    enum class SecureState : uint8_t {
-        Empty = 0U,
-        Pending,
-        Prepared,
-        Active
-    };
-
+    static BleRecordFormat directRecordFormat() {
+        BleRecordFormat format;
+        format.minimumHeaderSize = security::kDirectSecureHeaderSize;
+        format.decodeSize = &direct::decodeRecordSize;
+        format.validate = &direct::validateRecord;
+        return format;
+    }
     struct SecureSlot {
         uint32_t sessionId;
         uint32_t authenticationDeadlineMillis;
         security::DirectSecureSession session;
-        SecureState state;
 
         SecureSlot()
-            : sessionId(0U), authenticationDeadlineMillis(0U), session(),
-              state(SecureState::Empty) {}
+            : sessionId(0U), authenticationDeadlineMillis(0U), session() {}
+        bool occupied() const { return sessionId != 0U; }
+        bool pending() const {
+            return occupied() && authenticationDeadlineMillis != 0U &&
+                   !session.ready();
+        }
+        bool prepared() const {
+            return occupied() && authenticationDeadlineMillis != 0U &&
+                   session.ready();
+        }
+        bool active() const {
+            return occupied() && authenticationDeadlineMillis == 0U &&
+                   session.ready();
+        }
         void clear() {
             session.clear();
             sessionId = 0U;
             authenticationDeadlineMillis = 0U;
-            state = SecureState::Empty;
         }
     };
 
@@ -99,11 +113,8 @@ private:
             : owner(nullptr), slot(nullptr), frame(), attempted(false) {}
     };
 
-    static BleRecordFormat frameFormat();
     static BleRecordTransportConfig recordConfig(
         const BleFrameTransportConfig& config);
-    static Result decodeFrameSize(ByteView prefix, size_t& frameSize);
-    static Result validateFrame(ByteView frame);
     static void recordThunk(
         void* context,
         ByteView record,
@@ -133,9 +144,10 @@ private:
     BleRecordTransport records_;
     IClock& clock_;
     IX25519AesGcmCryptoProvider& crypto_;
-    MutableByteSpan plaintextScratch_;
+    uint8_t* plaintextScratch_;
     uint16_t maxFrameSize_;
-    uint32_t authenticationTimeoutMillis_;
+    uint16_t authenticationTimeoutMillis_;
+    uint16_t sessionRevision_;
     SecureSlot secure_[BLINKER_BLE_MAX_SESSIONS];
     FrameReceiver receiver_;
     void* receiverContext_;

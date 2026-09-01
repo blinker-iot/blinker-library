@@ -9,6 +9,7 @@
 #include "../model/EndpointRegistry.h"
 #include "../protocol/bbp2/Frame.h"
 #include "../protocol/bbp2/KeyedBody.h"
+#include "../provisioning/PresenceKeyControlContract.h"
 #include "../protocol/bbp2/Messages.h"
 #include "ReliableOutbox.h"
 #include "TelemetryLease.h"
@@ -355,6 +356,9 @@ private:
         const bbp2::FrameView& frame,
         const RxContext& rx);
     Result handleControllerMutation(
+        const bbp2::FrameView& frame,
+        const RxContext& rx);
+    Result handlePresenceKeyMutation(
         const bbp2::FrameView& frame,
         const RxContext& rx);
     Result visitEndpointValue(

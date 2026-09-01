@@ -5,3 +5,6 @@
 #include <BlinkerV2/identity/DeviceInstanceId.inc>
 #include <BlinkerV2/identity/DeviceInstanceIdStore.inc>
 #include <BlinkerV2/identity/DeviceKey.inc>
+#include <BlinkerV2/identity/DeviceKeyStore.inc>
+#include <BlinkerV2/identity/DevicePresenceKey.inc>
+#include <BlinkerV2/identity/GatewayAccessStore.inc>

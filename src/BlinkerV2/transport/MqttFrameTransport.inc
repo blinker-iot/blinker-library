@@ -16,7 +16,10 @@ MqttFrameTransport::MqttFrameTransport(
       sessionConnected_(nullptr),
       sessionDisconnected_(nullptr),
       sessionContext_(nullptr),
+      sideChannelHandler_(nullptr),
+      sideChannelContext_(nullptr),
       state_(TransportState::Stopped),
+      connectionGeneration_(0U),
       lastConnectAttempt_(0),
       configured_(false),
       started_(false),
@@ -70,6 +73,46 @@ Result MqttFrameTransport::configure(
     configured_ = true;
     lastError_ = ErrorCode::Ok;
     return Result::success();
+}
+
+Result MqttFrameTransport::subscribeSideChannel(
+    StringView topic,
+    size_t maximumPayloadSize,
+    uint8_t qos) {
+    if (!started_ || state_ != TransportState::Online ||
+        !mqtt_.connected()) {
+        return Result::failure(ErrorCode::NotConnected);
+    }
+    if (!valid(topic) || maximumPayloadSize == 0U || qos > 2U) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    Result result = mqtt_.validatePacketCapacity(
+        topic, maximumPayloadSize, qos, MqttPacketDirection::Inbound);
+    return result ? mqtt_.subscribe(topic, qos) : result;
+}
+
+Result MqttFrameTransport::publishSideChannel(
+    StringView topic,
+    ByteView payload,
+    const MqttPublishOptions& options) {
+    if (!started_ || state_ != TransportState::Online ||
+        !mqtt_.connected()) {
+        return Result::failure(ErrorCode::NotConnected);
+    }
+    if (!valid(topic) || payload.data == nullptr || payload.empty() ||
+        options.qos > 2U) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    Result result = mqtt_.validatePacketCapacity(
+        topic, payload.size, options.qos, MqttPacketDirection::Outbound);
+    return result ? mqtt_.publish(topic, payload, options) : result;
+}
+
+void MqttFrameTransport::setSideChannelHandler(
+    MqttMessageHandler handler,
+    void* context) {
+    sideChannelHandler_ = handler;
+    sideChannelContext_ = context;
 }
 
 void MqttFrameTransport::setNetworkAvailable(bool available) {
@@ -163,6 +206,10 @@ TransportCapabilities MqttFrameTransport::capabilities() const {
     return value;
 }
 
+uint32_t MqttFrameTransport::connectionGeneration() const {
+    return connectionGeneration_;
+}
+
 Result MqttFrameTransport::send(
     ByteView frame,
     const SendTarget&) {
@@ -224,14 +271,20 @@ void MqttFrameTransport::onMessage(
     StringView topic,
     ByteView payload,
     const MqttMessageInfo& info) {
-    if (!started_ ||
-        state_ != TransportState::Online ||
-        (info.retainedKnown && info.retained) ||
-        !equal(topic, credentials_.subscribeTopic) ||
-        payload.data == nullptr ||
-        payload.size > config_.maxFrameSize) {
+    if (!started_ || state_ != TransportState::Online ||
+        payload.data == nullptr) {
         return;
     }
+
+    if (!equal(topic, credentials_.subscribeTopic)) {
+        if (sideChannelHandler_ != nullptr) {
+            sideChannelHandler_(
+                sideChannelContext_, topic, payload, info);
+        }
+        return;
+    }
+    if ((info.retainedKnown && info.retained) ||
+        payload.size > config_.maxFrameSize) return;
 
     bbp2::FrameView frame;
     if (!bbp2::parseFrame(payload, frame)) {
@@ -288,6 +341,8 @@ Result MqttFrameTransport::connectNow() {
     }
 
     state_ = TransportState::Online;
+    ++connectionGeneration_;
+    if (connectionGeneration_ == 0U) ++connectionGeneration_;
     lastError_ = ErrorCode::Ok;
     notifyConnected();
     return Result::success();

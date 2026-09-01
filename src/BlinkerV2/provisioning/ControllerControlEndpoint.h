@@ -27,6 +27,14 @@ public:
         ByteView controllerSecret,
         MutableByteSpan output,
         ByteView& receipt) override;
+    bool supportsPresenceKeyControl() const override {
+        return coordinator_.supportsPresenceKeyControl();
+    }
+    Result applyPresenceKeyMutation(
+        const RxContext& rx,
+        ByteView encodedMutation,
+        MutableByteSpan output,
+        ByteView& receipt) override;
     void controllerSessionClosed(const RxContext& rx) override;
 
     void reset();

@@ -27,6 +27,7 @@ inline WioTerminalRpcBleLink::WioTerminalRpcBleLink(
       connectionId_(0xffffU),
       nextSessionId_(1U),
       connectedAtMillis_(0U),
+      nextConnectionReconcileAt_(0U),
       connectPending_(false),
       disconnectPending_(false),
       sessionAnnounced_(false),
@@ -34,6 +35,7 @@ inline WioTerminalRpcBleLink::WioTerminalRpcBleLink(
       advertisingConfigured_(false),
       advertisingDeadlineAt_(0U),
       nextAdvertisingAttemptAt_(0U),
+      rxObserved_(false),
       notifySucceeded_(true),
       state_(BleLinkState::Stopped),
       lastError_(ErrorCode::Ok),
@@ -50,6 +52,10 @@ inline Result WioTerminalRpcBleLink::start() {
     }
 
     state_ = BleLinkState::Starting;
+    // A SAMD upload resets only the host MCU. Clear any GATT server left in
+    // the RTL8720DN before rpcBLE registers this process' callbacks. Normal
+    // stop/start cycles keep BLEDevice initialized and reuse the live stack.
+    if (!BLEDevice::getInitialized()) ble_deinit();
     BLEDevice::init(config_.deviceName);
     BLEDevice::setMTU(23U);
     if (!BLEDevice::getInitialized()) {
@@ -139,6 +145,7 @@ inline void WioTerminalRpcBleLink::stop() {
         pendingConnectionId_ = 0xffffU;
         connectPending_ = false;
         disconnectPending_ = false;
+        rxObserved_ = false;
         if (notifyDescriptor_ != nullptr) {
             notifyDescriptor_->setNotifications(false);
         }
@@ -146,6 +153,7 @@ inline void WioTerminalRpcBleLink::stop() {
     }
     connectionId_ = 0xffffU;
     connectedAtMillis_ = 0U;
+    nextConnectionReconcileAt_ = 0U;
     sessionAnnounced_ = false;
     advertisingConfigured_ = false;
     advertisingDeadlineAt_ = 0U;
@@ -156,6 +164,7 @@ inline void WioTerminalRpcBleLink::stop() {
 inline void WioTerminalRpcBleLink::poll(uint32_t) {
     if (state_ == BleLinkState::Starting) advanceAdvertising();
     if (state_ != BleLinkState::Ready) return;
+    reconcileConnection();
     processConnection();
     updateSessionReadiness();
     drainPackets();
@@ -200,8 +209,7 @@ inline Result WioTerminalRpcBleLink::disconnectSession(uint32_t sessionId) {
         server_ == nullptr || connectionId_ == 0xffffU) {
         return Result::failure(ErrorCode::NotFound);
     }
-    server_->disconnect(connectionId_);
-    return Result::success();
+    return requestDisconnect();
 }
 
 inline void WioTerminalRpcBleLink::setPacketReceiver(
@@ -241,6 +249,7 @@ inline void WioTerminalRpcBleLink::onConnect(BLEServer* server) {
 inline void WioTerminalRpcBleLink::onDisconnect(BLEServer*) {
     if (!lock_.take()) return;
     disconnectPending_ = true;
+    rxObserved_ = false;
     clearPackets();
     if (notifyDescriptor_ != nullptr) {
         notifyDescriptor_->setNotifications(false);
@@ -252,8 +261,7 @@ inline void WioTerminalRpcBleLink::onWrite(
     BLECharacteristic* characteristic) {
     if (characteristic != receive_) return;
     const std::string value = characteristic->getValue();
-    if (value.empty() || value.size() > maximumPacketSize ||
-        !lock_.take()) {
+    if (value.empty() || value.size() > maximumPacketSize || !lock_.take()) {
         return;
     }
     if (packetCount_ < sizeof(packets_) / sizeof(packets_[0])) {
@@ -264,6 +272,10 @@ inline void WioTerminalRpcBleLink::onWrite(
             (packetTail_ + 1U) %
             (sizeof(packets_) / sizeof(packets_[0])));
         ++packetCount_;
+        // Receiving the first application write proves that Android has
+        // completed its subscribe-then-write sequence even when rpcBLE misses
+        // the CCCD callback. Authorization still happens above this bearer.
+        rxObserved_ = true;
     }
     lock_.give();
 }
@@ -293,6 +305,7 @@ inline Result WioTerminalRpcBleLink::configureAdvertising() {
     BLEAdvertisementData advertisement;
     advertisement.setFlags(0x06U);
     advertisement.setCompleteServices(BLEUUID(ble::kServiceUuid));
+    advertisement.setName(config_.deviceName);
     BLEAdvertisementData scanResponse;
     scanResponse.setServiceData(
         BLEUUID(ble::kServiceUuid),
@@ -350,6 +363,46 @@ inline void WioTerminalRpcBleLink::advanceAdvertising() {
     }
 }
 
+inline Result WioTerminalRpcBleLink::requestDisconnect() {
+    if (connectionId_ == 0xffffU || connectionId_ > 0xffU) {
+        return Result::failure(ErrorCode::NotConnected);
+    }
+    // Seeed_Arduino_rpcBLE 1.0.0 declares BLEServer::disconnect(), but its
+    // implementation is empty. Use the public RTL GAP RPC used by
+    // BLEClient::disconnect() so timeout and fail-closed paths really release
+    // the single Wio peripheral connection.
+    const T_GAP_CAUSE cause = le_disconnect(
+        static_cast<uint8_t>(connectionId_));
+    return cause == GAP_CAUSE_SUCCESS || cause == GAP_CAUSE_ALREADY_IN_REQ
+               ? Result::success()
+               : Result::failure(ErrorCode::ProtocolError);
+}
+
+inline void WioTerminalRpcBleLink::reconcileConnection() {
+    const uint32_t now = millis();
+    if (static_cast<int32_t>(now - nextConnectionReconcileAt_) < 0) return;
+    nextConnectionReconcileAt_ = now + 250U;
+
+    // rpcBLE can occasionally lose a GAP callback while the RTL8720DN still
+    // reports the correct single-link state. Reconcile that platform fact so
+    // a stale session cannot occupy Wio's only peripheral connection.
+    const bool connected = le_get_active_link_num() != 0U;
+    if (connected == session_.connected) return;
+    if (!lock_.take()) return;
+    if (connected) {
+        pendingConnectionId_ = 0U;
+        connectPending_ = true;
+    } else {
+        connectPending_ = false;
+        disconnectPending_ = true;
+        clearPackets();
+        if (notifyDescriptor_ != nullptr) {
+            notifyDescriptor_->setNotifications(false);
+        }
+    }
+    lock_.give();
+}
+
 inline void WioTerminalRpcBleLink::processConnection() {
     bool connect = false;
     bool disconnect = false;
@@ -365,12 +418,20 @@ inline void WioTerminalRpcBleLink::processConnection() {
     if (disconnect) {
         const BleSessionInfo old = session_;
         const bool announced = sessionAnnounced_;
+        const uint16_t oldConnectionId = connectionId_;
         session_ = BleSessionInfo();
         connectionId_ = 0xffffU;
         connectedAtMillis_ = 0U;
         sessionAnnounced_ = false;
+        rxObserved_ = false;
         if (announced && disconnectedHandler_ != nullptr) {
             disconnectedHandler_(sessionContext_, old);
+        }
+        if (server_ != nullptr && oldConnectionId != 0xffffU) {
+            server_->removePeerDevice(oldConnectionId, false);
+        }
+        if (::ble_gap_dev_state.gap_adv_state == GAP_ADV_STATE_IDLE) {
+            le_adv_start();
         }
     }
     if (connect && !disconnect && !session_.connected &&
@@ -390,19 +451,20 @@ inline void WioTerminalRpcBleLink::updateSessionReadiness() {
     // Keep the native link unpaired and report its facts exactly. Enrollment
     // is protected by Noise; normal traffic becomes AES-GCM DirectSecure
     // immediately after Method 2 controller authentication.
-    const bool ready = notifyDescriptor_ != nullptr &&
-                       notifyDescriptor_->getNotifications();
+    const bool ready = rxObserved_ ||
+                       (notifyDescriptor_ != nullptr &&
+                        notifyDescriptor_->getNotifications());
     session_.encrypted = false;
     session_.bonded = false;
     session_.notifyEnabled = ready;
     if (!sessionAnnounced_ && !ready &&
         static_cast<uint32_t>(millis() - connectedAtMillis_) >=
             config_.sessionReadyTimeoutMillis) {
-        if (server_ != nullptr) server_->disconnect(connectionId_);
+        requestDisconnect();
         return;
     }
     if (sessionAnnounced_ && !ready) {
-        if (server_ != nullptr) server_->disconnect(connectionId_);
+        requestDisconnect();
         return;
     }
     if (!sessionAnnounced_ && ready) {
@@ -455,6 +517,7 @@ inline uint32_t WioTerminalRpcBleLink::nextSessionId() {
 
 inline bool WioTerminalRpcBleLink::validConfig() const {
     return config_.deviceName != nullptr && config_.deviceName[0] != '\0' &&
+           strlen(config_.deviceName) <= ble::kLegacyLocalNameMaxSize &&
            config_.sessionReadyTimeoutMillis != 0U &&
            config_.maxRxPacketsPerPoll != 0U;
 }

@@ -42,7 +42,9 @@ enum class MessageKind : uint8_t {
     ControllerControlOpen = 0x30,
     ControllerControlChallenge = 0x31,
     ControllerMutation = 0x32,
-    ControllerMutationReceipt = 0x33
+    ControllerMutationReceipt = 0x33,
+    PresenceKeyMutation = 0x34,
+    PresenceKeyReceipt = 0x35
 };
 
 enum FrameFlag : uint8_t {

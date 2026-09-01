@@ -40,11 +40,13 @@ ControllerControlCoordinator::ControllerControlCoordinator(
     const DeviceInstanceId& deviceInstanceId,
     IAccessEpochSource& accessEpoch,
     IControllerCredentialStore& credentials,
-    ControllerGrantVerifier& verifier)
+    ControllerGrantVerifier& verifier,
+    IDeviceAccessStore* presenceAccess)
     : deviceInstanceId_(deviceInstanceId),
       accessEpoch_(accessEpoch),
       credentials_(credentials),
       verifier_(verifier),
+      presenceAccess_(presenceAccess),
       controlNonce_(),
       controlWindowActive_(false) {}
 
@@ -182,6 +184,64 @@ Result ControllerControlCoordinator::apply(
     }
     if (!result) receipt = ByteView();
     clearControllerCredential(credential);
+    return result;
+}
+
+Result ControllerControlCoordinator::applyPresence(
+    ByteView encodedMutation,
+    MutableByteSpan output,
+    ByteView& receipt) {
+    receipt = ByteView();
+    if (presenceAccess_ == nullptr || output.data == nullptr ||
+        output.size < kPresenceKeyReceiptMaxEncodedSize) {
+        return Result::failure(
+            presenceAccess_ == nullptr
+                ? ErrorCode::UnsupportedFeature
+                : ErrorCode::BufferTooSmall);
+    }
+    PresenceKeyMutation mutation;
+    Result result = decodePresenceKeyMutation(encodedMutation, mutation);
+    uint32_t accessEpoch = 0U;
+    if (result) result = accessEpoch_.loadAccessEpoch(accessEpoch);
+    if (result && accessEpoch != mutation.accessEpoch) {
+        result = Result::failure(ErrorCode::StateConflict);
+    }
+
+    uint8_t digest[kPresenceKeyDigestSize] = {};
+    uint8_t proof[kPresenceKeyReceiptProofSize] = {};
+    PresenceKeyReceipt body;
+    body.accessEpoch = mutation.accessEpoch;
+    body.expectedVersion = mutation.expectedVersion;
+    body.presenceKeyVersion = mutation.presence.version;
+    if (result) {
+        result = sha256(
+            ByteView(
+                mutation.presence.bytes,
+                sizeof(mutation.presence.bytes)),
+            MutableByteSpan(digest, sizeof(digest)));
+    }
+    body.keyDigest = ByteView(digest, sizeof(digest));
+    body.proofKind = 1U;
+    if (result) {
+        result = computePresenceKeyReceiptProof(
+            mutation.presence,
+            body,
+            MutableByteSpan(digest, sizeof(digest)),
+            MutableByteSpan(proof, sizeof(proof)));
+    }
+    body.proof = ByteView(proof, sizeof(proof));
+    if (result) result = encodePresenceKeyReceipt(body, output, receipt);
+    // Complete every fallible proof/encoding step before durable mutation.
+    if (result) {
+        result = presenceAccess_->replacePresenceVerified(
+            mutation.accessEpoch,
+            mutation.expectedVersion,
+            mutation.presence);
+    }
+    if (!result) receipt = ByteView();
+    clearDevicePresenceKey(mutation.presence);
+    secureZero(MutableByteSpan(digest, sizeof(digest)));
+    secureZero(MutableByteSpan(proof, sizeof(proof)));
     return result;
 }
 

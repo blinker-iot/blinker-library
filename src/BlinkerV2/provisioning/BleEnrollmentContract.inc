@@ -101,21 +101,25 @@ Result encodeBleEnrollmentHelloRequest(uint32_t requestId,
 Result encodeBleEnrollmentRequest(uint32_t requestId,
                                   ByteView grant,
                                   ByteView controllerSecret,
+                                  ByteView presenceKey,
                                   MutableByteSpan output,
                                   ByteView& encoded) {
     encoded = ByteView();
     if (grant.data == nullptr || grant.empty() ||
         grant.size > kBleEnrollmentGrantMaxEncodedSize ||
-        !exact(controllerSecret, kControllerCredentialSecretSize)) {
+        !exact(controllerSecret, kControllerCredentialSecretSize) ||
+        !exact(presenceKey, kDevicePresenceKeySize)) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
     cbor::Writer writer(output);
     Result result = header(
-        writer, 5U, BleEnrollmentMessageType::EnrollRequest, requestId);
+        writer, 6U, BleEnrollmentMessageType::EnrollRequest, requestId);
     if (result) result = writer.writeUnsigned(3U);
     if (result) result = writer.writeBytes(grant);
     if (result) result = writer.writeUnsigned(4U);
     if (result) result = writer.writeBytes(controllerSecret);
+    if (result) result = writer.writeUnsigned(5U);
+    if (result) result = writer.writeBytes(presenceKey);
     if (result) encoded = writer.view();
     return result;
 }
@@ -137,15 +141,19 @@ Result decodeBleEnrollmentRequest(ByteView encoded,
         if (count != 3U) result = Result::failure(ErrorCode::InvalidEncoding);
     } else if (result &&
                value.type == BleEnrollmentMessageType::EnrollRequest) {
-        if (count != 5U) result = Result::failure(ErrorCode::InvalidEncoding);
+        if (count != 6U) result = Result::failure(ErrorCode::InvalidEncoding);
         if (result) result = key(reader, 3U);
         if (result) result = reader.readBytes(value.grant);
         if (result) result = key(reader, 4U);
         if (result) result = reader.readBytes(value.controllerSecret);
+        if (result) result = key(reader, 5U);
+        if (result) result = reader.readBytes(value.presenceKey);
         if (result && (value.grant.empty() ||
                        value.grant.size > kBleEnrollmentGrantMaxEncodedSize ||
                        !exact(value.controllerSecret,
-                              kControllerCredentialSecretSize))) {
+                              kControllerCredentialSecretSize) ||
+                       !exact(value.presenceKey,
+                              kDevicePresenceKeySize))) {
             result = Result::failure(ErrorCode::ValueOutOfRange);
         }
     } else if (result) {

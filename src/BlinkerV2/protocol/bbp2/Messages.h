@@ -41,7 +41,8 @@ enum ProtocolFeature : uint32_t {
     FeatureRouting = 1UL << 10,
     FeatureTelemetry = 1UL << 11,
     // Account App/Broker capability; never enabled by the device runtime.
-    FeaturePresence = 1UL << 12
+    FeaturePresence = 1UL << 12,
+    FeaturePresenceKeyControl = 1UL << 13
 };
 
 enum class RoutePeerKind : uint8_t {
@@ -63,7 +64,13 @@ enum : size_t {
     kControllerMutationMaximumFrameSize =
         kBaseHeaderSize + kControllerMutationMaxEncodedSize,
     kControllerMutationReceiptMaximumFrameSize =
-        kBaseHeaderSize + kControllerMutationReceiptMaximumSize
+        kBaseHeaderSize + kControllerMutationReceiptMaximumSize,
+    kPresenceKeyMutationMaximumSize = 39U,
+    kPresenceKeyReceiptMaximumSize = 93U,
+    kPresenceKeyMutationMaximumFrameSize =
+        kBaseHeaderSize + kPresenceKeyMutationMaximumSize,
+    kPresenceKeyReceiptMaximumFrameSize =
+        kBaseHeaderSize + kPresenceKeyReceiptMaximumSize
 };
 
 static const uint8_t kControllerControlWireVersion = 1U;

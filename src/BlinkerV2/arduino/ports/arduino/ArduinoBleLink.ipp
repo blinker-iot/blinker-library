@@ -89,10 +89,11 @@ inline Result ArduinoBleLink::start() {
     BLE.setPairable(config_.requireEncryption ? YES : NO);
     BLE.setEventHandler(BLEConnected, &ArduinoBleLink::connectedThunk);
     BLE.setEventHandler(BLEDisconnected, &ArduinoBleLink::disconnectedThunk);
-    BLE.setLocalName(config_.deviceName);
-    BLE.setAdvertisedService(service_);
+    BLEAdvertisingData advertisementData;
     BLEAdvertisingData scanResponseData;
-    if (!scanResponseData.setRawData(
+    if (!advertisementData.setLocalName(config_.deviceName) ||
+        !advertisementData.setAdvertisedServiceUuid(config_.serviceUuid) ||
+        !scanResponseData.setRawData(
             scanResponse.data,
             static_cast<int>(scanResponse.size))) {
         BLE.setEventHandler(BLEConnected, nullptr);
@@ -103,6 +104,7 @@ inline Result ArduinoBleLink::start() {
         state_ = BleLinkState::Error;
         return Result::failure(lastError_);
     }
+    BLE.setAdvertisingData(advertisementData);
     BLE.setScanResponseData(scanResponseData);
     service_.addCharacteristic(receive_);
     service_.addCharacteristic(transmit_);
@@ -326,6 +328,7 @@ inline uint32_t ArduinoBleLink::nextSessionId() {
 
 inline bool ArduinoBleLink::validConfig() const {
     return config_.deviceName != nullptr && config_.deviceName[0] != '\0' &&
+           strlen(config_.deviceName) <= ble::kLegacyLocalNameMaxSize &&
            config_.serviceUuid != nullptr && config_.serviceUuid[0] != '\0' &&
            config_.receiveUuid != nullptr && config_.receiveUuid[0] != '\0' &&
            config_.transmitUuid != nullptr && config_.transmitUuid[0] != '\0' &&

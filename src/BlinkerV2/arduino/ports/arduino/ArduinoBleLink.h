@@ -20,7 +20,7 @@ struct ArduinoBleLinkConfig {
     bool requireEncryption;
 
     ArduinoBleLinkConfig()
-        : deviceName("BlinkerV2"),
+        : deviceName(ble::kLocalName),
           serviceUuid(ble::kServiceUuid),
           receiveUuid(ble::kReceiveUuid),
           transmitUuid(ble::kTransmitUuid),

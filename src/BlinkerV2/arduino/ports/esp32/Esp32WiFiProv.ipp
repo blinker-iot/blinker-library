@@ -78,6 +78,7 @@ inline Esp32WifiProvAdapter::Esp32WifiProvAdapter(
       wifiSucceeded_(false),
       ended_(false),
       managerInitialized_(false),
+      serviceStarted_(false),
       stopRequested_(false) {}
 
 inline Esp32WifiProvAdapter::~Esp32WifiProvAdapter() {
@@ -129,6 +130,7 @@ inline Result Esp32WifiProvAdapter::begin(
     credentialsCommitted_ = false;
     wifiSucceeded_ = false;
     ended_ = false;
+    serviceStarted_ = false;
     stopRequested_ = false;
     lastError_ = static_cast<uint8_t>(ErrorCode::Ok);
 
@@ -159,6 +161,7 @@ inline Result Esp32WifiProvAdapter::begin(
             config.proofOfPossession,
             config.serviceName,
             config.serviceKey);
+        serviceStarted_ = error == ESP_OK;
     }
     if (error == ESP_OK) {
         error = network_prov_mgr_endpoint_register(
@@ -168,8 +171,7 @@ inline Result Esp32WifiProvAdapter::begin(
     }
     if (error != ESP_OK) {
         const ErrorCode mapped = mapPlatformError(error);
-        network_prov_mgr_deinit();
-        managerInitialized_ = false;
+        shutdownManager();
         fail(mapped);
         return Result::failure(mapped);
     }
@@ -201,6 +203,7 @@ inline void Esp32WifiProvAdapter::handleEvent(
         wifiSucceeded_ = true;
     } else if (event == NETWORK_PROV_END) {
         ended_ = true;
+        serviceStarted_ = false;
     }
 }
 
@@ -285,10 +288,7 @@ inline void Esp32WifiProvAdapter::poll() {
     }
     if (!ended_) return;
 
-    if (managerInitialized_) {
-        network_prov_mgr_deinit();
-        managerInitialized_ = false;
-    }
+    if (!shutdownManager()) return;
     if (state() == Esp32WifiProvState::Fault) return;
     if (!keyInstalled_ || !credentialsCommitted_ || !wifiSucceeded_) {
         fail(ErrorCode::NotConfigured);
@@ -299,9 +299,9 @@ inline void Esp32WifiProvAdapter::poll() {
 }
 
 inline void Esp32WifiProvAdapter::end() {
-    if (managerInitialized_) {
-        network_prov_mgr_deinit();
-        managerInitialized_ = false;
+    if (!shutdownManager()) {
+        fail(ErrorCode::WouldBlock);
+        return;
     }
     deviceKey_.reset();
     keyInstalled_ = false;
@@ -311,6 +311,28 @@ inline void Esp32WifiProvAdapter::end() {
     stopRequested_ = false;
     lastError_ = static_cast<uint8_t>(ErrorCode::Ok);
     state_ = static_cast<uint8_t>(Esp32WifiProvState::Stopped);
+}
+
+inline bool Esp32WifiProvAdapter::shutdownManager() {
+    if (!managerInitialized_) return true;
+    if (serviceStarted_ && !ended_) {
+        if (!stopRequested_) {
+            stopRequested_ = true;
+            network_prov_mgr_stop_provisioning();
+        }
+        // The bundled IDF component stops asynchronously. Its END callback is
+        // the ownership boundary after which protocomm/NimBLE may be released.
+        const uint32_t startedAt = millis();
+        while (!ended_ &&
+               static_cast<uint32_t>(millis() - startedAt) < 3000U) {
+            delay(1U);
+        }
+        if (!ended_) return false;
+    }
+    network_prov_mgr_deinit();
+    managerInitialized_ = false;
+    serviceStarted_ = false;
+    return true;
 }
 
 } // namespace blinker

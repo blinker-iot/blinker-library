@@ -72,6 +72,16 @@ Result ControllerControlEndpoint::applyControllerMutation(
         receipt);
 }
 
+Result ControllerControlEndpoint::applyPresenceKeyMutation(
+    const RxContext& rx,
+    ByteView encodedMutation,
+    MutableByteSpan output,
+    ByteView& receipt) {
+    (void)rx;
+    receipt = ByteView();
+    return coordinator_.applyPresence(encodedMutation, output, receipt);
+}
+
 void ControllerControlEndpoint::controllerSessionClosed(
     const RxContext& rx) {
     if (active_ && owns(rx)) reset();

@@ -23,6 +23,14 @@
 #define BLINKER_OFFICIAL_MQTT_TLS 0
 #endif
 
+#ifndef BLINKER_OFFICIAL_CLOUD_SESSION_CA_PEM
+#define BLINKER_OFFICIAL_CLOUD_SESSION_CA_PEM ""
+#endif
+
+#ifndef BLINKER_OFFICIAL_MQTT_CA_PEM
+#define BLINKER_OFFICIAL_MQTT_CA_PEM ""
+#endif
+
 namespace blinker {
 namespace official {
 
@@ -31,8 +39,9 @@ namespace official {
 static const char controlHost[] = BLINKER_OFFICIAL_CONTROL_HOST;
 static const uint16_t controlPort = BLINKER_OFFICIAL_CONTROL_PORT;
 static const char firmwareVersion[] = BLINKER_OFFICIAL_FIRMWARE_VERSION;
-static const char cloudSessionCaPem[] = "";
-static const char mqttCaPem[] = "";
+static const char cloudSessionCaPem[] =
+    BLINKER_OFFICIAL_CLOUD_SESSION_CA_PEM;
+static const char mqttCaPem[] = BLINKER_OFFICIAL_MQTT_CA_PEM;
 static const bool cloudSessionTls = BLINKER_OFFICIAL_CLOUD_SESSION_TLS != 0;
 static const bool mqttTls = BLINKER_OFFICIAL_MQTT_TLS != 0;
 static const bool allowPlainStorage = true;
