@@ -202,8 +202,12 @@ inline void Esp32WifiProvAdapter::handleEvent(
     } else if (event == NETWORK_PROV_WIFI_CRED_SUCCESS) {
         wifiSucceeded_ = true;
     } else if (event == NETWORK_PROV_END) {
-        ended_ = true;
         serviceStarted_ = false;
+        stopRequested_ = true;
+    } else if (event == NETWORK_PROV_DEINIT) {
+        managerInitialized_ = false;
+        serviceStarted_ = false;
+        ended_ = true;
     }
 }
 
@@ -265,13 +269,25 @@ inline esp_err_t Esp32WifiProvAdapter::onRequest(
     *output = allocated;
     *outputSize = static_cast<ssize_t>(written);
     if (written >= kDeviceKeyProvisioningStatusResponseSize &&
-        (response[1] == static_cast<uint8_t>(
-             DeviceKeyProvisioningOperation::Install) ||
-         response[1] == static_cast<uint8_t>(
-             DeviceKeyProvisioningOperation::Bootstrap)) &&
         response[2] == static_cast<uint8_t>(
             DeviceKeyProvisioningStatus::Success)) {
-        self.keyInstalled_ = true;
+        const uint8_t operation = response[1];
+        if (operation == static_cast<uint8_t>(
+                             DeviceKeyProvisioningOperation::Install) ||
+            operation == static_cast<uint8_t>(
+                             DeviceKeyProvisioningOperation::Bootstrap)) {
+            self.keyInstalled_ = true;
+        } else if (
+            operation == static_cast<uint8_t>(
+                             DeviceKeyProvisioningOperation::GetInfo) &&
+            written >= kDeviceKeyProvisioningInfoResponseSize &&
+            (response[3] & kDeviceKeyProvisioningHasDeviceKey) != 0U) {
+            // Network-only reconfiguration preserves the durable DeviceKey.
+            // A successful GetInfo is sufficient proof that cloud identity is
+            // ready; requiring a redundant Install would rotate or rewrite an
+            // unrelated credential merely to complete WiFi provisioning.
+            self.keyInstalled_ = true;
+        }
     }
     return ESP_OK;
 }
@@ -315,13 +331,14 @@ inline void Esp32WifiProvAdapter::end() {
 
 inline bool Esp32WifiProvAdapter::shutdownManager() {
     if (!managerInitialized_) return true;
-    if (serviceStarted_ && !ended_) {
-        if (!stopRequested_) {
-            stopRequested_ = true;
-            network_prov_mgr_stop_provisioning();
-        }
-        // The bundled IDF component stops asynchronously. Its END callback is
-        // the ownership boundary after which protocomm/NimBLE may be released.
+    if (serviceStarted_ && !stopRequested_) {
+        stopRequested_ = true;
+        network_prov_mgr_stop_provisioning();
+    }
+    if (stopRequested_ && !ended_) {
+        // Arduino-ESP32 owns manager de-initialization from its global
+        // NETWORK_PROV_END handler. Wait for NETWORK_PROV_DEINIT so Direct
+        // NimBLE cannot start while that handler still owns the BLE host.
         const uint32_t startedAt = millis();
         while (!ended_ &&
                static_cast<uint32_t>(millis() - startedAt) < 3000U) {
@@ -329,9 +346,14 @@ inline bool Esp32WifiProvAdapter::shutdownManager() {
         }
         if (!ended_) return false;
     }
+    if (!managerInitialized_) return true;
+
+    // Initialization can fail before the service starts, so no END event will
+    // transfer cleanup to Arduino-ESP32. This is the adapter-owned path.
     network_prov_mgr_deinit();
     managerInitialized_ = false;
     serviceStarted_ = false;
+    ended_ = true;
     return true;
 }
 

@@ -124,6 +124,15 @@ Result computeControllerMutationReceiptProof(
     const ControllerMutationReceipt& body,
     MutableByteSpan transcriptWorkspace,
     MutableByteSpan proofOutput);
+// Builds the canonical deterministic receipt for a decoded Grant. The HMAC
+// proves possession of the installed secret; it is not device
+// non-repudiation. Callers must establish the mutation outcome separately.
+Result buildControllerMutationReceipt(
+    const ControllerGrant& grant,
+    ByteView controllerSecret,
+    MutableByteSpan transcriptWorkspace,
+    MutableByteSpan output,
+    ByteView& encoded);
 Result verifyControllerMutationReceiptProof(
     ByteView controllerSecret,
     const ControllerMutationReceipt& body,

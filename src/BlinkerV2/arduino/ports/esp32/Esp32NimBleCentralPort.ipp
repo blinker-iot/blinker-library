@@ -20,7 +20,8 @@ inline Esp32NimBleCentralPort::Esp32NimBleCentralPort(
       request_(), connection_(), packetReceiver_(nullptr),
       packetContext_(nullptr), connectedHandler_(nullptr),
       disconnectedHandler_(nullptr), connectionContext_(nullptr),
-      candidates_(), packets_(), candidateHead_(0U), candidateTail_(0U),
+      candidates_(), packets_(), pendingWrite_(), candidateHead_(0U),
+      candidateTail_(0U),
       candidateCount_(0U), packetHead_(0U), packetTail_(0U),
       packetCount_(0U), ownAddressType_(0U),
       connectionHandle_(BLE_HS_CONN_HANDLE_NONE),
@@ -34,6 +35,8 @@ inline Esp32NimBleCentralPort::Esp32NimBleCentralPort(
       disconnectEventPending_(false), discoveryResultPending_(false),
       securityEventPending_(false), pendingEncrypted_(false),
       pendingBonded_(false), cancelCompletionPending_(false),
+      pendingWriteResult_(ErrorCode::Ok), writeActive_(false),
+      writeComplete_(false),
       initialized_(false), stopping_(false),
       state_(BleCentralPortState::Stopped), lastError_(ErrorCode::Ok),
       lock_(portMUX_INITIALIZER_UNLOCKED) {
@@ -58,12 +61,10 @@ inline bool Esp32NimBleCentralPort::validConfig() const {
 }
 
 inline Result Esp32NimBleCentralPort::start() {
-    if (state_ != BleCentralPortState::Stopped || activePort() != nullptr ||
-        !esp32_nimble_detail::claim(this)) {
+    if (state_ != BleCentralPortState::Stopped) {
         return Result::failure(ErrorCode::AlreadyExists);
     }
     if (!validConfig()) {
-        esp32_nimble_detail::release(this);
         state_ = BleCentralPortState::Error;
         lastError_ = ErrorCode::NotConfigured;
         return Result::failure(lastError_);
@@ -72,6 +73,18 @@ inline Result Esp32NimBleCentralPort::start() {
     clearAttempt();
     stopping_ = false;
     lastError_ = ErrorCode::Ok;
+    if (initialized_) {
+        if (activePort() != this) {
+            state_ = BleCentralPortState::Error;
+            lastError_ = ErrorCode::StateConflict;
+            return Result::failure(lastError_);
+        }
+        state_ = BleCentralPortState::Idle;
+        return Result::success();
+    }
+    if (activePort() != nullptr || !esp32_nimble_detail::claim(this)) {
+        return Result::failure(ErrorCode::AlreadyExists);
+    }
     activePort() = this;
     const esp_err_t nativeResult = nimble_port_init();
     if (nativeResult != ESP_OK) {
@@ -157,23 +170,37 @@ inline void Esp32NimBleCentralPort::stop() {
                  static_cast<uint32_t>(millis() - startedAt) <
                      config_.hostStopTimeoutMillis);
 
-        if (!idle || nimble_port_stop() != 0) {
+        if (!idle) {
             stopping_ = false;
             state_ = BleCentralPortState::Error;
-            lastError_ = idle
-                             ? ErrorCode::ProtocolError
-                             : ErrorCode::WouldBlock;
+            lastError_ = ErrorCode::WouldBlock;
             return;
         }
-        (void)nimble_port_deinit();
-        initialized_ = false;
     }
-    if (activePort() == this) activePort() = nullptr;
-    esp32_nimble_detail::release(this);
+    // ESP-IDF's controller is process-lifetime infrastructure: repeatedly
+    // deinitializing and reinitializing it can corrupt controller/IPC state.
+    // A permit window therefore stops scan/ACL activity but keeps the single
+    // lazy NimBLE host alive for the next window.
     clearAttempt();
     stopping_ = false;
     state_ = BleCentralPortState::Stopped;
     lastError_ = ErrorCode::Ok;
+}
+
+inline void Esp32NimBleCentralPort::shutdown() {
+    stop();
+    if (initialized_) {
+        stopping_ = true;
+        if (nimble_port_stop() == 0) {
+            (void)nimble_port_deinit();
+            initialized_ = false;
+        }
+    }
+    if (!initialized_) {
+        if (activePort() == this) activePort() = nullptr;
+        esp32_nimble_detail::release(this);
+    }
+    stopping_ = false;
 }
 
 inline Result Esp32NimBleCentralPort::startScan() {
@@ -276,13 +303,71 @@ inline Result Esp32NimBleCentralPort::sendPacket(
         packet.size > BLINKER_ESP32_NIMBLE_CENTRAL_PACKET_SIZE) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
-    const int result = ble_gattc_write_no_rsp_flat(
+
+    bool active = false;
+    bool complete = false;
+    bool samePacket = false;
+    ErrorCode completedResult = ErrorCode::Ok;
+    portENTER_CRITICAL(&lock_);
+    active = writeActive_;
+    if (active) {
+        samePacket = pendingWrite_.attemptId == attemptId &&
+            pendingWrite_.size == packet.size &&
+            memcmp(pendingWrite_.data, packet.data, packet.size) == 0;
+        complete = writeComplete_;
+        completedResult = pendingWriteResult_;
+        if (samePacket && complete) {
+            pendingWrite_ = PendingWrite();
+            pendingWriteResult_ = ErrorCode::Ok;
+            writeActive_ = false;
+            writeComplete_ = false;
+        }
+    }
+    portEXIT_CRITICAL(&lock_);
+
+    if (active) {
+        if (!samePacket || !complete) {
+            return Result::failure(ErrorCode::WouldBlock);
+        }
+        if (completedResult == ErrorCode::Ok) return Result::success();
+        if (completedResult == ErrorCode::NotConnected) {
+            completeAttempt(ErrorCode::NotConnected);
+        }
+        return Result::failure(completedResult);
+    }
+
+    portENTER_CRITICAL(&lock_);
+    pendingWrite_.attemptId = attemptId;
+    pendingWrite_.size = static_cast<uint8_t>(packet.size);
+    memcpy(pendingWrite_.data, packet.data, packet.size);
+    pendingWriteResult_ = ErrorCode::Ok;
+    writeActive_ = true;
+    writeComplete_ = false;
+    portEXIT_CRITICAL(&lock_);
+    const int result = ble_gattc_write_flat(
         connectionHandle_, receiveHandle_, packet.data,
-        static_cast<uint16_t>(packet.size));
-    if (result == 0) return Result::success();
-    return Result::failure(
-        result == BLE_HS_ENOTCONN ? ErrorCode::NotConnected
-                                  : ErrorCode::WouldBlock);
+        static_cast<uint16_t>(packet.size),
+        &Esp32NimBleCentralPort::onWrite, this);
+    if (result == 0) {
+        // Success is reported only after the remote ATT server accepted the
+        // write. The Broker retries this exact packet to observe completion.
+        return Result::failure(ErrorCode::WouldBlock);
+    }
+    portENTER_CRITICAL(&lock_);
+    pendingWrite_ = PendingWrite();
+    pendingWriteResult_ = ErrorCode::Ok;
+    writeActive_ = false;
+    writeComplete_ = false;
+    portEXIT_CRITICAL(&lock_);
+    if (result == BLE_HS_ENOTCONN) {
+        // NimBLE can report the vanished ACL link before its queued GAP
+        // disconnect event reaches poll(). Reconcile the public port state
+        // immediately so callers can rescan instead of remaining in a stale
+        // Ready state forever.
+        completeAttempt(ErrorCode::NotConnected);
+        return Result::failure(ErrorCode::NotConnected);
+    }
+    return Result::failure(ErrorCode::WouldBlock);
 }
 
 inline void Esp32NimBleCentralPort::setPacketReceiver(
@@ -577,7 +662,8 @@ inline int Esp32NimBleCentralPort::handleGapEvent(
     }
     if (event.type == BLE_GAP_EVENT_NOTIFY_RX &&
         event.notify_rx.conn_handle == connectionHandle_ &&
-        event.notify_rx.attr_handle == transmitHandle_) {
+        event.notify_rx.attr_handle == transmitHandle_ &&
+        event.notify_rx.indication != 0U) {
         (void)queuePacket(
             event.notify_rx.conn_handle, event.notify_rx.om);
         return 0;
@@ -717,7 +803,7 @@ inline int Esp32NimBleCentralPort::onReceiveCharacteristic(
     if (error->status == 0U && characteristic != nullptr) {
         if (self->receiveHandle_ != 0U ||
             (characteristic->properties &
-             BLE_GATT_CHR_PROP_WRITE_NO_RSP) == 0U) {
+             BLE_GATT_CHR_PROP_WRITE) == 0U) {
             self->markDiscoveryResult(ErrorCode::ProtocolError);
             return BLE_HS_EDONE;
         }
@@ -751,7 +837,7 @@ inline int Esp32NimBleCentralPort::onTransmitCharacteristic(
     }
     if (error->status == 0U && characteristic != nullptr) {
         if (self->transmitHandle_ != 0U ||
-            (characteristic->properties & BLE_GATT_CHR_PROP_NOTIFY) == 0U) {
+            (characteristic->properties & BLE_GATT_CHR_PROP_INDICATE) == 0U) {
             self->markDiscoveryResult(ErrorCode::ProtocolError);
             return BLE_HS_EDONE;
         }
@@ -799,7 +885,7 @@ inline int Esp32NimBleCentralPort::onDescriptor(
         self->markDiscoveryResult(ErrorCode::NotFound);
         return 0;
     }
-    const uint8_t enabled[2] = {1U, 0U};
+    const uint8_t enabled[2] = {2U, 0U};
     const int result = ble_gattc_write_flat(
         connectionHandle, self->cccdHandle_, enabled, sizeof(enabled),
         &Esp32NimBleCentralPort::onSubscribe, self);
@@ -822,6 +908,29 @@ inline int Esp32NimBleCentralPort::onSubscribe(
             error->status == 0U ? ErrorCode::Ok
                                 : ErrorCode::ProtocolError);
     }
+    return 0;
+}
+
+inline int Esp32NimBleCentralPort::onWrite(
+    uint16_t connectionHandle,
+    const ble_gatt_error* error,
+    ble_gatt_attr*,
+    void* context) {
+    Esp32NimBleCentralPort* self =
+        static_cast<Esp32NimBleCentralPort*>(context);
+    if (self == nullptr || error == nullptr) return 0;
+    portENTER_CRITICAL(&self->lock_);
+    if (self->writeActive_ &&
+        connectionHandle == self->connectionHandle_) {
+        self->pendingWriteResult_ =
+            error->status == 0U
+                ? ErrorCode::Ok
+                : (error->status == BLE_HS_ENOTCONN
+                       ? ErrorCode::NotConnected
+                       : ErrorCode::WouldBlock);
+        self->writeComplete_ = true;
+    }
+    portEXIT_CRITICAL(&self->lock_);
     return 0;
 }
 
@@ -871,6 +980,10 @@ inline void Esp32NimBleCentralPort::clearQueuesLocked() {
 inline void Esp32NimBleCentralPort::clearAttempt() {
     portENTER_CRITICAL(&lock_);
     clearQueuesLocked();
+    pendingWrite_ = PendingWrite();
+    pendingWriteResult_ = ErrorCode::Ok;
+    writeActive_ = false;
+    writeComplete_ = false;
     pendingConnectionHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingDisconnectHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingConnectStatus_ = 0;

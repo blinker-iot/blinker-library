@@ -30,6 +30,9 @@ public:
 
     Result start(const ble::ModeProfile& profile);
     Result switchTo(const ble::ModeProfile& profile);
+    // Replaces only the idle advertising payload when the Port supports it.
+    // Other Ports retain the existing stop/reconfigure/start fallback.
+    Result refreshActive(const ble::ModeProfile& profile);
     // Stops, re-prepares and starts the exact active profile. Product code
     // calls this from loop() after a provisioning disconnect/fault so a new
     // Noise and application session exists before advertising resumes.

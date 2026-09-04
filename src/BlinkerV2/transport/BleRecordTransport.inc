@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+
 namespace blinker {
 
 BleRecordTransport::BleRecordTransport(

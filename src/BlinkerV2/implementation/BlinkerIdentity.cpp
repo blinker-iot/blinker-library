@@ -8,3 +8,4 @@
 #include <BlinkerV2/identity/DeviceKeyStore.inc>
 #include <BlinkerV2/identity/DevicePresenceKey.inc>
 #include <BlinkerV2/identity/GatewayAccessStore.inc>
+#include <BlinkerV2/identity/GatewayCredentialRenewalStore.inc>

@@ -83,10 +83,20 @@ public:
             return;
         }
 
-        const GatewayChildSessionState state = child_.state();
+        GatewayChildSessionState state = child_.state();
+        if (state == GatewayChildSessionState::Stopped) {
+            const Result started = child_.start();
+            if (!started) {
+                complete(gateway::GatewayProofStatus::Rejected);
+                return;
+            }
+            state = child_.state();
+        }
         if (child_.secure()) {
             if (child_.matchedPresenceVersion() ==
-                command_.presenceKeyVersion) {
+                    command_.presenceKeyVersion &&
+                child_.authenticatedCredentialVersion() ==
+                    command_.gatewayCredentialVersion) {
                 complete(gateway::GatewayProofStatus::Secure);
             } else {
                 retireChild();

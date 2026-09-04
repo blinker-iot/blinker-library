@@ -140,6 +140,19 @@ public:
         return succeeded;
     }
 
+    // Clears only saved WiFi credentials and restarts a supported product in
+    // provisioning mode. Device identity, DeviceKey and Direct access remain.
+    bool resetNetwork() {
+        const Result result = product_ != nullptr
+                                  ? product_->resetNetwork()
+                                  : Result::failure(
+                                        ErrorCode::NotConfigured);
+        const bool succeeded = remember(result);
+        facade_detail::observeProductStatus(status());
+        facade_detail::diagnostics().flush();
+        return succeeded;
+    }
+
     ProductStatus status() const {
         return product_ != nullptr ? product_->status() : ProductStatus();
     }

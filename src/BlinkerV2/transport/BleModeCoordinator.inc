@@ -67,6 +67,31 @@ Result BleModeCoordinator::switchTo(const ble::ModeProfile& profile) {
     return restore(previousProfile, *previousEndpoint, targetError);
 }
 
+Result BleModeCoordinator::refreshActive(
+    const ble::ModeProfile& profile) {
+    Result result = ble::validateModeProfile(profile);
+    if (!result) return result;
+    if (transitioning() || activeEndpoint_ == nullptr ||
+        state_ == BleModeCoordinatorState::Stopped ||
+        state_ == BleModeCoordinatorState::Error ||
+        profile.mode != activeProfile_.mode) {
+        return Result::failure(ErrorCode::StateConflict);
+    }
+    if (ble::modeProfilesEqual(activeProfile_, profile)) {
+        return Result::success();
+    }
+
+    result = link_.refreshBleProfile(profile);
+    if (result) {
+        activeProfile_ = profile;
+        lastTransitionError_ = ErrorCode::Ok;
+        return Result::success();
+    }
+    return result.code() == ErrorCode::UnsupportedFeature
+               ? switchTo(profile)
+               : result;
+}
+
 Result BleModeCoordinator::restartActive() {
     if (transitioning() || state_ == BleModeCoordinatorState::Stopped ||
         state_ == BleModeCoordinatorState::Error ||

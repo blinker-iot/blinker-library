@@ -64,7 +64,7 @@ void GatewayCloudMux::onMessage(
     StringView topic,
     ByteView payload,
     const MqttMessageInfo& info) {
-    for (size_t index = 0U; index < 2U; ++index) {
+    for (size_t index = 0U; index < 3U; ++index) {
         const Slot slot = slots_[index];
         if (slot.handler != nullptr) {
             slot.handler(slot.context, topic, payload, info);
@@ -73,7 +73,8 @@ void GatewayCloudMux::onMessage(
 }
 
 size_t GatewayCloudMux::slotIndex(GatewayCloudChannel channel) {
-    return channel == GatewayCloudChannel::ChildRoute ? 1U : 0U;
+    if (channel == GatewayCloudChannel::ChildRoute) return 1U;
+    return channel == GatewayCloudChannel::PermitJoinRelay ? 2U : 0U;
 }
 
 } // namespace blinker

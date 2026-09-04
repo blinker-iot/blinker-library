@@ -7,4 +7,5 @@
 #include <BlinkerV2/protocol/ble/Presence.inc>
 #include <BlinkerV2/protocol/cbor/Cbor.inc>
 #include <BlinkerV2/protocol/gateway/Contracts.inc>
+#include <BlinkerV2/protocol/gateway/PermitJoinRelay.inc>
 #include <BlinkerV2/protocol/noise/LocalSecureRecord.inc>

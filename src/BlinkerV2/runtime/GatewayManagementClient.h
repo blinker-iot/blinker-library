@@ -1,15 +1,16 @@
 #ifndef BLINKER_RUNTIME_GATEWAYMANAGEMENTCLIENT_H
 #define BLINKER_RUNTIME_GATEWAYMANAGEMENTCLIENT_H
 
-#include "GatewayAccessDeliveryProcessor.h"
 #include "GatewayCloudMux.h"
+#include "IGatewayManagementDelivery.h"
 #include "IGatewayManagementControl.h"
+#include "../protocol/gateway/PermitJoinRelay.h"
 
 namespace blinker {
 
 // MQTTS side-channel client for one ESP32-class Edge Hub. It defers flash and
 // crypto work out of the MQTT callback, owns fixed buffers, and publishes the
-// durable application ACK only after GatewayAccessDeliveryProcessor succeeds.
+// durable application ACK only after the selected delivery processor succeeds.
 class GatewayManagementClient {
 public:
     enum : size_t {
@@ -19,7 +20,7 @@ public:
 
     GatewayManagementClient(
         GatewayCloudMux& cloud,
-        GatewayAccessDeliveryProcessor& delivery,
+        IGatewayManagementDelivery& delivery,
         IGatewayManagementControl& control);
     ~GatewayManagementClient();
 
@@ -63,14 +64,16 @@ private:
     void clearCloudBinding();
 
     GatewayCloudMux& cloud_;
-    GatewayAccessDeliveryProcessor& delivery_;
+    IGatewayManagementDelivery& delivery_;
     IGatewayManagementControl& control_;
     GatewayAccessDeliveryContext context_;
     char publishTopic_[maximumTopicSize + 1U];
     char subscribeTopic_[maximumTopicSize + 1U];
-    uint8_t envelope_[gateway::kGatewayAccessEnvelopeMaximumEncodedSize];
+    uint8_t envelope_[
+        gateway::kGatewayCredentialRenewalEnvelopeMaximumEncodedSize];
     size_t envelopeSize_;
-    uint8_t ack_[gateway::kGatewayAccessDeliveryAckMaximumEncodedSize];
+    uint8_t ack_[
+        gateway::kGatewayCredentialRenewalDeliveryAckMaximumEncodedSize];
     size_t ackSize_;
     uint32_t subscribedGeneration_;
     bool configured_;

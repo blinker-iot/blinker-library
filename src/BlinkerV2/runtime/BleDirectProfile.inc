@@ -22,14 +22,13 @@ BleDirectProfileProvider::BleDirectProfileProvider(
       previousNonce_(),
       authorizedProfile_(0U),
       profileReady_(0U),
-      hasPreviousNonce_(0U) {}
+      hasPreviousNonce_(0U),
+      refreshRequested_(0U) {}
 
 Result BleDirectProfileProvider::make(
     uint32_t sessionRevision,
     ble::ModeProfile& profile) {
     profile = ble::makeDirectModeProfile();
-    profileReady_ = 0U;
-    authorizedProfile_ = 0U;
     Result result = tryMakeAuthorized(profile);
     if (!result) {
         profile = ble::ModeProfile();
@@ -42,6 +41,7 @@ Result BleDirectProfileProvider::make(
             ? 1U
             : 0U;
     profileReady_ = 1U;
+    refreshRequested_ = 0U;
     return Result::success();
 }
 
@@ -51,12 +51,17 @@ bool BleDirectProfileProvider::refreshDue(
     if (profileReady_ == 0U || sessionCount != 0U) {
         return false;
     }
+    if (refreshRequested_ != 0U) return true;
     if (sessionRevision != observedSessionRevision_) return true;
     return authorizedProfile_ != 0U &&
            rotationIntervalMillis_ != 0U &&
            static_cast<uint32_t>(
                clock_.monotonicMillis() - generatedAtMillis_) >=
                rotationIntervalMillis_;
+}
+
+void BleDirectProfileProvider::requestRefresh() {
+    if (profileReady_ != 0U) refreshRequested_ = 1U;
 }
 
 void BleDirectProfileProvider::reset() {
@@ -66,6 +71,7 @@ void BleDirectProfileProvider::reset() {
     authorizedProfile_ = 0U;
     profileReady_ = 0U;
     hasPreviousNonce_ = 0U;
+    refreshRequested_ = 0U;
 }
 
 Result BleDirectProfileProvider::tryMakeAuthorized(

@@ -47,6 +47,9 @@ inline Esp32NimBleLink::Esp32NimBleLink(
       connectedAtMillis_(0U),
       pendingHostError_(ErrorCode::Ok),
       pendingNotifyEnabled_(false),
+      pendingIndicateEnabled_(false),
+      indicateEnabled_(false),
+      indicationInFlight_(false),
       pendingEncrypted_(false),
       pendingBonded_(false),
       connectPending_(false),
@@ -81,21 +84,13 @@ inline Result Esp32NimBleLink::start() {
         return Result::failure(lastError_);
     }
 
-    uint8_t encodedBytes[ble::kModeServiceDataSize] = {};
-    ByteView encoded;
-    Result result = ble::encodeModeServiceData(
-        profile_,
-        MutableByteSpan(encodedBytes, sizeof(encodedBytes)),
-        encoded);
+    Result result = encodeProfile(profile_, modeServiceData_);
     if (!result) {
         esp32_nimble_detail::release(this);
         lastError_ = result.code();
         state_ = BleLinkState::Error;
         return result;
     }
-    memcpy(modeServiceData_, ble::kServiceUuidLittleEndian, 16U);
-    memcpy(modeServiceData_ + 16U, encoded.data, encoded.size);
-
     portENTER_CRITICAL(&lock_);
     resetRuntimeLocked();
     stopping_ = false;
@@ -187,6 +182,25 @@ inline void Esp32NimBleLink::stop() {
         (void)ble_gap_adv_stop();
         if (handle != BLE_HS_CONN_HANDLE_NONE) {
             (void)ble_gap_terminate(handle, BLE_ERR_REM_USER_CONN_TERM);
+            // nimble_port_stop() cannot stop a Host with a live connection.
+            // Give the asynchronous GAP disconnect a bounded opportunity to
+            // retire the session before releasing the process-wide Host.
+            const uint32_t disconnectStartedAt = millis();
+            while (static_cast<uint32_t>(
+                       millis() - disconnectStartedAt) < 1000U) {
+                bool pending = false;
+                bool connected = false;
+                portENTER_CRITICAL(&lock_);
+                pending = disconnectPending_ &&
+                          pendingDisconnectHandle_ == handle;
+                connected = connectionHandle_ == handle ||
+                            (connectPending_ &&
+                             pendingConnectHandle_ == handle);
+                portEXIT_CRITICAL(&lock_);
+                if (pending) processPendingEvents();
+                if (!connected || pending) break;
+                delay(1U);
+            }
         }
         if (nimble_port_stop() == 0) {
             (void)nimble_port_deinit();
@@ -274,8 +288,28 @@ inline Result Esp32NimBleLink::sendPacket(
     if (buffer == nullptr) {
         return Result::failure(ErrorCode::WouldBlock);
     }
-    return ble_gatts_notify_custom(
-               connectionHandle_, transmitHandle_, buffer) == 0
+    if (indicateEnabled_) {
+        bool busy = false;
+        portENTER_CRITICAL(&lock_);
+        busy = indicationInFlight_;
+        if (!busy) indicationInFlight_ = true;
+        portEXIT_CRITICAL(&lock_);
+        if (busy) {
+            os_mbuf_free_chain(buffer);
+            return Result::failure(ErrorCode::WouldBlock);
+        }
+    }
+    const int result = indicateEnabled_
+        ? ble_gatts_indicate_custom(
+              connectionHandle_, transmitHandle_, buffer)
+        : ble_gatts_notify_custom(
+              connectionHandle_, transmitHandle_, buffer);
+    if (result != 0 && indicateEnabled_) {
+        portENTER_CRITICAL(&lock_);
+        indicationInFlight_ = false;
+        portEXIT_CRITICAL(&lock_);
+    }
+    return result == 0
                ? Result::success()
                : Result::failure(ErrorCode::WouldBlock);
 }
@@ -316,6 +350,48 @@ inline Result Esp32NimBleLink::configureBleProfile(
     if (!result) return result;
     profile_ = profile;
     return Result::success();
+}
+
+inline Result Esp32NimBleLink::refreshBleProfile(
+    const ble::ModeProfile& profile) {
+    if (state_ != BleLinkState::Ready || !initialized_) {
+        return Result::failure(ErrorCode::StateConflict);
+    }
+    Result result = ble::validateModeProfile(profile);
+    if (!result || ble::modeProfilesEqual(profile_, profile)) return result;
+
+    uint8_t nextServiceData[modeServiceDataSize] = {};
+    result = encodeProfile(profile, nextServiceData);
+    if (!result) return result;
+
+    bool idle = false;
+    portENTER_CRITICAL(&lock_);
+    idle = connectionHandle_ == BLE_HS_CONN_HANDLE_NONE &&
+           !connectPending_ && !disconnectPending_;
+    portEXIT_CRITICAL(&lock_);
+    if (!idle) return Result::failure(ErrorCode::StateConflict);
+
+    if (ble_gap_adv_active() && ble_gap_adv_stop() != 0) {
+        return Result::failure(ErrorCode::WouldBlock);
+    }
+
+    portENTER_CRITICAL(&lock_);
+    idle = connectionHandle_ == BLE_HS_CONN_HANDLE_NONE &&
+           !connectPending_ && !disconnectPending_;
+    portEXIT_CRITICAL(&lock_);
+    if (!idle) return Result::failure(ErrorCode::StateConflict);
+
+    const ble::ModeProfile previous = profile_;
+    profile_ = profile;
+    memcpy(modeServiceData_, nextServiceData, sizeof(modeServiceData_));
+    result = startAdvertising();
+    if (result) return result;
+
+    profile_ = previous;
+    if (encodeProfile(profile_, modeServiceData_)) {
+        (void)startAdvertising();
+    }
+    return result;
 }
 
 inline void Esp32NimBleLink::hostTask(void*) {
@@ -388,12 +464,28 @@ inline void Esp32NimBleLink::initializeGatt() {
     characteristics_[1].access_cb = &Esp32NimBleLink::onGattAccess;
     characteristics_[1].arg = this;
     characteristics_[1].flags = BLE_GATT_CHR_F_READ |
-                                BLE_GATT_CHR_F_NOTIFY;
+                                BLE_GATT_CHR_F_NOTIFY |
+                                BLE_GATT_CHR_F_INDICATE;
     characteristics_[1].val_handle = &transmitHandle_;
 
     services_[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
     services_[0].uuid = &serviceUuid_.u;
     services_[0].characteristics = characteristics_;
+}
+
+inline Result Esp32NimBleLink::encodeProfile(
+    const ble::ModeProfile& profile,
+    uint8_t (&output)[modeServiceDataSize]) {
+    uint8_t encodedBytes[ble::kModeServiceDataSize] = {};
+    ByteView encoded;
+    Result result = ble::encodeModeServiceData(
+        profile,
+        MutableByteSpan(encodedBytes, sizeof(encodedBytes)),
+        encoded);
+    if (!result) return result;
+    memcpy(output, ble::kServiceUuidLittleEndian, 16U);
+    memcpy(output + 16U, encoded.data, encoded.size);
+    return Result::success();
 }
 
 inline Result Esp32NimBleLink::startAdvertising() {
@@ -523,8 +615,26 @@ inline int Esp32NimBleLink::handleGapEvent(const ble_gap_event& event) {
         portENTER_CRITICAL(&lock_);
         pendingSubscribeHandle_ = event.subscribe.conn_handle;
         pendingNotifyEnabled_ = event.subscribe.cur_notify != 0U;
+        pendingIndicateEnabled_ = event.subscribe.cur_indicate != 0U;
         subscribePending_ = true;
         portEXIT_CRITICAL(&lock_);
+        return 0;
+    }
+
+    if (event.type == BLE_GAP_EVENT_NOTIFY_TX &&
+        event.notify_tx.indication != 0U &&
+        event.notify_tx.conn_handle == connectionHandle_ &&
+        event.notify_tx.attr_handle == transmitHandle_) {
+        if (event.notify_tx.status == BLE_HS_EDONE) {
+            portENTER_CRITICAL(&lock_);
+            indicationInFlight_ = false;
+            portEXIT_CRITICAL(&lock_);
+        } else if (event.notify_tx.status != 0) {
+            portENTER_CRITICAL(&lock_);
+            indicationInFlight_ = false;
+            portEXIT_CRITICAL(&lock_);
+            markHostResult(ErrorCode::ProtocolError);
+        }
         return 0;
     }
 
@@ -588,6 +698,7 @@ inline void Esp32NimBleLink::processPendingEvents() {
     bool subscribe = false;
     bool security = false;
     bool notifyEnabled = false;
+    bool indicateEnabled = false;
     bool encrypted = false;
     bool bonded = false;
     uint16_t connectHandle = BLE_HS_CONN_HANDLE_NONE;
@@ -601,6 +712,7 @@ inline void Esp32NimBleLink::processPendingEvents() {
     subscribe = subscribePending_;
     security = securityPending_;
     notifyEnabled = pendingNotifyEnabled_;
+    indicateEnabled = pendingIndicateEnabled_;
     encrypted = pendingEncrypted_;
     bonded = pendingBonded_;
     connectHandle = pendingConnectHandle_;
@@ -625,6 +737,8 @@ inline void Esp32NimBleLink::processPendingEvents() {
             disconnectedHandler_(sessionContext_, oldSession);
         }
         sessionAnnounced_ = false;
+        indicateEnabled_ = false;
+        indicationInFlight_ = false;
     }
 
     const bool connectWasAlsoDisconnected =
@@ -639,13 +753,16 @@ inline void Esp32NimBleLink::processPendingEvents() {
         session_.connected = true;
         connectedAtMillis_ = millis();
         if (subscribe && subscribeHandle == connectHandle) {
-            session_.notifyEnabled = notifyEnabled;
+            session_.notifyEnabled = notifyEnabled || indicateEnabled;
+            indicateEnabled_ = indicateEnabled;
         }
     }
 
     if (subscribe && session_.connected &&
         subscribeHandle == connectionHandle_) {
-        session_.notifyEnabled = notifyEnabled;
+        session_.notifyEnabled = notifyEnabled || indicateEnabled;
+        indicateEnabled_ = indicateEnabled;
+        if (!indicateEnabled) indicationInFlight_ = false;
     }
     if (security && session_.connected &&
         securityHandle == connectionHandle_) {
@@ -704,6 +821,9 @@ inline void Esp32NimBleLink::resetRuntimeLocked() {
     pendingSecurityHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingHostError_ = ErrorCode::Ok;
     pendingNotifyEnabled_ = false;
+    pendingIndicateEnabled_ = false;
+    indicateEnabled_ = false;
+    indicationInFlight_ = false;
     pendingEncrypted_ = false;
     pendingBonded_ = false;
     connectPending_ = false;

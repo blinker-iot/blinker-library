@@ -104,9 +104,9 @@ private:
     volatile bool credentialsCommitted_;
     volatile bool wifiSucceeded_;
     volatile bool ended_;
-    bool managerInitialized_;
-    bool serviceStarted_;
-    bool stopRequested_;
+    volatile bool managerInitialized_;
+    volatile bool serviceStarted_;
+    volatile bool stopRequested_;
 
     Esp32WifiProvAdapter(const Esp32WifiProvAdapter&);
     Esp32WifiProvAdapter& operator=(const Esp32WifiProvAdapter&);

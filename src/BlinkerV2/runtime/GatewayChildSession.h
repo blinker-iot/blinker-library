@@ -9,6 +9,7 @@
 #include "../protocol/DirectRecord.h"
 #include "../transport/IFrameTransport.h"
 #include "ChildSessionCoordinator.h"
+#include "GatewaySessionAccessSource.h"
 
 namespace blinker {
 
@@ -65,21 +66,49 @@ public:
           handshakeCapacity_(boundedSize(handshakeScratch.size)),
           plaintextCapacity_(boundedSize(plaintextScratch.size)),
           secureRecordCapacity_(boundedSize(secureRecordScratch.size)),
+          pendingSecureRecordSize_(0U),
           receiver_(nullptr), receiverContext_(nullptr),
           secureHandler_(nullptr), disconnectedHandler_(nullptr),
           sessionContext_(nullptr), faultHandler_(nullptr),
           faultContext_(nullptr), activeAttemptId_(0U),
-          expiresAtUnixSeconds_(0U),
+          expiresAtUnixSeconds_(0U), credentialVersion_(0U),
           pendingError_(ErrorCode::Ok), lastError_(ErrorCode::Ok),
           state_(GatewayChildSessionState::Stopped),
           faultReported_(false) {
-        link_.setReceiver(&BasicGatewayChildSession::recordThunk, this);
-        link_.setSessionHandlers(
-            &BasicGatewayChildSession::connectedThunk,
-            &BasicGatewayChildSession::disconnectedThunk,
-            this);
-        link_.setFaultHandler(
-            &BasicGatewayChildSession::faultThunk, this);
+        bindLink();
+    }
+
+    BasicGatewayChildSession(
+        Link& link,
+        GatewayAccessStore& access,
+        GatewayCredentialRenewalStore& renewal,
+        IClock& clock,
+        IRandom& random,
+        IX25519AesGcmCryptoProvider& crypto,
+        MutableByteSpan handshakeScratch,
+        MutableByteSpan plaintextScratch,
+        MutableByteSpan secureRecordScratch,
+        const GatewayChildSessionConfig& config =
+            GatewayChildSessionConfig())
+        : link_(link), access_(access, renewal), clock_(clock), crypto_(crypto),
+          config_(config), coordinator_(random, childConfig(config)),
+          selector_(), credential_(),
+          handshakeScratch_(handshakeScratch.data),
+          plaintextScratch_(plaintextScratch.data),
+          secureRecordScratch_(secureRecordScratch.data),
+          handshakeCapacity_(boundedSize(handshakeScratch.size)),
+          plaintextCapacity_(boundedSize(plaintextScratch.size)),
+          secureRecordCapacity_(boundedSize(secureRecordScratch.size)),
+          pendingSecureRecordSize_(0U),
+          receiver_(nullptr), receiverContext_(nullptr),
+          secureHandler_(nullptr), disconnectedHandler_(nullptr),
+          sessionContext_(nullptr), faultHandler_(nullptr),
+          faultContext_(nullptr), activeAttemptId_(0U),
+          expiresAtUnixSeconds_(0U), credentialVersion_(0U),
+          pendingError_(ErrorCode::Ok), lastError_(ErrorCode::Ok),
+          state_(GatewayChildSessionState::Stopped),
+          faultReported_(false) {
+        bindLink();
     }
 
     ~BasicGatewayChildSession() { stop(); }
@@ -108,6 +137,7 @@ public:
         if (state_ == GatewayChildSessionState::Stopped) return;
         link_.stop();
         clearAttempt();
+        access_.reset();
         state_ = GatewayChildSessionState::Stopped;
         lastError_ = ErrorCode::Ok;
     }
@@ -130,6 +160,20 @@ public:
         if (pendingError_ != ErrorCode::Ok) {
             processFailure();
             return;
+        }
+        if (state_ == GatewayChildSessionState::Secure &&
+            pendingSecureRecordSize_ != 0U) {
+            const Result result = link_.sendRecord(ByteView(
+                secureRecordScratch_, pendingSecureRecordSize_));
+            if (result) {
+                secureZero(MutableByteSpan(
+                    secureRecordScratch_, pendingSecureRecordSize_));
+                pendingSecureRecordSize_ = 0U;
+            } else if (result.code() != ErrorCode::WouldBlock) {
+                pendingError_ = result.code();
+                processFailure();
+                return;
+            }
         }
         if (state_ == GatewayChildSessionState::Authenticating) {
             Result result = coordinator_.poll(clock_.monotonicMillis());
@@ -162,6 +206,7 @@ public:
                 access, unixSeconds, credential_);
         }
         if (result) expiresAtUnixSeconds_ = access.expiresAtUnixSeconds;
+        if (result) credentialVersion_ = access.credentialVersion;
         clearGatewayAccessRecord(access);
         if (!result) {
             resetSecurity();
@@ -209,6 +254,9 @@ public:
             pendingError_ = ErrorCode::AuthenticationRequired;
             return Result::failure(pendingError_);
         }
+        if (pendingSecureRecordSize_ != 0U) {
+            return Result::failure(ErrorCode::WouldBlock);
+        }
         Result result = direct::validateRecord(frame);
         if (!result || frame.size > coordinator_.negotiatedMaxFrameSize()) {
             return result
@@ -222,7 +270,17 @@ public:
                 secureRecordScratch_, secureRecordCapacity_),
             record);
         if (result) result = link_.sendRecord(record);
-        if (!result) {
+        if (result) {
+            secureZero(MutableByteSpan(
+                secureRecordScratch_, record.size));
+        } else if (result.code() == ErrorCode::WouldBlock) {
+            // seal() has already consumed a DirectSecure sequence. Retain the
+            // exact ciphertext in the existing scratch slot and enqueue it
+            // from poll(); re-sealing after queue pressure would create an
+            // observable sequence gap at the child.
+            pendingSecureRecordSize_ = static_cast<uint16_t>(record.size);
+            return Result::success();
+        } else {
             // A sealed sequence cannot be retried after an uncertain bearer
             // enqueue. Retire this session and let the cloud ledger retry on a
             // fresh authenticated connection.
@@ -254,6 +312,12 @@ public:
     uint32_t attemptId() const { return activeAttemptId_; }
     uint32_t matchedPresenceVersion() const {
         return selector_.matchedPresenceVersion();
+    }
+    // The durable Gateway credential version captured before Method 2 began.
+    // A caller must not infer this fact from the mutable access store: Rotate
+    // can promote that store while the old DirectSecure session is alive.
+    uint32_t authenticatedCredentialVersion() const {
+        return secure() ? credentialVersion_ : 0U;
     }
     bool matchedPendingPresence() const {
         return selector_.matchedPending();
@@ -296,6 +360,16 @@ public:
     }
 
 private:
+    void bindLink() {
+        link_.setReceiver(&BasicGatewayChildSession::recordThunk, this);
+        link_.setSessionHandlers(
+            &BasicGatewayChildSession::connectedThunk,
+            &BasicGatewayChildSession::disconnectedThunk,
+            this);
+        link_.setFaultHandler(
+            &BasicGatewayChildSession::faultThunk, this);
+    }
+
     static uint16_t boundedSize(size_t value) {
         return value <= UINT16_MAX ? static_cast<uint16_t>(value) : 0U;
     }
@@ -450,6 +524,9 @@ private:
             faultReported_ = true;
             faultHandler_(faultContext_, lastError_);
         }
+        if (error == ErrorCode::AuthenticationRequired) {
+            access_.authenticationFailed();
+        }
         if (link_.connected() || link_.connecting()) {
             state_ = GatewayChildSessionState::Disconnecting;
             const Result result = link_.disconnect();
@@ -466,6 +543,7 @@ private:
         selector_.clear();
         clearControllerCredential(credential_);
         expiresAtUnixSeconds_ = 0U;
+        credentialVersion_ = 0U;
     }
 
     bool accessTimeValid() const {
@@ -477,6 +555,7 @@ private:
 
     void clearAttempt() {
         resetSecurity();
+        pendingSecureRecordSize_ = 0U;
         if (handshakeScratch_ != nullptr) {
             secureZero(MutableByteSpan(
                 handshakeScratch_, handshakeCapacity_));
@@ -495,7 +574,7 @@ private:
     }
 
     Link& link_;
-    GatewayAccessStore& access_;
+    GatewaySessionAccessSource access_;
     IClock& clock_;
     IX25519AesGcmCryptoProvider& crypto_;
     GatewayChildSessionConfig config_;
@@ -508,6 +587,7 @@ private:
     uint16_t handshakeCapacity_;
     uint16_t plaintextCapacity_;
     uint16_t secureRecordCapacity_;
+    uint16_t pendingSecureRecordSize_;
     GatewayChildFrameReceiver receiver_;
     void* receiverContext_;
     GatewayChildSessionHandler secureHandler_;
@@ -517,6 +597,7 @@ private:
     void* faultContext_;
     uint32_t activeAttemptId_;
     uint64_t expiresAtUnixSeconds_;
+    uint32_t credentialVersion_;
     ErrorCode pendingError_;
     ErrorCode lastError_;
     GatewayChildSessionState state_;

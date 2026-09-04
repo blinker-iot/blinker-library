@@ -67,6 +67,7 @@ public:
         BleSessionHandler disconnected,
         void* context) override;
     Result configureBleProfile(const ble::ModeProfile& profile) override;
+    Result refreshBleProfile(const ble::ModeProfile& profile) override;
     ble::ModeProfile bleProfile() const override { return profile_; }
 
 private:
@@ -96,6 +97,9 @@ private:
 
     void initializeUuids();
     void initializeGatt();
+    static Result encodeProfile(
+        const ble::ModeProfile& profile,
+        uint8_t (&output)[modeServiceDataSize]);
     Result startAdvertising();
     void markHostResult(ErrorCode error);
     int handleGapEvent(const ble_gap_event& event);
@@ -144,6 +148,9 @@ private:
     uint32_t connectedAtMillis_;
     ErrorCode pendingHostError_;
     bool pendingNotifyEnabled_;
+    bool pendingIndicateEnabled_;
+    bool indicateEnabled_;
+    bool indicationInFlight_;
     bool pendingEncrypted_;
     bool pendingBonded_;
     bool connectPending_;

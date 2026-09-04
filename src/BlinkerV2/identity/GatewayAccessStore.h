@@ -7,6 +7,8 @@
 
 namespace blinker {
 
+struct GatewayCredentialRenewalRecord;
+
 // One outbound child credential owned by an Edge Hub. This is deliberately
 // separate from DeviceAccessStore: child access slots authorize controllers
 // entering this device, while this record authorizes the Hub leaving toward a
@@ -115,6 +117,14 @@ public:
     // Cancels an unproven staged locator without changing the active key.
     Result discardPendingPresence(
         uint32_t expectedVersion,
+        uint32_t& storageRevision);
+
+    // Atomically replaces only the active Method 2 secret/version after an
+    // exact Rotate receipt is durable in the separate renewal journal. A
+    // replay after reset is write-free when the active record already equals
+    // the candidate. Presence rotation cannot overlap this mutation.
+    Result promoteCredentialRenewal(
+        const GatewayCredentialRenewalRecord& pending,
         uint32_t& storageRevision);
 
     // Atomically removes the active secret and replaces it with a replayable

@@ -16,7 +16,7 @@ const char kSubscribeSuffix[] = "/management/down";
 
 GatewayManagementClient::GatewayManagementClient(
     GatewayCloudMux& cloud,
-    GatewayAccessDeliveryProcessor& delivery,
+    IGatewayManagementDelivery& delivery,
     IGatewayManagementControl& control)
     : cloud_(cloud), delivery_(delivery), control_(control), context_(), publishTopic_(),
       subscribeTopic_(), envelope_(), envelopeSize_(0U), ack_(),
@@ -93,7 +93,7 @@ void GatewayManagementClient::poll() {
         subscribed_ = false;
         Result result = cloud_.subscribe(
             subscribeTopic(),
-            gateway::kGatewayAccessEnvelopeMaximumEncodedSize,
+            gateway::kGatewayCredentialRenewalEnvelopeMaximumEncodedSize,
             1U);
         if (!result) {
             lastError_ = result.code();
@@ -115,7 +115,21 @@ void GatewayManagementClient::poll() {
             ? Result::failure(ErrorCode::InvalidEncoding)
             : gateway::decodeGatewayRevocationCommand(
                   message, revocationCommand);
-        const bool controlCommand = decodedProof || decodedRevocation;
+        gateway::GatewayPermitJoinCommandView permitJoinCommand;
+        const Result decodedPermitJoin =
+            (decodedProof || decodedRevocation)
+                ? Result::failure(ErrorCode::InvalidEncoding)
+                : gateway::decodeGatewayPermitJoinCommand(
+                      message, permitJoinCommand);
+        gateway::GatewayCredentialRenewalCommandView renewalCommand;
+        const Result decodedRenewal =
+            (decodedProof || decodedRevocation || decodedPermitJoin)
+                ? Result::failure(ErrorCode::InvalidEncoding)
+                : gateway::decodeGatewayCredentialRenewalCommand(
+                      message, renewalCommand);
+        const bool controlCommand =
+            decodedProof || decodedRevocation || decodedPermitJoin ||
+            decodedRenewal;
         Result result = controlCommand
                             ? control_.handleCommand(message)
                             : delivery_.process(
@@ -138,8 +152,8 @@ void GatewayManagementClient::poll() {
 
     control_.poll();
 
-    const ByteView proofResult = control_.pendingResult();
-    if (!ackPending_ && proofResult.empty()) return;
+    const ByteView controlResult = control_.pendingResult();
+    if (!ackPending_ && controlResult.empty()) return;
     MqttPublishOptions options;
     // PubSubClient cannot publish QoS 1. The Broker's durable exact-envelope
     // retry makes this application ACK reliable: a lost QoS 0 ACK causes the
@@ -148,7 +162,7 @@ void GatewayManagementClient::poll() {
     options.retained = false;
     const ByteView payload = ackPending_
                                  ? ByteView(ack_, ackSize_)
-                                 : proofResult;
+                                 : controlResult;
     Result result = cloud_.publish(
         publishTopic(), payload, options);
     if (!result) {
@@ -188,10 +202,16 @@ void GatewayManagementClient::onMessage(
     StringView topic,
     ByteView payload,
     const MqttMessageInfo& info) {
+    if (gateway::permitJoinRelayMessageKind(payload) !=
+        gateway::PermitJoinRelayMessageKind::Unknown) {
+        return;
+    }
     if (!configured_ || !subscribed_ || envelopePending_ || ackPending_ ||
+        !control_.pendingResult().empty() ||
         !equal(topic, subscribeTopic()) || payload.data == nullptr ||
         payload.empty() ||
-        payload.size > gateway::kGatewayAccessEnvelopeMaximumEncodedSize ||
+        payload.size >
+            gateway::kGatewayCredentialRenewalEnvelopeMaximumEncodedSize ||
         (info.qosKnown && info.qos != 1U) ||
         (info.retainedKnown && info.retained)) {
         return;

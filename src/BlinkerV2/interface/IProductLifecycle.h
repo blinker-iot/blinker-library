@@ -21,7 +21,8 @@ enum ProductCapability : uint16_t {
     ProductCapabilityCloudData = 1U << 0,
     ProductCapabilityDirectBleData = 1U << 1,
     ProductCapabilityBleSetup = 1U << 2,
-    ProductCapabilityAccessReset = 1U << 3
+    ProductCapabilityAccessReset = 1U << 3,
+    ProductCapabilityNetworkReset = 1U << 4
 };
 
 struct ProductCapabilities {
@@ -62,6 +63,11 @@ public:
     // transport configuration such as WiFi credentials and BLE bonds.
     // Product stops active sessions before calling this method.
     virtual Result resetAccess() {
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
+    // Clears only durable WiFi credentials. Device identity, cloud key,
+    // Direct access and BLE bond state remain intact.
+    virtual Result resetNetwork() {
         return Result::failure(ErrorCode::UnsupportedFeature);
     }
     virtual ProductLifecycleStatus status() const = 0;

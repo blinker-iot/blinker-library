@@ -447,6 +447,43 @@ Result computeControllerMutationReceiptProof(
     return result;
 }
 
+Result buildControllerMutationReceipt(
+    const ControllerGrant& grant,
+    ByteView controllerSecret,
+    MutableByteSpan transcriptWorkspace,
+    MutableByteSpan output,
+    ByteView& encoded) {
+    encoded = ByteView();
+    ControllerMutationReceipt body;
+    body.operation = grant.operation;
+    body.grantId = grant.grantId;
+    body.deviceInstanceId = grant.deviceInstanceId;
+    body.ownershipGeneration = grant.ownershipGeneration;
+    body.controllerId = grant.controllerId;
+    body.credentialVersion = grant.credentialVersion;
+    body.permissions = grant.permissions;
+    body.secretDigest = grant.secretDigest;
+
+    uint8_t proof[kControllerReceiptProofSize] = {};
+    Result result;
+    if (grant.operation == ControllerMutationOperation::Revoke) {
+        body.proofKind = ControllerReceiptProofKind::None;
+        body.proof = ByteView();
+        result = Result::success();
+    } else {
+        body.proofKind = ControllerReceiptProofKind::HmacSha256;
+        result = computeControllerMutationReceiptProof(
+            controllerSecret,
+            body,
+            transcriptWorkspace,
+            MutableByteSpan(proof, sizeof(proof)));
+        if (result) body.proof = ByteView(proof, sizeof(proof));
+    }
+    if (result) result = encodeControllerMutationReceipt(body, output, encoded);
+    secureZero(MutableByteSpan(proof, sizeof(proof)));
+    return result;
+}
+
 Result verifyControllerMutationReceiptProof(
     ByteView controllerSecret,
     const ControllerMutationReceipt& body,

@@ -14,6 +14,7 @@
 #include <BlinkerV2/identity/DeviceInstanceIdStore.h>
 #include <BlinkerV2/identity/DeviceKeyStore.h>
 #include <BlinkerV2/identity/GatewayAccessStore.h>
+#include <BlinkerV2/identity/GatewayCredentialRenewalStore.h>
 
 #include <WiFiClientSecure.h>
 
@@ -51,12 +52,13 @@ inline Esp32NvsWifiCredentialSinkConfig edgeHubWifiStorageConfig(
     return config;
 }
 
-// Narrow production platform. GatewayAccessBlob is a dependency-injection
-// seam for internal tests; the production alias below always uses the real
-// encrypted-NVS adapter.
+// Narrow production platform. The two Gateway blob types are injection seams
+// for internal tests; the production alias below always uses separate real
+// encrypted-NVS records for active access and pending renewal.
 template <
     bool ProtectedStorage,
-    typename GatewayAccessBlob = Esp32NvsAtomicBlobStore>
+    typename GatewayAccessBlob = Esp32NvsAtomicBlobStore,
+    typename GatewayRenewalBlob = GatewayAccessBlob>
 class BasicEsp32EdgeHubPlatform {
 public:
     typedef WiFiClientSecure CloudSessionClient;
@@ -76,6 +78,10 @@ public:
               "bl_eh_access", "child",
               GatewayAccessStore::serializedSize,
               ProtectedStorage)),
+          gatewayRenewalBlob_(edgeHubBlobConfig(
+              "bl_eh_renew", "pending",
+              GatewayCredentialRenewalStore::serializedSize,
+              ProtectedStorage)),
           station_(), controlNetwork_(), mqttNetwork_() {}
 
     Result begin() {
@@ -83,11 +89,13 @@ public:
         if (result) result = deviceKeyBlob_.begin();
         if (result) result = wifiStorage_.begin();
         if (result) result = gatewayAccessBlob_.begin();
+        if (result) result = gatewayRenewalBlob_.begin();
         if (!result) end();
         return result;
     }
 
     void end() {
+        gatewayRenewalBlob_.end();
         gatewayAccessBlob_.end();
         wifiStorage_.end();
         deviceKeyBlob_.end();
@@ -110,6 +118,9 @@ public:
     IAtomicBlobStore& gatewayAccessBlob() {
         return gatewayAccessBlob_;
     }
+    IAtomicBlobStore& gatewayCredentialRenewalBlob() {
+        return gatewayRenewalBlob_;
+    }
     IWifiStation& wifiStation() { return station_; }
     CloudSessionClient& controlNetwork() { return controlNetwork_; }
     MqttClient& mqttNetwork() { return mqttNetwork_; }
@@ -119,6 +130,7 @@ private:
     Esp32NvsAtomicBlobStore deviceKeyBlob_;
     Esp32NvsWifiCredentialSink wifiStorage_;
     GatewayAccessBlob gatewayAccessBlob_;
+    GatewayRenewalBlob gatewayRenewalBlob_;
     Esp32WifiStation station_;
     CloudSessionClient controlNetwork_;
     MqttClient mqttNetwork_;

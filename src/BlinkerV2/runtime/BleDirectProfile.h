@@ -30,6 +30,7 @@ public:
     bool refreshDue(
         size_t sessionCount,
         uint32_t sessionRevision) const;
+    void requestRefresh();
     void reset();
 
 private:
@@ -46,6 +47,7 @@ private:
     uint8_t authorizedProfile_ : 1;
     uint8_t profileReady_ : 1;
     uint8_t hasPreviousNonce_ : 1;
+    uint8_t refreshRequested_ : 1;
 };
 
 } // namespace blinker

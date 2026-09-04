@@ -28,15 +28,9 @@ public:
         : channel_(channel), access_(access), clock_(clock), command_(),
           result_(), resultSize_(0U), nextAttemptMillis_(0U),
           active_(false), waitingResponse_(false), resultReady_(false),
-          publishPending_(false) {
-        channel_.setControllerControlReceiver(
-            &BasicGatewayRevocationCoordinator::responseThunk, this);
-    }
+          publishPending_(false) {}
 
-    ~BasicGatewayRevocationCoordinator() override {
-        reset();
-        channel_.setControllerControlReceiver(nullptr, nullptr);
-    }
+    ~BasicGatewayRevocationCoordinator() override { reset(); }
 
     Result handleCommand(ByteView encoded) override {
         gateway::GatewayRevocationCommandView decoded;
@@ -148,6 +142,10 @@ public:
         secureZero(MutableByteSpan(grantDigest, sizeof(grantDigest)));
         if (!matches) complete(gateway::GatewayRevocationStatus::Rejected);
         return Result::success();
+    }
+
+    void handleControllerControlResponse(ByteView encoded) override {
+        onResponse(encoded);
     }
 
     void poll() override {
@@ -489,12 +487,6 @@ private:
         waitingResponse_ = false;
         resultReady_ = false;
         publishPending_ = false;
-    }
-
-    static void responseThunk(void* context, ByteView frame) {
-        BasicGatewayRevocationCoordinator* self =
-            static_cast<BasicGatewayRevocationCoordinator*>(context);
-        if (self != nullptr) self->onResponse(frame);
     }
 
     ControlChannel& channel_;

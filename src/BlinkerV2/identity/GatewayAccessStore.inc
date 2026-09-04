@@ -1,4 +1,5 @@
 #include "GatewayAccessStore.h"
+#include "GatewayCredentialRenewalStore.h"
 
 #include <limits.h>
 #include <string.h>
@@ -824,6 +825,86 @@ Result GatewayAccessStore::discardPendingPresence(
             storage_, current);
     }
     if (result) storageRevision = current.storageRevision;
+    clearGatewayAccessRecord(current);
+    return result;
+}
+
+Result GatewayAccessStore::promoteCredentialRenewal(
+    const GatewayCredentialRenewalRecord& pending,
+    uint32_t& storageRevision) {
+    storageRevision = 0U;
+    if (storage_.protection() == StorageProtection::PlainFlash) {
+        return Result::failure(ErrorCode::AuthenticationRequired);
+    }
+    Result result = GatewayCredentialRenewalStore::validateDurable(pending);
+    if (!result ||
+        (pending.state != GatewayCredentialRenewalState::ReceiptStored &&
+         pending.state != GatewayCredentialRenewalState::Promoted)) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+
+    GatewayAccessRecord current;
+    result = load(current);
+    const bool identityMatches = result &&
+        gateway_access_store_detail::equalBytes(
+            current.operationId, pending.topologyOperationId,
+            sizeof(current.operationId)) &&
+        gateway_access_store_detail::equalBytes(
+            current.childDeviceInstanceId,
+            pending.childDeviceInstanceId,
+            sizeof(current.childDeviceInstanceId)) &&
+        current.accessEpoch == pending.accessEpoch &&
+        gateway_access_store_detail::equalBytes(
+            current.controllerId, pending.controllerId,
+            sizeof(current.controllerId)) &&
+        current.activePresence.version == pending.presenceKeyVersion &&
+        current.pendingPresence.version == 0U &&
+        gateway_access_store_detail::zero(ByteView(
+            current.pendingPresence.key,
+            sizeof(current.pendingPresence.key)));
+    if (!identityMatches) {
+        clearGatewayAccessRecord(current);
+        return result ? Result::failure(ErrorCode::SequenceConflict) : result;
+    }
+
+    if (current.credentialVersion == pending.credentialVersion) {
+        const bool exactReplay =
+            current.expiresAtUnixSeconds == pending.expiresAtUnixSeconds &&
+            gateway_access_store_detail::equalBytes(
+                current.secret, pending.secret, sizeof(current.secret)) &&
+            gateway_access_store_detail::equalBytes(
+                current.accessMaterialDigest,
+                pending.accessMaterialDigest,
+                sizeof(current.accessMaterialDigest));
+        if (!exactReplay) {
+            clearGatewayAccessRecord(current);
+            return Result::failure(ErrorCode::SequenceConflict);
+        }
+        storageRevision = current.deliveryRevision;
+        clearGatewayAccessRecord(current);
+        return Result::success();
+    }
+
+    if (current.credentialVersion != pending.expectedCredentialVersion) {
+        clearGatewayAccessRecord(current);
+        return Result::failure(ErrorCode::SequenceConflict);
+    }
+    if (current.storageRevision == UINT32_MAX) {
+        clearGatewayAccessRecord(current);
+        return Result::failure(ErrorCode::CapacityExceeded);
+    }
+
+    ++current.storageRevision;
+    current.deliveryRevision = current.storageRevision;
+    current.credentialVersion = pending.credentialVersion;
+    current.expiresAtUnixSeconds = pending.expiresAtUnixSeconds;
+    memcpy(current.secret, pending.secret, sizeof(current.secret));
+    memcpy(current.accessMaterialDigest, pending.accessMaterialDigest,
+           sizeof(current.accessMaterialDigest));
+    secureZero(MutableByteSpan(
+        current.envelopeDigest, sizeof(current.envelopeDigest)));
+    result = gateway_access_store_detail::replaceVerified(storage_, current);
+    if (result) storageRevision = current.deliveryRevision;
     clearGatewayAccessRecord(current);
     return result;
 }

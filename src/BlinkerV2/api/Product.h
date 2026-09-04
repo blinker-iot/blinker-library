@@ -73,32 +73,15 @@ public:
     }
 
     Result resetAccess() {
-        if (!attached_) {
-            lastError_ = ErrorCode::NotConfigured;
-            return Result::failure(lastError_);
-        }
-        if (!capabilities().supports(ProductCapabilityAccessReset)) {
-            lastError_ = ErrorCode::UnsupportedFeature;
-            return Result::failure(lastError_);
-        }
+        return reset(
+            ProductCapabilityAccessReset,
+            &IProductLifecycle::resetAccess);
+    }
 
-        const bool restart = started_;
-        if (restart) {
-            lifecycle_.stop();
-            started_ = false;
-        }
-
-        Result result = lifecycle_.resetAccess();
-        if (result && restart) {
-            result = lifecycle_.start();
-            if (result) {
-                started_ = true;
-            } else {
-                lifecycle_.stop();
-            }
-        }
-        lastError_ = result.code();
-        return result;
+    Result resetNetwork() {
+        return reset(
+            ProductCapabilityNetworkReset,
+            &IProductLifecycle::resetNetwork);
     }
 
     ProductStatus status() const {
@@ -129,6 +112,39 @@ public:
     }
 
 private:
+    typedef Result (IProductLifecycle::*ResetOperation)();
+
+    Result reset(
+        ProductCapability capability,
+        ResetOperation operation) {
+        if (!attached_) {
+            lastError_ = ErrorCode::NotConfigured;
+            return Result::failure(lastError_);
+        }
+        if (!capabilities().supports(capability)) {
+            lastError_ = ErrorCode::UnsupportedFeature;
+            return Result::failure(lastError_);
+        }
+
+        const bool restart = started_;
+        if (restart) {
+            lifecycle_.stop();
+            started_ = false;
+        }
+
+        Result result = (lifecycle_.*operation)();
+        if (result && restart) {
+            result = lifecycle_.start();
+            if (result) {
+                started_ = true;
+            } else {
+                lifecycle_.stop();
+            }
+        }
+        lastError_ = result.code();
+        return result;
+    }
+
     Device& device_;
     IProductLifecycle& lifecycle_;
     bool attached_;

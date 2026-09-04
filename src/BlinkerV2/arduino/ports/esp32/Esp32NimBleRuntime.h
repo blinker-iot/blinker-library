@@ -5,6 +5,16 @@
 #error "Esp32NimBleRuntime requires an ESP32 Arduino target"
 #endif
 
+// Arduino-ESP32 3.3.10+ releases BLE memory during initArduino() unless a
+// linked BLE implementation marks it as retained before setup(). Direct IDF
+// NimBLE users must opt into the same platform contract as the bundled BLE
+// library. Older cores do not expose either header and keep their old behavior.
+#if __has_include(<esp32-hal-alloc-ble-mem.h>)
+#include <esp32-hal-alloc-ble-mem.h>
+#elif __has_include(<esp32-hal-bt-mem.h>)
+#include <esp32-hal-bt-mem.h>
+#endif
+
 namespace blinker {
 namespace esp32_nimble_detail {
 

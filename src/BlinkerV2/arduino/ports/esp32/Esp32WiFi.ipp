@@ -68,17 +68,20 @@ inline void Esp32WifiStation::poll() {
         state_ == WifiStationState::Failed) {
         return;
     }
+    const bool wasConnected = state_ == WifiStationState::Connected;
     const wl_status_t nativeState = WiFi.status();
     if (nativeState == WL_CONNECTED) {
         state_ = WifiStationState::Connected;
         lastError_ = ErrorCode::Ok;
     } else if (nativeState == WL_NO_SHIELD) {
         fail(ErrorCode::NotConfigured);
-    } else if (nativeState == WL_NO_SSID_AVAIL ||
-               nativeState == WL_CONNECT_FAILED ||
-               state_ == WifiStationState::Connected) {
+    } else if (wasConnected) {
         fail(ErrorCode::NotConnected);
     }
+    // WL_NO_SSID_AVAIL and WL_CONNECT_FAILED can be transient while the
+    // asynchronous ESP32 association is still starting. The portable WiFi
+    // lifecycle owns the bounded connection timeout, so keep polling until it
+    // either observes WL_CONNECTED or expires that deadline.
 }
 
 inline void Esp32WifiStation::stop() {

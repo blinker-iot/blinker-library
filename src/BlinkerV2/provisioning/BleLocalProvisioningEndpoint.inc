@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+
 #include "../core/SecureMemory.h"
 
 namespace blinker {

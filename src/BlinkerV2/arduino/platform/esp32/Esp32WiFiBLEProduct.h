@@ -163,10 +163,19 @@ public:
                 transport_.sessionRevision())) {
             return Result::success();
         }
-        transport_.stop();
-        Result result = prepare();
-        if (result) result = transport_.start();
-        if (!result) transport_.stop();
+        ble::ModeProfile profile;
+        Result result = directProfile_.make(
+            transport_.sessionRevision(), profile);
+        if (result) {
+            result = platform_.bleLink().refreshBleProfile(profile);
+        }
+        if (!result) {
+            directProfile_.requestRefresh();
+            if (result.code() == ErrorCode::StateConflict ||
+                result.code() == ErrorCode::WouldBlock) {
+                return Result::success();
+            }
+        }
         return result;
     }
 
@@ -373,6 +382,13 @@ public:
         return result;
     }
 
+    Result resetNetwork() override {
+        Result result = stack_.open();
+        if (result) result = platform_.wifiCredentials().clear();
+        stack_.end();
+        return result;
+    }
+
     ProductLifecycleStatus status() const override {
         if (state_ == Esp32WifiBleProductState::Stopped) {
             return ProductLifecycleStatus();
@@ -396,7 +412,8 @@ public:
         return ProductCapabilities(static_cast<uint16_t>(
             ProductCapabilityCloudData |
             direct_.capabilities() |
-            ProductCapabilityAccessReset));
+            ProductCapabilityAccessReset |
+            ProductCapabilityNetworkReset));
     }
 
 private:

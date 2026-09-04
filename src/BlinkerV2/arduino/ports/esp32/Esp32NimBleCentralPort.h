@@ -37,7 +37,7 @@
 #endif
 
 #ifndef BLINKER_ESP32_NIMBLE_CENTRAL_RX_QUEUE_DEPTH
-#define BLINKER_ESP32_NIMBLE_CENTRAL_RX_QUEUE_DEPTH 4
+#define BLINKER_ESP32_NIMBLE_CENTRAL_RX_QUEUE_DEPTH 32
 #endif
 
 namespace blinker {
@@ -66,7 +66,7 @@ public:
     explicit Esp32NimBleCentralPort(
         const Esp32NimBleCentralPortConfig& config =
             Esp32NimBleCentralPortConfig());
-    ~Esp32NimBleCentralPort() override { stop(); }
+    ~Esp32NimBleCentralPort() override { shutdown(); }
 
     Result start() override;
     void stop() override;
@@ -103,6 +103,14 @@ private:
             : connectionHandle(BLE_HS_CONN_HANDLE_NONE), size(0U), data() {}
     };
 
+    struct PendingWrite {
+        uint32_t attemptId;
+        uint8_t size;
+        uint8_t data[BLINKER_ESP32_NIMBLE_CENTRAL_PACKET_SIZE];
+
+        PendingWrite() : attemptId(0U), size(0U), data() {}
+    };
+
     static Esp32NimBleCentralPort*& activePort();
     static void hostTask(void* context);
     static void onHostReset(int reason);
@@ -134,8 +142,14 @@ private:
         const ble_gatt_error* error,
         ble_gatt_attr* attribute,
         void* context);
+    static int onWrite(
+        uint16_t connectionHandle,
+        const ble_gatt_error* error,
+        ble_gatt_attr* attribute,
+        void* context);
 
     void initializeUuids();
+    void shutdown();
     bool validConfig() const;
     Result startScan();
     void processScanCandidates();
@@ -168,6 +182,7 @@ private:
     void* connectionContext_;
     ScanCandidate candidates_[BLINKER_ESP32_NIMBLE_CENTRAL_SCAN_QUEUE_DEPTH];
     QueuedPacket packets_[BLINKER_ESP32_NIMBLE_CENTRAL_RX_QUEUE_DEPTH];
+    PendingWrite pendingWrite_;
     uint8_t candidateHead_;
     uint8_t candidateTail_;
     uint8_t candidateCount_;
@@ -194,6 +209,9 @@ private:
     bool pendingEncrypted_;
     bool pendingBonded_;
     bool cancelCompletionPending_;
+    ErrorCode pendingWriteResult_;
+    bool writeActive_;
+    bool writeComplete_;
     bool initialized_;
     bool stopping_;
     BleCentralPortState state_;

@@ -34,17 +34,24 @@
 #include <BlinkerV2/core/SecureMemory.h>
 #include <BlinkerV2/identity/DeviceKeyStore.h>
 #include <BlinkerV2/identity/GatewayAccessStore.h>
+#include <BlinkerV2/identity/GatewayCredentialRenewalStore.h>
 #include <BlinkerV2/provisioning/DeviceKeyProvisioningEndpoint.h>
 #include <BlinkerV2/runtime/EdgeHubLifecycle.h>
 #include <BlinkerV2/runtime/GatewayCloudMux.h>
+#include <BlinkerV2/runtime/GatewayCredentialRenewalCoordinator.h>
+#include <BlinkerV2/runtime/GatewayCredentialRenewalDeliveryProcessor.h>
 #include <BlinkerV2/runtime/GatewayChildRouteBridge.h>
 #include <BlinkerV2/runtime/GatewayManagementClient.h>
 #include <BlinkerV2/runtime/GatewayManagementControlMux.h>
+#include <BlinkerV2/runtime/GatewayManagementDeliveryMux.h>
+#include <BlinkerV2/runtime/GatewayPermitJoinCoordinator.h>
+#include <BlinkerV2/runtime/GatewayPermitJoinRelayClient.h>
 #include <BlinkerV2/runtime/GatewayRouteClient.h>
 #include <BlinkerV2/runtime/GatewayAccessDeliveryProcessor.h>
 #include <BlinkerV2/runtime/GatewayGattChildSession.h>
 #include <BlinkerV2/runtime/GatewayProofCoordinator.h>
 #include <BlinkerV2/runtime/GatewayRevocationCoordinator.h>
+#include <BlinkerV2/transport/NativeGattPermitJoinAdapter.h>
 
 #include <string.h>
 
@@ -106,7 +113,9 @@ enum class Esp32EdgeHubProductState : uint8_t {
 // the ordinary Sketch API remains unchanged until the single-child gateway
 // data plane and production hardware gates are complete.
 template <typename Platform>
-class BasicEsp32EdgeHubProduct final : public IProductLifecycle {
+class BasicEsp32EdgeHubProduct final
+    : public IProductLifecycle,
+      private IGatewayPermitJoinPortLease {
 public:
     enum : uint16_t {
         kEdgeHubMqttPacketBufferSize =
@@ -133,14 +142,20 @@ public:
         ProofCoordinator;
     typedef BasicGatewayRevocationCoordinator<ChildRouteBridge>
         RevocationCoordinator;
+    typedef BasicGatewayCredentialRenewalCoordinator<ChildRouteBridge>
+        RenewalCoordinator;
 
     BasicEsp32EdgeHubProduct()
         : platform_(), deviceKey_(platform_.deviceKeyBlob()),
           stack_(
               platform_, deviceKey_, edgeHubSessionConfig(),
               MqttSecurity::Tls, edgeHubMqttConfig()),
-          access_(platform_.gatewayAccessBlob()), crypto_(),
+          access_(platform_.gatewayAccessBlob()),
+          renewal_(platform_.gatewayCredentialRenewalBlob()), crypto_(),
           delivery_(access_, deviceKey_, crypto_, stack_.clock()),
+          renewalDelivery_(
+              access_, renewal_, deviceKey_, crypto_, stack_.clock()),
+          deliveryMux_(delivery_, renewalDelivery_),
           childPort_(), childRx_(), childTx_(), childPacket_(),
           childHandshake_(), childPlaintext_(), childSecureRecord_(),
           childLink_(
@@ -150,7 +165,8 @@ public:
               MutableByteSpan(childPacket_, sizeof(childPacket_))),
           childRandom_(),
           childSession_(
-              childLink_, access_, stack_.clock(), childRandom_, crypto_,
+              childLink_, access_, renewal_, stack_.clock(), childRandom_,
+              crypto_,
               MutableByteSpan(childHandshake_, sizeof(childHandshake_)),
               MutableByteSpan(childPlaintext_, sizeof(childPlaintext_)),
               MutableByteSpan(
@@ -161,8 +177,16 @@ public:
           routeBridge_(
               childSession_, route_, access_, stack_.clock(), childRandom_),
           revocation_(routeBridge_, access_, stack_.clock()),
-          managementControl_(proof_, revocation_),
-          management_(cloudMux_, delivery_, managementControl_),
+          renewalCoordinator_(
+              routeBridge_, access_, renewal_, stack_.clock()),
+          permitJoinAdapter_(childPort_, stack_.clock(), *this),
+          permitJoin_(permitJoinAdapter_, stack_.clock()),
+          managementControl_(
+              proof_, revocation_, permitJoin_, renewalCoordinator_),
+          management_(cloudMux_, deliveryMux_, managementControl_),
+          permitJoinRelay_(
+              cloudMux_, management_, permitJoin_, permitJoinAdapter_,
+              stack_.clock()),
           lifecycle_(
               stack_.wifiLifecycle(), stack_.cloudTransport(),
               stack_.sessionProvider(), stack_.clock(), management_, route_),
@@ -174,9 +198,16 @@ public:
           provisioningStartedMs_(0U), client_(nullptr),
           state_(Esp32EdgeHubProductState::Stopped),
           onboardingMode_(Esp32EdgeHubOnboardingMode::None),
-          configurationError_(ErrorCode::Ok), childStarted_(false) {}
+          configurationError_(ErrorCode::Ok) {
+        // Revocation and renewal share one private child-control channel.
+        // The mux, not construction order, owns response dispatch.
+        routeBridge_.setControllerControlReceiver(
+            &IGatewayManagementControl::controllerControlResponseThunk,
+            &managementControl_);
+    }
 
     ~BasicEsp32EdgeHubProduct() override {
+        routeBridge_.setControllerControlReceiver(nullptr, nullptr);
         stop();
         stack_.end();
         clearManualSetup();
@@ -300,6 +331,7 @@ public:
         }
         if (state_ != Esp32EdgeHubProductState::Active) return;
         lifecycle_.poll(totalBudgetMicros);
+        permitJoinRelay_.poll();
         const ProductLifecycleStatus current = lifecycle_.status();
         if (current.state == ProductLifecycleState::Fault) {
             enterFault(current.lastError);
@@ -313,31 +345,59 @@ public:
             // DirectSecure child session is not. Suspend forwarding during a
             // credential refresh but keep servicing the local BLE session.
             routeBridge_.reset();
-            if (childStarted_) childSession_.poll(totalBudgetMicros);
+            if (childSession_.state() !=
+                GatewayChildSessionState::Stopped) {
+                childSession_.poll(totalBudgetMicros);
+            }
             return;
         }
         if (cloudState != EdgeHubLifecycleState::Online) {
             stopChildDataPlane();
             return;
         }
-        if (!childStarted_) {
-            const Result result = childSession_.start();
-            if (!result) {
-                enterFault(result.code());
-                return;
-            }
-            childStarted_ = true;
+        if (permitJoin_.windowOpen()) return;
+        // The southbound radio is demand-driven. Permit-join owns it during
+        // enrollment; proof, route admission or revocation starts the native
+        // child session only when an authenticated task actually needs it.
+        if (childSession_.state() !=
+            GatewayChildSessionState::Stopped) {
+            childSession_.poll(totalBudgetMicros);
         }
-        childSession_.poll(totalBudgetMicros);
         routeBridge_.poll();
     }
 
     void stop() override {
         provisioner_.end();
+        permitJoinRelay_.reset();
         stopChildDataPlane();
         lifecycle_.stop();
         state_ = Esp32EdgeHubProductState::Stopped;
         configurationError_ = ErrorCode::Ok;
+    }
+
+    Result resetAccess() override {
+        const bool closeAfterReset = !stack_.initialized();
+        Result result = stack_.open();
+        // Outbound child authority must disappear before this Hub loses its
+        // own cloud/direct access root. A reset interrupted between the two
+        // writes therefore cannot leave an orphan child credential reachable
+        // by a newly provisioned owner.
+        if (result) result = renewal_.clear();
+        if (result) result = access_.clear();
+        if (result) result = deviceKey_.clear();
+        if (closeAfterReset) stack_.end();
+        return result;
+    }
+
+    Result resetNetwork() override {
+        if (onboardingMode_ != Esp32EdgeHubOnboardingMode::WifiProv) {
+            return Result::failure(ErrorCode::UnsupportedFeature);
+        }
+        const bool closeAfterReset = !stack_.initialized();
+        Result result = stack_.open();
+        if (result) result = platform_.wifiCredentials().clear();
+        if (closeAfterReset) stack_.end();
+        return result;
     }
 
     ProductLifecycleStatus status() const override {
@@ -358,14 +418,37 @@ public:
     }
 
     ProductCapabilities capabilities() const override {
-        return lifecycle_.capabilities();
+        uint16_t flags = static_cast<uint16_t>(
+            ProductCapabilityCloudData |
+            ProductCapabilityAccessReset);
+        if (onboardingMode_ == Esp32EdgeHubOnboardingMode::WifiProv) {
+            flags = static_cast<uint16_t>(
+                flags | ProductCapabilityNetworkReset);
+        }
+        return ProductCapabilities(flags);
     }
 
     GatewayAccessStore& gatewayAccess() { return access_; }
+    GatewayCredentialRenewalStore& gatewayCredentialRenewal() {
+        return renewal_;
+    }
     GatewayManagementClient& management() { return management_; }
     GatewayGattChildSession& childSession() { return childSession_; }
     ChildRouteBridge& routeBridge() { return routeBridge_; }
     RevocationCoordinator& revocation() { return revocation_; }
+    RenewalCoordinator& renewalCoordinator() {
+        return renewalCoordinator_;
+    }
+    GatewayPermitJoinCoordinator& permitJoin() { return permitJoin_; }
+    GatewayPermitJoinRelayClient& permitJoinRelay() {
+        return permitJoinRelay_;
+    }
+    NativeGattPermitJoinAdapter& permitJoinAdapter() {
+        return permitJoinAdapter_;
+    }
+    WifiConnectionLifecycle& wifiLifecycle() {
+        return stack_.wifiLifecycle();
+    }
 
 private:
     enum : uint32_t {
@@ -474,13 +557,20 @@ private:
 
     void stopChildDataPlane() {
         routeBridge_.reset();
-        if (!childStarted_ &&
-            childSession_.state() == GatewayChildSessionState::Stopped) {
+        if (childSession_.state() == GatewayChildSessionState::Stopped) {
             return;
         }
         childSession_.stop();
-        childStarted_ = false;
     }
+
+    Result acquirePermitJoinPort() override {
+        stopChildDataPlane();
+        return childPort_.state() == BleCentralPortState::Stopped
+                   ? Result::success()
+                   : Result::failure(ErrorCode::WouldBlock);
+    }
+
+    void releasePermitJoinPort() override {}
 
     void clearManualSetup() {
         clearDeviceKey(pendingDeviceKey_);
@@ -495,8 +585,11 @@ private:
     DeviceKeyStore deviceKey_;
     Stack stack_;
     GatewayAccessStore access_;
+    GatewayCredentialRenewalStore renewal_;
     Esp32MbedTlsCryptoProvider crypto_;
     GatewayAccessDeliveryProcessor delivery_;
+    GatewayCredentialRenewalDeliveryProcessor renewalDelivery_;
+    GatewayManagementDeliveryMux deliveryMux_;
     Esp32NimBleCentralPort childPort_;
     uint8_t childRx_[kChildRecordSize];
     uint8_t childTx_[kChildRecordSize];
@@ -512,8 +605,12 @@ private:
     GatewayRouteClient route_;
     ChildRouteBridge routeBridge_;
     RevocationCoordinator revocation_;
+    RenewalCoordinator renewalCoordinator_;
+    NativeGattPermitJoinAdapter permitJoinAdapter_;
+    GatewayPermitJoinCoordinator permitJoin_;
     GatewayManagementControlMux managementControl_;
     GatewayManagementClient management_;
+    GatewayPermitJoinRelayClient permitJoinRelay_;
     Lifecycle lifecycle_;
     DeviceKeyProvisioningEndpoint endpoint_;
     Esp32WifiProvAdapter provisioner_;
@@ -528,7 +625,6 @@ private:
     Esp32EdgeHubProductState state_;
     Esp32EdgeHubOnboardingMode onboardingMode_;
     ErrorCode configurationError_;
-    bool childStarted_;
 
     BasicEsp32EdgeHubProduct(const BasicEsp32EdgeHubProduct&);
     BasicEsp32EdgeHubProduct& operator=(

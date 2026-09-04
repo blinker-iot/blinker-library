@@ -7,7 +7,8 @@ namespace blinker {
 
 enum class GatewayCloudChannel : uint8_t {
     Management = 0U,
-    ChildRoute = 1U
+    ChildRoute = 1U,
+    PermitJoinRelay = 2U
 };
 
 // Edge-Hub-only fan-out for the single authenticated MQTT callback. Ordinary
@@ -57,7 +58,7 @@ private:
     static size_t slotIndex(GatewayCloudChannel channel);
 
     MqttFrameTransport& mqtt_;
-    Slot slots_[2U];
+    Slot slots_[3U];
 
     GatewayCloudMux(const GatewayCloudMux&);
     GatewayCloudMux& operator=(const GatewayCloudMux&);

@@ -3,8 +3,11 @@
 #include <BlinkerV2/runtime/BleDirectProfile.inc>
 #include <BlinkerV2/runtime/DeviceRuntime.inc>
 #include <BlinkerV2/runtime/GatewayAccessDeliveryProcessor.inc>
+#include <BlinkerV2/runtime/GatewayCredentialRenewalDeliveryProcessor.inc>
 #include <BlinkerV2/runtime/GatewayCloudMux.inc>
 #include <BlinkerV2/runtime/GatewayManagementClient.inc>
+#include <BlinkerV2/runtime/GatewayPermitJoinCoordinator.inc>
+#include <BlinkerV2/runtime/GatewayPermitJoinRelayClient.inc>
 #include <BlinkerV2/runtime/GatewayRouteClient.inc>
 #include <BlinkerV2/runtime/GatewayPresenceMatcher.inc>
 #include <BlinkerV2/runtime/OutboundScheduler.inc>

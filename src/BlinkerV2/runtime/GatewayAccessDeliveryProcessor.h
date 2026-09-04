@@ -5,28 +5,15 @@
 #include "../interface/IClock.h"
 #include "../interface/IDeviceKeySource.h"
 #include "../interface/IX25519AesGcmCryptoProvider.h"
+#include "IGatewayManagementDelivery.h"
 
 namespace blinker {
-
-struct GatewayAccessDeliveryContext {
-    // Optional defense-in-depth expectations. Empty views mean the product
-    // relies on the unique DeviceKey/current version AEAD binding and the
-    // authenticated Edge Hub Broker ACL; envelope identifiers remain covered
-    // by the exact KDF/AAD either way.
-    StringView environmentId;
-    StringView tenantId;
-    StringView edgeHubLogicalDeviceId;
-    uint32_t deviceKeyVersion;
-
-    GatewayAccessDeliveryContext()
-        : environmentId(), tenantId(), edgeHubLogicalDeviceId(),
-          deviceKeyVersion(0U) {}
-};
 
 // Device-side durable half of the Edge Hub management protocol. The caller
 // owns MQTTS/topic/QoS. This processor never emits an ACK before authenticated
 // plaintext has been committed and verified in protected storage.
-class GatewayAccessDeliveryProcessor {
+class GatewayAccessDeliveryProcessor final
+    : public IGatewayManagementDelivery {
 public:
     GatewayAccessDeliveryProcessor(
         GatewayAccessStore& access,
@@ -40,7 +27,7 @@ public:
         const GatewayAccessDeliveryContext& context,
         ByteView exactEnvelope,
         MutableByteSpan ackOutput,
-        size_t& ackSize);
+        size_t& ackSize) override;
 
 private:
     GatewayAccessStore& access_;

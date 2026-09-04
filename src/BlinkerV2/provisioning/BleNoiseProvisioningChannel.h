@@ -31,7 +31,11 @@ struct BleNoiseProvisioningConfig {
     uint8_t maxPacketsPerPoll;
 
     BleNoiseProvisioningConfig()
-        : pattern(noise::NoiseNnPattern::Nn), reassemblyTimeoutMillis(2000U),
+        // Gateway permit-join relays one ATT20 packet at a time through an
+        // acknowledged cloud mailbox. A 2 s direct-BLE timeout races normal
+        // network jitter; 10 s remains an inter-fragment idle bound while the
+        // separate 60 s secure-session deadline limits slow peers.
+        : pattern(noise::NoiseNnPattern::Nn), reassemblyTimeoutMillis(10000U),
           secureSessionTimeoutMillis(60000U), maxPacketsPerPoll(4U) {}
 };
 

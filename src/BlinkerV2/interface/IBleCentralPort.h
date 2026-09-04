@@ -82,6 +82,11 @@ public:
     // one attempt generation. Completion remains asynchronous.
     virtual Result cancel(uint32_t attemptId) = 0;
     virtual Result connection(BleCentralConnectionInfo& output) const = 0;
+    // Success is end-to-end bearer credit: the remote ATT server (or an
+    // equivalent reliable bearer) accepted the complete packet. Merely
+    // queueing bytes in the local controller is not success. WouldBlock and
+    // NotConnected mean the packet was not durably consumed; callers retain
+    // it and retry the exact bytes after poll()/reconnect.
     virtual Result sendPacket(uint32_t attemptId, ByteView packet) = 0;
 
     virtual void setPacketReceiver(

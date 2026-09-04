@@ -92,7 +92,15 @@ public:
             ble::ModeProfile profile;
             Result result = directProfiles_->make(
                 directSessionRevision, profile);
-            return result ? ble_.switchTo(profile) : result;
+            if (result) result = ble_.refreshActive(profile);
+            if (!result) {
+                directProfiles_->requestRefresh();
+                if (result.code() == ErrorCode::StateConflict ||
+                    result.code() == ErrorCode::WouldBlock) {
+                    return Result::success();
+                }
+            }
+            return result;
         }
         return Result::success();
     }
