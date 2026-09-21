@@ -10,72 +10,82 @@
 #include "../interface/IRandom.h"
 #include "../protocol/bbp2/Frame.h"
 #include "../protocol/bbp2/Messages.h"
-#include "GatewayChildSession.h"
+#include "GatewayChildExecutor.h"
 #include "GatewayRouteClient.h"
+#include "GatewayExecutionLease.h"
+#include "GatewayDirectYieldLease.h"
 
 namespace blinker {
 
-typedef void (*GatewayChildControlReceiver)(void* context, ByteView frame);
-
-// G2A's exact single-child data plane. It accepts a non-secret Active route
-// admission, then forwards one BBP/2 exchange at a time over DirectSecure.
-// It never derives topology authority from the child or from BLE metadata.
-template <typename ChildSession, typename RouteClient>
+// Cloud adapter for one child. It owns Cloud admission, demand lease and route
+// correlation only; the injected executor is the sole southbound owner and is
+// shared by future LAN or other authorized upstream adapters.
+template <typename ChildSession, typename RouteEndpoint>
 class BasicGatewayChildRouteBridge {
 public:
+    typedef BasicGatewayChildExecutor<ChildSession> Executor;
+
     BasicGatewayChildRouteBridge(
-        ChildSession& child,
-        RouteClient& route,
+        Executor& executor,
+        RouteEndpoint& route,
         GatewayAccessStore& access,
         IClock& clock,
         IRandom& random)
-        : child_(child), route_(route), access_(access), clock_(clock),
-          random_(random), topologyVersion_(0U), routeGeneration_(0U),
+        : executor_(executor), route_(route), access_(access), clock_(clock),
+          random_(random), execution_(), executionSentAt_(0U), executionAttempts_(0U),
+          executionConfirmation_(0U),
+          directYield_(), directSentAt_(0U), directSentControl_(0U), directSentChallenge_(0U),
+          directSentOperation_(0U), directAttempts_(0U),
+          topologyVersion_(0U), routeGeneration_(0U),
+          admittedAccessRevision_(0U), projectionGeneration_(0U),
+          helloStartedMillis_(0U), helloSize_(0U), helloAttempts_(0U),
           pendingCorrelation_(),
           pendingFrameDigest_(), recentCorrelation_(), recentFrameDigest_(),
-          helloFrame_(), frameScratch_(), output_(),
+          helloFrame_(), output_(),
           pendingRequestKind_(0U), pendingCloudSequence_(0U),
-          pendingChildSequence_(0U), nextChildSequence_(1U),
           recentRequestKind_(0U), recentCloudSequence_(0U),
-          recentChildSequence_(0U), recentReplayable_(false),
-          controlReceiver_(nullptr), controlReceiverContext_(nullptr),
-          controlRequestKind_(0U), controlResponseKind_(0U),
-          controlSequence_(0U), admitted_(false), cloudHelloSent_(false),
-          awaitingChild_(false), awaitingControl_(false),
+          recentReplayable_(false), admitted_(false), cloudHelloSent_(false),
+          awaitingChild_(false), closurePending_(false),
           lastError_(ErrorCode::Ok) {
         route_.setReceiver(
             &BasicGatewayChildRouteBridge::routeThunk, this);
-        child_.setReceiver(
-            &BasicGatewayChildRouteBridge::childThunk, this);
-        child_.setSessionHandlers(
+        executor_.setObserver(
+            &BasicGatewayChildRouteBridge::executorFrameThunk,
             &BasicGatewayChildRouteBridge::secureThunk,
             &BasicGatewayChildRouteBridge::disconnectedThunk,
+            &BasicGatewayChildRouteBridge::faultThunk,
             this);
-        child_.setFaultHandler(
-            &BasicGatewayChildRouteBridge::faultThunk, this);
     }
 
     ~BasicGatewayChildRouteBridge() {
         route_.setReceiver(nullptr, nullptr);
-        child_.setReceiver(nullptr, nullptr);
-        child_.setSessionHandlers(nullptr, nullptr, nullptr);
-        child_.setFaultHandler(nullptr, nullptr);
-        clearControlRequest();
-        controlReceiver_ = nullptr;
-        controlReceiverContext_ = nullptr;
+        executor_.cancelDataOwner(this);
+        executor_.clearObserver(this);
         reset();
     }
 
     void reset() {
+        execution_.clear();
+        executor_.setExecutionDemand(GatewayChildDemandCloud, false);
+        directYield_.retire(clock_.monotonicMillis());
+        directSentControl_ = directSentChallenge_ = 0U;
+        directAttempts_ = 0U;
+        executionAttempts_ = 0U;
+        executionConfirmation_ = 0U;
+        // Cloud admission is separate from the still-live child session.
+        // Preserve the executor's sequence allocator and the projection
+        // high-water mark; Cloud retirement cannot reset another upstream.
         topologyVersion_ = 0U;
         routeGeneration_ = 0U;
+        admittedAccessRevision_ = 0U;
         admitted_ = false;
         cloudHelloSent_ = false;
+        closurePending_ = false;
+        clearHello();
         awaitingChild_ = false;
         pendingRequestKind_ = 0U;
         pendingCloudSequence_ = 0U;
-        pendingChildSequence_ = 0U;
-        nextChildSequence_ = 1U;
+        executor_.cancelDataOwner(this);
         lastError_ = ErrorCode::Ok;
         secureZero(MutableByteSpan(
             pendingCorrelation_, sizeof(pendingCorrelation_)));
@@ -83,170 +93,74 @@ public:
             pendingFrameDigest_, sizeof(pendingFrameDigest_)));
         clearRecentRequest();
         secureZero(MutableByteSpan(helloFrame_, sizeof(helloFrame_)));
-        secureZero(MutableByteSpan(frameScratch_, sizeof(frameScratch_)));
         secureZero(MutableByteSpan(output_, sizeof(output_)));
     }
 
-    void poll() {
-        if (!admitted_ || !route_.subscribed()) return;
-        if (!recordStillValid()) {
-            fail(ErrorCode::AuthenticationRequired);
-            return;
-        }
-        if (child_.state() == GatewayChildSessionState::Stopped) {
-            const Result result = child_.start();
-            if (!result) {
-                lastError_ = result.code();
-                return;
+    // Maintain cloud authority/closure without acquiring the southbound radio.
+    // A temporary permit-join owner is not a topology or admission reset.
+    bool pollControlPlane() {
+        if (!route_.subscribed()) { retireAdmission(); return false; }
+        if (!admitted_) return false;
+        const Result accessState = admittedAccessState();
+        if (!accessState) {
+            if (accessState.code() == ErrorCode::StateConflict) {
+                retireAdmission();
+            } else {
+                fail(ErrorCode::AuthenticationRequired);
             }
+            return false;
         }
-        if (child_.secure()) {
+        pollExecution();
+        pollClosure();
+        return true;
+    }
+
+    bool poll() {
+        if (!pollControlPlane()) return false;
+        if (executor_.secure()) {
             if (!cloudHelloSent_) onChildSecure();
-            return;
+            else pollHello();
         }
-        if (child_.state() == GatewayChildSessionState::Idle) {
-            const Result result = child_.connect();
-            if (!result && result.code() != ErrorCode::AlreadyExists) {
-                lastError_ = result.code();
-            }
-        }
+        // Admission is authority, not physical demand. Composition consumes
+        // this result; no ordinary start/connect side effect remains here.
+        return true;
     }
 
     bool admitted() const { return admitted_; }
+    // Logical demand only. The physical scheduler is switched with idle/Direct
+    // and management ownership, not by merely accepting this new wire format.
+    bool executionWanted() {
+        const bool wanted = admitted_ && route_.subscribed() &&
+            admittedAccessState() &&
+            execution_.wanted(clock_.monotonicMillis());
+        executor_.setExecutionDemand(GatewayChildDemandCloud, wanted);
+        return executor_.executionWanted();
+    }
+    bool directYieldHolding() {
+        return directYield_.holding(clock_.monotonicMillis());
+    }
+
+    // Product must invoke this AFTER its sole radio arbitration, with true
+    // only for native quiescence AND no management/permit owner AND a decision
+    // not to reacquire while holding. This method never acquires/releases BLE.
+    // Only the combined radio policy may supply this physical assertion.
+    void pollDirectYield(bool quiescent) {
+        if (!admitted_ || !route_.subscribed() || !admittedAccessState()) return;
+        const uint32_t now = clock_.monotonicMillis();
+        gateway::GatewayDirectYieldView control;
+        if (!directYield_.challenge(now, control) && !directYield_.receipt(now, quiescent, control)) return;
+        const uint8_t operation = static_cast<uint8_t>(control.demand.operation);
+        if (directSentControl_ != control.controlId || directSentChallenge_ != control.demand.challengeId || directSentOperation_ != operation) {
+            directSentControl_ = control.controlId; directSentChallenge_ = control.demand.challengeId;
+            directSentOperation_ = operation; directAttempts_ = 0U;
+        }
+        if (directAttempts_ >= 5U || (directAttempts_ != 0U && static_cast<uint32_t>(now - directSentAt_) < 1000U)) return;
+        ++directAttempts_; directSentAt_ = now;
+        const Result result = publishExecutionControl(control.demand, control.controlId);
+        if (!result) lastError_ = result.code();
+    }
     uint32_t topologyVersion() const { return topologyVersion_; }
     ErrorCode lastError() const { return lastError_; }
-    uint32_t authenticatedControllerCredentialVersion() const {
-        return child_.authenticatedCredentialVersion();
-    }
-    uint32_t authenticatedControllerSessionAttemptId() const {
-        return child_.secure() ? child_.attemptId() : 0U;
-    }
-
-    void setControllerControlReceiver(
-        GatewayChildControlReceiver receiver,
-        void* context) {
-        controlReceiver_ = receiver;
-        controlReceiverContext_ = context;
-    }
-
-    bool controllerControlPending() const { return awaitingControl_; }
-
-    // Brings up DirectSecure for a signed management operation even while the
-    // ordinary route is intentionally withdrawn. It does not open a control
-    // nonce or authorize data-plane forwarding.
-    Result ensureControllerControlSession() {
-        if (child_.secure()) return Result::success();
-        GatewayChildSessionState state = child_.state();
-        if (state == GatewayChildSessionState::Stopped) {
-            const Result result = child_.start();
-            if (!result) return result;
-            state = child_.state();
-        }
-        if (state == GatewayChildSessionState::Idle) {
-            const Result result = child_.connect();
-            if (!result && result.code() != ErrorCode::AlreadyExists) {
-                return result;
-            }
-            return Result::failure(ErrorCode::WouldBlock);
-        }
-        if (state == GatewayChildSessionState::Fault) {
-            return Result::failure(ErrorCode::NotConnected);
-        }
-        return Result::failure(ErrorCode::WouldBlock);
-    }
-
-    void cancelControllerControlRequest() {
-        if (!awaitingControl_) return;
-        clearControlRequest();
-        if (child_.state() == GatewayChildSessionState::Connecting ||
-            child_.state() == GatewayChildSessionState::Authenticating ||
-            child_.state() == GatewayChildSessionState::Secure) {
-            (void)child_.disconnect();
-        }
-    }
-
-    // Retires the authenticated child session after a credential mutation.
-    // Unlike cancelControllerControlRequest(), this also applies after the
-    // exact response has arrived and the awaiting slot has been cleared.
-    // A subsequent proof must therefore run a fresh Method 2 exchange.
-    void retireControllerControlSession() {
-        clearControlRequest();
-        if (child_.state() == GatewayChildSessionState::Connecting ||
-            child_.state() == GatewayChildSessionState::Authenticating ||
-            child_.state() == GatewayChildSessionState::Secure) {
-            (void)child_.disconnect();
-        }
-    }
-
-    // The route bridge owns the sole child BBP/2 sequence allocator. Control
-    // requests use this narrow side channel, but are never accepted from the
-    // ordinary cloud route topic.
-    Result sendControllerControlRequest(
-        bbp2::MessageKind kind,
-        ByteView body) {
-        const bbp2::MessageKind expected =
-            kind == bbp2::MessageKind::ControllerControlOpen
-                ? bbp2::MessageKind::ControllerControlChallenge
-                : bbp2::MessageKind::ControllerMutationReceipt;
-        if ((kind != bbp2::MessageKind::ControllerControlOpen &&
-             kind != bbp2::MessageKind::ControllerMutation) ||
-            body.data == nullptr) {
-            return Result::failure(ErrorCode::InvalidArgument);
-        }
-        if (awaitingChild_ || awaitingControl_ ||
-            controlReceiver_ == nullptr) {
-            return Result::failure(ErrorCode::StateConflict);
-        }
-        if (!child_.secure()) {
-            const Result ready = ensureControllerControlSession();
-            if (!ready && ready.code() != ErrorCode::WouldBlock) return ready;
-            // Revoking retires the ordinary route before Prepare is sent. A
-            // signed management command may therefore bring up DirectSecure
-            // from the durable AccessRecord even though no data-plane route is
-            // admitted. The coordinator retries once authentication finishes.
-            return Result::failure(ErrorCode::WouldBlock);
-        }
-        if ((child_.negotiatedFeatures() &
-             bbp2::FeatureControllerControl) == 0U) {
-            return Result::failure(ErrorCode::UnsupportedFeature);
-        }
-        const uint16_t maximumFrameSize = child_.negotiatedMaxFrameSize();
-        if (maximumFrameSize < bbp2::kBaseHeaderSize ||
-            body.size + bbp2::kBaseHeaderSize > sizeof(frameScratch_) ||
-            body.size > maximumFrameSize - bbp2::kBaseHeaderSize) {
-            return Result::failure(ErrorCode::CapacityExceeded);
-        }
-        const uint16_t sequence = allocateChildSequence();
-        bbp2::FrameHeader header;
-        header.kind = static_cast<uint8_t>(kind);
-        // ControllerControl is a request/response exchange of its own. The
-        // device runtime accepts these management requests with FlagNone and
-        // returns the correlated Challenge/Receipt with FlagIsResponse; using
-        // AckRequired here makes a real device reject the request before the
-        // controller-control endpoint sees it.
-        header.flags = bbp2::FlagNone;
-        header.sequence = sequence;
-        header.bodyLength = static_cast<uint16_t>(body.size);
-        Result result = bbp2::encodeHeader(
-            header, MutableByteSpan(frameScratch_, sizeof(frameScratch_)));
-        if (result && !body.empty()) {
-            memcpy(
-                frameScratch_ + bbp2::kBaseHeaderSize,
-                body.data,
-                body.size);
-        }
-        if (result) {
-            result = child_.sendFrame(ByteView(
-                frameScratch_, bbp2::kBaseHeaderSize + body.size));
-        }
-        secureZero(MutableByteSpan(frameScratch_, sizeof(frameScratch_)));
-        if (!result) return result;
-        controlRequestKind_ = static_cast<uint8_t>(kind);
-        controlResponseKind_ = static_cast<uint8_t>(expected);
-        controlSequence_ = sequence;
-        awaitingControl_ = true;
-        return Result::success();
-    }
 
 private:
     static bool same(ByteView value, const uint8_t* bytes, size_t size) {
@@ -279,10 +193,13 @@ private:
                    record.credentialVersion;
     }
 
+    template <typename RouteIdentity>
     bool envelopeMatches(
-        const gateway::ChildRouteEnvelopeView& envelope,
+        const RouteIdentity& envelope,
         const GatewayAccessRecord& record) const {
         return admitted_ &&
+               routeGeneration_ == route_.subscriptionGeneration() &&
+               record.deliveryRevision == admittedAccessRevision_ &&
                envelope.topologyVersion == topologyVersion_ &&
                same(envelope.childLogicalDeviceId,
                     record.childLogicalDeviceId,
@@ -295,14 +212,42 @@ private:
                    record.credentialVersion;
     }
 
-    bool recordStillValid() {
+    Result admittedAccessState() {
+        if (routeGeneration_ != route_.subscriptionGeneration()) {
+            return Result::failure(ErrorCode::StateConflict);
+        }
         GatewayAccessRecord record;
         uint64_t now = 0U;
         const Result result = access_.load(record);
-        const bool valid = result && clock_.unixTime(now) && now != 0U &&
-                           now < record.expiresAtUnixSeconds;
+        Result state = result;
+        if (state && (!clock_.unixTime(now) || now == 0U ||
+                      now >= record.expiresAtUnixSeconds)) {
+            state = Result::failure(ErrorCode::AuthenticationRequired);
+        }
+        if (state && record.deliveryRevision != admittedAccessRevision_) {
+            state = Result::failure(ErrorCode::StateConflict);
+        }
         clearGatewayAccessRecord(record);
-        return valid;
+        return state;
+    }
+
+    void retireAdmission() {
+        execution_.clear();
+        executor_.setExecutionDemand(GatewayChildDemandCloud, false);
+        directYield_.retire(clock_.monotonicMillis());
+        executionAttempts_ = 0U;
+        executionConfirmation_ = 0U;
+        topologyVersion_ = 0U;
+        routeGeneration_ = 0U;
+        admittedAccessRevision_ = 0U;
+        admitted_ = false;
+        cloudHelloSent_ = false;
+        closurePending_ = false;
+        clearHello();
+        executor_.cancelDataOwner(this);
+        clearPendingRequest();
+        clearRecentRequest();
+        lastError_ = ErrorCode::Ok;
     }
 
     static bool allowedDownstream(uint8_t kind) {
@@ -341,56 +286,10 @@ private:
                kind == MessageKind::Command;
     }
 
-    static bool matchesResponse(
-        const bbp2::FrameView& frame,
-        uint8_t requestKind,
-        uint16_t childSequence) {
-        if (childSequence == 0U ||
-            (frame.header.flags & bbp2::FlagIsResponse) == 0U) {
-            return false;
-        }
-        using bbp2::MessageKind;
-        const MessageKind request =
-            static_cast<MessageKind>(requestKind);
-        const MessageKind response =
-            static_cast<MessageKind>(frame.header.kind);
-        if ((request == MessageKind::Hello &&
-             response == MessageKind::Hello) ||
-            (request == MessageKind::ManifestRequest &&
-             response == MessageKind::Manifest) ||
-            (request == MessageKind::StateRequest &&
-             response == MessageKind::StatePage)) {
-            return frame.header.sequence == childSequence;
-        }
-        if (response == MessageKind::Ack) {
-            bbp2::AckBody body;
-            return bbp2::decodeAckBody(frame.body, body) &&
-                    body.acknowledgedSequence == childSequence;
-        }
-        if (response == MessageKind::Error) {
-            bbp2::ErrorBody body;
-            return bbp2::decodeErrorBody(frame.body, body) &&
-                   body.hasRelatedSequence &&
-                    body.relatedSequence == childSequence;
-        }
-        return false;
-    }
-
-    bool matchesPendingResponse(const bbp2::FrameView& frame) const {
-        return awaitingChild_ && matchesResponse(
-            frame, pendingRequestKind_, pendingChildSequence_);
-    }
-
-    bool matchesRecentResponse(const bbp2::FrameView& frame) const {
-        return recentReplayable_ && matchesResponse(
-            frame, recentRequestKind_, recentChildSequence_);
-    }
-
     void clearPendingRequest() {
         awaitingChild_ = false;
         pendingRequestKind_ = 0U;
         pendingCloudSequence_ = 0U;
-        pendingChildSequence_ = 0U;
         secureZero(MutableByteSpan(
             pendingCorrelation_, sizeof(pendingCorrelation_)));
         secureZero(MutableByteSpan(
@@ -401,20 +300,19 @@ private:
         recentReplayable_ = false;
         recentRequestKind_ = 0U;
         recentCloudSequence_ = 0U;
-        recentChildSequence_ = 0U;
         secureZero(MutableByteSpan(
             recentCorrelation_, sizeof(recentCorrelation_)));
         secureZero(MutableByteSpan(
             recentFrameDigest_, sizeof(recentFrameDigest_)));
     }
 
-    void rememberCompletedRequest() {
+    bool rememberCompletedRequest() {
         using bbp2::MessageKind;
         const MessageKind kind =
             static_cast<MessageKind>(pendingRequestKind_);
         if (kind != MessageKind::Command &&
             kind != MessageKind::ManifestAccept) {
-            return;
+            return false;
         }
         memcpy(recentCorrelation_, pendingCorrelation_,
                sizeof(recentCorrelation_));
@@ -422,96 +320,139 @@ private:
                sizeof(recentFrameDigest_));
         recentRequestKind_ = pendingRequestKind_;
         recentCloudSequence_ = pendingCloudSequence_;
-        recentChildSequence_ = pendingChildSequence_;
         recentReplayable_ = true;
+        return true;
     }
 
-    void clearControlRequest() {
-        awaitingControl_ = false;
-        controlRequestKind_ = 0U;
-        controlResponseKind_ = 0U;
-        controlSequence_ = 0U;
+    Result requestExecution() {
+        const Result result = execution_.request(clock_.monotonicMillis());
+        if (result) executionAttempts_ = 0U;
+        return result.code() == ErrorCode::AlreadyExists ? Result::success() : result;
     }
 
-    uint16_t allocateChildSequence() {
-        const uint16_t sequence = nextChildSequence_;
-        nextChildSequence_ = sequence == UINT16_MAX
-                                 ? 1U
-                                 : static_cast<uint16_t>(sequence + 1U);
-        return sequence;
-    }
-
-    Result rewriteFrameSequence(
-        ByteView encoded,
-        uint16_t sequence,
-        ByteView& rewritten) {
-        if (encoded.data == nullptr || sequence == 0U ||
-            encoded.size > sizeof(frameScratch_)) {
-            return Result::failure(ErrorCode::InvalidArgument);
+    void pollExecution() {
+        const uint32_t now = clock_.monotonicMillis();
+        if (!execution_.pending(now)) {
+            if (execution_.challengeId() != 0U &&
+                (!execution_.wanted(now) || static_cast<uint32_t>(now - executionSentAt_) < 10000U)) return;
+            if (!requestExecution()) return;
         }
-        bbp2::FrameView frame;
-        Result result = bbp2::parseFrame(encoded, frame);
-        if (!result) return result;
-        memcpy(frameScratch_, encoded.data, encoded.size);
-        frameScratch_[6] = static_cast<uint8_t>(sequence >> 8U);
-        frameScratch_[7] = static_cast<uint8_t>(sequence & 0xFFU);
-        rewritten = ByteView(frameScratch_, encoded.size);
-        return Result::success();
+        if (executionAttempts_ >= 5U || (executionAttempts_ != 0U &&
+            static_cast<uint32_t>(now - executionSentAt_) < 1000U)) return;
+        ++executionAttempts_;
+        executionSentAt_ = now;
+        gateway::GatewayExecutionDemandView demand;
+        demand.operation = gateway::GatewayExecutionOperation::Challenge;
+        demand.incarnation = execution_.incarnation();
+        demand.challengeId = execution_.challengeId();
+        const Result result = publishExecutionControl(demand, 0U);
+        if (!result) lastError_ = result.code();
     }
 
-    Result rewriteMappedResponse(
-        ByteView encoded,
-        const bbp2::FrameView& frame,
-        uint16_t cloudSequence,
-        ByteView& rewritten) {
-        using bbp2::MessageKind;
-        const MessageKind kind = static_cast<MessageKind>(frame.header.kind);
-        if (kind == MessageKind::Hello || kind == MessageKind::Manifest ||
-            kind == MessageKind::StatePage) {
-            return rewriteFrameSequence(
-                encoded, cloudSequence, rewritten);
-        }
-
-        bbp2::FrameHeader header = frame.header;
-        ByteView body;
-        Result result = Result::failure(ErrorCode::UnsupportedFeature);
-        if (kind == MessageKind::Ack) {
-            bbp2::AckBody ack;
-            result = bbp2::decodeAckBody(frame.body, ack);
-            if (result) {
-                ack.acknowledgedSequence = cloudSequence;
-                result = bbp2::encodeAckBody(
-                    ack,
-                    MutableByteSpan(
-                        frameScratch_ + bbp2::kBaseHeaderSize,
-                        sizeof(frameScratch_) - bbp2::kBaseHeaderSize),
-                    body);
-            }
-        } else if (kind == MessageKind::Error) {
-            bbp2::ErrorBody error;
-            result = bbp2::decodeErrorBody(frame.body, error);
-            if (result) {
-                error.relatedSequence = cloudSequence;
-                error.hasRelatedSequence = true;
-                result = bbp2::encodeErrorBody(
-                    error,
-                    MutableByteSpan(
-                        frameScratch_ + bbp2::kBaseHeaderSize,
-                        sizeof(frameScratch_) - bbp2::kBaseHeaderSize),
-                    body);
+    Result publishExecutionControl(gateway::GatewayExecutionDemandView& demand, uint32_t directControlId) {
+        GatewayAccessRecord record;
+        Result result = access_.load(record);
+        size_t written = 0U;
+        if (result) {
+            demand.topologyVersion = topologyVersion_;
+            demand.childLogicalDeviceId = StringView(record.childLogicalDeviceId, record.childLogicalDeviceIdSize);
+            demand.childDeviceInstanceId = ByteView(record.childDeviceInstanceId, sizeof(record.childDeviceInstanceId));
+            demand.accessEpoch = record.accessEpoch;
+            demand.gatewayCredentialVersion = record.credentialVersion;
+            if (directControlId == 0U) {
+                result = gateway::encodeGatewayExecutionDemand(demand, MutableByteSpan(output_, sizeof(output_)), written);
+            } else {
+                gateway::GatewayDirectYieldView direct; direct.demand = demand; direct.controlId = directControlId;
+                result = gateway::encodeGatewayDirectYield(direct, MutableByteSpan(output_, sizeof(output_)), written);
             }
         }
-        if (!result) return result;
-        header.bodyLength = static_cast<uint16_t>(body.size);
-        result = bbp2::encodeHeader(
-            header, MutableByteSpan(frameScratch_, sizeof(frameScratch_)));
-        if (!result) return result;
-        rewritten = ByteView(
-            frameScratch_, bbp2::kBaseHeaderSize + body.size);
-        return Result::success();
+        clearGatewayAccessRecord(record);
+        if (result) result = route_.publish(ByteView(output_, written));
+        secureZero(MutableByteSpan(output_, sizeof(output_)));
+        return result;
     }
 
     void onRouteMessage(ByteView message) {
+        if (message.data != nullptr && message.size != 0U && message.data[0] == 0x8cU) {
+            gateway::GatewayDirectYieldView control;
+            Result result = gateway::decodeGatewayDirectYield(message, control);
+            if (!result) { lastError_ = result.code(); return; }
+            GatewayAccessRecord record; uint64_t now = 0U;
+            const bool valid = route_.subscribed() && access_.load(record) && clock_.unixTime(now) &&
+                now != 0U && now < record.expiresAtUnixSeconds && envelopeMatches(control.demand, record);
+            clearGatewayAccessRecord(record);
+            if (!valid) { lastError_ = ErrorCode::StateConflict; return; }
+            if (control.demand.operation == gateway::GatewayExecutionOperation::Probe) {
+                result = directYield_.probe(control.controlId, control.demand.incarnation, clock_.monotonicMillis());
+            } else result = directYield_.apply(control, clock_.monotonicMillis());
+            lastError_ = result.code() == ErrorCode::AlreadyExists ? ErrorCode::Ok : result.code();
+            return;
+        }
+        if (message.data != nullptr && message.size != 0U && message.data[0] == 0x8bU) {
+            gateway::GatewayExecutionDemandView demand;
+            Result result = gateway::decodeGatewayExecutionDemand(message, demand);
+            if (!result) { lastError_ = result.code(); return; }
+            GatewayAccessRecord record;
+            uint64_t now = 0U;
+            const bool valid = route_.subscribed() && access_.load(record) &&
+                clock_.unixTime(now) && now != 0U && now < record.expiresAtUnixSeconds &&
+                envelopeMatches(demand, record);
+            clearGatewayAccessRecord(record);
+            if (!valid) { lastError_ = ErrorCode::StateConflict; return; }
+            if (demand.operation == gateway::GatewayExecutionOperation::Probe) result = requestExecution();
+            else if (demand.operation == gateway::GatewayExecutionOperation::Decision) {
+                result = execution_.apply(demand.incarnation, demand.challengeId, demand.leaseMillis, clock_.monotonicMillis());
+                if (result) executionConfirmation_ = 3U;
+            } else result = Result::failure(ErrorCode::InvalidArgument);
+            // No start/connect/stop here, and no business sequence consumption.
+            lastError_ = result.code();
+            return;
+        }
+        // Admission is [2, 1, ...]; the read-only lease is [1, 3, ...].
+        if (message.size >= 3U && message.data != nullptr &&
+            message.data[0] == 0x8aU && message.data[1] == 1U && message.data[2] == 3U) {
+            gateway::GatewayRouteLeaseView lease;
+            Result result = gateway::decodeGatewayRouteLease(message, lease);
+            if (!result) { lastError_ = result.code(); return; }
+            GatewayAccessRecord record;
+            uint64_t now = 0U;
+            const bool valid = !lease.route.acknowledgment && executor_.secure() &&
+                cloudHelloSent_ && !closurePending_ && route_.subscribed() &&
+                lease.route.generation == projectionGeneration_ && access_.load(record) &&
+                clock_.unixTime(now) && now != 0U && now < record.expiresAtUnixSeconds &&
+                envelopeMatches(lease.route, record);
+            clearGatewayAccessRecord(record);
+            if (!valid) { lastError_ = ErrorCode::StateConflict; return; }
+            lease.route.acknowledgment = true;
+            size_t written = 0U;
+            result = gateway::encodeGatewayRouteLease(lease, MutableByteSpan(output_, sizeof(output_)), written);
+            if (result) result = route_.publish(ByteView(output_, written));
+            secureZero(MutableByteSpan(output_, sizeof(output_)));
+            lastError_ = result.code();
+            return;
+        }
+        // A closure receipt belongs to the Hub/Broker lifecycle, including
+        // while GATT is disconnected. Never send it into the child lane.
+        if (message.data != nullptr && message.size != 0U && message.data[0] == 0x89U) {
+            gateway::GatewayRouteClosureView closure;
+            const Result decoded = gateway::decodeGatewayRouteClosure(message, closure);
+            if (!decoded) { lastError_ = decoded.code(); return; }
+            GatewayAccessRecord record;
+            uint64_t now = 0U;
+            const Result loaded = access_.load(record);
+            const bool matches = loaded && clock_.unixTime(now) && now != 0U &&
+                now < record.expiresAtUnixSeconds &&
+                envelopeMatches(closure, record);
+            clearGatewayAccessRecord(record);
+            if (!matches || !closure.acknowledgment || !closurePending_ ||
+                closure.generation != projectionGeneration_) {
+                lastError_ = ErrorCode::StateConflict;
+                return;
+            }
+            closurePending_ = false;
+            lastError_ = ErrorCode::Ok;
+            return;
+        }
         gateway::GatewayRouteAdmissionView admission;
         Result result = gateway::decodeGatewayRouteAdmission(
             message, admission);
@@ -519,7 +460,7 @@ private:
             acceptAdmission(admission);
             return;
         }
-        if (awaitingControl_) {
+        if (executor_.controllerControlPending()) {
             lastError_ = ErrorCode::StateConflict;
             return;
         }
@@ -533,8 +474,7 @@ private:
         }
         bbp2::FrameView frame;
         result = bbp2::parseFrame(envelope.innerBbp2Frame, frame);
-        if (!result || !allowedDownstream(frame.header.kind) ||
-            !child_.secure()) {
+        if (!result || !allowedDownstream(frame.header.kind)) {
             fail(result ? ErrorCode::StateConflict : result.code());
             return;
         }
@@ -550,6 +490,23 @@ private:
             fail(ErrorCode::AuthenticationRequired);
             return;
         }
+        uint64_t generation = 0U;
+        for (size_t index = 0U; index < gateway::kRouteGenerationSize; ++index) {
+            generation = (generation << 8U) | envelope.correlationId.data[index];
+        }
+        if (!cloudHelloSent_ || !executor_.secure() || generation != projectionGeneration_) {
+            // An authenticated but delayed request belongs to another child
+            // projection, not the successor's native/authentication attempt.
+            // Drop it without retiring that attempt or queuing/retrying work.
+            lastError_ = ErrorCode::StateConflict;
+            return;
+        }
+        if (helloSize_ != 0U) {
+            // A valid same-generation downlink confirms Broker receipt. The
+            // Broker's lane, not this transport bridge, owns bootstrap ordering.
+            // Its pending exchange now reuses the same correlation workspace.
+            clearHello();
+        }
         const bool expectsResponse = expectsChildResponse(frame);
         uint8_t frameDigest[kSha256Size] = {};
         if (expectsResponse) {
@@ -560,52 +517,32 @@ private:
                 fail(result.code());
                 return;
             }
-            if (awaitingChild_) {
-                const bool replay = same(
-                    envelope.correlationId,
-                    pendingCorrelation_, sizeof(pendingCorrelation_)) &&
-                    memcmp(frameDigest, pendingFrameDigest_,
-                           sizeof(frameDigest)) == 0;
+            const bool pendingReplay = awaitingChild_ && same(
+                envelope.correlationId,
+                pendingCorrelation_, sizeof(pendingCorrelation_)) &&
+                memcmp(frameDigest, pendingFrameDigest_,
+                       sizeof(frameDigest)) == 0;
+            if (awaitingChild_ && !pendingReplay) {
                 secureZero(MutableByteSpan(
                     frameDigest, sizeof(frameDigest)));
-                if (replay) {
-                    // The child owns the reliable-request replay cache. The
-                    // bridge has no response cache, so swallowing an exact
-                    // Broker retry would turn a lost child ACK into a timeout.
-                    ByteView childFrame;
-                    result = rewriteFrameSequence(
-                        envelope.innerBbp2Frame,
-                        pendingChildSequence_,
-                        childFrame);
-                    if (result) result = child_.sendFrame(childFrame);
-                    if (!result) {
-                        if (result.code() == ErrorCode::WouldBlock) {
-                            lastError_ = result.code();
-                        } else {
-                            fail(result.code());
-                        }
-                    } else {
-                        lastError_ = ErrorCode::Ok;
-                    }
-                    return;
-                }
-                fail(ErrorCode::StateConflict);
+                // Capacity pressure is not a broken authenticated session.
+                // RouteEndpoint already owns one exact, bounded ingress slot;
+                // retain the active exchange and let that slot retry later.
+                lastError_ = ErrorCode::WouldBlock;
                 return;
             }
-            const bool completedReplay = recentReplayable_ && same(
+            const bool completedReplay = !awaitingChild_ && recentReplayable_ && same(
                 envelope.correlationId,
                 recentCorrelation_, sizeof(recentCorrelation_)) &&
                 memcmp(frameDigest, recentFrameDigest_,
                        sizeof(frameDigest)) == 0;
-            if (completedReplay) {
+            if (pendingReplay || completedReplay) {
+                // The executor owns the reliable-request replay cache and
+                // reuses the exact child sequence without exposing it here.
                 secureZero(MutableByteSpan(
                     frameDigest, sizeof(frameDigest)));
-                ByteView childFrame;
-                result = rewriteFrameSequence(
-                    envelope.innerBbp2Frame,
-                    recentChildSequence_,
-                    childFrame);
-                if (result) result = child_.sendFrame(childFrame);
+                result = executor_.replayDataFrame(
+                    this, envelope.innerBbp2Frame, completedReplay);
                 if (!result) {
                     if (result.code() == ErrorCode::WouldBlock) {
                         lastError_ = result.code();
@@ -618,21 +555,15 @@ private:
                 return;
             }
         }
-        ByteView childFrame = envelope.innerBbp2Frame;
-        uint16_t childSequence = 0U;
-        if (expectsResponse) {
-            childSequence = allocateChildSequence();
-            result = rewriteFrameSequence(
-                envelope.innerBbp2Frame, childSequence, childFrame);
-        }
-        if (result) result = child_.sendFrame(childFrame);
+        result = executor_.sendDataFrame(
+            this, &BasicGatewayChildRouteBridge::executorFrameThunk,
+            envelope.innerBbp2Frame);
         if (!result) {
             secureZero(MutableByteSpan(frameDigest, sizeof(frameDigest)));
             if (result.code() == ErrorCode::WouldBlock) {
                 // The child bearer rejected the record before enqueue. Keep
-                // DirectSecure and route admission alive; the Broker owns the
-                // exact-frame retry and will deliver it again after pressure
-                // clears.
+                // DirectSecure and route admission alive. RouteEndpoint retains
+                // the exact ingress frame for its bounded retry window.
                 lastError_ = result.code();
             } else {
                 fail(result.code());
@@ -646,7 +577,6 @@ private:
                    sizeof(pendingFrameDigest_));
             pendingRequestKind_ = frame.header.kind;
             pendingCloudSequence_ = frame.header.sequence;
-            pendingChildSequence_ = childSequence;
             awaitingChild_ = true;
         }
         secureZero(MutableByteSpan(frameDigest, sizeof(frameDigest)));
@@ -660,12 +590,13 @@ private:
         Result result = access_.load(record);
         const bool valid = result && clock_.unixTime(now) && now != 0U &&
                            admissionMatches(admission, record, now);
+        const uint32_t accessRevision = record.deliveryRevision;
         clearGatewayAccessRecord(record);
         if (!valid) {
             fail(ErrorCode::AuthenticationRequired);
             return;
         }
-        if (admitted_ && topologyVersion_ != admission.topologyVersion) {
+        if (admitted_ && admission.topologyVersion < topologyVersion_) {
             fail(ErrorCode::StateConflict);
             return;
         }
@@ -674,44 +605,69 @@ private:
             fail(ErrorCode::NotConnected);
             return;
         }
-        if (routeGeneration_ != generation) {
+        if (admission.retiredGeneration > projectionGeneration_) {
+            // The Broker cannot have observed a generation this bridge has
+            // never allocated on the same MQTT identity. Do not jump forward.
+            lastError_ = ErrorCode::StateConflict;
+            return;
+        }
+        if (!admitted_ || routeGeneration_ != generation ||
+            topologyVersion_ != admission.topologyVersion || admittedAccessRevision_ != accessRevision) {
+            directYield_.retire(clock_.monotonicMillis());
+            result = execution_.begin(random_);
+            if (result) result = directYield_.begin(execution_.incarnation());
+            directSentControl_ = directSentChallenge_ = 0U;
+            directAttempts_ = 0U;
+            executionAttempts_ = 0U;
+            executionConfirmation_ = 1U;
+            if (!result) { retireAdmission(); lastError_ = result.code(); return; }
+        } else if (executionConfirmation_ == 1U && execution_.challengeId() != 0U &&
+                   !execution_.pending(clock_.monotonicMillis())) {
+            // One explicit admission retry may recover a lost first batch.
+            // Same incarnation, fresh challenge/time anchor; no polling loop,
+            // no reset by duplicates while pending, no third confirmation batch.
+            if (requestExecution()) executionConfirmation_ = 2U;
+        }
+        if (routeGeneration_ != generation ||
+            topologyVersion_ != admission.topologyVersion ||
+            admittedAccessRevision_ != accessRevision ||
+            (cloudHelloSent_ && admission.retiredGeneration == projectionGeneration_)) {
             // The topology is durable, but route admission and the BBP/2
             // child projection are scoped to one MQTT connection. A fast
             // credential rebind may never expose CloudConnecting to the
             // product scheduler, so the connection generation is the only
             // authoritative boundary.
             cloudHelloSent_ = false;
+            closurePending_ = false;
+            clearHello();
+            executor_.cancelDataOwner(this);
             clearPendingRequest();
             clearRecentRequest();
         }
         topologyVersion_ = admission.topologyVersion;
         routeGeneration_ = generation;
+        admittedAccessRevision_ = accessRevision;
         admitted_ = true;
         lastError_ = ErrorCode::Ok;
     }
 
-    void onChildFrame(ByteView innerFrame) {
+    void onChildFrame(
+        ByteView innerFrame,
+        GatewayChildFrameSource source,
+        bool syntheticHello = false) {
+        if (!executor_.secure()) return;
         if (innerFrame.size > gateway::kEdgeHubChildMaximumInnerFrameSize) {
             fail(ErrorCode::AuthenticationRequired);
             return;
         }
         bbp2::FrameView frame;
         Result result = bbp2::parseFrame(innerFrame, frame);
-        if (result && awaitingControl_ &&
-            (frame.header.flags & bbp2::FlagIsResponse) != 0U &&
-            frame.header.sequence == controlSequence_ &&
-            (frame.header.kind == controlResponseKind_ ||
-             frame.header.kind == static_cast<uint8_t>(
-                                      bbp2::MessageKind::Error))) {
-            clearControlRequest();
-            controlReceiver_(controlReceiverContext_, innerFrame);
-            return;
-        }
         if (!result) {
             fail(result.code());
             return;
         }
-        if (!admitted_ || !route_.subscribed()) {
+        if (!admitted_ || !cloudHelloSent_ || !route_.subscribed() ||
+            routeGeneration_ != route_.subscriptionGeneration()) {
             // A management-only DirectSecure session has no ordinary route,
             // but the child may still emit its negotiated Hello/state frames.
             // They are authenticated yet not authorized for cloud routing:
@@ -724,9 +680,10 @@ private:
             return;
         }
 
-        const bool pendingResponse = matchesPendingResponse(frame);
-        const bool recentResponse = !pendingResponse &&
-                                    matchesRecentResponse(frame);
+        const bool pendingResponse =
+            source == GatewayChildFrameSource::PendingResponse;
+        const bool recentResponse =
+            source == GatewayChildFrameSource::RecentResponse;
         const bbp2::MessageKind kind =
             static_cast<bbp2::MessageKind>(frame.header.kind);
         if (!pendingResponse && !recentResponse &&
@@ -738,7 +695,7 @@ private:
             return;
         }
         uint8_t correlation[gateway::kCorrelationIdSize];
-        if (pendingResponse) {
+        if (syntheticHello || pendingResponse) {
             memcpy(correlation, pendingCorrelation_, sizeof(correlation));
         } else if (recentResponse) {
             memcpy(correlation, recentCorrelation_, sizeof(correlation));
@@ -748,6 +705,10 @@ private:
             if (!result) {
                 fail(result.code());
                 return;
+            }
+            for (size_t index = 0U; index < gateway::kRouteGenerationSize; ++index) {
+                correlation[index] = static_cast<uint8_t>(
+                    projectionGeneration_ >> ((gateway::kRouteGenerationSize - 1U - index) * 8U));
             }
         }
 
@@ -761,11 +722,20 @@ private:
             fail(ErrorCode::AuthenticationRequired);
             return;
         }
+        if (record.deliveryRevision != admittedAccessRevision_) {
+            clearGatewayAccessRecord(record);
+            secureZero(MutableByteSpan(correlation, sizeof(correlation)));
+            // Credential promotion is durable before the Service commits the
+            // matching topology version. Keep DirectSecure available to the
+            // management transaction, but fence the stale data-plane
+            // admission until the Broker sends its new RouteAdmission.
+            retireAdmission();
+            return;
+        }
         ByteView routedFrame = innerFrame;
         if (pendingResponse || recentResponse) {
-            result = rewriteMappedResponse(
+            result = executor_.mapResponseSequence(
                 innerFrame,
-                frame,
                 pendingResponse ? pendingCloudSequence_
                                 : recentCloudSequence_,
                 routedFrame);
@@ -797,19 +767,85 @@ private:
         if (result) result = route_.publish(ByteView(output_, written));
         secureZero(MutableByteSpan(output_, sizeof(output_)));
         if (pendingResponse) {
-            rememberCompletedRequest();
+            const bool replayable = rememberCompletedRequest();
+            executor_.completeDataRequest(this, replayable);
             clearPendingRequest();
         }
         if (!result) {
-            fail(result.code());
+            if (syntheticHello) lastError_ = result.code();
+            else fail(result.code());
             return;
         }
         lastError_ = ErrorCode::Ok;
     }
 
+    void clearHello() {
+        if (helloSize_ != 0U) secureZero(MutableByteSpan(pendingCorrelation_, sizeof(pendingCorrelation_)));
+        helloSize_ = 0U;
+        helloAttempts_ = 0U;
+        helloStartedMillis_ = 0U;
+        secureZero(MutableByteSpan(helloFrame_, sizeof(helloFrame_)));
+    }
+
+    void pollHello() {
+        if (helloSize_ == 0U || helloAttempts_ == 9U) return;
+        const uint32_t elapsed = clock_.monotonicMillis() - helloStartedMillis_;
+        if (elapsed >= 23000U) {
+            helloAttempts_ = 9U;
+            lastError_ = ErrorCode::NotConnected;
+            return;
+        }
+        // Two bounded rounds, anchored only after actual DirectSecure exists.
+        // Authority retries, owner renewal and duplicate Hello never re-anchor.
+        const uint32_t due[] = {0U, 1000U, 3000U, 7000U, 12000U, 13000U, 15000U, 19000U};
+        if (helloAttempts_ >= 8U || elapsed < due[helloAttempts_]) return;
+        ++helloAttempts_;
+        onChildFrame(
+            ByteView(helloFrame_, helloSize_),
+            GatewayChildFrameSource::Event,
+            true);
+    }
+
+    // Reconstruct the small, exact notice in the existing outbound workspace;
+    // no extra frame queue and no publish from a BLE disconnect callback.
+    // Reuses Hello's timer while no Hello is active. A fresh Hello supersedes
+    // closure delivery and must never wait for the receipt to reconnect.
+    void pollClosure() {
+        if (!closurePending_ || !admitted_ || !route_.subscribed()) return;
+        const uint32_t elapsed = clock_.monotonicMillis() - helloStartedMillis_;
+        if (elapsed >= 11000U) { closurePending_ = false; return; }
+        const uint32_t due[] = {0U, 1000U, 3000U, 7000U};
+        if (helloAttempts_ >= 4U || elapsed < due[helloAttempts_]) return;
+        ++helloAttempts_; // Failed publish consumes the same bounded attempt.
+        GatewayAccessRecord record;
+        Result result = access_.load(record);
+        if (result) {
+            gateway::GatewayRouteClosureView closure;
+            closure.topologyVersion = topologyVersion_;
+            closure.childLogicalDeviceId = StringView(record.childLogicalDeviceId, record.childLogicalDeviceIdSize);
+            closure.childDeviceInstanceId = ByteView(record.childDeviceInstanceId, sizeof(record.childDeviceInstanceId));
+            closure.accessEpoch = record.accessEpoch;
+            closure.gatewayCredentialVersion = record.credentialVersion;
+            closure.generation = projectionGeneration_;
+            size_t written = 0U;
+            result = gateway::encodeGatewayRouteClosure(closure, MutableByteSpan(output_, sizeof(output_)), written);
+            if (result) result = route_.publish(ByteView(output_, written));
+        }
+        clearGatewayAccessRecord(record);
+        lastError_ = result.code();
+    }
+
     void onChildSecure() {
-        if (!admitted_ || cloudHelloSent_ || !child_.secure()) return;
-        const ByteView fingerprint = child_.manifestFingerprint();
+        if (!admitted_ || cloudHelloSent_ || !executor_.secure()) return;
+        if (closurePending_ && admittedAccessState()) pollClosure();
+        closurePending_ = false;
+        if (projectionGeneration_ == UINT64_MAX) {
+            retireAdmission();
+            lastError_ = ErrorCode::CapacityExceeded;
+            return;
+        }
+        ++projectionGeneration_;
+        const ByteView fingerprint = executor_.manifestFingerprint();
         if (fingerprint.size != bbp2::kManifestFingerprintSize) {
             fail(ErrorCode::ProtocolError);
             return;
@@ -818,10 +854,11 @@ private:
         hello.role = bbp2::PeerRole::Device;
         hello.versions[0] = bbp2::kVersion;
         hello.versionCount = 1U;
-        hello.features = child_.negotiatedFeatures();
-        hello.maxFrameSize = child_.negotiatedMaxFrameSize();
+        hello.features = executor_.negotiatedFeatures() | bbp2::FeatureGatewayRouteGeneration |
+            bbp2::FeatureGatewayRouteLease;
+        hello.maxFrameSize = executor_.negotiatedMaxFrameSize();
         hello.maxReassemblySize = hello.maxFrameSize;
-        hello.manifestRevision = child_.manifestRevision();
+        hello.manifestRevision = executor_.manifestRevision();
         hello.hasManifestRevision = true;
         hello.manifestFingerprint = fingerprint;
         hello.hasManifestFingerprint = true;
@@ -832,7 +869,7 @@ private:
         }
         if ((hello.features & bbp2::FeatureReliableDelivery) != 0U) {
             hello.reliableReceiveWindow =
-                child_.remoteReliableReceiveWindow();
+                executor_.remoteReliableReceiveWindow();
         }
         ByteView body;
         Result result = bbp2::encodeHelloBody(
@@ -854,35 +891,42 @@ private:
             fail(result.code());
             return;
         }
+        result = random_.fill(MutableByteSpan(pendingCorrelation_, sizeof(pendingCorrelation_)));
+        if (!result) { fail(result.code()); return; }
+        for (size_t index = 0U; index < gateway::kRouteGenerationSize; ++index) {
+            pendingCorrelation_[index] = static_cast<uint8_t>(projectionGeneration_ >> ((7U - index) * 8U));
+        }
+        helloSize_ = static_cast<uint16_t>(bbp2::kBaseHeaderSize + body.size);
+        helloAttempts_ = 0U;
+        helloStartedMillis_ = clock_.monotonicMillis();
         cloudHelloSent_ = true;
-        onChildFrame(ByteView(
-            helloFrame_, bbp2::kBaseHeaderSize + body.size));
-        secureZero(MutableByteSpan(helloFrame_, sizeof(helloFrame_)));
-        if (lastError_ != ErrorCode::Ok) cloudHelloSent_ = false;
+        pollHello();
     }
 
     void fail(ErrorCode error) {
         lastError_ = error == ErrorCode::Ok
                          ? ErrorCode::ProtocolError
                          : error;
+        executor_.cancelDataOwner(this);
         clearPendingRequest();
         clearRecentRequest();
-        if (child_.state() == GatewayChildSessionState::Connecting ||
-            child_.state() == GatewayChildSessionState::Authenticating ||
-            child_.state() == GatewayChildSessionState::Secure) {
-            (void)child_.disconnect();
-        }
+        executor_.retire(lastError_);
     }
 
-    static void routeThunk(void* context, ByteView message) {
+    static Result routeThunk(void* context, ByteView message) {
         BasicGatewayChildRouteBridge* self =
             static_cast<BasicGatewayChildRouteBridge*>(context);
-        if (self != nullptr) self->onRouteMessage(message);
+        if (self == nullptr) return Result::failure(ErrorCode::NotConfigured);
+        self->onRouteMessage(message);
+        return Result(self->lastError_);
     }
-    static void childThunk(void* context, ByteView frame) {
+    static void executorFrameThunk(
+        void* context,
+        ByteView frame,
+        GatewayChildFrameSource source) {
         BasicGatewayChildRouteBridge* self =
             static_cast<BasicGatewayChildRouteBridge*>(context);
-        if (self != nullptr) self->onChildFrame(frame);
+        if (self != nullptr) self->onChildFrame(frame, source);
     }
     static void secureThunk(void* context) {
         BasicGatewayChildRouteBridge* self =
@@ -893,11 +937,19 @@ private:
         BasicGatewayChildRouteBridge* self =
             static_cast<BasicGatewayChildRouteBridge*>(context);
         if (self != nullptr) {
+            const bool notify = self->admitted_ && self->cloudHelloSent_ &&
+                self->route_.subscribed() &&
+                self->routeGeneration_ == self->route_.subscriptionGeneration();
             self->cloudHelloSent_ = false;
+            // A repeated disconnect callback cannot restart a closure budget.
+            if (!self->closurePending_) self->clearHello();
+            if (notify) {
+                self->closurePending_ = true;
+                self->helloStartedMillis_ = self->clock_.monotonicMillis();
+                self->helloAttempts_ = 0U;
+            }
             self->clearPendingRequest();
             self->clearRecentRequest();
-            self->clearControlRequest();
-            self->nextChildSequence_ = 1U;
         }
     }
     static void faultThunk(
@@ -905,40 +957,47 @@ private:
         ErrorCode error) {
         BasicGatewayChildRouteBridge* self =
             static_cast<BasicGatewayChildRouteBridge*>(context);
-        if (self != nullptr) self->lastError_ = error;
+        if (self != nullptr) {
+            self->lastError_ = error;
+            self->clearPendingRequest();
+            self->clearRecentRequest();
+        }
     }
 
-    ChildSession& child_;
-    RouteClient& route_;
+    Executor& executor_;
+    RouteEndpoint& route_;
     GatewayAccessStore& access_;
     IClock& clock_;
     IRandom& random_;
+    GatewayExecutionLease execution_;
+    uint32_t executionSentAt_;
+    uint8_t executionAttempts_;
+    uint8_t executionConfirmation_; // 0=none, 1=first, 2=retry, 3=confirmed
+    GatewayDirectYieldLease directYield_;
+    uint32_t directSentAt_, directSentControl_, directSentChallenge_;
+    uint8_t directSentOperation_, directAttempts_;
     uint32_t topologyVersion_;
     uint32_t routeGeneration_;
+    uint32_t admittedAccessRevision_;
+    uint64_t projectionGeneration_;
+    uint32_t helloStartedMillis_;
+    uint16_t helloSize_;
+    uint8_t helloAttempts_;
     uint8_t pendingCorrelation_[gateway::kCorrelationIdSize];
     uint8_t pendingFrameDigest_[kSha256Size];
     uint8_t recentCorrelation_[gateway::kCorrelationIdSize];
     uint8_t recentFrameDigest_[kSha256Size];
     uint8_t helloFrame_[128U];
-    uint8_t frameScratch_[gateway::kEdgeHubChildMaximumInnerFrameSize];
     uint8_t output_[gateway::kEdgeHubChildRouteEnvelopeMaximumEncodedSize];
     uint8_t pendingRequestKind_;
     uint16_t pendingCloudSequence_;
-    uint16_t pendingChildSequence_;
-    uint16_t nextChildSequence_;
     uint8_t recentRequestKind_;
     uint16_t recentCloudSequence_;
-    uint16_t recentChildSequence_;
     bool recentReplayable_;
-    GatewayChildControlReceiver controlReceiver_;
-    void* controlReceiverContext_;
-    uint8_t controlRequestKind_;
-    uint8_t controlResponseKind_;
-    uint16_t controlSequence_;
     bool admitted_;
     bool cloudHelloSent_;
     bool awaitingChild_;
-    bool awaitingControl_;
+    bool closurePending_;
     ErrorCode lastError_;
 
     BasicGatewayChildRouteBridge(

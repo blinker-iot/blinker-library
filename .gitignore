@@ -7,6 +7,7 @@ Debug/
 .vscode/
 /build/
 /.build/
+/.tmp-*/
 /tests/arduino/build-*/
 /tests/arduino/build/
 /tests/golden/build-*/
@@ -15,4 +16,5 @@ __pycache__/
 *.py[cod]
 /tests/host/*.exe
 /tests/host/*.obj
+/tests/local/
 /*.obj

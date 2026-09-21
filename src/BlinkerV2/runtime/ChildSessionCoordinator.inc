@@ -50,6 +50,14 @@ ChildSessionCoordinator::~ChildSessionCoordinator() {
     reset();
 }
 
+Result ChildSessionCoordinator::setOptionalFeatures(uint32_t features) {
+    if (state_ != ChildSessionState::Idle) return Result::failure(ErrorCode::StateConflict);
+    if ((features & ~kChildSessionOptionalFeatures) != 0U)
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    config_.features = kChildSessionRequiredFeatures | features;
+    return Result::success();
+}
+
 Result ChildSessionCoordinator::validateConfig() const {
     if ((config_.features & kChildSessionRequiredFeatures) !=
             kChildSessionRequiredFeatures ||

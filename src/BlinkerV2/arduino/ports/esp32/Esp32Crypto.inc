@@ -185,6 +185,9 @@ Result Esp32MbedTlsCryptoProvider::aes256GcmEncrypt(
     secureZero(MutableByteSpan(output.data, required));
     return Result::failure(ErrorCode::UnsupportedFeature);
 #else
+    // ESP-IDF's GCM backend requires non-null I/O even for an empty message.
+    // Adapt that pointer contract only; the authenticated length stays zero.
+    const uint8_t emptyInput = 0U;
     mbedtls_gcm_context context;
     mbedtls_gcm_init(&context);
     int error = mbedtls_gcm_setkey(
@@ -201,7 +204,7 @@ Result Esp32MbedTlsCryptoProvider::aes256GcmEncrypt(
             nonce.size,
             associatedData.data,
             associatedData.size,
-            plaintext.data,
+            plaintext.empty() ? &emptyInput : plaintext.data,
             output.data,
             kGcmTagSize,
             output.data + plaintext.size);
@@ -241,6 +244,7 @@ Result Esp32MbedTlsCryptoProvider::aes256GcmDecrypt(
     }
     return Result::failure(ErrorCode::UnsupportedFeature);
 #else
+    uint8_t emptyOutput = 0U;
     mbedtls_gcm_context context;
     mbedtls_gcm_init(&context);
     int error = mbedtls_gcm_setkey(
@@ -259,7 +263,7 @@ Result Esp32MbedTlsCryptoProvider::aes256GcmDecrypt(
             ciphertextAndTag.data + plaintextSize,
             kGcmTagSize,
             ciphertextAndTag.data,
-            output.data);
+            plaintextSize == 0U ? &emptyOutput : output.data);
     }
     mbedtls_gcm_free(&context);
     if (error != 0) {

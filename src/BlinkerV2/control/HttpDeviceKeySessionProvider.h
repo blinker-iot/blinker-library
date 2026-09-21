@@ -76,6 +76,11 @@ public:
     uint32_t authenticatedCredentialVersion() const {
         return authenticatedCredentialVersion_;
     }
+    // Current successful login proof, owned independently of HTTP scratch.
+    // Empty after stop/failure; refresh retains the old value until success.
+    ByteView proofSessionId() const {
+        return hasCredentials_ ? ByteView(proofSessionId_, sizeof(proofSessionId_)) : ByteView();
+    }
 
 private:
     enum class Phase : uint8_t {
@@ -118,6 +123,7 @@ private:
     MutableByteSpan responseBuffer_;
     MutableCharSpan credentialArena_;
     SessionCredentials credentials_;
+    uint8_t proofSessionId_[kDeviceKeySessionIdSize];
     uint8_t requestId_[kDeviceKeyRequestIdSize];
     uint8_t locator_[kDeviceKeyLocatorSize];
     uint8_t clientNonce_[kDeviceKeyNonceSize];

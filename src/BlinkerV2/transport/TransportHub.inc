@@ -3,7 +3,8 @@
 namespace blinker {
 
 TransportHub::TransportHub()
-    : count_(0),
+    : running_(false),
+      count_(0),
       nextPoll_(0),
       receiver_(nullptr),
       receiverContext_(nullptr),
@@ -18,7 +19,12 @@ TransportHub::TransportHub()
 
 Result TransportHub::addTransport(
     IFrameTransport& transport,
-    TransportLifecyclePolicy lifecycle) {
+    TransportLifecyclePolicy lifecycle,
+    TransportAccess access) {
+    if (running_) return Result::failure(ErrorCode::NotConfigured);
+    if (access.control != nullptr && access.authorization == nullptr) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
     for (size_t index = 0; index < count_; ++index) {
         if (transports_[index] == &transport) {
             return Result::failure(ErrorCode::AlreadyExists);
@@ -31,6 +37,7 @@ Result TransportHub::addTransport(
 
     const size_t index = count_;
     transports_[index] = &transport;
+    access_[index] = access;
     lifecycles_[index] = lifecycle;
     receiverContexts_[index].hub = this;
     receiverContexts_[index].transportId = static_cast<uint8_t>(index);
@@ -46,6 +53,7 @@ Result TransportHub::addTransport(
 }
 
 Result TransportHub::removeTransport(IFrameTransport& transport) {
+    if (running_) return Result::failure(ErrorCode::NotConfigured);
     size_t found = count_;
     for (size_t index = 0; index < count_; ++index) {
         if (transports_[index] == &transport) {
@@ -66,6 +74,7 @@ Result TransportHub::removeTransport(IFrameTransport& transport) {
 
     for (size_t index = found; index + 1 < count_; ++index) {
         transports_[index] = transports_[index + 1];
+        access_[index] = access_[index + 1];
         lifecycles_[index] = lifecycles_[index + 1];
         receiverContexts_[index].hub = this;
         receiverContexts_[index].transportId = static_cast<uint8_t>(index);
@@ -80,6 +89,7 @@ Result TransportHub::removeTransport(IFrameTransport& transport) {
 
     --count_;
     transports_[count_] = nullptr;
+    access_[count_] = TransportAccess();
     lifecycles_[count_] = TransportLifecyclePolicy::Managed;
     receiverContexts_[count_].hub = nullptr;
     receiverContexts_[count_].transportId = 0;
@@ -92,6 +102,8 @@ Result TransportHub::removeTransport(IFrameTransport& transport) {
 }
 
 Result TransportHub::startAll() {
+    if (running_) return Result::failure(ErrorCode::AlreadyExists);
+    running_ = true;
     for (size_t index = 0; index < count_; ++index) {
         if (lifecycles_[index] == TransportLifecyclePolicy::External) {
             continue;
@@ -105,6 +117,7 @@ Result TransportHub::startAll() {
                     transports_[index]->stop();
                 }
             }
+            running_ = false;
             return result;
         }
     }
@@ -117,6 +130,7 @@ void TransportHub::stopAll() {
             transports_[index]->stop();
         }
     }
+    running_ = false;
 }
 
 void TransportHub::poll(uint32_t totalBudgetMicros) {
@@ -229,6 +243,10 @@ void TransportHub::setSessionHandlers(
 
 IFrameTransport* TransportHub::at(size_t index) const {
     return index < count_ ? transports_[index] : nullptr;
+}
+
+TransportAccess TransportHub::accessAt(size_t index) const {
+    return index < count_ ? access_[index] : TransportAccess();
 }
 
 void TransportHub::receiveThunk(

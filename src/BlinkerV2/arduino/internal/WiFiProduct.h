@@ -23,6 +23,12 @@
 
 #include <BlinkerV2/arduino/config/OfficialConfig.h>
 
+// Internal control-carrier gate only: no LAN listener/discovery is enabled.
+// Set library-wide for probes, never as a public per-Sketch feature promise.
+#if defined(BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL) && BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL
+#include <BlinkerV2/runtime/LocalAccessCloudTransport.h>
+#endif
+
 #include <PubSubClient.h>
 #include <string.h>
 
@@ -69,6 +75,16 @@ public:
     typedef typename Platform::MqttClient MqttClient;
     typedef ArduinoClientHttpAdapter<CloudSessionClient, 97U, 384U, 128U>
         ControlHttp;
+#if defined(BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL) && BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL
+#if defined(BLINKER_INTERNAL_LAN_WEBSOCKET) && BLINKER_INTERNAL_LAN_WEBSOCKET && !BLINKER_INTERNAL_LAN_ENCRYPTED
+    typedef LocalAccessCloudTransport<1U, ManagedMqttTransport, HttpDeviceKeySessionProvider, MqttFrameTransport,
+        local_access::SecurityProfile::PlainHmacSha256> CloudTransport;
+#else
+    typedef LocalAccessCloudTransport<1U> CloudTransport;
+#endif
+#else
+    typedef ManagedMqttTransport CloudTransport;
+#endif
 
     DeviceKeyWifiStack(
         Platform& platform,
@@ -117,7 +133,14 @@ public:
               mqttAdapter_,
               clock_,
               mqttConfig),
+#if defined(BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL) && BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL
+          managedCloud_(cloudSession_, mqttTransport_),
+          localTargets_(),
+          cloudTransport_(managedCloud_, mqttTransport_, cloudSession_, deviceInstance_,
+                          deviceKey_, random_, clock_, localTargets_),
+#else
           cloudTransport_(cloudSession_, mqttTransport_),
+#endif
           initialized_(false) {}
 
     ~DeviceKeyWifiStack() { end(); }
@@ -163,7 +186,7 @@ public:
     Clock& clock() { return clock_; }
     PlatformHardwareRandom& random() { return random_; }
     WifiConnectionLifecycle& wifiLifecycle() { return wifiLifecycle_; }
-    ManagedMqttTransport& cloudTransport() { return cloudTransport_; }
+    CloudTransport& cloudTransport() { return cloudTransport_; }
     HttpDeviceKeySessionProvider& sessionProvider() {
         return cloudSession_;
     }
@@ -184,19 +207,33 @@ private:
     PubSubClient nativeMqtt_;
     PubSubClientAdapter<0U, 96U, 64U, 64U, 96U, 96U> mqttAdapter_;
     MqttFrameTransport mqttTransport_;
-    ManagedMqttTransport cloudTransport_;
+#if defined(BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL) && BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL
+    ManagedMqttTransport managedCloud_;
+    SelfLocalAccessTargetPolicy localTargets_;
+#endif
+    CloudTransport cloudTransport_;
     bool initialized_;
 
     DeviceKeyWifiStack(const DeviceKeyWifiStack&);
     DeviceKeyWifiStack& operator=(const DeviceKeyWifiStack&);
 };
 
+// Compile-time extension seam: optional transports share the original Client,
+// identity and authority. Their Managed lifecycle is owned by that Client;
+// extensions do not introduce another product polling/start/stop graph.
+struct NoWifiProductExtension {
+    template <typename Stack> explicit NoWifiProductExtension(Stack&) {}
+    Result attach(Client&) { return Result::success(); }
+    uint16_t capabilities() const { return 0U; }
+};
+
 // Canonical manual/education WiFi product. It is kept beside its stack so a
 // platform wrapper includes one product graph instead of assembling several
 // implementation headers.
-template <typename Platform>
+template <typename Platform, typename Extension = NoWifiProductExtension>
 class DeviceKeyWifiProduct final : public IProductLifecycle {
 public:
+    typedef DeviceKeyWifiStack<Platform> Stack;
     DeviceKeyWifiProduct()
         : platform_(),
           deviceKey_(),
@@ -204,6 +241,7 @@ public:
           lifecycle_(
               stack_.wifiLifecycle(),
               stack_.cloudTransport()),
+          extension_(stack_),
           setupSsid_(),
           setupCredential_(),
           setupSsidSize_(0U),
@@ -252,9 +290,18 @@ public:
     Result attach(Client& client) override {
         Result result = initialize();
         if (result) result = client.setMonotonicClock(&stack_.clock());
-        if (result) result = lifecycle_.attach(client);
+        if (result) {
+            // Cloud first in Runtime polling order: consume revocation before
+            // a local transport may flush a queued WS record in the same tick.
+            result = lifecycle_.attach(client);
+            if (result) result = extension_.attach(client);
+        }
         if (!result) configurationError_ = result.code();
         return result;
+    }
+
+    Result attachTime(Client& client, ITimeSync& service) override {
+        return client.setTimeSync(service, stack_.clock(), stack_.random());
     }
 
     Result start() override {
@@ -283,7 +330,7 @@ public:
     }
 
     ProductCapabilities capabilities() const override {
-        return lifecycle_.capabilities();
+        return ProductCapabilities(lifecycle_.capabilities().flags | extension_.capabilities());
     }
 
 private:
@@ -301,7 +348,9 @@ private:
                     : configurationError_);
         }
 
-        Result result = stack_.begin();
+        Result result = stack_.wifiLifecycle().setCandidateFailurePolicy(
+            WifiCandidateFailurePolicy::Retry);
+        if (result) result = stack_.begin();
         if (result) {
             WifiNetworkConfig network;
             network.ssid = ByteView(setupSsid_, setupSsidSize_);
@@ -335,8 +384,9 @@ private:
 
     Platform platform_;
     ConfiguredDeviceKeySource deviceKey_;
-    DeviceKeyWifiStack<Platform> stack_;
-    WifiCloudLifecycle lifecycle_;
+    Stack stack_;
+    BasicWifiCloudLifecycle<WifiConnectionLifecycle, typename Stack::CloudTransport> lifecycle_;
+    Extension extension_;
     uint8_t setupSsid_[kWifiSsidMaxSize];
     uint8_t setupCredential_[kWifiCredentialMaxSize];
     uint8_t setupSsidSize_;

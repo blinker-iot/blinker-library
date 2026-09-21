@@ -22,7 +22,6 @@ BLINKER_PROPERTY(uptimeSeconds, uint32_t, blinker::realtime(1000U));
 namespace {
 
 bool currentPower = false;
-uint32_t nextDiagnosticsAt = 10000U;
 
 void onPower(bool requested) {
     currentPower = requested;
@@ -38,19 +37,15 @@ uint32_t sampleUptimeSeconds() {
 
 void setup() {
     Serial.begin(115200);
-    Blinker.debug(Serial);
     power.onWrite(onPower);
     uptimeSeconds.onSample(sampleUptimeSeconds);
 
-    if (!Blinker.begin(
+    if (Blinker.enableTime() && Blinker.begin(
             BLINKER_DEVICE_KEY,
             BLINKER_WIFI_SSID,
             BLINKER_WIFI_PASSWORD,
             power,
             uptimeSeconds)) {
-        Serial.print("Blinker start failed: ");
-        Serial.println(Blinker.lastErrorText());
-    } else {
         // Initialize recoverable state once. Realtime data comes from onSample().
         power.report(currentPower);
     }
@@ -59,9 +54,18 @@ void setup() {
 void loop() {
     Blinker.run();
 
-    const uint32_t now = millis();
-    if (static_cast<int32_t>(now - nextDiagnosticsAt) >= 0) {
+    // Send 'd' once from Serial Monitor for diagnostics and business UTC.
+    // Print is synchronous: keep the monitor reading while requesting output.
+    // No periodic dump/debug output can stall an unattended device's run().
+    if (Serial.available() > 0 && Serial.read() == 'd') {
         Blinker.printDiagnostics(Serial);
-        nextDiagnosticsAt = now + 10000U;
+        uint64_t utcSeconds = 0U;
+        Serial.print("Business UTC: ");
+        if (Blinker.time(utcSeconds)) {
+            // The admitted 2000..2100 UTC range fits an Arduino unsigned long.
+            Serial.println(static_cast<unsigned long>(utcSeconds));
+        } else {
+            Serial.println("unsynchronized");
+        }
     }
 }

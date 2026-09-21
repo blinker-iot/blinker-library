@@ -7,11 +7,10 @@
 namespace blinker {
 
 NativeGattPermitJoinAdapter::NativeGattPermitJoinAdapter(
-    IBleCentralPort& port,
     IClock& clock,
-    IGatewayPermitJoinPortLease& lease,
+    IGattPermitJoinPortLease& lease,
     const NativeGattPermitJoinConfig& config)
-    : port_(port), clock_(clock), lease_(lease), config_(config),
+    : port_(nullptr), clock_(clock), lease_(lease), config_(config),
       candidates_(), rx_(), selectedLocator_(), rxHead_(0U),
       rxTail_(0U), rxCount_(0U),
       nextAttemptId_(0U), activeAttemptId_(0U),
@@ -21,6 +20,16 @@ NativeGattPermitJoinAdapter::NativeGattPermitJoinAdapter(
 
 NativeGattPermitJoinAdapter::~NativeGattPermitJoinAdapter() {
     closeWindow();
+    // Destruction cannot leave callbacks pointing into a dead object. Only
+    // this terminal teardown may use the Port's bounded synchronous stop.
+    if (leased_) {
+        port_->stop();
+        (void)finishClose();
+        if (leased_) {
+            port_->setPacketReceiver(nullptr, nullptr);
+            port_->setConnectionHandlers(nullptr, nullptr, nullptr);
+        }
+    }
 }
 
 bool NativeGattPermitJoinAdapter::validConfig() const {
@@ -34,23 +43,35 @@ Result NativeGattPermitJoinAdapter::openWindow() {
     if (!validConfig()) {
         return Result::failure(ErrorCode::NotConfigured);
     }
-    Result result = lease_.acquirePermitJoinPort();
-    if (!result) return result;
-    leased_ = true;
-    if (port_.state() != BleCentralPortState::Stopped) {
-        closeWindow();
-        return Result::failure(ErrorCode::WouldBlock);
-    }
+    state_ = GatewayPermitJoinAdapterState::Opening;
+    lastError_ = ErrorCode::Ok;
+    return tryOpen();
+}
 
-    port_.setPacketReceiver(&NativeGattPermitJoinAdapter::packetThunk, this);
-    port_.setConnectionHandlers(
-        &NativeGattPermitJoinAdapter::connectedThunk,
-        &NativeGattPermitJoinAdapter::disconnectedThunk,
-        this);
-    result = port_.start();
+Result NativeGattPermitJoinAdapter::tryOpen() {
+    Result result = Result::success();
+    if (!leased_) {
+        result = lease_.acquirePermitJoinPort(port_);
+        if (!result) {
+            if (result.code() != ErrorCode::WouldBlock) fail(result.code());
+            return result;
+        }
+        leased_ = port_ != nullptr;
+        if (!leased_ || port_->state() != BleCentralPortState::Stopped) {
+            fail(ErrorCode::StateConflict);
+            return Result::failure(ErrorCode::StateConflict);
+        }
+        port_->setPacketReceiver(&NativeGattPermitJoinAdapter::packetThunk, this);
+        port_->setConnectionHandlers(
+            &NativeGattPermitJoinAdapter::connectedThunk,
+            &NativeGattPermitJoinAdapter::disconnectedThunk, this);
+        result = port_->start();
+        if (!result) { fail(result.code()); return result; }
+    }
     if (result) result = startScan();
+    if (!result && result.code() == ErrorCode::WouldBlock) return result;
     if (!result) {
-        closeWindow();
+        fail(result.code());
         return result;
     }
     state_ = GatewayPermitJoinAdapterState::Ready;
@@ -59,38 +80,76 @@ Result NativeGattPermitJoinAdapter::openWindow() {
 }
 
 void NativeGattPermitJoinAdapter::closeWindow() {
-    if (!leased_) return;
-    port_.setPacketReceiver(nullptr, nullptr);
-    port_.setConnectionHandlers(nullptr, nullptr, nullptr);
-    if (port_.state() != BleCentralPortState::Stopped) port_.stop();
-    lease_.releasePermitJoinPort();
-    leased_ = false;
+    if (state_ == GatewayPermitJoinAdapterState::Stopped ||
+        state_ == GatewayPermitJoinAdapterState::Closing) return;
+    clearRelayData();
+    state_ = GatewayPermitJoinAdapterState::Closing;
+    (void)finishClose();
+}
+
+bool NativeGattPermitJoinAdapter::finishClose() {
+    if (leased_) {
+        if (port_->state() == BleCentralPortState::Idle || port_->state() == BleCentralPortState::Error) port_->stop();
+        if (port_->state() != BleCentralPortState::Stopped) return false;
+        port_->setPacketReceiver(nullptr, nullptr);
+        port_->setConnectionHandlers(nullptr, nullptr, nullptr);
+        lease_.releasePermitJoinPort(*port_);
+        port_ = nullptr;
+        leased_ = false;
+    }
     clearRuntime();
     state_ = GatewayPermitJoinAdapterState::Stopped;
-    lastError_ = ErrorCode::Ok;
+    return true;
 }
 
 void NativeGattPermitJoinAdapter::poll(uint32_t budgetMicros) {
+    if (state_ == GatewayPermitJoinAdapterState::Opening) {
+        if (leased_) {
+            port_->poll(budgetMicros);
+            if (port_->state() == BleCentralPortState::Error) { fail(port_->lastError()); return; }
+        }
+        (void)tryOpen();
+        return;
+    }
+    if (state_ == GatewayPermitJoinAdapterState::Closing) {
+        if (leased_) port_->poll(budgetMicros);
+        if (finishClose()) return;
+        if (activeAttemptId_ != 0U &&
+            port_->state() != BleCentralPortState::Disconnecting) {
+            const Result result = port_->cancel(activeAttemptId_);
+            if (!result) lastError_ = result.code();
+        }
+        (void)finishClose();
+        return;
+    }
     if (state_ != GatewayPermitJoinAdapterState::Ready) return;
-    port_.poll(budgetMicros);
+    // Unselected discovery yields initiation to another demanded child. A
+    // selected opaque relay is never silently resumed on another connection.
+    if (!selectionSet_ && port_->state() == BleCentralPortState::Scanning &&
+        !lease_.allowPermitJoinScan(*port_)) {
+        (void)port_->cancel(activeAttemptId_);
+    }
+    port_->poll(budgetMicros);
+    if (state_ != GatewayPermitJoinAdapterState::Ready) return;
     expireCandidates();
-    if (port_.state() == BleCentralPortState::Error) {
-        fail(port_.lastError() == ErrorCode::Ok
+    if (port_->state() == BleCentralPortState::Error) {
+        fail(port_->lastError() == ErrorCode::Ok
                  ? ErrorCode::InternalError
-                 : port_.lastError());
+                 : port_->lastError());
         return;
     }
 
     if (activeAttemptId_ != 0U &&
-        port_.state() == BleCentralPortState::Idle) {
-        activeAttemptId_ = 0U;
-        connectedAttemptId_ = 0U;
-        maxPacketSize_ = 0U;
+        port_->state() == BleCentralPortState::Idle) {
+        BleCentralConnectionInfo disconnected;
+        disconnected.attemptId = activeAttemptId_;
+        onDisconnected(disconnected);
+        if (state_ != GatewayPermitJoinAdapterState::Ready) return;
     }
     if (activeAttemptId_ == 0U &&
-        port_.state() == BleCentralPortState::Idle) {
+        port_->state() == BleCentralPortState::Idle) {
         const Result result = startScan();
-        if (!result) {
+        if (!result && result.code() != ErrorCode::WouldBlock) {
             fail(result.code());
             return;
         }
@@ -98,6 +157,7 @@ void NativeGattPermitJoinAdapter::poll(uint32_t budgetMicros) {
 }
 
 size_t NativeGattPermitJoinAdapter::relayCandidateCount() const {
+    if (state_ != GatewayPermitJoinAdapterState::Ready) return 0U;
     size_t count = 0U;
     for (size_t index = 0U;
          index < BLINKER_GATEWAY_PERMIT_JOIN_CANDIDATES;
@@ -110,16 +170,29 @@ size_t NativeGattPermitJoinAdapter::relayCandidateCount() const {
 Result NativeGattPermitJoinAdapter::readRelayCandidate(
     size_t index,
     GatewayPermitJoinCandidate& output) const {
-    size_t current = 0U;
+    if (state_ != GatewayPermitJoinAdapterState::Ready) {
+        return Result::failure(ErrorCode::NotConnected);
+    }
+    const uint32_t now = clock_.monotonicMillis();
     for (size_t slot = 0U;
          slot < BLINKER_GATEWAY_PERMIT_JOIN_CANDIDATES;
          ++slot) {
         if (!candidates_[slot].occupied) continue;
-        if (current == index) {
+        // A child rotates its authorized locator after an ACL closes. Both
+        // locators can authenticate while the old observation is still cached.
+        // Prefer fresh radio observations, not cache insertion order or RSSI.
+        const uint32_t age = now - candidates_[slot].lastSeenMillis;
+        size_t rank = 0U;
+        for (size_t other = 0U;
+             other < BLINKER_GATEWAY_PERMIT_JOIN_CANDIDATES; ++other) {
+            if (!candidates_[other].occupied) continue;
+            const uint32_t otherAge = now - candidates_[other].lastSeenMillis;
+            if (otherAge < age || (otherAge == age && other < slot)) ++rank;
+        }
+        if (rank == index) {
             output = candidates_[slot].candidate;
             return Result::success();
         }
-        ++current;
     }
     output = GatewayPermitJoinCandidate();
     return Result::failure(ErrorCode::NotFound);
@@ -155,9 +228,9 @@ Result NativeGattPermitJoinAdapter::selectRelayCandidate(ByteView locator) {
 }
 
 void NativeGattPermitJoinAdapter::clearRelaySelection() {
-    if (connectedAttemptId_ != 0U ||
-        port_.state() == BleCentralPortState::Connecting ||
-        port_.state() == BleCentralPortState::Discovering) {
+    if (connectedAttemptId_ != 0U || (port_ != nullptr &&
+        (port_->state() == BleCentralPortState::Connecting ||
+         port_->state() == BleCentralPortState::Discovering))) {
         return;
     }
     secureZero(MutableByteSpan(
@@ -173,9 +246,8 @@ Result NativeGattPermitJoinAdapter::queueRelayPacket(ByteView packet) {
             !relayConnected() ? ErrorCode::NotConnected
                          : ErrorCode::InvalidArgument);
     }
-    const Result result = port_.sendPacket(connectedAttemptId_, packet);
-    if (!result && result.code() != ErrorCode::WouldBlock &&
-        result.code() != ErrorCode::NotConnected) {
+    const Result result = port_->sendPacket(connectedAttemptId_, packet);
+    if (!result && result.code() != ErrorCode::WouldBlock) {
         fail(result.code());
     }
     return result;
@@ -234,6 +306,7 @@ void NativeGattPermitJoinAdapter::disconnectedThunk(
 
 bool NativeGattPermitJoinAdapter::onAdvertisement(
     const BleCentralAdvertisement& advertisement) {
+    if (state_ != GatewayPermitJoinAdapterState::Ready) return false;
     ble::ModeProfile profile;
     if (!ble::decodeModeServiceData(
             advertisement.modeServiceData, profile)) {
@@ -293,14 +366,14 @@ bool NativeGattPermitJoinAdapter::onAdvertisement(
         target->lastSeenMillis = now;
         target->occupied = true;
     }
-    return selected(ByteView(
-        profile.modeLocator,
-        sizeof(profile.modeLocator)));
+    return selected(ByteView(profile.modeLocator, sizeof(profile.modeLocator))) &&
+           lease_.allowPermitJoinTarget(advertisement);
 }
 
 void NativeGattPermitJoinAdapter::onPacket(
     const BleCentralConnectionInfo& connection,
     ByteView packet) {
+    if (state_ != GatewayPermitJoinAdapterState::Ready) return;
     if (connection.attemptId != connectedAttemptId_ ||
         packet.data == nullptr || packet.empty() ||
         packet.size > BLINKER_GATEWAY_PERMIT_JOIN_PACKET_SIZE ||
@@ -323,6 +396,7 @@ void NativeGattPermitJoinAdapter::onPacket(
 
 void NativeGattPermitJoinAdapter::onConnected(
     const BleCentralConnectionInfo& connection) {
+    if (state_ != GatewayPermitJoinAdapterState::Ready) return;
     if (connection.attemptId == 0U ||
         connection.attemptId != activeAttemptId_ ||
         !connection.connected || !connection.notifyEnabled ||
@@ -343,16 +417,24 @@ void NativeGattPermitJoinAdapter::onDisconnected(
     connectedAttemptId_ = 0U;
     maxPacketSize_ = 0U;
     rxHead_ = rxTail_ = rxCount_ = 0U;
+    // Selection owns one ACL/security session. A failed connect or lost ACL
+    // ends this window; opaque fragments cannot resume on a new connection.
+    // Only unselected discovery may automatically restart scanning.
+    if (selectionSet_ && state_ == GatewayPermitJoinAdapterState::Ready) {
+        fail(port_->lastError() == ErrorCode::Ok
+                 ? ErrorCode::NotConnected : port_->lastError());
+    }
 }
 
 Result NativeGattPermitJoinAdapter::startScan() {
+    if (!lease_.allowPermitJoinScan(*port_)) return Result::failure(ErrorCode::WouldBlock);
     ++nextAttemptId_;
     if (nextAttemptId_ == 0U) ++nextAttemptId_;
     BleCentralConnectRequest request;
     request.attemptId = nextAttemptId_;
     request.matcher = &NativeGattPermitJoinAdapter::advertisementThunk;
     request.matcherContext = this;
-    Result result = port_.connect(request);
+    Result result = port_->connect(request);
     if (result) activeAttemptId_ = request.attemptId;
     return result;
 }
@@ -378,7 +460,7 @@ void NativeGattPermitJoinAdapter::fail(ErrorCode error) {
     state_ = GatewayPermitJoinAdapterState::Fault;
 }
 
-void NativeGattPermitJoinAdapter::clearRuntime() {
+void NativeGattPermitJoinAdapter::clearRelayData() {
     for (size_t index = 0U;
          index < BLINKER_GATEWAY_PERMIT_JOIN_CANDIDATES;
          ++index) {
@@ -392,11 +474,15 @@ void NativeGattPermitJoinAdapter::clearRuntime() {
     secureZero(MutableByteSpan(
         selectedLocator_, sizeof(selectedLocator_)));
     rxHead_ = rxTail_ = rxCount_ = 0U;
-    activeAttemptId_ = 0U;
     connectedAttemptId_ = 0U;
-    droppedPackets_ = 0U;
     maxPacketSize_ = 0U;
     selectionSet_ = false;
+}
+
+void NativeGattPermitJoinAdapter::clearRuntime() {
+    clearRelayData();
+    activeAttemptId_ = 0U;
+    droppedPackets_ = 0U;
 }
 
 bool NativeGattPermitJoinAdapter::selected(ByteView locator) const {

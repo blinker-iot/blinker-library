@@ -83,7 +83,10 @@ struct DiagnosticCounters {
           outputDropped(0U) {}
 };
 
-typedef void (*DiagnosticSink)(void* context, const DiagnosticEvent& event);
+// Return true only when the entire event was accepted. A rejected event is
+// counted and dropped, never retried by the recorder. Sinks must not wait if
+// used for latency-sensitive output; this callback cannot enforce that policy.
+typedef bool (*DiagnosticSink)(void* context, const DiagnosticEvent& event);
 typedef uint32_t (*DiagnosticClock)(void* context);
 
 // Allocation-free diagnostic recorder. Counters remain available while
@@ -119,7 +122,7 @@ private:
         DiagnosticCode code,
         uint32_t argument0,
         uint32_t argument1);
-    void emitSuppressed(uint32_t timestamp);
+    void deliver(const DiagnosticEvent& event);
     static bool sameEvent(
         const DiagnosticEvent& first,
         const DiagnosticEvent& second);
@@ -137,6 +140,7 @@ private:
     LogLevel level_;
     bool hasPending_;
     bool hasLastEmitted_;
+    bool flushing_;
 
     Diagnostics(const Diagnostics&);
     Diagnostics& operator=(const Diagnostics&);

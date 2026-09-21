@@ -88,6 +88,7 @@ private:
     uint8_t upstream_[gateway::kPermitJoinRelayBatchMaximumEncodedSize];
     size_t upstreamSize_;
     uint32_t revision_;
+    uint32_t authorizationGeneration_;
     uint32_t observedCandidateHash_;
     uint32_t nextSnapshotAt_;
     uint32_t nextUpstreamRetryAt_;
@@ -100,6 +101,7 @@ private:
     uint8_t downRateCount_;
     uint8_t upRateCount_;
     uint8_t downPacketIndex_;
+    gateway::PermitJoinRelayAckStatus lastUpAckStatus_;
     bool operationActive_;
     bool inboundPending_;
     bool outboundPending_;

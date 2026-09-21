@@ -5,6 +5,7 @@
 #include "../interface/IGatewayPermitJoinAdapter.h"
 #include "../protocol/gateway/Contracts.h"
 #include "IGatewayManagementControl.h"
+#include "GatewayManagementBudget.h"
 
 namespace blinker {
 
@@ -19,17 +20,29 @@ public:
     ~GatewayPermitJoinCoordinator() override;
 
     Result handleCommand(ByteView encoded) override;
+    bool continuesCommand(ByteView encoded) const override;
     void poll() override;
+    bool busy() const override { return phase_ != Idle; }
+    bool ownsChildSession() const override {
+        return adapter_.state() != GatewayPermitJoinAdapterState::Stopped;
+    }
     ByteView pendingResult() const override;
     void markResultPublished() override;
     void reset() override;
+    // End the active window while retaining its exact terminal replay/result.
+    // Unlike reset(), this does not forget that the operation was rejected.
+    void rejectWindow();
 
-    bool windowOpen() const { return active_; }
+    bool windowOpen() const {
+        return phase_ == Ready &&
+               adapter_.state() == GatewayPermitJoinAdapterState::Ready;
+    }
     uint16_t activeAdapterId() const;
     ByteView activeOperationId() const;
     uint64_t expiresAtUnixSeconds() const;
 
 private:
+    enum Phase : uint8_t { Idle, Opening, Ready, Closing };
     struct OwnedWindow {
         uint8_t operationId[gateway::kOperationIdSize];
         uint16_t adapterId;
@@ -50,6 +63,9 @@ private:
     gateway::GatewayPermitJoinStatus openFailureStatus(
         ErrorCode error) const;
     void expire(gateway::GatewayPermitJoinStatus status);
+    void replyWindow(const OwnedWindow& window,
+                     gateway::GatewayPermitJoinStatus status);
+    void finishClose();
     void clearState();
 
     IGatewayPermitJoinAdapter& adapter_;
@@ -59,7 +75,8 @@ private:
     gateway::GatewayPermitJoinStatus terminalStatus_;
     uint8_t result_[gateway::kGatewayPermitJoinResultMaximumEncodedSize];
     size_t resultSize_;
-    bool active_;
+    GatewayManagementBudget budget_;
+    Phase phase_;
     bool hasTerminal_;
     bool publishPending_;
 

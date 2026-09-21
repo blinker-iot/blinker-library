@@ -52,6 +52,11 @@ Result parseLocalSecureRecord(
 // There is no unauthenticated suite negotiation in v1.
 ByteView localSecureNoisePrologue(NoiseNnPattern pattern);
 
+// LAN access uses the same reviewed record codec and Noise implementation as
+// setup, but a distinct prologue prevents cross-protocol key/nonce reuse.
+// Optional encrypted LAN profile 1; Plain profile 2 uses no secure records.
+ByteView localAccessNoisePrologue();
+
 } // namespace noise
 } // namespace blinker
 

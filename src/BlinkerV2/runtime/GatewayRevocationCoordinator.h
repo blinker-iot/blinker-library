@@ -11,6 +11,7 @@
 #include "../protocol/bbp2/Messages.h"
 #include "../provisioning/ControllerControlContract.h"
 #include "IGatewayManagementControl.h"
+#include "GatewayManagementBudget.h"
 
 namespace blinker {
 
@@ -26,27 +27,39 @@ public:
         GatewayAccessStore& access,
         IClock& clock)
         : channel_(channel), access_(access), clock_(clock), command_(),
-          result_(), resultSize_(0U), nextAttemptMillis_(0U),
+          result_(), resultSize_(0U), nextAttemptMillis_(0U), nonceAttemptId_(0U),
           active_(false), waitingResponse_(false), resultReady_(false),
           publishPending_(false) {}
 
     ~BasicGatewayRevocationCoordinator() override { reset(); }
+
+    bool continuesCommand(ByteView encoded) const override {
+        gateway::GatewayRevocationCommandView decoded;
+        if (!active_ || !gateway::decodeGatewayRevocationCommand(encoded, decoded)) return false;
+        return sameCommand(decoded) || (ownsChildSession() && resultReady_ &&
+            command_.phase == gateway::GatewayRevocationPhase::Prepare &&
+            decoded.phase == gateway::GatewayRevocationPhase::Apply && sameTransaction(decoded));
+    }
 
     Result handleCommand(ByteView encoded) override {
         gateway::GatewayRevocationCommandView decoded;
         Result result = gateway::decodeGatewayRevocationCommand(
             encoded, decoded);
         if (!result) return result;
+        const bool continueBudget = active_ && ownsChildSession() && sameTransaction(decoded) &&
+            command_.phase == gateway::GatewayRevocationPhase::Prepare && decoded.phase == gateway::GatewayRevocationPhase::Apply;
+        const GatewayManagementBudget previousBudget = budget_;
         if (active_) {
             if (sameCommand(decoded)) {
+                expirePreparedSession();
                 if (resultReady_) publishPending_ = true;
                 return Result::success();
             }
-            const bool recoveryFinalize =
-                decoded.phase ==
-                    gateway::GatewayRevocationPhase::Finalize &&
+            const bool recoveryTerminal =
+                (decoded.phase == gateway::GatewayRevocationPhase::Finalize ||
+                 decoded.phase == gateway::GatewayRevocationPhase::Supersede) &&
                 decoded.topologyVersion > command_.topologyVersion;
-            if (!resultReady_ && !recoveryFinalize) {
+            if (!resultReady_ && !recoveryTerminal) {
                 return Result::failure(ErrorCode::StateConflict);
             }
             clearCommand();
@@ -55,28 +68,48 @@ public:
         copyCommand(decoded);
         active_ = true;
         nextAttemptMillis_ = clock_.monotonicMillis();
-        if (command_.phase == gateway::GatewayRevocationPhase::Finalize) {
-            result = access_.finalizeRevocation(
-                ByteView(command_.operationId, sizeof(command_.operationId)),
-                command_.topologyVersion,
-                ByteView(
-                    command_.receiptDigest,
-                    sizeof(command_.receiptDigest)),
-                ByteView(
-                    command_.childDeviceInstanceId,
-                    sizeof(command_.childDeviceInstanceId)),
-                command_.accessEpoch,
-                ByteView(
-                    command_.controllerId,
-                    sizeof(command_.controllerId)),
-                command_.gatewayCredentialVersion,
-                command_.accessStorageRevision);
+        if (command_.phase == gateway::GatewayRevocationPhase::Finalize ||
+            command_.phase == gateway::GatewayRevocationPhase::Supersede) {
+            result = command_.phase == gateway::GatewayRevocationPhase::Finalize
+                ? access_.finalizeRevocation(
+                      ByteView(
+                          command_.operationId,
+                          sizeof(command_.operationId)),
+                      command_.topologyVersion,
+                      ByteView(
+                          command_.receiptDigest,
+                          sizeof(command_.receiptDigest)),
+                      ByteView(
+                          command_.childDeviceInstanceId,
+                          sizeof(command_.childDeviceInstanceId)),
+                      command_.accessEpoch,
+                      ByteView(
+                          command_.controllerId,
+                          sizeof(command_.controllerId)),
+                      command_.gatewayCredentialVersion,
+                      command_.accessStorageRevision)
+                : access_.retireSuperseded(
+                      ByteView(
+                          command_.operationId,
+                          sizeof(command_.operationId)),
+                      command_.topologyVersion,
+                      ByteView(
+                          command_.childDeviceInstanceId,
+                          sizeof(command_.childDeviceInstanceId)),
+                      command_.accessEpoch,
+                      ByteView(
+                          command_.controllerId,
+                          sizeof(command_.controllerId)),
+                      command_.gatewayCredentialVersion,
+                      command_.accessStorageRevision);
             if (!result) {
                 clearCommand();
                 return result;
             }
             complete(
-                gateway::GatewayRevocationStatus::Finalized,
+                command_.phase == gateway::GatewayRevocationPhase::Finalize
+                    ? gateway::GatewayRevocationStatus::Finalized
+                    : gateway::GatewayRevocationStatus::Retired,
                 ByteView(),
                 ByteView(
                     command_.receiptDigest,
@@ -89,7 +122,9 @@ public:
             clearCommand();
             return Result::failure(ErrorCode::NotConfigured);
         }
-        if (now >= command_.expiresAtUnixSeconds) {
+        if (continueBudget) budget_ = previousBudget;
+        if (!(continueBudget ? budget_.active(clock_.monotonicMillis())
+                : budget_.begin(clock_.monotonicMillis(), now, command_.expiresAtUnixSeconds))) {
             complete(gateway::GatewayRevocationStatus::Expired);
             return Result::success();
         }
@@ -149,9 +184,13 @@ public:
     }
 
     void poll() override {
-        if (!active_ || resultReady_) return;
+        if (!active_) return;
+        if (resultReady_) {
+            expirePreparedSession();
+            return;
+        }
         uint64_t now = 0U;
-        if (!clock_.unixTime(now) || now == 0U ||
+        if (!budget_.active(clock_.monotonicMillis()) || !clock_.unixTime(now) || now == 0U ||
             now >= command_.expiresAtUnixSeconds) {
             channel_.cancelControllerControlRequest();
             waitingResponse_ = false;
@@ -202,6 +241,16 @@ public:
         nextAttemptMillis_ = monotonic + kRetryDelayMillis;
     }
 
+    bool busy() const override { return active_ && !resultReady_; }
+
+    bool ownsChildSession() const override {
+        uint64_t now = 0U;
+        return active_ && budget_.active(clock_.monotonicMillis()) &&
+            clock_.unixTime(now) && now != 0U && now < command_.expiresAtUnixSeconds &&
+            (!resultReady_ || (nonceAttemptId_ != 0U &&
+                channel_.authenticatedControllerSessionAttemptId() == nonceAttemptId_));
+    }
+
     ByteView pendingResult() const override {
         return publishPending_ ? ByteView(result_, resultSize_) : ByteView();
     }
@@ -218,6 +267,12 @@ public:
     }
 
 private:
+    void expirePreparedSession() {
+        if (nonceAttemptId_ != 0U && !ownsChildSession()) {
+            complete(gateway::GatewayRevocationStatus::Expired);
+        }
+    }
+
     enum : uint32_t { kRetryDelayMillis = 1000U };
 
     struct OwnedCommand {
@@ -258,7 +313,7 @@ private:
                memcmp(first.data, second.data, size) == 0;
     }
 
-    bool sameCommand(
+    bool sameTransaction(
         const gateway::GatewayRevocationCommandView& value) const {
         return same(value.operationId, command_.operationId,
                     sizeof(command_.operationId)) &&
@@ -273,17 +328,20 @@ private:
                    command_.gatewayCredentialVersion &&
                value.accessStorageRevision ==
                    command_.accessStorageRevision &&
-               value.phase == command_.phase &&
+               value.expiresAtUnixSeconds == command_.expiresAtUnixSeconds;
+    }
+
+    bool sameCommand(const gateway::GatewayRevocationCommandView& value) const {
+        return sameTransaction(value) && value.phase == command_.phase &&
                same(value.grant, command_.grant, command_.grantSize) &&
                same(value.receiptDigest,
                     command_.receiptDigest,
                     value.receiptDigest.size) &&
                value.receiptDigest.size ==
-                   (command_.phase == gateway::GatewayRevocationPhase::Finalize
+                    ((command_.phase == gateway::GatewayRevocationPhase::Finalize ||
+                      command_.phase == gateway::GatewayRevocationPhase::Supersede)
                         ? sizeof(command_.receiptDigest)
-                        : 0U) &&
-               value.expiresAtUnixSeconds ==
-                   command_.expiresAtUnixSeconds;
+                        : 0U);
     }
 
     void copyCommand(
@@ -375,6 +433,10 @@ private:
     void onResponse(ByteView encodedFrame) {
         waitingResponse_ = false;
         if (!active_ || resultReady_) return;
+        if (!ownsChildSession()) {
+            complete(gateway::GatewayRevocationStatus::Expired);
+            return;
+        }
         bbp2::FrameView frame;
         Result result = bbp2::parseFrame(encodedFrame, frame);
         if (!result || frame.header.kind == static_cast<uint8_t>(
@@ -386,10 +448,13 @@ private:
             bbp2::ControllerControlChallengeBody challenge;
             result = bbp2::decodeControllerControlChallengeBody(
                 frame.body, challenge);
-            if (!result) {
+            if (!result || frame.header.kind != static_cast<uint8_t>(
+                    bbp2::MessageKind::ControllerControlChallenge) ||
+                channel_.authenticatedControllerSessionAttemptId() == 0U) {
                 complete(gateway::GatewayRevocationStatus::Rejected);
                 return;
             }
+            nonceAttemptId_ = channel_.authenticatedControllerSessionAttemptId();
             complete(
                 gateway::GatewayRevocationStatus::NonceReady,
                 challenge.controlNonce);
@@ -451,6 +516,7 @@ private:
         gateway::GatewayRevocationStatus status,
         ByteView payload = ByteView(),
         ByteView receiptDigest = ByteView()) {
+        if (status != gateway::GatewayRevocationStatus::NonceReady) nonceAttemptId_ = 0U;
         gateway::GatewayRevocationResultView result;
         result.operationId = ByteView(
             command_.operationId, sizeof(command_.operationId));
@@ -474,6 +540,8 @@ private:
     }
 
     void clearCommand() {
+        budget_.clear();
+        nonceAttemptId_ = 0U;
         if (waitingResponse_ || channel_.controllerControlPending()) {
             channel_.cancelControllerControlRequest();
         }
@@ -492,10 +560,12 @@ private:
     ControlChannel& channel_;
     GatewayAccessStore& access_;
     IClock& clock_;
+    GatewayManagementBudget budget_;
     OwnedCommand command_;
     uint8_t result_[gateway::kGatewayRevocationResultMaximumEncodedSize];
     size_t resultSize_;
     uint32_t nextAttemptMillis_;
+    uint32_t nonceAttemptId_;
     bool active_;
     bool waitingResponse_;
     bool resultReady_;

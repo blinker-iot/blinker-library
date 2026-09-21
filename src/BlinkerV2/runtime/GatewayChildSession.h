@@ -71,8 +71,9 @@ public:
           secureHandler_(nullptr), disconnectedHandler_(nullptr),
           sessionContext_(nullptr), faultHandler_(nullptr),
           faultContext_(nullptr), activeAttemptId_(0U),
-          expiresAtUnixSeconds_(0U), credentialVersion_(0U),
+          expiresAtUnixSeconds_(0U), credentialVersion_(0U), permissions_(0U),
           pendingError_(ErrorCode::Ok), lastError_(ErrorCode::Ok),
+          lastAuthenticationState_(ChildSessionState::Idle),
           state_(GatewayChildSessionState::Stopped),
           faultReported_(false) {
         bindLink();
@@ -104,8 +105,9 @@ public:
           secureHandler_(nullptr), disconnectedHandler_(nullptr),
           sessionContext_(nullptr), faultHandler_(nullptr),
           faultContext_(nullptr), activeAttemptId_(0U),
-          expiresAtUnixSeconds_(0U), credentialVersion_(0U),
+          expiresAtUnixSeconds_(0U), credentialVersion_(0U), permissions_(0U),
           pendingError_(ErrorCode::Ok), lastError_(ErrorCode::Ok),
+          lastAuthenticationState_(ChildSessionState::Idle),
           state_(GatewayChildSessionState::Stopped),
           faultReported_(false) {
         bindLink();
@@ -135,6 +137,7 @@ public:
 
     void stop() {
         if (state_ == GatewayChildSessionState::Stopped) return;
+        state_ = GatewayChildSessionState::Stopped; // Reentrant bearer callbacks have no authority.
         link_.stop();
         clearAttempt();
         access_.reset();
@@ -156,12 +159,16 @@ public:
             processFailure();
             return;
         }
+        if (state_ == GatewayChildSessionState::Disconnecting &&
+            link_.attemptId() != 0U) {
+            (void)link_.disconnect();
+        }
         link_.poll(budgetMicros);
         if (pendingError_ != ErrorCode::Ok) {
             processFailure();
             return;
         }
-        if (state_ == GatewayChildSessionState::Secure &&
+        if (secure() &&
             pendingSecureRecordSize_ != 0U) {
             const Result result = link_.sendRecord(ByteView(
                 secureRecordScratch_, pendingSecureRecordSize_));
@@ -207,6 +214,7 @@ public:
         }
         if (result) expiresAtUnixSeconds_ = access.expiresAtUnixSeconds;
         if (result) credentialVersion_ = access.credentialVersion;
+        if (result) permissions_ = credential_.permissions;
         clearGatewayAccessRecord(access);
         if (!result) {
             resetSecurity();
@@ -233,21 +241,17 @@ public:
             state_ != GatewayChildSessionState::Secure) {
             return Result::failure(ErrorCode::NotFound);
         }
-        const GatewayChildSessionState previous = state_;
         // The link is allowed to report disconnection synchronously. Publish
         // the transitional state first so that callback-owned Idle is not
         // overwritten after disconnect() returns.
         state_ = GatewayChildSessionState::Disconnecting;
-        Result result = link_.disconnect();
-        if (!result && state_ == GatewayChildSessionState::Disconnecting) {
-            state_ = previous;
-        }
-        return result;
+        // Rejected native cancellation is still a logical retirement. Keep
+        // the attempt owned, retry from poll, and never reopen record I/O.
+        return link_.disconnect();
     }
 
     Result sendFrame(ByteView frame) {
-        if (state_ != GatewayChildSessionState::Secure ||
-            !coordinator_.secure()) {
+        if (!secure()) {
             return Result::failure(ErrorCode::AuthenticationRequired);
         }
         if (!accessTimeValid()) {
@@ -305,9 +309,23 @@ public:
 
     GatewayChildSessionState state() const { return state_; }
     ErrorCode lastError() const { return lastError_; }
+    ChildSessionState lastAuthenticationState() const {
+        return lastAuthenticationState_;
+    }
     bool secure() const {
         return state_ == GatewayChildSessionState::Secure &&
-               coordinator_.secure();
+               coordinator_.secure() && pendingError_ == ErrorCode::Ok &&
+               activeAttemptId_ != 0U && activeAttemptId_ == link_.attemptId() && accessTimeValid();
+    }
+    // This exact credential was compared with the Method 2 proof. Never read
+    // a newly rotated mutable store to infer the authority of an old session.
+    uint32_t authenticatedPermissions() const { return secure() ? permissions_ : 0U; }
+    uint32_t monotonicMillis() const { return clock_.monotonicMillis(); }
+    Result setRequestFeatures(uint32_t features) {
+        if (activeAttemptId_ != 0U || link_.attemptId() != 0U ||
+            (state_ != GatewayChildSessionState::Stopped && state_ != GatewayChildSessionState::Idle))
+            return Result::failure(ErrorCode::StateConflict);
+        return coordinator_.setOptionalFeatures(features | bbp2::FeatureControllerControl);
     }
     uint32_t attemptId() const { return activeAttemptId_; }
     uint32_t matchedPresenceVersion() const {
@@ -403,20 +421,25 @@ private:
     static void recordThunk(
         void* context,
         ByteView record,
-        const RxContext&) {
+        const RxContext& rx) {
         BasicGatewayChildSession* self =
             static_cast<BasicGatewayChildSession*>(context);
-        if (self != nullptr) self->onRecord(record);
+        if (self != nullptr && rx.sessionId != 0U &&
+            rx.sessionId == self->activeAttemptId_ && rx.sessionId == self->link_.attemptId())
+            self->onRecord(record);
     }
     static void connectedThunk(void* context, const RxContext& rx) {
         BasicGatewayChildSession* self =
             static_cast<BasicGatewayChildSession*>(context);
         if (self != nullptr) self->onConnected(rx);
     }
-    static void disconnectedThunk(void* context, const RxContext&) {
+    static void disconnectedThunk(void* context, const RxContext& rx) {
         BasicGatewayChildSession* self =
             static_cast<BasicGatewayChildSession*>(context);
-        if (self != nullptr) self->onDisconnected();
+        if (self != nullptr && rx.sessionId != 0U &&
+            rx.sessionId == self->activeAttemptId_) {
+            self->onDisconnected();
+        }
     }
     static void faultThunk(
         void* context,
@@ -455,7 +478,14 @@ private:
     }
 
     void onRecord(ByteView record) {
+        if (pendingError_ != ErrorCode::Ok) return;
+        if (!accessTimeValid()) {
+            pendingError_ = ErrorCode::AuthenticationRequired;
+            return;
+        }
         if (state_ == GatewayChildSessionState::Authenticating) {
+            const ChildSessionState authenticationState =
+                coordinator_.state();
             ByteView response;
             Result result = coordinator_.handleFrame(
                 record,
@@ -466,6 +496,7 @@ private:
                 result = link_.sendRecord(response);
             }
             if (!result) {
+                lastAuthenticationState_ = authenticationState;
                 pendingError_ = result.code();
                 return;
             }
@@ -481,11 +512,7 @@ private:
             }
             return;
         }
-        if (state_ != GatewayChildSessionState::Secure ||
-            !coordinator_.secure()) {
-            pendingError_ = ErrorCode::SequenceConflict;
-            return;
-        }
+        if (!secure()) return;
         ByteView frame;
         Result result = coordinator_.secureSession().open(
             crypto_, record,
@@ -520,6 +547,7 @@ private:
                          : error;
         coordinator_.reset();
         clearControllerCredential(credential_);
+        permissions_ = 0U;
         if (!faultReported_ && faultHandler_ != nullptr) {
             faultReported_ = true;
             faultHandler_(faultContext_, lastError_);
@@ -527,12 +555,12 @@ private:
         if (error == ErrorCode::AuthenticationRequired) {
             access_.authenticationFailed();
         }
-        if (link_.connected() || link_.connecting()) {
+        if (link_.attemptId() != 0U) {
             state_ = GatewayChildSessionState::Disconnecting;
-            const Result result = link_.disconnect();
-            if (result) {
-                return;
-            }
+            (void)link_.disconnect();
+            // Losing record I/O or a rejected cancel does not release the
+            // bearer. Keep the exact attempt until its completion callback.
+            return;
         }
         clearAttempt();
         state_ = GatewayChildSessionState::Idle;
@@ -544,6 +572,7 @@ private:
         clearControllerCredential(credential_);
         expiresAtUnixSeconds_ = 0U;
         credentialVersion_ = 0U;
+        permissions_ = 0U;
     }
 
     bool accessTimeValid() const {
@@ -598,8 +627,10 @@ private:
     uint32_t activeAttemptId_;
     uint64_t expiresAtUnixSeconds_;
     uint32_t credentialVersion_;
+    uint32_t permissions_;
     ErrorCode pendingError_;
     ErrorCode lastError_;
+    ChildSessionState lastAuthenticationState_;
     GatewayChildSessionState state_;
     bool faultReported_;
 };

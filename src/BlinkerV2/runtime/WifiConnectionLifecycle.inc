@@ -25,12 +25,26 @@ WifiConnectionLifecycle::WifiConnectionLifecycle(
       connectionStartedAt_(0U),
       retryAt_(0U),
       state_(WifiConnectionState::Stopped),
-      lastError_(ErrorCode::Ok) {
+      lastError_(ErrorCode::Ok),
+      candidateFailurePolicy_(WifiCandidateFailurePolicy::Rollback) {
     clearWifiCredentialProfile(profile_);
 }
 
 WifiConnectionLifecycle::~WifiConnectionLifecycle() {
     stop();
+}
+
+Result WifiConnectionLifecycle::setCandidateFailurePolicy(
+    WifiCandidateFailurePolicy policy) {
+    if (state_ != WifiConnectionState::Stopped) {
+        return Result::failure(ErrorCode::StateConflict);
+    }
+    if (policy != WifiCandidateFailurePolicy::Rollback &&
+        policy != WifiCandidateFailurePolicy::Retry) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    candidateFailurePolicy_ = policy;
+    return Result::success();
 }
 
 void WifiConnectionLifecycle::clearProfile() {
@@ -56,7 +70,11 @@ Result WifiConnectionLifecycle::start() {
         return result;
     }
     lastError_ = ErrorCode::Ok;
-    return loadAndConnect();
+    result = loadAndConnect();
+    // A queued retry is accepted asynchronous startup, not a fatal product
+    // begin failure. Preserve lastError and keep cloud gated until confirmed.
+    return state_ == WifiConnectionState::RetryBackoff
+               ? Result::success() : result;
 }
 
 Result WifiConnectionLifecycle::reload() {
@@ -98,7 +116,7 @@ Result WifiConnectionLifecycle::startStation() {
     return Result::success();
 }
 
-Result WifiConnectionLifecycle::retryConfirmedLater(ErrorCode error) {
+Result WifiConnectionLifecycle::scheduleRetry(ErrorCode error) {
     station_.stop();
     lastError_ = error;
     retryAt_ = clock_.monotonicMillis() + config_.reconnectBackoffMs;
@@ -107,9 +125,12 @@ Result WifiConnectionLifecycle::retryConfirmedLater(ErrorCode error) {
 }
 
 Result WifiConnectionLifecycle::handleConnectionFailure(ErrorCode error) {
+    if (profile_.confirmed() ||
+        candidateFailurePolicy_ == WifiCandidateFailurePolicy::Retry) {
+        return scheduleRetry(error);
+    }
     station_.stop();
     lastError_ = error;
-    if (profile_.confirmed()) return retryConfirmedLater(error);
 
     Result result = credentials_.rollbackToPrevious();
     if (!result) {
@@ -213,7 +234,7 @@ void WifiConnectionLifecycle::poll() {
             const ErrorCode error = stationState == WifiStationState::Failed
                                         ? station_.lastError()
                                         : ErrorCode::NotConnected;
-            (void)retryConfirmedLater(error);
+            (void)scheduleRetry(error);
         }
         return;
     }

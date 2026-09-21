@@ -160,9 +160,10 @@ Result GattDirectChildLink::CentralAdapter::connect(
 }
 
 Result GattDirectChildLink::CentralAdapter::cancelCurrent() {
-    if (attemptId_ == 0U || closing_) {
+    if (attemptId_ == 0U) {
         return Result::failure(ErrorCode::NotFound);
     }
+    if (closing_) return Result::success();
     Result result = port_.cancel(attemptId_);
     if (result) closing_ = true;
     return result;
@@ -283,7 +284,7 @@ GattDirectChildLink::GattDirectChildLink(
       faultHandler_(nullptr), faultContext_(nullptr), nextAttemptId_(0U),
       connectStartedMillis_(0U), connectingAttemptId_(0U),
       connectedAttemptId_(0U),
-      retireAttemptId_(0U), faultRetirementAttemptId_(0U),
+      closingAttemptId_(0U), faultRetirementAttemptId_(0U),
       reportedPortError_(ErrorCode::Ok),
       started_(false), connecting_(false) {
     records_.setReceiver(&GattDirectChildLink::recordThunk, this);
@@ -341,7 +342,7 @@ void GattDirectChildLink::stop() {
     connectStartedMillis_ = 0U;
     connectingAttemptId_ = 0U;
     connectedAttemptId_ = 0U;
-    retireAttemptId_ = 0U;
+    closingAttemptId_ = 0U;
     faultRetirementAttemptId_ = 0U;
     reportedPortError_ = ErrorCode::Ok;
     connecting_ = false;
@@ -368,25 +369,12 @@ void GattDirectChildLink::poll(uint32_t budgetMicros) {
         emitFault(error, failed);
     }
 
-    if (retireAttemptId_ != 0U) {
-        const uint32_t retiring = retireAttemptId_;
-        retireAttemptId_ = 0U;
-        if (connectedAttemptId_ == retiring) {
-            // BleRecordTransport reports the requested retirement as a fault
-            // as well. The original fragment/protocol fault was already
-            // delivered, so suppress only this synchronous duplicate.
-            faultRetirementAttemptId_ = retiring;
-            (void)disconnect();
-            faultRetirementAttemptId_ = 0U;
-        }
-    }
-
     if (connecting_ &&
         static_cast<uint32_t>(
             clock_.monotonicMillis() - connectStartedMillis_) >=
             config_.connectTimeoutMillis) {
         const uint32_t expired = adapter_.attemptId();
-        (void)adapter_.cancelCurrent();
+        closingAttemptId_ = expired;
         connecting_ = false;
         connectingAttemptId_ = 0U;
         emitFault(ErrorCode::NotConnected, expired);
@@ -402,6 +390,24 @@ void GattDirectChildLink::poll(uint32_t budgetMicros) {
             emitFault(error, adapter_.attemptId());
         }
     }
+
+    if (closingAttemptId_ != 0U) {
+        if (connectedAttemptId_ == closingAttemptId_) {
+            (void)disconnect();
+        } else if (adapter_.attemptId() != 0U) {
+            // A rejected native cancel is retried without allocating a new
+            // attempt or returning capacity to another owner. Error is not
+            // proof of physical release either.
+            (void)adapter_.cancelCurrent();
+        } else {
+            RxContext rx;
+            rx.sessionId = closingAttemptId_;
+            closingAttemptId_ = 0U;
+            if (disconnectedHandler_ != nullptr) {
+                disconnectedHandler_(sessionContext_, rx);
+            }
+        }
+    }
 }
 
 Result GattDirectChildLink::connect(
@@ -412,6 +418,7 @@ Result GattDirectChildLink::connect(
         return Result::failure(ErrorCode::InvalidArgument);
     }
     if (connecting_ || connectedAttemptId_ != 0U ||
+        closingAttemptId_ != 0U ||
         adapter_.attemptId() != 0U) {
         return Result::failure(ErrorCode::AlreadyExists);
     }
@@ -442,13 +449,16 @@ Result GattDirectChildLink::disconnect() {
         return result;
     }
     if (adapter_.attemptId() != 0U) {
+        const uint32_t retiring = adapter_.attemptId();
         Result result = adapter_.cancelCurrent();
         if (result) {
+            closingAttemptId_ = retiring;
             connecting_ = false;
             connectingAttemptId_ = 0U;
         }
         return result;
     }
+    if (closingAttemptId_ != 0U) return Result::success();
     return Result::failure(ErrorCode::NotFound);
 }
 
@@ -547,9 +557,7 @@ void GattDirectChildLink::onConnected(const RxContext& rx) {
 void GattDirectChildLink::onDisconnected(const RxContext& rx) {
     if (connectedAttemptId_ == rx.sessionId) {
         connectedAttemptId_ = 0U;
-    }
-    if (disconnectedHandler_ != nullptr) {
-        disconnectedHandler_(sessionContext_, rx);
+        closingAttemptId_ = rx.sessionId;
     }
 }
 
@@ -561,7 +569,9 @@ void GattDirectChildLink::onRecordFault(
         return;
     }
     emitFault(error, rx.sessionId);
-    if (rx.sessionId != 0U) retireAttemptId_ = rx.sessionId;
+    if (rx.sessionId != 0U && rx.sessionId == adapter_.attemptId()) {
+        closingAttemptId_ = rx.sessionId;
+    }
 }
 
 } // namespace blinker

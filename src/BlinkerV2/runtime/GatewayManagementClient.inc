@@ -20,7 +20,7 @@ GatewayManagementClient::GatewayManagementClient(
     IGatewayManagementControl& control)
     : cloud_(cloud), delivery_(delivery), control_(control), context_(), publishTopic_(),
       subscribeTopic_(), envelope_(), envelopeSize_(0U), ack_(),
-      ackSize_(0U), subscribedGeneration_(0U), configured_(false),
+      ackSize_(0U), subscribedGeneration_(0U), authorizationGeneration_(0U), configured_(false),
       subscribed_(false),
       envelopePending_(false), ackPending_(false),
       lastError_(ErrorCode::Ok) {
@@ -40,6 +40,11 @@ Result GatewayManagementClient::configure(
     // A SessionCredential generation belongs to the cloud transport, not to
     // the already-proved local child topology. Rebind the MQTT side channel
     // without retiring a valid DirectSecure child session.
+    const bool sameAuthorization = configured_ &&
+        context.deviceKeyVersion == context_.deviceKeyVersion &&
+        equal(context.environmentId, context_.environmentId) &&
+        equal(context.tenantId, context_.tenantId) &&
+        equal(context.edgeHubLogicalDeviceId, context_.edgeHubLogicalDeviceId);
     clearCloudBinding();
     if (credentials.security != MqttSecurity::Tls ||
         credentials.clientId.data == nullptr ||
@@ -58,6 +63,10 @@ Result GatewayManagementClient::configure(
         return Result::failure(lastError_);
     }
     context_ = context;
+    if (!sameAuthorization) {
+        ++authorizationGeneration_;
+        if (authorizationGeneration_ == 0U) ++authorizationGeneration_;
+    }
     configured_ = true;
     lastError_ = ErrorCode::Ok;
     return Result::success();
@@ -141,6 +150,8 @@ void GatewayManagementClient::poll() {
         envelopePending_ = false;
         if (!result) {
             lastError_ = result.code();
+            // Rejected traffic must not starve an already-owned native close.
+            control_.poll();
             return;
         }
         if (!controlCommand) {
@@ -247,9 +258,9 @@ bool GatewayManagementClient::buildTopic(
 bool GatewayManagementClient::equal(
     StringView first,
     StringView second) {
-    return first.data != nullptr && second.data != nullptr &&
-           first.size == second.size &&
-           memcmp(first.data, second.data, first.size) == 0;
+    return first.size == second.size &&
+           (first.empty() || (first.data != nullptr && second.data != nullptr &&
+                            memcmp(first.data, second.data, first.size) == 0));
 }
 
 void GatewayManagementClient::clearTransient() {

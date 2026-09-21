@@ -1079,7 +1079,7 @@ Result GatewayAccessStore::finalizeRevocation(
         childDeviceInstanceId.size != gateway::kDeviceInstanceIdSize ||
         accessEpoch == 0U || controllerId.data == nullptr ||
         controllerId.size != gateway::kControllerIdSize ||
-        credentialVersion == 0U || deliveryRevision == 0U) {
+        credentialVersion == 0U) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
 
@@ -1103,7 +1103,77 @@ Result GatewayAccessStore::finalizeRevocation(
                    : result;
     }
     const bool matches =
-        active.deliveryRevision == deliveryRevision &&
+        (deliveryRevision == 0U ||
+         active.deliveryRevision == deliveryRevision) &&
+        active.accessEpoch == accessEpoch &&
+        active.credentialVersion == credentialVersion &&
+        gateway_access_store_detail::equalBytes(
+            active.operationId, operationId.data,
+            sizeof(active.operationId)) &&
+        gateway_access_store_detail::equalBytes(
+            active.childDeviceInstanceId, childDeviceInstanceId.data,
+            sizeof(active.childDeviceInstanceId)) &&
+        gateway_access_store_detail::equalBytes(
+            active.controllerId, controllerId.data,
+            sizeof(active.controllerId));
+    clearGatewayAccessRecord(active);
+    if (!matches) return Result::failure(ErrorCode::SequenceConflict);
+    result = storage_.clear();
+    return result.code() == ErrorCode::NotFound
+               ? Result::success()
+               : result;
+}
+
+Result GatewayAccessStore::retireSuperseded(
+    ByteView operationId,
+    uint32_t topologyVersion,
+    ByteView childDeviceInstanceId,
+    uint32_t accessEpoch,
+    ByteView controllerId,
+    uint32_t credentialVersion,
+    uint32_t deliveryRevision) {
+    if (operationId.data == nullptr ||
+        operationId.size != gateway::kOperationIdSize ||
+        topologyVersion == 0U ||
+        childDeviceInstanceId.data == nullptr ||
+        childDeviceInstanceId.size != gateway::kDeviceInstanceIdSize ||
+        accessEpoch == 0U || controllerId.data == nullptr ||
+        controllerId.size != gateway::kControllerIdSize ||
+        credentialVersion == 0U) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+
+    GatewayRevocationTombstone tombstone;
+    const Result tombstoneResult = loadRevocation(tombstone);
+    if (tombstoneResult) {
+        const bool matches =
+            topologyVersion > tombstone.topologyVersion &&
+            gateway_access_store_detail::equalBytes(
+                tombstone.operationId, operationId.data,
+                sizeof(tombstone.operationId));
+        clearGatewayRevocationTombstone(tombstone);
+        if (!matches) return Result::failure(ErrorCode::SequenceConflict);
+        Result result = storage_.clear();
+        return result.code() == ErrorCode::NotFound
+                   ? Result::success()
+                   : result;
+    }
+    clearGatewayRevocationTombstone(tombstone);
+    if (tombstoneResult.code() != ErrorCode::NotFound) {
+        return tombstoneResult;
+    }
+
+    GatewayAccessRecord active;
+    Result result = load(active);
+    if (!result) {
+        clearGatewayAccessRecord(active);
+        return result.code() == ErrorCode::NotFound
+                   ? Result::success()
+                   : result;
+    }
+    const bool matches =
+        (deliveryRevision == 0U ||
+         active.deliveryRevision == deliveryRevision) &&
         active.accessEpoch == accessEpoch &&
         active.credentialVersion == credentialVersion &&
         gateway_access_store_detail::equalBytes(

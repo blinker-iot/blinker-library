@@ -23,6 +23,14 @@ const uint8_t kNoiseNnPsk0Prologue[] = {
     static_cast<uint8_t>(NoiseNnPattern::NnPsk0)
 };
 
+const uint8_t kLocalAccessNoiseNnPsk0Prologue[] = {
+    'B', 'L', 'I', 'N', 'K', 'E', 'R', '-', 'L', 'A', 'N', '-',
+    'A', 'C', 'C', 'E', 'S', 'S', '-', 'V', '1',
+    kLocalSecureRecordMagic,
+    kLocalSecureRecordVersion,
+    static_cast<uint8_t>(NoiseNnPattern::NnPsk0)
+};
+
 bool validType(LocalSecureRecordType type) {
     return type == LocalSecureRecordType::InitiatorHandshake ||
            type == LocalSecureRecordType::ResponderHandshake ||
@@ -39,6 +47,12 @@ ByteView localSecureNoisePrologue(NoiseNnPattern pattern) {
         return ByteView(kNoiseNnPsk0Prologue, sizeof(kNoiseNnPsk0Prologue));
     }
     return ByteView();
+}
+
+ByteView localAccessNoisePrologue() {
+    return ByteView(
+        kLocalAccessNoiseNnPsk0Prologue,
+        sizeof(kLocalAccessNoiseNnPsk0Prologue));
 }
 
 Result encodeLocalSecureRecord(

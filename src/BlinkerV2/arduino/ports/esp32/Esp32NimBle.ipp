@@ -41,6 +41,7 @@ inline Esp32NimBleLink::Esp32NimBleLink(
       connectionHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingConnectHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingDisconnectHandle_(BLE_HS_CONN_HANDLE_NONE),
+      pendingTerminateHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingSubscribeHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingSecurityHandle_(BLE_HS_CONN_HANDLE_NONE),
       nextSessionId_(1U),
@@ -227,10 +228,12 @@ inline void Esp32NimBleLink::poll(uint32_t) {
     bool hostResult = false;
     bool hostReady = true;
     ErrorCode hostError = ErrorCode::Ok;
+    uint16_t terminateHandle = BLE_HS_CONN_HANDLE_NONE;
     portENTER_CRITICAL(&lock_);
     hostResult = hostResultPending_;
     hostReady = hostReady_;
     hostError = pendingHostError_;
+    terminateHandle = pendingTerminateHandle_;
     hostResultPending_ = false;
     portEXIT_CRITICAL(&lock_);
     if (hostResult && !hostReady) {
@@ -241,13 +244,18 @@ inline void Esp32NimBleLink::poll(uint32_t) {
         return;
     }
 
+    // An indication failure belongs to one peer, not to the process-wide Host.
+    // Retain a failed termination request for one bounded attempt per poll;
+    // never re-advertise until GAP has retired (or cannot find) that ACL.
+    if (terminateHandle != BLE_HS_CONN_HANDLE_NONE) {
+        (void)terminateConnection(terminateHandle);
+    }
     processPendingEvents();
     if (session_.connected && !sessionAnnounced_ &&
         static_cast<uint32_t>(millis() - connectedAtMillis_) >=
             config_.sessionReadyTimeoutMillis &&
         connectionHandle_ != BLE_HS_CONN_HANDLE_NONE) {
-        (void)ble_gap_terminate(
-            connectionHandle_, BLE_ERR_REM_USER_CONN_TERM);
+        (void)terminateConnection(connectionHandle_);
         return;
     }
     drainPackets();
@@ -272,7 +280,11 @@ inline Result Esp32NimBleLink::sessionAt(
 inline Result Esp32NimBleLink::sendPacket(
     uint32_t sessionId,
     ByteView packet) {
-    if (!sessionAnnounced_ || session_.sessionId != sessionId ||
+    portENTER_CRITICAL(&lock_);
+    const bool closing = disconnectPending_ ||
+        pendingTerminateHandle_ != BLE_HS_CONN_HANDLE_NONE;
+    portEXIT_CRITICAL(&lock_);
+    if (closing || !sessionAnnounced_ || session_.sessionId != sessionId ||
         !session_.notifyEnabled ||
         connectionHandle_ == BLE_HS_CONN_HANDLE_NONE || transmitHandle_ == 0U) {
         return Result::failure(ErrorCode::NotConnected);
@@ -319,10 +331,25 @@ inline Result Esp32NimBleLink::disconnectSession(uint32_t sessionId) {
         connectionHandle_ == BLE_HS_CONN_HANDLE_NONE) {
         return Result::failure(ErrorCode::NotFound);
     }
-    return ble_gap_terminate(
-               connectionHandle_, BLE_ERR_REM_USER_CONN_TERM) == 0
-               ? Result::success()
-               : Result::failure(ErrorCode::WouldBlock);
+    return terminateConnection(connectionHandle_);
+}
+
+inline Result Esp32NimBleLink::terminateConnection(uint16_t handle) {
+    const int result = ble_gap_terminate(handle, BLE_ERR_REM_USER_CONN_TERM);
+    if (result == BLE_HS_ENOTCONN) {
+        // The native ACL may already be gone while its callback is in flight.
+        // Reconcile via the same poll-owned retirement, without restarting SDK.
+        portENTER_CRITICAL(&lock_);
+        if (connectionHandle_ == handle ||
+            (connectPending_ && pendingConnectHandle_ == handle)) {
+            pendingDisconnectHandle_ = handle;
+            disconnectPending_ = true;
+            clearPacketQueueLocked();
+        }
+        portEXIT_CRITICAL(&lock_);
+    }
+    return result == 0 || result == BLE_HS_ENOTCONN || result == BLE_HS_EALREADY
+        ? Result::success() : Result::failure(ErrorCode::WouldBlock);
 }
 
 inline void Esp32NimBleLink::setPacketReceiver(
@@ -577,7 +604,6 @@ inline int Esp32NimBleLink::handleGapEvent(const ble_gap_event& event) {
 
     if (event.type == BLE_GAP_EVENT_DISCONNECT) {
         const uint16_t handle = event.disconnect.conn.conn_handle;
-        bool restart = false;
         portENTER_CRITICAL(&lock_);
         if (connectionHandle_ == handle ||
             (connectPending_ && pendingConnectHandle_ == handle)) {
@@ -585,12 +611,7 @@ inline int Esp32NimBleLink::handleGapEvent(const ble_gap_event& event) {
             disconnectPending_ = true;
             clearPacketQueueLocked();
         }
-        restart = !stopping_;
         portEXIT_CRITICAL(&lock_);
-        if (restart) {
-            const Result result = startAdvertising();
-            if (!result) markHostResult(result.code());
-        }
         return 0;
     }
 
@@ -622,19 +643,21 @@ inline int Esp32NimBleLink::handleGapEvent(const ble_gap_event& event) {
     }
 
     if (event.type == BLE_GAP_EVENT_NOTIFY_TX &&
-        event.notify_tx.indication != 0U &&
-        event.notify_tx.conn_handle == connectionHandle_ &&
-        event.notify_tx.attr_handle == transmitHandle_) {
-        if (event.notify_tx.status == BLE_HS_EDONE) {
-            portENTER_CRITICAL(&lock_);
-            indicationInFlight_ = false;
-            portEXIT_CRITICAL(&lock_);
-        } else if (event.notify_tx.status != 0) {
-            portENTER_CRITICAL(&lock_);
-            indicationInFlight_ = false;
-            portEXIT_CRITICAL(&lock_);
-            markHostResult(ErrorCode::ProtocolError);
+        event.notify_tx.indication != 0U) {
+        portENTER_CRITICAL(&lock_);
+        if (event.notify_tx.conn_handle == connectionHandle_ &&
+            event.notify_tx.attr_handle == transmitHandle_) {
+            if (event.notify_tx.status == BLE_HS_EDONE) {
+                if (pendingTerminateHandle_ == BLE_HS_CONN_HANDLE_NONE) {
+                    indicationInFlight_ = false;
+                }
+            } else if (event.notify_tx.status != 0) {
+                pendingTerminateHandle_ = connectionHandle_;
+                indicationInFlight_ = true;
+                clearPacketQueueLocked();
+            }
         }
+        portEXIT_CRITICAL(&lock_);
         return 0;
     }
 
@@ -678,7 +701,9 @@ inline bool Esp32NimBleLink::queuePacket(
     const bool accepted =
         connectionHandle_ == connectionHandle ||
         (connectPending_ && pendingConnectHandle_ == connectionHandle);
-    if (accepted && packetCount_ < BLINKER_ESP32_NIMBLE_RX_QUEUE_DEPTH) {
+    if (accepted && !disconnectPending_ &&
+        pendingTerminateHandle_ == BLE_HS_CONN_HANDLE_NONE &&
+        packetCount_ < BLINKER_ESP32_NIMBLE_RX_QUEUE_DEPTH) {
         QueuedPacket& packet = packets_[packetTail_];
         packet.connectionHandle = connectionHandle;
         packet.size = static_cast<uint16_t>(size);
@@ -705,6 +730,8 @@ inline void Esp32NimBleLink::processPendingEvents() {
     uint16_t disconnectHandle = BLE_HS_CONN_HANDLE_NONE;
     uint16_t subscribeHandle = BLE_HS_CONN_HANDLE_NONE;
     uint16_t securityHandle = BLE_HS_CONN_HANDLE_NONE;
+    bool connectWasAlsoDisconnected = false;
+    bool disconnectsCurrent = false;
 
     portENTER_CRITICAL(&lock_);
     connect = connectPending_;
@@ -719,34 +746,38 @@ inline void Esp32NimBleLink::processPendingEvents() {
     disconnectHandle = pendingDisconnectHandle_;
     subscribeHandle = pendingSubscribeHandle_;
     securityHandle = pendingSecurityHandle_;
+    connectWasAlsoDisconnected =
+        connect && disconnect && connectHandle == disconnectHandle;
+    disconnectsCurrent = disconnect &&
+        (connectionHandle_ == disconnectHandle || connectWasAlsoDisconnected);
+    if (disconnectsCurrent) {
+        connectionHandle_ = BLE_HS_CONN_HANDLE_NONE;
+        pendingTerminateHandle_ = BLE_HS_CONN_HANDLE_NONE;
+    }
+    // Publish the accepted native handle in the SAME critical section which
+    // consumes connectPending_. Otherwise a GAP disconnect on the other core
+    // sees neither pending nor current ownership and is silently discarded.
+    if (connect && !connectWasAlsoDisconnected) connectionHandle_ = connectHandle;
     connectPending_ = false;
     disconnectPending_ = false;
     subscribePending_ = false;
     securityPending_ = false;
     portEXIT_CRITICAL(&lock_);
 
-    if (disconnect && connectionHandle_ == disconnectHandle &&
-        session_.connected) {
+    if (disconnectsCurrent) {
         const BleSessionInfo oldSession = session_;
+        const bool notify = sessionAnnounced_;
         session_ = BleSessionInfo();
         connectedAtMillis_ = 0U;
-        portENTER_CRITICAL(&lock_);
-        connectionHandle_ = BLE_HS_CONN_HANDLE_NONE;
-        portEXIT_CRITICAL(&lock_);
-        if (sessionAnnounced_ && disconnectedHandler_ != nullptr) {
-            disconnectedHandler_(sessionContext_, oldSession);
-        }
         sessionAnnounced_ = false;
         indicateEnabled_ = false;
         indicationInFlight_ = false;
+        if (notify && disconnectedHandler_ != nullptr) {
+            disconnectedHandler_(sessionContext_, oldSession);
+        }
     }
 
-    const bool connectWasAlsoDisconnected =
-        disconnect && connectHandle == disconnectHandle;
     if (connect && !connectWasAlsoDisconnected && !session_.connected) {
-        portENTER_CRITICAL(&lock_);
-        connectionHandle_ = connectHandle;
-        portEXIT_CRITICAL(&lock_);
         session_ = BleSessionInfo();
         session_.sessionId = nextSessionId();
         session_.maxPacketSize = BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE;
@@ -775,6 +806,15 @@ inline void Esp32NimBleLink::processPendingEvents() {
         if (connectedHandler_ != nullptr) {
             connectedHandler_(sessionContext_, session_);
         }
+    }
+
+    // Re-advertise only after the previous logical session, reassembly state
+    // and authorization callbacks have been retired above. Starting from the
+    // GAP callback permits an immediate handle reuse before Arduino poll(),
+    // which can splice two physical connections into one pending event slot.
+    if (disconnectsCurrent && !session_.connected && !stopping_) {
+        const Result result = startAdvertising();
+        if (!result) markHostResult(result.code());
     }
 
 }
@@ -817,6 +857,7 @@ inline void Esp32NimBleLink::resetRuntimeLocked() {
     connectionHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingConnectHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingDisconnectHandle_ = BLE_HS_CONN_HANDLE_NONE;
+    pendingTerminateHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingSubscribeHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingSecurityHandle_ = BLE_HS_CONN_HANDLE_NONE;
     pendingHostError_ = ErrorCode::Ok;

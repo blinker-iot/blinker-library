@@ -106,24 +106,16 @@ void BleLocalProvisioningEndpoint::stop() {
 void BleLocalProvisioningEndpoint::poll(uint32_t budgetMicros) {
     if (!started_)
         return;
+    if (!recoveryRequired_) flushPending();
+    if (!recoveryRequired_) channel_.poll(budgetMicros);
+    if (!recoveryRequired_) flushPending();
     if (recoveryRequired_) {
         channel_.stop();
-        return;
+        // Channel stop releases the ACL without promising a disconnected
+        // callback. Do not retain a dead setup session: the mode owner must
+        // select recovery from durable completion, not this stale identity.
+        activeSessionId_ = 0U;
     }
-
-    flushPending();
-    if (recoveryRequired_) {
-        channel_.stop();
-        return;
-    }
-    channel_.poll(budgetMicros);
-    if (recoveryRequired_) {
-        channel_.stop();
-        return;
-    }
-    flushPending();
-    if (recoveryRequired_)
-        channel_.stop();
 }
 
 TransportState BleLocalProvisioningEndpoint::state() const {

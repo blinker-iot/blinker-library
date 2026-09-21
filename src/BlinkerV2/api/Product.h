@@ -37,7 +37,7 @@ public:
 
     ~Product() { end(); }
 
-    Result begin() {
+    Result begin(ITimeSync* time = nullptr) {
         if (started_) {
             return Result::failure(ErrorCode::AlreadyExists);
         }
@@ -47,6 +47,7 @@ public:
             result = lifecycle_.attach(device_.client());
             if (result) attached_ = true;
         }
+        if (result && time != nullptr) result = lifecycle_.attachTime(device_.client(), *time);
         if (result) result = device_.prepare();
         const bool startAttempted = result.ok();
         if (startAttempted) result = lifecycle_.start();

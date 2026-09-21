@@ -10,11 +10,10 @@
 #include "../../ports/esp32/Esp32Security.h"
 #include "../../ports/esp32/Esp32Storage.h"
 #include "../../ports/esp32/Esp32WiFi.h"
+#include "Esp32GatewayStorage.h"
 
 #include <BlinkerV2/identity/DeviceInstanceIdStore.h>
 #include <BlinkerV2/identity/DeviceKeyStore.h>
-#include <BlinkerV2/identity/GatewayAccessStore.h>
-#include <BlinkerV2/identity/GatewayCredentialRenewalStore.h>
 
 #include <WiFiClientSecure.h>
 
@@ -22,20 +21,22 @@ namespace blinker {
 namespace integration {
 namespace official_detail {
 
-inline Esp32NvsBlobStoreConfig edgeHubBlobConfig(
-    const char* namespaceName,
-    const char* key,
-    size_t maximumSize,
-    bool protectedStorage) {
+inline Esp32NvsBlobStoreConfig edgeHubStorageConfig(bool protectedStorage) {
     Esp32NvsBlobStoreConfig config;
-    config.namespaceName = namespaceName;
-    config.key = key;
     config.partitionLabel = official::edgeHubNvsPartition;
-    config.maximumSize = maximumSize;
     config.encrypted = protectedStorage;
     config.encryptionVerifier = protectedStorage
                                     ? &esp32EncryptedNvsPartitionAvailable
                                     : nullptr;
+    return config;
+}
+
+inline Esp32NvsBlobStoreConfig edgeHubBlobConfig(
+    const char* namespaceName, const char* key, size_t maximumSize, bool protectedStorage) {
+    Esp32NvsBlobStoreConfig config = edgeHubStorageConfig(protectedStorage);
+    config.namespaceName = namespaceName;
+    config.key = key;
+    config.maximumSize = maximumSize;
     return config;
 }
 
@@ -54,7 +55,7 @@ inline Esp32NvsWifiCredentialSinkConfig edgeHubWifiStorageConfig(
 
 // Narrow production platform. The two Gateway blob types are injection seams
 // for internal tests; the production alias below always uses separate real
-// encrypted-NVS records for active access and pending renewal.
+// encrypted-NVS records for active access and pending renewal in every slot.
 template <
     bool ProtectedStorage,
     typename GatewayAccessBlob = Esp32NvsAtomicBlobStore,
@@ -63,6 +64,7 @@ class BasicEsp32EdgeHubPlatform {
 public:
     typedef WiFiClientSecure CloudSessionClient;
     typedef WiFiClientSecure MqttClient;
+    typedef BasicEsp32GatewayStorage<GatewayAccessBlob, GatewayRenewalBlob> GatewayStorage;
 
     BasicEsp32EdgeHubPlatform()
         : deviceInstanceBlob_(edgeHubBlobConfig(
@@ -74,29 +76,20 @@ public:
               DeviceKeyStore::serializedSize,
               ProtectedStorage)),
           wifiStorage_(edgeHubWifiStorageConfig(ProtectedStorage)),
-          gatewayAccessBlob_(edgeHubBlobConfig(
-              "bl_eh_access", "child",
-              GatewayAccessStore::serializedSize,
-              ProtectedStorage)),
-          gatewayRenewalBlob_(edgeHubBlobConfig(
-              "bl_eh_renew", "pending",
-              GatewayCredentialRenewalStore::serializedSize,
-              ProtectedStorage)),
+          gatewayStorage_(edgeHubStorageConfig(ProtectedStorage)),
           station_(), controlNetwork_(), mqttNetwork_() {}
 
     Result begin() {
         Result result = deviceInstanceBlob_.begin();
         if (result) result = deviceKeyBlob_.begin();
         if (result) result = wifiStorage_.begin();
-        if (result) result = gatewayAccessBlob_.begin();
-        if (result) result = gatewayRenewalBlob_.begin();
+        if (result) result = gatewayStorage_.begin();
         if (!result) end();
         return result;
     }
 
     void end() {
-        gatewayRenewalBlob_.end();
-        gatewayAccessBlob_.end();
+        gatewayStorage_.end();
         wifiStorage_.end();
         deviceKeyBlob_.end();
         deviceInstanceBlob_.end();
@@ -115,12 +108,7 @@ public:
     WifiCredentialStore& wifiCredentials() {
         return wifiStorage_.credentialStore();
     }
-    IAtomicBlobStore& gatewayAccessBlob() {
-        return gatewayAccessBlob_;
-    }
-    IAtomicBlobStore& gatewayCredentialRenewalBlob() {
-        return gatewayRenewalBlob_;
-    }
+    GatewayStorage& gatewayStorage() { return gatewayStorage_; }
     IWifiStation& wifiStation() { return station_; }
     CloudSessionClient& controlNetwork() { return controlNetwork_; }
     MqttClient& mqttNetwork() { return mqttNetwork_; }
@@ -129,8 +117,7 @@ private:
     Esp32NvsAtomicBlobStore deviceInstanceBlob_;
     Esp32NvsAtomicBlobStore deviceKeyBlob_;
     Esp32NvsWifiCredentialSink wifiStorage_;
-    GatewayAccessBlob gatewayAccessBlob_;
-    GatewayRenewalBlob gatewayRenewalBlob_;
+    GatewayStorage gatewayStorage_;
     Esp32WifiStation station_;
     CloudSessionClient controlNetwork_;
     MqttClient mqttNetwork_;

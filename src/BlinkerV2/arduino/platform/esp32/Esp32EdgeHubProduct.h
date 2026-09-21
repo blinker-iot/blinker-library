@@ -33,24 +33,19 @@
 
 #include <BlinkerV2/core/SecureMemory.h>
 #include <BlinkerV2/identity/DeviceKeyStore.h>
-#include <BlinkerV2/identity/GatewayAccessStore.h>
-#include <BlinkerV2/identity/GatewayCredentialRenewalStore.h>
 #include <BlinkerV2/provisioning/DeviceKeyProvisioningEndpoint.h>
 #include <BlinkerV2/runtime/EdgeHubLifecycle.h>
 #include <BlinkerV2/runtime/GatewayCloudMux.h>
-#include <BlinkerV2/runtime/GatewayCredentialRenewalCoordinator.h>
-#include <BlinkerV2/runtime/GatewayCredentialRenewalDeliveryProcessor.h>
-#include <BlinkerV2/runtime/GatewayChildRouteBridge.h>
 #include <BlinkerV2/runtime/GatewayManagementClient.h>
-#include <BlinkerV2/runtime/GatewayManagementControlMux.h>
-#include <BlinkerV2/runtime/GatewayManagementDeliveryMux.h>
 #include <BlinkerV2/runtime/GatewayPermitJoinCoordinator.h>
 #include <BlinkerV2/runtime/GatewayPermitJoinRelayClient.h>
 #include <BlinkerV2/runtime/GatewayRouteClient.h>
-#include <BlinkerV2/runtime/GatewayAccessDeliveryProcessor.h>
-#include <BlinkerV2/runtime/GatewayGattChildSession.h>
-#include <BlinkerV2/runtime/GatewayProofCoordinator.h>
-#include <BlinkerV2/runtime/GatewayRevocationCoordinator.h>
+#include <BlinkerV2/runtime/GatewayGattRadio.h>
+#include <BlinkerV2/runtime/GatewayGattPool.h>
+#include <BlinkerV2/runtime/GatewayGattChildContext.h>
+#include <BlinkerV2/runtime/GatewayChildDirectory.h>
+#include <BlinkerV2/runtime/GatewayChildManagementRouter.h>
+#include <BlinkerV2/runtime/GatewayChildBinding.h>
 #include <BlinkerV2/transport/NativeGattPermitJoinAdapter.h>
 
 #include <string.h>
@@ -112,17 +107,16 @@ enum class Esp32EdgeHubProductState : uint8_t {
 // Internal D4 product. It intentionally has no public BlinkerEdgeHub facade;
 // the ordinary Sketch API remains unchanged until the single-child gateway
 // data plane and production hardware gates are complete.
-template <typename Platform>
-class BasicEsp32EdgeHubProduct final
-    : public IProductLifecycle,
-      private IGatewayPermitJoinPortLease {
+template <typename Platform, typename RouteEndpoint = GatewayRouteEndpoint>
+class BasicEsp32EdgeHubProduct final : public IProductLifecycle {
 public:
+    typedef GatewayRouteClient RouteClient;
     enum : uint16_t {
         kEdgeHubMqttPacketBufferSize =
             static_cast<uint16_t>(
-                GatewayRouteClient::maximumTopicSize) +
+                RouteClient::maximumTopicSize) +
             static_cast<uint16_t>(
-                GatewayRouteClient::maximumEnvelopeSize) + 9U
+                RouteClient::maximumEnvelopeSize) + 9U
     };
     typedef DeviceKeyWifiStack<
         Platform,
@@ -130,60 +124,48 @@ public:
         kEdgeHubMqttPacketBufferSize> Stack;
     typedef BasicEdgeHubLifecycle<
         WifiConnectionLifecycle,
-        ManagedMqttTransport,
+        typename Stack::CloudTransport,
         HttpDeviceKeySessionProvider,
         Esp32EdgeHubClock,
         GatewayManagementClient,
-        GatewayRouteClient> Lifecycle;
-    typedef BasicGatewayChildRouteBridge<
-        GatewayGattChildSession,
-        GatewayRouteClient> ChildRouteBridge;
-    typedef BasicGatewayProofCoordinator<GatewayGattChildSession>
-        ProofCoordinator;
-    typedef BasicGatewayRevocationCoordinator<ChildRouteBridge>
-        RevocationCoordinator;
-    typedef BasicGatewayCredentialRenewalCoordinator<ChildRouteBridge>
-        RenewalCoordinator;
+        RouteClient> Lifecycle;
+    typedef BasicGatewayGattChildContext<RouteEndpoint, 512U,
+        BLINKER_ESP32_NIMBLE_CENTRAL_PACKET_SIZE> ChildContext;
+    typedef typename ChildContext::Bridge ChildRouteBridge;
+    typedef typename ChildContext::Revocation RevocationCoordinator;
+    typedef typename ChildContext::Renewal RenewalCoordinator;
+    typedef BasicGatewayGattRadio<GatewayGattChildSession, Esp32NimBleCentralPort, ChildRouteBridge> ChildRadio;
+    typedef BasicGatewayGattPool<ChildRadio, Esp32NimBleCentralPort> GattPool;
+    enum : size_t { activeChildCapacity = 2U };
+    static_assert(Esp32NimBleCentralHost::capacity >= activeChildCapacity,
+                  "This internal two-child Edge Hub needs at least two SDK NimBLE slots");
+    static_assert(Platform::GatewayStorage::capacity == 2U,
+                  "Update binding composition when admitting a new durable capacity");
 
     BasicEsp32EdgeHubProduct()
         : platform_(), deviceKey_(platform_.deviceKeyBlob()),
           stack_(
               platform_, deviceKey_, edgeHubSessionConfig(),
               MqttSecurity::Tls, edgeHubMqttConfig()),
-          access_(platform_.gatewayAccessBlob()),
-          renewal_(platform_.gatewayCredentialRenewalBlob()), crypto_(),
-          delivery_(access_, deviceKey_, crypto_, stack_.clock()),
-          renewalDelivery_(
-              access_, renewal_, deviceKey_, crypto_, stack_.clock()),
-          deliveryMux_(delivery_, renewalDelivery_),
-          childPort_(), childRx_(), childTx_(), childPacket_(),
-          childHandshake_(), childPlaintext_(), childSecureRecord_(),
-          childLink_(
-              childPort_, stack_.clock(),
-              MutableByteSpan(childRx_, sizeof(childRx_)),
-              MutableByteSpan(childTx_, sizeof(childTx_)),
-              MutableByteSpan(childPacket_, sizeof(childPacket_))),
-          childRandom_(),
-          childSession_(
-              childLink_, access_, renewal_, stack_.clock(), childRandom_,
-              crypto_,
-              MutableByteSpan(childHandshake_, sizeof(childHandshake_)),
-              MutableByteSpan(childPlaintext_, sizeof(childPlaintext_)),
-              MutableByteSpan(
-                  childSecureRecord_, sizeof(childSecureRecord_))),
-          proof_(childSession_, access_, stack_.clock()),
-          cloudMux_(stack_.mqttTransport()),
-          route_(cloudMux_),
-          routeBridge_(
-              childSession_, route_, access_, stack_.clock(), childRandom_),
-          revocation_(routeBridge_, access_, stack_.clock()),
-          renewalCoordinator_(
-              routeBridge_, access_, renewal_, stack_.clock()),
-          permitJoinAdapter_(childPort_, stack_.clock(), *this),
+          crypto_(), childRandom_(), cloudMux_(stack_.mqttTransport()),
+          route_(cloudMux_, stack_.clock()), centralHost_(),
+          childPorts_{Esp32NimBleCentralPort(centralHost_), Esp32NimBleCentralPort(centralHost_)},
+          bindings_{{*platform_.gatewayStorage().records(0U), deviceKey_, crypto_, stack_.clock()},
+                    {*platform_.gatewayStorage().records(1U), deviceKey_, crypto_, stack_.clock()}},
+          bootGuard_(stack_.clock()),
+          children_{{childPorts_[0U], bindings_[0U].records, route_, stack_.clock(), childRandom_, crypto_},
+                    {childPorts_[1U], bindings_[1U].records, route_, stack_.clock(), childRandom_, crypto_}},
+          radios_{{children_[0U].session, childPorts_[0U], children_[0U].connection, children_[0U].bridge, children_[0U].management, bootGuard_, stack_.clock()},
+                  {children_[1U].session, childPorts_[1U], children_[1U].connection, children_[1U].bridge, children_[1U].management, bootGuard_, stack_.clock()}},
+          poolSlots_{{radios_[0U], childPorts_[0U], bindings_[0U].records}, {radios_[1U], childPorts_[1U], bindings_[1U].records}},
+          gattPool_(poolSlots_, activeChildCapacity, bootGuard_, stack_.clock()),
+          childEntries_{{bindings_[0U].records, bindings_[0U].delivery, &children_[0U].management},
+                        {bindings_[1U].records, bindings_[1U].delivery, &children_[1U].management}},
+          directory_(childEntries_, Platform::GatewayStorage::capacity),
+          permitJoinAdapter_(stack_.clock(), gattPool_),
           permitJoin_(permitJoinAdapter_, stack_.clock()),
-          managementControl_(
-              proof_, revocation_, permitJoin_, renewalCoordinator_),
-          management_(cloudMux_, deliveryMux_, managementControl_),
+          managementRouter_(directory_, permitJoin_),
+          management_(cloudMux_, directory_, managementRouter_),
           permitJoinRelay_(
               cloudMux_, management_, permitJoin_, permitJoinAdapter_,
               stack_.clock()),
@@ -199,15 +181,10 @@ public:
           state_(Esp32EdgeHubProductState::Stopped),
           onboardingMode_(Esp32EdgeHubOnboardingMode::None),
           configurationError_(ErrorCode::Ok) {
-        // Revocation and renewal share one private child-control channel.
-        // The mux, not construction order, owns response dispatch.
-        routeBridge_.setControllerControlReceiver(
-            &IGatewayManagementControl::controllerControlResponseThunk,
-            &managementControl_);
+        managementRouter_.setPermitAdmission(gattPool_);
     }
 
     ~BasicEsp32EdgeHubProduct() override {
-        routeBridge_.setControllerControlReceiver(nullptr, nullptr);
         stop();
         stack_.end();
         clearManualSetup();
@@ -275,9 +252,25 @@ public:
         return result;
     }
 
+    // Own-device business time only. Child Hello must not advertise a responder
+    // until the southbound permission/negotiation/dispatch seam is installed.
+    Result attachTime(Client& client, ITimeSync& service) override {
+        return client.setTimeSync(service, stack_.clock(), stack_.random());
+    }
+
+    // Internal opt-in protocol injection, before any child attempt. The caller
+    // owns each module and supplies the same own-device business-time source.
+    Result setChildRequestHandler(size_t index, IGatewayChildRequestHandler* handler) {
+        if (index >= activeChildCapacity) return Result::failure(ErrorCode::InvalidArgument);
+        return children_[index].executor.setRequestHandler(handler);
+    }
+
     Result start() override {
         if (state_ != Esp32EdgeHubProductState::Stopped) {
             return Result::failure(ErrorCode::AlreadyExists);
+        }
+        if (permitJoin_.ownsChildSession() || !gattPool_.stopped()) {
+            return Result::failure(ErrorCode::WouldBlock);
         }
         if (!stack_.initialized() || client_ == nullptr ||
             onboardingMode_ == Esp32EdgeHubOnboardingMode::None) {
@@ -311,6 +304,9 @@ public:
     }
 
     void poll(uint32_t totalBudgetMicros) override {
+        gattPool_.prepare(
+            state_ == Esp32EdgeHubProductState::Active &&
+            lifecycle_.state() == EdgeHubLifecycleState::Online);
         if (state_ == Esp32EdgeHubProductState::Provisioning) {
             provisioner_.poll();
             const uint32_t elapsed =
@@ -329,47 +325,25 @@ public:
             }
             return;
         }
-        if (state_ != Esp32EdgeHubProductState::Active) return;
+        if (state_ != Esp32EdgeHubProductState::Active) {
+            pollRadio(false, totalBudgetMicros);
+            return;
+        }
         lifecycle_.poll(totalBudgetMicros);
-        permitJoinRelay_.poll();
         const ProductLifecycleStatus current = lifecycle_.status();
         if (current.state == ProductLifecycleState::Fault) {
             enterFault(current.lastError);
             return;
         }
 
-        const EdgeHubLifecycleState cloudState = lifecycle_.state();
-        if (cloudState == EdgeHubLifecycleState::CloudConnecting ||
-            cloudState == EdgeHubLifecycleState::ManagementSubscribing) {
-            // Cloud route admission is per MQTT session, while the proved
-            // DirectSecure child session is not. Suspend forwarding during a
-            // credential refresh but keep servicing the local BLE session.
-            routeBridge_.reset();
-            if (childSession_.state() !=
-                GatewayChildSessionState::Stopped) {
-                childSession_.poll(totalBudgetMicros);
-            }
-            return;
-        }
-        if (cloudState != EdgeHubLifecycleState::Online) {
-            stopChildDataPlane();
-            return;
-        }
-        if (permitJoin_.windowOpen()) return;
-        // The southbound radio is demand-driven. Permit-join owns it during
-        // enrollment; proof, route admission or revocation starts the native
-        // child session only when an authenticated task actually needs it.
-        if (childSession_.state() !=
-            GatewayChildSessionState::Stopped) {
-            childSession_.poll(totalBudgetMicros);
-        }
-        routeBridge_.poll();
+        pollRadio(lifecycle_.state() == EdgeHubLifecycleState::Online, totalBudgetMicros);
+        permitJoinRelay_.poll();
     }
 
     void stop() override {
         provisioner_.end();
         permitJoinRelay_.reset();
-        stopChildDataPlane();
+        gattPool_.stop();
         lifecycle_.stop();
         state_ = Esp32EdgeHubProductState::Stopped;
         configurationError_ = ErrorCode::Ok;
@@ -377,13 +351,13 @@ public:
 
     Result resetAccess() override {
         const bool closeAfterReset = !stack_.initialized();
+        directory_.invalidate();
         Result result = stack_.open();
         // Outbound child authority must disappear before this Hub loses its
         // own cloud/direct access root. A reset interrupted between the two
         // writes therefore cannot leave an orphan child credential reachable
         // by a newly provisioned owner.
-        if (result) result = renewal_.clear();
-        if (result) result = access_.clear();
+        if (result) result = platform_.gatewayStorage().clear();
         if (result) result = deviceKey_.clear();
         if (closeAfterReset) stack_.end();
         return result;
@@ -428,17 +402,8 @@ public:
         return ProductCapabilities(flags);
     }
 
-    GatewayAccessStore& gatewayAccess() { return access_; }
-    GatewayCredentialRenewalStore& gatewayCredentialRenewal() {
-        return renewal_;
-    }
+    ChildContext* child(size_t index) { return index < activeChildCapacity ? &children_[index] : nullptr; }
     GatewayManagementClient& management() { return management_; }
-    GatewayGattChildSession& childSession() { return childSession_; }
-    ChildRouteBridge& routeBridge() { return routeBridge_; }
-    RevocationCoordinator& revocation() { return revocation_; }
-    RenewalCoordinator& renewalCoordinator() {
-        return renewalCoordinator_;
-    }
     GatewayPermitJoinCoordinator& permitJoin() { return permitJoin_; }
     GatewayPermitJoinRelayClient& permitJoinRelay() {
         return permitJoinRelay_;
@@ -454,12 +419,6 @@ private:
     enum : uint32_t {
         kProvisioningWindowMs = 10UL * 60UL * 1000UL
     };
-    enum : size_t {
-        kChildFrameSize = 512U,
-        kChildRecordSize =
-            kChildFrameSize + security::kDirectSecureOverhead,
-        kChildPacketSize = BLINKER_ESP32_NIMBLE_CENTRAL_PACKET_SIZE
-    };
 
     static ByteView asBytes(StringView value) {
         return ByteView(
@@ -468,6 +427,7 @@ private:
 
     Result initialize() {
         if (stack_.initialized()) return Result::success();
+        directory_.invalidate(); // Backend lifecycle is outside tracked writes.
         if (configurationError_ != ErrorCode::Ok ||
             onboardingMode_ == Esp32EdgeHubOnboardingMode::None) {
             return Result::failure(
@@ -475,7 +435,11 @@ private:
                     ? ErrorCode::NotConfigured
                     : configurationError_);
         }
-        Result result = stack_.open();
+        Result result = stack_.wifiLifecycle().setCandidateFailurePolicy(
+            onboardingMode_ == Esp32EdgeHubOnboardingMode::Manual
+                ? WifiCandidateFailurePolicy::Retry
+                : WifiCandidateFailurePolicy::Rollback);
+        if (result) result = stack_.open();
         if (result &&
             onboardingMode_ == Esp32EdgeHubOnboardingMode::Manual) {
             result = deviceKey_.replace(pendingDeviceKey_);
@@ -547,7 +511,7 @@ private:
 
     void enterFault(ErrorCode error) {
         provisioner_.end();
-        stopChildDataPlane();
+        gattPool_.stop();
         lifecycle_.stop();
         configurationError_ = error == ErrorCode::Ok
                                   ? ErrorCode::InternalError
@@ -555,22 +519,13 @@ private:
         state_ = Esp32EdgeHubProductState::Fault;
     }
 
-    void stopChildDataPlane() {
-        routeBridge_.reset();
-        if (childSession_.state() == GatewayChildSessionState::Stopped) {
-            return;
-        }
-        childSession_.stop();
+    void pollRadio(bool online, uint32_t budgetMicros) {
+        // A subscribed management client ticks the router. Offline or a failed
+        // subscription still needs one Hub tick to drain the original budgets.
+        if (!online && (lifecycle_.state() != EdgeHubLifecycleState::ManagementSubscribing ||
+                !management_.subscribed())) managementRouter_.poll();
+        gattPool_.poll(online, budgetMicros);
     }
-
-    Result acquirePermitJoinPort() override {
-        stopChildDataPlane();
-        return childPort_.state() == BleCentralPortState::Stopped
-                   ? Result::success()
-                   : Result::failure(ErrorCode::WouldBlock);
-    }
-
-    void releasePermitJoinPort() override {}
 
     void clearManualSetup() {
         clearDeviceKey(pendingDeviceKey_);
@@ -584,31 +539,23 @@ private:
     Platform platform_;
     DeviceKeyStore deviceKey_;
     Stack stack_;
-    GatewayAccessStore access_;
-    GatewayCredentialRenewalStore renewal_;
     Esp32MbedTlsCryptoProvider crypto_;
-    GatewayAccessDeliveryProcessor delivery_;
-    GatewayCredentialRenewalDeliveryProcessor renewalDelivery_;
-    GatewayManagementDeliveryMux deliveryMux_;
-    Esp32NimBleCentralPort childPort_;
-    uint8_t childRx_[kChildRecordSize];
-    uint8_t childTx_[kChildRecordSize];
-    uint8_t childPacket_[kChildPacketSize];
-    uint8_t childHandshake_[kChildFrameSize];
-    uint8_t childPlaintext_[kChildFrameSize];
-    uint8_t childSecureRecord_[kChildRecordSize];
-    GattDirectChildLink childLink_;
     PlatformHardwareRandom childRandom_;
-    GatewayGattChildSession childSession_;
-    ProofCoordinator proof_;
     GatewayCloudMux cloudMux_;
-    GatewayRouteClient route_;
-    ChildRouteBridge routeBridge_;
-    RevocationCoordinator revocation_;
-    RenewalCoordinator renewalCoordinator_;
+    RouteClient route_;
+    Esp32NimBleCentralHost centralHost_;
+    Esp32NimBleCentralPort childPorts_[activeChildCapacity];
+    GatewayChildBinding bindings_[Platform::GatewayStorage::capacity];
+    GatewayGattBootGuard bootGuard_;
+    ChildContext children_[activeChildCapacity];
+    ChildRadio radios_[activeChildCapacity];
+    typename GattPool::Slot poolSlots_[activeChildCapacity];
+    GattPool gattPool_;
+    GatewayChildDirectoryEntry childEntries_[Platform::GatewayStorage::capacity];
+    GatewayChildDirectory directory_;
     NativeGattPermitJoinAdapter permitJoinAdapter_;
     GatewayPermitJoinCoordinator permitJoin_;
-    GatewayManagementControlMux managementControl_;
+    GatewayChildManagementRouter managementRouter_;
     GatewayManagementClient management_;
     GatewayPermitJoinRelayClient permitJoinRelay_;
     Lifecycle lifecycle_;

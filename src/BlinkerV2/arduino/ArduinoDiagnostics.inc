@@ -4,6 +4,29 @@
 
 namespace {
 
+// Stack-only formatting, no persistent text queue. Overflow rejects the whole
+// event before touching I/O. Keep this optional formatter out of logs-off links.
+class DiagnosticLine : public Print {
+public:
+    DiagnosticLine() : size_(0U), overflow_(false) {}
+    size_t write(uint8_t value) override {
+        if (size_ == sizeof(bytes_)) {
+            overflow_ = true;
+            return 0U;
+        }
+        bytes_[size_++] = value;
+        return 1U;
+    }
+    const uint8_t* data() const { return bytes_; }
+    size_t size() const { return size_; }
+    bool complete() const { return !overflow_; }
+
+private:
+    uint8_t bytes_[192];
+    size_t size_;
+    bool overflow_;
+};
+
 uint32_t diagnosticMillis(void*) {
     return millis();
 }
@@ -38,6 +61,7 @@ const __FlashStringHelper* stateName(uint16_t status) {
     case blinker::ProductLifecycleState::Enrolling: return F("enrolling");
     case blinker::ProductLifecycleState::Active: return F("active");
     case blinker::ProductLifecycleState::Fault: return F("fault");
+    case blinker::ProductLifecycleState::Degraded: return F("degraded");
     }
     return F("unknown");
 }
@@ -69,10 +93,7 @@ void printStatus(Print& output, uint16_t status) {
     }
 }
 
-void printEvent(void* context, const blinker::DiagnosticEvent& event) {
-    Print* output = static_cast<Print*>(context);
-    if (output == nullptr) return;
-
+void formatEvent(Print* output, const blinker::DiagnosticEvent& event) {
     output->print(F("[Blinker]["));
     output->print(event.timestampMillis);
     output->print(F("]["));
@@ -123,6 +144,22 @@ void printEvent(void* context, const blinker::DiagnosticEvent& event) {
     output->println();
 }
 
+size_t writeLine(Print& output, const DiagnosticLine& line) {
+    return output.write(line.data(), line.size());
+}
+
+size_t writeLine(blinker::IDiagnosticOutput& output, const DiagnosticLine& line) {
+    return output.tryWrite(line.data(), line.size());
+}
+
+template <typename Output>
+bool outputEvent(void* context, const blinker::DiagnosticEvent& event) {
+    DiagnosticLine line;
+    formatEvent(&line, event);
+    return line.complete() &&
+        writeLine(*static_cast<Output*>(context), line) == line.size();
+}
+
 void printCounter(
     Print& output,
     const __FlashStringHelper* name,
@@ -137,11 +174,18 @@ void printCounter(
 
 void blinker::BlinkerClass::debug(Print& output, LogLevel level) {
     facade_detail::diagnostics().configure(
-        &printEvent,
+        &outputEvent<Print>,
         &output,
         level,
         &diagnosticMillis,
         nullptr);
+    facade_detail::diagnostics().flush();
+}
+
+void blinker::BlinkerClass::debug(IDiagnosticOutput& output, LogLevel level) {
+    facade_detail::diagnostics().configure(
+        &outputEvent<IDiagnosticOutput>, &output, level,
+        &diagnosticMillis, nullptr);
     facade_detail::diagnostics().flush();
 }
 

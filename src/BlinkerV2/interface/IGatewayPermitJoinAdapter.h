@@ -8,16 +8,9 @@ namespace blinker {
 enum class GatewayPermitJoinAdapterState : uint8_t {
     Stopped = 0U,
     Ready,
-    Fault
-};
-
-// The Edge Hub owns one physical southbound radio. A permit-join adapter must
-// acquire it before scanning and release it when the bounded window ends.
-class IGatewayPermitJoinPortLease {
-public:
-    virtual ~IGatewayPermitJoinPortLease() {}
-    virtual Result acquirePermitJoinPort() = 0;
-    virtual void releasePermitJoinPort() = 0;
+    Fault,
+    Opening,
+    Closing
 };
 
 // Adapter-scoped window control only. Enrollment bytes remain private to the
@@ -26,6 +19,9 @@ class IGatewayPermitJoinAdapter {
 public:
     virtual ~IGatewayPermitJoinAdapter() {}
     virtual uint16_t adapterId() const = 0;
+    // WouldBlock retains Opening; poll completes acquisition. closeWindow
+    // cancels Opening or revokes Ready immediately, but Closing keeps ownership
+    // until native release. Neither completion requires another wire command.
     virtual Result openWindow() = 0;
     virtual void closeWindow() = 0;
     virtual void poll(uint32_t budgetMicros) = 0;

@@ -187,9 +187,12 @@ Result Esp32NvsAtomicBlobStore::replace(ByteView value) {
 
 Result Esp32NvsAtomicBlobStore::clear() {
     if (!opened_) return Result::failure(ErrorCode::NotConfigured);
-    Result result = fromNvsError(nvs_erase_key(handle_, key_));
-    if (result) result = fromNvsError(nvs_commit(handle_));
-    return result;
+    const Result erased = fromNvsError(nvs_erase_key(handle_, key_));
+    if (!erased && erased.code() != ErrorCode::NotFound) return erased;
+    // An earlier erase may have succeeded while commit failed. NotFound is
+    // not proof of durable absence: retry commit before releasing authority.
+    const Result committed = fromNvsError(nvs_commit(handle_));
+    return committed ? erased : committed;
 }
 
 StorageProtection Esp32NvsAtomicBlobStore::protection() const {

@@ -7,6 +7,8 @@
 #include "StateUpdate.h"
 #include "WifiDeviceKeyProfile.h"
 #include "../core/Diagnostics.h"
+#include "../interface/IDiagnosticOutput.h"
+#include "../runtime/TimeSyncService.h"
 
 class Print;
 
@@ -74,7 +76,21 @@ private:
 // exactly one static, no-heap Session and delegates to Device/Product.
 class BlinkerClass {
 public:
-    BlinkerClass() : product_(nullptr), lastError_(ErrorCode::Ok) {}
+    BlinkerClass() : product_(nullptr), time_(nullptr), lastError_(ErrorCode::Ok) {}
+
+    // Optional business UTC. Call before begin; no heap/global clock is created
+    // unless this method is used. Does not set system time or credential time.
+    bool enableTime() {
+        if (product_ != nullptr) return remember(Result::failure(ErrorCode::AlreadyExists));
+        static TimeSyncService service;
+        time_ = &service;
+        return remember(Result::success());
+    }
+
+    bool time(uint64_t& utcSeconds) {
+        utcSeconds = 0U;
+        return time_ != nullptr && time_->time(utcSeconds);
+    }
 
 #if defined(BLINKER_PRODUCT_WIFI)
     // BlinkerWiFi.h selects the WiFi product before compilation, so begin()
@@ -172,8 +188,12 @@ public:
                    ? product_->telemetryCounters()
                    : TelemetryCounters();
     }
+    // Print compatibility output is synchronous: it has no latency guarantee.
     void debug(Print& output, LogLevel level = LogLevel::Info);
+    // Bounded single-attempt output; the adapter must honor tryWrite's contract.
+    void debug(IDiagnosticOutput& output, LogLevel level = LogLevel::Info);
     void noDebug();
+    // Explicit synchronous snapshot; do not call continuously from loop().
     void printDiagnostics(Print& output);
 
     template <typename T, typename... Rest>
@@ -225,7 +245,7 @@ private:
             return remember(Result::failure(ErrorCode::AlreadyExists));
         }
         product_ = selected;
-        const Result result = product_->begin();
+        const Result result = product_->begin(time_);
         facade_detail::diagnostics().recordOperation(
             DiagnosticOperation::Begin, result);
         facade_detail::observeProductStatus(product_->status());
@@ -309,6 +329,7 @@ private:
     }
 
     Product* product_;
+    ITimeSync* time_;
     ErrorCode lastError_;
 
     BlinkerClass(const BlinkerClass&);
@@ -317,7 +338,7 @@ private:
 
 #if UINTPTR_MAX <= UINT32_MAX
 static_assert(
-    sizeof(BlinkerClass) <= 8U,
+    sizeof(BlinkerClass) <= 12U,
     "Global Blinker facade exceeds its 32-bit ABI gate");
 #endif
 

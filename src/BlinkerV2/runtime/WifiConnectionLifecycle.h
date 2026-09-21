@@ -30,11 +30,18 @@ struct WifiConnectionLifecycleConfig {
           persistenceRetryMs(1000U) {}
 };
 
+// The product owns network intent; the station and durable store do not.
+enum class WifiCandidateFailurePolicy : uint8_t {
+    Rollback = 0U, // Transactional provisioning may restore a confirmed profile.
+    Retry         // Explicit Sketch configuration keeps its selected network.
+};
+
 // Portable, allocation-free WiFi connection policy. The caller owns the
 // profile workspace for the full lifetime of this object. A newly committed
 // profile is a candidate: it becomes usable by cloud/enrollment only after AP
-// connection and confirmActive() have both succeeded durably. Only an
-// unconfirmed candidate may roll back, and only to a confirmed previous slot.
+// connection and confirmActive() have both succeeded durably. Transactional
+// candidates may roll back only to a confirmed previous slot; explicit manual
+// candidates instead reuse the same bounded retry state without Flash writes.
 class WifiConnectionLifecycle {
 public:
     WifiConnectionLifecycle(
@@ -46,6 +53,7 @@ public:
             WifiConnectionLifecycleConfig());
     ~WifiConnectionLifecycle();
 
+    Result setCandidateFailurePolicy(WifiCandidateFailurePolicy policy);
     Result start();
     Result reload();
     void poll();
@@ -67,7 +75,7 @@ private:
     Result loadAndConnect();
     Result startStation();
     Result handleConnectionFailure(ErrorCode error);
-    Result retryConfirmedLater(ErrorCode error);
+    Result scheduleRetry(ErrorCode error);
     Result confirmCandidate();
     bool connectionTimedOut(uint32_t now) const;
     bool retryDue(uint32_t now) const;
@@ -84,6 +92,7 @@ private:
     uint32_t retryAt_;
     WifiConnectionState state_;
     ErrorCode lastError_;
+    WifiCandidateFailurePolicy candidateFailurePolicy_;
 
     WifiConnectionLifecycle(const WifiConnectionLifecycle&);
     WifiConnectionLifecycle& operator=(const WifiConnectionLifecycle&);

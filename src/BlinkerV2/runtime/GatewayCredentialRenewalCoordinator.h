@@ -12,6 +12,7 @@
 #include "../protocol/bbp2/Messages.h"
 #include "../provisioning/ControllerControlContract.h"
 #include "IGatewayManagementControl.h"
+#include "GatewayManagementBudget.h"
 
 namespace blinker {
 
@@ -29,24 +30,36 @@ public:
         IClock& clock)
         : channel_(channel), active_(active), pending_(pending),
           clock_(clock), command_(), result_(), resultSize_(0U),
-          nextAttemptMillis_(0U), mutationAttemptId_(0U),
+          nextAttemptMillis_(0U), mutationAttemptId_(0U), nonceAttemptId_(0U),
           activeCommand_(false), recoverMutationAttempted_(false),
           waitingResponse_(false), resultReady_(false),
           publishPending_(false), retireSession_(false) {}
 
     ~BasicGatewayCredentialRenewalCoordinator() override { reset(); }
 
+    bool continuesCommand(ByteView encoded) const override {
+        gateway::GatewayCredentialRenewalCommandView decoded;
+        if (!activeCommand_ || !gateway::decodeGatewayCredentialRenewalCommand(encoded, decoded)) return false;
+        return sameCommand(decoded) || (ownsChildSession() && resultReady_ &&
+            command_.phase == gateway::GatewayCredentialRenewalPhase::Prepare &&
+            decoded.phase == gateway::GatewayCredentialRenewalPhase::Apply && sameTransaction(decoded));
+    }
+
     Result handleCommand(ByteView encoded) override {
         gateway::GatewayCredentialRenewalCommandView decoded;
         Result result = gateway::decodeGatewayCredentialRenewalCommand(
             encoded, decoded);
         if (!result) return result;
+        const bool continueBudget = activeCommand_ && ownsChildSession() && sameTransaction(decoded) &&
+            command_.phase == gateway::GatewayCredentialRenewalPhase::Prepare && decoded.phase == gateway::GatewayCredentialRenewalPhase::Apply;
+        const GatewayManagementBudget previousBudget = budget_;
         if (activeCommand_) {
             if (sameCommand(decoded)) {
+                expirePreparedSession();
                 if (resultReady_) publishPending_ = true;
                 return Result::success();
             }
-            if (!resultReady_) {
+            if (!resultReady_ || retireSession_) {
                 return Result::failure(ErrorCode::StateConflict);
             }
             clearCommand();
@@ -135,7 +148,9 @@ public:
             clearCommand();
             return Result::failure(ErrorCode::NotConfigured);
         }
-        if (now >= command_.expiresAtUnixSeconds ||
+        if (continueBudget) budget_ = previousBudget;
+        if (!(continueBudget ? budget_.active(clock_.monotonicMillis())
+                : budget_.begin(clock_.monotonicMillis(), now, command_.expiresAtUnixSeconds)) ||
             command_.expiresAtUnixSeconds > pending.expiresAtUnixSeconds) {
             const bool irreversible = pending.state !=
                 GatewayCredentialRenewalState::Staged;
@@ -219,13 +234,16 @@ public:
 
     void poll() override {
         if (retireSession_) {
-            channel_.retireControllerControlSession();
-            retireSession_ = false;
+            retireSession_ = !channel_.retireControllerControlSession(mutationAttemptId_);
         }
-        if (!activeCommand_ || resultReady_) return;
+        if (!activeCommand_) return;
+        if (resultReady_) {
+            expirePreparedSession();
+            return;
+        }
 
         uint64_t now = 0U;
-        if (!clock_.unixTime(now) || now == 0U ||
+        if (!budget_.active(clock_.monotonicMillis()) || !clock_.unixTime(now) || now == 0U ||
             now >= command_.expiresAtUnixSeconds) {
             channel_.cancelControllerControlRequest();
             waitingResponse_ = false;
@@ -306,6 +324,19 @@ public:
         nextAttemptMillis_ = monotonic + kRetryDelayMillis;
     }
 
+    bool busy() const override {
+        return (activeCommand_ && !resultReady_) || retireSession_;
+    }
+
+    bool ownsChildSession() const override {
+        if (retireSession_) return true;
+        uint64_t now = 0U;
+        return activeCommand_ && budget_.active(clock_.monotonicMillis()) &&
+            clock_.unixTime(now) && now != 0U && now < command_.expiresAtUnixSeconds &&
+            (!resultReady_ || (nonceAttemptId_ != 0U &&
+                channel_.authenticatedControllerSessionAttemptId() == nonceAttemptId_));
+    }
+
     ByteView pendingResult() const override {
         return publishPending_ ? ByteView(result_, resultSize_) : ByteView();
     }
@@ -318,6 +349,12 @@ public:
     }
 
 private:
+    void expirePreparedSession() {
+        if (nonceAttemptId_ != 0U && !ownsChildSession()) {
+            complete(gateway::GatewayCredentialRenewalStatus::Expired);
+        }
+    }
+
     enum : uint32_t { kRetryDelayMillis = 1000U };
 
     struct OwnedCommand {
@@ -373,7 +410,7 @@ private:
                memcmp(first.data, second.data, size) == 0;
     }
 
-    bool sameCommand(
+    bool sameTransaction(
         const gateway::GatewayCredentialRenewalCommandView& value) const {
         return same(value.renewalOperationId, command_.renewalOperationId,
                     sizeof(command_.renewalOperationId)) &&
@@ -395,7 +432,11 @@ private:
                same(value.accessMaterialDigest,
                     command_.accessMaterialDigest,
                     sizeof(command_.accessMaterialDigest)) &&
-               value.phase == command_.phase &&
+               value.expiresAtUnixSeconds == command_.expiresAtUnixSeconds;
+    }
+
+    bool sameCommand(const gateway::GatewayCredentialRenewalCommandView& value) const {
+        return sameTransaction(value) && value.phase == command_.phase &&
                value.grant.size == command_.grantSize &&
                (value.grant.empty() ||
                 same(value.grant, command_.grant, command_.grantSize)) &&
@@ -406,8 +447,7 @@ private:
                         : 0U) &&
                (value.receiptDigest.empty() ||
                 same(value.receiptDigest, command_.receiptDigest,
-                     sizeof(command_.receiptDigest))) &&
-               value.expiresAtUnixSeconds == command_.expiresAtUnixSeconds;
+                     sizeof(command_.receiptDigest)));
     }
 
     void copyCommand(
@@ -586,7 +626,14 @@ private:
                 journalRevision);
         }
         if (result) {
-            retireSession_ = true;
+            // Crash replay may only retire a currently authenticated OLD
+            // credential session, not a fresh session using the new version.
+            if (mutationAttemptId_ == 0U &&
+                channel_.authenticatedControllerCredentialVersion() ==
+                    command_.expectedCredentialVersion) {
+                mutationAttemptId_ = channel_.authenticatedControllerSessionAttemptId();
+            }
+            retireSession_ = mutationAttemptId_ != 0U;
             complete(
                 gateway::GatewayCredentialRenewalStatus::Rotated,
                 ByteView(pending.receipt, pending.receiptSize),
@@ -690,6 +737,12 @@ private:
     void onResponse(ByteView encodedFrame) {
         waitingResponse_ = false;
         if (!activeCommand_ || resultReady_) return;
+        if (!ownsChildSession()) {
+            complete(command_.phase == gateway::GatewayCredentialRenewalPhase::Apply
+                ? gateway::GatewayCredentialRenewalStatus::ForwardRecoveryRequired
+                : gateway::GatewayCredentialRenewalStatus::Expired);
+            return;
+        }
         bbp2::FrameView frame;
         Result result = bbp2::parseFrame(encodedFrame, frame);
         if (!result || frame.header.kind ==
@@ -706,10 +759,13 @@ private:
             bbp2::ControllerControlChallengeBody challenge;
             result = bbp2::decodeControllerControlChallengeBody(
                 frame.body, challenge);
-            if (!result) {
+            if (!result || frame.header.kind != static_cast<uint8_t>(
+                    bbp2::MessageKind::ControllerControlChallenge) ||
+                channel_.authenticatedControllerSessionAttemptId() == 0U) {
                 complete(gateway::GatewayCredentialRenewalStatus::Rejected);
                 return;
             }
+            nonceAttemptId_ = channel_.authenticatedControllerSessionAttemptId();
             complete(gateway::GatewayCredentialRenewalStatus::NonceReady,
                      challenge.controlNonce);
             return;
@@ -748,6 +804,7 @@ private:
         ByteView payload = ByteView(),
         ByteView receiptDigest = ByteView(),
         uint32_t activeStorageRevision = 0U) {
+        if (status != gateway::GatewayCredentialRenewalStatus::NonceReady) nonceAttemptId_ = 0U;
         gateway::GatewayCredentialRenewalResultView value;
         value.renewalOperationId = renewalOperation();
         value.topologyOperationId = topologyOperation();
@@ -773,6 +830,8 @@ private:
     }
 
     void clearCommand() {
+        budget_.clear();
+        nonceAttemptId_ = 0U;
         if (waitingResponse_ || channel_.controllerControlPending()) {
             channel_.cancelControllerControlRequest();
         }
@@ -795,12 +854,14 @@ private:
     GatewayAccessStore& active_;
     GatewayCredentialRenewalStore& pending_;
     IClock& clock_;
+    GatewayManagementBudget budget_;
     OwnedCommand command_;
     uint8_t result_[
         gateway::kGatewayCredentialRenewalResultMaximumEncodedSize];
     size_t resultSize_;
     uint32_t nextAttemptMillis_;
     uint32_t mutationAttemptId_;
+    uint32_t nonceAttemptId_;
     bool activeCommand_;
     bool recoverMutationAttempted_;
     bool waitingResponse_;

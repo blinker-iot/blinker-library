@@ -172,10 +172,13 @@ public:
     EndpointCatalog& endpoints() { return endpoints_; }
     const EndpointRegistry& endpointRegistry() const { return registry_; }
 
+    // Stopped-only atomic binding; removeTransport also removes its access
+    // services. No global auth/control fallback is applied to other paths.
     Result addTransport(
         IFrameTransport& transport,
         TransportLifecyclePolicy lifecycle =
-            TransportLifecyclePolicy::Managed);
+            TransportLifecyclePolicy::Managed,
+        TransportAccess access = TransportAccess());
     Result removeTransport(IFrameTransport& transport);
     // Validates and seals the model/storage without starting transports.
     // Property state may be committed after prepare(); Events still require
@@ -190,11 +193,9 @@ public:
         TransportState& state,
         TransportCapabilities& capabilities) const;
 
-    Result setAuthorizationProvider(IAuthorizationProvider* provider);
-    Result setControllerControlEndpoint(
-        IControllerControlEndpoint* endpoint);
     Result setReliableOutbox(ReliableOutbox* outbox);
     Result setMonotonicClock(IClock* clock);
+    Result setTimeSync(ITimeSync& service, IClock& tick, IRandom& random);
     Result setStateWriteHandler(
         StateWriteTransactionHandler handler,
         void* context);

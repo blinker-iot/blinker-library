@@ -5,6 +5,7 @@
 #include <BlinkerV2/security/Ed25519Signature.inc>
 #include <BlinkerV2/security/GatewayAccessEnvelopeSecurity.inc>
 #include <BlinkerV2/security/GatewayCredentialRenewalEnvelopeSecurity.inc>
+#include <BlinkerV2/security/LocalAccessSecurity.inc>
 #include <BlinkerV2/security/NoiseNn.inc>
 #include <BlinkerV2/security/P256ServerKeyRingVerifier.inc>
 #include <BlinkerV2/security/P256Signature.inc>

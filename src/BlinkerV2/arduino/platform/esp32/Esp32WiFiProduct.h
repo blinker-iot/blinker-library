@@ -8,12 +8,20 @@
 #include "../../internal/WiFiProduct.h"
 #include "Esp32WiFiPlatform.h"
 #include <BlinkerV2/api/WifiDeviceKeyProfile.h>
+#if defined(BLINKER_INTERNAL_LAN_WEBSOCKET) && BLINKER_INTERNAL_LAN_WEBSOCKET
+#include "Esp32WiFiLanExtension.h"
+#endif
 
 namespace blinker {
 namespace integration {
 namespace official_detail {
 
+#if defined(BLINKER_INTERNAL_LAN_WEBSOCKET) && BLINKER_INTERNAL_LAN_WEBSOCKET
+typedef DeviceKeyWifiProduct<Esp32WifiNetworkPlatform,
+    Esp32WifiLanExtension<DeviceKeyWifiStack<Esp32WifiNetworkPlatform> > >
+#else
 typedef DeviceKeyWifiProduct<Esp32WifiNetworkPlatform>
+#endif
     Esp32DeviceKeyWifiProduct;
 
 inline Esp32DeviceKeyWifiProduct& esp32WifiProduct() {

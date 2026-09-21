@@ -5,6 +5,7 @@
 #include "../core/SecureMemory.h"
 #include "../model/Manifest.h"
 #include "../model/EndpointValue.h"
+#include "../protocol/bbp2/TimeSync.h"
 
 namespace blinker {
 
@@ -251,9 +252,8 @@ DeviceRuntime::DeviceRuntime(
       statePageEncoder_(nullptr),
       stateContext_(nullptr),
       statePageContext_(nullptr),
-      authorizationProvider_(nullptr),
-      controllerControlEndpoint_(nullptr),
       reliableOutbox_(nullptr),
+      timeSync_(nullptr),
       telemetryClock_(nullptr),
       telemetrySampleEncoder_(nullptr),
       telemetrySampleContext_(nullptr),
@@ -274,39 +274,40 @@ DeviceRuntime::DeviceRuntime(
 
 Result DeviceRuntime::start() {
     if (started_) return Result::failure(ErrorCode::AlreadyExists);
-    if (authorizationProvider_ != nullptr) {
-        const size_t count = authorizationProvider_->methodCount();
-        if (count == 0U || count > bbp2::kMaxAuthorizationMethods) {
+    // Access services are validated per transport, never pooled into one
+    // global advertised method list. Explicit feature requests still fail
+    // if no binding supplies them.
+    uint32_t suppliedFeatures = 0U;
+    for (size_t transportId = 0; transportId < transports_.size(); ++transportId) {
+        const TransportAccess access = transports_.accessAt(transportId);
+        if ((access.authorization != nullptr || access.control != nullptr) &&
+            !localTransport(static_cast<uint8_t>(transportId))) {
             return Result::failure(ErrorCode::NotConfigured);
         }
-        for (size_t index = 0; index < count; ++index) {
-            const uint16_t method = authorizationProvider_->methodAt(index);
-            if (method == 0U) {
+        if (access.authorization != nullptr) {
+            const size_t count = access.authorization->methodCount();
+            if (count == 0U || count > bbp2::kMaxAuthorizationMethods) {
                 return Result::failure(ErrorCode::NotConfigured);
             }
-            for (size_t prior = 0; prior < index; ++prior) {
-                if (authorizationProvider_->methodAt(prior) == method) {
-                    return Result::failure(ErrorCode::DuplicateField);
+            for (size_t index = 0; index < count; ++index) {
+                const uint16_t method = access.authorization->methodAt(index);
+                if (method == 0U) return Result::failure(ErrorCode::NotConfigured);
+                for (size_t prior = 0; prior < index; ++prior) {
+                    if (access.authorization->methodAt(prior) == method) {
+                        return Result::failure(ErrorCode::DuplicateField);
+                    }
                 }
             }
         }
-        config_.protocolFeatures |= bbp2::FeatureAuthentication;
-    } else if ((config_.protocolFeatures &
-                bbp2::FeatureAuthentication) != 0U) {
-        return Result::failure(ErrorCode::NotConfigured);
-    }
-    if (controllerControlEndpoint_ != nullptr) {
-        if (config_.maxFrameSize <
-            bbp2::kControllerMutationMaximumFrameSize) {
+        if (access.control != nullptr &&
+            config_.maxFrameSize < bbp2::kControllerMutationMaximumFrameSize) {
             return Result::failure(ErrorCode::NotConfigured);
         }
-        config_.protocolFeatures |= bbp2::FeatureControllerControl;
-        if (controllerControlEndpoint_->supportsPresenceKeyControl()) {
-            config_.protocolFeatures |= bbp2::FeaturePresenceKeyControl;
-        }
-    } else if ((config_.protocolFeatures &
-                (bbp2::FeatureControllerControl |
-                 bbp2::FeaturePresenceKeyControl)) != 0U) {
+        suppliedFeatures |= transportFeatures(static_cast<uint8_t>(transportId));
+    }
+    const uint32_t accessFeatures = bbp2::FeatureAuthentication |
+        bbp2::FeatureControllerControl | bbp2::FeaturePresenceKeyControl;
+    if ((config_.protocolFeatures & accessFeatures & ~suppliedFeatures) != 0U) {
         return Result::failure(ErrorCode::NotConfigured);
     }
     const bool reliableFeature =
@@ -351,9 +352,7 @@ Result DeviceRuntime::start() {
         if (!fingerprintResult) return fingerprintResult;
         hasManifestFingerprint_ = true;
     }
-    if (authorizationProvider_ != nullptr) {
-        authorizationProvider_->resetSessions();
-    }
+    resetAuthorizationSessions();
     transports_.setReceiver(&DeviceRuntime::receiveThunk, this);
     transports_.setSessionHandlers(
         &DeviceRuntime::connectedThunk,
@@ -370,28 +369,16 @@ Result DeviceRuntime::start() {
 }
 
 void DeviceRuntime::stop() {
+    if (timeSync_ != nullptr) timeSync_->reset(true);
     transports_.stopAll();
     transports_.setReceiver(nullptr, nullptr);
     transports_.setSessionHandlers(nullptr, nullptr, nullptr);
-    if (authorizationProvider_ != nullptr) {
-        authorizationProvider_->resetSessions();
-    }
     if (reliableOutbox_ != nullptr) reliableOutbox_->reset();
     telemetryLeases_.reset();
     for (size_t index = 0; index < BLINKER_MAX_PEER_SESSIONS; ++index) {
-        if (controllerControlEndpoint_ != nullptr &&
-            peers_[index].occupied) {
-            RxContext closed;
-            closed.transportId = peers_[index].transportId;
-            closed.sessionId = peers_[index].sessionId;
-            closed.encrypted = peers_[index].encrypted;
-            closed.bonded = peers_[index].bonded;
-            closed.authenticated =
-                peers_[index].transportAuthenticated;
-            controllerControlEndpoint_->controllerSessionClosed(closed);
-        }
-        peers_[index] = PeerSession();
+        if (peers_[index].occupied) retirePeer(peers_[index]);
     }
+    resetAuthorizationSessions();
     for (size_t index = 0; index < BLINKER_MAX_TRANSPORTS; ++index) {
         helloSent_[index] = false;
     }
@@ -418,22 +405,14 @@ void DeviceRuntime::poll(uint32_t totalBudgetMicros) {
                  ++peerIndex) {
                 if (peers_[peerIndex].occupied &&
                     peers_[peerIndex].transportId == index) {
-                    if (authorizationProvider_ != nullptr) {
-                        AuthorizationSessionContext security;
-                        security.transportId =
-                            peers_[peerIndex].transportId;
-                        security.sessionId = peers_[peerIndex].sessionId;
-                        security.encrypted = peers_[peerIndex].encrypted;
-                        security.bonded = peers_[peerIndex].bonded;
-                        security.transportAuthenticated =
-                            peers_[peerIndex].transportAuthenticated;
-                        authorizationProvider_->sessionClosed(security);
-                    }
-                    peers_[peerIndex] = PeerSession();
+                    retirePeer(peers_[peerIndex]);
                 }
             }
             continue;
         }
+        // Transport progress releases its existing TX slot. Service a bounded
+        // cached result before automatic Hello/outbox/telemetry traffic.
+        pollRequestAcks(static_cast<uint8_t>(index));
         const bool peerInitiatesHello =
             (transport->capabilities().features &
              TransportFeaturePeerInitiatesHello) != 0U;
@@ -472,6 +451,74 @@ void DeviceRuntime::poll(uint32_t totalBudgetMicros) {
     }
     if (reliableOutbox_ != nullptr) reliableOutbox_->poll();
     pollTelemetry();
+    pollTimeSync(); // Control/ACK/bootstrap and sampling keep their original priority.
+}
+
+Result DeviceRuntime::setTimeSync(ITimeSync* service) {
+    if (started_) return Result::failure(ErrorCode::NotConfigured);
+    if (timeSync_ != nullptr && service != timeSync_)
+        return Result::failure(ErrorCode::AlreadyExists);
+    timeSync_ = service;
+    return Result::success();
+}
+
+WallTimeSource DeviceRuntime::timeSource(uint8_t transportId) const {
+    const IFrameTransport* transport = transports_.at(transportId);
+    if (transport == nullptr) return WallTimeSource::None;
+    const uint16_t flags = transport->capabilities().features;
+    const bool local = (flags & TransportFeatureLocal) != 0U;
+    const bool cloud = (flags & TransportFeatureCloud) != 0U;
+    const bool authenticated = (flags & TransportFeatureAuthenticated) != 0U;
+    if (cloud && !local && authenticated) return WallTimeSource::Server;
+    if (local && !cloud && (authenticated || transports_.accessAt(transportId).authorization != nullptr))
+        return WallTimeSource::Controller;
+    return WallTimeSource::None;
+}
+
+TimeSyncPeer DeviceRuntime::timePeer(const PeerSession& session) const {
+    TimeSyncPeer value;
+    const IFrameTransport* transport = transports_.at(session.transportId);
+    if (transport == nullptr || transport->state() != TransportState::Online) return value;
+    value.transportId = session.transportId;
+    value.sessionId = session.sessionId;
+    value.source = timeSource(session.transportId); // Bound path, never Hello.role.
+    value.features = session.helloComplete ? session.negotiatedFeatures : 0U;
+    value.authenticated = authorizedFor(session, kAuthorizationPermissionControl);
+    value.permissions = value.authenticated ? kAuthorizationPermissionControl : 0U;
+    return value;
+}
+
+TimeSyncPeer DeviceRuntime::selectedTimePeer() const {
+    TimeSyncPeer selected;
+    for (size_t i = 0U; i < BLINKER_MAX_PEER_SESSIONS; ++i) {
+        const PeerSession& session = peers_[i];
+        if (!session.occupied || !session.helloComplete || !session.idReady) continue;
+        const TimeSyncPeer candidate = timePeer(session);
+        if (candidate.source == WallTimeSource::None || !candidate.authenticated ||
+            (candidate.features & bbp2::FeatureTimeSync) == 0U) continue;
+        if (candidate.source == WallTimeSource::Server) return candidate;
+        if (selected.source == WallTimeSource::None) selected = candidate;
+    }
+    return selected;
+}
+
+void DeviceRuntime::pollTimeSync() {
+    if (timeSync_ == nullptr) return;
+    const TimeSyncPeer selected = selectedTimePeer();
+    if (!timeSync_->poll(selected) || selected.source == WallTimeSource::None) return;
+    const uint16_t sequence = nextSequence();
+    size_t written = 0U;
+    Result result = timeSync_->request(selected, sequence,
+        MutableByteSpan(transmitBuffer_.data + bbp2::kBaseHeaderSize,
+                        transmitBuffer_.size - bbp2::kBaseHeaderSize), written);
+    if (result) {
+        SendTarget target;
+        target.kind = SendTargetKind::Session;
+        target.transportId = selected.transportId;
+        target.sessionId = selected.sessionId;
+        result = sendEncodedBody(bbp2::MessageKind::TimeRequest, bbp2::FlagNone, sequence, written, target);
+        if (!result) timeSync_->sendRejected(result.code());
+    } else timeSync_->reset(false); // Encoding/RNG failure retains the long retry deadline.
 }
 
 void DeviceRuntime::setCommandHandler(
@@ -530,31 +577,37 @@ void DeviceRuntime::setStatePageEncoder(
     statePageContext_ = context;
 }
 
-Result DeviceRuntime::setAuthorizationProvider(
-    IAuthorizationProvider* provider) {
-    if (started_) return Result::failure(ErrorCode::NotConfigured);
-    authorizationProvider_ = provider;
-    if (provider == nullptr) {
-        config_.protocolFeatures &=
-            ~static_cast<uint32_t>(bbp2::FeatureAuthentication);
+uint32_t DeviceRuntime::transportFeatures(uint8_t transportId) const {
+    const TransportAccess access = transports_.accessAt(transportId);
+    uint32_t features = config_.protocolFeatures &
+        ~static_cast<uint32_t>(bbp2::FeatureAuthentication |
+            bbp2::FeatureControllerControl | bbp2::FeaturePresenceKeyControl | bbp2::FeatureTimeSync);
+    if (timeSync_ != nullptr && config_.maxFrameSize >= bbp2::kBaseHeaderSize + bbp2::kTimeResponseMaxSize &&
+        timeSource(transportId) != WallTimeSource::None)
+        features |= bbp2::FeatureTimeSync;
+    if (access.authorization != nullptr) features |= bbp2::FeatureAuthentication;
+    if (access.control != nullptr) {
+        features |= bbp2::FeatureControllerControl;
+        if (access.control->supportsPresenceKeyControl()) {
+            features |= bbp2::FeaturePresenceKeyControl;
+        }
     }
-    return Result::success();
+    return features;
 }
 
-Result DeviceRuntime::setControllerControlEndpoint(
-    IControllerControlEndpoint* endpoint) {
-    if (started_) return Result::failure(ErrorCode::NotConfigured);
-    controllerControlEndpoint_ = endpoint;
-    if (endpoint == nullptr) {
-        config_.protocolFeatures &=
-            ~static_cast<uint32_t>(
-                bbp2::FeatureControllerControl |
-                bbp2::FeaturePresenceKeyControl);
-    } else if (!endpoint->supportsPresenceKeyControl()) {
-        config_.protocolFeatures &=
-            ~static_cast<uint32_t>(bbp2::FeaturePresenceKeyControl);
+void DeviceRuntime::resetAuthorizationSessions() {
+    for (size_t index = 0; index < transports_.size(); ++index) {
+        IAuthorizationProvider* provider = transports_.accessAt(index).authorization;
+        if (provider == nullptr) continue;
+        bool alreadyReset = false;
+        for (size_t prior = 0; prior < index; ++prior) {
+            if (transports_.accessAt(prior).authorization == provider) {
+                alreadyReset = true;
+                break;
+            }
+        }
+        if (!alreadyReset) provider->resetSessions();
     }
-    return Result::success();
 }
 
 Result DeviceRuntime::setReliableOutbox(ReliableOutbox* outbox) {
@@ -629,28 +682,46 @@ void DeviceRuntime::sessionDisconnected(const RxContext& rx) {
     if (reliableOutbox_ != nullptr) {
         reliableOutbox_->sessionClosed(rx);
     }
-    if (controllerControlEndpoint_ != nullptr) {
-        controllerControlEndpoint_->controllerSessionClosed(rx);
-    }
     telemetryLeases_.sessionClosed(rx);
     for (size_t index = 0; index < BLINKER_MAX_PEER_SESSIONS; ++index) {
         PeerSession& session = peers_[index];
         if (session.occupied && session.transportId == rx.transportId &&
             session.sessionId == rx.sessionId) {
-            if (authorizationProvider_ != nullptr) {
-                AuthorizationSessionContext security;
-                security.transportId = session.transportId;
-                security.sessionId = session.sessionId;
-                security.encrypted = session.encrypted;
-                security.bonded = session.bonded;
-                security.transportAuthenticated =
-                    session.transportAuthenticated;
-                authorizationProvider_->sessionClosed(security);
-            }
-            session = PeerSession();
+            retirePeer(session);
             return;
         }
     }
+    IControllerControlEndpoint* control = transports_.accessAt(rx.transportId).control;
+    if (control != nullptr) control->controllerSessionClosed(rx);
+}
+
+void DeviceRuntime::retirePeer(PeerSession& session) {
+    if (timeSync_ != nullptr) timeSync_->sessionClosed(session.transportId, session.sessionId);
+    const TransportAccess access = transports_.accessAt(session.transportId);
+    IAuthorizationProvider* authorizationProvider = access.authorization;
+    IControllerControlEndpoint* controllerControlEndpoint = access.control;
+    // A transport can become unavailable without a native disconnect callback
+    // (e.g. MQTT credential failure). Retire its control window as well as its
+    // authorization, without resetting another transport's sessions.
+    if (controllerControlEndpoint != nullptr) {
+        RxContext closed;
+        closed.transportId = session.transportId;
+        closed.sessionId = session.sessionId;
+        closed.encrypted = session.encrypted;
+        closed.bonded = session.bonded;
+        closed.authenticated = session.transportAuthenticated;
+        controllerControlEndpoint->controllerSessionClosed(closed);
+    }
+    if (authorizationProvider != nullptr) {
+        AuthorizationSessionContext security;
+        security.transportId = session.transportId;
+        security.sessionId = session.sessionId;
+        security.encrypted = session.encrypted;
+        security.bonded = session.bonded;
+        security.transportAuthenticated = session.transportAuthenticated;
+        authorizationProvider->sessionClosed(security);
+    }
+    session = PeerSession();
 }
 
 void DeviceRuntime::receive(ByteView encoded, const RxContext& rx) {
@@ -686,6 +757,11 @@ void DeviceRuntime::receive(ByteView encoded, const RxContext& rx) {
         result = handleAck(frame, rx);
     } else if (kind == bbp2::MessageKind::Error) {
         result = handleError(frame, rx);
+    } else if (kind == bbp2::MessageKind::TimeResponse) {
+        if (timeSync_ != nullptr) (void)timeSync_->poll(selectedTimePeer());
+        result = timeSync_ != nullptr && existingPeer != nullptr
+            ? timeSync_->receive(timePeer(*existingPeer), frame)
+            : Result::failure(ErrorCode::UnsupportedFeature);
     } else if (kind == bbp2::MessageKind::ManifestRequest) {
         result = handleManifestRequest(frame, rx);
     } else if (kind == bbp2::MessageKind::ManifestAccept) {
@@ -741,10 +817,12 @@ void DeviceRuntime::receive(ByteView encoded, const RxContext& rx) {
 Result DeviceRuntime::handleControllerControlOpen(
     const bbp2::FrameView& frame,
     const RxContext& rx) {
+    IControllerControlEndpoint* controllerControlEndpoint =
+        transports_.accessAt(rx.transportId).control;
     if (frame.header.flags != bbp2::FlagNone) {
         return Result::failure(ErrorCode::InvalidEncoding);
     }
-    if (controllerControlEndpoint_ == nullptr) {
+    if (controllerControlEndpoint == nullptr) {
         return Result::failure(ErrorCode::UnsupportedFeature);
     }
     if (!negotiated(rx) ||
@@ -761,7 +839,7 @@ Result DeviceRuntime::handleControllerControlOpen(
     Result result = bbp2::decodeControllerControlOpenBody(frame.body);
     ByteView nonce;
     if (result) {
-        result = controllerControlEndpoint_->beginControlWindow(
+        result = controllerControlEndpoint->beginControlWindow(
             rx,
             nonce);
     }
@@ -789,10 +867,12 @@ Result DeviceRuntime::handleControllerControlOpen(
 Result DeviceRuntime::handleControllerMutation(
     const bbp2::FrameView& frame,
     const RxContext& rx) {
+    IControllerControlEndpoint* controllerControlEndpoint =
+        transports_.accessAt(rx.transportId).control;
     if (frame.header.flags != bbp2::FlagNone) {
         return Result::failure(ErrorCode::InvalidEncoding);
     }
-    if (controllerControlEndpoint_ == nullptr) {
+    if (controllerControlEndpoint == nullptr) {
         return Result::failure(ErrorCode::UnsupportedFeature);
     }
     if (!negotiated(rx) ||
@@ -818,7 +898,7 @@ Result DeviceRuntime::handleControllerMutation(
     }
     ByteView receipt;
     if (result) {
-        result = controllerControlEndpoint_->applyControllerMutation(
+        result = controllerControlEndpoint->applyControllerMutation(
             rx,
             mutation.grant,
             mutation.controllerSecret,
@@ -840,11 +920,13 @@ Result DeviceRuntime::handleControllerMutation(
 Result DeviceRuntime::handlePresenceKeyMutation(
     const bbp2::FrameView& frame,
     const RxContext& rx) {
+    IControllerControlEndpoint* controllerControlEndpoint =
+        transports_.accessAt(rx.transportId).control;
     if (frame.header.flags != bbp2::FlagNone) {
         return Result::failure(ErrorCode::InvalidEncoding);
     }
-    if (controllerControlEndpoint_ == nullptr ||
-        !controllerControlEndpoint_->supportsPresenceKeyControl()) {
+    if (controllerControlEndpoint == nullptr ||
+        !controllerControlEndpoint->supportsPresenceKeyControl()) {
         return Result::failure(ErrorCode::UnsupportedFeature);
     }
     if (!negotiated(rx) ||
@@ -865,7 +947,7 @@ Result DeviceRuntime::handlePresenceKeyMutation(
         return Result::failure(ErrorCode::BufferTooSmall);
     }
     ByteView receipt;
-    Result result = controllerControlEndpoint_->applyPresenceKeyMutation(
+    Result result = controllerControlEndpoint->applyPresenceKeyMutation(
         rx,
         frame.body,
         MutableByteSpan(
@@ -885,6 +967,8 @@ Result DeviceRuntime::handlePresenceKeyMutation(
 Result DeviceRuntime::handleHello(
     const bbp2::FrameView& frame,
     const RxContext& rx) {
+    IAuthorizationProvider* authorizationProvider =
+        transports_.accessAt(rx.transportId).authorization;
     bbp2::HelloBody hello;
     Result result = bbp2::decodeHelloBody(frame.body, hello);
     if (!result) return result;
@@ -904,8 +988,10 @@ Result DeviceRuntime::handleHello(
     }
     session->helloComplete = true;
     session->negotiatedFeatures =
-        hello.features & config_.protocolFeatures;
+        hello.features & transportFeatures(rx.transportId);
     session->remoteMaxFrameSize = hello.maxFrameSize;
+    if (hello.maxFrameSize < bbp2::kBaseHeaderSize + bbp2::kTimeResponseMaxSize)
+        session->negotiatedFeatures &= ~static_cast<uint32_t>(bbp2::FeatureTimeSync);
     if (hello.maxFrameSize <
         bbp2::kControllerMutationReceiptMaximumFrameSize) {
         session->negotiatedFeatures &=
@@ -934,7 +1020,7 @@ Result DeviceRuntime::handleHello(
          bbp2::FeatureReliableDelivery) != 0U
             ? hello.reliableReceiveWindow
             : 0U;
-    if (authorizationProvider_ != nullptr &&
+    if (authorizationProvider != nullptr &&
         (session->negotiatedFeatures &
          bbp2::FeatureAuthentication) != 0U) {
         bool commonMethod = false;
@@ -942,10 +1028,10 @@ Result DeviceRuntime::handleHello(
              peerMethod < hello.authorizationMethodCount && !commonMethod;
              ++peerMethod) {
             for (size_t localMethod = 0;
-                 localMethod < authorizationProvider_->methodCount();
+                 localMethod < authorizationProvider->methodCount();
                  ++localMethod) {
                 if (hello.authorizationMethods[peerMethod] ==
-                    authorizationProvider_->methodAt(localMethod)) {
+                    authorizationProvider->methodAt(localMethod)) {
                     commonMethod = true;
                     break;
                 }
@@ -1039,7 +1125,7 @@ Result DeviceRuntime::handleCommand(
         result = stateSettlementHandler_(stateSettlementContext_, nullptr);
     }
     if (reliable) {
-        rememberRequest(
+        RequestReplayRecord& record = rememberRequest(
             *session,
             frame.header.sequence,
             fingerprint,
@@ -1048,14 +1134,14 @@ Result DeviceRuntime::handleCommand(
             result ? WireError::MalformedMessage
                    : mapError(result.code()));
         secureZero(MutableByteSpan(fingerprint, sizeof(fingerprint)));
+        if (result) {
+            sendRequestAck(record, rx);
+            return Result::success();
+        }
     }
     if (!result) return result;
     if ((frame.header.flags & bbp2::FlagAckRequired) != 0U) {
-        const Result responseResult = sendAck(frame.header.sequence, rx);
-        // A reliable request is already recorded before the response send.
-        // If the transport is full, the peer retries and receives the cached
-        // ACK without executing the command again.
-        return reliable ? Result::success() : responseResult;
+        return sendAck(frame.header.sequence, rx);
     }
     return Result::success();
 }
@@ -1159,7 +1245,7 @@ Result DeviceRuntime::handlePatch(
         invalidateStateObservations(session);
     }
 
-    rememberRequest(
+    RequestReplayRecord& record = rememberRequest(
         *session,
         frame.header.sequence,
         fingerprint,
@@ -1170,9 +1256,7 @@ Result DeviceRuntime::handlePatch(
         stateRevision_);
     secureZero(MutableByteSpan(fingerprint, sizeof(fingerprint)));
     if (!result) return result;
-    // The request is already in the replay cache. A transport-full result is
-    // recovered by the peer retry without applying state twice.
-    sendAck(frame.header.sequence, rx, true, stateRevision_);
+    sendRequestAck(record, rx);
     // ACK is the source peer's confirmation. Other authorized peers receive
     // a best-effort full keyed snapshot at the same revision. Full keyed
     // state avoids forwarding source-specific endpoint IDs and also leaves
@@ -1241,7 +1325,7 @@ Result DeviceRuntime::handleEvent(
                            &context);
     }
     if (reliable) {
-        rememberRequest(
+        RequestReplayRecord& record = rememberRequest(
             *session,
             frame.header.sequence,
             fingerprint,
@@ -1250,11 +1334,14 @@ Result DeviceRuntime::handleEvent(
             result ? WireError::MalformedMessage
                    : mapError(result.code()));
         secureZero(MutableByteSpan(fingerprint, sizeof(fingerprint)));
+        if (result) {
+            sendRequestAck(record, rx);
+            return Result::success();
+        }
     }
     if (!result) return result;
     if ((frame.header.flags & bbp2::FlagAckRequired) != 0U) {
-        const Result response = sendAck(frame.header.sequence, rx);
-        return reliable ? Result::success() : response;
+        return sendAck(frame.header.sequence, rx);
     }
     return Result::success();
 }
@@ -1289,6 +1376,9 @@ Result DeviceRuntime::handleError(
     bbp2::ErrorBody body;
     Result result = bbp2::decodeErrorBody(frame.body, body);
     if (!result) return result;
+    PeerSession* timeSession = peer(rx, false);
+    if (timeSync_ != nullptr && timeSession != nullptr && body.hasRelatedSequence)
+        (void)timeSync_->receive(timePeer(*timeSession), frame);
     if (reliableOutbox_ != nullptr &&
         authorizedFor(rx, kAuthorizationPermissionObserve) &&
         body.hasRelatedSequence &&
@@ -1312,21 +1402,23 @@ Result DeviceRuntime::handleError(
 Result DeviceRuntime::handleAuthenticate(
     const bbp2::FrameView& frame,
     const RxContext& rx) {
+    IAuthorizationProvider* authorizationProvider =
+        transports_.accessAt(rx.transportId).authorization;
     if (!negotiated(rx)) {
         return Result::failure(ErrorCode::NotConfigured);
     }
     if (!localTransport(rx.transportId) ||
         (!rx.encrypted &&
-         (authorizationProvider_ == nullptr ||
-          !authorizationProvider_->establishesSecureTransport()))) {
+         (authorizationProvider == nullptr ||
+          !authorizationProvider->establishesSecureTransport()))) {
         return Result::failure(ErrorCode::AuthenticationRequired);
     }
-    if (authorizationProvider_ != nullptr &&
+    if (authorizationProvider != nullptr &&
         (negotiatedFeatures(rx) &
          bbp2::FeatureAuthentication) == 0U) {
         return Result::failure(ErrorCode::UnsupportedFeature);
     }
-    if (authorizationProvider_ == nullptr ||
+    if (authorizationProvider == nullptr ||
         (frame.header.flags &
          static_cast<uint8_t>(bbp2::FlagIsResponse | bbp2::FlagIdMode)) !=
             0U) {
@@ -1335,6 +1427,14 @@ Result DeviceRuntime::handleAuthenticate(
     bbp2::AuthRequestBody request;
     Result result = bbp2::decodeAuthRequestBody(frame.body, request);
     if (!result) return result;
+    bool supportedMethod = false;
+    for (size_t index = 0; index < authorizationProvider->methodCount(); ++index) {
+        if (authorizationProvider->methodAt(index) == request.method) {
+            supportedMethod = true;
+            break;
+        }
+    }
+    if (!supportedMethod) return Result::failure(ErrorCode::UnsupportedFeature);
     PeerSession* session = peer(rx, false);
     if (session == nullptr) {
         return Result::failure(ErrorCode::NotConfigured);
@@ -1368,7 +1468,7 @@ Result DeviceRuntime::handleAuthenticate(
     security.bonded = rx.bonded;
     security.transportAuthenticated = rx.authenticated;
     AuthorizationDecision decision;
-    result = authorizationProvider_->authorize(
+    result = authorizationProvider->authorize(
         request.method,
         request.payload,
         security,
@@ -1383,7 +1483,7 @@ Result DeviceRuntime::handleAuthenticate(
         (decision.status == bbp2::AuthStatus::Authorized
              ? !validAuthorizationPermissions(decision.permissions)
              : decision.permissions != 0U)) {
-        authorizationProvider_->sessionClosed(security);
+        authorizationProvider->sessionClosed(security);
         return Result::failure(ErrorCode::InvalidArgument);
     }
     if (decision.status == bbp2::AuthStatus::Rejected) {
@@ -1392,7 +1492,7 @@ Result DeviceRuntime::handleAuthenticate(
             config_.maxAuthorizationAttempts) {
             session->authorizationLocked = true;
             decision.status = bbp2::AuthStatus::Locked;
-            authorizationProvider_->sessionClosed(security);
+            authorizationProvider->sessionClosed(security);
         }
     }
     response.status = decision.status;
@@ -1401,10 +1501,10 @@ Result DeviceRuntime::handleAuthenticate(
     result = sendAuthResult(frame.header.sequence, response, rx);
     if (decision.status == bbp2::AuthStatus::Authorized) {
         if (!result) {
-            authorizationProvider_->sessionClosed(security);
+            authorizationProvider->sessionClosed(security);
             return result;
         }
-        authorizationProvider_->authorizationResultQueued(security);
+        authorizationProvider->authorizationResultQueued(security);
         session->authorizationPermissions = decision.permissions;
     } else if (decision.status == bbp2::AuthStatus::Locked && result) {
         (void)transports_.disconnectSession(
@@ -1721,7 +1821,9 @@ Result DeviceRuntime::sendHello(
     hello.role = bbp2::PeerRole::Device;
     hello.versions[0] = bbp2::kVersion;
     hello.versionCount = 1;
-    hello.features = config_.protocolFeatures;
+    hello.features = transportFeatures(target.transportId);
+    IAuthorizationProvider* authorizationProvider =
+        transports_.accessAt(target.transportId).authorization;
     hello.maxFrameSize = config_.maxFrameSize;
     hello.maxReassemblySize = config_.maxReassemblySize;
     if ((config_.protocolFeatures & bbp2::FeatureManifest) != 0U) {
@@ -1734,15 +1836,15 @@ Result DeviceRuntime::sendHello(
             sizeof(manifestFingerprint_));
         hello.hasManifestFingerprint = true;
     }
-    if (authorizationProvider_ != nullptr) {
-        const size_t count = authorizationProvider_->methodCount();
+    if (authorizationProvider != nullptr) {
+        const size_t count = authorizationProvider->methodCount();
         if (count == 0U || count > bbp2::kMaxAuthorizationMethods) {
             return Result::failure(ErrorCode::NotConfigured);
         }
         hello.authorizationMethodCount = static_cast<uint8_t>(count);
         for (size_t index = 0; index < count; ++index) {
             hello.authorizationMethods[index] =
-                authorizationProvider_->methodAt(index);
+                authorizationProvider->methodAt(index);
         }
     }
     if ((config_.protocolFeatures &
@@ -2499,7 +2601,7 @@ Result DeviceRuntime::replayReliableRequest(
     for (uint8_t index = 0;
          index < config_.reliableReceiveWindow;
          ++index) {
-        const RequestReplayRecord& record = session.requestReplay[index];
+        RequestReplayRecord& record = session.requestReplay[index];
         if (record.response == RequestReplayResponse::Empty ||
             record.sequence != frame.header.sequence) {
             continue;
@@ -2520,12 +2622,9 @@ Result DeviceRuntime::replayReliableRequest(
         }
         secureZero(MutableByteSpan(
             fingerprint, kRequestFingerprintSize));
-        if (record.response == RequestReplayResponse::Ack) {
-            sendAck(
-                frame.header.sequence,
-                rx,
-                record.hasStateRevision,
-                record.stateRevision);
+        if (record.response == RequestReplayResponse::Ack ||
+            record.response == RequestReplayResponse::AckPending) {
+            sendRequestAck(record, rx);
         } else {
             sendError(
                 record.error,
@@ -2540,7 +2639,7 @@ Result DeviceRuntime::replayReliableRequest(
     return Result::success();
 }
 
-void DeviceRuntime::rememberRequest(
+DeviceRuntime::RequestReplayRecord& DeviceRuntime::rememberRequest(
     PeerSession& session,
     uint16_t sequence,
     const uint8_t fingerprint[kRequestFingerprintSize],
@@ -2560,6 +2659,50 @@ void DeviceRuntime::rememberRequest(
     record.stateRevision = stateRevision;
     session.nextRequestReplay = static_cast<uint8_t>(
         (index + 1U) % config_.reliableReceiveWindow);
+    return record;
+}
+
+void DeviceRuntime::sendRequestAck(
+    RequestReplayRecord& record,
+    const RxContext& rx) {
+    const Result result = sendAck(
+        record.sequence, rx, record.hasStateRevision, record.stateRevision);
+    // Reuse the receive window, not another frame queue. Only backpressure is
+    // locally retryable; permanent failures keep exact peer replay as fallback.
+    record.response = result.code() == ErrorCode::WouldBlock
+                          ? RequestReplayResponse::AckPending
+                          : RequestReplayResponse::Ack;
+}
+
+void DeviceRuntime::pollRequestAcks(uint8_t transportId) {
+    bool attempted = false;
+    for (size_t peerIndex = 0U; peerIndex < BLINKER_MAX_PEER_SESSIONS; ++peerIndex) {
+        PeerSession& session = peers_[peerIndex];
+        if (!session.occupied || session.transportId != transportId) continue;
+        const bool allowed = session.helloComplete &&
+            authorizedFor(session, kAuthorizationPermissionControl);
+        // Oldest retained result first; a window replacement also discards any
+        // pending send, preserving the negotiated bounded replay contract.
+        for (uint8_t offset = 0U; offset < config_.reliableReceiveWindow; ++offset) {
+            const uint8_t index = static_cast<uint8_t>(
+                (session.nextRequestReplay + offset) % config_.reliableReceiveWindow);
+            RequestReplayRecord& record = session.requestReplay[index];
+            if (record.response != RequestReplayResponse::AckPending) continue;
+            if (!allowed) {
+                record.response = RequestReplayResponse::Ack;
+                continue;
+            }
+            if (attempted) continue;
+            RxContext rx;
+            rx.transportId = session.transportId;
+            rx.sessionId = session.sessionId;
+            rx.encrypted = session.encrypted;
+            rx.bonded = session.bonded;
+            rx.authenticated = session.transportAuthenticated;
+            sendRequestAck(record, rx);
+            attempted = true; // At most one send attempt per online transport/poll.
+        }
+    }
 }
 
 SendTarget DeviceRuntime::responseTarget(const RxContext& rx) const {
@@ -2624,8 +2767,15 @@ bool DeviceRuntime::authorizedFor(
     const RxContext& rx,
     uint32_t requiredPermissions) const {
     if (!localTransport(rx.transportId)) return rx.authenticated;
-    if (!rx.encrypted) return false;
-    if (rx.authenticated) return true;
+    if (rx.authenticated) {
+        // Transport-owned session authorization is independent of payload
+        // encryption (LAN Plain). It must still supply live, exact permissions.
+        const IFrameTransport* transport = transports_.at(rx.transportId);
+        return transport != nullptr && (rx.encrypted ||
+            (transport->capabilities().features & TransportFeatureAuthenticated) != 0U) &&
+            (transport->sessionPermissions(rx.sessionId) & requiredPermissions) == requiredPermissions;
+    }
+    if (!rx.encrypted) return false; // Existing in-band BLE authorization remains secure-only.
     for (size_t index = 0; index < BLINKER_MAX_PEER_SESSIONS; ++index) {
         const PeerSession& session = peers_[index];
         if (session.occupied && session.transportId == rx.transportId &&
@@ -2643,10 +2793,14 @@ bool DeviceRuntime::authorizedFor(
     if (!localTransport(session.transportId)) {
         return session.transportAuthenticated;
     }
-    return session.encrypted &&
-           (session.transportAuthenticated ||
-            (session.authorizationPermissions & requiredPermissions) ==
-                requiredPermissions);
+    const IFrameTransport* transport = transports_.at(session.transportId);
+    if (session.transportAuthenticated) {
+        return transport != nullptr && (session.encrypted ||
+            (transport->capabilities().features & TransportFeatureAuthenticated) != 0U) &&
+            (transport->sessionPermissions(session.sessionId) & requiredPermissions) == requiredPermissions;
+    }
+    if (!session.encrypted) return false;
+    return (session.authorizationPermissions & requiredPermissions) == requiredPermissions;
 }
 
 bool DeviceRuntime::explicitlyAuthorizedLocal(

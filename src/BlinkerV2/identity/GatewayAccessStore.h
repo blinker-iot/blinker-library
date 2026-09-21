@@ -159,6 +159,21 @@ public:
         uint32_t credentialVersion,
         uint32_t deliveryRevision);
 
+    // A newer enrollment for the same physical child makes its previous
+    // Gateway credential unreachable. An authenticated Hub command may then
+    // clear only the exact old outbound record (or its matching revocation
+    // tombstone). A zero delivery revision is the narrow recovery value for a
+    // lost delivery ACK; every other active-record binding still must match.
+    // Empty storage is an idempotent success.
+    Result retireSuperseded(
+        ByteView operationId,
+        uint32_t topologyVersion,
+        ByteView childDeviceInstanceId,
+        uint32_t accessEpoch,
+        ByteView controllerId,
+        uint32_t credentialVersion,
+        uint32_t deliveryRevision);
+
     Result clear();
 
     StorageProtection protection() const {

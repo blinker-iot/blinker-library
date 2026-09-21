@@ -177,6 +177,7 @@ void MqttFrameTransport::poll(uint32_t budgetMicros) {
 
     if (state_ == TransportState::Online && !mqtt_.connected()) {
         notifyDisconnected();
+        lastError_ = ErrorCode::NotConnected;
         enterBackoff(now);
     }
 

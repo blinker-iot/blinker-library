@@ -101,6 +101,7 @@ private:
         const ble::ModeProfile& profile,
         uint8_t (&output)[modeServiceDataSize]);
     Result startAdvertising();
+    Result terminateConnection(uint16_t handle);
     void markHostResult(ErrorCode error);
     int handleGapEvent(const ble_gap_event& event);
     int handleGattAccess(
@@ -142,6 +143,7 @@ private:
     uint16_t connectionHandle_;
     uint16_t pendingConnectHandle_;
     uint16_t pendingDisconnectHandle_;
+    uint16_t pendingTerminateHandle_;
     uint16_t pendingSubscribeHandle_;
     uint16_t pendingSecurityHandle_;
     uint32_t nextSessionId_;

@@ -56,7 +56,8 @@ public:
     uint32_t attemptId() const {
         return connectedAttemptId_ != 0U
                    ? connectedAttemptId_
-                   : adapter_.attemptId();
+                   : (closingAttemptId_ != 0U
+                          ? closingAttemptId_ : adapter_.attemptId());
     }
     size_t queuedRecordCount() const {
         return records_.queuedRecordCount();
@@ -185,7 +186,9 @@ private:
     uint32_t connectStartedMillis_;
     uint32_t connectingAttemptId_;
     uint32_t connectedAttemptId_;
-    uint32_t retireAttemptId_;
+    // Record retirement revokes I/O immediately; the physical slot remains
+    // owned until Port completion is observed from poll().
+    uint32_t closingAttemptId_;
     uint32_t faultRetirementAttemptId_;
     ErrorCode reportedPortError_;
     bool started_;

@@ -68,9 +68,10 @@ Client::Client(
 
 Result Client::addTransport(
     IFrameTransport& transport,
-    TransportLifecyclePolicy lifecycle) {
+    TransportLifecyclePolicy lifecycle,
+    TransportAccess access) {
     if (started_) return Result::failure(ErrorCode::NotConfigured);
-    return transports_.addTransport(transport, lifecycle);
+    return transports_.addTransport(transport, lifecycle, access);
 }
 
 Result Client::removeTransport(IFrameTransport& transport) {
@@ -176,15 +177,6 @@ Result Client::transportStatus(
     return Result::success();
 }
 
-Result Client::setAuthorizationProvider(IAuthorizationProvider* provider) {
-    return runtime_.setAuthorizationProvider(provider);
-}
-
-Result Client::setControllerControlEndpoint(
-    IControllerControlEndpoint* endpoint) {
-    return runtime_.setControllerControlEndpoint(endpoint);
-}
-
 Result Client::setReliableOutbox(ReliableOutbox* outbox) {
     return runtime_.setReliableOutbox(outbox);
 }
@@ -196,6 +188,13 @@ Result Client::setMonotonicClock(IClock* clock) {
     }
     clock_ = clock;
     return Result::success();
+}
+
+Result Client::setTimeSync(ITimeSync& service, IClock& tick, IRandom& random) {
+    if (started_) return Result::failure(ErrorCode::NotConfigured);
+    Result result = service.configure(tick, random);
+    if (result) result = runtime_.setTimeSync(&service);
+    return result;
 }
 
 Result Client::setStateWriteHandler(

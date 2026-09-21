@@ -118,10 +118,12 @@ TransportState ManagedMqttTransport::state() const {
 
 ErrorCode ManagedMqttTransport::lastError() const {
     if (bindingError_ != ErrorCode::Ok) return bindingError_;
-    if (sessionProvider_.state() == SessionProviderState::Failed) {
+    if (sessionProvider_.state() == SessionProviderState::Failed ||
+        sessionProvider_.state() == SessionProviderState::Backoff) {
         return sessionProvider_.lastError();
     }
-    if (mqttTransport_.state() == TransportState::Error) {
+    if (mqttTransport_.state() == TransportState::Error ||
+        mqttTransport_.state() == TransportState::Backoff) {
         return mqttTransport_.lastError();
     }
     return ErrorCode::Ok;

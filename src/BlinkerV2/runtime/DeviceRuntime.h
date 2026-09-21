@@ -6,11 +6,13 @@
 #include "../interface/IAuthorizationProvider.h"
 #include "../interface/IControllerControlEndpoint.h"
 #include "../interface/IClock.h"
+#include "../interface/ITimeSync.h"
 #include "../model/EndpointRegistry.h"
 #include "../protocol/bbp2/Frame.h"
 #include "../protocol/bbp2/KeyedBody.h"
 #include "../provisioning/PresenceKeyControlContract.h"
 #include "../protocol/bbp2/Messages.h"
+#include "../protocol/bbp2/WireError.h"
 #include "ReliableOutbox.h"
 #include "TelemetryLease.h"
 #include "../transport/TransportHub.h"
@@ -21,21 +23,6 @@
 #endif
 
 namespace blinker {
-
-enum class WireError : uint16_t {
-    MalformedMessage = 1,
-    AuthenticationRequired = 2,
-    NegotiationRequired = 3,
-    UnsupportedMessage = 4,
-    UnknownEndpoint = 5,
-    CommandRejected = 6,
-    ResourceExhausted = 7,
-    InternalError = 8,
-    SequenceConflict = 9,
-    StateConflict = 10,
-    ManifestConflict = 11,
-    RateLimited = 12
-};
 
 // Handlers run synchronously inside receive(). encodedValue and rx are valid
 // only for this call. Deferred work reports later state/event through the
@@ -146,13 +133,11 @@ public:
     void setEventHandler(EventHandler handler, void* context);
     void setStateEncoder(StateEncoder encoder, void* context);
     void setStatePageEncoder(StatePageEncoder encoder, void* context);
-    Result setAuthorizationProvider(IAuthorizationProvider* provider);
-    Result setControllerControlEndpoint(
-        IControllerControlEndpoint* endpoint);
     // The outbox and every slot buffer must outlive Runtime and be configured
     // before start(). It is optional when the device only receives reliable
     // COMMANDs and never originates reliable PATCHes.
     Result setReliableOutbox(ReliableOutbox* outbox);
+    Result setTimeSync(ITimeSync* service);
     Result setTelemetrySampler(
         IClock* clock,
         TelemetrySampleEncoder encoder,
@@ -224,6 +209,7 @@ private:
     enum class RequestReplayResponse : uint8_t {
         Empty = 0,
         Ack,
+        AckPending,
         Error
     };
 
@@ -331,6 +317,7 @@ private:
     void receive(ByteView frame, const RxContext& rx);
     void sessionConnected(const RxContext& rx);
     void sessionDisconnected(const RxContext& rx);
+    void retirePeer(PeerSession& session);
     Result handleHello(const bbp2::FrameView& frame, const RxContext& rx);
     Result handleCommand(const bbp2::FrameView& frame, const RxContext& rx);
     Result handlePatch(const bbp2::FrameView& frame, const RxContext& rx);
@@ -372,6 +359,8 @@ private:
         cbor::Type valueType,
         const EndpointVisitContext& visit);
     Result sendHello(const SendTarget& target, uint8_t flags, uint16_t sequence);
+    uint32_t transportFeatures(uint8_t transportId) const;
+    void resetAuthorizationSessions();
     Result sendAck(
         uint16_t acknowledgedSequence,
         const RxContext& rx,
@@ -425,6 +414,10 @@ private:
         TelemetryLeaseSlot& lease,
         uint32_t nowMillis);
     void pollTelemetry();
+    void pollTimeSync();
+    WallTimeSource timeSource(uint8_t transportId) const;
+    TimeSyncPeer selectedTimePeer() const;
+    TimeSyncPeer timePeer(const PeerSession& session) const;
     Result requestFingerprint(
         const bbp2::FrameView& frame,
         uint8_t output[kRequestFingerprintSize]) const;
@@ -434,7 +427,7 @@ private:
         PeerSession& session,
         uint8_t fingerprint[kRequestFingerprintSize],
         bool& replayed);
-    void rememberRequest(
+    RequestReplayRecord& rememberRequest(
         PeerSession& session,
         uint16_t sequence,
         const uint8_t fingerprint[kRequestFingerprintSize],
@@ -442,6 +435,8 @@ private:
         WireError error,
         bool hasStateRevision = false,
         uint32_t stateRevision = 0);
+    void sendRequestAck(RequestReplayRecord& record, const RxContext& rx);
+    void pollRequestAcks(uint8_t transportId);
     SendTarget responseTarget(const RxContext& rx) const;
     PeerSession* peer(const RxContext& rx, bool create);
     PeerSession* peer(const SendTarget& target);
@@ -484,9 +479,8 @@ private:
     StatePageEncoder statePageEncoder_;
     void* stateContext_;
     void* statePageContext_;
-    IAuthorizationProvider* authorizationProvider_;
-    IControllerControlEndpoint* controllerControlEndpoint_;
     ReliableOutbox* reliableOutbox_;
+    ITimeSync* timeSync_;
     IClock* telemetryClock_;
     TelemetrySampleEncoder telemetrySampleEncoder_;
     void* telemetrySampleContext_;

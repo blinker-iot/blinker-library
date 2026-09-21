@@ -42,7 +42,17 @@ enum ProtocolFeature : uint32_t {
     FeatureTelemetry = 1UL << 11,
     // Account App/Broker capability; never enabled by the device runtime.
     FeaturePresence = 1UL << 12,
-    FeaturePresenceKeyControl = 1UL << 13
+    FeaturePresenceKeyControl = 1UL << 13,
+    // Synthetic Edge Hub -> Broker Hello only, never a BLE child's capability.
+    FeatureGatewayRouteGeneration = 1UL << 14,
+    // Synthetic Hub Hello only; not a capability of the child or its BBP lane.
+    FeatureGatewayRouteLease = 1UL << 15,
+    // Outer Hub Hello only, with the complete radio release policy installed.
+    // Never a default device feature or a synthetic child's capability.
+    FeatureGatewayDirectYield = 1UL << 18,
+    // Optional business UTC exchange; not advertised until a handler is installed.
+    // Bits 19..23 belong to existing App/Broker readiness/presence/state contracts.
+    FeatureTimeSync = 1UL << 24
 };
 
 enum class RoutePeerKind : uint8_t {

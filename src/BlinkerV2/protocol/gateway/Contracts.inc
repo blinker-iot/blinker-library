@@ -12,6 +12,7 @@ namespace {
 const uint8_t kGatewayAccessContractVersion = 2U;
 const uint8_t kChildRouteContractVersion = 1U;
 const uint8_t kGatewayRouteAdmissionKind = 1U;
+const uint8_t kGatewayRouteAdmissionVersion = 2U;
 const uint8_t kGatewayManagementContractVersion = 1U;
 const uint8_t kGatewayProofCommandKind = 1U;
 const uint8_t kGatewayProofResultKind = 2U;
@@ -197,10 +198,10 @@ ChildRouteEnvelopeView::ChildRouteEnvelopeView()
       correlationId(), innerBbp2Frame() {}
 
 GatewayRouteAdmissionView::GatewayRouteAdmissionView()
-    : version(kChildRouteContractVersion), operationId(),
+    : version(kGatewayRouteAdmissionVersion), operationId(),
       topologyVersion(0U), childLogicalDeviceId(),
       childDeviceInstanceId(), accessEpoch(0U),
-      gatewayCredentialVersion(0U), expiresAtUnixSeconds(0U) {}
+      gatewayCredentialVersion(0U), expiresAtUnixSeconds(0U), retiredGeneration(0U) {}
 
 GatewayProofCommandView::GatewayProofCommandView()
     : version(kGatewayManagementContractVersion), operationId(),
@@ -874,9 +875,10 @@ Result validateGatewayRevocationCommand(
         value.accessEpoch == 0U ||
         !exactBytes(value.controllerId, kControllerIdSize, true) ||
         value.gatewayCredentialVersion == 0U ||
-        value.accessStorageRevision == 0U ||
+        (value.accessStorageRevision == 0U &&
+         value.phase != GatewayRevocationPhase::Supersede) ||
         phase < static_cast<uint8_t>(GatewayRevocationPhase::Prepare) ||
-        phase > static_cast<uint8_t>(GatewayRevocationPhase::Finalize)) {
+        phase > static_cast<uint8_t>(GatewayRevocationPhase::Supersede)) {
         return invalidArgument();
     }
     if (value.phase == GatewayRevocationPhase::Prepare) {
@@ -891,13 +893,15 @@ Result validateGatewayRevocationCommand(
             value.expiresAtUnixSeconds == 0U) {
             return invalidArgument();
         }
-    } else if (!emptyBytes(value.grant) ||
-               !exactBytes(
-                   value.receiptDigest,
-                   kAccessMaterialDigestSize,
-                   true) ||
-               value.expiresAtUnixSeconds != 0U) {
-        return invalidArgument();
+    } else {
+        if (!emptyBytes(value.grant) ||
+            !exactBytes(
+                value.receiptDigest,
+                kAccessMaterialDigestSize,
+                true) ||
+            value.expiresAtUnixSeconds != 0U) {
+            return invalidArgument();
+        }
     }
     return Result::success();
 }
@@ -970,7 +974,7 @@ Result decodeGatewayRevocationCommand(
         reader, kControllerIdSize, true, value.controllerId);
     if (result) result = readUnsigned32(
         reader, value.gatewayCredentialVersion);
-    if (result) result = readUnsigned32(
+    if (result) result = readOptionalUnsigned32(
         reader, value.accessStorageRevision);
     if (result) {
         result = reader.readUnsigned(decoded);
@@ -978,7 +982,7 @@ Result decodeGatewayRevocationCommand(
             (decoded < static_cast<uint8_t>(
                            GatewayRevocationPhase::Prepare) ||
              decoded > static_cast<uint8_t>(
-                           GatewayRevocationPhase::Finalize))) {
+                           GatewayRevocationPhase::Supersede))) {
             result = invalidEncoding();
         }
         if (result) value.phase =
@@ -1002,9 +1006,9 @@ Result validateGatewayRevocationResult(
         !exactBytes(value.operationId, kOperationIdSize, true) ||
         value.topologyVersion == 0U ||
         phase < static_cast<uint8_t>(GatewayRevocationPhase::Prepare) ||
-        phase > static_cast<uint8_t>(GatewayRevocationPhase::Finalize) ||
+        phase > static_cast<uint8_t>(GatewayRevocationPhase::Supersede) ||
         status < static_cast<uint8_t>(GatewayRevocationStatus::NonceReady) ||
-        status > static_cast<uint8_t>(GatewayRevocationStatus::Expired)) {
+        status > static_cast<uint8_t>(GatewayRevocationStatus::Retired)) {
         return invalidArgument();
     }
     if (value.status == GatewayRevocationStatus::NonceReady) {
@@ -1025,6 +1029,15 @@ Result validateGatewayRevocationResult(
         }
     } else if (value.status == GatewayRevocationStatus::Finalized) {
         if (value.phase != GatewayRevocationPhase::Finalize ||
+            !emptyBytes(value.payload) ||
+            !exactBytes(
+                value.receiptDigest,
+                kAccessMaterialDigestSize,
+                true)) {
+            return invalidArgument();
+        }
+    } else if (value.status == GatewayRevocationStatus::Retired) {
+        if (value.phase != GatewayRevocationPhase::Supersede ||
             !emptyBytes(value.payload) ||
             !exactBytes(
                 value.receiptDigest,
@@ -1102,7 +1115,7 @@ Result decodeGatewayRevocationResult(
             (decoded < static_cast<uint8_t>(
                            GatewayRevocationPhase::Prepare) ||
              decoded > static_cast<uint8_t>(
-                           GatewayRevocationPhase::Finalize))) {
+                           GatewayRevocationPhase::Supersede))) {
             result = invalidEncoding();
         }
         if (result) value.phase =
@@ -1114,7 +1127,7 @@ Result decodeGatewayRevocationResult(
             (decoded < static_cast<uint8_t>(
                            GatewayRevocationStatus::NonceReady) ||
              decoded > static_cast<uint8_t>(
-                           GatewayRevocationStatus::Expired))) {
+                           GatewayRevocationStatus::Retired))) {
             result = invalidEncoding();
         }
         if (result) value.status =
@@ -1663,6 +1676,197 @@ Result decodeGatewayPermitJoinResult(
     return normalizedDecodeResult(result);
 }
 
+GatewayExecutionDemandView::GatewayExecutionDemandView()
+    : operation(GatewayExecutionOperation::Probe), topologyVersion(0U),
+      childLogicalDeviceId(), childDeviceInstanceId(), accessEpoch(0U),
+      gatewayCredentialVersion(0U), incarnation(), challengeId(0U), leaseMillis(0U) {}
+
+static Result validateExecutionDemand(const GatewayExecutionDemandView& value, bool direct = false) {
+    const bool probe = value.operation == GatewayExecutionOperation::Probe;
+    const bool decision = value.operation == GatewayExecutionOperation::Decision;
+    const bool yielded = direct && value.operation == GatewayExecutionOperation::Yielded;
+    return static_cast<uint8_t>(value.operation) <= (direct ? 3U : 2U) && value.topologyVersion != 0U &&
+        value.accessEpoch != 0U && value.gatewayCredentialVersion != 0U &&
+        validIdentifier(value.childLogicalDeviceId, kMaximumLogicalDeviceIdSize) &&
+        exactBytes(value.childDeviceInstanceId, kDeviceInstanceIdSize, true) &&
+        (probe ? (direct ? exactBytes(value.incarnation, kGatewayExecutionIncarnationSize, true) : value.incarnation.empty()) && value.challengeId == 0U
+               : exactBytes(value.incarnation, kGatewayExecutionIncarnationSize, true) && value.challengeId != 0U) &&
+        ((decision || yielded) ? value.leaseMillis <= kGatewayExecutionMaximumLeaseMillis && (!yielded || value.leaseMillis != 0U)
+                               : value.leaseMillis == 0U)
+        ? Result::success() : invalidArgument();
+}
+
+static Result encodeExecutionControl(
+    const GatewayExecutionDemandView& value, uint32_t controlId, MutableByteSpan output, size_t& written) {
+    written = 0U;
+    Result result = validateExecutionDemand(value, controlId != 0U);
+    if (!result) return result;
+    cbor::Writer writer(output);
+    result = writer.beginArray(controlId != 0U ? 12U : 11U);
+    if (result) result = writer.writeUnsigned(1U);
+    if (result) result = writer.writeUnsigned(controlId != 0U ? 5U : 4U);
+    if (result) result = writer.writeUnsigned(static_cast<uint8_t>(value.operation));
+    if (result) result = writer.writeUnsigned(value.topologyVersion);
+    if (result) result = writer.writeText(value.childLogicalDeviceId);
+    if (result) result = writer.writeBytes(value.childDeviceInstanceId);
+    if (result) result = writer.writeUnsigned(value.accessEpoch);
+    if (result) result = writer.writeUnsigned(value.gatewayCredentialVersion);
+    if (result) result = writer.writeBytes(value.incarnation);
+    if (result) result = writer.writeUnsigned(value.challengeId);
+    if (result) result = writer.writeUnsigned(value.leaseMillis);
+    if (result && controlId != 0U) result = writer.writeUnsigned(controlId);
+    if (result) written = writer.size();
+    return result;
+}
+
+static Result decodeExecutionControl(ByteView encoded, GatewayExecutionDemandView& value, uint32_t* controlId) {
+    value = GatewayExecutionDemandView();
+    if (encoded.size > kGatewayExecutionMaximumEncodedSize) return invalidEncoding();
+    cbor::Limits limits;
+    limits.maxTextLength = kMaximumLogicalDeviceIdSize;
+    limits.maxByteStringLength = kGatewayExecutionIncarnationSize;
+    limits.maxContainerItems = controlId != nullptr ? 12U : 11U;
+    limits.maxDepth = 1U;
+    cbor::Reader reader(encoded, limits);
+    size_t count = 0U;
+    uint64_t decoded = 0U;
+    Result result = reader.readArraySize(count);
+    if (result && count != limits.maxContainerItems) result = invalidEncoding();
+    if (result) result = reader.readUnsigned(decoded);
+    if (result && decoded != 1U) result = invalidEncoding();
+    if (result) result = reader.readUnsigned(decoded);
+    if (result && decoded != (controlId != nullptr ? 5U : 4U)) result = invalidEncoding();
+    if (result) result = reader.readUnsigned(decoded);
+    if (result && decoded > (controlId != nullptr ? 3U : 2U)) result = invalidEncoding();
+    if (result) value.operation = static_cast<GatewayExecutionOperation>(decoded);
+    if (result) result = readUnsigned32(reader, value.topologyVersion);
+    if (result) result = reader.readText(value.childLogicalDeviceId);
+    if (result) result = readExactBytes(reader, kDeviceInstanceIdSize, true, value.childDeviceInstanceId);
+    if (result) result = readUnsigned32(reader, value.accessEpoch);
+    if (result) result = readUnsigned32(reader, value.gatewayCredentialVersion);
+    if (result) result = reader.readBytes(value.incarnation);
+    if (result) result = readOptionalUnsigned32(reader, value.challengeId);
+    if (result) result = readOptionalUnsigned32(reader, value.leaseMillis);
+    if (result && controlId != nullptr) result = readUnsigned32(reader, *controlId);
+    if (result && !reader.finished()) result = Result::failure(ErrorCode::TrailingData);
+    if (result) result = validateExecutionDemand(value, controlId != nullptr);
+    return normalizedDecodeResult(result);
+}
+
+Result encodeGatewayExecutionDemand(const GatewayExecutionDemandView& value, MutableByteSpan output, size_t& written) {
+    return encodeExecutionControl(value, 0U, output, written);
+}
+Result decodeGatewayExecutionDemand(ByteView encoded, GatewayExecutionDemandView& value) {
+    return decodeExecutionControl(encoded, value, nullptr);
+}
+Result encodeGatewayDirectYield(const GatewayDirectYieldView& value, MutableByteSpan output, size_t& written) {
+    written = 0U;
+    if (value.controlId == 0U) return invalidArgument();
+    return encodeExecutionControl(value.demand, value.controlId, output, written);
+}
+Result decodeGatewayDirectYield(ByteView encoded, GatewayDirectYieldView& value) {
+    value = GatewayDirectYieldView();
+    return decodeExecutionControl(encoded, value.demand, &value.controlId);
+}
+
+GatewayRouteClosureView::GatewayRouteClosureView()
+    : acknowledgment(false), topologyVersion(0U), childLogicalDeviceId(),
+      childDeviceInstanceId(), accessEpoch(0U), gatewayCredentialVersion(0U),
+      generation(0U) {}
+
+static Result validateRouteClosure(const GatewayRouteClosureView& value) {
+    return value.topologyVersion != 0U && value.accessEpoch != 0U &&
+        value.gatewayCredentialVersion != 0U && value.generation != 0U &&
+        validIdentifier(value.childLogicalDeviceId, kMaximumLogicalDeviceIdSize) &&
+        exactBytes(value.childDeviceInstanceId, kDeviceInstanceIdSize, true)
+        ? Result::success() : invalidArgument();
+}
+
+static Result encodeRouteControl(
+    const GatewayRouteClosureView& value, ByteView challenge,
+    MutableByteSpan output, size_t& written) {
+    written = 0U;
+    Result result = validateRouteClosure(value);
+    if (!result) return result;
+    cbor::Writer writer(output);
+    result = writer.beginArray(challenge.empty() ? 9U : 10U);
+    if (result) result = writer.writeUnsigned(1U);
+    if (result) result = writer.writeUnsigned(challenge.empty() ? 2U : 3U);
+    if (result) result = writer.writeUnsigned(value.acknowledgment ? 1U : 0U);
+    if (result) result = writer.writeUnsigned(value.topologyVersion);
+    if (result) result = writer.writeText(value.childLogicalDeviceId);
+    if (result) result = writer.writeBytes(value.childDeviceInstanceId);
+    if (result) result = writer.writeUnsigned(value.accessEpoch);
+    if (result) result = writer.writeUnsigned(value.gatewayCredentialVersion);
+    uint8_t generation[8U];
+    for (size_t index = 0U; index < sizeof(generation); ++index) {
+        generation[index] = static_cast<uint8_t>(value.generation >> ((7U - index) * 8U));
+    }
+    if (result) result = writer.writeBytes(ByteView(generation, sizeof(generation)));
+    if (result && !challenge.empty()) result = writer.writeBytes(challenge);
+    if (result) written = writer.size();
+    return result;
+}
+
+static Result decodeRouteControl(
+    ByteView encoded, GatewayRouteClosureView& value, ByteView* challenge) {
+    value = GatewayRouteClosureView();
+    cbor::Limits limits;
+    limits.maxTextLength = kMaximumLogicalDeviceIdSize;
+    limits.maxByteStringLength = kDeviceInstanceIdSize;
+    limits.maxContainerItems = challenge == nullptr ? 9U : 10U;
+    limits.maxDepth = 1U;
+    cbor::Reader reader(encoded, limits);
+    size_t count = 0U;
+    uint64_t decoded = 0U;
+    Result result = reader.readArraySize(count);
+    if (result && count != limits.maxContainerItems) result = invalidEncoding();
+    if (result) result = reader.readUnsigned(decoded);
+    if (result && decoded != 1U) result = invalidEncoding();
+    if (result) result = reader.readUnsigned(decoded);
+    if (result && decoded != (challenge == nullptr ? 2U : 3U)) result = invalidEncoding();
+    if (result) result = reader.readUnsigned(decoded);
+    if (result && decoded > 1U) result = invalidEncoding();
+    if (result) value.acknowledgment = decoded == 1U;
+    if (result) result = readUnsigned32(reader, value.topologyVersion);
+    if (result) result = reader.readText(value.childLogicalDeviceId);
+    if (result) result = readExactBytes(reader, kDeviceInstanceIdSize, true, value.childDeviceInstanceId);
+    if (result) result = readUnsigned32(reader, value.accessEpoch);
+    if (result) result = readUnsigned32(reader, value.gatewayCredentialVersion);
+    ByteView generation;
+    if (result) result = readExactBytes(reader, 8U, true, generation);
+    if (result) {
+        for (size_t index = 0U; index < generation.size; ++index) {
+            value.generation = (value.generation << 8U) | generation.data[index];
+        }
+    }
+    if (result && challenge != nullptr) result = readExactBytes(reader, 8U, true, *challenge);
+    if (result && !reader.finished()) result = Result::failure(ErrorCode::TrailingData);
+    if (result) result = validateRouteClosure(value);
+    return normalizedDecodeResult(result);
+}
+
+Result encodeGatewayRouteClosure(
+    const GatewayRouteClosureView& value, MutableByteSpan output, size_t& written) {
+    return encodeRouteControl(value, ByteView(), output, written);
+}
+
+Result decodeGatewayRouteClosure(ByteView encoded, GatewayRouteClosureView& value) {
+    return decodeRouteControl(encoded, value, nullptr);
+}
+
+Result encodeGatewayRouteLease(
+    const GatewayRouteLeaseView& value, MutableByteSpan output, size_t& written) {
+    written = 0U;
+    if (!exactBytes(value.challenge, 8U, true)) return invalidArgument();
+    return encodeRouteControl(value.route, value.challenge, output, written);
+}
+
+Result decodeGatewayRouteLease(ByteView encoded, GatewayRouteLeaseView& value) {
+    value = GatewayRouteLeaseView();
+    return decodeRouteControl(encoded, value.route, &value.challenge);
+}
+
 Result validateChildRouteEnvelope(const ChildRouteEnvelopeView& value) {
     if (value.version != kChildRouteContractVersion || value.topologyVersion == 0U ||
         !validIdentifier(
@@ -1680,7 +1884,7 @@ Result validateChildRouteEnvelope(const ChildRouteEnvelopeView& value) {
 
 Result validateGatewayRouteAdmission(
     const GatewayRouteAdmissionView& value) {
-    if (value.version != kChildRouteContractVersion ||
+    if (value.version != kGatewayRouteAdmissionVersion ||
         !exactBytes(value.operationId, kOperationIdSize, true) ||
         value.topologyVersion == 0U ||
         !validIdentifier(
@@ -1703,7 +1907,7 @@ Result encodeGatewayRouteAdmission(
     Result result = validateGatewayRouteAdmission(value);
     if (!result) return result;
     cbor::Writer writer(output);
-    result = writer.beginArray(9U);
+    result = writer.beginArray(10U);
     if (result) result = writer.writeUnsigned(value.version);
     if (result) result = writer.writeUnsigned(kGatewayRouteAdmissionKind);
     if (result) result = writer.writeBytes(value.operationId);
@@ -1714,6 +1918,11 @@ Result encodeGatewayRouteAdmission(
     if (result) result = writer.writeUnsigned(
         value.gatewayCredentialVersion);
     if (result) result = writer.writeUnsigned(value.expiresAtUnixSeconds);
+    uint8_t retired[kRouteGenerationSize];
+    for (size_t index = 0U; index < sizeof(retired); ++index) {
+        retired[index] = static_cast<uint8_t>(value.retiredGeneration >> ((7U - index) * 8U));
+    }
+    if (result) result = writer.writeBytes(ByteView(retired, sizeof(retired)));
     if (result) written = writer.size();
     return result;
 }
@@ -1725,15 +1934,15 @@ Result decodeGatewayRouteAdmission(
     cbor::Limits limits;
     limits.maxTextLength = kMaximumLogicalDeviceIdSize;
     limits.maxByteStringLength = kDeviceInstanceIdSize;
-    limits.maxContainerItems = 9U;
+    limits.maxContainerItems = 10U;
     limits.maxDepth = 1U;
     cbor::Reader reader(encoded, limits);
     size_t count = 0U;
     uint64_t decoded = 0U;
     Result result = reader.readArraySize(count);
-    if (result && count != 9U) result = invalidEncoding();
+    if (result && count != 10U) result = invalidEncoding();
     if (result) result = reader.readUnsigned(decoded);
-    if (result && decoded != kChildRouteContractVersion) {
+    if (result && decoded != kGatewayRouteAdmissionVersion) {
         result = invalidEncoding();
     }
     if (result) value.version = static_cast<uint8_t>(decoded);
@@ -1752,6 +1961,13 @@ Result decodeGatewayRouteAdmission(
     if (result) result = readUnsigned32(
         reader, value.gatewayCredentialVersion);
     if (result) result = reader.readUnsigned(value.expiresAtUnixSeconds);
+    ByteView retired;
+    if (result) result = readExactBytes(reader, kRouteGenerationSize, false, retired);
+    if (result) {
+        for (size_t index = 0U; index < retired.size; ++index) {
+            value.retiredGeneration = (value.retiredGeneration << 8U) | retired.data[index];
+        }
+    }
     if (result && !reader.finished()) {
         result = Result::failure(ErrorCode::TrailingData);
     }

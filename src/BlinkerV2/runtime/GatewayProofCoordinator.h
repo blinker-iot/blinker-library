@@ -7,7 +7,9 @@
 #include "../identity/GatewayAccessStore.h"
 #include "../interface/IClock.h"
 #include "GatewayChildSession.h"
+#include "GatewayChildConnection.h"
 #include "IGatewayManagementControl.h"
+#include "GatewayManagementBudget.h"
 
 namespace blinker {
 
@@ -20,14 +22,21 @@ class BasicGatewayProofCoordinator final : public IGatewayManagementControl {
 public:
     BasicGatewayProofCoordinator(
         ChildSession& child,
+        IGatewayChildConnection& connection,
         GatewayAccessStore& access,
         IClock& clock)
-        : child_(child), access_(access), clock_(clock), command_(),
+        : child_(child), connection_(connection), access_(access), clock_(clock), command_(),
           result_(), resultSize_(0U), nextAttemptMillis_(0U),
+          ownedAttemptId_(0U),
           previousState_(GatewayChildSessionState::Stopped), active_(false),
           resultReady_(false), publishPending_(false) {}
 
     ~BasicGatewayProofCoordinator() override { reset(); }
+
+    bool continuesCommand(ByteView encoded) const override {
+        gateway::GatewayProofCommandView decoded;
+        return active_ && gateway::decodeGatewayProofCommand(encoded, decoded) && sameCommand(decoded);
+    }
 
     Result handleCommand(ByteView encoded) override {
         gateway::GatewayProofCommandView decoded;
@@ -38,7 +47,7 @@ public:
                 if (resultReady_) publishPending_ = true;
                 return Result::success();
             }
-            if (!resultReady_) {
+            if (busy()) {
                 return Result::failure(ErrorCode::StateConflict);
             }
             // A different authenticated command can only supersede a task
@@ -46,7 +55,6 @@ public:
             // operation/topology/nonce would create two concurrent proofs.
             // The new command is also the only acknowledgement needed to
             // retire the in-RAM replay cache for the old terminal result.
-            retireChild();
             clearCommand();
         }
 
@@ -60,7 +68,7 @@ public:
             clearCommand();
             return Result::failure(ErrorCode::NotConfigured);
         }
-        if (now >= command_.expiresAtUnixSeconds) {
+        if (!budget_.begin(clock_.monotonicMillis(), now, command_.expiresAtUnixSeconds)) {
             complete(gateway::GatewayProofStatus::Expired);
             return Result::success();
         }
@@ -74,32 +82,34 @@ public:
     }
 
     void poll() override {
-        if (!active_ || resultReady_) return;
-        uint64_t now = 0U;
-        if (!clock_.unixTime(now) || now == 0U ||
-            now >= command_.expiresAtUnixSeconds) {
+        if (!active_) return;
+        if (resultReady_) {
             retireChild();
+            return;
+        }
+        uint64_t now = 0U;
+        if (!budget_.active(clock_.monotonicMillis()) || !clock_.unixTime(now) || now == 0U ||
+            now >= command_.expiresAtUnixSeconds) {
             complete(gateway::GatewayProofStatus::Expired);
             return;
         }
 
         GatewayChildSessionState state = child_.state();
-        if (state == GatewayChildSessionState::Stopped) {
-            const Result started = child_.start();
-            if (!started) {
-                complete(gateway::GatewayProofStatus::Rejected);
-                return;
-            }
-            state = child_.state();
-        }
         if (child_.secure()) {
-            if (child_.matchedPresenceVersion() ==
+            if (!connection_.ensureConnected()) return;
+            // A grant admitted before authentication is not authority after
+            // its durable record was revoked or replaced during that attempt.
+            GatewayAccessRecord record;
+            const Result loaded = access_.load(record);
+            const bool current = loaded && recordMatches(record) &&
+                command_.expiresAtUnixSeconds <= record.expiresAtUnixSeconds;
+            clearGatewayAccessRecord(record);
+            if (current && child_.matchedPresenceVersion() ==
                     command_.presenceKeyVersion &&
                 child_.authenticatedCredentialVersion() ==
                     command_.gatewayCredentialVersion) {
                 complete(gateway::GatewayProofStatus::Secure);
             } else {
-                retireChild();
                 complete(gateway::GatewayProofStatus::Rejected);
             }
             previousState_ = state;
@@ -111,13 +121,13 @@ public:
             previousState_ = state;
             return;
         }
-        if (state != GatewayChildSessionState::Idle) {
+        if (state != GatewayChildSessionState::Idle && state != GatewayChildSessionState::Stopped) {
             previousState_ = state;
             return;
         }
 
         const uint32_t monotonic = clock_.monotonicMillis();
-        if (previousState_ != GatewayChildSessionState::Idle) {
+        if (state == GatewayChildSessionState::Idle && previousState_ != GatewayChildSessionState::Idle) {
             nextAttemptMillis_ = monotonic + kRetryDelayMillis;
         }
         previousState_ = state;
@@ -133,8 +143,10 @@ public:
             return;
         }
 
-        result = child_.connect();
-        if (result) {
+        result = connection_.ensureConnected();
+        if (child_.state() == GatewayChildSessionState::Connecting ||
+            child_.state() == GatewayChildSessionState::Authenticating || child_.secure()) {
+            ownedAttemptId_ = child_.attemptId();
             previousState_ = child_.state();
             return;
         }
@@ -145,6 +157,19 @@ public:
             return;
         }
         nextAttemptMillis_ = monotonic + kRetryDelayMillis;
+    }
+
+    bool busy() const override {
+        return active_ && (!resultReady_ || ownedAttemptId_ != 0U);
+    }
+
+    bool ownsChildSession() const override {
+        // Keep cleanup ownership until the exact owned attempt is gone, even
+        // after proof completion. Merely observing someone else's session
+        // never gives this coordinator ownership of its eventual disconnect.
+        return ownedAttemptId_ != 0U
+            ? child_.attemptId() == ownedAttemptId_
+            : active_ && !resultReady_ && budget_.active(clock_.monotonicMillis());
     }
 
     ByteView pendingResult() const override {
@@ -284,6 +309,7 @@ private:
         size_t written = 0U;
         const Result result = gateway::encodeGatewayProofResult(
             value, MutableByteSpan(result_, sizeof(result_)), written);
+        retireChild();
         if (!result) {
             clearCommand();
             return;
@@ -294,20 +320,22 @@ private:
     }
 
     void retireChild() {
-        const GatewayChildSessionState state = child_.state();
-        if (state == GatewayChildSessionState::Connecting ||
-            state == GatewayChildSessionState::Authenticating ||
-            state == GatewayChildSessionState::Secure) {
-            (void)child_.disconnect();
+        if (ownedAttemptId_ == 0U) return;
+        // The replay cache is not a connection owner. Never retire a session
+        // subsequently acquired by route/control, or one only observed by proof.
+        if (connection_.retire(ownedAttemptId_)) {
+            ownedAttemptId_ = 0U;
         }
     }
 
     void clearCommand() {
+        budget_.clear();
         secureZero(MutableByteSpan(
             reinterpret_cast<uint8_t*>(&command_), sizeof(command_)));
         secureZero(MutableByteSpan(result_, sizeof(result_)));
         resultSize_ = 0U;
         nextAttemptMillis_ = 0U;
+        ownedAttemptId_ = 0U;
         previousState_ = GatewayChildSessionState::Stopped;
         active_ = false;
         resultReady_ = false;
@@ -315,12 +343,15 @@ private:
     }
 
     ChildSession& child_;
+    IGatewayChildConnection& connection_;
     GatewayAccessStore& access_;
     IClock& clock_;
+    GatewayManagementBudget budget_;
     OwnedCommand command_;
     uint8_t result_[gateway::kGatewayProofResultMaximumEncodedSize];
     size_t resultSize_;
     uint32_t nextAttemptMillis_;
+    uint32_t ownedAttemptId_;
     GatewayChildSessionState previousState_;
     bool active_;
     bool resultReady_;

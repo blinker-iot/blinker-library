@@ -14,11 +14,10 @@ const char kSubscribeSuffix[] = "/route/down";
 
 } // namespace gateway_route_client_detail
 
-GatewayRouteClient::GatewayRouteClient(GatewayCloudMux& cloud)
-    : cloud_(cloud), publishTopic_(), subscribeTopic_(), pendingEnvelope_(),
-      pendingSize_(0U), receiver_(nullptr), receiverContext_(nullptr),
-      subscribedGeneration_(0U), configured_(false), subscribed_(false),
-      pending_(false), lastError_(ErrorCode::Ok) {
+GatewayRouteClient::GatewayRouteClient(GatewayCloudMux& cloud, IClock& clock)
+    : cloud_(cloud), clock_(clock), publishTopic_(), subscribeTopic_(),
+      endpoints_(nullptr), subscribedGeneration_(0U), configured_(false),
+      subscribed_(false), lastError_(ErrorCode::Ok) {
     (void)cloud_.bind(
         GatewayCloudChannel::ChildRoute,
         &GatewayRouteClient::messageThunk, this);
@@ -27,6 +26,12 @@ GatewayRouteClient::GatewayRouteClient(GatewayCloudMux& cloud)
 GatewayRouteClient::~GatewayRouteClient() {
     cloud_.unbind(GatewayCloudChannel::ChildRoute, this);
     reset();
+    while (endpoints_ != nullptr) {
+        GatewayRouteEndpoint* endpoint = endpoints_;
+        endpoints_ = endpoint->next_;
+        endpoint->client_ = nullptr;
+        endpoint->next_ = nullptr;
+    }
 }
 
 Result GatewayRouteClient::configure(
@@ -73,6 +78,9 @@ void GatewayRouteClient::poll() {
     }
     const uint32_t generation = cloud_.connectionGeneration();
     if (!subscribed_ || subscribedGeneration_ != generation) {
+        // A reconnect can finish between two route polls. Never carry the
+        // previous session's admission or command into its replacement.
+        clearPending();
         subscribed_ = false;
         Result result = cloud_.subscribe(
             subscribeTopic(), maximumEnvelopeSize, 0U);
@@ -83,21 +91,15 @@ void GatewayRouteClient::poll() {
         subscribed_ = true;
         subscribedGeneration_ = generation;
     }
-    if (!pending_) {
-        lastError_ = ErrorCode::Ok;
-        return;
+    lastError_ = ErrorCode::Ok;
+    for (GatewayRouteEndpoint* endpoint = endpoints_; endpoint != nullptr; endpoint = endpoint->next_) {
+        if (!subscribed()) { clearPending(); return; }
+        endpoint->dispatch();
     }
-    const ByteView message(pendingEnvelope_, pendingSize_);
-    const Result result = receiver_ == nullptr
-                              ? Result::failure(ErrorCode::NotConfigured)
-                              : Result::success();
-    if (result) receiver_(receiverContext_, message);
-    clearPending();
-    lastError_ = result.code();
 }
 
 Result GatewayRouteClient::publish(ByteView exactEnvelope) {
-    if (!configured_ || !subscribed_) {
+    if (!configured_ || !subscribed()) {
         return Result::failure(ErrorCode::NotConnected);
     }
     gateway::ChildRouteEnvelopeView envelope;
@@ -109,13 +111,6 @@ Result GatewayRouteClient::publish(ByteView exactEnvelope) {
     result = cloud_.publish(publishTopic(), exactEnvelope, options);
     lastError_ = result.code();
     return result;
-}
-
-void GatewayRouteClient::setReceiver(
-    GatewayRouteMessageReceiver receiver,
-    void* context) {
-    receiver_ = receiver;
-    receiverContext_ = context;
 }
 
 StringView GatewayRouteClient::publishTopic() const {
@@ -139,16 +134,33 @@ void GatewayRouteClient::onMessage(
     StringView topic,
     ByteView payload,
     const MqttMessageInfo& info) {
-    if (!configured_ || !subscribed_ || pending_ ||
+    if (!configured_ || !subscribed() ||
         !equal(topic, subscribeTopic()) || payload.data == nullptr ||
         payload.empty() || payload.size > maximumEnvelopeSize ||
         (info.qosKnown && info.qos != 0U) ||
-        (info.retainedKnown && info.retained)) {
+        (info.retainedKnown && info.retained)) return;
+
+    GatewayRouteEndpoint* endpoint = select(payload);
+    if (endpoint == nullptr) return; // Unknown or ambiguous target: never broadcast.
+    if (endpoint->hasPendingEnvelope()) {
+        endpoint->lastError_ = ErrorCode::WouldBlock;
         return;
     }
-    memcpy(pendingEnvelope_, payload.data, payload.size);
-    pendingSize_ = payload.size;
-    pending_ = true;
+    memcpy(endpoint->pendingEnvelope_, payload.data, payload.size);
+    endpoint->pendingSize_ = payload.size;
+    endpoint->receivedAtMillis_ = clock_.monotonicMillis();
+    ++endpoint->revision_;
+}
+
+GatewayRouteEndpoint* GatewayRouteClient::select(ByteView payload) const {
+    GatewayRouteEndpoint* selected = nullptr;
+    for (GatewayRouteEndpoint* endpoint = endpoints_; endpoint != nullptr; endpoint = endpoint->next_) {
+        if (endpoint->receiver_ == nullptr || endpoint->matcher_ == nullptr ||
+            !endpoint->matcher_(endpoint->matcherContext_, payload)) continue;
+        if (selected != nullptr) return nullptr;
+        selected = endpoint;
+    }
+    return selected;
 }
 
 bool GatewayRouteClient::buildTopic(
@@ -188,6 +200,40 @@ Result GatewayRouteClient::validateProfile(
         encoded.size > maximumEnvelopeSize) {
         return Result::failure(ErrorCode::CapacityExceeded);
     }
+    if (encoded.data[0] == 0x89U) {
+        gateway::GatewayRouteClosureView closure;
+        Result result = gateway::decodeGatewayRouteClosure(encoded, closure);
+        if (result && closure.acknowledgment) {
+            result = Result::failure(ErrorCode::InvalidArgument);
+        }
+        return result;
+    }
+    if (encoded.data[0] == 0x8aU) {
+        gateway::GatewayRouteLeaseView lease;
+        Result result = gateway::decodeGatewayRouteLease(encoded, lease);
+        if (result && !lease.route.acknowledgment) {
+            result = Result::failure(ErrorCode::InvalidArgument);
+        }
+        return result;
+    }
+    if (encoded.size >= 3U && encoded.data[0] == 0x8bU &&
+        encoded.data[1] == 1U && encoded.data[2] == 4U) {
+        gateway::GatewayExecutionDemandView demand;
+        Result result = gateway::decodeGatewayExecutionDemand(encoded, demand);
+        if (result && demand.operation != gateway::GatewayExecutionOperation::Challenge) {
+            result = Result::failure(ErrorCode::InvalidArgument);
+        }
+        return result;
+    }
+    if (encoded.data[0] == 0x8cU) {
+        gateway::GatewayDirectYieldView control;
+        Result result = gateway::decodeGatewayDirectYield(encoded, control);
+        if (result && control.demand.operation != gateway::GatewayExecutionOperation::Challenge &&
+            control.demand.operation != gateway::GatewayExecutionOperation::Yielded) {
+            result = Result::failure(ErrorCode::InvalidArgument);
+        }
+        return result;
+    }
     Result result = gateway::decodeChildRouteEnvelope(encoded, envelope);
     if (result && envelope.innerBbp2Frame.size >
                       gateway::kEdgeHubChildMaximumInnerFrameSize) {
@@ -197,10 +243,72 @@ Result GatewayRouteClient::validateProfile(
 }
 
 void GatewayRouteClient::clearPending() {
-    secureZero(MutableByteSpan(
-        pendingEnvelope_, sizeof(pendingEnvelope_)));
+    for (GatewayRouteEndpoint* endpoint = endpoints_; endpoint != nullptr; endpoint = endpoint->next_) {
+        endpoint->clearPending();
+    }
+}
+
+GatewayRouteEndpoint::GatewayRouteEndpoint(
+    GatewayRouteClient& client, GatewayRouteMessageMatcher matcher, void* context)
+    : client_(&client), next_(client.endpoints_), matcher_(matcher), matcherContext_(context),
+      receiver_(nullptr), receiverContext_(nullptr), pendingEnvelope_(), pendingSize_(0U),
+      receivedAtMillis_(0U), revision_(0U), lastError_(ErrorCode::Ok) {
+    client.endpoints_ = this;
+}
+
+GatewayRouteEndpoint::~GatewayRouteEndpoint() {
+    if (client_ != nullptr) {
+        GatewayRouteEndpoint** cursor = &client_->endpoints_;
+        while (*cursor != nullptr && *cursor != this) cursor = &(*cursor)->next_;
+        if (*cursor == this) *cursor = next_;
+    }
+    clearPending();
+}
+
+void GatewayRouteEndpoint::setReceiver(GatewayRouteMessageReceiver receiver, void* context) {
+    if (receiver_ != receiver || receiverContext_ != context) clearPending();
+    receiver_ = receiver;
+    receiverContext_ = context;
+}
+
+Result GatewayRouteEndpoint::publish(ByteView exactEnvelope) {
+    if (!subscribed()) return Result::failure(ErrorCode::NotConnected);
+    if (client_->select(exactEnvelope) != this) {
+        return Result::failure(ErrorCode::StateConflict);
+    }
+    return client_->publish(exactEnvelope);
+}
+
+void GatewayRouteEndpoint::dispatch() {
+    if (!hasPendingEnvelope()) return;
+    if (static_cast<uint32_t>(monotonicMillis() - receivedAtMillis_) >=
+        GatewayRouteClient::maximumIngressWaitMillis) {
+        clearPending();
+        lastError_ = ErrorCode::WouldBlock;
+        return;
+    }
+    const ByteView message(pendingEnvelope_, pendingSize_);
+    // Revalidate selection after record/receiver changes. Identity selection
+    // never substitutes for the bridge's full authority and sequence checks.
+    if (client_->select(message) != this) {
+        clearPending();
+        lastError_ = ErrorCode::StateConflict;
+        return;
+    }
+    const uint32_t revision = revision_;
+    const Result result = receiver_(receiverContext_, message);
+    if (revision_ != revision) return; // reset/rebind retired this exact delivery.
+    if (!subscribed()) { clearPending(); return; }
+    if (result.code() != ErrorCode::WouldBlock) clearPending();
+    lastError_ = result.code();
+}
+
+void GatewayRouteEndpoint::clearPending() {
+    secureZero(MutableByteSpan(pendingEnvelope_, pendingSize_));
     pendingSize_ = 0U;
-    pending_ = false;
+    receivedAtMillis_ = 0U;
+    ++revision_;
+    lastError_ = ErrorCode::Ok;
 }
 
 } // namespace blinker

@@ -13,13 +13,15 @@ enum class WifiCloudLifecycleState : uint8_t {
     NetworkConnecting,
     CloudConnecting,
     Online,
-    Fault
+    NetworkFault,
+    CloudFault,
+    AccessFault
 };
 
-// Portable WiFi-only product ordering. Identity/session policy stays inside
-// the supplied cloud transport; this lifecycle only coordinates connectivity,
-// Client polling and terminal fault rollback. The template parameters are
-// test seams, not user-facing platform variants.
+// Portable station/cloud ordering around one shared Client. A failed path
+// stays observable without stopping unrelated local transports. Start failure
+// still rolls back the whole start transaction; explicit stop ends the Client.
+// Identity/retry policy belongs to the supplied cloud transport, not here.
 template <typename WifiConnection, typename CloudTransport>
 class BasicWifiCloudLifecycle final : public IProductLifecycle {
 public:
@@ -66,20 +68,23 @@ public:
 
     void poll(uint32_t totalBudgetMicros) override {
         if (state_ == WifiCloudLifecycleState::Stopped ||
-            state_ == WifiCloudLifecycleState::Fault) {
-            return;
-        }
+            state_ == WifiCloudLifecycleState::AccessFault) return;
 
         wifi_.poll();
-        if (wifi_.state() == WifiConnectionState::Fault) {
-            enterFault(wifi_.lastError());
-            return;
-        }
-
         cloud_.setNetworkAvailable(wifi_.online());
+        // Runtime retires peers only on their failed transport. It must keep
+        // polling BLE/local sessions even when the station or cloud is Fault.
         client_->poll(totalBudgetMicros);
-        if (cloud_.state() == TransportState::Error) {
-            enterFault(cloud_.lastError());
+        if (cloud_.state() == TransportState::Error &&
+            cloud_.lastError() == ErrorCode::AuthenticationRequired) {
+            // The current provider conflates key/device/session revocation.
+            // Until independent local authority is explicit, retain the old
+            // fail-closed boundary; connectivity isolation must not extend it.
+            cloud_.setNetworkAvailable(false);
+            client_->end();
+            wifi_.stop();
+            lastError_ = ErrorCode::AuthenticationRequired;
+            state_ = WifiCloudLifecycleState::AccessFault;
             return;
         }
         updateState();
@@ -98,8 +103,11 @@ public:
         ProductLifecycleState product = ProductLifecycleState::Starting;
         if (state_ == WifiCloudLifecycleState::Stopped) {
             product = ProductLifecycleState::Stopped;
-        } else if (state_ == WifiCloudLifecycleState::Fault) {
+        } else if (state_ == WifiCloudLifecycleState::AccessFault) {
             product = ProductLifecycleState::Fault;
+        } else if (state_ == WifiCloudLifecycleState::NetworkFault ||
+                   state_ == WifiCloudLifecycleState::CloudFault) {
+            product = ProductLifecycleState::Degraded;
         } else if (state_ == WifiCloudLifecycleState::Online) {
             product = ProductLifecycleState::Active;
         } else if (wifi_.state() ==
@@ -129,10 +137,14 @@ private:
 
     void updateState() {
         if (state_ == WifiCloudLifecycleState::Stopped ||
-            state_ == WifiCloudLifecycleState::Fault) {
-            return;
-        }
-        if (!wifi_.online()) {
+            state_ == WifiCloudLifecycleState::AccessFault) return;
+        if (wifi_.state() == WifiConnectionState::Fault) {
+            state_ = WifiCloudLifecycleState::NetworkFault;
+            lastError_ = faultError(wifi_.lastError());
+        } else if (cloud_.state() == TransportState::Error) {
+            state_ = WifiCloudLifecycleState::CloudFault;
+            lastError_ = faultError(cloud_.lastError());
+        } else if (!wifi_.online()) {
             state_ = WifiCloudLifecycleState::NetworkConnecting;
             lastError_ = wifi_.lastError();
         } else if (cloud_.state() == TransportState::Online) {
@@ -140,18 +152,15 @@ private:
             lastError_ = ErrorCode::Ok;
         } else {
             state_ = WifiCloudLifecycleState::CloudConnecting;
-            lastError_ = ErrorCode::Ok;
+            // Backoff is still recoverable. Expose its cause without stopping
+            // the shared Client or turning a retry into an access fault.
+            lastError_ = cloud_.state() == TransportState::Backoff
+                             ? cloud_.lastError() : ErrorCode::Ok;
         }
     }
 
-    void enterFault(ErrorCode error) {
-        cloud_.setNetworkAvailable(false);
-        if (client_ != nullptr) client_->end();
-        wifi_.stop();
-        lastError_ = error == ErrorCode::Ok
-                         ? ErrorCode::InternalError
-                         : error;
-        state_ = WifiCloudLifecycleState::Fault;
+    static ErrorCode faultError(ErrorCode error) {
+        return error == ErrorCode::Ok ? ErrorCode::InternalError : error;
     }
 
     WifiConnection& wifi_;

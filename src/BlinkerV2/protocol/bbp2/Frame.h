@@ -39,12 +39,17 @@ enum class MessageKind : uint8_t {
     Presence = 0x1B,
     HistoryRequest = 0x20,
     HistoryBatch = 0x21,
+    TimeRequest = 0x22,
+    TimeResponse = 0x23,
     ControllerControlOpen = 0x30,
     ControllerControlChallenge = 0x31,
     ControllerMutation = 0x32,
     ControllerMutationReceipt = 0x33,
     PresenceKeyMutation = 0x34,
-    PresenceKeyReceipt = 0x35
+    PresenceKeyReceipt = 0x35,
+    // Physical WiFi/Hub local-authority control carrier, consumed only by the
+    // optional product control extension; never a Direct/virtual-child command.
+    LocalAccessControl = 0x36
 };
 
 enum FrameFlag : uint8_t {

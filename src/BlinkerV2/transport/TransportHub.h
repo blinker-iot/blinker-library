@@ -11,6 +11,22 @@ enum class TransportLifecyclePolicy : uint8_t {
     External
 };
 
+class IAuthorizationProvider;
+class IControllerControlEndpoint;
+
+// Non-owning access services for exactly one transport. They must outlive
+// its registration. Registration/removal is atomic with the transport;
+// Runtime supplies the exact transport + session context to each service.
+struct TransportAccess {
+    IAuthorizationProvider* authorization;
+    IControllerControlEndpoint* control;
+
+    TransportAccess(
+        IAuthorizationProvider* provider = nullptr,
+        IControllerControlEndpoint* endpoint = nullptr)
+        : authorization(provider), control(endpoint) {}
+};
+
 class TransportHub {
 public:
     TransportHub();
@@ -18,7 +34,8 @@ public:
     Result addTransport(
         IFrameTransport& transport,
         TransportLifecyclePolicy lifecycle =
-            TransportLifecyclePolicy::Managed);
+            TransportLifecyclePolicy::Managed,
+        TransportAccess access = TransportAccess());
     Result removeTransport(IFrameTransport& transport);
 
     Result startAll();
@@ -37,6 +54,7 @@ public:
 
     size_t size() const { return count_; }
     IFrameTransport* at(size_t index) const;
+    TransportAccess accessAt(size_t index) const;
 
 private:
     struct ReceiverContext {
@@ -61,7 +79,9 @@ private:
     void sessionDisconnected(uint8_t transportId, const RxContext& rx);
 
     IFrameTransport* transports_[BLINKER_MAX_TRANSPORTS];
+    TransportAccess access_[BLINKER_MAX_TRANSPORTS];
     TransportLifecyclePolicy lifecycles_[BLINKER_MAX_TRANSPORTS];
+    bool running_;
     ReceiverContext receiverContexts_[BLINKER_MAX_TRANSPORTS];
     size_t count_;
     size_t nextPoll_;

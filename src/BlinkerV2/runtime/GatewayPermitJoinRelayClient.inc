@@ -15,13 +15,14 @@ GatewayPermitJoinRelayClient::GatewayPermitJoinRelayClient(
     : cloud_(cloud), management_(management), coordinator_(coordinator),
       adapter_(adapter), clock_(clock), operationId_(), selectedToken_(),
       selectedTokenSize_(0U), inbound_(), inboundSize_(0U), outbound_(),
-      outboundSize_(0U), upstream_(), upstreamSize_(0U), revision_(0U),
+      outboundSize_(0U), upstream_(), upstreamSize_(0U), revision_(0U), authorizationGeneration_(0U),
       observedCandidateHash_(0U), nextSnapshotAt_(0U),
       nextUpstreamRetryAt_(0U), upstreamCoalesceAt_(0U),
       lastDownSequence_(0U), nextUpSequence_(1U),
       downFragmentCount_(0U), upFragmentCount_(0U),
       rateWindowStartedAt_(0U), downRateCount_(0U), upRateCount_(0U),
       downPacketIndex_(0U),
+      lastUpAckStatus_(gateway::PermitJoinRelayAckStatus::Rejected),
       operationActive_(false), inboundPending_(false),
       outboundPending_(false), upstreamPending_(false),
       candidateHashKnown_(false), selectionSet_(false),
@@ -33,15 +34,27 @@ GatewayPermitJoinRelayClient::GatewayPermitJoinRelayClient(
 
 GatewayPermitJoinRelayClient::~GatewayPermitJoinRelayClient() {
     cloud_.unbind(GatewayCloudChannel::PermitJoinRelay, this);
-    clearOperation();
+    reset();
 }
 
 void GatewayPermitJoinRelayClient::poll() {
-    if (!coordinator_.windowOpen() || !management_.configured() ||
-        !management_.subscribed() || cloud_.state() != TransportState::Online) {
+    const bool cloudReady = management_.configured() && management_.subscribed() &&
+                            cloud_.state() == TransportState::Online;
+    // Online management polls the coordinator. During a cloud/subscription
+    // gap, keep its local deadline / native ACL pump running independently.
+    if (!cloudReady) coordinator_.poll();
+    if (!coordinator_.windowOpen()) {
         clearOperation();
         return;
     }
+    if (!management_.configured() ||
+        (operationActive_ && authorizationGeneration_ != management_.authorizationGeneration())) {
+        reset();
+        return;
+    }
+    // The same window and authority keep their exact bounded progress across
+    // MQTT replacement. No new writes, ACKs or counter resets while offline.
+    if (!cloudReady) return;
     const ByteView active = coordinator_.activeOperationId();
     if (!operationActive_ || !sameOperation(active)) beginOperation(active);
 
@@ -57,6 +70,7 @@ void GatewayPermitJoinRelayClient::poll() {
 }
 
 void GatewayPermitJoinRelayClient::reset() {
+    coordinator_.rejectWindow();
     clearOperation();
 }
 
@@ -76,7 +90,8 @@ void GatewayPermitJoinRelayClient::onMessage(
     const MqttMessageInfo& info) {
     const gateway::PermitJoinRelayMessageKind kind =
         gateway::permitJoinRelayMessageKind(payload);
-    if (!operationActive_ || inboundPending_ || !sameTopic(topic) ||
+    if (!operationActive_ || !management_.subscribed() ||
+        cloud_.state() != TransportState::Online || inboundPending_ || !sameTopic(topic) ||
         payload.data == nullptr || payload.empty() ||
         payload.size > sizeof(inbound_) ||
         (info.qosKnown && info.qos != 1U) ||
@@ -99,6 +114,7 @@ void GatewayPermitJoinRelayClient::beginOperation(ByteView operationId) {
         return;
     }
     memcpy(operationId_, operationId.data, sizeof(operationId_));
+    authorizationGeneration_ = management_.authorizationGeneration();
     operationActive_ = true;
     nextSnapshotAt_ = clock_.monotonicMillis();
 }
@@ -222,17 +238,32 @@ void GatewayPermitJoinRelayClient::processUpAck(ByteView encoded) {
     gateway::PermitJoinRelayAckView ack;
     const Result result = gateway::decodePermitJoinRelayAck(encoded, ack);
     if (!result || !sameOperation(ack.operationId) ||
-        ack.direction != gateway::PermitJoinRelayDirection::Up ||
-        !upstreamPending_ || ack.sequence + 1U != nextUpSequence_) {
+        ack.direction != gateway::PermitJoinRelayDirection::Up) {
         lastError_ = result ? ErrorCode::SequenceConflict : result.code();
+        return;
+    }
+    // One outstanding batch: nextUpSequence_ already includes that batch.
+    // The previous ACK may arrive again via MQTT/HTTP retry. Its sequence is
+    // derived, so only its status needs storage; never clear a newer batch.
+    const uint32_t lastAcknowledged =
+        nextUpSequence_ - (upstreamPending_ ? 2U : 1U);
+    if (lastAcknowledged != 0U && ack.sequence == lastAcknowledged) {
+        lastError_ = ack.status != lastUpAckStatus_
+            ? ErrorCode::SequenceConflict
+            : ack.status == gateway::PermitJoinRelayAckStatus::Accepted
+                ? ErrorCode::Ok : ErrorCode::ProtocolError;
+        return;
+    }
+    if (!upstreamPending_ || ack.sequence + 1U != nextUpSequence_) {
+        lastError_ = ErrorCode::SequenceConflict;
         return;
     }
     secureZero(MutableByteSpan(upstream_, sizeof(upstream_)));
     upstreamSize_ = 0U;
     upstreamPending_ = false;
-    if (ack.status != gateway::PermitJoinRelayAckStatus::Accepted) {
-        lastError_ = ErrorCode::ProtocolError;
-    }
+    lastUpAckStatus_ = ack.status;
+    lastError_ = ack.status == gateway::PermitJoinRelayAckStatus::Accepted
+        ? ErrorCode::Ok : ErrorCode::ProtocolError;
 }
 
 void GatewayPermitJoinRelayClient::reportSelectionState() {
@@ -512,10 +543,12 @@ void GatewayPermitJoinRelayClient::clearOperation() {
     selectedTokenSize_ = 0U;
     inboundSize_ = outboundSize_ = upstreamSize_ = 0U;
     revision_ = observedCandidateHash_ = nextSnapshotAt_ = 0U;
+    authorizationGeneration_ = 0U;
     nextUpstreamRetryAt_ = upstreamCoalesceAt_ = lastDownSequence_ = 0U;
     nextUpSequence_ = 1U;
     downFragmentCount_ = upFragmentCount_ = rateWindowStartedAt_ = 0U;
     downRateCount_ = upRateCount_ = downPacketIndex_ = 0U;
+    lastUpAckStatus_ = gateway::PermitJoinRelayAckStatus::Rejected;
     operationActive_ = inboundPending_ = outboundPending_ = false;
     upstreamPending_ = candidateHashKnown_ = selectionSet_ = false;
     selectionWasConnected_ = false;

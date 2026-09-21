@@ -60,6 +60,7 @@ HttpDeviceKeySessionProvider::HttpDeviceKeySessionProvider(
       responseBuffer_(responseBuffer),
       credentialArena_(credentialArena),
       credentials_(),
+      proofSessionId_(),
       requestId_(),
       locator_(),
       clientNonce_(),
@@ -479,6 +480,7 @@ void HttpDeviceKeySessionProvider::processSessionSuccess(ByteView body) {
     }
 
     credentials_ = next;
+    memcpy(proofSessionId_, decoded.sessionId.data, sizeof(proofSessionId_));
     hasCredentials_ = true;
     authenticatedCredentialVersion_ = decoded.credentialVersion;
     ++credentialGeneration_;
@@ -590,6 +592,7 @@ void HttpDeviceKeySessionProvider::clearTransaction() {
 }
 
 void HttpDeviceKeySessionProvider::clearCredentials() {
+    secureZero(MutableByteSpan(proofSessionId_, sizeof(proofSessionId_)));
     secureZero(MutableByteSpan(
         reinterpret_cast<uint8_t*>(credentialArena_.data),
         credentialArena_.size));
@@ -639,7 +642,10 @@ bool HttpDeviceKeySessionProvider::credentialsExpired(uint32_t now) const {
 }
 
 bool HttpDeviceKeySessionProvider::retryableClientError(ErrorCode error) {
+    // HTTP transport truncation is retryable; malformed completed CBOR is
+    // handled separately by processChallengeSuccess/processSessionSuccess.
     return error == ErrorCode::NotConnected ||
+           error == ErrorCode::TruncatedInput ||
            error == ErrorCode::WouldBlock ||
            error == ErrorCode::InternalError;
 }

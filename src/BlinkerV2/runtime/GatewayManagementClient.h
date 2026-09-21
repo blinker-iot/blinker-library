@@ -31,6 +31,9 @@ public:
     void poll();
 
     bool configured() const { return configured_; }
+    // Changes only when the authenticated authority changes, not when its
+    // short-lived MQTT SessionCredential / clientId is renewed.
+    uint32_t authorizationGeneration() const { return authorizationGeneration_; }
     bool subscribed() const {
         return subscribed_ &&
                subscribedGeneration_ == cloud_.connectionGeneration();
@@ -76,6 +79,7 @@ private:
         gateway::kGatewayCredentialRenewalDeliveryAckMaximumEncodedSize];
     size_t ackSize_;
     uint32_t subscribedGeneration_;
+    uint32_t authorizationGeneration_;
     bool configured_;
     bool subscribed_;
     bool envelopePending_;

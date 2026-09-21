@@ -566,7 +566,14 @@ private:
             hasContentLength_ = true;
         } else if (startsWithIgnoreCase(line, size, "Transfer-Encoding:") &&
                    containsIgnoreCase(line, size, "chunked")) {
-            return fail(ErrorCode::UnsupportedFeature);
+            // Proxies may chunk even an empty 502/504. Do not turn a temporary
+            // outage into a terminal login failure just because its error body
+            // uses unsupported framing. Never accept/decode the chunk bytes.
+            const uint16_t status = response_.statusCode;
+            const bool transient = status == 408U || status == 425U ||
+                status == 429U || (status >= 500U && status < 600U);
+            return fail(transient ? ErrorCode::WouldBlock
+                                  : ErrorCode::UnsupportedFeature);
         }
         return Result::success();
     }

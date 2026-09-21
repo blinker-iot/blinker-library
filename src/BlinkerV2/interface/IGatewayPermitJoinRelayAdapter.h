@@ -31,8 +31,10 @@ public:
     virtual Result selectRelayCandidate(ByteView token) = 0;
     virtual void clearRelaySelection() = 0;
     // Success means the southbound bearer reliably accepted this packet.
-    // WouldBlock or NotConnected means no packet was accepted and the relay
-    // must withhold its cloud ACK so the exact fragment can be retried later.
+    // WouldBlock means acceptance is not yet confirmed; retry only the exact
+    // packet on this same connection. NotConnected withholds the cloud ACK; the window
+    // owner must close a lost connection, never replay its opaque fragments
+    // onto a new ACL/security session.
     virtual Result queueRelayPacket(ByteView packet) = 0;
     virtual Result takeRelayPacket(
         MutableByteSpan output,

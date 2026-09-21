@@ -2,12 +2,7 @@
 #include <host/ble_att.h>
 #include <host/ble_hs.h>
 #include <host/ble_hs_adv.h>
-#include <host/ble_hs_id.h>
 #include <host/ble_hs_mbuf.h>
-#include <host/ble_sm.h>
-#include <host/util/util.h>
-#include <nimble/nimble_port.h>
-#include <nimble/nimble_port_freertos.h>
 #include <os/os_mbuf.h>
 
 #include <string.h>
@@ -15,43 +10,40 @@
 namespace blinker {
 
 inline Esp32NimBleCentralPort::Esp32NimBleCentralPort(
-    const Esp32NimBleCentralPortConfig& config)
-    : config_(config), serviceUuid_(), receiveUuid_(), transmitUuid_(),
+    Esp32NimBleCentralHost& host, const Esp32NimBleCentralPortConfig& config)
+    : host_(host), callbackContext_(nullptr), config_(config), serviceUuid_(), receiveUuid_(), transmitUuid_(),
       request_(), connection_(), packetReceiver_(nullptr),
       packetContext_(nullptr), connectedHandler_(nullptr),
       disconnectedHandler_(nullptr), connectionContext_(nullptr),
       candidates_(), packets_(), pendingWrite_(), candidateHead_(0U),
       candidateTail_(0U),
       candidateCount_(0U), packetHead_(0U), packetTail_(0U),
-      packetCount_(0U), ownAddressType_(0U),
+      packetCount_(0U),
       connectionHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingConnectionHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingDisconnectHandle_(BLE_HS_CONN_HANDLE_NONE),
       serviceStartHandle_(0U), serviceEndHandle_(0U), receiveHandle_(0U),
       transmitHandle_(0U), cccdHandle_(0U), pendingConnectStatus_(0),
-      pendingHostError_(ErrorCode::Ok),
       pendingDiscoveryError_(ErrorCode::Ok),
-      hostResultPending_(false), connectEventPending_(false),
+      hostResetPending_(false), connectEventPending_(false),
       disconnectEventPending_(false), discoveryResultPending_(false),
       securityEventPending_(false), pendingEncrypted_(false),
       pendingBonded_(false), cancelCompletionPending_(false),
       pendingWriteResult_(ErrorCode::Ok), writeActive_(false),
       writeComplete_(false),
-      initialized_(false), stopping_(false),
+      releasePending_(false), nativeConnectPending_(false), stopping_(false), terminationRequested_(false),
       state_(BleCentralPortState::Stopped), lastError_(ErrorCode::Ok),
       lock_(portMUX_INITIALIZER_UNLOCKED) {
     initializeUuids();
 }
 
-inline Esp32NimBleCentralPort*& Esp32NimBleCentralPort::activePort() {
-    static Esp32NimBleCentralPort* active = nullptr;
-    return active;
-}
-
 inline bool Esp32NimBleCentralPort::validConfig() const {
-    return config_.hostReadyTimeoutMillis != 0U &&
-           config_.hostStopTimeoutMillis != 0U &&
+    return config_.closeTimeoutMillis != 0U &&
            config_.nativeConnectTimeoutMillis != 0U &&
+           config_.connectionIntervalUnits >= 6U &&
+           config_.connectionIntervalUnits <= 3200U &&
+           static_cast<uint32_t>(config_.connectionIntervalUnits) * 5U <
+               BLE_GAP_INITIAL_SUPERVISION_TIMEOUT * 20U &&
            config_.maxScanResultsPerPoll != 0U &&
            config_.maxRxPacketsPerPoll != 0U &&
            BLINKER_ESP32_NIMBLE_CENTRAL_SCAN_QUEUE_DEPTH != 0U &&
@@ -73,85 +65,31 @@ inline Result Esp32NimBleCentralPort::start() {
     clearAttempt();
     stopping_ = false;
     lastError_ = ErrorCode::Ok;
-    if (initialized_) {
-        if (activePort() != this) {
-            state_ = BleCentralPortState::Error;
-            lastError_ = ErrorCode::StateConflict;
-            return Result::failure(lastError_);
-        }
-        state_ = BleCentralPortState::Idle;
-        return Result::success();
+    portENTER_CRITICAL(&lock_);
+    hostResetPending_ = false;
+    portEXIT_CRITICAL(&lock_);
+    const Result result = host_.attach(this, &Esp32NimBleCentralPort::onHostReset);
+    if (!result) {
+        state_ = BleCentralPortState::Error; lastError_ = result.code();
+        return result;
     }
-    if (activePort() != nullptr || !esp32_nimble_detail::claim(this)) {
-        return Result::failure(ErrorCode::AlreadyExists);
-    }
-    activePort() = this;
-    const esp_err_t nativeResult = nimble_port_init();
-    if (nativeResult != ESP_OK) {
-        activePort() = nullptr;
-        esp32_nimble_detail::release(this);
-        state_ = BleCentralPortState::Error;
-        lastError_ = nativeResult == ESP_ERR_NO_MEM
-                         ? ErrorCode::CapacityExceeded
-                         : ErrorCode::InternalError;
-        return Result::failure(lastError_);
-    }
-    initialized_ = true;
-
-    ble_hs_cfg.reset_cb = &Esp32NimBleCentralPort::onHostReset;
-    ble_hs_cfg.sync_cb = &Esp32NimBleCentralPort::onHostSync;
-    ble_hs_cfg.store_status_cb = nullptr;
-    ble_hs_cfg.sm_io_cap = BLE_HS_IO_NO_INPUT_OUTPUT;
-    ble_hs_cfg.sm_bonding = 0U;
-    ble_hs_cfg.sm_mitm = 0U;
-    ble_hs_cfg.sm_sc = 0U;
-    ble_hs_cfg.sm_sc_only = 0U;
-    ble_hs_cfg.sm_our_key_dist = 0U;
-    ble_hs_cfg.sm_their_key_dist = 0U;
-    nimble_port_freertos_init(&Esp32NimBleCentralPort::hostTask);
-
-    const uint32_t startedAt = millis();
-    while (static_cast<uint32_t>(millis() - startedAt) <
-           config_.hostReadyTimeoutMillis) {
-        bool completed = false;
-        ErrorCode error = ErrorCode::Ok;
-        portENTER_CRITICAL(&lock_);
-        completed = hostResultPending_;
-        error = pendingHostError_;
-        portEXIT_CRITICAL(&lock_);
-        if (completed) {
-            if (error == ErrorCode::Ok) {
-                portENTER_CRITICAL(&lock_);
-                hostResultPending_ = false;
-                portEXIT_CRITICAL(&lock_);
-                state_ = BleCentralPortState::Idle;
-                return Result::success();
-            }
-            stop();
-            state_ = BleCentralPortState::Error;
-            lastError_ = error;
-            return Result::failure(error);
-        }
-        delay(1U);
-    }
-
-    stop();
-    state_ = BleCentralPortState::Error;
-    lastError_ = ErrorCode::NotConnected;
-    return Result::failure(lastError_);
+    state_ = BleCentralPortState::Idle;
+    return Result::success();
 }
 
 inline void Esp32NimBleCentralPort::stop() {
     stopping_ = true;
-    if (initialized_) {
-        if (ble_gap_disc_active()) (void)ble_gap_disc_cancel();
-        if (state_ == BleCentralPortState::Connecting &&
-            connectionHandle_ == BLE_HS_CONN_HANDLE_NONE) {
-            (void)ble_gap_conn_cancel();
+    // Consume SDK reset before touching a handle: another Port may already
+    // have reconnected using the same numeric handle after that reset.
+    processNativeEvents();
+    if (host_.ownsActivity(this)) {
+        if (host_.ownsInitiation(this)) {
+            if (ble_gap_disc_active()) (void)ble_gap_disc_cancel();
+            if (ble_gap_conn_active()) (void)ble_gap_conn_cancel();
         }
-        if (connectionHandle_ != BLE_HS_CONN_HANDLE_NONE) {
-            (void)ble_gap_terminate(
-                connectionHandle_, BLE_ERR_REM_USER_CONN_TERM);
+        if (connectionHandle_ != BLE_HS_CONN_HANDLE_NONE && !terminationRequested_) {
+            terminationRequested_ = ble_gap_terminate(
+                connectionHandle_, BLE_ERR_REM_USER_CONN_TERM) == 0;
         }
 
         // GAP termination is asynchronous. Calling nimble_port_stop() while
@@ -160,15 +98,21 @@ inline void Esp32NimBleCentralPort::stop() {
         const uint32_t startedAt = millis();
         bool idle = false;
         do {
+            // A successful CONNECT may already be queued while cancellation
+            // is being requested. Adopt and terminate that ACL before reuse.
+            processNativeEvents();
             ble_gap_conn_desc connection = {};
             const bool connected =
                 connectionHandle_ != BLE_HS_CONN_HANDLE_NONE &&
                 ble_gap_conn_find(connectionHandle_, &connection) == 0;
-            idle = !connected && !ble_gap_disc_active();
+            const bool procedure = host_.ownsInitiation(this) &&
+                (ble_gap_disc_active() || ble_gap_conn_active());
+            idle = !host_.ownsActivity(this) || (!nativeConnectPending_ && !connected && !procedure &&
+                   host_.releaseActivity(this));
             if (!idle) delay(1U);
         } while (!idle &&
                  static_cast<uint32_t>(millis() - startedAt) <
-                     config_.hostStopTimeoutMillis);
+                     config_.closeTimeoutMillis);
 
         if (!idle) {
             stopping_ = false;
@@ -181,26 +125,14 @@ inline void Esp32NimBleCentralPort::stop() {
     // deinitializing and reinitializing it can corrupt controller/IPC state.
     // A permit window therefore stops scan/ACL activity but keeps the single
     // lazy NimBLE host alive for the next window.
+    if (!host_.detach(this)) {
+        stopping_ = false; state_ = BleCentralPortState::Error; lastError_ = ErrorCode::WouldBlock;
+        return;
+    }
     clearAttempt();
     stopping_ = false;
     state_ = BleCentralPortState::Stopped;
     lastError_ = ErrorCode::Ok;
-}
-
-inline void Esp32NimBleCentralPort::shutdown() {
-    stop();
-    if (initialized_) {
-        stopping_ = true;
-        if (nimble_port_stop() == 0) {
-            (void)nimble_port_deinit();
-            initialized_ = false;
-        }
-    }
-    if (!initialized_) {
-        if (activePort() == this) activePort() = nullptr;
-        esp32_nimble_detail::release(this);
-    }
-    stopping_ = false;
 }
 
 inline Result Esp32NimBleCentralPort::startScan() {
@@ -213,8 +145,8 @@ inline Result Esp32NimBleCentralPort::startScan() {
     parameters.filter_duplicates = 0U;
     parameters.disable_observer_mode = 0U;
     const int result = ble_gap_disc(
-        ownAddressType_, BLE_HS_FOREVER, &parameters,
-        &Esp32NimBleCentralPort::onGapEvent, this);
+        host_.addressType(), BLE_HS_FOREVER, &parameters,
+        &Esp32NimBleCentralPort::onGapEvent, callbackContext_);
     return result == 0
                ? Result::success()
                : Result::failure(
@@ -225,22 +157,29 @@ inline Result Esp32NimBleCentralPort::startScan() {
 
 inline Result Esp32NimBleCentralPort::connect(
     const BleCentralConnectRequest& request) {
+    if (stopping_) return Result::failure(ErrorCode::WouldBlock);
     if (state_ != BleCentralPortState::Idle) {
         return Result::failure(ErrorCode::AlreadyExists);
     }
     if (request.attemptId == 0U || request.matcher == nullptr) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
+    void* context = nullptr;
+    const Result acquired = host_.acquireActivity(this, context);
+    if (!acquired) return acquired;
     clearAttempt();
+    callbackContext_ = context;
     request_ = request;
     lastError_ = ErrorCode::Ok;
+    state_ = BleCentralPortState::Scanning; // SDK can deliver an advertisement before disc() returns.
     Result result = startScan();
     if (!result) {
+        (void)host_.releaseActivity(this);
         clearAttempt();
+        state_ = BleCentralPortState::Idle;
         lastError_ = result.code();
         return result;
     }
-    state_ = BleCentralPortState::Scanning;
     return Result::success();
 }
 
@@ -258,19 +197,19 @@ inline Result Esp32NimBleCentralPort::cancel(uint32_t attemptId) {
     int nativeResult = 0;
     if (previous == BleCentralPortState::Scanning) {
         nativeResult = ble_gap_disc_cancel();
-        portENTER_CRITICAL(&lock_);
-        cancelCompletionPending_ = true;
-        portEXIT_CRITICAL(&lock_);
-    } else if (connectionHandle_ == BLE_HS_CONN_HANDLE_NONE) {
-        nativeResult = ble_gap_conn_cancel();
-        if (nativeResult == BLE_HS_EALREADY) {
+        if (nativeResult == 0 || nativeResult == BLE_HS_EALREADY) {
             portENTER_CRITICAL(&lock_);
             cancelCompletionPending_ = true;
             portEXIT_CRITICAL(&lock_);
         }
+    } else if (connectionHandle_ == BLE_HS_CONN_HANDLE_NONE) {
+        nativeResult = ble_gap_conn_cancel();
+        // EALREADY can mean successful CONNECT is queued, not "no ACL".
+        // Its GAP completion, rather than a synthetic cancel, owns release.
     } else {
         nativeResult = ble_gap_terminate(
             connectionHandle_, BLE_ERR_REM_USER_CONN_TERM);
+        terminationRequested_ = nativeResult == 0;
     }
     if (nativeResult != 0 && nativeResult != BLE_HS_EALREADY) {
         state_ = previous;
@@ -347,7 +286,7 @@ inline Result Esp32NimBleCentralPort::sendPacket(
     const int result = ble_gattc_write_flat(
         connectionHandle_, receiveHandle_, packet.data,
         static_cast<uint16_t>(packet.size),
-        &Esp32NimBleCentralPort::onWrite, this);
+        &Esp32NimBleCentralPort::onWrite, callbackContext_);
     if (result == 0) {
         // Success is reported only after the remote ATT server accepted the
         // write. The Broker retries this exact packet to observe completion.
@@ -387,8 +326,27 @@ inline void Esp32NimBleCentralPort::setConnectionHandlers(
 }
 
 inline void Esp32NimBleCentralPort::poll(uint32_t) {
-    if (state_ == BleCentralPortState::Stopped) return;
+    if (state_ == BleCentralPortState::Stopped || state_ == BleCentralPortState::Error) return;
     processNativeEvents();
+    if (state_ == BleCentralPortState::Error) return;
+    if (releasePending_) { completeAttempt(lastError_); return; }
+    // A local terminate can race the peer's disconnect. NimBLE then has no
+    // live ACL to report, and some controller versions do not enqueue a
+    // second GAP disconnect event for our request. Reconcile against the
+    // authoritative connection table so the logical attempt cannot remain
+    // stuck in Disconnecting forever.
+    if (state_ == BleCentralPortState::Disconnecting &&
+        connectionHandle_ != BLE_HS_CONN_HANDLE_NONE) {
+        ble_gap_conn_desc connection = {};
+        if (ble_gap_conn_find(connectionHandle_, &connection) != 0) {
+            completeAttempt(ErrorCode::Ok);
+            return;
+        }
+        if (!terminationRequested_) {
+            terminationRequested_ = ble_gap_terminate(
+                connectionHandle_, BLE_ERR_REM_USER_CONN_TERM) == 0;
+        }
+    }
     if (state_ == BleCentralPortState::Scanning) {
         processScanCandidates();
     }
@@ -396,7 +354,7 @@ inline void Esp32NimBleCentralPort::poll(uint32_t) {
 }
 
 inline void Esp32NimBleCentralPort::processNativeEvents() {
-    bool host = false;
+    bool hostReset = false;
     bool connectEvent = false;
     bool disconnectEvent = false;
     bool discovery = false;
@@ -405,13 +363,12 @@ inline void Esp32NimBleCentralPort::processNativeEvents() {
     uint16_t connectHandle = BLE_HS_CONN_HANDLE_NONE;
     uint16_t disconnectHandle = BLE_HS_CONN_HANDLE_NONE;
     int connectStatus = 0;
-    ErrorCode hostError = ErrorCode::Ok;
     ErrorCode discoveryError = ErrorCode::Ok;
     bool encrypted = false;
     bool bonded = false;
 
     portENTER_CRITICAL(&lock_);
-    host = hostResultPending_;
+    hostReset = hostResetPending_;
     connectEvent = connectEventPending_;
     disconnectEvent = disconnectEventPending_;
     discovery = discoveryResultPending_;
@@ -420,22 +377,28 @@ inline void Esp32NimBleCentralPort::processNativeEvents() {
     connectHandle = pendingConnectionHandle_;
     disconnectHandle = pendingDisconnectHandle_;
     connectStatus = pendingConnectStatus_;
-    hostError = pendingHostError_;
     discoveryError = pendingDiscoveryError_;
     encrypted = pendingEncrypted_;
     bonded = pendingBonded_;
-    hostResultPending_ = false;
+    hostResetPending_ = false;
     connectEventPending_ = false;
     disconnectEventPending_ = false;
     discoveryResultPending_ = false;
     securityEventPending_ = false;
     cancelCompletionPending_ = false;
+    if (hostReset || connectEvent) nativeConnectPending_ = false;
     portEXIT_CRITICAL(&lock_);
 
-    if (host && hostError != ErrorCode::Ok) {
-        lastError_ = hostError;
+    if (hostReset) {
+        // SDK reset retires its procedures and all ACLs.
+        connectionHandle_ = BLE_HS_CONN_HANDLE_NONE;
+        terminationRequested_ = false;
+        lastError_ = ErrorCode::ProtocolError;
         state_ = BleCentralPortState::Error;
         return;
+    }
+    if (connectEvent) {
+        host_.finishInitiation(this);
     }
     if (disconnectEvent &&
         (disconnectHandle == connectionHandle_ ||
@@ -443,17 +406,20 @@ inline void Esp32NimBleCentralPort::processNativeEvents() {
         completeAttempt(lastError_);
         return;
     }
-    if (cancelComplete && state_ == BleCentralPortState::Disconnecting) {
-        completeAttempt(ErrorCode::Ok);
-        return;
-    }
     if (connectEvent) {
-        if (connectStatus != 0 ||
-            state_ == BleCentralPortState::Disconnecting) {
+        if (connectStatus != 0) {
             completeAttempt(
                 state_ == BleCentralPortState::Disconnecting
                     ? ErrorCode::Ok
                     : ErrorCode::NotConnected);
+            return;
+        }
+        if (connectHandle != BLE_HS_CONN_HANDLE_NONE &&
+            (stopping_ || state_ == BleCentralPortState::Disconnecting)) {
+            connectionHandle_ = connectHandle;
+            state_ = BleCentralPortState::Disconnecting;
+            terminationRequested_ = ble_gap_terminate(
+                connectHandle, BLE_ERR_REM_USER_CONN_TERM) == 0;
             return;
         }
         if (state_ != BleCentralPortState::Connecting ||
@@ -468,18 +434,24 @@ inline void Esp32NimBleCentralPort::processNativeEvents() {
         state_ = BleCentralPortState::Discovering;
         beginDiscovery(connectHandle);
     }
+    if (cancelComplete && state_ == BleCentralPortState::Disconnecting &&
+        connectionHandle_ == BLE_HS_CONN_HANDLE_NONE &&
+        !ble_gap_disc_active() && !ble_gap_conn_active()) {
+        completeAttempt(ErrorCode::Ok);
+        return;
+    }
     if (security && connectionHandle_ != BLE_HS_CONN_HANDLE_NONE) {
         connection_.encrypted = encrypted;
         connection_.bonded = bonded;
     }
     if (discovery && state_ == BleCentralPortState::Discovering) {
-        if (discoveryError != ErrorCode::Ok) {
+        if (discoveryError != ErrorCode::Ok || stopping_) {
             lastError_ = discoveryError;
             state_ = BleCentralPortState::Disconnecting;
-            if (ble_gap_terminate(
-                    connectionHandle_, BLE_ERR_REM_USER_CONN_TERM) != 0) {
-                completeAttempt(discoveryError);
-            }
+            // Failure to request termination is not proof that the ACL is
+            // gone. poll() reconciles only an absent native connection.
+            terminationRequested_ = ble_gap_terminate(
+                connectionHandle_, BLE_ERR_REM_USER_CONN_TERM) == 0;
             return;
         }
         ble_gap_conn_desc description = {};
@@ -540,14 +512,33 @@ inline void Esp32NimBleCentralPort::beginNativeConnect(
     portEXIT_CRITICAL(&lock_);
     const int cancelResult = ble_gap_disc_cancel();
     if (cancelResult != 0 && cancelResult != BLE_HS_EALREADY) {
-        completeAttempt(ErrorCode::ProtocolError);
+        // The observer is still active. Keep this exact attempt scanning;
+        // another advertisement can retry, or its owner can cancel/expire it.
+        state_ = BleCentralPortState::Scanning;
+        lastError_ = ErrorCode::WouldBlock;
         return;
     }
+    // Keep NimBLE's scan/supervision defaults, but explicitly request a low
+    // latency interval for the single stop-and-wait GATT link. This changes
+    // neither ATT reliability nor the fixed packet/queue memory footprint.
+    ble_gap_conn_params params = {};
+    params.scan_itvl = 0x0010U;
+    params.scan_window = 0x0010U;
+    params.itvl_min = config_.connectionIntervalUnits;
+    params.itvl_max = config_.connectionIntervalUnits;
+    params.latency = BLE_GAP_INITIAL_CONN_LATENCY;
+    params.supervision_timeout = BLE_GAP_INITIAL_SUPERVISION_TIMEOUT;
+    params.min_ce_len = BLE_GAP_INITIAL_CONN_MIN_CE_LEN;
+    params.max_ce_len = BLE_GAP_INITIAL_CONN_MAX_CE_LEN;
+    // Native initiating state can disappear BEFORE CONNECT is delivered.
+    // Keep ownership until that completion is consumed, even during stop.
+    portENTER_CRITICAL(&lock_); nativeConnectPending_ = true; portEXIT_CRITICAL(&lock_);
     const int result = ble_gap_connect(
-        ownAddressType_, &candidate.address,
+        host_.addressType(), &candidate.address,
         static_cast<int32_t>(config_.nativeConnectTimeoutMillis),
-        nullptr, &Esp32NimBleCentralPort::onGapEvent, this);
+        &params, &Esp32NimBleCentralPort::onGapEvent, callbackContext_);
     if (result != 0) {
+        portENTER_CRITICAL(&lock_); nativeConnectPending_ = false; portEXIT_CRITICAL(&lock_);
         completeAttempt(
             result == BLE_HS_EBUSY ? ErrorCode::WouldBlock
                                    : ErrorCode::NotConnected);
@@ -563,11 +554,15 @@ inline void Esp32NimBleCentralPort::beginDiscovery(
     cccdHandle_ = 0U;
     const int result = ble_gattc_disc_svc_by_uuid(
         connectionHandle, &serviceUuid_.u,
-        &Esp32NimBleCentralPort::onService, this);
+        &Esp32NimBleCentralPort::onService, callbackContext_);
     if (result != 0) markDiscoveryResult(ErrorCode::ProtocolError);
 }
 
 inline void Esp32NimBleCentralPort::completeAttempt(ErrorCode error) {
+    if (!host_.releaseActivity(this)) {
+        releasePending_ = true; state_ = BleCentralPortState::Disconnecting; lastError_ = error;
+        return;
+    }
     BleCentralConnectionInfo previous = connection_;
     if (previous.attemptId == 0U) previous.attemptId = request_.attemptId;
     clearAttempt();
@@ -604,31 +599,19 @@ inline void Esp32NimBleCentralPort::drainPackets() {
     }
 }
 
-inline void Esp32NimBleCentralPort::hostTask(void*) {
-    nimble_port_run();
-    nimble_port_freertos_deinit();
-}
-
-inline void Esp32NimBleCentralPort::onHostReset(int) {
-    Esp32NimBleCentralPort* self = activePort();
-    if (self != nullptr) self->markHostResult(ErrorCode::ProtocolError);
-}
-
-inline void Esp32NimBleCentralPort::onHostSync() {
-    Esp32NimBleCentralPort* self = activePort();
-    if (self == nullptr) return;
-    const bool ready = ble_hs_util_ensure_addr(0) == 0 &&
-                       ble_hs_id_infer_auto(
-                           0, &self->ownAddressType_) == 0;
-    self->markHostResult(
-        ready ? ErrorCode::Ok : ErrorCode::NotConfigured);
+inline void Esp32NimBleCentralPort::onHostReset(void* context) {
+    auto* self = static_cast<Esp32NimBleCentralPort*>(context);
+    portENTER_CRITICAL(&self->lock_);
+    self->hostResetPending_ = true;
+    portEXIT_CRITICAL(&self->lock_);
 }
 
 inline int Esp32NimBleCentralPort::onGapEvent(
     ble_gap_event* event,
     void* context) {
+    Esp32NimBleCentralHost::Callback callback(context);
     Esp32NimBleCentralPort* self =
-        static_cast<Esp32NimBleCentralPort*>(context);
+        static_cast<Esp32NimBleCentralPort*>(callback.owner());
     return self != nullptr && event != nullptr
                ? self->handleGapEvent(*event)
                : 0;
@@ -644,19 +627,25 @@ inline int Esp32NimBleCentralPort::handleGapEvent(
     }
     if (event.type == BLE_GAP_EVENT_CONNECT) {
         portENTER_CRITICAL(&lock_);
-        pendingConnectStatus_ = event.connect.status;
-        pendingConnectionHandle_ = event.connect.conn_handle;
-        connectEventPending_ = true;
+        if (nativeConnectPending_) {
+            pendingConnectStatus_ = event.connect.status;
+            pendingConnectionHandle_ = event.connect.conn_handle;
+            connectEventPending_ = true;
+        }
         portEXIT_CRITICAL(&lock_);
         return 0;
     }
     if (event.type == BLE_GAP_EVENT_DISCONNECT) {
         portENTER_CRITICAL(&lock_);
-        pendingDisconnectHandle_ = event.disconnect.conn.conn_handle;
-        disconnectEventPending_ = true;
-        packetHead_ = 0U;
-        packetTail_ = 0U;
-        packetCount_ = 0U;
+        const uint16_t handle = event.disconnect.conn.conn_handle;
+        if (handle != BLE_HS_CONN_HANDLE_NONE && (handle == connectionHandle_ ||
+            (connectEventPending_ && pendingConnectStatus_ == 0 && handle == pendingConnectionHandle_))) {
+            pendingDisconnectHandle_ = handle;
+            disconnectEventPending_ = true;
+            packetHead_ = 0U;
+            packetTail_ = 0U;
+            packetCount_ = 0U;
+        }
         portEXIT_CRITICAL(&lock_);
         return 0;
     }
@@ -669,7 +658,7 @@ inline int Esp32NimBleCentralPort::handleGapEvent(
         return 0;
     }
     if (event.type == BLE_GAP_EVENT_ENC_CHANGE &&
-        event.enc_change.status == 0) {
+        event.enc_change.status == 0 && event.enc_change.conn_handle == connectionHandle_) {
         ble_gap_conn_desc description = {};
         if (ble_gap_conn_find(
                 event.enc_change.conn_handle, &description) == 0) {
@@ -759,8 +748,9 @@ inline int Esp32NimBleCentralPort::onService(
     const ble_gatt_error* error,
     const ble_gatt_svc* service,
     void* context) {
+    Esp32NimBleCentralHost::Callback callback(context);
     Esp32NimBleCentralPort* self =
-        static_cast<Esp32NimBleCentralPort*>(context);
+        static_cast<Esp32NimBleCentralPort*>(callback.owner());
     if (self == nullptr || error == nullptr ||
         !self->currentNativeConnection(connectionHandle)) {
         return 0;
@@ -782,7 +772,7 @@ inline int Esp32NimBleCentralPort::onService(
     const int result = ble_gattc_disc_chrs_by_uuid(
         connectionHandle, self->serviceStartHandle_,
         self->serviceEndHandle_, &self->receiveUuid_.u,
-        &Esp32NimBleCentralPort::onReceiveCharacteristic, self);
+        &Esp32NimBleCentralPort::onReceiveCharacteristic, self->callbackContext_);
     if (result != 0) {
         self->markDiscoveryResult(ErrorCode::ProtocolError);
     }
@@ -794,8 +784,9 @@ inline int Esp32NimBleCentralPort::onReceiveCharacteristic(
     const ble_gatt_error* error,
     const ble_gatt_chr* characteristic,
     void* context) {
+    Esp32NimBleCentralHost::Callback callback(context);
     Esp32NimBleCentralPort* self =
-        static_cast<Esp32NimBleCentralPort*>(context);
+        static_cast<Esp32NimBleCentralPort*>(callback.owner());
     if (self == nullptr || error == nullptr ||
         !self->currentNativeConnection(connectionHandle)) {
         return 0;
@@ -817,7 +808,7 @@ inline int Esp32NimBleCentralPort::onReceiveCharacteristic(
     const int result = ble_gattc_disc_chrs_by_uuid(
         connectionHandle, self->serviceStartHandle_,
         self->serviceEndHandle_, &self->transmitUuid_.u,
-        &Esp32NimBleCentralPort::onTransmitCharacteristic, self);
+        &Esp32NimBleCentralPort::onTransmitCharacteristic, self->callbackContext_);
     if (result != 0) {
         self->markDiscoveryResult(ErrorCode::ProtocolError);
     }
@@ -829,8 +820,9 @@ inline int Esp32NimBleCentralPort::onTransmitCharacteristic(
     const ble_gatt_error* error,
     const ble_gatt_chr* characteristic,
     void* context) {
+    Esp32NimBleCentralHost::Callback callback(context);
     Esp32NimBleCentralPort* self =
-        static_cast<Esp32NimBleCentralPort*>(context);
+        static_cast<Esp32NimBleCentralPort*>(callback.owner());
     if (self == nullptr || error == nullptr ||
         !self->currentNativeConnection(connectionHandle)) {
         return 0;
@@ -851,7 +843,7 @@ inline int Esp32NimBleCentralPort::onTransmitCharacteristic(
     const int result = ble_gattc_disc_all_dscs(
         connectionHandle, self->transmitHandle_,
         self->serviceEndHandle_,
-        &Esp32NimBleCentralPort::onDescriptor, self);
+        &Esp32NimBleCentralPort::onDescriptor, self->callbackContext_);
     if (result != 0) {
         self->markDiscoveryResult(ErrorCode::ProtocolError);
     }
@@ -864,8 +856,9 @@ inline int Esp32NimBleCentralPort::onDescriptor(
     uint16_t characteristicValueHandle,
     const ble_gatt_dsc* descriptor,
     void* context) {
+    Esp32NimBleCentralHost::Callback callback(context);
     Esp32NimBleCentralPort* self =
-        static_cast<Esp32NimBleCentralPort*>(context);
+        static_cast<Esp32NimBleCentralPort*>(callback.owner());
     if (self == nullptr || error == nullptr ||
         !self->currentNativeConnection(connectionHandle)) {
         return 0;
@@ -888,7 +881,7 @@ inline int Esp32NimBleCentralPort::onDescriptor(
     const uint8_t enabled[2] = {2U, 0U};
     const int result = ble_gattc_write_flat(
         connectionHandle, self->cccdHandle_, enabled, sizeof(enabled),
-        &Esp32NimBleCentralPort::onSubscribe, self);
+        &Esp32NimBleCentralPort::onSubscribe, self->callbackContext_);
     if (result != 0) {
         self->markDiscoveryResult(ErrorCode::ProtocolError);
     }
@@ -900,8 +893,9 @@ inline int Esp32NimBleCentralPort::onSubscribe(
     const ble_gatt_error* error,
     ble_gatt_attr*,
     void* context) {
+    Esp32NimBleCentralHost::Callback callback(context);
     Esp32NimBleCentralPort* self =
-        static_cast<Esp32NimBleCentralPort*>(context);
+        static_cast<Esp32NimBleCentralPort*>(callback.owner());
     if (self != nullptr && error != nullptr &&
         self->currentNativeConnection(connectionHandle)) {
         self->markDiscoveryResult(
@@ -916,8 +910,9 @@ inline int Esp32NimBleCentralPort::onWrite(
     const ble_gatt_error* error,
     ble_gatt_attr*,
     void* context) {
+    Esp32NimBleCentralHost::Callback callback(context);
     Esp32NimBleCentralPort* self =
-        static_cast<Esp32NimBleCentralPort*>(context);
+        static_cast<Esp32NimBleCentralPort*>(callback.owner());
     if (self == nullptr || error == nullptr) return 0;
     portENTER_CRITICAL(&self->lock_);
     if (self->writeActive_ &&
@@ -932,13 +927,6 @@ inline int Esp32NimBleCentralPort::onWrite(
     }
     portEXIT_CRITICAL(&self->lock_);
     return 0;
-}
-
-inline void Esp32NimBleCentralPort::markHostResult(ErrorCode error) {
-    portENTER_CRITICAL(&lock_);
-    pendingHostError_ = error;
-    hostResultPending_ = true;
-    portEXIT_CRITICAL(&lock_);
 }
 
 inline void Esp32NimBleCentralPort::markDiscoveryResult(ErrorCode error) {
@@ -978,7 +966,9 @@ inline void Esp32NimBleCentralPort::clearQueuesLocked() {
 }
 
 inline void Esp32NimBleCentralPort::clearAttempt() {
+    callbackContext_ = nullptr; releasePending_ = false;
     portENTER_CRITICAL(&lock_);
+    nativeConnectPending_ = false;
     clearQueuesLocked();
     pendingWrite_ = PendingWrite();
     pendingWriteResult_ = ErrorCode::Ok;
@@ -999,6 +989,7 @@ inline void Esp32NimBleCentralPort::clearAttempt() {
     request_ = BleCentralConnectRequest();
     connection_ = BleCentralConnectionInfo();
     connectionHandle_ = BLE_HS_CONN_HANDLE_NONE;
+    terminationRequested_ = false;
     serviceStartHandle_ = 0U;
     serviceEndHandle_ = 0U;
     receiveHandle_ = 0U;

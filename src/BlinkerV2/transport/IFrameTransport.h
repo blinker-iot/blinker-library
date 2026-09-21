@@ -2,6 +2,7 @@
 #define BLINKER_TRANSPORT_IFRAMETRANSPORT_H
 
 #include "../core/Result.h"
+#include "../core/Authorization.h"
 #include "../core/Span.h"
 #include "../interface/ITransportLifecycle.h"
 
@@ -94,6 +95,15 @@ public:
     // Monotonic in-process activity marker for transports whose advertising
     // metadata must be refreshed after a completed peer session.
     virtual uint32_t sessionRevision() const { return 0U; }
+    // Upper bound, never a grant by itself: Runtime consults this only after
+    // transport authentication. Scoped local transports recheck their live
+    // lease here; legacy/cloud transports retain their existing behavior.
+    // Plain local access also requires TransportFeatureAuthenticated, not an
+    // RxContext flag alone. Credential mutation still requires a secure path.
+    virtual uint32_t sessionPermissions(uint32_t sessionId) const {
+        (void)sessionId;
+        return kAuthorizationPermissionAll;
+    }
     virtual void setReceiver(FrameReceiver receiver, void* context) = 0;
     // Session-aware transports override this. Connectionless transports can
     // keep the default no-op and use sessionId 0.

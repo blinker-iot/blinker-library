@@ -34,23 +34,25 @@ public:
           state_(BleOnlyLifecycleState::Stopped),
           lastError_(ErrorCode::Ok) {}
 
-    ~BasicBleOnlyLifecycle() override { stop(); }
+    ~BasicBleOnlyLifecycle() override {
+        stop();
+        if (client_ != nullptr) (void)client_->removeTransport(directBle_);
+    }
 
     Result attach(Client& client) override {
+        return attach(client, nullptr);
+    }
+
+    Result attach(Client& client, IControllerControlEndpoint* control) {
         if (state_ != BleOnlyLifecycleState::Stopped || client_ != nullptr) {
             return client_ == &client
                        ? Result::success()
                        : Result::failure(ErrorCode::AlreadyExists);
         }
-        Result result = client.addTransport(
-            directBle_, TransportLifecyclePolicy::External);
-        if (result) {
-            result = client.setAuthorizationProvider(&directAuthorization_);
-        }
-        if (!result) {
-            (void)client.removeTransport(directBle_);
-            return result;
-        }
+        const Result result = client.addTransport(
+            directBle_, TransportLifecyclePolicy::External,
+            TransportAccess(&directAuthorization_, control));
+        if (!result) return result;
         client_ = &client;
         return Result::success();
     }

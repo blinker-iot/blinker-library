@@ -11,7 +11,7 @@
 #include <BlinkerV2/protocol/ble/Gatt.h>
 #include <BlinkerV2/protocol/ble/Mode.h>
 
-#include "Esp32NimBleRuntime.h"
+#include "Esp32NimBleCentralHost.h"
 
 #if !defined(CONFIG_BT_NIMBLE_ENABLED) || !CONFIG_BT_NIMBLE_ENABLED
 #error "Blinker BLE Central requires ESP-IDF NimBLE"
@@ -43,16 +43,16 @@
 namespace blinker {
 
 struct Esp32NimBleCentralPortConfig {
-    uint32_t hostReadyTimeoutMillis;
-    uint32_t hostStopTimeoutMillis;
+    uint32_t closeTimeoutMillis;
     uint32_t nativeConnectTimeoutMillis;
+    uint16_t connectionIntervalUnits; // 1.25 ms; small ATT packets need short round trips.
     uint8_t maxScanResultsPerPoll;
     uint8_t maxRxPacketsPerPoll;
 
     Esp32NimBleCentralPortConfig()
-        : hostReadyTimeoutMillis(2000U),
-          hostStopTimeoutMillis(1000U),
+        : closeTimeoutMillis(1000U),
           nativeConnectTimeoutMillis(12000U),
+          connectionIntervalUnits(12U),
           maxScanResultsPerPoll(4U),
           maxRxPacketsPerPoll(4U) {}
 };
@@ -64,10 +64,13 @@ struct Esp32NimBleCentralPortConfig {
 class Esp32NimBleCentralPort final : public IBleCentralPort {
 public:
     explicit Esp32NimBleCentralPort(
+        Esp32NimBleCentralHost& host,
         const Esp32NimBleCentralPortConfig& config =
             Esp32NimBleCentralPortConfig());
-    ~Esp32NimBleCentralPort() override { shutdown(); }
-
+    ~Esp32NimBleCentralPort() override {
+        stop();
+        if (state_ != BleCentralPortState::Stopped) abort(); // Live callback borrowers must outlive close.
+    }
     Result start() override;
     void stop() override;
     void poll(uint32_t budgetMicros) override;
@@ -111,10 +114,7 @@ private:
         PendingWrite() : attemptId(0U), size(0U), data() {}
     };
 
-    static Esp32NimBleCentralPort*& activePort();
-    static void hostTask(void* context);
-    static void onHostReset(int reason);
-    static void onHostSync();
+    static void onHostReset(void* context);
     static int onGapEvent(ble_gap_event* event, void* context);
     static int onService(
         uint16_t connectionHandle,
@@ -149,7 +149,6 @@ private:
         void* context);
 
     void initializeUuids();
-    void shutdown();
     bool validConfig() const;
     Result startScan();
     void processScanCandidates();
@@ -158,7 +157,6 @@ private:
     void beginNativeConnect(const ScanCandidate& candidate);
     void beginDiscovery(uint16_t connectionHandle);
     void completeAttempt(ErrorCode error);
-    void markHostResult(ErrorCode error);
     void markDiscoveryResult(ErrorCode error);
     int handleGapEvent(const ble_gap_event& event);
     bool queueCandidate(const ble_gap_disc_desc& discovery);
@@ -169,6 +167,8 @@ private:
     void clearQueuesLocked();
     void clearAttempt();
 
+    Esp32NimBleCentralHost& host_;
+    void* callbackContext_;
     Esp32NimBleCentralPortConfig config_;
     ble_uuid128_t serviceUuid_;
     ble_uuid128_t receiveUuid_;
@@ -189,7 +189,6 @@ private:
     uint8_t packetHead_;
     uint8_t packetTail_;
     uint8_t packetCount_;
-    uint8_t ownAddressType_;
     uint16_t connectionHandle_;
     uint16_t pendingConnectionHandle_;
     uint16_t pendingDisconnectHandle_;
@@ -199,9 +198,8 @@ private:
     uint16_t transmitHandle_;
     uint16_t cccdHandle_;
     int pendingConnectStatus_;
-    ErrorCode pendingHostError_;
     ErrorCode pendingDiscoveryError_;
-    bool hostResultPending_;
+    bool hostResetPending_;
     bool connectEventPending_;
     bool disconnectEventPending_;
     bool discoveryResultPending_;
@@ -212,8 +210,10 @@ private:
     ErrorCode pendingWriteResult_;
     bool writeActive_;
     bool writeComplete_;
-    bool initialized_;
+    bool releasePending_;
+    bool nativeConnectPending_;
     bool stopping_;
+    bool terminationRequested_;
     BleCentralPortState state_;
     ErrorCode lastError_;
     portMUX_TYPE lock_;

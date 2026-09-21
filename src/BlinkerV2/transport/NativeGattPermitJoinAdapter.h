@@ -5,6 +5,7 @@
 #include "../interface/IClock.h"
 #include "../interface/IGatewayPermitJoinAdapter.h"
 #include "../interface/IGatewayPermitJoinRelayAdapter.h"
+#include "../interface/IGattPermitJoinPortLease.h"
 #include "../protocol/SetupSession.h"
 #include "../protocol/ble/Mode.h"
 #include "../protocol/gateway/Contracts.h"
@@ -51,9 +52,8 @@ class NativeGattPermitJoinAdapter final
       public IGatewayPermitJoinRelayAdapter {
 public:
     NativeGattPermitJoinAdapter(
-        IBleCentralPort& port,
         IClock& clock,
-        IGatewayPermitJoinPortLease& lease,
+        IGattPermitJoinPortLease& lease,
         const NativeGattPermitJoinConfig& config =
             NativeGattPermitJoinConfig());
     ~NativeGattPermitJoinAdapter() override;
@@ -82,7 +82,8 @@ public:
         size_t& written) override;
     size_t relayPacketCount() const override { return rxCount_; }
     bool relayConnected() const override {
-        return connectedAttemptId_ != 0U;
+        return state_ == GatewayPermitJoinAdapterState::Ready &&
+               connectedAttemptId_ != 0U;
     }
     uint16_t relayPacketSize() const override { return maxPacketSize_; }
     uint32_t droppedPacketCount() const { return droppedPackets_; }
@@ -127,6 +128,9 @@ private:
     void onConnected(const BleCentralConnectionInfo& connection);
     void onDisconnected(const BleCentralConnectionInfo& connection);
     Result startScan();
+    Result tryOpen();
+    bool finishClose();
+    void clearRelayData();
     void expireCandidates();
     void fail(ErrorCode error);
     void clearRuntime();
@@ -134,9 +138,9 @@ private:
     bool selected(ByteView locator) const;
     static bool sameLocator(const uint8_t* left, ByteView right);
 
-    IBleCentralPort& port_;
+    IBleCentralPort* port_;
     IClock& clock_;
-    IGatewayPermitJoinPortLease& lease_;
+    IGattPermitJoinPortLease& lease_;
     NativeGattPermitJoinConfig config_;
     CandidateSlot candidates_[BLINKER_GATEWAY_PERMIT_JOIN_CANDIDATES];
     PacketSlot rx_[BLINKER_GATEWAY_PERMIT_JOIN_RX_PACKET_QUEUE_DEPTH];

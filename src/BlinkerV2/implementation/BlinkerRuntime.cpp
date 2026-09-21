@@ -3,6 +3,8 @@
 #include <BlinkerV2/runtime/BleDirectProfile.inc>
 #include <BlinkerV2/runtime/DeviceRuntime.inc>
 #include <BlinkerV2/runtime/GatewayAccessDeliveryProcessor.inc>
+#include <BlinkerV2/runtime/GatewayChildDirectory.inc>
+#include <BlinkerV2/runtime/GatewayChildManagementRouter.inc>
 #include <BlinkerV2/runtime/GatewayCredentialRenewalDeliveryProcessor.inc>
 #include <BlinkerV2/runtime/GatewayCloudMux.inc>
 #include <BlinkerV2/runtime/GatewayManagementClient.inc>
@@ -13,4 +15,7 @@
 #include <BlinkerV2/runtime/OutboundScheduler.inc>
 #include <BlinkerV2/runtime/ReliableOutbox.inc>
 #include <BlinkerV2/runtime/TelemetryLease.inc>
+#include <BlinkerV2/runtime/TimeSyncCoordinator.inc>
+#include <BlinkerV2/runtime/TimeSyncService.inc>
+#include <BlinkerV2/runtime/TimeSyncResponder.inc>
 #include <BlinkerV2/runtime/WifiConnectionLifecycle.inc>

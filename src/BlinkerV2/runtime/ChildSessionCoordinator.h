@@ -16,7 +16,8 @@ enum : uint32_t {
         bbp2::FeatureStateRevision,
     kChildSessionOptionalFeatures =
         bbp2::FeatureTelemetry |
-        bbp2::FeatureControllerControl,
+        bbp2::FeatureControllerControl |
+        bbp2::FeatureTimeSync,
     kChildSessionKnownFeatures =
         kChildSessionRequiredFeatures | kChildSessionOptionalFeatures
 };
@@ -74,6 +75,8 @@ public:
         ByteView& responseFrame);
     Result poll(uint32_t nowMillis);
     void reset();
+    // Configure only before a handshake. reset() preserves this selection.
+    Result setOptionalFeatures(uint32_t features);
 
     ChildSessionState state() const { return state_; }
     bool secure() const {

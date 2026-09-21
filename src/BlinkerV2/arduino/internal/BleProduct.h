@@ -175,31 +175,10 @@ public:
               directAuthorization_,
               random,
               config,
-              &directProfile_),
-          client_(nullptr) {}
-
-    ~BleOnlyRadio() {
-        lifecycle_.stop();
-        if (client_ != nullptr) {
-            (void)client_->setControllerControlEndpoint(nullptr);
-        }
-    }
+              &directProfile_) {}
 
     Result attach(Client& client) {
-        if (client_ != nullptr) {
-            return client_ == &client
-                       ? Result::success()
-                       : Result::failure(ErrorCode::AlreadyExists);
-        }
-        Result result = client.setControllerControlEndpoint(
-            &controlEndpoint_);
-        if (result) result = lifecycle_.attach(client);
-        if (!result) {
-            (void)client.setControllerControlEndpoint(nullptr);
-            return result;
-        }
-        client_ = &client;
-        return Result::success();
+        return lifecycle_.attach(client, &controlEndpoint_);
     }
     Result start() { return lifecycle_.start(); }
     void poll(uint32_t budgetMicros) { lifecycle_.poll(budgetMicros); }
@@ -226,7 +205,6 @@ private:
     ControllerControlEndpoint controlEndpoint_;
     BleDirectProfileProvider directProfile_;
     BleOnlyLifecycle lifecycle_;
-    Client* client_;
 };
 
 template <typename Platform>
@@ -273,6 +251,10 @@ public:
         if (result) result = radio_.attach(client);
         if (!result) configurationError_ = result.code();
         return result;
+    }
+
+    Result attachTime(Client& client, ITimeSync& service) override {
+        return client.setTimeSync(service, clock_, random_);
     }
 
     Result start() override {

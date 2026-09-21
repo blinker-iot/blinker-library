@@ -6,6 +6,7 @@
 namespace blinker {
 
 class Client;
+class ITimeSync;
 
 enum class ProductLifecycleState : uint8_t {
     Stopped = 0U,
@@ -13,7 +14,10 @@ enum class ProductLifecycleState : uint8_t {
     Provisioning,
     Enrolling,
     Active,
-    Fault
+    Fault,
+    // A network/cloud path failed, but the shared Client keeps serving other
+    // transports. This is not evidence that any alternative peer is Ready.
+    Degraded
 };
 
 enum ProductCapability : uint16_t {
@@ -22,7 +26,8 @@ enum ProductCapability : uint16_t {
     ProductCapabilityDirectBleData = 1U << 1,
     ProductCapabilityBleSetup = 1U << 2,
     ProductCapabilityAccessReset = 1U << 3,
-    ProductCapabilityNetworkReset = 1U << 4
+    ProductCapabilityNetworkReset = 1U << 4,
+    ProductCapabilityLanData = 1U << 5
 };
 
 struct ProductCapabilities {
@@ -38,6 +43,8 @@ struct ProductCapabilities {
 
 struct ProductLifecycleStatus {
     ProductLifecycleState state;
+    // May describe a recoverable Starting/backoff condition. Use state, not
+    // lastError alone, to distinguish a terminal fault from an ongoing retry.
     ErrorCode lastError;
     bool networkReady;
 
@@ -56,6 +63,9 @@ public:
     virtual ~IProductLifecycle() {}
 
     virtual Result attach(Client& client) = 0;
+    virtual Result attachTime(Client&, ITimeSync&) {
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
     virtual Result start() = 0;
     virtual void poll(uint32_t totalBudgetMicros) = 0;
     virtual void stop() = 0;

@@ -12,6 +12,8 @@ enum : size_t {
     kDeviceInstanceIdSize = 16U,
     kControllerIdSize = 16U,
     kCorrelationIdSize = 16U,
+    // Correlation prefix: nonzero uint64 BE route generation. Suffix: exchange ID.
+    kRouteGenerationSize = 8U,
     kProofNonceSize = 16U,
     kEnvelopeNonceSize = 12U,
     kGatewaySecretSize = 32U,
@@ -51,7 +53,7 @@ enum : size_t {
     kGatewayCredentialRenewalResultMaximumEncodedSize = 274U,
     kGatewayPermitJoinCommandMaximumEncodedSize = 33U,
     kGatewayPermitJoinResultMaximumEncodedSize = 33U,
-    kGatewayRouteAdmissionMaximumEncodedSize = 191U
+    kGatewayRouteAdmissionMaximumEncodedSize = 200U
 };
 
 enum : uint32_t {
@@ -83,7 +85,11 @@ enum class GatewayProofStatus : uint8_t {
 enum class GatewayRevocationPhase : uint8_t {
     Prepare = 1U,
     Apply = 2U,
-    Finalize = 3U
+    Finalize = 3U,
+    // A newer child access root proves that the old Gateway credential no
+    // longer exists on the child. The Hub therefore retires only its exact
+    // matching outbound record without opening a child connection.
+    Supersede = 4U
 };
 
 enum class GatewayRevocationStatus : uint8_t {
@@ -91,7 +97,8 @@ enum class GatewayRevocationStatus : uint8_t {
     Revoked = 2U,
     Finalized = 3U,
     Rejected = 4U,
-    Expired = 5U
+    Expired = 5U,
+    Retired = 6U
 };
 
 enum class GatewayCredentialRenewalPhase : uint8_t {
@@ -477,6 +484,83 @@ struct ChildRouteEnvelopeView {
     ChildRouteEnvelopeView();
 };
 
+// Route-topic lifecycle control, never a child BBP/2 frame or topology mutation.
+// Canonical [1, 2, acknowledgment(0/1), topologyVersion, child, instance,
+//            accessEpoch, credentialVersion, generation(bstr8 BE)].
+struct GatewayRouteClosureView {
+    bool acknowledgment;
+    uint32_t topologyVersion;
+    StringView childLogicalDeviceId;
+    ByteView childDeviceInstanceId;
+    uint32_t accessEpoch;
+    uint32_t gatewayCredentialVersion;
+    uint64_t generation;
+
+    GatewayRouteClosureView();
+};
+
+Result encodeGatewayRouteClosure(
+    const GatewayRouteClosureView& value, MutableByteSpan output, size_t& written);
+Result decodeGatewayRouteClosure(ByteView encoded, GatewayRouteClosureView& value);
+
+// Read-only Hub reachability assertion. Same exact route identity as closure,
+// kind 3 / ten items, followed by a fresh Broker challenge (bstr8). It never
+// authorizes a connection, changes access storage, or reaches the child BBP lane.
+struct GatewayRouteLeaseView {
+    GatewayRouteClosureView route;
+    ByteView challenge;
+};
+Result encodeGatewayRouteLease(
+    const GatewayRouteLeaseView& value, MutableByteSpan output, size_t& written);
+Result decodeGatewayRouteLease(ByteView encoded, GatewayRouteLeaseView& value);
+
+// Yielded is valid only in the independent DirectYield contract, never in
+// GatewayExecutionDemand (which still accepts exactly operations 0..2).
+enum class GatewayExecutionOperation : uint8_t { Probe = 0U, Challenge = 1U, Decision = 2U, Yielded = 3U };
+enum : size_t {
+    kGatewayExecutionIncarnationSize = 16U,
+    kGatewayExecutionMaximumEncodedSize = 200U,
+    kGatewayExecutionMaximumLeaseMillis = 30000U,
+    kGatewayExecutionChallengeMillis = 5000U
+};
+
+// Independent connection demand, not reachability or a child BBP frame.
+// [1,4,operation,topology,child,instance,epoch,credential,incarnation,id,leaseMs]
+// Probe only asks for a fresh challenge (empty incarnation, id/lease zero).
+// A Decision is bounded from HUB challenge issue time, never receive time.
+struct GatewayExecutionDemandView {
+    GatewayExecutionOperation operation;
+    uint32_t topologyVersion;
+    StringView childLogicalDeviceId;
+    ByteView childDeviceInstanceId;
+    uint32_t accessEpoch;
+    uint32_t gatewayCredentialVersion;
+    ByteView incarnation;
+    uint32_t challengeId;
+    uint32_t leaseMillis;
+
+    GatewayExecutionDemandView();
+};
+Result encodeGatewayExecutionDemand(
+    const GatewayExecutionDemandView& value, MutableByteSpan output, size_t& written);
+Result decodeGatewayExecutionDemand(ByteView encoded, GatewayExecutionDemandView& value);
+
+// [1,5,operation,topology,child,instance,epoch,credential,incarnation,id,leaseMs,controlId]
+// Same bounded exchange fields, separate semantics: positive Decision asks the
+// Hub to remain yielded, NEVER to acquire BLE. controlId is Broker-session-local
+// nonzero monotonic uint32; Yielded echoes the exact Decision, not remaining TTL.
+// Unlike ordinary execution Probe, Direct Probe includes the known CURRENT
+// Hub route incarnation (learned from its execution Challenge). Reusing a
+// counter on a new MQTT identity cannot match an old Probe/challenge anchor.
+struct GatewayDirectYieldView {
+    GatewayExecutionDemandView demand;
+    uint32_t controlId;
+    GatewayDirectYieldView() : demand(), controlId(0U) {}
+};
+Result encodeGatewayDirectYield(
+    const GatewayDirectYieldView& value, MutableByteSpan output, size_t& written);
+Result decodeGatewayDirectYield(ByteView encoded, GatewayDirectYieldView& value);
+
 // Non-secret bootstrap sent only after the Broker resolves an Active
 // topology. It lets a rebooted Hub bind the route to its durable access
 // record before opening the child DirectSecure session.
@@ -489,6 +573,8 @@ struct GatewayRouteAdmissionView {
     uint32_t accessEpoch;
     uint32_t gatewayCredentialVersion;
     uint64_t expiresAtUnixSeconds;
+    // V2 recovery fence, scoped to the current MQTT identity; never authority.
+    uint64_t retiredGeneration;
 
     GatewayRouteAdmissionView();
 };

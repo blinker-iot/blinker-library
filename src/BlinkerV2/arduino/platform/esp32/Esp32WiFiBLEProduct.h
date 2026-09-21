@@ -188,27 +188,17 @@ public:
                        : Result::failure(ErrorCode::AlreadyExists);
         }
 
-        Result result = client.addTransport(transport_);
-        if (result) result = client.setAuthorizationProvider(&authorizer_);
-        if (result) {
-            result = client.setControllerControlEndpoint(&controlEndpoint_);
-        }
-        if (!result) {
-            (void)client.setControllerControlEndpoint(nullptr);
-            (void)client.setAuthorizationProvider(nullptr);
-            (void)client.removeTransport(transport_);
-            return result;
-        }
+        const Result result = client.addTransport(
+            transport_, TransportLifecyclePolicy::Managed,
+            TransportAccess(&authorizer_, &controlEndpoint_));
+        if (!result) return result;
         client_ = &client;
         return Result::success();
     }
 
     void detach(Client& client) {
         if (client_ != &client) return;
-        (void)client.setControllerControlEndpoint(nullptr);
-        (void)client.setAuthorizationProvider(nullptr);
-        (void)client.removeTransport(transport_);
-        client_ = nullptr;
+        if (client.removeTransport(transport_)) client_ = nullptr;
     }
 
     uint16_t capabilities() const {
@@ -300,6 +290,10 @@ public:
         }
         client_ = &client;
         return Result::success();
+    }
+
+    Result attachTime(Client& client, ITimeSync& service) override {
+        return client.setTimeSync(service, stack_.clock(), stack_.random());
     }
 
     Result start() override {
@@ -477,7 +471,8 @@ private:
     DirectBleExtension<Platform> direct_;
     DeviceKeyProvisioningEndpoint endpoint_;
     Esp32WifiProvAdapter provisioner_;
-    WifiCloudLifecycle cloud_;
+    BasicWifiCloudLifecycle<WifiConnectionLifecycle,
+        typename DeviceKeyWifiStack<Platform>::CloudTransport> cloud_;
     Client* client_;
     char serviceName_[32U];
     uint32_t provisioningStartedMs_;

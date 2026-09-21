@@ -42,7 +42,8 @@ Diagnostics::Diagnostics()
       emittedRepeats_(0U),
       level_(LogLevel::Info),
       hasPending_(false),
-      hasLastEmitted_(false) {}
+      hasLastEmitted_(false),
+      flushing_(false) {}
 
 void Diagnostics::configure(
     DiagnosticSink sink,
@@ -143,28 +144,31 @@ void Diagnostics::queue(
     }
 }
 
-void Diagnostics::emitSuppressed(uint32_t timestamp) {
-    if (sink_ == nullptr || emittedRepeats_ == 0U) return;
-    DiagnosticEvent summary;
-    summary.timestampMillis = timestamp;
-    summary.argument0 = lastEmitted_.code;
-    summary.argument1 = emittedRepeats_;
-    summary.code = static_cast<uint16_t>(
-        DiagnosticCode::OutputSuppressed);
-    summary.component = lastEmitted_.component;
-    summary.level = lastEmitted_.level;
-    sink_(sinkContext_, summary);
-    emittedRepeats_ = 0U;
+void Diagnostics::deliver(const DiagnosticEvent& event) {
+    // Consume state before calling external code. A sink may record, disable
+    // or reconfigure diagnostics, but cannot recursively drain the recorder.
+    flushing_ = true;
+    if (!sink_(sinkContext_, event)) ++counters_.outputDropped;
+    flushing_ = false;
 }
 
 void Diagnostics::flush() {
-    if (sink_ == nullptr) return;
+    if (sink_ == nullptr || flushing_) return;
     const uint32_t timestamp = now();
     if (emittedRepeats_ != 0U &&
         (hasPending_ ||
          static_cast<uint32_t>(timestamp - lastEmittedAt_) >=
              kRepeatWindowMillis)) {
-        emitSuppressed(timestamp);
+        DiagnosticEvent summary;
+        summary.timestampMillis = timestamp;
+        summary.argument0 = lastEmitted_.code;
+        summary.argument1 = emittedRepeats_;
+        summary.code = static_cast<uint16_t>(DiagnosticCode::OutputSuppressed);
+        summary.component = lastEmitted_.component;
+        summary.level = lastEmitted_.level;
+        emittedRepeats_ = 0U;
+        deliver(summary);
+        return; // At most one sink call per flush, including summaries.
     }
     if (!hasPending_) return;
     if (clock_ != nullptr &&
@@ -175,16 +179,14 @@ void Diagnostics::flush() {
         return;
     }
 
-    sink_(sinkContext_, pending_);
-    lastEmitted_ = pending_;
+    const DiagnosticEvent event = pending_;
+    lastEmitted_ = event;
     lastEmittedAt_ = timestamp;
     hasLastEmitted_ = true;
     hasPending_ = false;
-    if (pendingRepeats_ != 0U) {
-        emittedRepeats_ = pendingRepeats_;
-        pendingRepeats_ = 0U;
-        emitSuppressed(timestamp);
-    }
+    emittedRepeats_ = pendingRepeats_;
+    pendingRepeats_ = 0U;
+    deliver(event);
 }
 
 void Diagnostics::recordProductStatus(uint16_t previous, uint16_t current) {

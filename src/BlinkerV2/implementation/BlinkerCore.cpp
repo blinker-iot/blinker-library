@@ -5,3 +5,4 @@
 #include <BlinkerV2/core/SecureMemory.inc>
 #include <BlinkerV2/core/Sha256.inc>
 #include <BlinkerV2/core/Utf8.inc>
+#include <BlinkerV2/core/WallClock.inc>
