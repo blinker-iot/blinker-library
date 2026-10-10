@@ -184,6 +184,7 @@ public:
         return deviceInstance_;
     }
     Clock& clock() { return clock_; }
+    IDeviceKeySource& deviceKeySource() { return deviceKey_; }
     PlatformHardwareRandom& random() { return random_; }
     WifiConnectionLifecycle& wifiLifecycle() { return wifiLifecycle_; }
     CloudTransport& cloudTransport() { return cloudTransport_; }
@@ -219,11 +220,14 @@ private:
 };
 
 // Compile-time extension seam: optional transports share the original Client,
-// identity and authority. Their Managed lifecycle is owned by that Client;
-// extensions do not introduce another product polling/start/stop graph.
+// identity and authority. Optional work wraps this lifecycle and/or carrier;
+// extensions never duplicate the WiFi state machine, Client or MQTT connection.
 struct NoWifiProductExtension {
-    template <typename Stack> explicit NoWifiProductExtension(Stack&) {}
+    template <typename Stack> NoWifiProductExtension(Stack&, IProductLifecycle&) {}
     Result attach(Client&) { return Result::success(); }
+    Result attachTime(ITimeSync&) { return Result::success(); }
+    template <typename Stack> IFrameTransport& carrier(Stack& stack) { return stack.cloudTransport(); }
+    IProductLifecycle& lifecycle(IProductLifecycle& base) { return base; }
     uint16_t capabilities() const { return 0U; }
 };
 
@@ -241,7 +245,7 @@ public:
           lifecycle_(
               stack_.wifiLifecycle(),
               stack_.cloudTransport()),
-          extension_(stack_),
+          extension_(stack_, *this),
           setupSsid_(),
           setupCredential_(),
           setupSsidSize_(0U),
@@ -293,7 +297,7 @@ public:
         if (result) {
             // Cloud first in Runtime polling order: consume revocation before
             // a local transport may flush a queued WS record in the same tick.
-            result = lifecycle_.attach(client);
+            result = lifecycle_.attach(client, extension_.carrier(stack_));
             if (result) result = extension_.attach(client);
         }
         if (!result) configurationError_ = result.code();
@@ -301,8 +305,13 @@ public:
     }
 
     Result attachTime(Client& client, ITimeSync& service) override {
-        return client.setTimeSync(service, stack_.clock(), stack_.random());
+        Result result = extension_.attachTime(service);
+        return result ? client.setTimeSync(service, stack_.clock(), stack_.random()) : result;
     }
+
+    // Internal product selection, not a new Sketch-level composition API.
+    IProductLifecycle& lifecycle() { return extension_.lifecycle(*this); }
+    Extension& extension() { return extension_; }
 
     Result start() override {
         const Result result = stack_.initialized()

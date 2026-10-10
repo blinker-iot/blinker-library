@@ -1,131 +1,211 @@
 # Blinker Device V2
 
-This working tree contains the platform-independent Device V2 core. The legacy
-implementation and legacy examples were removed from the working tree because
-Arduino recursively compiles a library's complete `src` directory. The current
-work is local and uncommitted on top of `origin/dev_edu`; no remote
-`device_v2` branch is currently published.
+Blinker Device V2 is one Arduino library for BBP/2 devices. A single install
+contains the shared component/protocol runtime, ESP32 and UNO R4 WiFi/BLE,
+and Wio Terminal WiFi implementations. Wio Terminal BLE is an explicit
+experimental preview and is not part of the current release claim.
 
-Current scope:
+## WiFi QuickStart
 
-- ordinary `<Blinker.h>` facade with global `Blinker`, one `begin()`, compile-time
-  WiFi/BLE/WiFiBLE tags, void callbacks and atomic multi-Property reporting;
-- Advanced owning `Device` with build-wide Small/Standard/Large storage profiles,
-  plus caller-owned `ClientStorage`/`Client` for exceptional budgets;
-- Property/Action/Event declarations that generate immutable capability
-  descriptors and compose through a zero-copy `DeviceSchema`;
-- scalar endpoint handles, typed command values, fixed-capacity state, and
-  zero-JSON patch reporting;
-- platform-independent result/span primitives;
-- authentication-independent session-provider and MQTT dependency interfaces;
-- complete-frame transport interface and fixed-capacity transport hub;
-- MQTT frame transport with non-blocking reconnect/backoff;
-- BBP/2 base header encoder/parser;
-- bounded, definite-length CBOR codec with no DOM or heap allocation;
-- typed HELLO/ACK/ERROR and versioned PATCH bodies;
-- state snapshot/apply conflict handling and keyed COMMAND/EVENT visitors;
-- fixed-capacity endpoint registry and static capability manifest;
-- an existing `device-cloud-session/2`/CloudCredential software experiment that
-  will be replaced in the Education composition by DeviceKey challenge-HMAC and
-  versioned short-term MQTT credentials;
-- managed MQTT login/data-plane composition and multi-transport device runtime;
-- platform-independent device-instance identity and independent crash-atomic
-  Ownership, Controller, network and experimental CloudCredential records;
-- old Enrollment/1, ProductOrchestrator and stored permanent Setup-PSK source
-  have been deleted. Optional P-256 developer identity remains independent of
-  ordinary onboarding and is excluded from official WiFi compositions;
-- explicit `ClientStatus` with separate local-ready and cloud-ready state;
-- no Arduino, JSON, MQTT, WebSocket, BLE, or MCU SDK dependency.
+```cpp
+#include <Blinker.h>
 
-Use `<Blinker.h>` for ordinary application code. It provides the global
-`Blinker` facade, typed Property/Action/Event interactions and compile-time
-WiFi/BLE/WiFiBLE profile tags. Internal probes, adapter authors and products
-that deliberately own `Device`, `Client`, transports or buffers use
-`<BlinkerV2Advanced.h>`.
+BLINKER_PROPERTY(power, bool, blinker::readWrite());
 
-The repository root remains the engineering source tree. `Blinker.begin(...)`
-needs one linked platform composition. ESP32 and UNO R4 have staging WiFi software
-graphs, not released onboarding products. The current priorities are a no-prefix
-DeviceKey with hard session revocation, followed by ESP32 WiFiProv Security1.
-UNO R4 currently has WiFiS3 and an encrypted-ArduinoBLE/portable-Noise internal
-graph but still lacks hardware admission; Wio Terminal has no wireless product
-adapter in this repository. See `docs/DEVICE_V2_DEVICE_KEY_CONTRACT.md` and
-`docs/DEVICE_V2_ESP32_WIFIPROV_PRIORITY_PLAN.md`.
+void onPower(bool value) {
+    power.report(value);
+}
 
-The public profile defaults are Small `24/256/192/192`, Standard
-`32/1024/512/512`, and Large `64/4096/2048/2048` for
-fields/frame/patch/total-state-arena. Select a non-default profile with a
-build-wide `BLINKER_RESOURCE_PROFILE=1/2/3` definition, never a sketch-local
-macro. A normal sketch declares a typed Property, registers a void callback, and
-calls `Blinker.begin(profile, power, ...)`. A Sketch never asserts productId.
-Headless WiFi-only targets `blinker::WiFi.onboard(ssid, password, deviceKey)`
-with a long-lived, user-revealable DeviceKey. ESP32 App provisioning will install
-the same DeviceKey through WiFiProv Security1 plus a short-lived EnrollmentTicket.
-The current source parameter is still named `enrollmentKey` and is scheduled for
-the DKEY cutover; it is not a compatibility contract. Explicit Schema,
-`Device`, `Client`, `Product` and checked callbacks remain Advanced APIs.
+void setup() {
+    power.onWrite(onPower);
+    Blinker.begin(
+        "DEVICE_KEY",
+        "WIFI_SSID",
+        "WIFI_PASSWORD",
+        power);
+}
 
-During development, compile sketches with the repository root as the library.
-The package name remains `BlinkerDeviceV2` until the App/server BBP/2 path,
-device migration facade, and hardware release gates are complete; naming it
-`Blinker` earlier would falsely advertise a production-compatible replacement.
+void loop() {
+    Blinker.run();
+}
+```
 
-Run `tools/build_device_v2_packages.py` from the repository root to validate
-the engineering package boundary and create standalone ZIPs. Every package
-listed in `release/device-v2-packages.json` is an independent standard Arduino
-package used for adapter development and CI; it is not the final ordinary-user
-distribution contract. External libraries such as PubSubClient, ArduinoBLE
-and NimBLE-Arduino remain separate, pinned dependencies and their source is
-never copied into this repository. ESP32 and UNO R4 WiFi
-use their small platform packages under `adapters/esp32-wifi` and
-`adapters/renesas-uno-wifi`; neither implementation is compiled for unrelated
-MCUs. `examples/AdvancedCoreModel/AdvancedCoreModel.ino` is explicitly a
-transport-independent Advanced model probe and does not claim cloud or BLE
-connectivity. Product network QuickStarts are added only with their real static
-platform composition. The ESP32 WiFi aggregate already ensures that
-`<Blinker.h>` links the selected composition; other platform tags remain gated
-until their equivalent package exists.
+## BLE QuickStart
 
-`BlinkerEsp32StorageAdapter` maps bounded credentials to committed ESP-IDF NVS
-blobs without importing WiFiProv, BLE or MQTT. An encrypted store now requires
-a product-owned `Esp32NvsEncryptionVerifier`; a boolean flag alone cannot make
-plain NVS report `EncryptedFlash`. Identity, portable Noise provisioning and
-radio composition remain separate packages so installing storage never owns a
-radio implicitly.
+```cpp
+#include <BlinkerBLE.h>
 
-The existing ESP32 pre-enrollment generator and CloudCredential records are
-unreleased experiments. They may remain as Enhanced/factory evidence while the
-DeviceKey composition is implemented, but are not the Education QuickStart or
-the first App provisioning path.
+BLINKER_PROPERTY(power, bool, blinker::readWrite());
 
-The old `BlinkerEsp32IdentityAdapter` and its P-256-derived Developer identity
-were removed from the active package set. Enhanced/manufactured products may
-later inject an attestation provider, but ordinary WiFi/BLE/WiFiBLE firmware
-uses the same public device-instance, ownership and credential contracts and
-does not acquire an ESP32-specific identity API.
+void setup() {
+    Blinker.begin(power);
+}
 
-`BlinkerHardwareRandomAdapter` exposes ESP32 `esp_fill_random()` and UNO R4
-Renesas SCE RNG through one portable `PlatformHardwareRandom`. It is separate
-from BLE/Noise so a WiFi-only product can generate cloud-session request IDs
-without importing a radio stack. The same injected `IRandom` seam is reused by
-provisioning code; Arduino `random()` is not an acceptable security source.
+void loop() {
+    Blinker.run();
+}
+```
 
-The current `HttpCloudSessionProvider -> ManagedMqttTransport`, EnrollmentKey,
-CloudCredential enrollment and portable Noise flows are software-tested staging
-implementations. Education will replace their credential root with a 32-byte
-DeviceKey, exact challenge-HMAC, `credentialVersion`, short SessionCredential and
-broker hard disconnect on rotation. ESP32 provisioning will first use an internal
-`network_prov_mgr` Security1 adapter and one bounded custom endpoint; Security2 and
-Noise remain optional Enhanced profiles. Gateway/App production support, shared
-DeviceKey vectors, Security1 final-composition resource probes and hardware E2E are
-release blockers. Existing Ownership/Controller/BBP2 contracts remain reusable;
-see `docs/DEVICE_V2_DEVICE_KEY_CONTRACT.md`,
-`docs/DEVICE_V2_ESP32_WIFIPROV_PRIORITY_PLAN.md` and
-`docs/DEVICE_V2_OWNERSHIP_RELEASE_CONTRACT.md`.
+## ESP32 WiFi+BLE QuickStart
 
-Properties use stateful `report()` backed by the bounded `EndpointStateStore`.
-Writable Properties receive desired values through `onWrite()`, Actions receive
-one-shot invocations through `onInvoke()`, and Events use `emit()` without
-mutating state. App widgets, layout, style and bindings are deliberately absent
-from the firmware and Manifest. See `docs/DEVICE_V2_CANONICAL_API.md`,
-`docs/BBP2_NORMATIVE_WIRE_SPEC.md` and `docs/DEVICE_V2_REFACTOR_PROGRESS.md`.
+```cpp
+#include <BlinkerWiFiBLE.h>
+
+BLINKER_PROPERTY(power, bool, blinker::readWrite());
+
+void setup() {
+    Blinker.begin(power);
+}
+
+void loop() {
+    Blinker.run();
+}
+```
+
+`Blinker.h` selects WiFi and `BlinkerWiFi.h` remains its explicit synonym.
+`BlinkerBLE.h` and ESP32-only `BlinkerWiFiBLE.h` select the other products in
+the same library; they are not separate packages. All selectors expose the same global `Blinker`, strongly
+typed Property/Action/Event API, callbacks, atomic reporting and `run()` loop.
+There is no public WiFi/BLE mode argument in `begin()`.
+
+Realtime values use a lease-driven sampling callback; user code does not send
+them from `loop()`:
+
+```cpp
+BLINKER_PROPERTY(uptimeSeconds, uint32_t, blinker::realtime(1000U));
+
+uint32_t sampleUptimeSeconds() {
+    return millis() / 1000U;
+}
+
+void setup() {
+    uptimeSeconds.onSample(sampleUptimeSeconds);
+    // Blinker.begin(..., uptimeSeconds);
+}
+
+void loop() {
+    Blinker.run();
+}
+```
+
+`onSample()` runs only when an authorized App/service lease is active and its
+negotiated interval is due. Keep the callback short and non-blocking. For a slow
+sensor, update a cached value with the sensor's own non-blocking state machine
+and return that cache from the callback; do not perform network sends there.
+
+Arduino IDE's **Include Library** action inserts `Blinker.h` by default.
+For a BLE sketch, replace it with `BlinkerBLE.h`; do not include both headers.
+
+## Optional business time (WiFi / BLE / ESP32 WiFi+BLE)
+
+Call `Blinker.enableTime()` before `Blinker.begin(...)` to request UTC over the
+existing MQTT connection, or from a Control-authorized phone on the existing BLE
+Direct connection. Read it with `uint64_t utc; if (Blinker.time(utc)) { ... }`.
+The value is UTC seconds; disabled, unsynchronized or expired time returns false
+and clears the output. No second connection, NTP client or system clock is added.
+The Broker must support BBP/2 TimeSync. Plain MQTT time is not tamper-resistant
+and must not be used for credentials, certificates or security deadlines.
+
+TimeSync is off in QuickStart examples and demonstrated in CloudSmokeTest.
+Ordinary WiFi, pure BLE and ESP32 WiFi+BLE use the same optional clock API.
+BLE needs a compatible App responder and Control permission; an Observer cannot
+set time. Business UTC is not a security clock even when its carrier is encrypted.
+Gateway time adapters remain internal/preview, not a public product API.
+Do not treat missing time as a valid zero timestamp. Final-version hardware
+acceptance is tracked separately for each declared platform and mode.
+
+## Optional local tasks (closed ESP32 WiFi pilot)
+
+Tasks require a maintainer-built development candidate with the admitted
+`esp32-wifi-t2-lab-v1` task profile and a matching Service device allowlist.
+The stock source and production profiles do not enable tasks. Arduino users
+do not generate profiles, supply storage budgets, or assemble internal objects.
+
+In that candidate, define `BLINKER_ENABLE_TASKS 1` before `#include <Blinker.h>`.
+Register the usual write callback, then call `Blinker.enableTasks(power)` before
+the unchanged `Blinker.begin(key, ssid, password, power, ...)`. Check both results.
+This selects the allowed scalar Properties and enables the existing business
+clock; it does not initialize owner authority or create/start a task. The App
+still requires explicit owner initialization and confirmed management results.
+
+Targets must be global/long-lived, writable, have a write callback, and also be
+passed to `begin()`. Ordinary writable Properties are not automatically allowed.
+Repeated configuration is rejected, including after `end()`. Disabled products
+return `UnsupportedFeature`; opting into BLE, WiFi+BLE or non-ESP32 fails compilation.
+No task graph is linked when the compile-time opt-in is absent. This pilot is
+not production admission, an offline clock guarantee, or support for every MCU.
+
+## Current platform matrix
+
+| Board family | WiFi | BLE | WiFi+BLE provisioning |
+|---|---|---|---|
+| ESP32 | device API and hardware E2E complete; production config pending | App/Service/device hardware E2E passed | BLE WiFiProv and Direct hardware E2E passed; release profile pending |
+| UNO R4 | device API and hardware E2E complete; production config pending | App/Service/device hardware E2E passed | not planned for the current release |
+| Wio Terminal | device/cloud hardware E2E passed | experimental opt-in; hardware E2E passed, not released | not planned for the current release |
+
+Wio Terminal BLE development builds must define
+`BLINKER_ENABLE_WIO_BLE_PREVIEW=1` before including `BlinkerBLE.h`. The opt-in
+does not imply production support. Enrollment, DirectSecure, controls, same-image
+reflash and a real USB power cycle have passed; long-running reconnect and
+single-connection denial-of-service hardening remain before the macro is removed.
+
+WiFi uses DeviceKey challenge-HMAC, a short SessionCredential, PubSubClient
+and BBP/2. Plain HTTP/MQTT is the constrained-device default; TLS remains an
+explicit release configuration. BLE uses the bounded BLE/Noise/Direct runtime.
+ESP32 WiFi+BLE uses BLE WiFiProv Security1 for first setup, then runs WiFi
+cloud and ESP-IDF NimBLE Direct against one Manifest/state model. The education setup
+window has no unique PoP and therefore does not claim active-MITM resistance.
+
+## Repository structure
+
+```text
+src/BlinkerV2/                 platform-independent Core
+src/BlinkerV2/arduino/internal Product composition
+src/BlinkerV2/arduino/ports/   SDK/external-library Ports
+src/BlinkerV2/arduino/platform platform binding
+examples/                      four public Arduino examples
+tests/internal/                unreleased probes only
+```
+
+Mode-specific SDK Port implementations use private `.ipp` files included only
+by the selected product header. This prevents an unselected third-party WiFi or
+BLE SDK from entering dependency discovery. Arduino still compiles every
+ordinary `.cpp` below `src`, so the shared Core translation-unit count remains
+a release-time compile-cost issue; link-map/ELF checks prove firmware closure,
+not compile-time closure.
+
+The repository root is the complete Arduino library. Public releases contain
+one `library.properties`, one `src/` and one `examples/`; users never install
+Core, Port or platform packages separately.
+
+The current external dependency set is PubSubClient 2.8, ArduinoBLE 2.0.2,
+Crypto 0.4.0 and the pinned Seeed rpcWiFi/rpcBLE/rpcUnified libraries. ESP32
+BLE uses the NimBLE Host already supplied by ESP-IDF. Arduino has no conditional
+dependency field, so the unified library declares the remaining flat set while
+archive linkage prevents the unselected product graph from entering firmware.
+
+When installing a ZIP locally, Arduino CLI does not resolve `depends` for you.
+Install the required pinned libraries once through Library Manager; do not copy
+additional Blinker Core/Port/product ZIPs. ESP32 BLE and WiFi+BLE also require an
+Arduino core built with ESP-IDF NimBLE enabled and the admitted SDK configuration.
+A stock core using Bluedroid is not equivalent, and installing NimBLE-Arduino
+does not replace that SDK requirement. Ordinary ESP32 WiFi does not require BLE.
+
+The current ESP32S3 BLE/WiFi+BLE baseline is the **official Arduino-ESP32
+3.3.11 (ESP-IDF 5.5.5)** Board Manager package, not a private SDK or an additional
+NimBLE-Arduino install. Its S3 SDK enables NimBLE with a 2048-byte IPC stack and
+5120-byte Host stack. CI checks that SDK's configuration/binary digests, then
+compiles both BLE products from the same ZIP used for the five WiFi/portable
+targets (ordinary ESP32 WiFi retains the stock 3.3.6 baseline). This is a tested
+baseline, not an assertion that every earlier SDK fails or every ESP32 variant
+has passed hardware acceptance. See the
+[official release](https://github.com/espressif/arduino-esp32/releases/tag/3.3.11)
+and `docs/DEVICE_V2_C4_REPRODUCIBLE_DEPLOYMENT_PLAN.md` for the remaining gates.
+
+Production publication is still gated on clean-build time closure, platform
+reliability, the remaining ESP32 WiFi+BLE gates, and replacement of the
+repository's placeholder cloud host/server key rings. See
+`docs/DEVICE_V2_STANDARD_ARDUINO_LAYOUT.md`,
+`docs/DEVICE_V2_CANONICAL_API.md`,
+`docs/DEVICE_V2_DEVICE_KEY_CONTRACT.md`, and
+`docs/DEVICE_V2_ARCHITECTURE_CLOSURE_AUDIT.md`.

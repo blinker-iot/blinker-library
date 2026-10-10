@@ -484,7 +484,8 @@ TimeSyncPeer DeviceRuntime::timePeer(const PeerSession& session) const {
     value.source = timeSource(session.transportId); // Bound path, never Hello.role.
     value.features = session.helloComplete ? session.negotiatedFeatures : 0U;
     value.authenticated = authorizedFor(session, kAuthorizationPermissionControl);
-    value.permissions = value.authenticated ? kAuthorizationPermissionControl : 0U;
+    value.permissions = value.authenticated
+        ? static_cast<uint32_t>(kAuthorizationPermissionControl) : 0U;
     return value;
 }
 
@@ -581,7 +582,16 @@ uint32_t DeviceRuntime::transportFeatures(uint8_t transportId) const {
     const TransportAccess access = transports_.accessAt(transportId);
     uint32_t features = config_.protocolFeatures &
         ~static_cast<uint32_t>(bbp2::FeatureAuthentication |
-            bbp2::FeatureControllerControl | bbp2::FeaturePresenceKeyControl | bbp2::FeatureTimeSync);
+            bbp2::FeatureControllerControl | bbp2::FeaturePresenceKeyControl | bbp2::FeatureTimeSync |
+            bbp2::FeatureTaskManagement);
+    const IFrameTransport* transport = transports_.at(transportId);
+    // Only an explicitly installed physical cloud handler may advertise tasks.
+    // Configuration bits alone must never expose an unimplemented capability.
+    if (transport != nullptr && cloudTransport(transportId) && !localTransport(transportId) &&
+        (transport->capabilities().features & TransportFeatureAuthenticated) != 0U &&
+        config_.maxFrameSize >= bbp2::kTaskManagementMaximumFrameSize &&
+        transport->capabilities().maxFrameSize >= bbp2::kTaskManagementMaximumFrameSize)
+        features |= transport->protocolFeatures() & bbp2::FeatureTaskManagement;
     if (timeSync_ != nullptr && config_.maxFrameSize >= bbp2::kBaseHeaderSize + bbp2::kTimeResponseMaxSize &&
         timeSource(transportId) != WallTimeSource::None)
         features |= bbp2::FeatureTimeSync;
@@ -992,6 +1002,8 @@ Result DeviceRuntime::handleHello(
     session->remoteMaxFrameSize = hello.maxFrameSize;
     if (hello.maxFrameSize < bbp2::kBaseHeaderSize + bbp2::kTimeResponseMaxSize)
         session->negotiatedFeatures &= ~static_cast<uint32_t>(bbp2::FeatureTimeSync);
+    if (hello.maxFrameSize < bbp2::kTaskManagementMaximumFrameSize)
+        session->negotiatedFeatures &= ~static_cast<uint32_t>(bbp2::FeatureTaskManagement);
     if (hello.maxFrameSize <
         bbp2::kControllerMutationReceiptMaximumFrameSize) {
         session->negotiatedFeatures &=
@@ -1054,6 +1066,9 @@ Result DeviceRuntime::handleHello(
         if (!result) return result;
     }
     session->helloSent = true;
+    IFrameTransport* transport = transports_.at(rx.transportId);
+    if (transport != nullptr)
+        transport->protocolNegotiated(rx, session->negotiatedFeatures, hello.maxFrameSize);
     if ((frame.header.flags & bbp2::FlagAckRequired) != 0U) {
         return sendAck(frame.header.sequence, rx);
     }

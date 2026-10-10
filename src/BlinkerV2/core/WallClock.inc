@@ -16,7 +16,7 @@ bool validWallTimeSource(WallTimeSource source) {
 
 WallClock::WallClock(const WallClockConfig& config)
     : utcMillis_(0U), config_(config), lastMillis_(0U), ageMillis_(0U),
-      sampleUncertaintyMillis_(0U), source_(WallTimeSource::None),
+      sampleUncertaintyMillis_(0U), sampleRevision_(0U), source_(WallTimeSource::None),
       state_(WallClockState::Unsynchronized) {}
 
 Result WallClock::synchronize(const WallClockSample& sample, uint32_t nowMillis) {
@@ -29,12 +29,18 @@ Result WallClock::synchronize(const WallClockSample& sample, uint32_t nowMillis)
         sample.uncertaintyMillis > config_.maxUncertaintyMillis) {
         return Result::failure(ErrorCode::ValueOutOfRange);
     }
+    // Never wrap an observed anchor back to an earlier revision. A new boot
+    // creates a new WallClock; ordinary clear/expiry must not reset this counter.
+    if (sampleRevision_ == UINT32_MAX) {
+        return Result::failure(ErrorCode::SequenceConflict);
+    }
     utcMillis_ = sample.utcMillis;
     lastMillis_ = nowMillis;
     ageMillis_ = 0U;
     sampleUncertaintyMillis_ = sample.uncertaintyMillis;
     source_ = sample.source;
     state_ = WallClockState::Synchronized;
+    ++sampleRevision_;
     return Result::success();
 }
 
@@ -61,6 +67,7 @@ bool WallClock::read(uint32_t nowMillis, WallClockSnapshot& output) {
     poll(nowMillis);
     output = WallClockSnapshot();
     output.state = state_;
+    output.sampleRevision = sampleRevision_;
     if (state_ != WallClockState::Synchronized) return false;
     output.utcMillis = utcMillis_;
     output.uncertaintyMillis = static_cast<uint32_t>(uncertaintyMillis());

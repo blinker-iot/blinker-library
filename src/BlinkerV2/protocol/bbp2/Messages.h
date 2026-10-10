@@ -52,7 +52,8 @@ enum ProtocolFeature : uint32_t {
     FeatureGatewayDirectYield = 1UL << 18,
     // Optional business UTC exchange; not advertised until a handler is installed.
     // Bits 19..23 belong to existing App/Broker readiness/presence/state contracts.
-    FeatureTimeSync = 1UL << 24
+    FeatureTimeSync = 1UL << 24,
+    FeatureTaskManagement = 1UL << 25
 };
 
 enum class RoutePeerKind : uint8_t {

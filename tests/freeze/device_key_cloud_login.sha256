@@ -1,0 +1,59 @@
+# DeviceKey cloud-login freeze v41 (2026-09-24; reviewed typed task facade opt-in)
+# TaskSupport adds an explicit property allowlist before begin; no facade
+# instance fields, login credentials, begin signature or MQTT changes.
+# WiFi lifecycle selects one optional carrier and task lifecycle wrapper;
+# default extension keeps the original carrier/lifecycle, no extra state.
+# Shared business clock and read-only DeviceKey source are borrowed. Login
+# provider, key/proof/session wire, MQTT engine and public begin are unchanged.
+# Host 70-target regression and disabled/enabled firmware gates cover the seam;
+# task authority retirement/hardware admission remain explicit pending work.
+# Previous v39 (2026-09-13; reviewed B3-4c own time)
+# WiFiBLE versus B3-4b installed source: only attachTime using existing stack
+# tick/RNG/Client. No new members, login/provisioning wire or begin changes.
+# Previous v38 (2026-09-13; reviewed B3-3 optional time)
+# Review: Facade opt-in enableTime/time API and WiFiProduct attachTime injection.
+# Borrowed business-time service only; default off, begin arguments, DeviceKey,
+# login proof/session wire, TLS/security clocks and all other hashes unchanged.
+# Previous v37: reviewed B2b-12 recovery.
+# B1 review: HTTP transport truncation retries the same request, completed
+# malformed CBOR/authentication still fails closed; expose Backoff and dropped
+# MQTT socket errors. B2b-12/13 host 58/58 plus real login/reboot/revocation.
+# Login wire, golden vectors, proof/key material and public begin unchanged.
+# Previous v36 (2026-09-12; D1b optional diagnostic output):
+# Facade review: only an IDiagnosticOutput debug overload and API comments.
+# begin/login/provisioning implementation and all other hashes unchanged.
+# v35 changed only WiFiProduct's stopped-state candidate Retry policy injection.
+# Login wire/authentication and transactional provisioning defaults are unchanged.
+# Session contract/provider/Key/ManagedMQTT/golden hashes are unchanged.
+# Cloud is attached first so it polls revocation before LAN output. Default
+# NoWifiProductExtension adds no sockets, credentials, queue or SDK dependency.
+# Preserve the successful 16 B login proof separately from HTTP scratch.
+# Optional shared cloud wrapper handles local-control without a second MQTT.
+# Default products allocate no control table/queue; public begin and login wire
+# remain unchanged. AuthenticationRequired remains fail-closed.
+# Hashes cover non-empty implementation text but omit #include paths and blank
+# layout lines. Dependency/layout changes have separate architecture/package
+# gates. Implementation changes still require review and an explicit update.
+4f1287f4c37e08b02189859766b5c3b708ea7226ed0fa177033b49accc4a2d47  src/BlinkerV2/api/WifiDeviceKeyProfile.h
+f38d2cd5cf55185ac00a28b1f4ac8d3b93fccafbcd2b18458457eb11b4221d99  src/BlinkerV2/api/BlinkerFacade.h
+7347cdea171a30c0277a99b01290b40e9b4df98bbfad7319d5c7a33e67371c00  src/BlinkerV2/identity/DeviceKey.h
+db599ad42759a06951c3b5e5ba64f14254668ce0104bf3e9764f1d0505b5c46d  src/BlinkerV2/identity/DeviceKey.inc
+e7da166a0c243a354019e7c21d4bf9d7bfaac6c1b4b62a16b34ae2ee70f200cd  src/BlinkerV2/identity/ConfiguredDeviceKeySource.h
+137237e4422b5ac26f499feb10ff0bbfc8d2d425161814f12bf6adcef83adf16  src/BlinkerV2/identity/ConfiguredDeviceKeySource.inc
+a9c9175f37afc4509258fd176049cf3c309977e5194f64c705d67355d52ba73a  src/BlinkerV2/control/DeviceKeySessionContract.h
+a9da3cb37e84fa6d70da7c4fc75ba77f7d78b0329ccba56800318349143c0f2a  src/BlinkerV2/control/DeviceKeySessionContract.inc
+9a981ef03be821e730a64078359fcad99d59557a32ea8be08bafbffc01aec8a5  src/BlinkerV2/control/HttpDeviceKeySessionProvider.h
+2d7fcc0e3b167ec359d97965338526dd06ab3617926d275388e36a566aa28aff  src/BlinkerV2/control/HttpDeviceKeySessionProvider.inc
+4d2f83766017a4b6adce75ba7ed4faa8c3d975afdfdb305736369aa1b23ba4b8  src/BlinkerV2/runtime/DeviceKeySessionArena.h
+6a40e221aebc5bae370462e26ceecd6e986eaf5592df326a1b9582c7bbaf4944  src/BlinkerV2/runtime/WifiCloudLifecycle.h
+7bfffb99dd3a8fa4c33429d5e28282a81384b038e3c5de1fb7cbe3c8266cc020  src/BlinkerV2/transport/ManagedMqttTransport.h
+518efa81331bf5d573c73d5897ea82c5aec509ce17e110af81507a13bfa2faa5  src/BlinkerV2/transport/ManagedMqttTransport.inc
+672fb1341fa26d37a5eb318a46ddf013b2dce80e3c8986ed0dd1ba3c1fce6c37  src/BlinkerV2/transport/MqttFrameTransport.h
+9f320ab72e7dc28cd5bda897e2cbb8f325a3da77cee52c690e7ec30858bfa314  src/BlinkerV2/transport/MqttFrameTransport.inc
+9ea18259ab3999e56a766ff2e825594618fc8e6f292ca52b4fc07298964b4cbc  src/BlinkerV2/arduino/internal/WiFiProduct.h
+f0cfe0fcc6832216a3a5302cd164b886508ddf37af8e270828aba5604b059abf  src/BlinkerV2/arduino/ports/esp32/Esp32WiFiProv.h
+d99a25cdada22ebe933acb40286ea06da82492207ff2f5a04786d4fec040052f  src/BlinkerV2/arduino/ports/esp32/Esp32WiFiProv.ipp
+fe91b8c62dafe51965cdf977c3961bdbcb9dac884f923a67a2b16f6398ac0a36  src/BlinkerV2/arduino/platform/esp32/Esp32WiFiProduct.h
+adef23aab205e127d98920a526c6c4cd45a3d78341663a190fba6490a4c26e39  src/BlinkerV2/arduino/platform/esp32/Esp32WiFiBLEProduct.h
+41b4a39b146983a688cc8fc4fab7711586019861ff3795ade89b9064f2f70dd2  src/BlinkerV2/arduino/platform/uno_r4/UnoR4WiFiProduct.h
+6f2f7e75f56826eeaf7df8fc171886d751055058ef3c460e2ee57138b08742a3  tests/golden/device_key_session_golden_vectors.properties

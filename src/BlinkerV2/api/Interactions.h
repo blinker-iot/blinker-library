@@ -405,6 +405,7 @@ private:
 
 class Device;
 class BlinkerClass;
+class TaskPropertyBinding;
 
 template <typename T>
 class Property {
@@ -428,7 +429,7 @@ public:
         if (client_ != nullptr) {
             EndpointHandle field = client_->endpoints().find(
                 spec_->field().key);
-            Result result = field.onCommand(&Property::voidCommandThunk, this);
+            Result result = field.onCommand(&Property::commandThunk, this);
             if (!result) return result;
         }
         callback_.normal = handler;
@@ -443,7 +444,7 @@ public:
             EndpointHandle field = client_->endpoints().find(
                 spec_->field().key);
             Result result = field.onCommand(
-                &Property::checkedCommandThunk, this);
+                &Property::commandThunk, this);
             if (!result) return result;
         }
         callback_.checked = handler;
@@ -511,36 +512,29 @@ private:
         Callback() : normal(nullptr) {}
     };
 
-    static Result voidCommandThunk(
-        void* context,
-        const EndpointHandle&,
-        const EndpointValueView& value,
-        const RxContext&) {
-        Property* property = static_cast<Property*>(context);
-        if (property == nullptr || property->callbackMode_ != Normal ||
-            property->callback_.normal == nullptr) {
+    // One typed application path for remote commands and explicitly admitted
+    // local tasks. No synthesized RxContext and no implicit state report.
+    Result writeValue(const EndpointValueView& value, bool apply) {
+        if ((callbackMode_ != Normal && callbackMode_ != Checked) ||
+            (callbackMode_ == Normal && callback_.normal == nullptr) ||
+            (callbackMode_ == Checked && callback_.checked == nullptr)) {
             return Result::failure(ErrorCode::NotConfigured);
         }
         T decoded;
-        Result result = interaction_detail::ValueCodec<T>::decode(
-            value, decoded);
-        if (result) property->callback_.normal(decoded);
-        return result;
+        Result result = interaction_detail::ValueCodec<T>::decode(value, decoded);
+        if (!result || !apply) return result;
+        if (callbackMode_ == Checked) return callback_.checked(decoded);
+        callback_.normal(decoded);
+        return Result::success();
     }
-    static Result checkedCommandThunk(
+    static Result commandThunk(
         void* context,
         const EndpointHandle&,
         const EndpointValueView& value,
         const RxContext&) {
         Property* property = static_cast<Property*>(context);
-        if (property == nullptr || property->callbackMode_ != Checked ||
-            property->callback_.checked == nullptr) {
-            return Result::failure(ErrorCode::NotConfigured);
-        }
-        T decoded;
-        Result result = interaction_detail::ValueCodec<T>::decode(
-            value, decoded);
-        return result ? property->callback_.checked(decoded) : result;
+        return property != nullptr ? property->writeValue(value, true)
+                                   : Result::failure(ErrorCode::NotConfigured);
     }
     static Result sampleThunk(
         void* context,
@@ -565,9 +559,7 @@ private:
             result = client.endpoints()
                          .find(spec_->field().key)
                          .onCommand(
-                             callbackMode_ == Normal
-                                 ? &Property::voidCommandThunk
-                                 : &Property::checkedCommandThunk,
+                             &Property::commandThunk,
                              this);
             if (!result) client_ = nullptr;
         }
@@ -587,6 +579,7 @@ private:
 
     friend class Device;
     friend class BlinkerClass;
+    friend class TaskPropertyBinding;
 };
 
 template <typename T>

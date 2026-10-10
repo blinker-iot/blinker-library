@@ -44,28 +44,24 @@ jobs:
           node-version: "20"
       - name: Install pinned TypeScript oracle
         run: npm install --global typescript@4.3.5
-      - name: Install pinned Espressif NVS generator
-        run: |
-          python3 -m venv "${RUNNER_TEMP}/blinker-nvs"
-          "${RUNNER_TEMP}/blinker-nvs/bin/pip" install \
-            esp-idf-nvs-partition-gen==0.3.0
-          echo "NVS_PYTHON=${RUNNER_TEMP}/blinker-nvs/bin/python" >> "${GITHUB_ENV}"
       - name: Architecture boundary
         run: python3 tests/architecture/check_device_v2.py
       - name: Python syntax boundary
         run: python3 -m compileall -q tools tests
+      - name: Task resource evidence parser (no SDK or hardware)
+        run: python3 -m unittest discover -s tests/arduino -p 'test_task_resource_gate.py'
+      - name: Task NVS fixture driver (no hardware)
+        run: python3 -m unittest discover -s tests/hardware -p 'test_task_nvs_gate.py'
+      - name: Task grant independent signature oracle
+        run: node tests/golden/task_management_grant_oracle.cjs tests/golden/task_management_grant_vectors.properties
+      - name: Gateway hardware-tool self-tests (no hardware)
+        run: node --test tests/hardware/*.test.mjs tests/hardware/*.test.cjs
       - name: ASan, UBSan, LSan and deterministic fuzz
         run: >-
           python3 tests/host/run_sanitized_tests.py
           --mode asan-ubsan
           --iterations 200000
           --build-dir build/sanitized
-      - name: Exact C++ records and deterministic NVS image
-        run: >-
-          python3 tests/pre-enrollment/verify_pre_enrollment.py
-          --cpp-executable build/sanitized/blinker_pre_enrollment_cpp_vectors
-          --factory-cpp-executable build/sanitized/blinker_factory_credential_installer_tests
-          --nvs-python "${NVS_PYTHON}"
       - name: Cross-language exact golden vectors
         shell: pwsh
         run: |
@@ -74,12 +70,9 @@ jobs:
             -NoiseCppExecutable "$PWD/build/sanitized/blinker_noise_golden_tests" `
             -ControllerAuthCppExecutable "$PWD/build/sanitized/blinker_controller_auth_golden_tests" `
             -ControllerControlCppExecutable "$PWD/build/sanitized/blinker_controller_control_golden_tests" `
-            -OwnershipClaimCppExecutable "$PWD/build/sanitized/blinker_ownership_claim_golden_tests" `
-            -EnrollmentTicketCppExecutable "$PWD/build/sanitized/blinker_enrollment_ticket_golden_tests" `
-            -LocalSetupCppExecutable "$PWD/build/sanitized/blinker_local_setup_golden_tests" `
-            -CloudEnrollmentCppExecutable "$PWD/build/sanitized/blinker_cloud_credential_enrollment_golden_tests" `
-            -OwnershipReleaseCppExecutable "$PWD/build/sanitized/blinker_ownership_release_golden_tests" `
+            -BleEnrollmentCppExecutable "$PWD/build/sanitized/blinker_ble_enrollment_golden_tests" `
             -DeviceKeySessionCppExecutable "$PWD/build/sanitized/blinker_device_key_session_golden_tests" `
+            -DirectSecureCppExecutable "$PWD/build/sanitized/blinker_direct_secure_golden_tests" `
             -TypeScriptCompiler (Get-Command tsc).Source
 
   libfuzzer:
@@ -134,21 +127,28 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Validate the single Arduino release boundary
-        run: python3 tools/build_arduino_release.py --check-only
+        run: |
+          python3 tools/build_arduino_release.py --check-only
+          python3 tests/release/check_release_profile.py
+          python3 -m unittest discover -s tests/release -p 'test_*.py'
       - name: Build the single deterministic Arduino archive twice
         run: |
           python3 tools/build_arduino_release.py \
             --stage-dir build/release-a/library \
-            --output-dir build/release-a/artifacts
+            --output-dir build/release-a/artifacts \
+            --profile tests/release/development_profile.json \
+            --allow-development-profile
           python3 tools/build_arduino_release.py \
             --stage-dir build/release-b/library \
-            --output-dir build/release-b/artifacts
+            --output-dir build/release-b/artifacts \
+            --profile tests/release/development_profile.json \
+            --allow-development-profile
           cmp \
             build/release-a/artifacts/BlinkerDeviceV2-*.zip \
             build/release-b/artifacts/BlinkerDeviceV2-*.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: blinker-device-v2-arduino
+          name: blinker-device-v2-arduino-development
           path: build/release-a/artifacts
 
   arduino-core:
@@ -159,7 +159,7 @@ jobs:
       matrix:
         include:
           - target: esp32-core
-            core: esp32:esp32@3.3.1
+            core: esp32:esp32@3.3.6
             index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
           - target: uno-r4-core
             core: arduino:renesas_uno@1.5.3
@@ -213,13 +213,13 @@ jobs:
       matrix:
         include:
           - platform: esp32
-            core: esp32:esp32@3.3.1
+            core: esp32:esp32@3.3.6
             index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             targets: --target esp32-storage --target esp32-crypto --target esp32-http --target esp32-mqtt --target esp32-mqtt-tls
           - platform: uno-r4
             core: arduino:renesas_uno@1.5.3
             index: ""
-            targets: --target uno-r4-storage --target uno-r4-ble-security --target uno-r4-factory-installer --target uno-r4-http --target uno-r4-mqtt --target uno-r4-mqtt-tls
+            targets: --target uno-r4-storage --target uno-r4-http --target uno-r4-mqtt --target uno-r4-mqtt-tls
           - platform: esp8266
             core: esp8266:esp8266@3.1.2
             index: https://arduino.esp8266.com/stable/package_esp8266com_index.json
@@ -245,6 +245,8 @@ jobs:
   arduino-unified:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      ARDUINO_DIRECTORIES_DATA: ${{ runner.temp }}/arduino-unified-data
     steps:
       - uses: actions/checkout@v6
       - uses: arduino/setup-arduino-cli@v2
@@ -252,7 +254,7 @@ jobs:
           version: "1.5.0"
       - name: Install pinned ESP32 core
         run: >-
-          arduino-cli core install "esp32:esp32@3.3.1"
+          arduino-cli core install "esp32:esp32@3.3.6"
           --additional-urls
           "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
       - name: Install pinned UNO R4 core
@@ -261,15 +263,43 @@ jobs:
         run: >-
           arduino-cli core install "Seeeduino:samd@1.8.5"
           --additional-urls
-          "https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json"
+           "https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json"
+      - name: Compile ESP32, UNO R4 and Wio Small SizeProbe gates
+        run: python3 tests/arduino/compile_matrix.py --group size-probes
+      - name: Install pinned Wio BLE preview dependencies
+        run: >-
+          arduino-cli lib install
+          "Crypto@0.4.0"
+          "Seeed Arduino rpcBLE@1.0.0"
+          "Seeed Arduino rpcUnified@2.1.4"
+      - name: Compile Wio BLE preview and hardware release gate
+        run: python3 tests/arduino/compile_matrix.py --group previews
       - name: Build the public Arduino ZIP
         run: |
           python3 tools/build_arduino_release.py \
             --stage-dir build/formal-release/library \
-            --output-dir build/formal-release/artifacts
-      - name: Install the ZIP and compile every public example/product
+            --output-dir build/formal-release/artifacts \
+            --profile tests/release/development_profile.json \
+            --allow-development-profile
+      - name: Install the same ZIP for stock WiFi and portable targets
         run: >-
           python3 tests/arduino/verify_installed_release.py
           --zip-path build/formal-release/artifacts/BlinkerDeviceV2-0.1.0.zip
           --work-dir build/installed-zip-gate
+          --target esp32-wifi --target esp32-cloud-smoke
+          --target uno-r4-wifi --target uno-r4-ble --target wio-terminal-wifi
+          --jobs 4
+      - name: Install the official SDK matched to the S3 BLE hardware baseline
+        run: >-
+          arduino-cli core install "esp32:esp32@3.3.11"
+          --additional-urls
+          "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+      - name: Verify the official BLE SDK configuration and binary pin
+        run: python3 tests/arduino/verify_esp32_ble_sdk.py --data-dir "$ARDUINO_DIRECTORIES_DATA"
+      - name: Install the same ZIP for both S3 BLE products
+        run: >-
+          python3 tests/arduino/verify_installed_release.py
+          --zip-path build/formal-release/artifacts/BlinkerDeviceV2-0.1.0.zip
+          --work-dir build/installed-zip-ble-gate
+          --target esp32-ble --target esp32-wifi-ble
           --jobs 4

@@ -1,0 +1,6 @@
+/*/build/
+/*/build-*/
+/*/*.bin
+/*/*.elf
+/*/*.hex
+/*/*.map

@@ -35,11 +35,14 @@ struct WallClockSnapshot {
     uint64_t utcMillis;
     uint32_t uncertaintyMillis;
     uint32_t ageMillis;
+    // Boot-local accepted-sample revision, not wire data or an ownership epoch.
+    // Readers can distinguish a fresh time anchor from ordinary tick progress.
+    uint32_t sampleRevision;
     WallTimeSource source;
     WallClockState state;
 
     WallClockSnapshot()
-        : utcMillis(0U), uncertaintyMillis(0U), ageMillis(0U),
+        : utcMillis(0U), uncertaintyMillis(0U), ageMillis(0U), sampleRevision(0U),
           source(WallTimeSource::None), state(WallClockState::Unsynchronized) {}
 };
 
@@ -65,6 +68,7 @@ private:
     uint32_t lastMillis_;
     uint32_t ageMillis_;
     uint32_t sampleUncertaintyMillis_;
+    uint32_t sampleRevision_;
     WallTimeSource source_;
     WallClockState state_;
 };

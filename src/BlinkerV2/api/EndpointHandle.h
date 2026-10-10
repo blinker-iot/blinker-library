@@ -134,6 +134,7 @@ private:
     friend class Client;
     friend class EndpointCatalog;
     friend class PatchBuilder;
+    friend class TaskPropertyBinding;
 };
 
 class EndpointCatalog {

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "admission": "test-only",
+  "target": {
+    "board": "XIAO_ESP32S3",
+    "arduinoCore": "3.3.6",
+    "idf": "v5.5.2-249-gf56bea3d1f",
+    "ipcStackBytes": 1024
+  },
+  "heapMinimumBytes": 131072,
+  "largestBlockMinimumBytes": 98304,
+  "tasks": {
+    "ipc0": 64,
+    "ipc1": 192,
+    "loopTask": 4096,
+    "IDLE0": 192,
+    "IDLE1": 256,
+    "tiT": 2048,
+    "sys_evt": 2048,
+    "arduino_events": 2048,
+    "nimble_host": 1536,
+    "btController": 2432,
+    "wifi": 3584,
+    "esp_timer": 6144,
+    "Tmr Svc": 2048
+  }
+}

@@ -80,6 +80,13 @@ public:
     virtual void poll(uint32_t budgetMicros) = 0;
     virtual TransportState state() const = 0;
     virtual TransportCapabilities capabilities() const = 0;
+    // Optional product protocol handlers. Runtime filters supported bits and
+    // reports its accepted Hello; raw RX/peer claims do not open an extension.
+    // No per-peer storage is added to ordinary transports.
+    virtual uint32_t protocolFeatures() const { return 0U; }
+    virtual void protocolNegotiated(const RxContext& rx, uint32_t features, uint16_t maximumFrame) {
+        (void)rx; (void)features; (void)maximumFrame;
+    }
     // The frame view is only valid for this call. Implementations must consume
     // it synchronously or copy it into adapter-owned storage before returning.
     // send() must not synchronously invoke the registered receive/session

@@ -6,6 +6,7 @@
 #include "Product.h"
 #include "StateUpdate.h"
 #include "WifiDeviceKeyProfile.h"
+#include "TaskSupport.h"
 #include "../core/Diagnostics.h"
 #include "../interface/IDiagnosticOutput.h"
 #include "../runtime/TimeSyncService.h"
@@ -18,12 +19,27 @@ class Print;
 #error "Select exactly one Blinker product"
 #endif
 
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+#if defined(BLINKER_PRODUCT_BLE) || defined(BLINKER_PRODUCT_WIFI_BLE) || \
+    (defined(BLINKER_PRODUCT_WIFI) && !defined(ARDUINO_ARCH_ESP32))
+#error "Tasks currently support ESP32 manual WiFi only"
+#endif
+#endif
+
 namespace blinker {
 
 namespace facade_detail {
 
 struct BleProfile {};
 struct WifiBleProfile {};
+
+#if defined(BLINKER_PRODUCT_WIFI)
+typedef WifiDeviceKeyProfile SelectedProfile;
+#elif defined(BLINKER_PRODUCT_BLE)
+typedef BleProfile SelectedProfile;
+#else
+typedef WifiBleProfile SelectedProfile;
+#endif
 
 Diagnostics& diagnostics();
 void observeProductStatus(const ProductStatus& status);
@@ -90,6 +106,15 @@ public:
     bool time(uint64_t& utcSeconds) {
         utcSeconds = 0U;
         return time_ != nullptr && time_->time(utcSeconds);
+    }
+
+    // Before begin(), explicitly allow only these scalar Properties. The
+    // product copies bindings into fixed static storage; Property objects must
+    // still outlive the session. Also enables the existing business UTC source.
+    // This is firmware opt-in, NOT owner authorization or task initialization.
+    template <typename First, typename... Rest>
+    bool enableTasks(Property<First>& first, Property<Rest>&... rest) {
+        return enableTaskProfile<facade_detail::SelectedProfile>(first, rest...);
     }
 
 #if defined(BLINKER_PRODUCT_WIFI)
@@ -232,6 +257,13 @@ public:
     }
 
 private:
+    template <typename Profile, typename... T>
+    bool enableTaskProfile(Property<T>&... properties) {
+        if (product_ != nullptr) return remember(Result::failure(ErrorCode::AlreadyExists));
+        const Result result = integration::TaskSupport<Profile>::configure(properties...);
+        return result ? enableTime() : remember(result);
+    }
+
     template <typename Profile, typename... Interactions>
     bool beginProfile(Profile profile, Interactions&... interactions) {
         static facade_detail::Session<Interactions...> session(

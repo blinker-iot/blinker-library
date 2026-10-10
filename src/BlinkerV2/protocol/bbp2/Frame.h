@@ -12,6 +12,7 @@ static const uint8_t kMagic1 = 0x4B;
 static const uint8_t kVersion = 0x02;
 static const uint8_t kBaseHeaderSize = 10;
 static const uint8_t kCrc32cSize = 4;
+static const uint16_t kTaskManagementMaximumFrameSize = 212U;
 
 enum class MessageKind : uint8_t {
     Hello = 0x01,
@@ -49,7 +50,9 @@ enum class MessageKind : uint8_t {
     PresenceKeyReceipt = 0x35,
     // Physical WiFi/Hub local-authority control carrier, consumed only by the
     // optional product control extension; never a Direct/virtual-child command.
-    LocalAccessControl = 0x36
+    LocalAccessControl = 0x36,
+    // Optional physical Service <-> device task management, never App Route.
+    TaskManagement = 0x37
 };
 
 enum FrameFlag : uint8_t {

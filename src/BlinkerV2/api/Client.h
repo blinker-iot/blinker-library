@@ -316,6 +316,7 @@ private:
 
     friend class EndpointHandle;
     friend class StateUpdate;
+    friend class TaskPropertyTarget;
 };
 
 } // namespace blinker
