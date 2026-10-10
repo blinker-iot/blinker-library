@@ -1,6 +1,8 @@
 # Device V2：核心稳定版进度与后续执行计划
 
-更新：2026-10-09（第81批A2公开合同与App）。**第38项A2-3软件收口：公开四/六字段联合、App条件选择与原意图恢复已实现；下一步仅A2-4匹配差异候选＋两设备有限实物。** 正式runtime源码已配对接入A1/A2，未部署的新源码不能冒充现场已支持A2；未显式组装的repository/service默认仍A1。证据取§8.81，合同取[Service§28.12](../../aily-blinker-services/docs/SERVICE_DEVICE_V2_AUTOMATION_IMPLEMENTATION_PLAN.md#2812-第81批a2公开合同app与最终软件验收)。旧S4/289项/镜像不替换，P1普通关闭，接收/iOS/Wio与T2/生产边界保持；不扩多步骤、网关、100轮、整组维护。
+更新：2026-10-10（第86批M5本机产品验收）。**最小自动化M1～M5按限定范围收口：命名／编辑／统一入口的软件实现和新版App、Gateway迁移050、两普通WiFi设备真机短闭环均通过。** 执行取[产品方案§8](../../blinker-app/docs/APP_DEVICE_V2_MINIMAL_AUTOMATION_PRODUCT_PLAN.md#8-m5本机新版本验收)及§8.86；第82～85原证据保留。复用执行链路，不扩复杂规则、网关、100轮或整组维护；本机验收与独立交接／正式发布分开。
+
+最新用户确认（2026-10-10）：**参考IFTTT／米家完成最小自动化产品收口，优先页面简化、统一入口、规则命名与编辑及准确状态展示。** 第84执行闭环不重新派发；本批只改必要App与Service管理层，设备协议、观察和执行器保持。正式profile/签名、独立交接及线上发布仍是后续，不阻挡本机功能开发；不以API操作代替新界面的用户验收。
 
 **从本文件起统一执行优先级。** [原核心稳定计划](DEVICE_V2_CORE_STABILITY_EXECUTION_PLAN.md)保留 C0～C4 和 25 个批次的历史依据；各专项保留协议与测试记录。历史“下一步”不再自动成为任务。
 
@@ -12,7 +14,7 @@
 
 - 普通接入、属性/动作控制、状态同步及有限故障恢复的 **C1～C3 冻结范围已收口**；未覆盖用户定时与自动化，不能据此宣称产品基础功能全部完成。
 - “真实失效 BLE 候选不拖慢 Cloud”、Manifest 缓存协商和损坏缓存恢复均已完成，不再列为待办。
-- 三端及三个修改过的原生插件源码已于 9 月 21 日推送，但**源码同步 ≠ 可复现构建 ≠ 生产部署 ≠ 正式发布**。
+- 三端最新源码已于 10 月 10 日上一轮同步，三个修改过的原生插件保留 9 月 21 日基线；本批另完成匹配A2本机候选与有限实物，但**源码同步 ≠ 生产部署 ≠ 正式发布**。
 - 新增功能包：P1 BLE 有界优化、T0～T2 本机定时、A1 最小云端自动化。详见[三端共同合同](DEVICE_V2_SCHEDULING_AUTOMATION_AND_BLE_PLAN.md)，设计/实施/验收状态分别记录。
 - 依赖/测试源码闭包、匹配 profile 与发布声明仍要补齐，但只是功能实施与交付的支撑，不替代新增功能，也不成为重写架构的理由。
 - 大范围服务器维护、网关多子设备、通用 LAN 产品化仍暂停。仅核对核心版本所必需的配置与依赖，不自动启动整组服务升级。
@@ -21,13 +23,13 @@
 
 ## 2. 当前版本基线
 
-以下为本地 Git HEAD 与 9 月 21 日推送结果；本轮不重新获取远端、不宣称线上正在运行这些提交。
+以下三端基线已于 2026-10-10 上一轮推送；本轮仅只读复核本地 HEAD、对应 `origin` 跟踪引用及 Git 树，未重新获取仓库、fetch 或查询 Actions，不宣称线上正在运行这些提交。三个原生插件的 9 月 21 日推送基线仍按下表保留。
 
 | 模块 | 仓库 / 分支 | 基线提交 | 说明 |
 | --- | --- | --- | --- |
-| 设备库 | blinker-iot/blinker-library / device_v2 | `ab006764a9f6831ac75b33d25e87cbb238b9d756` | src、标准示例；不是正式服务 profile ZIP |
-| App | blinker-iot/blinker-app / i3w-dev-v2 | `dc801aa21e43857025dc3da316947f4559fa2a09` | 包含缓存协商和页面恢复；LAN 默认关闭 |
-| IoT Service | ailyProject/aily-blinker-services / dev_v2 | `3d737daa327002cf056edd777ffdf62b2beb4035` | 包含迁移/路由/分享；不等于已替换现场镜像 |
+| 设备库 | blinker-iot/blinker-library / device_v2 | `bd0c913b947f7bf9c402ea9fc2e6f19bcbe79095` | 含 src、标准示例及 tests/tools/CI 源码；不是正式服务 profile ZIP |
+| App | blinker-iot/blinker-app / i3w-dev-v2 | `e9e1880726c24476a1b84a9cb1ed9bc531a85136` | 含当前 App、确定性测试与交接工具源码；普通 LAN/P1 默认关闭 |
+| IoT Service | ailyProject/aily-blinker-services / dev_v2 | `7bd10077ac2940037bbbc21d6d746024c80ea007` | 含匹配 A1/A2 runtime 与测试源码；源码同步不等于现场镜像或生产部署 |
 | WiFiProv 插件 | i3water/capacitor-wifiprov / main | `a21e87642a853242677f7dccd8847e9785837ab0` | BLE 发现委托及扫描协调 |
 | mDNS 插件 | i3water/capacitor-mdns / main | `00f994f2896327781c64f93851932f1acbddcb8e` | 原生扫描生命周期回收 |
 | 通知插件 | i3water/capacitor-ntfy / main | `83b57ee2efdd829db025d37fb898d349e6cd6a35` | 通知生命周期和点击入口 |
@@ -47,7 +49,7 @@
 
 | 能力 | 当前证据/实现 | 核心版还需做什么 | 暂不纳入 |
 | --- | --- | --- | --- |
-| 单 Arduino 库/API | 一个 src、4 个标准示例；B1 七目标安装编译、C3 六种基础实物模式 | 用匹配 profile 重建候选；固定 SDK/依赖；发布使用说明 | 每 MCU/模式一个 ZIP、自动全局组件注册 |
+| 单 Arduino 库/API | 一个 src、4 个标准示例；B1/C3既有矩阵保留；第82单库ZIP ESP32 WiFi安装编译/有限实物、第83索引和415文件不变对照通过 | 确定可达交付profile/信任/外部SDK；第82没有新的独立device source-bundle闭包，旧包不冒称新profile；无输入不重建 | 每 MCU/模式一个 ZIP、自动全局组件注册 |
 | WiFi 手动模式 | DeviceKey→session→MQTT→BBP/2；S3/R4/Wio 基础链路已测 | 配置真实接入地址；必要差异回归；明确 SDK socket 等待风险 | 新登录协议、恢复永久 EnrollmentKey |
 | 普通 BLE | S3/R4 认领、Method 2、控制/状态、有限重启恢复 | 从当前候选证实不会遗漏插件/配置；只回归受影响路径 | Wio BLE 正式发布、任意 SDK 全覆盖 |
 | ESP32 WiFi+BLE | 默认 BLE WiFiProv、同逻辑 ID 双通道、重配网；C1 进程中断恢复 | 匹配候选一条 WiFiProv→Cloud/BLE→恢复链 | UNO R4 WiFi+BLE；新增工厂体系 |
@@ -56,7 +58,7 @@
 | 日志/限流/采样 | 默认静默；onSample、租约/配额、基本恢复有证据 | 用户说明与当前声明的最小回归；区分回调采集与成功发送 | History/Bulk、无限流、所有平台高频图表 |
 | 业务授时 | 可选 enableTime/time；WiFi/BLE/LAN/Hub 的短闭环已实现 | T0 明确日历任务的时钟保持/精度，现默认最多一小时且断电后需有效来源 | 将业务 UTC 用作密钥有效性依据；无源长期离线准时保证 |
 | 本机定时 | T2c时间/4槽/Start保护、原意图/未知根拒绝/退休有限真机；公开入口、安装及COM3实物通过；最小独立源码重建/安装编译闭合 | 已分享operator缺同片环境；写额度仅软件证据，4槽单目标不是全平台准入，未知根仍不能恢复；正式材料/三端完整构建未交付 | 通用脚本、无限任务、非幂等动作恰好一次 |
-| 自动化 | A1限定闭环保持；A2公开合同/App与原事务软件链通过，runtime源码已接线，尚未部署/真机 | 第38项A2-4匹配差异候选＋两设备短闭环；正式profile/交接独立保留，已有条件编辑器不在本包 | 网关自动接管、可靠事件全历史、多步骤事务、首轮周期采样 |
+| 自动化 | 第82～85原证据保留；第86匹配新App／Gateway050的命名／编辑／启用／App退出后执行／查询／停用／删除实物通过，M1～M5收口 | 新命名历史保留匹配版本，独立接收／正式profile另验；首执行尝试2、第二1如实保留，不把回调当物理exactly-once | 多条件／多动作、按钮Action、数值目标、网关自动接管、全平台实测及生产准入 |
 | 首次进入 | 缓存协商已收口；P1显式候选、S3/R4有限控制/取消、健康Cloud/BLE并行只读；新目录构建及匹配CA变体Android/XIAO有限实物闭合，默认关闭 | iOS实物/Wio preview、独立接收待测；新无CA原包不覆盖，有限样本/中断/冷却限制保留 | 秒开承诺、100 次交替、新抢占协议；未经评审的大包协商 P2 |
 | 分享/通知 | 公开链接/二维码/粘贴、定向邀请、接受/拒绝、权限与撤销已有代码和分批证据 | 若候选开放：匹配 Auth、Gateway/所有 Broker 开关，双账号定点验收；否则明确不开放 | 为所有家庭复制新鉴权系统、拓扑扩张 |
 | LAN WebSocket | ESP32 self/internal，有 mDNS、局部认证/撤权/页面证据；App 默认 false | 本阶段仅保留/回归共享模块；清楚标 preview | 宣称所有 WiFi 产品均正式 LAN 可用 |
@@ -78,19 +80,18 @@
 
 必须由维护者生成包含**明确服务地址/公开验签材料/安全模式**的单一候选库。私钥、用户 Key、WiFi 密码不进入库。普通 Arduino 用户无需 Python，不要求修改内部 composition。不同测试 profile 的 ZIP 只属证据，不能变成不同 MCU 的安装产品。
 
-### D2：CI 引用与已推送文件不闭合
+### D2：CI 引用源码已可获取，远端运行与交付闭包独立验收
 
-设备库 HEAD 中有 `.github/workflows/device-v2-ci.yml`，但 `git ls-tree HEAD` 无 `tests/` 或 `tools/`；workflow 调用其中的 Python/golden 检查。这是**可由代码树确定的依赖缺口**，本轮未查询 Actions，不假报远端某次运行结果。
+此前“workflow 已推送而 `tests/`、`tools/` 缺失”的源码可获取缺口，已由 2026-10-10 上一轮三端源码同步关闭。本轮 `git ls-tree --name-only HEAD` 确认设备库 `bd0c913…` 包含 `.github/workflows/device-v2-ci.yml`、`tests/`、`tools/`；并逐项核对 workflow 直接引用的 architecture、host/CMake/seed、golden oracle/向量/跨语言脚本、Arduino 编译/安装/SDK 校验及 release profile/打包路径，均已在 HEAD 内。`tests/hardware/*.test.mjs` / `*.test.cjs` 也有已跟踪的匹配源码；不是删除校验或生成假通过结果。
 
-这是此前“只上传必要库源码、不上传 docs/tests/tools”的同步边界，不通过删除校验或创建假通过修复。最小测试/打包源码与 APK、日志、现场 fixture 不是同一种资料：
-
-- 建议后续单独确认并同步最小确定性测试、CI/打包工具及公开 fixture；**不要把它们放进用户 Arduino ZIP**。
-- 未确认前仍遵守不上传约束，保留本地验证；不能宣称干净远端 CI 已通过。
-- App 本次未上传大部分新增测试与本地 Vitest 修订；240/240 是本地受控结果，不是仅拉当前 HEAD 就能复现的远端门禁。Service 已保留 package 脚本所依赖的测试源码，但有需数据库的测试，不能把 skip 算 pass。
+- App `e9e1880…` 的 Git 树已含 `vitest.config.ts`、自动化 client/page spec、`device-template/tests`、授时公开 golden fixture 和 `tools/source-handoff.mjs` / 自测，原“新增测试与 Vitest 修订尚未上传”不再是当前源码状态。
+- Service `7bd1007…` 的合同、Broker 观察与 Gateway worker/版本策略测试及 package 脚本源码仍在 HEAD 内；需要数据库的测试必须按真实环境运行，不能把 skip 算 pass。
+- 这里只闭合已引用源码的可获取性。本轮未查询远端 Actions，未新获取仓库，也未把历史本地 240/240 或其他软件结果改称远端 CI 成功。干净 checkout 的实际构建、精确来源/锁/外部工具链闭包、旧 S4 接收验收及生产 profile/签名仍分别取证，不由三端推送或本段树检查代替。
+- 最小确定性测试、CI/打包工具与公开 fixture 属于维护源码；**不因此进入用户 Arduino ZIP**。APK、现场日志、设备/账号秘密与私有备份仍不属于这些公开源码。
 
 ### D3：App 相邻插件与构建产物依赖
 
-fork 推送只解决源码可获取，未解决 lockfile、插件 `dist` 生成、Capacitor 原生工程同步以及固定版本。Android 本机 `capacitor.settings.gradle` 的 pnpm 缓存路径差异未推送，不能手工复制到其他机器。
+fork 推送只解决Git来源可获取，不能单独证明lockfile、插件dist、Capacitor同步及固定工具链匹配；第64/75/82批已有各自新目录构建证据，第83批重新验证第82冻结1,646输入，并不否定已过步骤。Android本机`capacitor.settings.gradle`的pnpm缓存路径差异不能手工复制到其他机器；所选插件未提交README/tests仍须按manifest而非HEAD交接。
 
 本阶段建议保留现有五个插件布局，先用**一份维护者 checkout 清单锁定全部提交**，在新目录完成插件构建→App 安装→Capacitor 同步→APK。避免本轮同时引入 monorepo/私有包注册表/依赖大升级。
 
@@ -167,7 +168,7 @@ Service 的跨片 requests/shares、LocalAccess、通知安装/投递以及 App 
 | S3 定点业务验收 | 复用 C3 和缓存证据，按 S1/S2 差异选择关键链路；有限回归见下表 | 同候选/同真实服务边界；命令 ACK＋真实 State/计数；退出回收；失败修在原模块 | 为凑次数跑 100 轮、无差异全平台反复重刷、Action 自动跨路重发 |
 | S4 核心候选交接 | 简洁 QuickStart、支持矩阵、诊断/重置说明、已知限制、维护者构建入口 | 同事可从清单独立安装和复现实例；标清“内部候选”与“正式发布” | 将传输 preview、维护工具完成度包装成正式生产准入 |
 
-**第33～37项及第38项A2-3已完成限定软件门禁；下一包只A2-4两设备短闭环，不重跑内部2c或P1。** 第28项真实接收与第32项缺实物保持待办，普通P1关闭。第34/35项新包链不覆盖旧S4/P1，无实际输入变化不重建/重测。A2只扩有限条件、复用观察/PG/Command，不增加多步骤/网关执行器。生产profile/信任根、Git同步和现网部署不自动批准；匹配本机联调候选按§8.81的备份/有限差异路径准备，不做整组维护。A1边界取[专项§27.4](../../aily-blinker-services/docs/SERVICE_DEVICE_V2_AUTOMATION_IMPLEMENTATION_PLAN.md#274-a1-6两普通wifi有限实物闭环与收尾)；T2仍取执行器§10.42～10.44及[交接说明](DEVICE_V2_TASK_PILOT_HANDOFF.md)，不靠迁账号/跨片补operator门禁。以下完成项不重新执行：
+**第33～38项、第84最小执行流程与第85～86[产品收口M1～M5](../../blinker-app/docs/APP_DEVICE_V2_MINIMAL_AUTOMATION_PRODUCT_PLAN.md#8-m5本机新版本验收)按限定范围完成，不重跑A2-4或M5。** 命名／编辑和简化页面已沿文档→管理合同与迁移→页面／入口→联合软件验证→本机新版本短闭环收口。没有新执行器、协议或MQTT连接；下一步只按用户试用反馈修复现有范围的已证实缺口，或明确要求后执行独立交接。正式profile/签名、P1/LAN/网关、长循环及服务器整组维护仍独立后续；原历史与未知结果保留，T2及第32项缺环境项不自动重开。以下记录只作历史依据：
 
 1. **已完成T2b-1**：原Read通道返回实际容量及最多32项固件调度白名单；流式fingerprint锁定分页，完整帧最大183 B。普通Manifest可写仍不等于调度许可，属性约束不在目录重复建模。当前目录需已初始化的任务authority；页面必须让用户显式启用，不能查询时偷偷Initialize，不支持/读取失败也不能回退为所有可写属性。
 2. **已完成T2b-2软件接线**：原列表/编辑器使用真实taskId、认证目录及同revision记录；删除旧JSON/160ms/900ms猜成功和loop/默认动作。创建不Start、启用不恢复；未知写精确重试，只有新鲜查询后明确确认才允许停止本地追踪（不取消远端任务）。账号/页面取消、旧弹窗拒绝、持久写前存储及请求节流已测。Manifest缓存只作提示，MCU验当前约束；不把页面编译当真机验收。
@@ -206,12 +207,12 @@ Service 的跨片 requests/shares、LocalAccess、通知安装/投递以及 App 
 
 第73批继续第32项：用户许可COM3后，仅公开WiFi示例临时更新网络/profile，用现有DeviceKey版本2上线；COM11/COM4不刷写或清授权。原账户MQTT在BLE就绪前/保持连接中/退出后均收到新StateRequest→StatePage（不同序号，非缓存），三次状态读取往返各60ms；BLE只读ready3393ms、退出213ms归零，不发Property/Action。原板及App恢复完成，恢复旧配置后见证板离线如实记录。详细恢复/端口例外取§8.73及[共同方案§7.9](DEVICE_V2_SCHEDULING_AUTOMATION_AND_BLE_PLAN.md#79-第73批健康cloudble只读短链及恢复2026-10-09)。旧S4是历史普通WiFi交接证据，**不得直接拿其中错误Ed25519公钥包验证当前服务BLE认领**；新修正组件包取[清单§5.5](DEVICE_V2_CANDIDATE_SOURCE_AND_SUPPORT.md#55-第73批公开公钥修正组件交接及有限并行短链)，不覆盖旧证据。
 
-33. **已完成P1候选与交付边界收口（第74批）**：保留显式Android测试候选，不默认启用，不新建策略；[共同方案§3.4](DEVICE_V2_SCHEDULING_AUTOMATION_AND_BLE_PLAN.md#34-p1候选冻结与使用边界2026-10-09)冻结作用路径/窗口/配置及支持限制，[清单§3.1](DEVICE_V2_CANDIDATE_SOURCE_AND_SUPPORT.md#31-当前交付选择第74批收口)区分原S4、公开公钥修正设备组件与独立P1 App。1,646项当前App/插件输入与原P1冻结源匹配，原S4/两个P1 APK及修正组件摘要未变；交接工具明确拒绝P1配置，不能声称已做该变体新目录依赖重建。iOS/Wio及接收待办保留，不阻塞未启用P1的普通候选，也不提升正式支持。无输入变化不重建/刷全部板；后继合成包、默认开启、Git/部署须各自差异验收/授权，旧S4不覆写、不代签。
+33. **已完成P1候选与交付边界收口（第74批）**：保留显式Android测试候选，不默认启用，不新建策略；[共同方案§3.4](DEVICE_V2_SCHEDULING_AUTOMATION_AND_BLE_PLAN.md#34-p1候选冻结与使用边界2026-10-09)冻结作用路径/窗口/配置及支持限制，[清单§3.1历史比较](DEVICE_V2_CANDIDATE_SOURCE_AND_SUPPORT.md#31-当前匹配组件索引第83批收口)区分原S4、公开公钥修正设备组件与独立P1 App。1,646项当批App/插件输入与原P1冻结源匹配，原S4/两个P1 APK及修正组件摘要未变；当批交接工具明确拒绝P1配置，不能声称已做该变体新目录依赖重建。iOS/Wio及接收待办保留，不阻塞未启用P1的普通候选，也不提升正式支持。无输入变化不重建/刷全部板；后继合成包、默认开启、Git/部署须各自差异验收/授权，旧S4不覆写、不代签。
 34. **已完成P1显式实验的新目录构建（第75批）**：仅修改交接工具/测试，把`local,ble-priority-test`加入固定白名单；普通P1仍关闭，仍拒绝裸开关/production混合/任意组合。新1,646项快照与原P1仅这两项差异，由包内入口完成五插件/App/模板安装构建、类型/Web/sync/Android debug共16步；12项工具/隔离目录41项相关回归均通过。依赖版本/冻结锁/插件发布内容及HTTPS origin/实际P1导出核对通过，原8项制品未变。新APK `f54b78…4209`无测试CA、未安装，不能写为旧实物包/接收或生产通过；详细新manifest/制品取§8.75，不扩运行时/协议/SDK/部署。
 35. **已完成新构建来源的匹配CA有限实物（第76批）**：在第34项原隔离work显式加入已验证公开测试CA，App build独立输出，新APK `cebd57…2b85`；原无CA APK和八项旧制品不改。原签名/HTTPS origin、1,580项assets/16项native lib和22个App Java类匹配；两个新资源改变生成R及项目DEX，不称整DEX同字节。Android/XIAO缓存命中、一次Property/Action ACK、退出、认证途中取消、只读重进/不重放通过；17项测量工具测试0skip，不重复累计旧App业务回归。手机原包实际恢复读回，授权/缓存/3条任务意图及空自动化journal摘要不变、零连接/观测；不刷板、清授权、部署或修改源码。仅发送方新包有限差异链闭合，不代签第28项或外推iOS/Wio/稳定提速，详见§8.76。
 36. **完成A2-0/1合同与纯条件核心**：按[Service§28](../../aily-blinker-services/docs/SERVICE_DEVICE_V2_AUTOMATION_IMPLEMENTATION_PLAN.md#28-a2实用条件扩展与执行顺序2026-10-09)明确布尔双方向、数值阈值/正回差、基线/重置、版本与持久锁定；shared落无I/O模块，A1原上升沿复用；103节点联合回归、三项类型检查通过，见§8.77。公开A1输入/输出、观察/能力验签、DB和设备wire保持原合同，新条件只作纯核心候选，不部署/开放。
 37. **完成A2-2内部版本化底座（第80批历史准入）**：2a类型观察、2b原事务/证明/执行、2c完整V2两worker＋五用途签名HTTP＋PG提交/ACK＋Command/ledger、并发/恢复与公开版本边界通过§8.80。当批默认production/public仅A1；第81批源码公开准入取下一项，不将旧历史描述当当前runtime。graph全量配额不缩，软件fixture不是真实MQTT/MCU，不重复该门禁或据此自动部署。
-38. **A2-3软件完成，下一步A2-4有限实物**：按Service§28.12，原V1四字段保留，V2仅加policyVersion:2/condition成精确六字段；正式runtime源码统一配对public/worker准入，未部署。App五类型源/固定bool目标、条件选择、原CAS/精确回执/未知意图恢复与严格response通过；删除被替代A1-only硬编码，保留旧SceneService真实消费者。页面当前新建/启停/退役/恢复，不冒称已有条件编辑器。下一包匹配差异候选，测下降沿、数值回差、退出、恢复/停用及真实ACK/State的两设备短闭环；第38项整体及A2产品仍未关闭。不扩任意表达式、多步骤、跨账号/片、周期采样或网关离线。
+38. **A2-3软件＋A2-4限定实物收口（第82批）**：原V1四字段/V2六字段合同与同一观察/PG/Command保持；匹配新目录App、Gateway/Broker1及普通WiFi库候选，真实同owner/tenant/shard两S3下降沿、uint32上阈值/回差边界、重复、基线、App退出、停用/源重启恢复已通过。原ID最终revision8/disabled/pending0，4条ACK对应真实连续回调0→4；错过首次冷却窗口后的合法第3次保留，第二窗口真实抑制且不补发。两板原固件/授权恢复及临时入口清理通过。保留匹配A2 App/服务与历史，不能无感回退旧A1组合。页面不冒称已有条件编辑器；完整条件/权限矩阵、正式profile/交接/生产产品独立保留，不扩任意表达式、多步骤、跨账号/片、周期采样或网关离线。详见§8.82。
 
 这条WiFi owner链及最小设备交接已具备有限证据；不同时扩BLE/混合根/网关任务、页面重写或服务器维护。未知写意图/权威历史占满时仍明确拒绝；有限回收不是长期生产账本或寿命准入。A1设计进入下一包不等于取消T2发布限制。
 
@@ -933,4 +934,81 @@ S3 现场网络和 COM/设备身份必须重读；文档里的 SSID、IP、COM �
 - 最终23文件Service **315节点（300顶层）**，App三文件 **40项**，两validator合同对照 **59项**，最终隔离PG **134节点（133子项）约103.7秒**，各自0fail/skip、不累加中间子集/重复PG。shared/Broker构建、三项项目检查（Gateway仍checkJs=false）、App/app-spec类型与严格Angular模板均通过；不是APK或真机点击。公开save→真实五用途签名/原两worker/BBP/2 accepted→原Command ACK也只是软件fixture，不是实际MQTT网络或MCU。
 - PG仅随机schema、原镜像Linux依赖、只读候选mount；残留schema0、临时容器移除，现有服务/业务schema不改。16样本JSONB预算最大2,036/1,762/3,122 B，未增字段/预算，不外推全域上界或设备400 B/RAM。证据`build/automation-a2-public-app-20261009`含复现脚本、86门禁输入/87最终源码文档摘要和原/最终日志；门禁后代码零漂移，仅验收文档更新。非完整新目录闭包，原289项/S4/APK/设备证据不继承。
 - 中间UI两处TS错误修正后全项目检查通过；文案调整使旧文字断言一项失败（39/40），修正对应语义断言后40/40，失败日志保留。未安装App、ADB/刷板/切网、部署、Git暂存/提交/推送；原脏工作树与已有功能保持。
-- **下一步只A2-4**：按Service§28.12的顺序核现场身份/网络、备份原板/APK/受影响服务，生成独立匹配A2差异候选，做同owner/tenant/shard两普通WiFi真实bool下降沿＋数值回差/重复/新基线/退出/停用/恢复、真实ACK＋State的短闭环；结束停用试点/恢复原固件授权，缺环境明确留待测。不要重跑P1、100轮、扩网关、多步骤、采样协议、条件编辑器或Auth/整组维护。
+- **当批下一步A2-4已由第82／84批完成，不再派发**：原准备范围为匹配候选与两普通WiFi有限实物，原操作与恢复证据保留。当前队列取§8.85，不自动重跑P1、100轮或服务器维护。
+
+### 8.82 第八十二批A2-4匹配候选、两设备有限实物与安全收尾（2026-10-10）
+
+- **第38项限定范围收口，不宣称自动化完整产品或正式发布。** 本批只执行第81批指定的A2-4，未新增生产运行时代码/协议/依赖/数据库表；保留原模块职责，不为“清理”删除有消费者的任务、Direct或SceneService。前批软件、旧S4/289项/APK证据保持原样，不以推送代替部署/实物。
+- 新目录Service冻结291项，源码摘要`15477d2be5775f085b54ad44fc7c6c8e97f97dcca6ec9a72d13a287da5e0fab8`；本机Gateway镜像`1bd321f51654243da56e6a783ff5fbaf50971701e3cd9421a3f62691a1777b28`、Broker镜像`57501d068e588bea3995491ebcc3b24206ccc15c5a166ae3b666497d65d7b681`。只替换Gateway/Broker shard1；业务schema49、原五用途密钥/其他服务配置不改。PG/SQLite先备份并隔离恢复校验，未覆盖业务库。
+- App冻结1,646项，源码摘要`9fa45279444874820350083a81cc2953d06753179476684752c73be66c73140c`；固定原锁/五插件在新目录构建，不借旧dist。APK **79,959,579 B**、SHA `66b47aaa416085561759be7fdd0358f8dcd775cd10b4a5a5899fa8c101c42e5d`，实际安装并手机读回一致。使用明确的公开debug CA、原HTTPS origin/原账号，P1/LAN=false；Android构建439任务不是439项测试，非正式签名/生产包。
+- 单Arduino ZIP标准安装WiFi编译通过；stock ESP32 SDK3.3.11下两XIAO S3实际fixture编译、Flash设备端校验、原DeviceKey登录/MQTT通过。实际固件分别943,248 B，编译占用program943,092 B/static RAM51,312 B；不是峰值RAM/全平台声明。只用普通Property/report增加有限uint32样本，无自动loop采集或设备规则表。COM3源Key version2/COM11目标version1未刷新；COM4不动。新Manifest `dcddcd4b05303f0414fb982c620895ae9fa58818a199fa494f54c739b52bb997` 经真实协商，非沿用旧缓存。
+- 全程一个原ruleId，真实App页面组件新建下降沿/启停；数值编辑沿App公开客户端原ID/精确CAS，不假称手工触屏或UI已有条件编辑器。revision2的true初值只建基线，真正force-stop App后true→false产生ACK1；重复false无新增。revision5初值12只建锁定基线，8再布防→10阈值边界产生ACK2，12→10锁定区不多发。
+- 第一次冷却测试中10的acceptedAt=`1791607699953`，比原deadline=`1791607697243`晚2,710 ms，故合法产生ACK3；不删除、不记为抑制通过。只补一次有限窗口：10在`1791607715908`接受/`1791607716256`评估，均早于新deadline=`1791607730252`，游标/锁定被消费，执行/回调保持3；截止后9,502 ms仍保持10，无补发。原误命名快照保留并由本节纠正解释，不改时间或业务断言凑次数。
+- 冷却结束后revision6停用时8→10不动作；revision7重启用时10只建基线。只复位源板，新物理连接/session、fence4及raw0基线不触发；之后0→10才ACK4。目标全程不复位，15份快照uptime单调、同一MQTT session，实际回调连续 **0→1→2→3→4**。四条PG执行与原Broker ledger逐项ACK，sequence5～8、各attempt1/status200，fresh State和回调独立取证；最后相同false写入不强求State revision增加，不称GPIO/物理exactly-once。
+- 原规则最终**revision8/disabled/claimed=false/pending0/targetOutcomeUnknown=false**，全部历史保留。结束后ROM校验恢复原固件/授权：COM3从0x9000恢复1,339,392 B，COM11从0x9000恢复3,371,008 B；两块范围不同，不能写成全部重新读/回滚8 MB。原Flash备份、APK/私有数据与数据库备份均保留，未清设备Key/账号历史。
+- 原APK `05071e…7606`的实际ZIP模块仅支持policy1/boolean；用实际停用revision8规则在提取的真实decoder中仍拒绝，新APK接受，A1正对照两者接受。这是字节/内存核验，不是旧App真机运行。原A1镜像也不兼容non-retired A2 graph，因此**修订原APK/服务无条件回退计划，保留匹配A2 App/Gateway/Broker作为本机候选**；不删typed记录或整库覆盖以强行降级。
+- 两板恢复后移除本批独立HTTP代理、17002及新增18884绑定，Gateway原环境/映射/mount恢复，保留匹配A2镜像。续处理时Docker引擎已停，首次restore连接失败未写；用户手动启动后恢复成功。最终无关容器ID/image不变，但14个StartedAt因引擎重启已变，不能声称跨停机完全不变。原并行启动时代理占用Gateway静态IP的失败证据保留；仅修测试编排为Gateway/Broker健康后再开代理，非生产代码修补。
+- 收尾实际原账号HTTP200、账户Cloudready、公开详情4ACK/停用/pending0；返回首页，释放测试State interests，停止App进程并移除本批ADB转发。**恢复原板后旧fixture状态已非fresh**，不能把收尾缓存当新的硬件运行证明。最终只读审计：schema49、47设备/7route、2rule/8execution总历史、enabled0/unresolved0，四条试点ledger仍ACK1次；备份/恢复摘要不变。
+- 本地忽略证据`build/automation-a2-live-20261010`保留冻结输入、真实样本/CAS/PG/ledger、安装/恢复日志及`network-restore-verification.json`、`apk-compatibility-audit.{cjs,json}`、`closeout-audit.{cjs,json}`；准备审计的`liveDeployment=false/installed=false`只是原阶段，不代表最终状态。私有Flash/数据/网络Key不可上传或进入Arduino包。两次独立核验确认限定门禁；本批只更新既有文档，无Git暂存/提交/推送。
+- 未外推below/其他scalar/中间回差带、真实ACL全矩阵/跨账号、Action/多步骤、物理传感器、BLE-only/网关/iOS/Wio、长稳或生产容量。下一步回现有S2～S4候选索引/升级回退说明和真实接收；正式服务profile/签名未给定保持待办，不重新打包或开启P2/新自动化包。
+
+### 8.83 第八十三批匹配组件索引与升级回退交付收口（2026-10-10）
+
+- 回到既有S2～S4，不新开自动化/服务器维护包。修正候选清单仍称“A2未部署/实物待办”和App交接仍推荐原05071包的陈旧入口；[候选§3.1](DEVICE_V2_CANDIDATE_SOURCE_AND_SUPPORT.md#31-当前匹配组件索引第83批收口)成为唯一匹配组索引，App交接§8指向它，Service保留自身实物/合同并链接[升级暂停回退§7.5](DEVICE_V2_CANDIDATE_SOURCE_AND_SUPPORT.md#75-匹配候选升级暂停与回退)。原S4/旧manifest/历史失败及原脏工作树保持，不为“清理”删除有消费者的运行时模块。
+- 本批实际只读复核：第82ZIP `09900bfd…bbd7` 690,345 B/416文件与stage同字节；与第73公钥修正ZIP `1e05de…23c1`相比新增/删除0、415文件同字节，唯一差异OfficialConfig.h生成profile。App包内原verify通过1,646项，manifest `9fa452…140c`/已测APK `66b47…2e5d`实际文件SHA一致；Service291项context逐项与原inputs相同，聚合来源标记 `15477d…fab8`。不重新构建/复制/安装/刷板/部署或运行真机；第82实测仅按原范围引用，不把校验数量称业务测试。
+- 索引分别列Git基线、冻结来源、制品及实际环境；明确第82设备没有独立source-bundle/新目录交接重建证据、两个Service镜像ID不是registry地址/OCI归档、App公共CA overlay不在普通生产签名包。白名单只允许选择公共ZIP/profile、App冻结源/manifest/APK/三份public overlay、Service context/inputs和脱敏说明；现场build父目录含Key/Flash/手机数据/DB备份，不整体交付。结构校验不是通用秘密扫描或发布者签名。
+- 升级先停用/核无未决并备份，匹配App/所有参与Broker/Gateway后才显式创建disabled A2；不声称已有生产多客户端维护写锁。暂停优先保留匹配组合/typed历史，停用或退役不能推定旧A1/旧P1兼容；不靠删unknown/规则或整库回灌凑回退。没有新增安装器、管理层、sender、运行时开关或工具框架。
+- 当前设备profile为已关闭的本机临时入口`192.168.1.142:17002`，App为USB本机HTTPS公开CA调试变体，不能推荐给初学者直接“填Key上线”。正式服务/profile/信任/签名与接收环境需确定；第28项接收由同事包外实录、不代签。现有功能/来源/索引完成项冻结，只因实际输入变化或接收失败做必要差异修正，不扩P2、100轮、条件编辑器、网关或整组维护。
+- 本地可复核记录`build/delivery-index-20261010/{audit.cjs,audit.json}`通过，复用现有App verify与来源清单，公共overlay证书字节/期限单独记录；它不执行Docker/ADB/Flash/网络探测/DB/Git写入，不冒称本批查过部署健康或证书链。仅更新现有文档与忽略目录审计，无暂存/提交/推送；本批源码工具链/锁/运行时代码不变。
+
+### 8.84 第八十四批本机真实App最小自动化用户闭环（2026-10-10）
+
+- 用户已明确以功能可用性为主线；第82限定A2-4证据不重写，第83交接索引保留，交接/生产条件不再阻挡本机功能验收。本批目标不是再证明一次引擎可发ACK，而是确认普通用户经真实App控件能完成最小流程。
+- 顺序：核当前App/设备/网络及原未决状态 → 备份并恢复受限本机测试入口 → 真实界面新建布尔/数值停用规则 → 显式启用/建立基线 → MCU报告触发、退出App后执行 → App查询ACK与fresh State/回调 → 停用、重进及恢复。必须区分ADB/CDP控件交互与手工触屏；禁止直接调用页面save/client/管理HTTP代替界面验收，辅助只读PG/ledger与串口报告可独立取证。
+- 原page→AutomationService→Client→Gateway仓储/worker→Broker原Command链保持；没有证实的缺陷不猜测重构。先补真实模板控件/数值转换与管理流程软件回归，软件HTTP/storage替身不得当手机/MCU实物。完整条件编辑器并非本包前置。
+- 仅COM3/COM11两XIAO普通WiFi，COM4 R4不动；先精确MAC/分区/当前恢复范围备份核验，复用第82已测二进制及DeviceKey、不清授权。所有现场证据放新忽略目录`build/automation-app-ui-live-20261010`，不覆写旧wx记录、不分发私有备份。网络准备只改测试所需device-plain下发/17002和18884，不升级其他服务/迁移业务库或回退旧A1。
+- **最小本机用户流程通过。** 手机原账号在实际Android WebView按“Me → Automation → 设备自动化（V2试点）”进入，所有新建/选择/输入/保存/启停/退役/查询来自生产DOM控件。select实际打开Ionic单选框并确认，number输入经原生input/change事件和生产值访问器；未调用Angular页面方法、管理client/API或写业务SQL代替交互。这是ADB/CDP程序化真实UI验收，不冒称人手触屏/键盘测试。
+- 复用匹配APK `66b47aaa…2e5d`及第82两个943,248 B设备候选，无新APK/服务镜像构建；保持一个原用户MQTT、原账号HTTP。普通设备源只report/目标走原Property回调，规则持久权威/两worker仍在Gateway，Broker只观察和复用Command/ledger；设备没有新增规则NVS、执行器、权限槽或自动采样。COM3/COM11实际WiFi连接及active session/presence另查，App选择缓存不充当实时能力权威。
+
+| 本轮真实UI与两设备门禁 | 实际结果 |
+| --- | --- |
+| 布尔下降沿新建 | `64b2bced-2033-4122-b51f-ebc7ac019d2c`，源power/目标power=true；保存默认disabled，明确启用后false自动快照只建基线；true重新布防→false产生一条ACK，COM11回调0→1、power=true |
+| App不作为执行器 | 触发前工具依次force-stop App成功、pidof为空，随后真实源样本/PG执行/目标回调；ACK后另一次文件化PID观察仍为空。重新正常启动并通过菜单进入，详情显示该ACK。触发前PID证据在本轮原始工具顺序，不能把触发后JSON冒称触发前采样 |
+| 数值控件与下阈值 | `015588e2-ba3f-484f-8658-9d7cdf6fdbc0`，sensor:uint32/below/阈值10/正回差2→power=false；实际输入零回差或空阈值时禁保存，修正为2/10才能创建；启用时0处于触发区只建基线，12再布防→10触发一条ACK，回调1→2、power=false |
+| 保持触发区与停用 | 数值降至8仍在锁定区，没有第二条执行；通过页面停用后分别再送bool true→false、sensor12→10，执行各保持1，目标回调保持2。数值保持区测试已越过原冷却截止，不把它冒称窗口内冷却抑制；该窗口的历史证据仍取第82批 |
+| 退役、历史与重进 | 两新规则仅通过UI确认退役，revision1停用→2启用→3停用→4退役；退役列表可查两条且没有重新启用按钮；实际离页/重进表单归空、无未确认请求，原两条停用规则保持。原有scene消费者未删除 |
+
+- 一次保存碰到本轮Gateway配置重建，App出现原ruleId未确认、PG当时不存在该行。待服务健康后先点击“查询原请求”，仍保留；再用户确认“恢复同一请求”才创建同ID/revision1，未生成替代ID/直接PUT/删journal。这个现场中断处理通过，不算生产代码故障或重新实现恢复系统。
+- 观察工具一次将初始同值false报告记为`accepted=false`：启用后的自动Snapshot已先建立false基线，同值report去重未刷新时间，PG实际seq1/occurrence0/execution空。这是工具要求“采样时间晚于begin”的局限，未把它修成设备重复发送、重新启用或触发补发；后续不同值的真实报告和ACK分别取证，原记录不覆写。
+- 新增唯一代码文件是**维护测试**`blinker-app/src/app/sections/scene/automation/automation.dom.spec.ts`，生产运行时代码/依赖/wire未变：保留真实模板、Forms/Ionic与生产service/client，仅替换API、能力缓存、存储。四方向参数化流程＋无效/清空/切源共5项；同一次联合四文件45项全部通过，最终App spec TypeScript检查通过；不与原40重复累加，也不当手机/MCU证明。审查未发现应删的重复引擎；旧A1版本读取、未知意图及SceneService仍有消费者，不为“简洁”删除安全或使用中的分支。
+- 状态解释：5秒是已验收样本的近期显示预算，30秒是动作冷却/租约；值不变可无新样本。因此“已启用 · 等待观察恢复”可能只表示没有近期样本，也可能worker租约失效，不能单凭它推定设备离线或规则停用。无新增样本时也没有凭空新触发；实际新变化可继续执行。此状态回读只读，不应为让页面一直显示绿色而新增心跳/改协议。
+- 只读终态独立核验：schema49、47设备/7route、4rule/10execution、enabled0/unresolved0；两个新execution各1ACK，对应原Broker ledger各attempt1/result200、sequence4/5；原两条规则revision5/8、旧8执行与本轮fresh备份逐行字节一致，旧8ledger全行摘要一致。不恢复数据库、不删除历史或绕过未知预约。ACK只证明协议，串口fresh属性/回调是独立MCU软件证据，未接GPIO/物理传感器；本轮没有把旧App State缓存当新StatePage。
+- 设备已按本轮已验的原始范围恢复：COM3 `0x9000+1,339,392 B`、COM11 `0x9000+3,371,008 B`，app/NVS授权材料全范围verify与备份一致并启动复位，system/分区/COM4不动。原固件被动串口无指标，因此**未独立确认原固件重新云登录**，不能把字节恢复冒称新登录通过。两份PG/Broker备份本轮仅校验导出格式/完整性及复制SHA，不宣称新的全量恢复演练。
+- 收尾：两新规则已软退役、历史保留；手机回首页后停止进程，本批ADB9334/17000/18885转发已移除。仅撤本批测试网络overlay，保留匹配A2 App/服务与typed历史，不回退旧A1或迁移其他服务。`network-restore-verification.json`及恢复后只读审计确认匹配服务healthy、env/ports/mount回baseline、本批17002/18884入口消失，23个原有无关容器ID/image/StartedAt全批不变，旧代理保留；最终enabled0/unresolved0，未恢复DB或移除volume。
+- 所有现场记录在忽略目录`build/automation-app-ui-live-20261010`，旧wx证据未覆盖，Flash/数据库/网络秘密不发布。**没有发现需重写产品实现的阻塞，本机最小用户目标已达成；不宣称完整产品、已有条件编辑器、所有scalar/平台、跨账号/片、Action/多步骤、BLE-only/网关、长稳或生产发布。** 当批未Git暂存/提交/推送；后续用户反馈的产品缺口已成为§8.85，不再使用本段历史“下一步”限制新需求。
+
+### 8.85 第八十五批最小自动化产品收口（2026-10-10）
+
+- 当前执行入口为[App产品收口方案](../../blinker-app/docs/APP_DEVICE_V2_MINIMAL_AUTOMATION_PRODUCT_PLAN.md)。参考IFTTT和米家的条件／动作交互，明确列表、创建／编辑和详情分层；主入口统一，旧场景只读归档，不冒称其保存配置已进入云规则执行器。
+- 名称只进入HTTP管理合同及规则表管理元数据，迁移050与原创建名称用于同请求核对；不改设备协议、判定definition/digest、观察或原Command。旧无名称请求／记录兼容，省略名称的旧编辑保留现有名称，未知意图不补写或按新表单重建。
+- 编辑沿原规则ID和精确CAS版本，只修改名称、条件和目标布尔值；已有源／目标端点保持。已启用规则修改需明确确认，初次／编辑后基线、回差、冷却和未知结果保护继续沿原实现。
+- 启停以enabled为准，超过5秒没有新观察不冒称离线。默认不显示完整ID、类型／版本及内部状态；执行未知仍明显提示，技术恢复与原请求细节折叠保留。首页删除旧场景计数与默认10条假数，不新增规则数量猜测。
+- M1～M4软件收口完成：App最终联合5文件59项、spec类型检查与development完整模板／资源构建通过；Service确定性相关集合117项、隔离真实PG最终139项分别通过且无skip，Gateway类型检查通过。此前各子集／中间重跑不累计；DOM的API／能力缓存／存储明确替身，不能冒称手机或设备验收。
+- 原场景编辑器、动作选择器和SceneService在路由替换后经全源码消费者检索确认失用，删除7个文件；只读归档和旧用户数据保留，源码可从Git恢复。未命名设备按排序展示编号区分，不把编号或MAC作为身份。陈旧A2-4当前待办和源事实链接已纠正，历史批次／失败不删除。
+- M5新版本真机短闭环仍待执行：只备份并升级匹配Gateway管理代码／迁移050和新App，真实页面做命名规则创建／编辑／启用／两设备触发／查询／停用／删除。旧APK严格模型不保证识别新命名响应，不能只升级一端；第84历史ACK不替代本批证据。设备固件及执行链无需新设计，不扩复杂规则或整组维护。
+- 临时PG测试容器已移除；没有现场部署／业务库迁移／安装APK／刷板／授权清理或Git提交推送。当前现场与冻结制品仍是第84匹配组合，源码新修改不冒称已经上线。
+
+### 8.86 第八十六批M5本机新版App与两设备产品验收（2026-10-10）
+
+- **M1～M5最小产品包按限定范围收口。** 只执行用户指定的备份、匹配部署与真实App两设备短闭环；没有新增生产运行时代码／协议／依赖、自动化执行器或服务器维护包。原脏工作树和第82～85失败／测试记录保留，无Git暂存／提交／推送。
+- 手机原APK和停止进程后的完整数据先备份（6,662,656 B，tar可读，含原IndexedDB和shared preferences）；Gateway PG 3,355,203 B与Broker SQLite 2,637,824 B fresh备份校验，SQLite integrity=ok。PG独立完整恢复后验证050及旧行保留，临时容器移除，不回灌业务库。两板按MAC／实际分区新读并verify当前app／NVS恢复范围，COM4不动，不刷新DeviceKey或清授权。
+- 新Gateway镜像`468e06bb4e898193238ebac7d11fb9e35ace7a903da53ebe7690edbf59608a41`只改变6个预审管理／050文件，292项冻结输入；业务schema50。Broker仍`57501d068e588bea3995491ebcc3b24206ccc15c5a166ae3b666497d65d7b681`，原容器未重启。App新冻结来源1,641项／摘要`8a36e0576faa6d88333dd4a0dcff3137d39b756469764e3edde489c94ecce934`经新目录依赖／类型／Web及Android构建；APK **79,913,838 B**／SHA`7284b0673517a52eb8b76d4ec5ce1581ff772748ebe89495659c0e1f37ed514c`实际安装读回相同，新生产模板字节、原debug签名／公开CA、AppID／HTTPS origin匹配，P1／LAN仍false。不是release签名包或独立接收方验收。
+- 复用第82两个943,248 B普通WiFi固件候选，不新造设备协议。两板原Key版本2／1登录、active session／MQTT online及最新State只读确认；源只使用普通report，目标仍原Property回调。App通过“我 → 自动化”进入，Ionic选择框／原生input事件／保存、确认及查询均为生产DOM；禁止直接调用页面／管理client或业务SQL写入替代流程。这是ADB／CDP程序化真实UI，不冒称手工软键盘。
+- 同一新规则`49785c73-1f4d-4161-ba1a-b0f2a5bbd776`：revision1“M5 开关联动”停用创建→2“M5 开关自动联动”停用改名→3显式启用→4经确认改名“M5 关灯联动”、falling／目标false且继续启用→5停用→6软删除。原端点／fingerprint保持，create_name不变；编辑沿原ID／CAS而非删除重建。revision3 false基线零执行，true变化ACK1；revision4 true新基线保持仅一次执行及原冷却截止，false变化才ACK2。
+- 触发第二次前独立`phone-stop`记录空PID时间`1791617285056`，随后真实源sample开始`1791617285117`、服务accepted`1791617285507`／execution创建`1791617286058`；ACK与目标回调2之后才重启App`1791617301062`。重开真实入口及刷新查得名称、条件、已启用和两条“设备已确认”。目标uptime单调，回调 **0→1→2**、power **false→true→false**；协议ACK＋应用回调不宣称物理负载动作。
+- 停用及软删除后分别源1→0，样本均晚于第二次冷却截止`1791617316058`，执行／目标回调保持2，不误算冷却抑制。Broker最终源revision7／power=false，更新时间晚于负向样本，终态再核无新增执行。新规则删除历史详情有两ACK，仅返回／刷新无编辑／启用。一次历史first误点只读旧数值详情，随后明确查询新规则，不把旧记录冒充新结果。
+- 首条逻辑execution **1,373 ms**内ACK、Broker ledger创建至ACK **339 ms**；原250ms ACK等待后同pending.frame有一次有界重试，PG与Broker尝试数 **2**，第二条 **1**。两条13 B frame与各PG frameDigest一致、每key仅一条ledger／原sequence4、5；均未超dispatchDeadline，没有第三条执行或重复应用回调。无逐次包日志，不能推断丢包或具体ACK延迟原因，不修改retry参数凑“单尝试”。原terminal的attempt1预期失败记录保留，改为精确核2／1及原命令绑定，不宣称物理exactly-once。
+- 终态独立审计：schema50、47设备／7route、5rule／12execution、enabled0／unresolved0；新规则rev6 retired／不被worker认领，两执行ACK200；旧4rule／10execution和旧10ledger逐行／哈希与fresh备份一致。新版软件59／117／139项不重新累计；本批另有原始UI／设备／账本独立复核、只读10项证据核查及实际Android截图，不把校验项数当业务测试数。
+- 恢复原板app／NVS授权并ROM verify：COM3 `0x9000+1,339,392 B` SHA`307c2e7f…514f6`，COM11 `0x9000+3,371,008 B` SHA`643cc58c…6ac7`；COM11本批fresh材料不同历史备份，不借旧SHA。system／分区／COM4不变，启动复位已发；安静原固件无登录指标，不能宣称恢复后新云登录。只撤本批proxy／17002／18884和ADB9334／17000／18885，保留新App／Gateway50／命名退休历史，不恢复DB／清App数据或降级旧APK。
+- 恢复后Gateway／Broker健康，env／ports／mount回baseline，原TLS／plain代理和CA保留，24个原非Gateway容器（含停止容器）ID／image／StartedAt不变。HTTPS healthz200、未认证自动化请求401且证书可信。证据保存在忽略目录`build/automation-product-m5-live-20261010`，含私有Flash／App数据／业务库／网络参数，不能整体上传／交付。
+- 后续仅修实际用户反馈或明确要求的独立交接／正式profile差异；不重新派发M5或自动扩多条件／多动作、Action、BLE-only／网关、全部scalar／平台、iOS、跨账号／片、长稳及生产发布。

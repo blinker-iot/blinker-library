@@ -1,7 +1,9 @@
 # Device V2：BLE 有界优化、本机定时与自动化实施方案
 
-更新：2026-10-09（第八十一批同步）。**第38项A2-3软件完成：公开联合合同/App条件与原请求恢复通过，下一步仅A2-4匹配差异候选＋两设备有限实物。** 正式runtime源码已配对支持A1/A2，尚未部署；未组装端口默认仍A1。最新合同取[Service§28.12](../../aily-blinker-services/docs/SERVICE_DEVICE_V2_AUTOMATION_IMPLEMENTATION_PLAN.md#2812-第81批a2公开合同app与最终软件验收)，证据取主线§8.81。P1新目录公开CA变体有限实物保持[主线§8.76](DEVICE_V2_NEXT_EXECUTION_PLAN.md#876-第七十六批新目录p1公开ca变体与有限实物闭合2026-10-09)，普通关闭，合同取§3.4。原无CA包/旧P1/S4不覆盖；iOS/Wio、真实接收和T2/A1/生产限制不变，不扩P2/长循环/整组维护。
+更新：2026-10-10（第86批M5本机产品验收）。**最小自动化M1～M5按限定范围完成：名称／编辑／统一入口的软件收口与新版App、Gateway050、两普通WiFi设备真实页面短闭环均通过。** 取[产品方案§8](../../blinker-app/docs/APP_DEVICE_V2_MINIMAL_AUTOMATION_PRODUCT_PLAN.md#8-m5本机新版本验收)及[主线§8.86](DEVICE_V2_NEXT_EXECUTION_PLAN.md#886-第八十六批m5本机新版app与两设备产品验收2026-10-10)。复用执行器、设备协议和原Command；首条有一次原帧重试，目标回调总计两次，不外推物理exactly-once。P1、T2、iOS/Wio及生产限制不变，不扩复杂规则、长循环或整组维护，历史步骤不重新派发。
 唯一执行优先级见[主线进度](DEVICE_V2_NEXT_EXECUTION_PLAN.md)。本文维护三端共同合同，不再分别复制三份协议。
+
+第85批M1～M4的软件59／117／139项结果保留，不重复累计；第86批已先备份、安装匹配新APK并部署Gateway050，真实命名／停用编辑／启用／已启用编辑／App退出后执行／查询／停用／删除均通过。新规则已退休，终态enabled0／unresolved0，旧历史和授权保留；测试入口已撤，保留匹配新版本，不降级旧APK或恢复DB。旧场景仅只读归档，失用编辑／保存实现已删除；详细实物和恢复边界取主线，不复制新的执行合同。
 
 第六十四批S2b补充：[候选/依赖/支持清单§5.1](DEVICE_V2_CANDIDATE_SOURCE_AND_SUPPORT.md#51-第64批s2b依赖合同与最终源码重建)记录App唯一pnpm安装合同、69项直接版本零差异、最终16步Android构建及31文件391项相关回归。第63批20项漂移包保留诊断；新包仍无现场测试CA/未安装，下一包显式匹配信任配置后做S3有限验收，再S4。T2 profile仍独立准入，A1仅同owner/同片试点；不扩大设备执行器/协议或功能声明。
 
@@ -18,7 +20,7 @@
 | BLE | 通信/缓存基线收口；P1显式有界候选及可用环境有限证据，默认关闭 | 当前支持与使用取§3.4；缺实物/后继交付独立补验 | 秒开、所有手机相同延迟、全平台删除分片等待 |
 | 时间 | 可选业务 UTC、单调时间、已有来源交换 | T0 明确任务精度/保持策略；需要时扩展同一业务时钟入口 | 断电后无来源仍知道日期、业务时间替代鉴权时钟 |
 | 本机任务 | 普通WiFi owner四槽有限实物、Start/时间/原ID、Key及未知根拒绝/退休、公开入口与最小源码交接；见执行器当前准入表 | 已分享operator实物缺同片环境，写额度实物/生产交付等独立保留 | 任意 cron、循环动作链、脚本、任意物理动作恰好一次 |
-| 自动化 | A1-1～6限定包、匹配本机部署/schema049、真实App原请求恢复/启停、两S3四次ACK及有限恢复 | S2固定本轮范围/配置及可重建交接，不将有限测试当正式发布 | 可靠事件全历史、多步骤事务、网关自动接管、物理动作恰好一次 |
+| 自动化 | A1/A2限定软件/匹配本机部署/schema49；第84真实UI新建下降沿/uint32下阈值，各1ACK与目标回调0→2，查询/原请求恢复/停用/退役通过 | 最小本机用户流程已过；仅修实际缺口，正式交付/接收与生产准入独立后续 | 可靠事件全历史、多步骤事务、网关自动接管、物理动作恰好一次 |
 
 C1～C3 和 9 月 18 日首连/缓存包仍按原冻结范围完成；它们从未验收用户定时或 IFTTT 执行器。**已完成的通信基线与新增功能进度分开记录。**
 
@@ -26,7 +28,7 @@ C1～C3 和 9 月 18 日首连/缓存包仍按原冻结范围完成；它们从�
 
 - [App BLE transport](../../blinker-app/src/app/core/device-v2/ble-direct/transport.ts)：20 B packet、4 B 分片头、30 ms 片间等待；[ESP32 port](../src/BlinkerV2/arduino/ports/esp32/Esp32NimBle.h)明确 MTU 改变不等于 wire 协商。
 - [WallClock](../src/BlinkerV2/core/WallClock.h)：默认最大样本年龄 1 小时、误差预算 5 秒、漂移预算 1,000 ppm；[TimeSyncService](../src/BlinkerV2/runtime/TimeSyncService.inc)成功后每五分钟尝试刷新，需实际来源可用。
-- [App TimerService](../../blinker-app/src/app/sections/device/device-timer/timer.service.ts)已接V2目录/任务表与原请求客户端，旧JSON timing/loop/countdown已删除；[SceneService](../../blinker-app/src/app/sections/scene/scene.service.ts)仍保存旧场景配置，不能代表V2自动化已接线。
+- [App TimerService](../../blinker-app/src/app/sections/device/device-timer/timer.service.ts)已接V2目录/任务表与原请求客户端，旧JSON timing/loop/countdown已删除；第85批移除无消费者的旧场景编辑／保存实现，旧配置由[只读存档](../../blinker-app/src/app/sections/scene/scene-manager/scene-manager.ts)保留，不当作云规则执行器。
 - [BBP/2 kind](../src/BlinkerV2/protocol/bbp2/Frame.h)已预留任务carrier `0x37/bit25`，仅可选物理云入口；默认产品/Broker业务未打开。现有OutboundScheduler管发送、onSample管受需求驱动采样，都不是业务定时器。
 
 ## 2. 第一性原理与模块边界
@@ -197,7 +199,7 @@ App/服务器接口采用适合其边界的类型化表示；只有设备传输�
 
 ## 6. A1/A2：有边界的云端自动化
 
-具体落地以[自动化设计](../../aily-blinker-services/docs/SERVICE_DEVICE_V2_AUTOMATION_IMPLEMENTATION_PLAN.md)为准：A1同owner/tenant/shard两台普通WiFi、reported-change bool源false→true触发目标固定bool赋值，限定闭环已过§27.4。A2布尔下降沿/数值回差的观察、Gateway事务内raw/latch/cursor及原Command逐次执行候选已接线，有限隔离PG通过；完整V2组合、公开准入/App与实物仍待办，生产默认Gateway拒绝V2权威。设备仍同Property/report，不修改本机TaskEngine或增加任务profile要求。
+具体落地以[自动化设计](../../aily-blinker-services/docs/SERVICE_DEVICE_V2_AUTOMATION_IMPLEMENTATION_PLAN.md)为准：A1同owner/tenant/shard两台普通WiFi、reported-change bool源false→true触发目标固定bool赋值，限定闭环保留§27.4。A2观察、Gateway事务内raw/latch/cursor、两worker及原Command逐次执行已过软件/隔离PG/公开管理准入，第82／84分别完成下降沿、uint32上下阈值的有限实物。五scalar源仍是合同／软件支持，不冒称全部真机已测；target仍boolean。当前第85批补最小名称和条件／动作值编辑，仅管理合同和UI，不替换执行器。匹配runtime源码支持A1/A2，未显式组装端口仍默认A1-only；正式准入不由本机试点推定。设备仍同Property/report，不修改TaskEngine或增加任务profile要求。
 
 ### 6.1 执行位置与范围
 
@@ -206,10 +208,10 @@ App/服务器接口采用适合其边界的类型化表示；只有设备传输�
 | 本机倒计时/每日开关 | 设备 | T1/T2 |
 | 本机传感器保护/闭环 | Sketch/本机业务模块 | 保留现有写法，不依赖云、不新增可视化规则引擎 |
 | A 的bool属性false→true设置 B 的bool属性 | 云端 | A1限定两S3实物闭环通过，正式交付/生产限制保留 |
-| A 的bool下降沿/温度阈值与回差设置 B 的bool属性 | 云端 | A2-3公开合同/App软件已过、runtime源码接线；匹配部署与两设备实物待A2-4，现场未开放 |
+| A 的bool下降沿/数值阈值与回差设置 B 的bool属性 | 云端 | 第82匹配A2及第84真实App有限实物已过；其余scalar、全平台和生产范围不外推 |
 | 同 Hub 子设备断网联动 | 网关 | 后置，未来复用规则语义及南向接口 |
 
-首版一个新鲜bool状态触发源、固定上升沿条件、一个同owner目标的固定bool赋值。规则含版本、启停、源与目标能力引用及有限policy（冷却、最大观测年龄、命令TTL）；阈值/回差不是当前字段。赋值仍可能触发有副作用的Sketch回调，不能保证物理幂等。不开放任意代码、跨租户委托、多步延时、任意Action或webhook。
+原A1首版为新鲜bool上升沿触发一个同owner目标的固定bool赋值；当前A2已支持布尔双方向及数值阈值／正回差。规则保留版本、启停、能力引用和有限policy。赋值仍可能触发有副作用的Sketch回调，不能保证物理幂等。不开放任意代码、跨租户委托、多步延时、任意Action或webhook。
 
 ### 6.2 触发语义与数据需求
 
@@ -244,10 +246,10 @@ App/服务器接口采用适合其边界的类型化表示；只有设备传输�
 | T1 设备纯核心 | 核心/四档资源、COM3隔离断电、4槽产品共存及Start/时间policy有限实物已过 | 写额度仅软件证据；其他平台/正式profile/长期运行未准入 |
 | T2 任务三端闭环 | owner主链、未知根拒绝/退休、公开入口安装/实物及最小源码独立重建通过 | 已分享operator缺同片环境、写额度实物/最大目录/正式发布独立保留 |
 | A1 云端自动化 | A1-1～6限定软件/匹配本机部署/真实App/两S3实物通过 | 四次ACK及独立回调/State，有限App/源/服务恢复与停用；正式交付/长稳未完成 |
-| A2 实用条件扩展 | 第37项内部底座及第38项A2-3公开/App软件完成；本批315节点Service、40项App、59项对照及134节点隔离PG分别通过 | A2-4匹配差异候选与两设备实物待办；页面仅新建/启停/退役/恢复，不扩Action/多步骤或已有条件编辑器 |
+| A2 实用条件扩展 | 第77～81软件和第82／84匹配部署、两设备有限实物已过，按原批次记录不累计 | 不重跑A2-4；当前第85产品收口另行验证命名、条件／动作值编辑、页面和状态，不扩Action或多步骤 |
 | S2～S4 候选与交接 | S2本机同源构建、S3有限差异包、S4发送方目录完成；接收验收待办 | 原冻结交接目录不覆写；真实接收记录、生产profile/签名/CI和缺环境项独立，不把P1实验当匹配发布包 |
 
-**当前第33～37项及第38项A2-3完成限定软件门禁，下一步仅A2-4匹配差异候选＋有限两设备实物；第38项整体尚未关闭，不重跑内部2c/P1，第32项缺实物及S4独立接收保持待办。** P1默认关闭，限定合同取§3.4；第76批新包有限实物不等于独立接收，无新输入不重复构建/S3，不补长循环或扩服务器维护。A1限定包及S2/S3/S4发送方工作已完成，不代签接收验收。T2准入限制独立，不用重复owner测试代替operator门禁。Manifest缓存只是提示；原ID重提可能首次执行，不是只读查询，未知失败不得清意图。DeviceKey由Service验真，Admin由持密钥App验真，只有指纹的Service不独立验真，不上传raw Admin secret。不扩混合/BLE/网关任务、全平台RTC或整组维护。
+**第33～38项在各自限定软件/实物范围已收口；第84本机真实App最小自动化用户流程亦通过，不再自动重跑A2-4/内部2c/P1或转入正式发布准备。** 仅按用户实际复现缺口做原模块最小修正；第32项缺实物、S4独立接收与正式profile/签名是独立后续，不是功能验收前置。P1默认关闭，限定合同取§3.4；第76批新包有限实物不等于独立接收，无新输入不重复构建/S3，不补长循环或服务器维护。T2准入限制独立，不用重复owner测试代替operator门禁。Manifest缓存只是提示；原ID重提可能首次执行，不是只读查询，未知失败不得清意图。DeviceKey由Service验真，Admin由持密钥App验真，只有指纹的Service不独立验真，不上传raw Admin secret。不扩混合/BLE/网关任务、全平台RTC或整组维护。
 
 ### 7.1 必要门禁矩阵
 
