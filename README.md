@@ -37,7 +37,12 @@ void loop() {
 
 BLINKER_PROPERTY(power, bool, blinker::readWrite());
 
+void onPower(bool value) {
+    power.report(value);
+}
+
 void setup() {
+    power.onWrite(onPower);
     Blinker.begin(power);
 }
 
@@ -53,7 +58,12 @@ void loop() {
 
 BLINKER_PROPERTY(power, bool, blinker::readWrite());
 
+void onPower(bool value) {
+    power.report(value);
+}
+
 void setup() {
+    power.onWrite(onPower);
     Blinker.begin(power);
 }
 
@@ -202,9 +212,16 @@ has passed hardware acceptance. See the
 [official release](https://github.com/espressif/arduino-esp32/releases/tag/3.3.11)
 and `docs/DEVICE_V2_C4_REPRODUCIBLE_DEPLOYMENT_PLAN.md` for the remaining gates.
 
-Production publication is still gated on clean-build time closure, platform
-reliability, the remaining ESP32 WiFi+BLE gates, and replacement of the
-repository's placeholder cloud host/server key rings. See
+The next work is a minimal matched internal candidate containing the validated
+BLE packet negotiation and integer-step fixes; see
+[the current execution plan](docs/DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#10-核心稳定与最小内部交付).
+The N1–N5 finite acceptances are not a production publication or a claim that
+the restored boards permanently run the new firmware. Ordinary LAN/P1 and
+unadmitted task/automation modes stay disabled.
+
+Production publication separately requires the declared build/reliability gates,
+real service configuration and matching public server key rings. The repository
+defaults are development templates, not production trust material. See
 `docs/DEVICE_V2_STANDARD_ARDUINO_LAYOUT.md`,
 `docs/DEVICE_V2_CANONICAL_API.md`,
 `docs/DEVICE_V2_DEVICE_KEY_CONTRACT.md`, and

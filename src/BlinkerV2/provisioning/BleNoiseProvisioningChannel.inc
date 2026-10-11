@@ -42,6 +42,7 @@ BleRecordTransportConfig BleNoiseProvisioningChannel::recordConfig(
     const BleNoiseProvisioningConfig& config) {
     BleRecordTransportConfig records;
     records.maxRecordSize = static_cast<uint16_t>(kBleNoiseRecordSize);
+    records.initialPacketSize = ble::kMinimumPacketSize;
     records.reassemblyTimeoutMillis = config.reassemblyTimeoutMillis;
     records.maxPacketsPerPoll = config.maxPacketsPerPoll;
     records.sessionCapacity = 1U;

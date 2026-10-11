@@ -44,6 +44,12 @@ typedef void (*BleSessionHandler)(
 // Platform adapters expose raw characteristic packets and security metadata.
 // sendPacket must consume/copy packet bytes before returning. WouldBlock means
 // the caller should retry after poll; it must not partially consume a packet.
+// CapacityExceeded is a definite size rejection before packet delivery, not
+// an unknown notification outcome. A transport may restart its same record
+// at 20 bytes; Ports must use another error for ambiguous native failures.
+// CapacityExceeded also guarantees that this packet was NOT transmitted, so
+// the record layer may restart it with a smaller stride. Uncertain native TX
+// failures must use another error and retire the secure session, not replay.
 // A non-zero sessionId identifies exactly one physical connection: emit one
 // connected callback, keep the ID stable, then emit its matching disconnected
 // callback before reusing that numeric ID for any later peer.

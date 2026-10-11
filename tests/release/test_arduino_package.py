@@ -12,12 +12,48 @@ import zipfile
 REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY / 'tools'))
 sys.path.insert(0, str(REPOSITORY / 'tests/arduino'))
+sys.path.insert(0, str(REPOSITORY / 'tests/architecture'))
 import build_arduino_release as release
 import verify_installed_release as gate
 import verify_esp32_ble_sdk as ble_sdk
+import check_device_v2 as architecture
 
 
 class PackageBoundary(unittest.TestCase):
+    def packet_sources(self):
+        files = (
+            architecture.ESP32_NIMBLE_HEADER, architecture.ESP32_NIMBLE_IMPLEMENTATION,
+            architecture.BLE_FRAME_TRANSPORT_HEADER, architecture.BLE_FRAME_TRANSPORT_SOURCE,
+            architecture.BLE_RECORD_TRANSPORT, architecture.BLE_NOISE_CHANNEL,
+            architecture.DEVICE_RUNTIME_SOURCE,
+        )
+        return [p.read_text(encoding='utf-8') for p in files]
+
+    def assert_packet_mutation_rejected(self, index, before, after, reason):
+        sources = self.packet_sources()
+        self.assertIn(before, sources[index])
+        sources[index] = sources[index].replace(before, after)
+        failures = architecture.ble_packet_boundary_failures(*sources)
+        self.assertTrue(any(reason in error for error in failures), failures)
+
+    def test_current_packet_layer_boundaries(self):
+        self.assertEqual(architecture.ble_packet_boundary_failures(*self.packet_sources()), [])
+
+    def test_packet_bootstrap_cannot_start_at_244(self):
+        self.assert_packet_mutation_rejected(2, 'initialPacketSize(ble::kMinimumPacketSize)',
+                                             'initialPacketSize(244U)', 'bootstrap')
+
+    def test_packet_negotiation_requires_active_direct(self):
+        self.assert_packet_mutation_rejected(3, '!slot->active()', 'false', 'authentication')
+
+    def test_packet_fallback_must_latch_att20(self):
+        self.assert_packet_mutation_rejected(4, 'sessionState->packetFallback = true;',
+                                             'sessionState->packetFallback = false;', 'fallback')
+
+    def test_unknown_native_packet_error_is_not_capacity_rejection(self):
+        self.assert_packet_mutation_rejected(1, 'ErrorCode::ProtocolError',
+                                             'ErrorCode::CapacityExceeded', 'native send errors')
+
     def test_ci_covers_every_installed_target_once_with_separate_ble_sdk(self):
         workflow = (REPOSITORY / '.github/workflows/device-v2-ci.yml').read_text(encoding='utf-8')
         job = re.split(r'\n  [a-z][a-z0-9-]*:', workflow.split('  arduino-unified:', 1)[1])[0]

@@ -111,11 +111,22 @@ Result BleFrameTransport::send(
         recordSize,
         target,
         &BleFrameTransport::sealThunk,
-        &context);
+        &context,
+        frame.data[3] == static_cast<uint8_t>(bbp2::MessageKind::Hello)
+            ? ble::kMinimumPacketSize : 0U);
     if (!result && context.attempted) {
         retire(target.sessionId, result.code());
     }
     return result;
+}
+
+uint16_t BleFrameTransport::negotiatePacketSize(
+    const RxContext& rx,
+    uint16_t requested) {
+    const SecureSlot* slot = findSecure(rx.sessionId);
+    if (!rx.encrypted || slot == nullptr || !slot->active() ||
+        requested < ble::kMinimumPacketSize || requested > 244U) return 0U;
+    return records_.negotiatePacketSize(rx.sessionId, requested);
 }
 
 Result BleFrameTransport::disconnectSession(uint32_t sessionId) {
@@ -200,6 +211,7 @@ BleRecordTransportConfig BleFrameTransport::recordConfig(
     result.maxRecordSize = maximum <= UINT16_MAX
                                ? static_cast<uint16_t>(maximum)
                                : 0U;
+    result.initialPacketSize = config.initialPacketSize;
     result.reassemblyTimeoutMillis = config.reassemblyTimeoutMillis;
     result.maxPacketsPerPoll = config.maxPacketsPerPoll;
     return result;

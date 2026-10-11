@@ -358,7 +358,8 @@ private:
         ByteView encodedValue,
         cbor::Type valueType,
         const EndpointVisitContext& visit);
-    Result sendHello(const SendTarget& target, uint8_t flags, uint16_t sequence);
+    Result sendHello(const SendTarget& target, uint8_t flags, uint16_t sequence,
+                     uint16_t maxBlePacketSize = 0U);
     uint32_t transportFeatures(uint8_t transportId) const;
     void resetAuthorizationSessions();
     Result sendAck(

@@ -1058,15 +1058,21 @@ Result DeviceRuntime::handleHello(
     session->bonded = rx.bonded;
     session->transportAuthenticated = rx.authenticated;
 
+    IFrameTransport* transport = transports_.at(rx.transportId);
     if ((frame.header.flags & bbp2::FlagIsResponse) == 0U) {
+        const uint16_t packetSize = hello.maxBlePacketSize != 0U &&
+                                           transport != nullptr
+                                       ? transport->negotiatePacketSize(
+                                             rx, hello.maxBlePacketSize)
+                                       : 0U;
         result = sendHello(
             responseTarget(rx),
             bbp2::FlagIsResponse,
-            frame.header.sequence);
+            frame.header.sequence,
+            packetSize);
         if (!result) return result;
     }
     session->helloSent = true;
-    IFrameTransport* transport = transports_.at(rx.transportId);
     if (transport != nullptr)
         transport->protocolNegotiated(rx, session->negotiatedFeatures, hello.maxFrameSize);
     if ((frame.header.flags & bbp2::FlagAckRequired) != 0U) {
@@ -1831,7 +1837,8 @@ Result DeviceRuntime::visitEndpointValue(
 Result DeviceRuntime::sendHello(
     const SendTarget& target,
     uint8_t flags,
-    uint16_t sequence) {
+    uint16_t sequence,
+    uint16_t maxBlePacketSize) {
     bbp2::HelloBody hello;
     hello.role = bbp2::PeerRole::Device;
     hello.versions[0] = bbp2::kVersion;
@@ -1841,6 +1848,7 @@ Result DeviceRuntime::sendHello(
         transports_.accessAt(target.transportId).authorization;
     hello.maxFrameSize = config_.maxFrameSize;
     hello.maxReassemblySize = config_.maxReassemblySize;
+    hello.maxBlePacketSize = maxBlePacketSize;
     if ((config_.protocolFeatures & bbp2::FeatureManifest) != 0U) {
         hello.manifestRevision = config_.manifestRevision;
         hello.hasManifestRevision = true;

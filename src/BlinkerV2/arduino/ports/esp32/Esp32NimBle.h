@@ -21,11 +21,14 @@
 #include <host/ble_uuid.h>
 #include <freertos/FreeRTOS.h>
 
-// BBP/2 BLE v1 fixes the bearer packet at the default ATT payload. An MTU
-// change alone is not a protocol negotiation and must not alter fragmentation.
+// Physical ATT capacity only. Direct/Noise start at ATT20 and the authenticated
+// Direct transport separately selects a per-session packet limit.
 #ifndef BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE
-#define BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE 20
+#define BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE 244
 #endif
+static_assert(BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE >= 20 &&
+              BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE <= 244,
+              "ESP32 BLE packet capacity must be 20..244 bytes");
 
 #ifndef BLINKER_ESP32_NIMBLE_RX_QUEUE_DEPTH
 #define BLINKER_ESP32_NIMBLE_RX_QUEUE_DEPTH 4
@@ -116,6 +119,7 @@ private:
     void drainPackets();
     void clearPacketQueueLocked();
     void resetRuntimeLocked();
+    static uint16_t packetCapacity(uint16_t connectionHandle);
     uint32_t nextSessionId();
     bool validConfig() const;
 

@@ -121,6 +121,74 @@ void hostFailureStaysFailure() {
     fake_nimble::disconnect(7); f.link.poll(0); f.link.poll(0);
     expect(f.link.state() == blinker::BleLinkState::Error, "real advertising failure not swallowed");
 }
+
+void actualMtuAndSendErrors() {
+    Fixture f;
+    expect(fake_nimble::state.preferredMtu == 247U, "best-effort ATT247 preference");
+    const uint32_t id = f.connect();
+    blinker::BleSessionInfo info;
+    expect(f.link.sessionAt(0U, info).ok() && info.maxPacketSize == 20U,
+           "preference does not imply negotiated capacity");
+    fake_nimble::state.mtu = 83U;
+    expect(f.link.sessionAt(0U, info).ok() && info.maxPacketSize == 80U,
+           "live actual MTU minus ATT overhead");
+    const uint8_t bytes[244U] = {};
+    const unsigned sends = fake_nimble::state.sends;
+    expect(f.link.sendPacket(id, blinker::ByteView(bytes, 81U)).code() ==
+           blinker::ErrorCode::CapacityExceeded && fake_nimble::state.sends == sends,
+           "definite oversized failure is checked before native transmit");
+    expect(f.link.sendPacket(id, blinker::ByteView(bytes, 80U)).ok(), "actual MTU supports 80-byte send");
+    fake_nimble::tx(BLE_HS_EDONE);
+    fake_nimble::state.mtu = 517U;
+    expect(f.link.sessionAt(0U, info).ok() && info.maxPacketSize == 244U,
+           "large native MTU remains bounded by port memory");
+    fake_nimble::state.sendResult = BLE_HS_ENOMEM;
+    expect(f.link.sendPacket(id, blinker::ByteView(bytes, 244U)).code() ==
+           blinker::ErrorCode::WouldBlock, "temporary memory pressure retains the packet");
+    fake_nimble::state.sendResult = BLE_HS_EMSGSIZE;
+    expect(f.link.sendPacket(id, blinker::ByteView(bytes, 244U)).code() ==
+           blinker::ErrorCode::ProtocolError, "uncertain native failure cannot be silently replayed");
+    fake_nimble::state.sendResult = BLE_HS_ENOTCONN;
+    expect(f.link.sendPacket(id, blinker::ByteView(bytes, 244U)).code() ==
+           blinker::ErrorCode::NotConnected, "dead ACL is not perpetual backpressure");
+}
+
+void unsupportedMtuPreference() {
+    fake_nimble::state = fake_nimble::State();
+    fake_nimble::state.preferredMtuResult = BLE_HS_EINVAL;
+    blinker::Esp32NimBleLink link;
+    expect(link.start().ok(), "smaller SDK ATT preference support does not block start");
+    fake_nimble::connect(); fake_nimble::subscribe(); link.poll(0U);
+    blinker::BleSessionInfo info;
+    expect(link.sessionAt(0U, info).ok() && info.maxPacketSize == 20U,
+           "unsupported preference remains physical ATT20");
+    link.stop();
+}
+
+void actualMtuReceive() {
+    Fixture f; f.connect();
+    fake_nimble::state.mtu = 247U;
+    unsigned received = 0U;
+    f.link.setPacketReceiver([](void* context, const blinker::BleSessionInfo& session,
+                               blinker::ByteView packet) {
+        expect(session.maxPacketSize == 244U && packet.size == 244U,
+               "queue delivery carries actual packet limit");
+        expect(packet.data[243] == 0x5aU, "bounded queue retains all packet bytes");
+        ++*static_cast<unsigned*>(context);
+    }, &received);
+    os_mbuf input = {};
+    input.size = 244U; input.data[243] = 0x5aU;
+    ble_gatt_access_ctxt access = {BLE_GATT_ACCESS_OP_WRITE_CHR, &input};
+    const ble_gatt_chr_def* characteristic = fake_nimble::state.receive;
+    expect(characteristic->access_cb(7U, fake_nimble::state.receiveHandle,
+               &access, characteristic->arg) == 0, "negotiated native write enters bounded queue");
+    f.link.poll(0U);
+    expect(received == 1U, "large RX delivered once");
+    fake_nimble::state.mtu = 23U;
+    expect(characteristic->access_cb(7U, fake_nimble::state.receiveHandle,
+               &access, characteristic->arg) == BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN,
+           "unnegotiated native large write is rejected before copy");
+}
 }
 int main(int argc, char** argv) {
     const char* selected = argc == 2 ? argv[1] : "all";
@@ -131,6 +199,8 @@ int main(int argc, char** argv) {
     if (!std::strcmp(selected, "all")) {
         lateFailure(); completedAndUnrelated(); missingAcl(); busyTermination(); connectThenDisconnect();
         asynchronousClose(); hostFailureStaysFailure();
+        actualMtuAndSendErrors(); unsupportedMtuPreference();
+        actualMtuReceive();
     }
     std::cout << "ESP32 native peripheral lifecycle tests passed" << std::endl;
 }

@@ -1,35 +1,37 @@
 # Device V2：核心稳定版进度与后续执行计划
 
-更新：2026-10-10（第86批M5本机产品验收）。**最小自动化M1～M5按限定范围收口：命名／编辑／统一入口的软件实现和新版App、Gateway迁移050、两普通WiFi设备真机短闭环均通过。** 执行取[产品方案§8](../../blinker-app/docs/APP_DEVICE_V2_MINIMAL_AUTOMATION_PRODUCT_PLAN.md#8-m5本机新版本验收)及§8.86；第82～85原证据保留。复用执行链路，不扩复杂规则、网关、100轮或整组维护；本机验收与独立交接／正式发布分开。
+> 当前H1最小状态历史按限定范围收口，最新结果取[实时与历史方案§9.6](DEVICE_V2_LIVE_AND_HISTORY_EXECUTION_PLAN.md#96-h1真实分享只读与撤权收口2026-10-11)：自有WiFi设备历史及真实viewer读取、精确撤权后的404/页面清空已通过；多位记录ID排序已有限修正，仅更新目标Broker1并保留本机测试网络、账号、授权和日志。其他Shard与全部历史/分享通信门禁不据此关闭。既有L1、L2b/L2c限定短验收及COM3恢复保持关闭，普通LAN开关不变。必要源码/最短说明与差异安装编译已收口，取易用性计划§10.7；**顺序4按用户要求改为三仓Git源码及五插件固定远端提交，由同事自行编译、安装和短验收**，取[§10.9](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#109-三仓git源码交付与独立验收2026-10-11)和[Git验收手册](DEVICE_V2_INDEPENDENT_ACCEPTANCE.md)。§10.8本地交接包只留历史摘要，不再交付或保留；独立本人签收仍待完成，不把本批软件门禁当接收者实物通过。R4新版实时例程编译已通过，实物仍未复测；不自动开启H2、设备离线存储、Bulk或服务器长期维护。
 
-最新用户确认（2026-10-10）：**参考IFTTT／米家完成最小自动化产品收口，优先页面简化、统一入口、规则命名与编辑及准确状态展示。** 第84执行闭环不重新派发；本批只改必要App与Service管理层，设备协议、观察和执行器保持。正式profile/签名、独立交接及线上发布仍是后续，不阻挡本机功能开发；不以API操作代替新界面的用户验收。
+历史基线：2026-10-10（第86批M5本机产品验收）。**最小自动化M1～M5按限定范围收口：命名／编辑／统一入口的软件实现和新版App、Gateway迁移050、两普通WiFi设备真机短闭环均通过。** 执行取[产品方案§8](../../blinker-app/docs/APP_DEVICE_V2_MINIMAL_AUTOMATION_PRODUCT_PLAN.md#8-m5本机新版本验收)及§8.86；第82～85原证据保留。复用执行链路，不扩复杂规则、网关、100轮或整组维护；本机验收与独立交接／正式发布分开。
 
-**从本文件起统一执行优先级。** [原核心稳定计划](DEVICE_V2_CORE_STABILITY_EXECUTION_PLAN.md)保留 C0～C4 和 25 个批次的历史依据；各专项保留协议与测试记录。历史“下一步”不再自动成为任务。
+最新执行（2026-10-11）：**M1～M5及N1～N5各自限定本机短验收已收口；后续设备通用整数step源码/软件对齐及COM3短差异验收也已完成。** N5两设备uint32 50→0自动化及恢复取[§9.6](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#96-n5-本机数值短验收2026-10-11收口)，共享EndpointValue整数余数及回归取[§9.7](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#97-设备通用整数-step-有限对齐)。最新[§9.8](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#98-设备与app整数step短差异验收2026-10-11收口)仅临时刷COM3：非法step值实际到设备、Error与Command序号对应，合法ACK/State及原App开关/数值控制通过；首合法raw RX漏测记录保留。原固件/授权从本次fresh备份恢复并逐字节读回，App/服务沿用匹配版本，临时网络配置撤回，规则/执行fresh逐行不变。修复候选已验收但现场原固件未永久升级，浮点边界及正式交付仍独立待办。N3首次进入约2.5秒、N4禁用任务未Start等原边界保持；不扩复杂规则、网关或服务器维护，本批无Git暂存/提交/推送。
+
+**既有实时及H1各自限定验收保持关闭，当前历史结果只取上方共同方案§9.4～§9.6。** 真实分享历史撤权不代替全部平台LAN、生产默认启用、强杀、多消费者、MQTT分享禁控或全部历史能力；离线存储/Bulk不实施，不重开N1～N5、复杂自动化或服务器维护。[核心稳定与最小内部交付§10](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#10-核心稳定与最小内部交付)顺序1～3已关闭：原单库ZIP七目标结果取[§10.6](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#106-n3与整数step单库候选冻结及安装编译2026-10-11)，现行README/BLE实时例程候选、433项同字节重建、35项回归及S3/R4 BLE两目标差异编译取[§10.7](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#107-最短使用匹配来源与例程差异2026-10-11)。其他五目标仅输入等价与原证据，不称本批重新跑七目标。顺序4同事独立接收尚未完成。新ZIP没有永久升级现场板或完成全部实物接入验证。本文件保留总进度和历史依据；[原核心稳定计划](DEVICE_V2_CORE_STABILITY_EXECUTION_PLAN.md)保留C0～C4历史。生产发行、LAN/P1默认启用、复杂任务/自动化和服务器长期维护不作为本轮前置。
 
 ## 1. 结论：现在应交付什么
 
-目标是**稳定现有通信、补齐有边界的普通设备任务能力，再交付可重建、可安装的版本**。不继续扩展所有通道，不把授时等同于定时或把消息路由等同于自动化执行器。
+目标是**保留已收口的普通通信、有限任务/自动化与实时/H1，交付可重建、可安装且说明一致的内部候选**。当前不扩展通道、任务引擎或历史采样，不把授时等同于定时、消息路由等同于自动化，也不把发送方验收当同事签收。
 
 当前状态应表述为：
 
 - 普通接入、属性/动作控制、状态同步及有限故障恢复的 **C1～C3 冻结范围已收口**；未覆盖用户定时与自动化，不能据此宣称产品基础功能全部完成。
 - “真实失效 BLE 候选不拖慢 Cloud”、Manifest 缓存协商和损坏缓存恢复均已完成，不再列为待办。
 - 三端最新源码已于 10 月 10 日上一轮同步，三个修改过的原生插件保留 9 月 21 日基线；本批另完成匹配A2本机候选与有限实物，但**源码同步 ≠ 生产部署 ≠ 正式发布**。
-- 新增功能包：P1 BLE 有界优化、T0～T2 本机定时、A1 最小云端自动化。详见[三端共同合同](DEVICE_V2_SCHEDULING_AUTOMATION_AND_BLE_PLAN.md)，设计/实施/验收状态分别记录。
-- 依赖/测试源码闭包、匹配 profile 与发布声明仍要补齐，但只是功能实施与交付的支撑，不替代新增功能，也不成为重写架构的理由。
+- P1/T0～T2/A1是既有阶段背景，后续M/N、实时及H1限定结果按本页开头的现行入口，不能从旧阶段顺序重新派发。未准入的平台/生产默认保持原边界。
+- 当前只核对应交付的源码/制品、公开profile、最短说明及独立接收，不自动新增功能或以闭包整理重写架构。
 - 大范围服务器维护、网关多子设备、通用 LAN 产品化仍暂停。仅核对核心版本所必需的配置与依赖，不自动启动整组服务升级。
 
-实施阶段顺序为 **S1 最小依赖准备 → P1 BLE 测量/有界优化与 T0 合同定稿 → T1 设备核心 → T2 定时三端闭环 → A1 最小云端自动化 → S2～S4 候选交付**，不是把已通过阶段重新加入队列；当前状态取§3/§6。S0/F0文档完成不等于功能实现。旧C4整组维护仍暂停。
+原实施顺序S1→P1/T0→T1→T2→A1→S2～S4仅作历史背景；现行交付顺序只取易用性计划§10.4/§10.9和Git手册。已过阶段不重新排队，独立接收未完成不以新功能替代；旧C4整组维护继续暂停。
 
 ## 2. 当前版本基线
 
-以下三端基线已于 2026-10-10 上一轮推送；本轮仅只读复核本地 HEAD、对应 `origin` 跟踪引用及 Git 树，未重新获取仓库、fetch 或查询 Actions，不宣称线上正在运行这些提交。三个原生插件的 9 月 21 日推送基线仍按下表保留。
+下表三端提交是本轮Git交付前、2026-10-10已推送的历史基线，不含本地后续N/L/H1修改；本轮新提交及推送完成状态由最终Git报告核对，接收者记录实际拉取的三仓HEAD。五插件采用[Git手册](DEVICE_V2_INDEPENDENT_ACCEPTANCE.md#1-拉取同一组源码)列出的固定远端提交；来源可获取不代表已经部署或由同事验收。
 
 | 模块 | 仓库 / 分支 | 基线提交 | 说明 |
 | --- | --- | --- | --- |
-| 设备库 | blinker-iot/blinker-library / device_v2 | `bd0c913b947f7bf9c402ea9fc2e6f19bcbe79095` | 含 src、标准示例及 tests/tools/CI 源码；不是正式服务 profile ZIP |
-| App | blinker-iot/blinker-app / i3w-dev-v2 | `e9e1880726c24476a1b84a9cb1ed9bc531a85136` | 含当前 App、确定性测试与交接工具源码；普通 LAN/P1 默认关闭 |
-| IoT Service | ailyProject/aily-blinker-services / dev_v2 | `7bd10077ac2940037bbbc21d6d746024c80ea007` | 含匹配 A1/A2 runtime 与测试源码；源码同步不等于现场镜像或生产部署 |
+| 设备库 | blinker-iot/blinker-library / device_v2 | `350f4474b88b8a414028316da478d4b43354e2fe` | M1～M5方案/验收更新；含 src、标准示例及 tests/tools/CI；不是正式服务 profile ZIP |
+| App | blinker-iot/blinker-app / i3w-dev-v2 | `b26cb91f34cf66a781e88b7a19062cef244f07b0` | M1～M5命名/编辑/统一入口及测试；普通 LAN/P1 默认关闭 |
+| IoT Service | ailyProject/aily-blinker-services / dev_v2 | `8f0bca23c52e3488f5f698559c782c72dd302fbd` | M1～M5管理合同/迁移050及测试；源码同步不等于生产部署 |
 | WiFiProv 插件 | i3water/capacitor-wifiprov / main | `a21e87642a853242677f7dccd8847e9785837ab0` | BLE 发现委托及扫描协调 |
 | mDNS 插件 | i3water/capacitor-mdns / main | `00f994f2896327781c64f93851932f1acbddcb8e` | 原生扫描生命周期回收 |
 | 通知插件 | i3water/capacitor-ntfy / main | `83b57ee2efdd829db025d37fb898d349e6cd6a35` | 通知生命周期和点击入口 |
@@ -49,17 +51,18 @@
 
 | 能力 | 当前证据/实现 | 核心版还需做什么 | 暂不纳入 |
 | --- | --- | --- | --- |
-| 单 Arduino 库/API | 一个 src、4 个标准示例；B1/C3既有矩阵保留；第82单库ZIP ESP32 WiFi安装编译/有限实物、第83索引和415文件不变对照通过 | 确定可达交付profile/信任/外部SDK；第82没有新的独立device source-bundle闭包，旧包不冒称新profile；无输入不重建 | 每 MCU/模式一个 ZIP、自动全局组件注册 |
+| 单 Arduino 库/API | 一个src、4个标准示例；原七目标取§10.6，README/BLE例程差异及S3/R4 BLE编译取§10.7；现行Git交付35项打包/4目标host回归取§10.9 | 同事从Git构建一个标准库并独立接收；先核可达profile/信任；不交本地包，不称本批七目标重编或新实物已升级 | 每 MCU/模式一个 ZIP、自动全局组件注册 |
 | WiFi 手动模式 | DeviceKey→session→MQTT→BBP/2；S3/R4/Wio 基础链路已测 | 配置真实接入地址；必要差异回归；明确 SDK socket 等待风险 | 新登录协议、恢复永久 EnrollmentKey |
 | 普通 BLE | S3/R4 认领、Method 2、控制/状态、有限重启恢复 | 从当前候选证实不会遗漏插件/配置；只回归受影响路径 | Wio BLE 正式发布、任意 SDK 全覆盖 |
 | ESP32 WiFi+BLE | 默认 BLE WiFiProv、同逻辑 ID 双通道、重配网；C1 进程中断恢复 | 匹配候选一条 WiFiProv→Cloud/BLE→恢复链 | UNO R4 WiFi+BLE；新增工厂体系 |
 | 绑定/解绑/Key | 创建、重认领、刷新 Key 与旧凭据失效有实现/分批证据 | 把 owner 移除、分享退出、物理 reset 分开说明；候选必要断点补证 | 网关拓扑删除等价于普通设备 DELETE |
 | Manifest/页面 | Property/Action/Event 描述能力；页面独立；缓存协商已过 S3 真机 | 固定合同，检查首次无缓存及固件摘要变化回退；已有确定性测试复用 | 编辑器重构、设备端描述整页、直接执行任意 JS |
-| 日志/限流/采样 | 默认静默；onSample、租约/配额、基本恢复有证据 | 用户说明与当前声明的最小回归；区分回调采集与成功发送 | History/Bulk、无限流、所有平台高频图表 |
-| 业务授时 | 可选 enableTime/time；WiFi/BLE/LAN/Hub 的短闭环已实现 | T0 明确日历任务的时钟保持/精度，现默认最多一小时且断电后需有效来源 | 将业务 UTC 用作密钥有效性依据；无源长期离线准时保证 |
+| 日志/限流/实时采样 | 默认静默；onSample/租约/配额；L1云端、L2 BLE与内部LAN的来源/实际间隔/曲线及退出恢复各有有限实物 | 现行说明已区分采集、成功发送和State；只做实际差异回归，不重开租约主线 | 无限流、所有平台高频图表、周期历史/Bulk |
+| H1状态历史 | 服务器已采纳State、数值ID倒序/有界分页，真实自有WiFi及viewer只读/撤权后下一查询清空，取共同方案§9.4～§9.6 | 当前匹配入口已列出；仅shard1已部署，独立接收及未测边界明确保留 | H2在线周期归档、离线存储/Bulk、即时撤权push、全部shard/类型实物 |
+| 业务授时 | 可选 enableTime/time，已有平台/组合分别取原有限结果，不外推所有模式 | 保持原时钟保持/精度合同：默认最多一小时，断电后需有效来源；不重新派发已定稿T0 | 将业务UTC用作密钥有效性依据；无源长期离线准时保证 |
 | 本机定时 | T2c时间/4槽/Start保护、原意图/未知根拒绝/退休有限真机；公开入口、安装及COM3实物通过；最小独立源码重建/安装编译闭合 | 已分享operator缺同片环境；写额度仅软件证据，4槽单目标不是全平台准入，未知根仍不能恢复；正式材料/三端完整构建未交付 | 通用脚本、无限任务、非幂等动作恰好一次 |
-| 自动化 | 第82～85原证据保留；第86匹配新App／Gateway050的命名／编辑／启用／App退出后执行／查询／停用／删除实物通过，M1～M5收口 | 新命名历史保留匹配版本，独立接收／正式profile另验；首执行尝试2、第二1如实保留，不把回调当物理exactly-once | 多条件／多动作、按钮Action、数值目标、网关自动接管、全平台实测及生产准入 |
-| 首次进入 | 缓存协商已收口；P1显式候选、S3/R4有限控制/取消、健康Cloud/BLE并行只读；新目录构建及匹配CA变体Android/XIAO有限实物闭合，默认关闭 | iOS实物/Wio preview、独立接收待测；新无CA原包不覆盖，有限样本/中断/冷却限制保留 | 秒开承诺、100 次交替、新抢占协议；未经评审的大包协商 P2 |
+| 自动化 | M1～M5限定布尔实物及N5匹配新版两设备uint32 50/0短闭环收口；编辑/启停/退出App执行/查询/删除通过，Broker整数step已修正；设备共享校验源码/软件取§9.7，COM3非法值真实到达设备的短差异及原App控制取§9.8 | 保持匹配版本和原历史/unknown；COM3已恢复原固件，正式交付仍须包含修复及对应版本声明，不重跑旧门禁 | int32/float目标、多条件/动作、按钮Action、网关自动接管、全平台/生产 |
+| 首次进入 | 缓存协商已收口；P1显式参数候选保持默认关闭；N3受保护20～244 B包长协商/旧端20 B回退及S3限定实物已验收，二者职责不同 | 当前ZIP含N3，编译结果取§10.6；iOS/Wio及独立接收不冒称通过，有限样本/中断/冷却限制保留 | 秒开承诺、100次交替、新抢占协议、未鉴权就增大分片 |
 | 分享/通知 | 公开链接/二维码/粘贴、定向邀请、接受/拒绝、权限与撤销已有代码和分批证据 | 若候选开放：匹配 Auth、Gateway/所有 Broker 开关，双账号定点验收；否则明确不开放 | 为所有家庭复制新鉴权系统、拓扑扩张 |
 | LAN WebSocket | ESP32 self/internal，有 mDNS、局部认证/撤权/页面证据；App 默认 false | 本阶段仅保留/回归共享模块；清楚标 preview | 宣称所有 WiFi 产品均正式 LAN 可用 |
 | Edge Hub/子设备 | 已有模块化管理、南向会话、路由及四端部分证据 | 保留实现、修明确安全缺陷，不扩大产品声明 | 多 child 完整发布、ESP-NOW/Zigbee/Mesh、生产 eFuse 门禁 |
@@ -82,7 +85,7 @@
 
 ### D2：CI 引用源码已可获取，远端运行与交付闭包独立验收
 
-此前“workflow 已推送而 `tests/`、`tools/` 缺失”的源码可获取缺口，已由 2026-10-10 上一轮三端源码同步关闭。本轮 `git ls-tree --name-only HEAD` 确认设备库 `bd0c913…` 包含 `.github/workflows/device-v2-ci.yml`、`tests/`、`tools/`；并逐项核对 workflow 直接引用的 architecture、host/CMake/seed、golden oracle/向量/跨语言脚本、Arduino 编译/安装/SDK 校验及 release profile/打包路径，均已在 HEAD 内。`tests/hardware/*.test.mjs` / `*.test.cjs` 也有已跟踪的匹配源码；不是删除校验或生成假通过结果。
+此前“workflow已推送而tests/tools缺失”的可获取缺口已由上一轮同步关闭；原逐项检查记录保留。2026-10-11只读`git rev-parse`确认三端HEAD仍与§2一致，`git ls-tree`确认设备库`350f447…`含`.github/workflows/device-v2-ci.yml`、`tests/`、`tools/`。这不含本地后续未提交的N/L/H1修改、不等于本批重新跑远端CI；不再把旧`bd0c913…`写成当前HEAD，也不删门禁制造通过。
 
 - App `e9e1880…` 的 Git 树已含 `vitest.config.ts`、自动化 client/page spec、`device-template/tests`、授时公开 golden fixture 和 `tools/source-handoff.mjs` / 自测，原“新增测试与 Vitest 修订尚未上传”不再是当前源码状态。
 - Service `7bd1007…` 的合同、Broker 观察与 Gateway worker/版本策略测试及 package 脚本源码仍在 HEAD 内；需要数据库的测试必须按真实环境运行，不能把 skip 算 pass。
@@ -91,7 +94,7 @@
 
 ### D3：App 相邻插件与构建产物依赖
 
-fork 推送只解决Git来源可获取，不能单独证明lockfile、插件dist、Capacitor同步及固定工具链匹配；第64/75/82批已有各自新目录构建证据，第83批重新验证第82冻结1,646输入，并不否定已过步骤。Android本机`capacitor.settings.gradle`的pnpm缓存路径差异不能手工复制到其他机器；所选插件未提交README/tests仍须按manifest而非HEAD交接。
+五插件必要实现已有固定远端提交，现行来源与相邻目录布局取Git手册。fork推送只解决源码可获取，不能单独证明lockfile、插件dist、Capacitor同步及固定工具链匹配。Android本机`capacitor.settings.gradle`的pnpm缓存路径差异不能手工复制到其他机器；接收者按原锁先构建插件再安装App，记录实际来源，不交旧node_modules或冻结副本。
 
 本阶段建议保留现有五个插件布局，先用**一份维护者 checkout 清单锁定全部提交**，在新目录完成插件构建→App 安装→Capacitor 同步→APK。避免本轮同时引入 monorepo/私有包注册表/依赖大升级。
 
@@ -152,6 +155,8 @@ Service 的跨片 requests/shares、LocalAccess、通知安装/投递以及 App 
 - App升级/本机构建保持既有WebView origin；localStorage缓存和IndexedDB事务意图按origin隔离。新origin下的空journal不等于原操作没有发生，不能自动重发/新建ID或清旧数据绕过。MQTT设备默认明文与App是否切换origin是两个独立问题。
 
 ## 6. 新执行队列
+
+本节 S/P/T/A 队列为先前实施与范围记录，不是当前重新执行清单。当前 **N1～N5限定本机范围收口** 取[易用性后续计划§9.6](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#96-n5-本机数值短验收2026-10-11收口)，不等同全平台或生产发布。后续结果在新计划汇总，不再追加整段重复的历史“下一步”。
 
 各包要求独立可验收。P1/T0 可独立推进；缺硬件时保留 P1 待测并进行任务纯核心软件工作，不转去扩另一条架构。新增功能的详细合同/各端职责/门禁统一维护在[任务与 BLE 方案](DEVICE_V2_SCHEDULING_AUTOMATION_AND_BLE_PLAN.md)。
 

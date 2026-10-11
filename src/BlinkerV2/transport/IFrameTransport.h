@@ -87,6 +87,12 @@ public:
     virtual void protocolNegotiated(const RxContext& rx, uint32_t features, uint16_t maximumFrame) {
         (void)rx; (void)features; (void)maximumFrame;
     }
+    // Optional bearer-specific Hello limit. The transport itself verifies an
+    // active authenticated session and its physical/workspace limits. Zero
+    // omits the field for other bearers and legacy 20-byte BLE peers.
+    virtual uint16_t negotiatePacketSize(const RxContext& rx, uint16_t requested) {
+        (void)rx; (void)requested; return 0U;
+    }
     // The frame view is only valid for this call. Implementations must consume
     // it synchronously or copy it into adapter-owned storage before returning.
     // send() must not synchronously invoke the registered receive/session

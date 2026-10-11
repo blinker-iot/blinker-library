@@ -19,7 +19,8 @@ enum {
     ESP_OK = 0, ESP_ERR_NO_MEM = 0x101,
     BLE_HS_CONN_HANDLE_NONE = 0xffff, BLE_HS_FOREVER = -1,
     BLE_HS_ENOTCONN = 7, BLE_HS_EDONE = 14, BLE_HS_ETIMEOUT = 13,
-    BLE_HS_EALREADY = 2, BLE_HS_EBUSY = 15,
+    BLE_HS_EAGAIN = 1, BLE_HS_EALREADY = 2, BLE_HS_EINVAL = 3,
+    BLE_HS_EMSGSIZE = 4, BLE_HS_ENOMEM = 6, BLE_HS_EBUSY = 15,
     BLE_UUID_TYPE_128 = 128, BLE_HS_IO_NO_INPUT_OUTPUT = 3,
     BLE_ERR_REM_USER_CONN_TERM = 0x13,
     BLE_GATT_CHR_F_READ = 2, BLE_GATT_CHR_F_WRITE_NO_RSP = 4,
@@ -37,7 +38,7 @@ enum {
 };
 struct ble_uuid_t { uint8_t type; };
 struct ble_uuid128_t { ble_uuid_t u; uint8_t value[16]; };
-struct os_mbuf { uint16_t size; uint8_t data[20]; };
+struct os_mbuf { uint16_t size; uint8_t data[244]; };
 #define OS_MBUF_PKTLEN(buffer) ((buffer)->size)
 struct ble_gatt_access_ctxt { uint8_t op; os_mbuf* om; };
 struct ble_gatt_chr_def {
@@ -106,6 +107,9 @@ struct State {
     int initResult = 0, stopResult = 0, deinitResult = 0;
     bool autoSync = true;
     int terminateResult = 0, advertiseResult = 0;
+    int sendResult = 0, preferredMtuResult = 0;
+    uint16_t mtu = 23U, preferredMtu = 23U;
+    unsigned sends = 0U;
     int (*gap)(ble_gap_event*, void*) = nullptr;
     void* context = nullptr;
     const ble_gatt_chr_def* receive = nullptr;
@@ -178,6 +182,13 @@ inline void nimble_port_freertos_deinit() {}
 inline void nimble_port_freertos_init(void (*)(void*)) { if (fake_nimble::state.autoSync) ble_hs_cfg.sync_cb(); }
 inline void ble_svc_gap_init() {}
 inline void ble_svc_gatt_init() {}
+inline int ble_att_set_preferred_mtu(uint16_t mtu) {
+    fake_nimble::state.preferredMtu = mtu;
+    return fake_nimble::state.preferredMtuResult;
+}
+inline uint16_t ble_att_mtu(uint16_t handle) {
+    return handle == fake_nimble::state.connected ? fake_nimble::state.mtu : 0U;
+}
 inline int ble_svc_gap_device_name_set(const char*) { return 0; }
 inline int ble_gatts_count_cfg(const ble_gatt_svc_def*) { return 0; }
 inline int ble_gatts_add_svcs(const ble_gatt_svc_def* services) {
@@ -230,5 +241,11 @@ inline int ble_hs_mbuf_to_flat(const os_mbuf* b, void* data, uint16_t capacity, 
     *size = b->size; std::memcpy(data, b->data, b->size); return 0;
 }
 inline void os_mbuf_free_chain(os_mbuf*) {}
-inline int ble_gatts_indicate_custom(uint16_t, uint16_t, os_mbuf*) { return 0; }
-inline int ble_gatts_notify_custom(uint16_t, uint16_t, os_mbuf*) { return 0; }
+inline int ble_gatts_indicate_custom(uint16_t, uint16_t, os_mbuf*) {
+    ++fake_nimble::state.sends;
+    return fake_nimble::state.sendResult;
+}
+inline int ble_gatts_notify_custom(uint16_t, uint16_t, os_mbuf*) {
+    ++fake_nimble::state.sends;
+    return fake_nimble::state.sendResult;
+}

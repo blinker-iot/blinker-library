@@ -1593,6 +1593,37 @@ void testControlBodies() {
     CHECK_EQ(
         static_cast<size_t>(blinker::bbp2::kManifestFingerprintSize),
         decodedHello.manifestFingerprint.size);
+    CHECK_EQ(static_cast<uint16_t>(0), decodedHello.maxBlePacketSize);
+
+    // The optional bearer limit leaves legacy Hello bytes unchanged. It is
+    // distinct from the frame limit and rejects zero/oversized wire claims.
+    for (uint16_t packet = 20U; packet <= 244U; packet += 224U) {
+        blinker::bbp2::HelloBody packetHello = hello;
+        packetHello.maxBlePacketSize = packet;
+        CHECK_TRUE(blinker::bbp2::encodeHelloBody(
+            packetHello, blinker::MutableByteSpan(buffer, sizeof(buffer)),
+            encoded).ok());
+        CHECK_TRUE(blinker::bbp2::decodeHelloBody(encoded, decodedHello).ok());
+        CHECK_EQ(packet, decodedHello.maxBlePacketSize);
+        CHECK_EQ(static_cast<uint16_t>(1024), decodedHello.maxFrameSize);
+    }
+    blinker::bbp2::HelloBody invalidPacketHello = hello;
+    invalidPacketHello.maxBlePacketSize = 245U;
+    CHECK_EQ(blinker::ErrorCode::InvalidArgument,
+        blinker::bbp2::encodeHelloBody(invalidPacketHello,
+            blinker::MutableByteSpan(buffer, sizeof(buffer)), encoded).code());
+    invalidPacketHello.maxBlePacketSize = 19U;
+    CHECK_EQ(blinker::ErrorCode::InvalidArgument,
+        blinker::bbp2::encodeHelloBody(invalidPacketHello,
+            blinker::MutableByteSpan(buffer, sizeof(buffer)), encoded).code());
+    const uint8_t zeroPacketHello[] = {
+        0xA6, 0x00, 0x00, 0x01, 0x81, 0x02, 0x02, 0x00,
+        0x03, 0x18, 0x40, 0x04, 0x18, 0x40, 0x0C, 0x00
+    };
+    CHECK_EQ(blinker::ErrorCode::ValueOutOfRange,
+        blinker::bbp2::decodeHelloBody(
+            blinker::ByteView(zeroPacketHello, sizeof(zeroPacketHello)),
+            decodedHello).code());
 
     blinker::bbp2::HelloBody shortFingerprintHello = hello;
     shortFingerprintHello.manifestFingerprint =
@@ -8928,6 +8959,8 @@ void testBleFrameTransport() {
     uint8_t txStorage[88 * 4] = {};
     uint8_t packetScratch[244] = {};
     blinker::BleFrameTransportConfig config;
+    // This exercises the raw record MTU/stride layer, not Direct negotiation.
+    config.initialPacketSize = 0U;
     config.maxFrameSize = 64;
     config.reassemblyTimeoutMillis = 50;
     config.maxPacketsPerPoll = 2;
@@ -9204,6 +9237,7 @@ void testBleFrameTransport() {
     uint8_t mtuTx[536] = {};
     uint8_t mtuPacket[244] = {};
     blinker::BleFrameTransportConfig mtuConfig;
+    mtuConfig.initialPacketSize = 0U;
     mtuConfig.maxFrameSize = 512;
     mtuConfig.maxPacketsPerPoll = 1;
     blinker::BleFrameTransport mtuTransport(
@@ -9657,6 +9691,17 @@ void testBleRuntimeSessionLifecycle() {
 }
 
 void testPeerInitiatedHelloTransport() {
+    class NegotiatingTransport : public FakeTransport {
+    public:
+        unsigned packetNegotiations = 0U;
+        uint16_t requestedPacket = 0U;
+        uint16_t negotiatePacketSize(
+            const blinker::RxContext& rx, uint16_t requested) override {
+            ++packetNegotiations;
+            requestedPacket = requested;
+            return rx.encrypted ? 100U : 0U;
+        }
+    };
     const blinker::EndpointDescriptor endpoint(
         blinker::StringView("lamp", 4),
         blinker::EndpointKind::Property,
@@ -9667,7 +9712,7 @@ void testPeerInitiatedHelloTransport() {
     blinker::EndpointRegistry endpoints(endpointStorage, 1);
     CHECK_TRUE(endpoints.add(endpoint).ok());
 
-    FakeTransport transport;
+    NegotiatingTransport transport;
     transport.featureFlags = static_cast<uint16_t>(
         blinker::TransportFeatureBinary |
         blinker::TransportFeatureLocal |
@@ -9746,6 +9791,24 @@ void testPeerInitiatedHelloTransport() {
     CHECK_TRUE(
         (response.header.flags & blinker::bbp2::FlagIsResponse) != 0U);
     CHECK_EQ(static_cast<uint16_t>(77U), response.header.sequence);
+    CHECK_EQ(0U, transport.packetNegotiations);
+    blinker::bbp2::HelloBody responseHello;
+    CHECK_TRUE(blinker::bbp2::decodeHelloBody(response.body, responseHello).ok());
+    CHECK_EQ(static_cast<uint16_t>(0U), responseHello.maxBlePacketSize);
+    peerHello.maxBlePacketSize = 244U;
+    CHECK_TRUE(blinker::bbp2::encodeHelloBody(
+        peerHello, blinker::MutableByteSpan(bodyStorage, sizeof(bodyStorage)),
+        body).ok());
+    CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::Hello,
+        blinker::bbp2::FlagNone, 78U, body,
+        blinker::MutableByteSpan(frameStorage, sizeof(frameStorage)), frame).ok());
+    transport.inject(frame, 0U, true, session.sessionId, true, true);
+    CHECK_EQ(1U, transport.packetNegotiations);
+    CHECK_EQ(static_cast<uint16_t>(244U), transport.requestedPacket);
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(transport.lastSent, transport.lastSentSize), response).ok());
+    CHECK_TRUE(blinker::bbp2::decodeHelloBody(response.body, responseHello).ok());
+    CHECK_EQ(static_cast<uint16_t>(100U), responseHello.maxBlePacketSize);
     runtime.stop();
 }
 

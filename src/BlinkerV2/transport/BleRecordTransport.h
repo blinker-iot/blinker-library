@@ -38,6 +38,9 @@ struct BleRecordFormat {
 
 struct BleRecordTransportConfig {
     uint16_t maxRecordSize;
+    // Zero preserves a raw bearer's packet capacity. Direct/Noise products
+    // explicitly start at ATT20 until an authenticated peer selects a limit.
+    uint16_t initialPacketSize;
     uint32_t reassemblyTimeoutMillis;
     uint8_t maxPacketsPerPoll;
     uint8_t sessionCapacity;
@@ -45,6 +48,7 @@ struct BleRecordTransportConfig {
 
     BleRecordTransportConfig()
         : maxRecordSize(512U),
+          initialPacketSize(0U),
           reassemblyTimeoutMillis(2000U),
           maxPacketsPerPoll(4U),
           sessionCapacity(BLINKER_BLE_MAX_SESSIONS),
@@ -89,7 +93,11 @@ public:
         size_t recordSize,
         const SendTarget& target,
         BleRecordWriter writer,
-        void* context);
+        void* context,
+        uint16_t packetLimit = 0U);
+    // Called only by the authenticated Direct wrapper. A failed enlarged
+    // packet latches ATT20 for this physical session, not for other peers.
+    uint16_t negotiatePacketSize(uint32_t sessionId, uint16_t requested);
     Result disconnectSession(uint32_t sessionId, ErrorCode error);
     bool hasSession(uint32_t sessionId) const;
     void failSession(uint32_t sessionId, ErrorCode error);
@@ -118,9 +126,12 @@ private:
         uint8_t recordId;
         uint8_t lastRecordId;
         uint8_t nextTxRecordId;
-        bool occupied;
-        bool assembling;
-        bool hasLastRecordId;
+        uint8_t packetLimit;
+        uint8_t receivePacketLimit;
+        uint8_t occupied : 1;
+        uint8_t assembling : 1;
+        uint8_t hasLastRecordId : 1;
+        uint8_t packetFallback : 1;
 
         RxSession()
             : info(),
@@ -132,9 +143,12 @@ private:
               recordId(0U),
               lastRecordId(0U),
               nextTxRecordId(1U),
+              packetLimit(0U),
+              receivePacketLimit(0U),
               occupied(false),
               assembling(false),
-              hasLastRecordId(false) {}
+              hasLastRecordId(false),
+              packetFallback(false) {}
     };
 
     struct TxRecord {
@@ -184,12 +198,17 @@ private:
     size_t rxIndex(const RxSession* session) const;
     MutableByteSpan rxBuffer(size_t index) const;
     MutableByteSpan txBuffer(size_t index) const;
-    Result enqueue(const BleSessionInfo& session, ByteView record);
+    Result enqueue(
+        const BleSessionInfo& session,
+        ByteView record,
+        uint16_t packetLimit = 0U);
     void popTx();
     void dropQueuedForSession(uint32_t sessionId);
     uint8_t nextRecordId(RxSession& session);
     size_t txCapacity() const;
-    size_t packetPayloadCapacity(const BleSessionInfo& session) const;
+    size_t packetPayloadCapacity(
+        const BleSessionInfo& session,
+        uint16_t packetLimit = 0U) const;
     static size_t fragmentCount(size_t recordSize, size_t payloadCapacity);
     static bool usable(const BleSessionInfo& session);
     static bool securityDowngraded(

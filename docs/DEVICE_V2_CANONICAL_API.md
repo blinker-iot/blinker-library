@@ -1,6 +1,6 @@
 # Device V2 canonical API：Property / Action / Event
 
-> 状态：正式修订基线，2026-08-18。本文取代旧 Button/Switch/Slider/Text、TypedWidget 与
+> 状态：语义合同基线2026-08-18，普通入口校正于2026-10-11；安装使用取[当前QuickStart](DEVICE_V2_USER_API_AND_LLM_QUICKSTART.md)，实际候选/有限验收取[交付计划§10](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#10-核心稳定与最小内部交付)。本文取代旧 Button/Switch/Slider/Text、TypedWidget 与
 > WidgetCatalog 设备 API。旧方案从未发布，不提供兼容层。
 > WiFi-only connectivity 表面已完成双平台软件接线；身份与注册以
 > `DEVICE_V2_DEVICE_KEY_CONTRACT.md` 和 `DEVICE_V2_ESP32_WIFIPROV_PRIORITY_PLAN.md` 为准。
@@ -41,18 +41,17 @@ Hub 自身 enableTime 不等于所有孩子支持授时；内部两个独立 16 
 > QuickStart。WiFi-only 已正式绑定 DeviceKey challenge/session，并完成 ESP32/UNO R4 官方包实编；
 > ESP32/UNO R4 普通 BLE 已绑定同一 tag-free `Blinker.begin(...)` facade 并完成 official package 实编；
 > App/Service 的 Cloud Telemetry 与 Wio 真机链已完成；Cloud/Direct 双 route Core 隔离也已通过 Host 门禁。
-> ESP32 WiFiBLE 已固定为 WiFiProv Security1 bootstrap + WiFi Cloud + NimBLE Direct 唯一业务图；SoftAP 是
-> 跨 ESP32 默认，IDF-NimBLE 目标可编译期选择 BLE 配网，公开 selector/QuickStart/`begin()` 不变；
-> App/Service 与真机准入仍未完成。UNO R4/Wio 不提供 WiFiBLE。普通代码
+> ESP32 WiFiBLE采用WiFiProv Security1 bootstrap＋WiFi Cloud＋SDK NimBLE Direct；当前默认BLE配网，SoftAP由维护者显式选择，公开selector/QuickStart/`begin()`不变。
+> 已有有限App/Service与实物结果不等于生产发布或全平台准入。UNO R4/Wio不提供WiFiBLE。普通代码
 > 不得调用 `official_detail`。
 
 ~~~cpp
-#include <BlinkerWiFi.h>
+#include <Blinker.h>
 
 BLINKER_PROPERTY(power, bool, blinker::readWrite());
 BLINKER_PROPERTY(temperature, float, blinker::readOnly());
 BLINKER_ACTION(reboot);
-BLINKER_EVENT(alarm, uint32_t);
+BLINKER_EVENT_KEY(alarmEvent, "alarm", uint32_t);
 
 void writePower(bool requested)
 {
@@ -76,7 +75,7 @@ void setup()
         power,
         temperature,
         reboot,
-        alarm);
+        alarmEvent);
 }
 
 void loop()
@@ -85,7 +84,7 @@ void loop()
 }
 ~~~
 
-入口头文件在 Arduino 编译依赖扫描前选择产品：WiFi 使用 `<BlinkerWiFi.h>`，BLE 使用 `<BlinkerBLE.h>`，
+入口头文件在Arduino编译依赖扫描前选择产品：WiFi默认使用`<Blinker.h>`（`<BlinkerWiFi.h>`等价），BLE使用`<BlinkerBLE.h>`，
 ESP32 WiFi+BLE 使用 `<BlinkerWiFiBLE.h>`；`begin()` 均不重复填写 mode tag。一个发布 ZIP 包含这些实现，
 最终固件只保留被选 composition；门禁以第三方依赖闭包和 ELF defined symbols 验证，而不假设各 Core 都按
 archive 成员抽取。UNO R4/Wio 只有相互独立的 WiFi/BLE。普通 Sketch 不填写

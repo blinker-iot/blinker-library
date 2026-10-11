@@ -1,5 +1,7 @@
 # Device V2 调试、发送治理、实时遥测与大流量传输方案
 
+> **2026-10-11 实时产品结果见[实时与历史方案§7～§8](DEVICE_V2_LIVE_AND_HISTORY_EXECUTION_PLAN.md#8-l2最小实施范围2026-10-11)。** 云端真实App短验收及L2a共用Direct/BLE页面接入软件与ESP32编译通过；下一批只做L2b BLE原生真机短验收，LAN产品、R4新增示例编译和History后置，离线storage/Bulk不实施。本页旧现场状态和历史“下一步”不覆盖新入口。
+
 > **2026-09-22：执行入口仅见[主线 §6](DEVICE_V2_NEXT_EXECUTION_PLAN.md)。** onSample/页面 lease/发送限流继续各司其职，不兼任用户定时；新增云自动化的数据需求由独立有界消费者持有，停用释放且不放宽总体限流，见[任务合同 §6](DEVICE_V2_SCHEDULING_AUTOMATION_AND_BLE_PLAN.md)。本页历史“下一步”不自动扩大任务。
 
 > **2026-09-12 D1 背压事实修订：** [B2b-5 真机](DEVICE_V2_OWNER_REMOVAL_IMPLEMENTATION_PLAN.md#121-发现并修正的测试阻塞不扩-ble-协议)发现开启 `debug(Serial)` 的测试固件在 USB 无人读取时，状态转换 Print 可阻塞 BLE 首次 Hello；业务回调打印还曾造成约 6 s ACK。持续读取的原固件及移除连续输出后关闭串口的修订固件均通过。标准 QuickStart 不开启日志，本批只清理硬件测试 Sketch；**`debug(Print&)` 仍为同步 formatter，§9.3 的独立日志预算、§9.4 的背压不影响通信是尚未完成的保障，不能从 D1“代码完成”推导已满足。** 下一步先约束可检测输出容量/短写丢弃及 sink 适配，资源不足时丢诊断不等通信；通用 Print 不保证容量/非阻塞，不能无依据宣称任意平台都可抢占阻塞写。保持默认关闭日志，不新增通用大 ring buffer/后台任务，不用调大协议 deadline 代替修复。

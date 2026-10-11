@@ -358,6 +358,71 @@ def strip_comments(text: str) -> str:
     return re.sub(r"//.*", "", text)
 
 
+def ble_packet_boundary_failures(
+    port_header: str, port_source: str, frame_header: str,
+    frame_source: str, record_source: str, noise_source: str,
+    runtime_source: str,
+) -> list[str]:
+    """Check N3 layer boundaries; behavior remains covered by host tests."""
+    port_header, port_source, frame_header, frame_source, record_source, noise_source, runtime_source = (
+        strip_comments(value) for value in (
+            port_header, port_source, frame_header, frame_source,
+            record_source, noise_source, runtime_source,
+        )
+    )
+
+    def section(source: str, start: str, end: str) -> str:
+        return source.split(start, 1)[1].split(end, 1)[0] if start in source else ""
+
+    def contains(source: str, *tokens: str) -> bool:
+        return all(token in source for token in tokens)
+
+    capacity = section(port_source, "Esp32NimBleLink::packetCapacity(", "Esp32NimBleLink::sendPacket(")
+    negotiate = section(frame_source, "BleFrameTransport::negotiatePacketSize(", "BleFrameTransport::disconnectSession(")
+    record_negotiate = section(record_source, "BleRecordTransport::negotiatePacketSize(", "BleRecordTransport::disconnectSession(")
+    flush = section(record_source, "BleRecordTransport::flushTx(", "BleRecordTransport::expireReassembly(")
+    send = section(port_source, "Esp32NimBleLink::sendPacket(", "Esp32NimBleLink::disconnectSession(")
+    faults = section(frame_source, "BleFrameTransport::onFault(", "BleFrameTransport::expireUnauthenticatedSessions(")
+    hello = section(runtime_source, "DeviceRuntime::handleHello(", "DeviceRuntime::handleCommand(")
+    failures = []
+    if not (
+        contains(port_header, "#define BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE 244", ">= 20", "<= 244")
+        and contains(capacity, "ble_att_mtu(handle)", "mtu - 3U", "BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE")
+        and "session.maxPacketSize = packetCapacity(connectionHandle_);" in port_source
+        and "negotiatePacketSize" not in port_source
+    ):
+        failures.append("BLE physical ATT capacity must be bounded without selecting protocol stride")
+    if not (
+        "initialPacketSize(ble::kMinimumPacketSize)" in frame_header
+        and "records.initialPacketSize = ble::kMinimumPacketSize;" in noise_source
+        and contains(negotiate, "!rx.encrypted", "slot == nullptr", "!slot->active()",
+                     "requested < ble::kMinimumPacketSize", "requested > 244U",
+                     "records_.negotiatePacketSize(rx.sessionId, requested)")
+        and contains(frame_source, "bbp2::MessageKind::Hello", "? ble::kMinimumPacketSize : 0U")
+        and contains(hello, "(frame.header.flags & bbp2::FlagIsResponse) == 0U",
+                     "hello.maxBlePacketSize != 0U", "transport->negotiatePacketSize(")
+    ):
+        failures.append("BLE bootstrap must stay ATT20 and packet negotiation must require active Direct authentication")
+    if not (
+        contains(record_negotiate, "physical.maxPacketSize", "packetScratch_.size", "session->packetFallback")
+        and contains(flush, "availablePayloadCapacity < item.fragmentPayloadCapacity",
+                     "if (result.code() == ErrorCode::WouldBlock) return;",
+                     "result.code() == ErrorCode::CapacityExceeded",
+                     "sessionState->packetLimit = ble::kMinimumPacketSize;",
+                     "sessionState->packetFallback = true;",
+                     "item.recordId = nextRecordId(*sessionState);",
+                     "item.offset = 0U;", "item.fragmentIndex = 0U;", "txBuffer(txHead_)")
+    ):
+        failures.append("BLE queued record stride and same-record ATT20 fallback must be preserved")
+    if not (
+        contains(send, "packet.size > capacity", "ErrorCode::CapacityExceeded", "ErrorCode::ProtocolError")
+        and contains(faults, "slot->session.ready()", "retire(rx.sessionId, error)",
+                     "records_.disconnectSession(sessionId, error)")
+    ):
+        failures.append("BLE unknown native send errors must retire Direct sessions, not trigger capacity fallback")
+    return failures
+
+
 def login_freeze_digest(path: Path) -> str:
     """Hash implementation text without build-layout-only include paths."""
     text = path.read_text(encoding="utf-8")
@@ -1001,19 +1066,15 @@ def main() -> int:
             f"{UNO_R4_BLE_PLATFORM}: portable Direct security policy missing"
         )
 
-    esp32_nimble_text = strip_comments(
-        ESP32_NIMBLE_HEADER.read_text(encoding="utf-8")
-        + ESP32_NIMBLE_IMPLEMENTATION.read_text(encoding="utf-8")
-    )
-    if (
-        "#define BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE 20"
-        not in ESP32_NIMBLE_HEADER.read_text(encoding="utf-8")
-        or "preferredMtu" in esp32_nimble_text
-        or "onMTUChange" in esp32_nimble_text
-    ):
-        failures.append(
-            f"{ESP32_NIMBLE_HEADER}: unnegotiated ATT MTU must not change BBP/2 fragmentation"
-        )
+    failures.extend(ble_packet_boundary_failures(
+        ESP32_NIMBLE_HEADER.read_text(encoding="utf-8"),
+        ESP32_NIMBLE_IMPLEMENTATION.read_text(encoding="utf-8"),
+        BLE_FRAME_TRANSPORT_HEADER.read_text(encoding="utf-8"),
+        BLE_FRAME_TRANSPORT_SOURCE.read_text(encoding="utf-8"),
+        BLE_RECORD_TRANSPORT.read_text(encoding="utf-8"),
+        BLE_NOISE_CHANNEL.read_text(encoding="utf-8"),
+        DEVICE_RUNTIME_SOURCE.read_text(encoding="utf-8"),
+    ))
 
     ble_record_text = strip_comments(
         BLE_RECORD_TRANSPORT.read_text(encoding="utf-8")

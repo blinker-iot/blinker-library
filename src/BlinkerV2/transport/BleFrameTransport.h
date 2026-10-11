@@ -10,12 +10,14 @@ namespace blinker {
 
 struct BleFrameTransportConfig {
     uint16_t maxFrameSize;
+    uint16_t initialPacketSize;
     uint32_t reassemblyTimeoutMillis;
     uint32_t authenticationTimeoutMillis;
     uint8_t maxPacketsPerPoll;
 
     BleFrameTransportConfig()
         : maxFrameSize(512U),
+          initialPacketSize(ble::kMinimumPacketSize),
           reassemblyTimeoutMillis(2000U),
           authenticationTimeoutMillis(15000U),
           maxPacketsPerPoll(4U) {}
@@ -42,6 +44,9 @@ public:
     void poll(uint32_t budgetMicros) override;
     TransportState state() const override;
     TransportCapabilities capabilities() const override;
+    uint16_t negotiatePacketSize(
+        const RxContext& rx,
+        uint16_t requested) override;
     Result send(ByteView frame, const SendTarget& target) override;
     Result disconnectSession(uint32_t sessionId) override;
     uint32_t sessionRevision() const override {

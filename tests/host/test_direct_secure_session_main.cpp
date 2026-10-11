@@ -25,6 +25,7 @@ namespace {
 class DeterministicAead final
     : public blinker::IX25519AesGcmCryptoProvider {
 public:
+    unsigned encryptions = 0U;
     blinker::Result x25519PublicKey(
         blinker::ByteView,
         blinker::MutableByteSpan) override {
@@ -47,6 +48,7 @@ public:
         blinker::ByteView plaintext,
         blinker::MutableByteSpan output,
         size_t& written) override {
+        ++encryptions;
         written = 0U;
         if (!valid(key, nonce, associatedData) || plaintext.data == nullptr ||
             output.data == nullptr || output.size < plaintext.size + 16U) {
@@ -159,7 +161,7 @@ public:
 class TestBleLink final : public blinker::IBleLink {
 public:
     struct Packet {
-        uint8_t bytes[20U];
+        uint8_t bytes[244U];
         size_t size;
 
         Packet() : bytes(), size(0U) {}
@@ -175,7 +177,9 @@ public:
           sessionContext(nullptr),
           packets(),
           packetCount(0U),
-          disconnectRequests(0U) {}
+          disconnectRequests(0U),
+          failAbove(0U),
+          blockSends(false) {}
 
     blinker::Result start() override {
         current = blinker::BleLinkState::Ready;
@@ -206,6 +210,9 @@ public:
             return blinker::Result::failure(
                 blinker::ErrorCode::NotConnected);
         }
+        if (blockSends) return blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+        if (failAbove != 0U && packet.size > failAbove)
+            return blinker::Result::failure(blinker::ErrorCode::CapacityExceeded);
         if (packetCount >= sizeof(packets) / sizeof(packets[0]) ||
             packet.size > sizeof(packets[0].bytes)) {
             return blinker::Result::failure(
@@ -259,12 +266,17 @@ public:
         uint8_t* output,
         size_t capacity) const {
         size_t written = 0U;
+        size_t start = 0U;
         for (size_t index = 0U; index < packetCount; ++index) {
+            if ((packets[index].bytes[1] & blinker::ble::FragmentFlagStart) != 0U)
+                start = index;
+        }
+        for (size_t index = start; index < packetCount; ++index) {
             blinker::ble::FragmentView fragment;
             CHECK_TRUE(blinker::ble::parseFragment(
                 blinker::ByteView(packets[index].bytes, packets[index].size),
                 fragment));
-            CHECK_EQ(static_cast<uint8_t>(index), fragment.header.index);
+            CHECK_EQ(static_cast<uint8_t>(index - start), fragment.header.index);
             CHECK_TRUE(written + fragment.payload.size <= capacity);
             std::memcpy(
                 output + written,
@@ -275,14 +287,18 @@ public:
         return blinker::ByteView(output, written);
     }
 
-    void injectRecord(blinker::ByteView record, uint8_t recordId) {
+    void injectRecord(
+        blinker::ByteView record,
+        uint8_t recordId,
+        size_t packetSize = 20U) {
         CHECK_TRUE(receiver != nullptr);
         size_t offset = 0U;
         uint8_t index = 0U;
         while (offset < record.size) {
             const size_t remaining = record.size - offset;
-            const size_t payloadSize = remaining < 16U ? remaining : 16U;
-            uint8_t packet[20U];
+            const size_t capacity = packetSize - blinker::ble::kFragmentHeaderSize;
+            const size_t payloadSize = remaining < capacity ? remaining : capacity;
+            uint8_t packet[244U];
             blinker::ble::FragmentHeader header;
             header.flags = offset == 0U
                                ? blinker::ble::FragmentFlagStart
@@ -317,13 +333,15 @@ public:
     blinker::BleSessionHandler connected;
     blinker::BleSessionHandler disconnected;
     void* sessionContext;
-    Packet packets[8U];
+    Packet packets[64U];
     size_t packetCount;
     uint32_t disconnectRequests;
+    uint16_t failAbove;
+    bool blockSends;
 };
 
 struct FrameCapture {
-    uint8_t bytes[64U];
+    uint8_t bytes[512U];
     size_t size;
     uint32_t disconnects;
     bool encrypted;
@@ -885,6 +903,155 @@ void testBleTransportAuthenticationDeadline() {
     CHECK_TRUE(!oversizedTransport.start());
 }
 
+void testBlePacketNegotiationAndFallback() {
+    Fixture fixture;
+    fixture.begin();
+    TestClock clock;
+    TestBleLink link;
+    uint8_t rx[324U * BLINKER_BLE_MAX_SESSIONS] = {};
+    uint8_t tx[324U * BLINKER_BLE_MAX_TX_FRAMES] = {};
+    uint8_t packet[244U] = {};
+    uint8_t plaintext[300U] = {};
+    blinker::BleFrameTransportConfig config;
+    config.maxFrameSize = 300U;
+    config.maxPacketsPerPoll = 1U;
+    blinker::BleFrameTransport transport(
+        link, clock, fixture.crypto,
+        blinker::MutableByteSpan(rx, sizeof(rx)),
+        blinker::MutableByteSpan(tx, sizeof(tx)),
+        blinker::MutableByteSpan(packet, sizeof(packet)),
+        blinker::MutableByteSpan(plaintext, sizeof(plaintext)), config);
+    FrameCapture capture;
+    transport.setReceiver(&captureFrame, &capture);
+    CHECK_TRUE(transport.start());
+    link.connect(70U);
+    link.session.maxPacketSize = 244U;
+    blinker::RxContext verified;
+    verified.sessionId = 70U;
+    verified.encrypted = true;
+    CHECK_EQ(0U, transport.negotiatePacketSize(verified, 244U));
+
+    uint8_t shortStorage[50U] = {};
+    const blinker::ByteView shortFrame = makeFrame(shortStorage, sizeof(shortStorage), 1U);
+    blinker::SendTarget target;
+    target.kind = blinker::SendTargetKind::Session;
+    target.sessionId = verified.sessionId;
+    CHECK_TRUE(transport.send(shortFrame, target));
+    CHECK_TRUE(transport.prepare(70U,
+        blinker::ByteView(fixture.secret, sizeof(fixture.secret)), fixture.context));
+    CHECK_EQ(0U, transport.negotiatePacketSize(verified, 244U));
+    transport.commit(70U);
+    blinker::RxContext raw = verified;
+    raw.encrypted = false;
+    CHECK_EQ(0U, transport.negotiatePacketSize(raw, 244U));
+    CHECK_EQ(0U, transport.negotiatePacketSize(verified, 19U));
+    CHECK_EQ(0U, transport.negotiatePacketSize(verified, 245U));
+    link.session.maxPacketSize = 80U;
+    CHECK_EQ(80U, transport.negotiatePacketSize(verified, 244U));
+    link.session.maxPacketSize = 244U;
+    CHECK_EQ(244U, transport.negotiatePacketSize(verified, 244U));
+    const auto flush = [&]() {
+        unsigned attempts = 0U;
+        while (transport.queuedFrameCount() != 0U && attempts++ < 64U)
+            transport.poll(1000U);
+        CHECK_EQ(0U, transport.queuedFrameCount());
+    };
+    const auto allAt20 = [&]() {
+        CHECK_TRUE(link.packetCount != 0U);
+        for (size_t index = 0U; index < link.packetCount; ++index)
+            CHECK_TRUE(link.packets[index].size <= 20U);
+    };
+    uint8_t recordStorage[324U] = {};
+    uint8_t openedStorage[300U] = {};
+    const auto openSent = [&](blinker::ByteView expected) {
+        blinker::ByteView opened;
+        CHECK_TRUE(fixture.initiator.open(fixture.crypto,
+            link.sentRecord(recordStorage, sizeof(recordStorage)),
+            blinker::MutableByteSpan(openedStorage, sizeof(openedStorage)), opened));
+        CHECK_EQ(expected.size, opened.size);
+        CHECK_TRUE(std::memcmp(expected.data, opened.data, expected.size) == 0);
+    };
+    // A raw Auth/Hello already queued before commit must stay ATT20.
+    flush();
+    allAt20();
+    link.clearPackets();
+    CHECK_EQ(20U, transport.negotiatePacketSize(verified, 20U));
+    CHECK_TRUE(transport.send(shortFrame, target));
+    CHECK_EQ(244U, transport.negotiatePacketSize(verified, 244U));
+    flush();
+    allAt20();
+    openSent(shortFrame);
+
+    // The authenticated peer can use a larger START; RX stride is record-local.
+    blinker::ByteView appRecord;
+    CHECK_TRUE(fixture.initiator.seal(fixture.crypto, shortFrame,
+        blinker::MutableByteSpan(recordStorage, sizeof(recordStorage)), appRecord));
+    link.injectRecord(appRecord, 71U, 244U);
+    CHECK_EQ(shortFrame.size, capture.size);
+    CHECK_TRUE(capture.encrypted);
+
+    uint8_t longStorage[300U] = {};
+    const blinker::ByteView longFrame = makeFrame(longStorage, sizeof(longStorage), 2U);
+    link.clearPackets();
+    CHECK_TRUE(transport.send(longFrame, target));
+    link.blockSends = true;
+    transport.poll(1000U);
+    CHECK_EQ(1U, transport.queuedFrameCount());
+    CHECK_EQ(0U, link.packetCount);
+    CHECK_EQ(244U, transport.negotiatePacketSize(verified, 244U));
+    link.blockSends = false;
+    flush();
+    CHECK_EQ(2U, link.packetCount);
+    CHECK_EQ(244U, link.packets[0].size);
+    openSent(longFrame);
+
+    // Secure Hello responses always use the bootstrap stride, even ATT244.
+    link.clearPackets();
+    shortStorage[3] = static_cast<uint8_t>(blinker::bbp2::MessageKind::Hello);
+    CHECK_TRUE(transport.send(shortFrame, target));
+    flush();
+    allAt20();
+    openSent(shortFrame);
+
+    // A definite oversized failure after START restarts the SAME ciphertext.
+    link.clearPackets();
+    const unsigned encryptions = fixture.crypto.encryptions;
+    CHECK_TRUE(transport.send(longFrame, target));
+    CHECK_EQ(encryptions + 1U, fixture.crypto.encryptions);
+    transport.poll(1000U);
+    CHECK_EQ(1U, link.packetCount);
+    const uint8_t firstId = link.packets[0].bytes[2];
+    link.failAbove = 20U;
+    transport.poll(1000U);
+    CHECK_EQ(1U, link.packetCount);
+    flush();
+    CHECK_TRUE(link.packets[1].bytes[2] != firstId);
+    CHECK_EQ(0U, link.packets[1].bytes[3]);
+    for (size_t index = 1U; index < link.packetCount; ++index)
+        CHECK_TRUE(link.packets[index].size <= 20U);
+    CHECK_EQ(encryptions + 1U, fixture.crypto.encryptions);
+    CHECK_EQ(20U, transport.negotiatePacketSize(verified, 244U));
+    CHECK_EQ(0U, link.disconnectRequests);
+    openSent(longFrame); // Exact secure sequence still opens once, no reseal.
+    // A transmit fallback does not reject the peer's still-valid larger RX.
+    CHECK_TRUE(fixture.initiator.seal(fixture.crypto, longFrame,
+        blinker::MutableByteSpan(recordStorage, sizeof(recordStorage)), appRecord));
+    link.injectRecord(appRecord, 72U, 244U);
+    CHECK_EQ(longFrame.size, capture.size);
+    CHECK_EQ(0U, link.disconnectRequests);
+
+    transport.stop();
+    CHECK_TRUE(transport.start());
+    link.connect(73U);
+    link.session.maxPacketSize = 244U;
+    verified.sessionId = 73U;
+    CHECK_TRUE(transport.prepare(73U,
+        blinker::ByteView(fixture.secret, sizeof(fixture.secret)), fixture.context));
+    transport.commit(73U);
+    CHECK_EQ(244U, transport.negotiatePacketSize(verified, 244U));
+    transport.stop();
+}
+
 } // namespace
 
 int main() {
@@ -896,6 +1063,7 @@ int main() {
     testHeaderValidation();
     testBleTransportAtomicSwitchAndReplayRetirement();
     testBleTransportAuthenticationDeadline();
+    testBlePacketNegotiationAndFallback();
     std::cout << "Direct secure session tests passed" << std::endl;
     return 0;
 }

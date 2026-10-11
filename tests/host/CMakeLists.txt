@@ -107,6 +107,7 @@ target_include_directories(blinker_device_v2_tests PRIVATE
     stubs "${BLINKER_SOURCE_ROOT}/BlinkerV2/arduino/ports/arduino")
 
 blinker_test(blinker_telemetry_tests test_telemetry_main.cpp)
+blinker_test(blinker_endpoint_integer_step_tests test_endpoint_integer_step_main.cpp)
 blinker_test(blinker_wall_clock_tests test_wall_clock_main.cpp)
 blinker_test(blinker_task_timing_tests test_task_timing_main.cpp)
 blinker_test(blinker_task_calendar_cursor_tests test_task_calendar_cursor_main.cpp)
@@ -330,6 +331,7 @@ foreach(target IN ITEMS
 endforeach()
 
 add_test(NAME blinker_diagnostics_output_tests COMMAND blinker_diagnostics_output_tests)
+add_test(NAME blinker_endpoint_integer_step_tests COMMAND blinker_endpoint_integer_step_tests)
 add_test(NAME blinker_wall_clock_tests COMMAND blinker_wall_clock_tests)
 add_test(NAME blinker_task_timing_tests COMMAND blinker_task_timing_tests)
 add_test(NAME blinker_task_calendar_cursor_tests COMMAND blinker_task_calendar_cursor_tests)

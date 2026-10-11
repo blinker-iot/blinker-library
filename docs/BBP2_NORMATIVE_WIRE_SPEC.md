@@ -164,6 +164,7 @@ HELLO body：
 | 7 | bytes(32) | 否 | Field Manifest SHA-256；必须精确 32 B |
 | 8 | array&lt;uint16&gt; | 条件 | Authentication 方法 |
 | 9 | uint8 | 条件 | reliable receive window，1..16 |
+| 12 | uint16 | 否 | Direct BLE鉴权后确认的ATT value上限，20..244 B；包含4 B分片头，不是maxFrame |
 
 Key 6/7 必须成对出现。其 role 语义：Device 应宣告自己当前 Field Manifest；Direct BLE/LAN
 单设备 App/Server session 可宣告其已完整验证并缓存的该设备 Manifest。一个账户级 App MQTT
@@ -191,6 +192,8 @@ revision+fingerprint 与设备当前值精确相等时，设备可在 HELLO 后�
 | 12 | FeaturePresence | 账户 App/Broker 在线状态；不由设备协商，不依赖 Manifest |
 
 HELLO key 10/11 当前同样保留；发送端不得生成，接收端按未知扩展 key 跳过但不得据此启用能力。
+
+2026-10-10 N3已实现的可选扩展：key12仅在DirectSecure鉴权后的BLE Hello请求/响应中确认；启动、Noise、Method2及Hello响应发送均保留20 B。其他bearer不生成该字段，旧peer忽略或不回复该字段时保持20 B。发送端收到认证确认后仅从新完整记录启用最小共同上限，接收端以START实际payload冻结该记录stride；MTU提升自身不授权升级。失败回退不得重新加密或在未知结果下重执行业务，细则和软件/本机限定真机状态见[易用性后续计划§7](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#7-n3-esp32-ble-包长协商)。本扩展不改变Frame或4 B分片版本，不复用key10/11。
 
 发送给某 session 的 logical frame 必须满足：
 
@@ -527,8 +530,10 @@ session-local 分片头加一段连续 BBP/2 frame bytes：
 - Frame ID 顺序为 `1..255,1..`，0 非法；正常新 frame、BBP 层重发和 MTU restart 都必须
   分配新的 ID。回绕只能发生在 frame 边界。
 - START 之后 MTU 增大时，当前 frame 必须保持原 P，可以发送小于新 ATT 上限的 packet。
-- MTU 减小到无法继续原 P 时，发送端必须放弃当前 wire frame，使用新 Frame ID、index 0
-  和新 P 重发完整 logical frame；不得在一个 frame 内混用两个 stride。
+- MTU 减小到无法继续原 P，且 Adapter 能确认当前长度拒绝未消费 packet 时，发送端放弃当前
+  wire frame，使用新 Frame ID、index 0 和新 P 重分片同一 logical record；DirectSecure 必须保留
+  原密文及 nonce，不重新 seal。未知原生发送结果必须关闭会话，不借包长回退重执行业务；
+  不得在一个 frame 内混用两个 stride。
 - 新的合法 START/新 Frame ID 可替换当前未完成 reassembly；相同 Frame ID 的重复 START、
   已完成 frame 的立即重复 START、重复 index、缺口、乱序、错误非终片长度、越界、未知
   version/flag 均必须丢弃并终止当前 reassembly。只有后续合法 START 可以恢复。

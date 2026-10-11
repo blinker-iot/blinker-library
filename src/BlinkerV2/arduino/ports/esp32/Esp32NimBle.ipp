@@ -1,4 +1,5 @@
 #include <esp_err.h>
+#include <host/ble_att.h>
 #include <host/ble_hs.h>
 #include <host/ble_hs_adv.h>
 #include <host/ble_hs_id.h>
@@ -113,6 +114,10 @@ inline Result Esp32NimBleLink::start() {
         return Result::failure(error);
     }
     initialized_ = true;
+    // The central initiates MTU exchange. An SDK unable to accept this
+    // preference retains its default; sessionAt reports the ACTUAL ATT MTU.
+    (void)ble_att_set_preferred_mtu(
+        BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE + 3U);
 
     ble_hs_cfg.reset_cb = &Esp32NimBleLink::onHostReset;
     ble_hs_cfg.sync_cb = &Esp32NimBleLink::onHostSync;
@@ -274,7 +279,16 @@ inline Result Esp32NimBleLink::sessionAt(
         return Result::failure(ErrorCode::NotFound);
     }
     session = session_;
+    session.maxPacketSize = packetCapacity(connectionHandle_);
     return Result::success();
+}
+
+inline uint16_t Esp32NimBleLink::packetCapacity(uint16_t handle) {
+    const uint16_t mtu = ble_att_mtu(handle);
+    if (mtu < 23U) return 0U;
+    const uint16_t payload = static_cast<uint16_t>(mtu - 3U);
+    return payload < BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE
+        ? payload : BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE;
 }
 
 inline Result Esp32NimBleLink::sendPacket(
@@ -289,11 +303,13 @@ inline Result Esp32NimBleLink::sendPacket(
         connectionHandle_ == BLE_HS_CONN_HANDLE_NONE || transmitHandle_ == 0U) {
         return Result::failure(ErrorCode::NotConnected);
     }
-    if (packet.data == nullptr || packet.empty() ||
-        packet.size > session_.maxPacketSize ||
-        packet.size > BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE) {
+    if (packet.data == nullptr || packet.empty()) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
+    const uint16_t capacity = packetCapacity(connectionHandle_);
+    if (capacity == 0U) return Result::failure(ErrorCode::NotConnected);
+    if (packet.size > capacity)
+        return Result::failure(ErrorCode::CapacityExceeded);
 
     os_mbuf* buffer = ble_hs_mbuf_from_flat(
         packet.data, static_cast<uint16_t>(packet.size));
@@ -321,9 +337,15 @@ inline Result Esp32NimBleLink::sendPacket(
         indicationInFlight_ = false;
         portEXIT_CRITICAL(&lock_);
     }
-    return result == 0
-               ? Result::success()
-               : Result::failure(ErrorCode::WouldBlock);
+    if (result == 0) return Result::success();
+    // Native rejection may consume the mbuf. Only the capacity check above
+    // establishes the no-transmission contract needed for record fallback.
+    if (result == BLE_HS_ENOTCONN)
+        return Result::failure(ErrorCode::NotConnected);
+    if (result == BLE_HS_EBUSY || result == BLE_HS_ENOMEM ||
+        result == BLE_HS_EAGAIN || result == BLE_HS_EALREADY)
+        return Result::failure(ErrorCode::WouldBlock);
+    return Result::failure(ErrorCode::ProtocolError);
 }
 
 inline Result Esp32NimBleLink::disconnectSession(uint32_t sessionId) {
@@ -671,7 +693,7 @@ inline int Esp32NimBleLink::handleGattAccess(
     if (attributeHandle == receiveHandle_ &&
         context.op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
         const uint16_t size = OS_MBUF_PKTLEN(context.om);
-        if (size == 0U || size > BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE) {
+        if (size == 0U || size > packetCapacity(connectionHandle)) {
             return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
         }
         uint8_t packet[BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE] = {};
@@ -780,7 +802,7 @@ inline void Esp32NimBleLink::processPendingEvents() {
     if (connect && !connectWasAlsoDisconnected && !session_.connected) {
         session_ = BleSessionInfo();
         session_.sessionId = nextSessionId();
-        session_.maxPacketSize = BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE;
+        session_.maxPacketSize = ble::kMinimumPacketSize;
         session_.connected = true;
         connectedAtMillis_ = millis();
         if (subscribe && subscribeHandle == connectHandle) {
@@ -838,9 +860,11 @@ inline void Esp32NimBleLink::drainPackets() {
         if (sessionAnnounced_ &&
             packet.connectionHandle == connectionHandle_ &&
             packetReceiver_ != nullptr) {
+            BleSessionInfo current;
+            if (!sessionAt(0U, current)) continue;
             packetReceiver_(
                 packetContext_,
-                session_,
+                current,
                 ByteView(packet.data, packet.size));
         }
     }

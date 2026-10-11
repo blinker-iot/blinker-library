@@ -1,6 +1,6 @@
 # Device V2 Arduino 发布配置合同
 
-> 状态：2026-08-23，C4 第一片已实施。本文描述发布工程配置，不增加 Sketch 参数，也不改变 BBP/2、DeviceKey 或组件 API。
+> 合同基线：2026-08-23；当前交付范围更新于2026-10-11。本文描述原发布工程配置，不增加Sketch参数或改变BBP/2、DeviceKey、组件API。先做[最小内部development候选](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#10-核心稳定与最小内部交付)，生产发行单独准入，不重开整组C4维护。
 
 ## 1. 结论
 
@@ -62,6 +62,8 @@ python tools/build_arduino_release.py `
 
 ## 4. 当前证据与剩余阻断
 
+以下ZIP摘要和编译占用是原2026-08-23批次的历史证据，不是当前源码的安装证明。当前白名单为416文件；含N3/整数step的内部ZIP及隔离七目标结果已记录于[执行计划§10.6](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#106-n3与整数step单库候选冻结及安装编译2026-10-11)，后续README/BLE实时例程交付修订取§10.7。精确摘要与每个目标的来源分别记录，不以旧包证明新例程，也不为文档收口更换SDK/依赖或生产信任材料。
+
 - 缺 profile 和未授权 development profile 均已做反向失败测试。
 - development profile 两次构建得到字节一致的 256 文件 ZIP，SHA-256
   `1f2de604e6095667cd1c6e94a88969fd699460e641b13e01978ad66a432e5241`。
@@ -69,8 +71,7 @@ python tools/build_arduino_release.py `
 - production parser 已覆盖 placeholder host、两组测试 key、TLS 无 CA 拒绝和 1～4 key ring 结构。
 
 C4 尚不能标记全部完成：真实 production host/port、P-256/Ed25519 公钥 id、plain/TLS 选择与 CA 尚未由部署环境提供；取得这些
-公开值后生成 production profile，再对该精确 ZIP重跑八目标门禁。不能用 development profile 或仓库模板替代该准入。
+公开值后生成production profile，再对该精确ZIP执行所声明的安装门禁。当前`verify_installed_release.py`是七个普通目标，任务另显式opt-in；不是八个默认目标。不能用development profile或仓库模板替代生产准入，也不能继承旧ZIP的字节证明。
 
-服务仓部署文档已表明设备 Gateway 域名为 `iot.yiyu.pro`，`api.yiyu.pro` 是 Aily 账户 API，二者不得混用。但当前服务代码
-尚无 `BleEnrollmentGrant` 生产签发器和对应 P-256/Ed25519 key ring；因此不能只填入域名并继续沿用测试公钥。服务器完成
-双算法签发/KMS 公钥导出后，才能冻结首个 production profile。
+服务仓部署文档区分设备 Gateway 域名 `iot.yiyu.pro` 与 Aily 账户 API `api.yiyu.pro`，二者不得混用；这些文档不是本轮线上探测。当前服务代码
+已实现`ble-enrollment-signer.js`，`index.js`也可从配置文件装配P-256/Ed25519签发ring；“源码没有签发器”是早期缺口，不再作为当前事实。存在签发代码不等于所选生产环境已配置KMS、密钥/公开ring或完成验收；冻结production profile前须核对实际部署及公开材料，不能只填域名并继续沿用测试公钥。内部development候选按明确本机profile验收，无须以生产KMS完成作为前置。

@@ -18,6 +18,13 @@ bool endpointValueFiniteNumber(double value) {
     return value == value && value <= DBL_MAX && value >= -DBL_MAX;
 }
 
+bool endpointValueSafeInteger(double value) {
+    static const double kMaximumSafeInteger = 9007199254740991.0;
+    return endpointValueFiniteNumber(value) &&
+           value >= -kMaximumSafeInteger && value <= kMaximumSafeInteger &&
+           floor(value) == value;
+}
+
 Result validateNumericConstraints(
     const PropertyConstraints& constraints,
     double value,
@@ -38,6 +45,24 @@ Result validateNumericConstraints(
             (constraints.flags & ConstraintMinimum) != 0U
                 ? constraints.minimum
                 : 0.0;
+        if (type == ValueType::SignedInteger ||
+            type == ValueType::UnsignedInteger) {
+            if (!endpointValueSafeInteger(value) ||
+                !endpointValueSafeInteger(base) ||
+                !endpointValueSafeInteger(constraints.step) ||
+                constraints.step <= 0.0) {
+                return Result::failure(ErrorCode::ValueOutOfRange);
+            }
+            // Convert each safe operand before subtracting: their difference
+            // may exceed double's exact range, but is at most 2^54 - 2 and
+            // therefore fits int64_t. Integer grids have no float tolerance.
+            const int64_t difference = static_cast<int64_t>(value) -
+                                       static_cast<int64_t>(base);
+            if (difference % static_cast<int64_t>(constraints.step) != 0) {
+                return Result::failure(ErrorCode::ValueOutOfRange);
+            }
+            return Result::success();
+        }
         const double quotient = (value - base) / constraints.step;
         const double nearest = quotient >= 0.0
                                    ? floor(quotient + 0.5)

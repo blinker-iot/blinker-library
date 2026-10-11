@@ -2,7 +2,7 @@
 
 更新：2026-09-24。由[任务与 BLE 方案](DEVICE_V2_SCHEDULING_AUTOMATION_AND_BLE_PLAN.md)的 T0b 展开；[总主线](DEVICE_V2_NEXT_EXECUTION_PLAN.md)仍是唯一优先级入口。
 
-**结论：第四十五批已关闭T2最小设备源码交接。** 433项清单在仓库外重建出与第四十四批真机候选完全一致的ZIP，隔离安装/完整编译公开入口及来源/链接检查通过，见§10.44。公开API合同§8.17、软件§10.42、实物§10.43保留；[交接说明](DEVICE_V2_TASK_PILOT_HANDOFF.md)区分用户与维护者。第四十七批已完成[A1-1纯规则/判定软件](../../aily-blinker-services/docs/SERVICE_DEVICE_V2_AUTOMATION_IMPLEMENTATION_PLAN.md)，当前下一步取主线§6第20项Broker有界观察，不修改本机引擎。已分享operator、写额度实物/其他平台/生产材料/三端完整构建独立待办，未知根恢复未实现，T2正式整体未关闭。
+**结论：第四十五批已关闭T2最小设备源码交接。** 433项清单在仓库外重建出与第四十四批真机候选完全一致的ZIP，隔离安装/完整编译公开入口及来源/链接检查通过，见§10.44。公开API合同§8.17、软件§10.42、实物§10.43保留；[交接说明](DEVICE_V2_TASK_PILOT_HANDOFF.md)区分用户与维护者。A1/A2和第86批最小自动化M1～M5已有限收口；当前下一步取[易用性后续计划N1→N2](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md)，不修改本机引擎。已分享operator、写额度实物/其他平台/生产材料/三端完整构建独立待办，未知根恢复未实现，T2正式整体未关闭。
 
 ## 1. 先限定“定时”做什么
 

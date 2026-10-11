@@ -98,6 +98,9 @@ struct HelloBody {
     uint16_t authorizationMethods[kMaxAuthorizationMethods];
     uint8_t authorizationMethodCount;
     uint8_t reliableReceiveWindow;
+    // Optional, session-local BLE ATT value limit. Zero means absent, not
+    // a negotiation of BBP frame/reassembly size or another bearer.
+    uint16_t maxBlePacketSize;
     bool hasManifestRevision;
     bool hasManifestFingerprint;
 
@@ -113,6 +116,7 @@ struct HelloBody {
           authorizationMethods(),
           authorizationMethodCount(0),
           reliableReceiveWindow(0),
+          maxBlePacketSize(0),
           hasManifestRevision(false),
           hasManifestFingerprint(false) {}
 };

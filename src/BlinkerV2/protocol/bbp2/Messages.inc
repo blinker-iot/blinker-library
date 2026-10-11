@@ -51,7 +51,9 @@ Result encodeHelloBody(
         authenticationFeature != (body.authorizationMethodCount != 0U) ||
         body.authorizationMethodCount > kMaxAuthorizationMethods ||
         reliableFeature != (body.reliableReceiveWindow != 0U) ||
-        body.reliableReceiveWindow > kMaxReliableReceiveWindow) {
+        body.reliableReceiveWindow > kMaxReliableReceiveWindow ||
+        (body.maxBlePacketSize != 0U &&
+         (body.maxBlePacketSize < 20U || body.maxBlePacketSize > 244U))) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
     for (uint8_t index = 0;
@@ -83,6 +85,7 @@ Result encodeHelloBody(
     fieldCount += body.hasManifestFingerprint ? 1U : 0U;
     fieldCount += authenticationFeature ? 1U : 0U;
     fieldCount += reliableFeature ? 1U : 0U;
+    fieldCount += body.maxBlePacketSize != 0U ? 1U : 0U;
     if (limits.maxDepth < 2U) {
         return Result::failure(ErrorCode::NestingTooDeep);
     }
@@ -130,6 +133,10 @@ Result encodeHelloBody(
     if (result && reliableFeature) {
         result = writer.writeUnsigned(body.reliableReceiveWindow);
     }
+    if (result && body.maxBlePacketSize != 0U) result = writeKey(writer, 12);
+    if (result && body.maxBlePacketSize != 0U) {
+        result = writer.writeUnsigned(body.maxBlePacketSize);
+    }
     if (!result) {
         return result;
     }
@@ -154,7 +161,7 @@ Result decodeHelloBody(
         uint64_t key = 0;
         result = readKey(reader, key);
         if (!result) return result;
-        if (key <= 9U) {
+        if (key <= 9U || key == 12U) {
             const uint16_t bit = static_cast<uint16_t>(1U << key);
             if ((seen & bit) != 0U) {
                 return Result::failure(ErrorCode::DuplicateField);
@@ -270,6 +277,14 @@ Result decodeHelloBody(
                     return Result::failure(ErrorCode::ValueOutOfRange);
                 }
                 decoded.reliableReceiveWindow = static_cast<uint8_t>(value);
+                break;
+            case 12:
+                result = reader.readUnsigned(value);
+                if (!result) return result;
+                if (value < 20U || value > 244U) {
+                    return Result::failure(ErrorCode::ValueOutOfRange);
+                }
+                decoded.maxBlePacketSize = static_cast<uint16_t>(value);
                 break;
             default:
                 result = reader.skipValue();

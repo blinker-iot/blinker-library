@@ -310,7 +310,7 @@ frame buffer、接收/reassembly buffer 或显式离线队列中，不由 codec 
   Platform BLE/LocalBLE internal product graph；
 - 云端共享/访客仍需后续签名 capability method；
 - ESP32 NimBLE正式候选当前单 central；仍需实机确认scan response、模式切换/回滚、notify背压、WiFi共存和24 h稳定性；
-- UNO R4 默认 20 B，吞吐低于协商大 MTU 的 ESP32；核心真机链路已通过，仍需长稳/恶意断连门禁；
+- UNO R4/Wio 当前 packet 为 20 B。N3 已实现 ESP32 已鉴权 Direct 会话的可选 Hello key12 协商，取双方、实际 MTU 和有界缓冲的最小上限（20～244 B）；启动、Noise、Method2 与 Hello 仍为20 B。明确未发送的长度拒绝按原密文重分片回20 B，未知原生发送结果则关闭会话，不重试业务。软件门禁及ESP32两种包长各三轮限定短验收已通过，故障注入/资源/性能边界见[后续计划§7](DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#7-n3-esp32-ble-包长协商)；实测最大notify141 B，不把确认244 B上限称为满包/PHY吞吐或全平台发布通过；
 - Wio 官方 RTL `2.1.3` 已通过同 owner 三端重认领、App kill、同 Sketch 重刷和 Direct 数据面；自维护 RTL
   不再是应用安全发布依赖。readiness/authentication deadline、32 次重连和 heap 水位已通过，只剩
   24 h authenticated DirectSecure 长稳后才能移出 opt-in preview；

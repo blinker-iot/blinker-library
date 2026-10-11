@@ -309,8 +309,8 @@ BLE 再配网是另一个明确操作，目标是避免设备在写入/联网中
 
 TLS 继续是可选 build/profile，不强制所有 MCU：
 
-- Plain profile 仍必须使用 challenge、随机 nonce、HMAC、短时 session、消息级 MAC、序号和防重放；当前
-  DeviceKey session v1 没有独立 cloud frame key，故 Plain internal graph 只算资源候选，不具备生产准入；
+- 当前 DIY Plain profile 复用 challenge、随机 nonce、HMAC 与短时 session 获取 MQTT 登录信息；它不等于 TLS，也不承诺网络全链路保密或业务帧密码学完整性。DeviceKey session v1 没有独立 cloud frame key，不能把尚未实施的 Cloud Frame Authentication 写成当前必需且已完成的功能；
+- 生产安全增强另评审 TLS 或消息级 MAC/key/序号防重放。Plain DIY 功能接入可先验收，不因缺此增强而重造登录协议；功能通过不等于生产安全准入；
 - raw DeviceKey 不得出现在 HTTP/MQTT、普通 BBP/2 或未加密 BLE 报文；唯一例外是短时 Security1 provisioning
   session 内的 `blinker-config.Install`，并且不得进入日志、analytics 或 crash dump；
 - Plain 只能提供设备认证/消息完整性，不能宣称业务数据保密；被动监听者仍可能看到业务数据和短期 session；
