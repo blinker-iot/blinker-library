@@ -252,6 +252,11 @@ private:
         StringView endpointKey,
         ByteView encodedValue,
         cbor::Type valueType);
+    static Result markDirtyIdThunk(
+        void* context,
+        uint16_t endpointId,
+        ByteView encodedValue,
+        cbor::Type valueType);
     Result dispatchCommand(
         const EndpointDescriptor& endpoint,
         ByteView encodedValue,
@@ -310,6 +315,10 @@ private:
     bool stateApplyActive_;
     Diagnostics* diagnostics_;
     IClock* clock_;
+    // An unchanged blocked selection is already versioned. Keep only its
+    // revision/count; values and field bits remain in the existing stores.
+    uint32_t blockedStateRevision_;
+    size_t blockedStateFieldCount_;
 
     Client(const Client&);
     Client& operator=(const Client&);

@@ -108,26 +108,29 @@ Result OutboundScheduler::commitStateSelection(
         selectedCount_ > dirtyCount_) {
         return Result::failure(ErrorCode::StateConflict);
     }
-    size_t cleared = 0U;
+    const bool blocked = transportResult.code() == ErrorCode::WouldBlock;
+    size_t matched = 0U;
     for (size_t index = 0U; index < fieldCount_; ++index) {
         if (!isBitSet(selection(), index)) continue;
         if (!stateDirty(index)) {
             return Result::failure(ErrorCode::StateConflict);
         }
-        clearBit(dirtyFields_, index);
-        ++cleared;
+        if (!blocked) clearBit(dirtyFields_, index);
+        ++matched;
     }
-    if (cleared != selectedCount_) {
+    if (matched != selectedCount_) {
         return Result::failure(ErrorCode::InternalError);
     }
-    dirtyCount_ -= cleared;
+    if (!blocked) dirtyCount_ -= matched;
     clearBitmap(selectedFields_);
     selectedCount_ = 0U;
     lastFlushAt_ = now;
     hasFlushed_ = true;
     ++counters_.stateFlushes;
     if (!transportResult) ++counters_.stateTransportErrors;
-    return Result::success();
+    // A full TX slot is temporary: retain the latest state for a rate-limited
+    // retry, and stop a forced multi-frame flush without spinning.
+    return blocked ? transportResult : Result::success();
 }
 
 void OutboundScheduler::deferStateFlush() {

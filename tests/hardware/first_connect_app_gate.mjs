@@ -1,12 +1,16 @@
 // Debug-App measurement only: delegates every operation to the real implementation.
 // No synthetic credentials, readiness, HTTP responses or automatic Action replay.
-export async function firstConnectAppGate({ mode, logicalDeviceId: id, ownerId, expectedTransport = 'cloud', measureBlePhases = false, useCachedAccountForBle = false, requireCloudCapable = true, testConnectionPriority, testPriorityRejection = false, cancelAtPhase }) {
+export async function firstConnectAppGate(input) {
+  // Retired experiments awaited an unbounded native hint. Never silently
+  // accept them as measurement of the production-owned bounded window.
+  if ('testConnectionPriority' in input || 'testPriorityRejection' in input)
+    throw Error('Legacy BLE priority experiment removed; use the existing bounded bootstrap window');
+  const { mode, logicalDeviceId: id, ownerId, expectedTransport = 'cloud', measureBlePhases = false,
+    useCachedAccountForBle = false, requireCloudCapable = true, cancelAtPhase, eventLimit = 512 } = input;
+  if (!Number.isInteger(eventLimit) || eventLimit < 16 || eventLimit > 2048) throw Error('Invalid measurement event limit');
   if (typeof requireCloudCapable !== 'boolean' || (!requireCloudCapable
     && (expectedTransport !== 'ble' || !measureBlePhases))) throw Error('Pure BLE requires explicit measured BLE mode');
-  if (testConnectionPriority !== undefined && (testConnectionPriority !== 1
-    || expectedTransport !== 'ble' || !measureBlePhases)) throw Error('Invalid BLE timing experiment');
-  if (typeof testPriorityRejection !== 'boolean' || testPriorityRejection && testConnectionPriority !== 1
-    || cancelAtPhase !== undefined && (mode !== 'cancel' || !measureBlePhases || expectedTransport !== 'ble'
+  if (cancelAtPhase !== undefined && (mode !== 'cancel' || !measureBlePhases || expectedTransport !== 'ble'
       || !['gatt', 'authentication', 'manifest', 'state'].includes(cancelAtPhase))) throw Error('Invalid BLE fault/cancel experiment');
   const root = ng.getComponent(document.querySelector('app-root'));
   const ui = root.deviceService.deviceUi;
@@ -43,44 +47,104 @@ export async function firstConnectAppGate({ mode, logicalDeviceId: id, ownerId, 
     if (!useCachedAccountForBle) await root.userService.getAllInfo();
     gate = globalThis.__blinkerFirstConnectGate = {
       id, started: performance.now(), session: ui.deviceV2.client.session,
-      events: [], restore: [], commandsAttempted: false, exiting: false,
-      testPriorityRejection, commandAcks: [],
+      events: [], eventsDropped: 0, restore: [], active: true, commandsAttempted: false, exiting: false,
+      commandAcks: [],
     };
     let reachedPhase;
     const phase = new Promise(resolve => { reachedPhase = resolve; });
-    const trace = (name, state) => {
-      gate.events.push({ name, state, millis: Math.round(performance.now() - gate.started) });
+    const trace = (name, state, facts = {}) => {
+      if (!gate.active || gate.exiting) return;
+      if (gate.events.length < eventLimit) gate.events.push({ name, state, ...facts, millis: Math.round(performance.now() - gate.started) });
+      else gate.eventsDropped++;
       if (name === cancelAtPhase && state === 'start') reachedPhase();
     };
-    const priority = async (deviceId, value) => {
-      const label = value === 1 ? 'priority-request' : 'priority-balanced';
-      trace(label, 'start');
+    // Exact native scanner categories only, never exception text or IDs. Data
+    // descriptors avoid invoking arbitrary getters on an unknown rejection.
+    const failureCategory = error => {
+      const dataString = key => {
+        try {
+          const field = error && Object.getOwnPropertyDescriptor(error, key);
+          return field && typeof field.value === 'string' ? field.value : undefined;
+        } catch { return undefined; }
+      };
+      const categories = {
+        BLE_SCAN_BACKGROUND: 'scan-background', BLE_SCAN_BUSY: 'scan-busy',
+        BLE_SCAN_BUDGET_INVALID: 'scan-budget-invalid', BLE_SCAN_UNAVAILABLE: 'scan-unavailable',
+        BLE_SCAN_BUDGET_STORAGE_FAILED: 'scan-budget-storage-failed', BLE_SCAN_THROTTLED: 'scan-throttled',
+        BLE_SCAN_PERMISSION: 'scan-permission', BLE_SCAN_FAILED: 'scan-failed',
+        BLE_SCAN_CLOSE_FAILED: 'scan-close-failed', BLE_SCAN_DEADLINE: 'scan-deadline',
+        BLE_SCAN_REGISTRATION_FAILED: 'scan-registration-failed', BLE_SCAN_UNSUPPORTED: 'scan-unsupported',
+        BLE_SCAN_RESOURCES: 'scan-resources', BLE_SCAN_CANCELLED: 'cancelled',
+        BLE_DIRECT_SCAN_CANCELLED: 'cancelled', BLE_DIRECT_CONNECT_CANCELLED: 'cancelled',
+        BLE_DIRECT_SCAN_TIMEOUT: 'scan-timeout',
+      };
+      const message = dataString('message');
+      if (Object.hasOwn(categories, message)) return categories[message];
+      if (dataString('name') === 'AbortError') return 'cancelled';
       try {
-        if (testPriorityRejection) throw Error('Explicit unsupported-hint fault injection');
-        await globalThis.Capacitor.nativePromise('BluetoothLe', 'requestConnectionPriority', {
-          deviceId, connectionPriority: value,
-        });
-        trace(label, 'resolved');
-      } catch { trace(label, 'rejected'); } // An optional hint cannot reject authentication/control.
+        // Use the built-in accessor, never an unknown object's name getter.
+        const name = typeof DOMException === 'function'
+          && Object.getOwnPropertyDescriptor(DOMException.prototype, 'name')?.get;
+        if (name && name.call(error) === 'AbortError') return 'cancelled';
+      } catch { /* Non-DOMException rejection. */ }
+      return 'unknown';
     };
-    const wrap = (object, name, targetArgument, label = name, onResult = value => value) => {
-      const original = object[name];
-      if (typeof original !== 'function') throw Error('Measurement method missing');
+    // Observational settlement must not replace a Promise, inspect a payload,
+    // or make an observation failure reject the actual operation.
+    const settlement = (result, resolved, rejected) => {
+      try {
+        const then = result?.then;
+        if (typeof then === 'function') then.call(result, resolved, rejected);
+        else resolved(result);
+      } catch { trace('measurement-observation', 'unavailable'); }
+    };
+    // Connection-local observation, including synchronous carrier facts. Keep
+    // the exact original result/promise and never inspect record bodies.
+    const observe = (object, name, label, onStart = () => {}, onResult = () => {}, selected = () => true) => {
+      let original;
+      try { original = object?.[name]; } catch { return false; }
+      if (typeof original !== 'function') return false; // Report coverage, do not invent a phase.
       const hadOwn = Object.hasOwn(object, name);
       const wrapped = function (...args) {
-        if (targetArgument && args[0] !== id) return original.apply(this, args);
-        trace(label, 'start');
-        try {
-          return Promise.resolve(original.apply(this, args)).then(value => {
-            trace(label, 'resolved'); return onResult(value, args);
-          }, error => { trace(label, 'rejected'); throw error; });
-        } catch (error) { trace(label, 'rejected'); throw error; }
+        if (!selected(args)) return original.apply(this, args);
+        const started = performance.now();
+        let facts = {};
+        if (gate.active && !gate.exiting) {
+          try { facts = onStart(args) ?? {}; } catch { trace('measurement-observation', 'unavailable'); }
+          trace(label, 'start', facts);
+        }
+        const rejected = error => {
+          if (!gate.active || gate.exiting) return;
+          trace(label, 'rejected', {
+            ...facts, durationMs: Math.round(performance.now() - started), failureCategory: failureCategory(error),
+          });
+        };
+        let result;
+        try { result = original.apply(this, args); }
+        catch (error) { rejected(error); throw error; }
+        const resolved = value => {
+          if (!gate.active || gate.exiting) return;
+          trace(label, 'resolved', { ...facts, durationMs: Math.round(performance.now() - started) });
+          try {
+            const observed = onResult(value, args);
+            // A future asynchronous observation failure is also only missing
+            // coverage. It must not become an unhandled rejection.
+            if (observed !== undefined) settlement(observed, () => {}, () => trace('measurement-observation', 'unavailable'));
+          } catch { trace('measurement-observation', 'unavailable'); }
+        };
+        if (gate.active && !gate.exiting) settlement(result, resolved, rejected);
+        return result;
       };
       object[name] = wrapped;
       gate.restore.push(() => {
         if (object[name] !== wrapped) throw Error('Measurement ownership changed');
         if (hadOwn) object[name] = original; else delete object[name];
       });
+      return true;
+    };
+    const wrap = (object, name, targetArgument, label = name, onResult = () => {}) => {
+      if (!observe(object, name, label, undefined, onResult, args => !targetArgument || args[0] === id))
+        throw Error('Measurement method missing');
     };
     wrap(ui, 'connectCloud', true);
     wrap(ui, 'sendCommand', true, 'command', (value, args) => {
@@ -93,23 +157,73 @@ export async function firstConnectAppGate({ mode, logicalDeviceId: id, ownerId, 
       const original = ui.ble.client, hadOwn = Object.hasOwn(ui.ble, 'client');
       const factory = function (link, ...args) {
         const client = original.call(this, link, ...args);
-        wrap(link, 'connect', false, 'gatt', async (value, args) => {
-          if (testConnectionPriority !== undefined && !gate.exiting) {
-            // Explicit, connection-local Android experiment. No MTU, packet,
-            // authentication, wait interval or persistent configuration changes.
-            const deviceId = args[0].device.deviceId;
-            let balanced;
-            gate.balance = () => balanced ??= priority(deviceId, 0);
-            await priority(deviceId, 1);
+        if (!gate.active || gate.exiting) return client;
+        let authenticating = true, authWrites = 0, pendingRecord, preparingPackets = false;
+        const bootstrapPhase = record => {
+          if (record?.length >= 10 && record[0] === 0x42 && record[1] === 0x4b
+            && record[2] === 2 && record[5] === 10) {
+            if (record[3] === 1) return 'hello';
+            if (record[3] === 4) return ++authWrites === 1 ? 'method2-challenge' : 'method2-authorize';
           }
-          return value;
+          return preparingPackets ? 'authenticated-hello' : 'unknown';
+        };
+        const recordSend = observe(link, 'sendRecord', 'record-send', recordArgs => {
+          if (!authenticating || gate.exiting) return;
+          pendingRecord = bootstrapPhase(recordArgs[0]);
+          const recordBytes = recordArgs[0]?.byteLength;
+          const facts = { phase: pendingRecord };
+          if (Number.isInteger(recordBytes) && recordBytes >= 1 && recordBytes <= 1048) {
+            const estimatedFragments = Math.ceil(recordBytes / 16);
+            Object.assign(facts, { recordBytes, packetBytes: 20, estimatedFragments,
+              estimatedInterFragmentWaitMs: (estimatedFragments - 1) * 30 });
+          }
+          trace('bootstrap-record', 'send', facts);
+          return facts;
         });
+        const recordReceive = observe(link, 'receiveRecord', 'record-receive', () =>
+          authenticating && pendingRecord && !gate.exiting ? { phase: pendingRecord } : {}, record => {
+          if (!authenticating || !pendingRecord || gate.exiting) return;
+          // Receipt of bytes is not a validated proof. authenticate:resolved
+          // remains the only full authentication-success observation.
+          const recordBytes = record?.byteLength;
+          trace('bootstrap-record', 'received', { phase: pendingRecord,
+            ...(Number.isInteger(recordBytes) && recordBytes >= 1 && recordBytes <= 1048 ? { recordBytes } : {}) });
+          pendingRecord = undefined;
+        });
+        const mtu = observe(link, 'maxPacketSize', 'mtu-probe', () => {}, size => {
+          if (Number.isInteger(size) && size >= 20 && size <= 244)
+            trace('packet-capacity', 'observed', { packetBytes: size });
+        });
+        const packetPrepare = observe(link, 'preparePacketNegotiation', 'packet-prepare', () => { preparingPackets = true; });
+        const packetApply = observe(link, 'applyPacketSize', 'packet-apply', () => {}, (_, packetArgs) => {
+          const size = packetArgs[0];
+          if (Number.isInteger(size) && size >= 20 && size <= 244)
+            trace('packet-accepted', 'observed', { packetBytes: size });
+        });
+        trace('phase-coverage', 'observed', { bootstrapRecords: recordSend && recordReceive,
+          mtuProbe: mtu, packetNegotiation: packetPrepare && packetApply, noise: 'not-used-on-bound-direct-connect' });
+        wrap(link, 'connect', false, 'gatt');
         wrap(client, 'authenticate', false, 'authentication', session => {
+          authenticating = false;
           if (gate.exiting) return session;
+          let manifestRequests = 0, cachedMatch = false;
+          // Observe the real account-bound load exactly once when the session
+          // requests it. Never read it early or retain the Manifest/fingerprint.
+          const cache = session.manifestCache;
+          trace('manifest-cache-hint', 'observed', { available: !!cache });
+          observe(cache, 'load', 'manifest-cache-load', () => {}, candidate => {
+            cachedMatch = !!candidate && candidate.revision === cache.hello.revision
+              && candidate.fingerprint === cache.hello.fingerprint;
+            trace('manifest-cache-candidate', 'observed', { present: !!candidate, matchesHello: cachedMatch });
+          });
           const channel = session.channel, send = channel.send, ownSend = Object.hasOwn(channel, 'send');
           const measureSend = function (frame) {
-            gate.events.push({ name: 'frame-send', kind: frame.kind, bodyBytes: frame.body.length,
-              millis: Math.round(performance.now() - gate.started) });
+            if (gate.active && !gate.exiting) {
+              try {
+                if (frame.kind === 2) manifestRequests++;
+                trace('frame-send', 'start', { kind: frame.kind, bodyBytes: frame.body.length });
+              } catch { trace('measurement-observation', 'unavailable'); }
+            }
             return send.call(this, frame);
           };
           channel.send = measureSend;
@@ -118,11 +232,16 @@ export async function firstConnectAppGate({ mode, logicalDeviceId: id, ownerId, 
             if (ownSend) channel.send = send; else delete channel.send;
           });
           wrap(session, 'synchronize', false, 'manifest-state');
-          wrap(session, 'synchronizeManifest', false, 'manifest');
+          wrap(session, 'synchronizeManifest', false, 'manifest', value => {
+            const accepted = session.store.snapshot(id).manifestAccepted === true;
+            trace('manifest-cache-result', 'observed', { accepted, requests: manifestRequests,
+              outcome: manifestRequests > 0 ? (cachedMatch ? 'fetch-after-cache' : 'fetch')
+                : cachedMatch && accepted ? 'hit' : 'unobserved' });
+            return value;
+          });
           wrap(session, 'acceptManifest', false, 'manifest-accept', value => {
             const state = session.store.snapshot(id);
-            gate.events.push({ name: 'manifest-ack-state', accepted: state.manifestAccepted, fresh: state.stateFresh,
-              millis: Math.round(performance.now() - gate.started) });
+            trace('manifest-ack-state', 'observed', { accepted: state.manifestAccepted === true, fresh: state.stateFresh === true });
             return value;
           });
           wrap(session, 'synchronizeState', false, 'state');
@@ -151,12 +270,12 @@ export async function firstConnectAppGate({ mode, logicalDeviceId: id, ownerId, 
       await sleep(100);
       const shortlyAfterExit = snapshot();
       await sleep(6400);
-      // Native disconnect ends this connection's hint; do not issue a late
-      // BALANCED request against a possible successor GATT connection.
+      // Native disconnect and the production window own cancellation. This
+      // observer never restores priority or requests a hint on a successor.
       const result = { ...snapshot(), exitMillis, cancelAtPhase, phaseReached,
         cancelFailed: !!cancelAtPhase && !phaseReached, shortlyAfterExit,
-        testPriorityRejection: gate.testPriorityRejection,
-        events: [...gate.events], sameAccountSession: gate.session === ui.deviceV2.client.session };
+        events: [...gate.events], eventsDropped: gate.eventsDropped, sameAccountSession: gate.session === ui.deviceV2.client.session };
+      gate.active = false;
       for (const restore of gate.restore.reverse()) restore();
       delete globalThis.__blinkerFirstConnectGate;
       return result;
@@ -165,22 +284,19 @@ export async function firstConnectAppGate({ mode, logicalDeviceId: id, ownerId, 
       const current = page();
       if (current?.logicalDeviceId === id && current.canControl && current.snapshot.stateFresh
         && current.snapshot.manifestAccepted && ui.transport(id).value === expectedTransport) {
-        const readyBeforeBalanceMillis = Math.round(performance.now() - gate.started);
-        await gate.balance?.();
-        return { ...snapshot(), readyBeforeBalanceMillis, readyMillis: Math.round(performance.now() - gate.started),
-          testPriorityRejection: gate.testPriorityRejection,
-          events: [...gate.events], sameAccountSession: gate.session === ui.deviceV2.client.session };
+        trace('page-ready', 'observed', { manifestAccepted: true, stateFresh: true, transport: expectedTransport });
+        return { ...snapshot(), readyMillis: Math.round(performance.now() - gate.started),
+          events: [...gate.events], eventsDropped: gate.eventsDropped, sameAccountSession: gate.session === ui.deviceV2.client.session };
       }
       await sleep(50);
     }
-    await gate.balance?.();
-    return { ...snapshot(), openFailed: true, events: [...gate.events] };
+    return { ...snapshot(), openFailed: true, events: [...gate.events], eventsDropped: gate.eventsDropped };
   }
   if (!gate || gate.id !== id) throw Error('Matching open measurement required');
   if (mode === 'observe') {
     const samples = [];
     for (let n = 0; n < 14; n++) { samples.push(snapshot()); await sleep(500); }
-    return { samples, events: [...gate.events], sameAccountSession: gate.session === ui.deviceV2.client.session };
+    return { samples, events: [...gate.events], eventsDropped: gate.eventsDropped, sameAccountSession: gate.session === ui.deviceV2.client.session };
   }
   if (mode === 'commands') {
     const p = page();
@@ -206,7 +322,7 @@ export async function firstConnectAppGate({ mode, logicalDeviceId: id, ownerId, 
       && gate.commandAcks.at(-1)?.key === 'button' && !p.fieldError?.(button);
     return { ...after, before, propertyMillis, actionMillis, propertyAcknowledged, actionAcknowledged,
       commandsFailed: !actionAcknowledged || !after.ready || value('power') !== !oldPower || value('buttonPresses') !== oldCount + 1,
-      events: [...gate.events], sameAccountSession: gate.session === ui.deviceV2.client.session };
+      events: [...gate.events], eventsDropped: gate.eventsDropped, sameAccountSession: gate.session === ui.deviceV2.client.session };
   }
   if (mode === 'close') {
     const at = performance.now();
@@ -214,7 +330,8 @@ export async function firstConnectAppGate({ mode, logicalDeviceId: id, ownerId, 
     await root.viewService.router.navigateByUrl('/home/device');
     for (let n = 0; n < 60 && (ui.connections.size || ui.ble.accountLinks.size || ui.ble.opening); n++) await sleep(100);
     const result = { ...snapshot(), cleanupMillis: Math.round(performance.now() - at),
-      events: [...gate.events], sameAccountSession: gate.session === ui.deviceV2.client.session };
+      events: [...gate.events], eventsDropped: gate.eventsDropped, sameAccountSession: gate.session === ui.deviceV2.client.session };
+    gate.active = false;
     for (const restore of gate.restore.reverse()) restore();
     delete globalThis.__blinkerFirstConnectGate;
     return result;

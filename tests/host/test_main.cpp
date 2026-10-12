@@ -6325,6 +6325,828 @@ public:
     uint32_t sessionPermissions(uint32_t) const override { return permissions; }
 };
 
+void testOutboundStateBackpressureScheduling() {
+    uint8_t dirty[1] = {}, selected[1] = {};
+    blinker::OutboundScheduler scheduler(
+        blinker::MutableByteSpan(dirty, sizeof(dirty)),
+        blinker::MutableByteSpan(selected, sizeof(selected)));
+    CHECK_TRUE(scheduler.prepare(2U).ok());
+    const uint32_t start = UINT32_MAX - 100U;
+    CHECK_TRUE(scheduler.markStateDirty(0U, start).ok());
+    CHECK_TRUE(scheduler.markStateDirty(1U, start).ok());
+    CHECK_EQ(static_cast<size_t>(2U), scheduler.selectStateFields(2U));
+    CHECK_EQ(blinker::ErrorCode::WouldBlock,
+        scheduler.commitStateSelection(start + 250U,
+            blinker::Result::failure(blinker::ErrorCode::WouldBlock)).code());
+    CHECK_EQ(static_cast<size_t>(2U), scheduler.pendingStateCount());
+    CHECK_TRUE(scheduler.stateDirty(0U) && scheduler.stateDirty(1U));
+    CHECK_EQ(static_cast<size_t>(0U), scheduler.selectedStateCount());
+    CHECK_EQ(static_cast<uint8_t>(0U), selected[0]);
+    CHECK_TRUE(!scheduler.stateFlushDue(start + 499U));
+    CHECK_TRUE(scheduler.stateFlushDue(start + 500U));
+    // Explicit observation boundaries still force a bounded settlement.
+    CHECK_TRUE(scheduler.stateFlushDue(start + 250U, true));
+    for (uint32_t attempt = 1U; attempt < 3U; ++attempt) {
+        const uint32_t at = start + 250U * (attempt + 1U);
+        CHECK_EQ(static_cast<size_t>(2U), scheduler.selectStateFields(2U));
+        CHECK_EQ(blinker::ErrorCode::WouldBlock,
+            scheduler.commitStateSelection(at,
+                blinker::Result::failure(blinker::ErrorCode::WouldBlock)).code());
+        CHECK_EQ(static_cast<size_t>(2U), scheduler.pendingStateCount());
+        CHECK_TRUE(scheduler.stateDirty(0U) && scheduler.stateDirty(1U));
+        CHECK_EQ(static_cast<size_t>(0U), scheduler.selectedStateCount());
+        CHECK_EQ(static_cast<uint8_t>(0U), selected[0]);
+        CHECK_TRUE(!scheduler.stateFlushDue(at + 249U));
+        CHECK_TRUE(scheduler.stateFlushDue(at + 250U));
+    }
+    CHECK_EQ(static_cast<size_t>(2U), scheduler.selectStateFields(2U));
+    CHECK_TRUE(scheduler.commitStateSelection(start + 1000U,
+        blinker::Result::success()).ok());
+    CHECK_EQ(static_cast<size_t>(0U), scheduler.pendingStateCount());
+    CHECK_TRUE(!scheduler.stateFlushDue(start + 1000U, true));
+
+    const blinker::ErrorCode permanentErrors[] = {
+        blinker::ErrorCode::NotConnected, blinker::ErrorCode::BufferTooSmall
+    };
+    for (size_t index = 0U; index < 2U; ++index) {
+        CHECK_TRUE(scheduler.markStateDirty(0U, start + 1000U).ok());
+        CHECK_EQ(static_cast<size_t>(1U), scheduler.selectStateFields(1U));
+        CHECK_TRUE(scheduler.commitStateSelection(start + 1000U,
+            blinker::Result::failure(permanentErrors[index])).ok());
+        CHECK_EQ(static_cast<size_t>(0U), scheduler.pendingStateCount());
+    }
+    CHECK_EQ(5U, scheduler.counters().stateTransportErrors);
+}
+
+void testSingleSlotEventStateBackpressure(bool withCloud) {
+    static const blinker::FieldSpec fields[] = {
+        blinker::FieldSpec("buttonPresses", blinker::EndpointKind::Property,
+            blinker::ValueType::UnsignedInteger,
+            blinker::AccessRead | blinker::AccessWrite | blinker::AccessNotify),
+        blinker::FieldSpec("button", blinker::EndpointKind::Action,
+            blinker::ValueType::Null, blinker::AccessCommand),
+        blinker::FieldSpec("buttonPressed", blinker::EndpointKind::Event,
+            blinker::ValueType::UnsignedInteger, blinker::AccessEvent)
+    };
+    blinker::ClientStorage<3, 256, 96, 16> storage;
+    blinker::DeviceRuntimeConfig config;
+    config.maxFrameSize = 256U;
+    config.maxReassemblySize = 256U;
+    config.reliableReceiveWindow = 1U;
+    blinker::Client client(storage.buffers(fields), config);
+    FakeClock clock;
+    SingleSlotTransport local;
+    FakeTransport cloud;
+    local.featureFlags |= blinker::TransportFeatureLocal |
+                          blinker::TransportFeatureAuthenticated |
+                          blinker::TransportFeaturePeerInitiatesHello;
+    cloud.featureFlags |= blinker::TransportFeatureCloud |
+                          blinker::TransportFeatureAuthenticated;
+    struct Capture { blinker::Client* client; uint32_t calls; } capture = {&client, 0U};
+    auto handler = [](void* context, const blinker::EndpointHandle&,
+                      const blinker::EndpointValueView&,
+                      const blinker::RxContext&) -> blinker::Result {
+        Capture& state = *static_cast<Capture*>(context);
+        const blinker::Result result = state.client->endpoints().find("buttonPresses")
+            .setUnsigned(++state.calls);
+        return result ? state.client->endpoints().find("buttonPressed")
+            .emitUnsigned(state.calls) : result;
+    };
+    CHECK_TRUE(client.endpoints().find("button").onCommand(handler, &capture).ok());
+    CanonicalStateWriteCapture stateWrites;
+    CHECK_TRUE(client.setStateWriteHandler(&acceptCanonicalStateWrite, &stateWrites).ok());
+    CHECK_TRUE(client.setMonotonicClock(&clock).ok());
+    CHECK_TRUE(client.addTransport(local).ok());
+    if (withCloud) CHECK_TRUE(client.addTransport(cloud).ok());
+    CHECK_TRUE(client.begin().ok());
+    uint8_t bodyBytes[128] = {}, frameBytes[256] = {};
+    blinker::ByteView body, frame;
+    blinker::bbp2::HelloBody deviceHello;
+    if (withCloud) {
+        client.poll(1000U); // Runtime sends the transport-initiated Cloud Hello.
+        blinker::bbp2::FrameView outbound;
+        CHECK_TRUE(blinker::bbp2::parseFrame(
+            blinker::ByteView(cloud.lastSent, cloud.lastSentSize), outbound).ok());
+        CHECK_TRUE(blinker::bbp2::decodeHelloBody(outbound.body, deviceHello).ok());
+    }
+    auto hello = [&](FakeTransport& port, uint32_t sessionId, bool cloudPeer) {
+        blinker::bbp2::HelloBody value;
+        value.role = blinker::bbp2::PeerRole::App;
+        value.versions[0] = blinker::bbp2::kVersion;
+        value.versionCount = 1U;
+        value.features = blinker::bbp2::FeatureReliableDelivery |
+                         blinker::bbp2::FeatureStateRevision;
+        value.reliableReceiveWindow = 1U;
+        value.maxFrameSize = 256U;
+        value.maxReassemblySize = 256U;
+        if (cloudPeer) {
+            value.features |= blinker::bbp2::FeatureManifest | blinker::bbp2::FeatureEndpointIds;
+            value.manifestRevision = deviceHello.manifestRevision;
+            value.hasManifestRevision = true;
+            value.manifestFingerprint = deviceHello.manifestFingerprint;
+            value.hasManifestFingerprint = true;
+        }
+        CHECK_TRUE(blinker::bbp2::encodeHelloBody(value,
+            blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
+        CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::Hello,
+            blinker::bbp2::FlagIsResponse, 1U, body,
+            blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
+        port.inject(frame, 0U, true, sessionId);
+    };
+    hello(local, 7U, false);
+    if (withCloud) hello(cloud, 0U, true);
+    CHECK_TRUE(client.endpoints().find("buttonPresses").setUnsigned(0U).ok());
+    clock.advance(250U);
+    client.poll(1000U);
+    client.poll(1000U); // Drain the baseline State before the one Action.
+    CHECK_EQ(1U, client.runtime().stateRevision());
+
+    blinker::bbp2::KeyedBodyWriter writer(
+        blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)));
+    CHECK_TRUE(writer.begin(1U).ok());
+    CHECK_TRUE(writer.writeNull(blinker::StringView("button", 6U)).ok());
+    CHECK_TRUE(writer.finish(body).ok());
+    CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::Command,
+        blinker::bbp2::FlagAckRequired, 10U, body,
+        blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
+    const uint32_t acceptedBefore = local.sendCount;
+    local.inject(frame, 0U, true, 7U);
+    CHECK_EQ(1U, capture.calls);
+    CHECK_EQ(acceptedBefore + 1U, local.sendCount); // Only Event fit the TX slot.
+    CHECK_EQ(2U, client.runtime().stateRevision());
+    CHECK_EQ(2U, client.outboundCounters().stateFlushes); // No force-flush busy loop.
+    CHECK_EQ(1U, client.outboundCounters().stateTransportErrors);
+    blinker::bbp2::FrameView outbound;
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(local.lastSent, local.lastSentSize), outbound).ok());
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Event), outbound.header.kind);
+    blinker::cbor::Reader eventReader(outbound.body);
+    size_t count = 0U;
+    blinker::StringView key;
+    uint64_t value = 0U;
+    CHECK_TRUE(eventReader.readMapSize(count).ok());
+    CHECK_EQ(static_cast<size_t>(1U), count);
+    CHECK_TRUE(eventReader.readText(key).ok());
+    CHECK_TRUE(key.size == 13U && std::memcmp(key.data, "buttonPressed", 13U) == 0);
+    CHECK_TRUE(eventReader.readUnsigned(value).ok());
+    CHECK_EQ(static_cast<uint64_t>(1U), value);
+    const uint32_t cloudSends = cloud.sendCount;
+    if (withCloud) {
+        CHECK_TRUE(blinker::bbp2::parseFrame(
+            blinker::ByteView(cloud.lastSent, cloud.lastSentSize), outbound).ok());
+        blinker::bbp2::StatePatchBody patch;
+        CHECK_TRUE(blinker::bbp2::decodeStatePatchBody(outbound.body, patch).ok());
+        CHECK_EQ(2U, patch.revision); // This peer accepted the first attempt.
+    }
+    local.stalled = true;
+    const uint32_t blockedAttempts = local.attempts;
+    client.poll(1000U);
+    CHECK_EQ(blockedAttempts + 1U, local.attempts); // One AckPending retry, no State retry.
+    local.stalled = false;
+    client.poll(1000U);
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(local.lastSent, local.lastSentSize), outbound).ok());
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Ack), outbound.header.kind);
+    blinker::bbp2::AckBody ack;
+    CHECK_TRUE(blinker::bbp2::decodeAckBody(outbound.body, ack).ok());
+    CHECK_EQ(static_cast<uint16_t>(10U), ack.acknowledgedSequence);
+    CHECK_EQ(7U, local.lastTarget.sessionId);
+    CHECK_EQ(cloudSends, cloud.sendCount); // ACK only to its original lane.
+    client.poll(1000U); // Drain ACK before State becomes due.
+    if (withCloud) {
+        CHECK_TRUE(client.endpoints().find("buttonPresses").setUnsigned(2U).ok());
+        CHECK_EQ(1U, client.outboundCounters().stateCoalesced);
+    }
+    const uint32_t ackAttempts = local.attempts;
+    clock.advance(249U);
+    client.poll(1000U);
+    CHECK_EQ(ackAttempts, local.attempts);
+    CHECK_EQ(2U, client.outboundCounters().stateFlushes);
+    clock.advance(1U);
+    client.poll(1000U);
+    CHECK_EQ(ackAttempts + 1U, local.attempts);
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(local.lastSent, local.lastSentSize), outbound).ok());
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Patch), outbound.header.kind);
+    blinker::bbp2::StatePatchBody patch;
+    CHECK_TRUE(blinker::bbp2::decodeStatePatchBody(outbound.body, patch).ok());
+    const uint32_t retryRevision = withCloud ? 3U : 2U;
+    CHECK_EQ(retryRevision, patch.revision); // Only a real coalesced report creates a new version.
+    blinker::cbor::Reader stateReader(patch.values);
+    CHECK_TRUE(stateReader.readMapSize(count).ok());
+    CHECK_EQ(static_cast<size_t>(1U), count);
+    CHECK_TRUE(stateReader.readText(key).ok());
+    CHECK_TRUE(key.size == 13U && std::memcmp(key.data, "buttonPresses", 13U) == 0);
+    CHECK_TRUE(stateReader.readUnsigned(value).ok());
+    CHECK_EQ(static_cast<uint64_t>(withCloud ? 2U : 1U), value);
+    if (withCloud) {
+        CHECK_EQ(cloudSends + 1U, cloud.sendCount);
+        CHECK_TRUE(blinker::bbp2::parseFrame(
+            blinker::ByteView(cloud.lastSent, cloud.lastSentSize), outbound).ok());
+        CHECK_TRUE(blinker::bbp2::decodeStatePatchBody(outbound.body, patch).ok());
+        CHECK_EQ(3U, patch.revision);
+    }
+    clock.advance(250U);
+    client.poll(1000U);
+    CHECK_EQ(ackAttempts + 1U, local.attempts); // Dirty cleared only after accepted retry.
+    CHECK_EQ(1U, capture.calls); // Never execute or resend the Action again.
+    CHECK_EQ(1U, client.outboundCounters().eventDispatched);
+
+    // A snapshot excludes its source even when another peer has backpressure.
+    CHECK_TRUE(client.endpoints().find("buttonPresses").setUnsigned(3U).ok());
+    if (withCloud) cloud.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    CHECK_TRUE(encodeTestStateRequest(0U, 0U, false,
+        blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
+    CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::StateRequest,
+        blinker::bbp2::FlagNone, 11U, body,
+        blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
+    const uint32_t beforeSnapshot = local.sendCount;
+    local.inject(frame, 0U, true, 7U);
+    CHECK_EQ(beforeSnapshot + 1U, local.sendCount); // StatePage, not a preceding Patch.
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(local.lastSent, local.lastSentSize), outbound).ok());
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::StatePage), outbound.header.kind);
+    blinker::bbp2::StatePageBody snapshot;
+    CHECK_TRUE(blinker::bbp2::decodeStatePageBody(outbound.body, snapshot).ok());
+    CHECK_EQ(retryRevision + 1U, snapshot.revision);
+    if (withCloud) cloud.sendResult = blinker::Result::success();
+    client.poll(1000U);
+
+    // Workspace WouldBlock is not delivery backpressure. Neither a snapshot
+    // nor an optimistic Apply may pass settlement while a transaction owns it.
+    CHECK_TRUE(client.endpoints().find("buttonPresses").setUnsigned(4U).ok());
+    {
+        blinker::StateUpdate busy(client);
+        CHECK_TRUE(busy.begin(1U).ok());
+        local.inject(frame, 0U, true, 7U);
+        CHECK_TRUE(blinker::bbp2::parseFrame(
+            blinker::ByteView(local.lastSent, local.lastSentSize), outbound).ok());
+        CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Error), outbound.header.kind);
+        CHECK_EQ(snapshot.revision, client.runtime().stateRevision());
+        client.poll(1000U);
+
+        uint8_t valuesBytes[64] = {};
+        blinker::bbp2::KeyedBodyWriter applyWriter(
+            blinker::MutableByteSpan(valuesBytes, sizeof(valuesBytes)));
+        blinker::ByteView values;
+        CHECK_TRUE(applyWriter.begin(1U).ok());
+        CHECK_TRUE(applyWriter.writeUnsigned(blinker::StringView("buttonPresses"), 99U).ok());
+        CHECK_TRUE(applyWriter.finish(values).ok());
+        patch.mode = blinker::bbp2::StatePatchMode::Apply;
+        patch.revision = snapshot.revision;
+        patch.values = values;
+        CHECK_TRUE(blinker::bbp2::encodeStatePatchBody(patch,
+            blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
+        CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::Patch,
+            blinker::bbp2::FlagAckRequired, 12U, body,
+            blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
+        local.inject(frame, 0U, true, 7U);
+        CHECK_TRUE(blinker::bbp2::parseFrame(
+            blinker::ByteView(local.lastSent, local.lastSentSize), outbound).ok());
+        CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Error), outbound.header.kind);
+        blinker::bbp2::ErrorBody error;
+        CHECK_TRUE(blinker::bbp2::decodeErrorBody(outbound.body, error).ok());
+        CHECK_EQ(static_cast<uint16_t>(blinker::WireError::MalformedMessage), error.errorCode);
+        CHECK_EQ(0U, stateWrites.calls);
+        CHECK_EQ(snapshot.revision, client.runtime().stateRevision());
+        blinker::EndpointValueView current;
+        CHECK_TRUE(client.endpoints().find("buttonPresses").current(current).ok());
+        CHECK_TRUE(current.asUnsigned(value).ok());
+        CHECK_EQ(static_cast<uint64_t>(4U), value); // The unexecuted Apply never wrote 99.
+    }
+    client.poll(1000U);
+    clock.advance(250U);
+    client.poll(1000U);
+    CHECK_EQ(snapshot.revision + 1U, client.runtime().stateRevision());
+    CHECK_EQ(1U, capture.calls);
+    client.end();
+}
+
+// A small snapshot lane and an independently blocked report lane exercise the
+// Client settlement callback, not a hand-written DeviceRuntime test double.
+class StateBackpressureObservationFixture {
+public:
+    static const blinker::FieldSpec (&fields())[4] {
+        static const blinker::FieldSpec values[] = {
+            blinker::FieldSpec("alpha", blinker::EndpointKind::Property,
+                blinker::ValueType::Text,
+                blinker::AccessRead | blinker::AccessNotify),
+            blinker::FieldSpec("bravo", blinker::EndpointKind::Property,
+                blinker::ValueType::Text,
+                blinker::AccessRead | blinker::AccessNotify),
+            blinker::FieldSpec("charlie", blinker::EndpointKind::Property,
+                blinker::ValueType::Text,
+                blinker::AccessRead | blinker::AccessNotify),
+            blinker::FieldSpec("counter", blinker::EndpointKind::Property,
+                blinker::ValueType::UnsignedInteger,
+                blinker::AccessRead | blinker::AccessWrite | blinker::AccessNotify)
+        };
+        return values;
+    }
+
+    static blinker::DeviceRuntimeConfig config() {
+        blinker::DeviceRuntimeConfig value;
+        value.maxFrameSize = 192U;
+        value.maxReassemblySize = 192U;
+        value.reliableReceiveWindow = 2U;
+        return value;
+    }
+
+    StateBackpressureObservationFixture()
+        : client(storage.buffers(fields()), config()) {}
+
+    bool start(bool extraPeer = false) {
+        source.featureFlags |= blinker::TransportFeaturePeerInitiatesHello;
+        mirror.featureFlags |= blinker::TransportFeaturePeerInitiatesHello;
+        delayed.featureFlags |= blinker::TransportFeaturePeerInitiatesHello;
+        CHECK_TRUE(client.setStateWriteHandler(
+            &acceptCanonicalStateWrite, &writes).ok());
+        CHECK_TRUE(client.setMonotonicClock(&clock).ok());
+        CHECK_TRUE(client.addTransport(source).ok());
+        CHECK_TRUE(client.addTransport(mirror).ok());
+        if (extraPeer) CHECK_TRUE(client.addTransport(delayed).ok());
+        CHECK_TRUE(client.begin().ok());
+        CHECK_TRUE(client.endpoints().find("alpha").setText("12345678").ok());
+        CHECK_TRUE(client.endpoints().find("bravo").setText("12345678").ok());
+        CHECK_TRUE(client.endpoints().find("charlie").setText("12345678").ok());
+        CHECK_TRUE(client.endpoints().find("counter").setUnsigned(0U).ok());
+        clock.advance(250U);
+        client.poll(1000U); // Settle the baseline before either peer negotiates.
+        CHECK_EQ(1U, client.runtime().stateRevision());
+        hello(source, 7U, 39U);
+        hello(mirror, 8U, 192U);
+        if (extraPeer) hello(delayed, 9U, 192U);
+        return client.runtime().stateRevision() == 1U;
+    }
+
+    void hello(FakeTransport& port, uint32_t sessionId, uint16_t maxFrameSize,
+               bool endpointIds = false) {
+        blinker::bbp2::HelloBody value;
+        value.role = blinker::bbp2::PeerRole::App;
+        value.versions[0] = blinker::bbp2::kVersion;
+        value.versionCount = 1U;
+        value.features = blinker::bbp2::FeatureReliableDelivery |
+                         blinker::bbp2::FeatureStateRevision;
+        value.reliableReceiveWindow = 2U;
+        value.maxFrameSize = maxFrameSize;
+        value.maxReassemblySize = 192U;
+        uint8_t fingerprint[blinker::kSha256Size] = {};
+        if (endpointIds) {
+            CHECK_TRUE(blinker::computeManifestFingerprint(config().manifestRevision,
+                client.endpointRegistry(),
+                blinker::MutableByteSpan(fingerprint, sizeof(fingerprint))).ok());
+            value.features |= blinker::bbp2::FeatureManifest | blinker::bbp2::FeatureEndpointIds;
+            value.manifestRevision = config().manifestRevision;
+            value.hasManifestRevision = true;
+            value.manifestFingerprint = blinker::ByteView(fingerprint, sizeof(fingerprint));
+            value.hasManifestFingerprint = true;
+        }
+        CHECK_TRUE(blinker::bbp2::encodeHelloBody(value,
+            blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
+        CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::Hello,
+            blinker::bbp2::FlagIsResponse, 1U, body,
+            blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
+        port.inject(frame, 0U, true, sessionId);
+    }
+
+    bool request(uint16_t cursor, uint32_t revision, bool observed,
+                 uint16_t sequence, blinker::bbp2::StatePageBody& page) {
+        CHECK_TRUE(encodeTestStateRequest(cursor, revision, observed,
+            blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
+        CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::StateRequest,
+            blinker::bbp2::FlagNone, sequence, body,
+            blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
+        source.inject(frame, 0U, true, 7U);
+        if (!parseSource()) return false;
+        const bool isPage = response.header.kind ==
+            static_cast<uint8_t>(blinker::bbp2::MessageKind::StatePage);
+        CHECK_TRUE(isPage);
+        if (!isPage) return false;
+        const blinker::Result decoded =
+            blinker::bbp2::decodeStatePageBody(response.body, page);
+        CHECK_TRUE(decoded.ok());
+        return decoded.ok();
+    }
+
+    bool snapshot(uint16_t sequence, uint32_t& revision) {
+        blinker::bbp2::StatePageBody page;
+        if (!request(0U, 0U, false, sequence++, page)) return false;
+        revision = page.revision;
+        for (size_t attempt = 0U;
+             page.nextCursor < page.totalFields && attempt < 4U;
+             ++attempt) {
+            const uint16_t cursor = page.nextCursor;
+            if (!request(cursor, revision, true, sequence++, page)) return false;
+            CHECK_EQ(revision, page.revision);
+        }
+        CHECK_EQ(page.totalFields, page.nextCursor);
+        return page.totalFields == page.nextCursor;
+    }
+
+    void apply(uint64_t value, uint32_t revision, uint16_t sequence,
+               bool idMode = false) {
+        uint8_t valuesBytes[48] = {};
+        blinker::ByteView values;
+        if (idMode) {
+            blinker::bbp2::IdBodyWriter writer(
+                blinker::MutableByteSpan(valuesBytes, sizeof(valuesBytes)));
+            CHECK_TRUE(writer.begin(1U).ok());
+            CHECK_TRUE(writer.writeUnsigned(4U, value).ok());
+            CHECK_TRUE(writer.finish(values).ok());
+        } else {
+            blinker::bbp2::KeyedBodyWriter writer(
+                blinker::MutableByteSpan(valuesBytes, sizeof(valuesBytes)));
+            CHECK_TRUE(writer.begin(1U).ok());
+            CHECK_TRUE(writer.writeUnsigned(
+                blinker::StringView("counter"), value).ok());
+            CHECK_TRUE(writer.finish(values).ok());
+        }
+        blinker::bbp2::StatePatchBody patch;
+        patch.mode = blinker::bbp2::StatePatchMode::Apply;
+        patch.revision = revision;
+        patch.values = values;
+        CHECK_TRUE(blinker::bbp2::encodeStatePatchBody(patch,
+            blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
+        CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::Patch,
+            static_cast<uint8_t>(blinker::bbp2::FlagAckRequired |
+                (idMode ? blinker::bbp2::FlagIdMode : 0U)), sequence, body,
+            blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
+        source.inject(frame, 0U, true, 7U);
+        CHECK_TRUE(parseSource());
+    }
+
+    bool parseSource() {
+        const blinker::Result result = blinker::bbp2::parseFrame(
+            blinker::ByteView(source.lastSent, source.lastSentSize), response);
+        CHECK_TRUE(result.ok());
+        return result.ok();
+    }
+
+    ~StateBackpressureObservationFixture() { client.end(); }
+
+    blinker::ClientStorage<4, 192, 128, 64> storage;
+    blinker::Client client;
+    FakeClock clock;
+    FakeTransport source;
+    FakeTransport mirror;
+    FakeTransport delayed;
+    CanonicalStateWriteCapture writes;
+    uint8_t bodyBytes[128] = {}, frameBytes[192] = {};
+    blinker::ByteView body, frame;
+    blinker::bbp2::FrameView response;
+};
+
+void testStateSnapshotBackpressureContinuation() {
+    StateBackpressureObservationFixture fixture;
+    if (!fixture.start()) return;
+    fixture.mirror.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    CHECK_TRUE(fixture.client.endpoints().find("alpha").setText("87654321").ok());
+    blinker::bbp2::StatePageBody page;
+    if (!fixture.request(0U, 0U, false, 50U, page)) return;
+    const uint32_t revision = page.revision;
+    CHECK_EQ(2U, revision);
+    CHECK_TRUE(page.nextCursor > 0U && page.nextCursor < page.totalFields);
+    const uint16_t firstContinuation = page.nextCursor;
+
+    // Even an ordinary paced retry between snapshot pages must not invent a
+    // new state version when no value changed.
+    fixture.clock.advance(250U);
+    fixture.client.poll(1000U);
+    CHECK_EQ(revision, fixture.client.runtime().stateRevision());
+    if (!fixture.request(firstContinuation, revision, true, 51U, page)) return;
+    CHECK_EQ(revision, page.revision);
+    CHECK_EQ(firstContinuation, page.cursor);
+    if (!fixture.request(firstContinuation, revision, true, 52U, page)) return;
+    CHECK_EQ(revision, page.revision); // Exact continuation replay remains valid.
+    for (uint16_t sequence = 53U;
+         page.nextCursor < page.totalFields && sequence < 57U;
+         ++sequence) {
+        const uint16_t cursor = page.nextCursor;
+        if (!fixture.request(cursor, revision, true, sequence, page)) return;
+        CHECK_EQ(revision, page.revision);
+    }
+    CHECK_EQ(page.totalFields, page.nextCursor);
+
+    // A genuine report still invalidates a transfer; the fix must not simply
+    // bypass settlement for every continuation request.
+    if (!fixture.request(0U, 0U, false, 60U, page)) return;
+    const uint16_t staleCursor = page.nextCursor;
+    CHECK_TRUE(fixture.client.endpoints().find("alpha").setText("11223344").ok());
+    CHECK_TRUE(encodeTestStateRequest(staleCursor, revision, true,
+        blinker::MutableByteSpan(fixture.bodyBytes, sizeof(fixture.bodyBytes)),
+        fixture.body).ok());
+    CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::StateRequest,
+        blinker::bbp2::FlagNone, 61U, fixture.body,
+        blinker::MutableByteSpan(fixture.frameBytes, sizeof(fixture.frameBytes)),
+        fixture.frame).ok());
+    fixture.source.inject(fixture.frame, 0U, true, 7U);
+    if (!fixture.parseSource()) return;
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Error),
+        fixture.response.header.kind);
+    blinker::bbp2::ErrorBody error;
+    CHECK_TRUE(blinker::bbp2::decodeErrorBody(fixture.response.body, error).ok());
+    CHECK_EQ(static_cast<uint16_t>(blinker::WireError::StateConflict), error.errorCode);
+    CHECK_EQ(revision + 1U, fixture.client.runtime().stateRevision());
+    uint32_t refreshed = 0U;
+    CHECK_TRUE(fixture.snapshot(62U, refreshed));
+    CHECK_EQ(revision + 1U, refreshed);
+}
+
+void testStateApplyBackpressureObservation() {
+    StateBackpressureObservationFixture fixture;
+    if (!fixture.start()) return;
+    fixture.mirror.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    CHECK_TRUE(fixture.client.endpoints().find("counter").setUnsigned(1U).ok());
+    uint32_t observed = 0U;
+    if (!fixture.snapshot(70U, observed)) return;
+    fixture.apply(7U, observed, 80U);
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Ack),
+        fixture.response.header.kind);
+    if (fixture.response.header.kind !=
+        static_cast<uint8_t>(blinker::bbp2::MessageKind::Ack)) return;
+    blinker::bbp2::AckBody ack;
+    CHECK_TRUE(blinker::bbp2::decodeAckBody(fixture.response.body, ack).ok());
+    CHECK_TRUE(ack.hasStateRevision);
+    CHECK_EQ(observed + 1U, ack.stateRevision);
+    CHECK_EQ(1U, fixture.writes.calls);
+
+    // The accepted Apply is already versioned by DeviceRuntime. A retained
+    // delivery must not manufacture another settlement before the next Apply.
+    fixture.apply(9U, ack.stateRevision, 81U);
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Ack),
+        fixture.response.header.kind);
+    if (fixture.response.header.kind !=
+        static_cast<uint8_t>(blinker::bbp2::MessageKind::Ack)) return;
+    CHECK_TRUE(blinker::bbp2::decodeAckBody(fixture.response.body, ack).ok());
+    CHECK_EQ(observed + 2U, ack.stateRevision);
+    CHECK_EQ(2U, fixture.writes.calls);
+
+    // Real report changes still invalidate optimistic writes and never call
+    // the hardware writer for the rejected value.
+    CHECK_TRUE(fixture.client.endpoints().find("counter").setUnsigned(10U).ok());
+    fixture.apply(99U, ack.stateRevision, 82U);
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Error),
+        fixture.response.header.kind);
+    blinker::bbp2::ErrorBody error;
+    CHECK_TRUE(blinker::bbp2::decodeErrorBody(fixture.response.body, error).ok());
+    CHECK_EQ(static_cast<uint16_t>(blinker::WireError::StateConflict), error.errorCode);
+    CHECK_EQ(2U, fixture.writes.calls);
+    blinker::EndpointValueView value;
+    uint64_t current = 0U;
+    CHECK_TRUE(fixture.client.endpoints().find("counter").current(value).ok());
+    CHECK_TRUE(value.asUnsigned(current).ok());
+    CHECK_EQ(static_cast<uint64_t>(10U), current);
+}
+
+void testStateLargeRetryDuringSnapshot() {
+    StateBackpressureObservationFixture fixture;
+    if (!fixture.start()) return;
+    fixture.mirror.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    CHECK_TRUE(fixture.client.endpoints().find("alpha").setText("87654321").ok());
+    CHECK_TRUE(fixture.client.endpoints().find("bravo").setText("87654321").ok());
+    CHECK_TRUE(fixture.client.endpoints().find("charlie").setText("87654321").ok());
+    blinker::bbp2::StatePageBody page;
+    if (!fixture.request(0U, 0U, false, 90U, page)) return;
+    const uint32_t revision = page.revision;
+    CHECK_EQ(2U, revision);
+    CHECK_TRUE(page.nextCursor > 0U && page.nextCursor < page.totalFields);
+    const uint32_t sourceSends = fixture.source.sendCount;
+    fixture.clock.advance(250U);
+    fixture.client.poll(1000U);
+    CHECK_EQ(revision, fixture.client.runtime().stateRevision());
+    CHECK_EQ(sourceSends, fixture.source.sendCount); // Delta exceeds this lane's 39 B limit.
+    for (uint16_t sequence = 91U;
+         page.nextCursor < page.totalFields && sequence < 95U;
+         ++sequence) {
+        const uint16_t cursor = page.nextCursor;
+        if (!fixture.request(cursor, revision, true, sequence, page)) return;
+        CHECK_EQ(revision, page.revision);
+    }
+    CHECK_EQ(page.totalFields, page.nextCursor);
+}
+
+void testStateObservedAfterBlockedRetry() {
+    StateBackpressureObservationFixture fixture;
+    if (!fixture.start()) return;
+    fixture.mirror.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    CHECK_TRUE(fixture.client.endpoints().find("counter").setUnsigned(1U).ok());
+    uint32_t observed = 0U;
+    if (!fixture.snapshot(95U, observed)) return;
+    fixture.source.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    fixture.clock.advance(250U);
+    fixture.client.poll(1000U);
+    CHECK_EQ(observed, fixture.client.runtime().stateRevision());
+    fixture.source.sendResult = blinker::Result::success();
+    // The fully observed snapshot is still current: only a repeated delivery
+    // failed, with no native disconnect and no real value/revision mutation.
+    fixture.apply(7U, observed, 99U);
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Ack),
+        fixture.response.header.kind);
+    CHECK_EQ(1U, fixture.writes.calls);
+}
+
+void testStateFanOutMixedBackpressure() {
+    StateBackpressureObservationFixture fixture;
+    if (!fixture.start()) return;
+    fixture.mirror.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    CHECK_TRUE(fixture.client.endpoints().find("alpha").setText("87654321").ok());
+    CHECK_TRUE(fixture.client.endpoints().find("bravo").setText("87654321").ok());
+    CHECK_TRUE(fixture.client.endpoints().find("charlie").setText("87654321").ok());
+    fixture.clock.advance(250U);
+    const uint32_t sourceSends = fixture.source.sendCount;
+    fixture.client.poll(1000U);
+    CHECK_EQ(sourceSends, fixture.source.sendCount); // The first peer's real 39 B limit.
+    const uint32_t mirrorAttempts = fixture.mirror.sendCount;
+    CHECK_EQ(1U, mirrorAttempts);
+    fixture.mirror.sendResult = blinker::Result::success();
+    fixture.clock.advance(250U);
+    fixture.client.poll(1000U);
+    CHECK_EQ(mirrorAttempts + 1U, fixture.mirror.sendCount);
+    blinker::bbp2::FrameView response;
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(fixture.mirror.lastSent, fixture.mirror.lastSentSize),
+        response).ok());
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Patch), response.header.kind);
+    blinker::bbp2::StatePatchBody patch;
+    CHECK_TRUE(blinker::bbp2::decodeStatePatchBody(response.body, patch).ok());
+    CHECK_EQ(2U, patch.revision); // A delivery retry, not a new local mutation.
+
+    // With no blocked peer, keep the original permanent-error clearing rule.
+    fixture.mirror.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::NotConnected);
+    CHECK_TRUE(fixture.client.endpoints().find("alpha").setText("11223344").ok());
+    CHECK_TRUE(fixture.client.endpoints().find("bravo").setText("11223344").ok());
+    CHECK_TRUE(fixture.client.endpoints().find("charlie").setText("11223344").ok());
+    fixture.clock.advance(250U);
+    fixture.client.poll(1000U);
+    const uint32_t permanentAttempts = fixture.mirror.sendCount;
+    fixture.mirror.sendResult = blinker::Result::success();
+    fixture.clock.advance(250U);
+    fixture.client.poll(1000U);
+    CHECK_EQ(permanentAttempts, fixture.mirror.sendCount);
+}
+
+void testStateApplyRetainedOtherField(bool idMode) {
+    StateBackpressureObservationFixture fixture;
+    if (!fixture.start(true)) return;
+    if (idMode) fixture.hello(fixture.source, 7U, 39U, true);
+    fixture.delayed.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    CHECK_TRUE(fixture.client.endpoints().find("alpha").setText("87654321").ok());
+    fixture.clock.advance(250U);
+    fixture.client.poll(1000U);
+    blinker::bbp2::FrameView response;
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(fixture.mirror.lastSent, fixture.mirror.lastSentSize),
+        response).ok());
+    blinker::bbp2::StatePatchBody patch;
+    CHECK_TRUE(blinker::bbp2::decodeStatePatchBody(response.body, patch).ok());
+    CHECK_EQ(2U, patch.revision); // This peer accepted alpha while the third lane blocked.
+    uint32_t observed = 0U;
+    if (!fixture.snapshot(100U, observed)) return;
+    CHECK_EQ(2U, observed);
+
+    fixture.mirror.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    fixture.apply(7U, observed, 110U, idMode);
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Ack),
+        fixture.response.header.kind);
+    if (fixture.response.header.kind !=
+        static_cast<uint8_t>(blinker::bbp2::MessageKind::Ack)) return;
+    blinker::bbp2::AckBody ack;
+    CHECK_TRUE(blinker::bbp2::decodeAckBody(fixture.response.body, ack).ok());
+    const uint32_t applyRevision = ack.stateRevision;
+    CHECK_EQ(3U, applyRevision);
+    CHECK_EQ(1U, fixture.writes.calls);
+
+    // Both non-source lanes missed the Apply's full State. Reusing revision 3
+    // for only the old alpha selection would silently omit counter for a peer
+    // that already accepted revision 2 (no revision gap to trigger recovery).
+    fixture.mirror.sendResult = blinker::Result::success();
+    fixture.clock.advance(250U);
+    fixture.client.poll(1000U);
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(fixture.mirror.lastSent, fixture.mirror.lastSentSize),
+        response).ok());
+    CHECK_TRUE(blinker::bbp2::decodeStatePatchBody(response.body, patch).ok());
+    CHECK_EQ(applyRevision, patch.revision);
+    blinker::cbor::Reader reader(patch.values);
+    size_t count = 0U;
+    blinker::StringView key, text;
+    uint64_t counter = 0U;
+    CHECK_TRUE(reader.readMapSize(count).ok());
+    CHECK_EQ(static_cast<size_t>(2U), count);
+    CHECK_TRUE(reader.readText(key).ok());
+    CHECK_TRUE(key.size == 5U && std::memcmp(key.data, "alpha", 5U) == 0);
+    CHECK_TRUE(reader.readText(text).ok());
+    CHECK_TRUE(text.size == 8U && std::memcmp(text.data, "87654321", 8U) == 0);
+    CHECK_TRUE(reader.readText(key).ok());
+    CHECK_TRUE(key.size == 7U && std::memcmp(key.data, "counter", 7U) == 0);
+    CHECK_TRUE(reader.readUnsigned(counter).ok());
+    CHECK_EQ(static_cast<uint64_t>(7U), counter);
+    fixture.apply(9U, applyRevision, 111U, idMode);
+    CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Ack),
+        fixture.response.header.kind);
+    CHECK_EQ(2U, fixture.writes.calls);
+}
+
+void testStateBackpressureUnselectedTail() {
+    static const blinker::FieldSpec fields[] = {
+        blinker::FieldSpec("alpha", blinker::EndpointKind::Property,
+            blinker::ValueType::Text,
+            blinker::AccessRead | blinker::AccessNotify),
+        blinker::FieldSpec("bravo", blinker::EndpointKind::Property,
+            blinker::ValueType::Text,
+            blinker::AccessRead | blinker::AccessNotify)
+    };
+    // One 8-character value fits in the existing patch workspace; two do not.
+    blinker::ClientStorage<2, 192, 20, 32> storage;
+    blinker::DeviceRuntimeConfig config;
+    config.maxFrameSize = 192U;
+    config.maxReassemblySize = 192U;
+    blinker::Client client(storage.buffers(fields), config);
+    FakeClock clock;
+    FakeTransport transport;
+    transport.featureFlags |= blinker::TransportFeaturePeerInitiatesHello;
+    CHECK_TRUE(client.setMonotonicClock(&clock).ok());
+    CHECK_TRUE(client.addTransport(transport).ok());
+    CHECK_TRUE(client.begin().ok());
+    CHECK_TRUE(client.endpoints().find("alpha").setText("12345678").ok());
+    clock.advance(250U);
+    client.poll(1000U);
+    CHECK_EQ(1U, client.runtime().stateRevision());
+
+    uint8_t bodyBytes[128] = {}, frameBytes[192] = {};
+    blinker::ByteView body, frame;
+    blinker::bbp2::HelloBody hello;
+    hello.role = blinker::bbp2::PeerRole::App;
+    hello.versions[0] = blinker::bbp2::kVersion;
+    hello.versionCount = 1U;
+    hello.features = blinker::bbp2::FeatureStateRevision;
+    hello.maxFrameSize = 192U;
+    hello.maxReassemblySize = 192U;
+    CHECK_TRUE(blinker::bbp2::encodeHelloBody(hello,
+        blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
+    CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::Hello,
+        blinker::bbp2::FlagIsResponse, 1U, body,
+        blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
+    transport.inject(frame, 0U, true, 7U);
+
+    transport.sendResult =
+        blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+    CHECK_TRUE(client.endpoints().find("alpha").setText("87654321").ok());
+    CHECK_TRUE(client.endpoints().find("bravo").setText("11223344").ok());
+    clock.advance(250U);
+    client.poll(1000U);
+    CHECK_EQ(2U, client.runtime().stateRevision());
+    transport.sendResult = blinker::Result::success();
+    clock.advance(250U);
+    client.poll(1000U);
+    CHECK_EQ(2U, client.runtime().stateRevision());
+    blinker::bbp2::FrameView response;
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(transport.lastSent, transport.lastSentSize), response).ok());
+    blinker::bbp2::StatePatchBody patch;
+    CHECK_TRUE(blinker::bbp2::decodeStatePatchBody(response.body, patch).ok());
+    CHECK_EQ(2U, patch.revision);
+    blinker::cbor::Reader first(patch.values);
+    size_t count = 0U;
+    blinker::StringView key, text;
+    CHECK_TRUE(first.readMapSize(count).ok());
+    CHECK_EQ(static_cast<size_t>(1U), count);
+    CHECK_TRUE(first.readText(key).ok());
+    CHECK_TRUE(key.size == 5U && std::memcmp(key.data, "alpha", 5U) == 0);
+    CHECK_TRUE(first.readText(text).ok());
+    CHECK_TRUE(text.size == 8U && std::memcmp(text.data, "87654321", 8U) == 0);
+
+    clock.advance(250U);
+    client.poll(1000U);
+    CHECK_EQ(3U, client.runtime().stateRevision()); // Unselected tail is a new Patch.
+    CHECK_TRUE(blinker::bbp2::parseFrame(
+        blinker::ByteView(transport.lastSent, transport.lastSentSize), response).ok());
+    CHECK_TRUE(blinker::bbp2::decodeStatePatchBody(response.body, patch).ok());
+    CHECK_EQ(3U, patch.revision);
+    blinker::cbor::Reader second(patch.values);
+    CHECK_TRUE(second.readMapSize(count).ok());
+    CHECK_EQ(static_cast<size_t>(1U), count);
+    CHECK_TRUE(second.readText(key).ok());
+    CHECK_TRUE(key.size == 5U && std::memcmp(key.data, "bravo", 5U) == 0);
+    CHECK_TRUE(second.readText(text).ok());
+    CHECK_TRUE(text.size == 8U && std::memcmp(text.data, "11223344", 8U) == 0);
+    const uint32_t delivered = transport.sendCount;
+    clock.advance(250U);
+    client.poll(1000U);
+    CHECK_EQ(delivered, transport.sendCount);
+    client.end();
+}
+
 void testSingleSlotCommandAck() {
     static const blinker::FieldSpec fields[] = {
         blinker::FieldSpec("power", blinker::EndpointKind::Property,
@@ -9856,6 +10678,17 @@ int main() {
     testTelemetryRuntimeAcrossCloudAndDirect();
     testTelemetryRuntime();
     testDeviceRuntime();
+    testOutboundStateBackpressureScheduling();
+    testSingleSlotEventStateBackpressure(false);
+    testSingleSlotEventStateBackpressure(true);
+    testStateSnapshotBackpressureContinuation();
+    testStateApplyBackpressureObservation();
+    testStateLargeRetryDuringSnapshot();
+    testStateObservedAfterBlockedRetry();
+    testStateFanOutMixedBackpressure();
+    testStateApplyRetainedOtherField(false);
+    testStateApplyRetainedOtherField(true);
+    testStateBackpressureUnselectedTail();
     testSingleSlotCommandAck();
     testReliableCommandIdempotency();
     testVersionedStateAndEvents();

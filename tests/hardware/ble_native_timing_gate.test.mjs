@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { bleNativeTimingGate } from './ble_native_timing_gate.mjs';
 
-function fixture(nativePromise) {
+function fixture(nativePromise, now = () => 42) {
   const cap = { nativePromise };
-  const context = vm.createContext({ Capacitor: cap, performance: { now: () => 42 }, input: null });
+  const context = vm.createContext({ Capacitor: cap, performance: { now }, input: null });
   const run = input => { context.input = input; return vm.runInContext(`(${bleNativeTimingGate.toString()})(input)`, context); };
   return { cap, run };
 }
@@ -70,4 +70,65 @@ test('bounds output, rejects duplicate installation and detects replacement', as
   assert.throws(() => run({ mode: 'stop' }));
   cap.nativePromise = wrapped;
   run({ mode: 'stop' });
+});
+
+test('observes both real Android coordinator and standard scanner without retaining discovery data', async () => {
+  const input = { id: 'private-scan-id', services: ['private-service'], deviceId: 'private-device' };
+  const result = { rawAdvertisement: 'private-advertisement' };
+  const promise = Promise.resolve(result);
+  const { cap, run } = fixture(() => promise);
+  run({ mode: 'start' });
+  for (const [plugin, method] of [['BlinkerBleScan', 'start'], ['BlinkerBleScan', 'stop'],
+    ['BluetoothLe', 'requestLEScan'], ['BluetoothLe', 'stopLEScan']]) {
+    assert.equal(cap.nativePromise(plugin, method, input), promise);
+    await promise;
+  }
+  cap.nativePromise('BlinkerBleScan', 'unrelated', input);
+  const output = run({ mode: 'stop' });
+  assert.equal(output.events.length, 8);
+  assert.deepEqual(Array.from(output.events, e => e.plugin), [
+    'BlinkerBleScan', 'BlinkerBleScan', 'BlinkerBleScan', 'BlinkerBleScan',
+    'BluetoothLe', 'BluetoothLe', 'BluetoothLe', 'BluetoothLe',
+  ]);
+  assert(!JSON.stringify(output).includes('private-'));
+});
+
+test('measures native settlement rather than inventing hidden Android connect subphases', async () => {
+  let time = 100, settle;
+  const promise = new Promise(resolve => { settle = resolve; });
+  const { cap, run } = fixture(() => promise, () => time);
+  run({ mode: 'start' });
+  assert.equal(cap.nativePromise('BluetoothLe', 'connect'), promise);
+  time = 769;
+  settle({ privateMtu: 'private-result' });
+  await promise;
+  const events = run({ mode: 'stop' }).events;
+  assert.equal(events.length, 2);
+  assert.equal(events[0].durationMs, undefined);
+  assert.equal(events[1].durationMs, 669);
+  assert.equal(events[1].millis, 669);
+  assert.equal(events[1].method, 'connect');
+  assert(!JSON.stringify(events).includes('private-'));
+  assert(!JSON.stringify(events).includes('service-discovery'));
+});
+
+test('keeps overlapping native calls separate and records rejected write elapsed time without its error', async () => {
+  let time = 0, finishWrite, finishMtu;
+  const write = new Promise((_, reject) => { finishWrite = reject; });
+  const mtu = new Promise(resolve => { finishMtu = resolve; });
+  const { cap, run } = fixture((_plugin, method) => method === 'write' ? write : mtu, () => time);
+  run({ mode: 'start' });
+  assert.equal(cap.nativePromise('BluetoothLe', 'write'), write);
+  time = 5;
+  assert.equal(cap.nativePromise('BluetoothLe', 'getMtu'), mtu);
+  time = 12;
+  finishMtu(); await mtu;
+  time = 20;
+  finishWrite(Error('private-failure'));
+  await assert.rejects(write);
+  const events = run({ mode: 'stop' }).events;
+  const settled = events.filter(event => event.state !== 'start');
+  assert.deepEqual(Array.from(settled, event => [event.method, event.call, event.state, event.durationMs]),
+    [['getMtu', 2, 'resolved', 7], ['write', 1, 'rejected', 20]]);
+  assert(!JSON.stringify(events).includes('private-'));
 });

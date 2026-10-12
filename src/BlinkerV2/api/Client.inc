@@ -55,7 +55,9 @@ Client::Client(
       stateWriteContext_(nullptr),
       stateApplyActive_(false),
       diagnostics_(diagnostics),
-      clock_(nullptr) {
+      clock_(nullptr),
+      blockedStateRevision_(0U),
+      blockedStateFieldCount_(0U) {
     runtime_.setCommandHandler(&Client::commandThunk, this);
     runtime_.setStateEncoder(&Client::stateEncoderThunk, this);
     runtime_.setStatePageEncoder(&Client::statePageEncoderThunk, this);
@@ -341,6 +343,23 @@ Result Client::stateApplyTransactionThunk(
         return Result::failure(ErrorCode::InternalError);
     }
     changed = result && committed;
+    if (changed && client->blockedStateFieldCount_ != 0U) {
+        // Runtime versions an accepted Apply immediately after this callback.
+        // Merge its fields into the retained delta: a peer might miss the
+        // subsequent full State, and a same-revision retry must not omit them.
+        result = idMode
+                     ? bbp2::visitIdBody(values, &Client::markDirtyIdThunk, client)
+                     : bbp2::visitKeyedBody(values, &Client::markDirtyThunk, client);
+        if (result) {
+            client->blockedStateRevision_ = client->runtime_.stateRevision() + 1U;
+            // Reuse that real revision only if the whole merged delta fits.
+            // A partial selection must advance, preserving gap/resync semantics.
+            client->blockedStateFieldCount_ = client->outbound_.pendingStateCount();
+        } else {
+            client->blockedStateFieldCount_ = 0U;
+            changed = false;
+        }
+    }
     return result;
 }
 
@@ -369,6 +388,9 @@ void Client::remoteErrorThunk(
     const uint32_t now = client->clock_->monotonicMillis();
     client->outbound_.applyRemoteBackoff(now);
     client->runtime_.deferTelemetrySamples(rx, now, 1000U);
+    // Refreshing all initialized fields creates a different selection from
+    // the old blocked subset, even if the values themselves are unchanged.
+    client->blockedStateFieldCount_ = 0U;
     for (size_t index = 0U; index < client->registry_.size(); ++index) {
         if (client->stateStore_.initializedAt(index)) {
             (void)client->outbound_.markStateDirty(index, now);
@@ -388,6 +410,19 @@ Result Client::markDirtyThunk(
     uint16_t endpointId = 0U;
     Result result = client->registry_.idOf(endpointKey, endpointId);
     if (!result || endpointId == 0U) return result;
+    return markDirtyIdThunk(context, endpointId, ByteView(), cbor::Type::Invalid);
+}
+
+Result Client::markDirtyIdThunk(
+    void* context,
+    uint16_t endpointId,
+    ByteView,
+    cbor::Type) {
+    Client* client = static_cast<Client*>(context);
+    if (client == nullptr || endpointId == 0U ||
+        endpointId > client->registry_.size()) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
     const uint32_t now = client->clock_ != nullptr
                              ? client->clock_->monotonicMillis()
                              : 0U;
@@ -635,6 +670,7 @@ Result Client::commitState(ByteView values) {
         }
         return result;
     }
+    blockedStateFieldCount_ = 0U;
     result = bbp2::visitKeyedBody(
         values, &Client::markDirtyThunk, this);
     if (result && (clock_ == nullptr || !started_)) {
@@ -688,17 +724,32 @@ Result Client::flushPendingState(
             return result;
         }
 
-        uint32_t revision = 0U;
-        result = runtime_.advanceStateRevision(revision);
-        if (!result) {
-            outbound_.deferStateFlush();
-            return result;
+        const size_t selectedCount = outbound_.selectedStateCount();
+        const bool blockedRetry =
+            blockedStateFieldCount_ == selectedCount &&
+            blockedStateRevision_ == runtime_.stateRevision();
+        if (!blockedRetry) {
+            uint32_t revision = 0U;
+            result = runtime_.advanceStateRevision(revision);
+            if (!result) {
+                outbound_.deferStateFlush();
+                return result;
+            }
         }
         const Result transportResult = started_
                                            ? runtime_.fanOutCurrentPatch(
                                                  encoded, exclude)
                                            : Result::success();
         result = outbound_.commitStateSelection(now, transportResult);
+        // An unchanged retry preserves snapshot/CAS observations. Real reports
+        // clear this metadata, and the unselected tail gets its own next version.
+        // Stop flushAll on a full TX slot, without swallowing workspace errors.
+        if (result.code() == ErrorCode::WouldBlock) {
+            blockedStateRevision_ = runtime_.stateRevision();
+            blockedStateFieldCount_ = selectedCount;
+            return Result::success();
+        }
+        blockedStateFieldCount_ = 0U;
         if (!result) return result;
     } while (flushAll && outbound_.hasPendingState());
 

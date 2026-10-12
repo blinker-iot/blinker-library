@@ -11,28 +11,37 @@ export function bleNativeTimingGate({ mode, limit = 512 }) {
       || typeof cap?.nativePromise !== 'function') throw Error('BLE timing precondition');
     const original = cap.nativePromise;
     const hadOwn = Object.hasOwn(cap, 'nativePromise');
-    const methods = new Set(['connect', 'disconnect', 'getServices', 'discoverServices',
+    const methods = new Set(['initialize', 'isEnabled', 'requestLEScan', 'stopLEScan',
+      'connect', 'disconnect', 'getServices', 'discoverServices',
       'startNotifications', 'stopNotifications', 'write', 'writeWithoutResponse',
       'read', 'getMtu', 'requestConnectionPriority']);
     gate = { started: performance.now(), events: [], dropped: 0, active: true, sequence: 0 };
-    const emit = (method, call, state) => {
+    const emit = (plugin, method, call, state, started) => {
       if (!gate.active) return;
       if (gate.events.length >= limit) { gate.dropped++; return; }
-      gate.events.push({ method, call, state, millis: performance.now() - gate.started });
+      const now = performance.now();
+      gate.events.push({ plugin, method, call, state, millis: now - gate.started,
+        ...(started === undefined ? {} : { durationMs: now - started }) });
     };
     const wrapped = function (plugin, method, ...args) {
-      if (plugin !== 'BluetoothLe' || !methods.has(method))
+      // Android uses our shared scan coordinator's native plugin; other
+      // platforms retain BluetoothLe.requestLEScan. Neither observer records
+      // scan options, advertisements, callbacks or discovered identities.
+      if (!(plugin === 'BluetoothLe' && methods.has(method)
+        || plugin === 'BlinkerBleScan' && ['start', 'stop'].includes(method)))
         return original.call(this, plugin, method, ...args);
       const call = ++gate.sequence;
-      emit(method, call, 'start');
+      const started = performance.now();
+      emit(plugin, method, call, 'start');
       let result;
       try { result = original.call(this, plugin, method, ...args); }
-      catch (error) { emit(method, call, 'rejected'); throw error; }
+      catch (error) { emit(plugin, method, call, 'rejected', started); throw error; }
       // Observe settlement but return the exact original promise/value.
       // The handlers do not throw or retain any native result or error.
       if (result && typeof result.then === 'function') {
-        result.then(() => emit(method, call, 'resolved'), () => emit(method, call, 'rejected'));
-      } else emit(method, call, 'resolved');
+        result.then(() => emit(plugin, method, call, 'resolved', started),
+          () => emit(plugin, method, call, 'rejected', started));
+      } else emit(plugin, method, call, 'resolved', started);
       return result;
     };
     gate.restore = () => {

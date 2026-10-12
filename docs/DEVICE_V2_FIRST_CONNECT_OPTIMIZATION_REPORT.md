@@ -1,10 +1,12 @@
 # Device V2 首次进入：有界优化与真机记录
 
-> **2026-09-22 执行入口：[新进度与后续计划](DEVICE_V2_NEXT_EXECUTION_PLAN.md) §6。** 本文件保留已完成实测证据；后续 P1 有界优化见[专项合同](DEVICE_V2_SCHEDULING_AUTOMATION_AND_BLE_PLAN.md)，不改写本轮结果，不自动开启大包协商或全平台激进提速。
+> **2026-10-13现行入口：[核心易用性优化方案§8.4](DEVICE_V2_CORE_USABILITY_OPTIMIZATION_EXECUTION_PLAN.md#84-有界窗口同设备对照和取消)。** 2026-10-12的A/B/B/A及认证中取消已通过，平均可控3260→2785ms（单20Bpeer），普通默认仍关闭；旧无界await-HIGH工具入口已撤回。非BLE展示结果取§8.6～§8.8，有效日期/星期停用定义编辑已在§9.4通过，不再等待自然试点；这不证明到期执行或已授时。LAN单次冷进入7,986ms仅是展示样本，不称首连性能改善，也不等于首个Cloud可控耗时；原App和COM3原固件/授权已恢复，普通LAN默认不变。COM11原恢复及获准保留网络地址取§8.7，不重开BLE循环。当前七目标隔离安装编译与必要源码Git交付分别取§10.6、§10.7；同事独立验证单独保留，本文件历史实测不改写，不将旧P1收益当生产默认。
 
-更新：2026-09-18。唯一主线仍为 `DEVICE_V2_CORE_STABILITY_EXECUTION_PLAN.md`。
+历史记录：2026-09-18；当时主线为 `DEVICE_V2_CORE_STABILITY_EXECUTION_PLAN.md`。
 C3 的冻结基本矩阵已于 §23 / C3 报告 §12.6 收口，本文件不重开平台矩阵、不展开 C4。
 最新结论见 §6：真实失效 BLE 候选对照已完成，缓存协商已实现并真机验证；§5 保留实施前依据。
+
+现行 Android 测量口径：BluetoothLe 的 connect Promise 包含 GAP 连接、服务发现和 MTU 交换；getServices 读取已发现的 GATT 列表。不能将后者短时间称为完整服务发现，或将 connect 全窗口都归给物理建链。App 记录开始发送至 receiveRecord 返回的 bootstrap 时间包含 native write 和片间等待，也不是设备端计算/发送的独立耗时。2026-10-12 原 669/5 ms 数值保留，正确名称分别为“原生连接准备全流程”和“GATT 合同列表读取”；后续没有单独观测的子阶段保持未观测。
 
 ## 1. 本包合同
 

@@ -61,7 +61,8 @@ int main() {
 #if UINTPTR_MAX <= UINT32_MAX && \
     BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_SMALL && \
     BLINKER_MAX_TRANSPORTS == 3 && BLINKER_MAX_PEER_SESSIONS == 3
-    static_assert(sizeof(blinker::Device) <= 1760U,
+    // Includes the borrowed time service (+4 B) and retry metadata (+8 B).
+    static_assert(sizeof(blinker::Device) <= 1772U,
                   "Small three-path Device exceeded its measured ABI budget");
 #endif
     // Use the real Client + Runtime + TransportHub, compiled with the same

@@ -2528,8 +2528,11 @@ Result DeviceRuntime::fanOutPreparedFrame(
         return Result::failure(ErrorCode::NotConfigured);
     }
     Result firstError = Result::success();
+    Result stateBackpressure = Result::success();
     const bool carriesStateRevision =
         (requiredFeatures & bbp2::FeatureStateRevision) != 0U;
+    // Revision commits and peer lifecycle invalidate observations. A failed
+    // retry at the current revision must not discard an already-current snapshot.
     for (size_t index = 0; index < BLINKER_MAX_PEER_SESSIONS; ++index) {
         PeerSession& session = peers_[index];
         const bool manifestPending = cloudTransport(session.transportId) &&
@@ -2557,11 +2560,6 @@ Result DeviceRuntime::fanOutPreparedFrame(
         target.transportId = session.transportId;
         target.sessionId = session.sessionId;
         if (encodedFrame.size > maximumOutboundFrameSize(target)) {
-            if (carriesStateRevision) {
-                session.stateObserved = false;
-                session.snapshotCursor = 0U;
-                session.snapshotNextCursor = 0U;
-            }
             if (firstError) {
                 firstError = Result::failure(ErrorCode::BufferTooSmall);
             }
@@ -2570,14 +2568,16 @@ Result DeviceRuntime::fanOutPreparedFrame(
         const Result result = transports_.send(encodedFrame, target);
         if (!result) {
             if (carriesStateRevision) {
-                session.stateObserved = false;
-                session.snapshotCursor = 0U;
-                session.snapshotNextCursor = 0U;
+                if (result.code() == ErrorCode::WouldBlock) {
+                    stateBackpressure = result;
+                }
             }
             if (firstError) firstError = result;
         }
     }
-    return firstError;
+    // A permanent error on an earlier lane must not discard another lane's
+    // blocked State. Without actual backpressure, retain first-error semantics.
+    return stateBackpressure ? firstError : stateBackpressure;
 }
 
 Result DeviceRuntime::requestFingerprint(
