@@ -17,6 +17,7 @@ BLINKER_PROPERTY(wifiRssi, int32_t,
     blinker::rangedProperty(blinker::PropertyMode::ReadOnly, -127, 0, 1, "dBm"));
 BLINKER_PROPERTY(uptimeSeconds, uint32_t, blinker::readOnly());
 BLINKER_PROPERTY(freeHeapBytes, uint32_t, blinker::readOnly());
+BLINKER_PROPERTY(totalHeapBytes, uint32_t, blinker::readOnly());
 
 bool currentPower = false;
 uint32_t currentBrightness = 50;
@@ -58,6 +59,7 @@ void onPressButton() {
 void reportMeasurements() {
     uptimeSeconds.report(millis() / 1000U);
     freeHeapBytes.report(ESP.getFreeHeap());
+    totalHeapBytes.report(ESP.getHeapSize());
 
     if (WiFi.status() == WL_CONNECTED) {
         wifiRssi.report(WiFi.RSSI());
@@ -76,7 +78,7 @@ void setup() {
     started = Blinker.begin(
         DEMO_DEVICE_KEY, DEMO_WIFI_SSID, DEMO_WIFI_PASSWORD,
         demoPower, demoBrightness, demoLabel, buttonPresses, pressButton,
-        wifiRssi, uptimeSeconds, freeHeapBytes);
+        wifiRssi, uptimeSeconds, freeHeapBytes, totalHeapBytes);
 
     if (!started) {
         Serial.println("Blinker initialization failed; send d for diagnostics.");
