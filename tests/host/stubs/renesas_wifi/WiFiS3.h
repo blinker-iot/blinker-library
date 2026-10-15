@@ -25,6 +25,7 @@ public:
           disconnectResult(1),
           timeoutValue(10000U),
           beginCalls(0),
+          statusCalls(0),
           disconnectCalls(0),
           openBegin(false),
           lastSsid(),
@@ -40,7 +41,7 @@ public:
         return beginImpl(ssid, password);
     }
 
-    uint8_t status() { return static_cast<uint8_t>(statusResult); }
+    uint8_t status() { ++statusCalls; return static_cast<uint8_t>(statusResult); }
     void setTimeout(unsigned long timeout) { timeoutValue = timeout; }
 
     int disconnect() {
@@ -55,6 +56,7 @@ public:
     int disconnectResult;
     unsigned long timeoutValue;
     unsigned int beginCalls;
+    unsigned int statusCalls;
     unsigned int disconnectCalls;
     bool openBegin;
     char lastSsid[33];

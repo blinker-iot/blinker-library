@@ -12,7 +12,9 @@ void expect(bool value, const char* message) {
 struct Fixture {
     blinker::Esp32NimBleLink link;
     unsigned connected = 0, disconnected = 0;
-    Fixture() {
+    explicit Fixture(const blinker::Esp32NimBleLinkConfig& config =
+                         blinker::Esp32NimBleLinkConfig())
+        : link(config) {
         fake_nimble::state = fake_nimble::State();
         link.setSessionHandlers(&onConnect, &onDisconnect, this);
         expect(link.start().ok(), "start"); link.poll(0);
@@ -189,6 +191,62 @@ void actualMtuReceive() {
                &access, characteristic->arg) == BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN,
            "unnegotiated native large write is rejected before copy");
 }
+
+void receiveQueueBackpressure() {
+    expect(BLINKER_ESP32_NIMBLE_RX_QUEUE_DEPTH == 4U,
+           "this regression exercises the unchanged four-packet default");
+    blinker::Esp32NimBleLinkConfig config;
+    config.maxRxPacketsPerPoll = 1U;
+    Fixture f(config);
+    struct Capture {
+        uint32_t sessionId;
+        unsigned received;
+    } capture = {f.connect(), 0U};
+    f.link.setPacketReceiver([](void* context, const blinker::BleSessionInfo& session,
+                               blinker::ByteView packet) {
+        auto& observed = *static_cast<Capture*>(context);
+        blinker::ble::FragmentView fragment;
+        expect(session.sessionId == observed.sessionId &&
+                   blinker::ble::parseFragment(packet, fragment).ok(),
+               "accepted packets retain their live session and valid fragment");
+        expect(fragment.header.frameId == observed.received + 1U &&
+                   fragment.header.index == 0U && fragment.payload.size == 1U &&
+                   fragment.payload.data[0] == fragment.header.frameId,
+               "queue retains accepted packets once and in FIFO order");
+        ++observed.received;
+    }, &capture);
+    os_mbuf input = {};
+    input.size = blinker::ble::kFragmentHeaderSize + 1U;
+    ble_gatt_access_ctxt access = {BLE_GATT_ACCESS_OP_WRITE_CHR, &input};
+    const ble_gatt_chr_def* characteristic = fake_nimble::state.receive;
+    const uint16_t handle = fake_nimble::state.connected;
+    const auto write = [&](uint8_t id) {
+        blinker::ble::FragmentHeader header;
+        header.flags = blinker::ble::FragmentFlagStart |
+                       blinker::ble::FragmentFlagEnd;
+        header.frameId = id;
+        expect(blinker::ble::encodeFragmentHeader(header,
+                   blinker::MutableByteSpan(input.data, sizeof(input.data))).ok(),
+               "test writes a bounded valid fragment");
+        input.data[blinker::ble::kFragmentHeaderSize] = id;
+        return characteristic->access_cb(handle, fake_nimble::state.receiveHandle,
+                                         &access, characteristic->arg);
+    };
+    for (uint8_t id = 1U; id <= 4U; ++id)
+        expect(write(id) == 0, "four queue slots acknowledge actual acceptance");
+    expect(capture.received == 0U, "ATT success does not claim poll consumption");
+    expect(write(5U) == BLE_ATT_ERR_INSUFFICIENT_RES,
+           "full queue rejects the fifth packet explicitly at ATT access");
+    f.link.poll(0U);
+    expect(capture.received == 1U, "one-packet poll budget releases exactly one slot");
+    expect(write(5U) == 0, "a released slot accepts the previously rejected packet");
+    for (unsigned index = 0U; index < 4U; ++index) f.link.poll(0U);
+    f.link.poll(0U);
+    expect(capture.received == 5U && f.connected == 1U && f.disconnected == 0U &&
+               fake_nimble::state.terminateCalls == 0U &&
+               f.link.state() == blinker::BleLinkState::Ready,
+           "bounded backpressure loses no accepted packet and does not reset the peer");
+}
 }
 int main(int argc, char** argv) {
     const char* selected = argc == 2 ? argv[1] : "all";
@@ -200,7 +258,7 @@ int main(int argc, char** argv) {
         lateFailure(); completedAndUnrelated(); missingAcl(); busyTermination(); connectThenDisconnect();
         asynchronousClose(); hostFailureStaysFailure();
         actualMtuAndSendErrors(); unsupportedMtuPreference();
-        actualMtuReceive();
+        actualMtuReceive(); receiveQueueBackpressure();
     }
     std::cout << "ESP32 native peripheral lifecycle tests passed" << std::endl;
 }

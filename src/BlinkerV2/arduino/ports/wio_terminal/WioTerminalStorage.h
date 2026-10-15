@@ -1,11 +1,7 @@
 #ifndef BLINKER_V2_ARDUINO_PORTS_WIO_TERMINAL_STORAGE_H
 #define BLINKER_V2_ARDUINO_PORTS_WIO_TERMINAL_STORAGE_H
 
-#if !defined(SEEED_WIO_TERMINAL) && !defined(WIO_TERMINAL)
-#error "WioTerminalStorage requires a Wio Terminal target"
-#endif
-
-#include <Arduino.h>
+#include "WioTerminalQspi.h"
 #include <BlinkerV2/identity/DeviceAccessStore.h>
 #include <BlinkerV2/identity/DeviceInstanceIdStore.h>
 #include <BlinkerV2/interface/IAtomicBlobStore.h>
@@ -18,7 +14,8 @@ namespace blinker {
 // accepted only after CRC and read-back verification.
 class WioTerminalFlashBlobBank {
 public:
-    WioTerminalFlashBlobBank();
+    explicit WioTerminalFlashBlobBank(
+        WioTerminalQspiOwner& owner = wioTerminalQspiOwner());
 
     Result begin();
     void end();
@@ -28,6 +25,7 @@ public:
     IAtomicBlobStore& wifiSlot0Blob();
     IAtomicBlobStore& wifiSlot1Blob();
     IAtomicBlobStore& deviceAccessBlob();
+    WioTerminalQspiOwner& qspiOwner() { return owner_; }
 
 private:
     enum BlobId : uint8_t {
@@ -107,7 +105,7 @@ private:
     BlobView wifiSlot0_;
     BlobView wifiSlot1_;
     BlobView deviceAccess_;
-    uint32_t flashSize_;
+    WioTerminalQspiOwner& owner_;
     bool opened_;
 
     WioTerminalFlashBlobBank(const WioTerminalFlashBlobBank&);

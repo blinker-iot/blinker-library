@@ -22,6 +22,10 @@ WidgetCatalog、组件类型、布局、颜色、标题、JS 或推荐卡片。
 
 ## 2. 普通用户目标 API
 
+2026-10-13 可选 Sketch 定时：`#include <BlinkerTimer.h>`、`blinker::Timer<4> timers`，用 `setInterval(ms, callback)`／`setTimeout(ms, callback)` 注册，在原 `loop()` 的 `Blinker.run()` 后调用 `timers.run()`。固定容量、无堆分配，周期错过时跳过、不追赶；取消用 `cancel(handle)`，查询当前有效用 `active(handle)`。这是独立的开机内单调时间工具，不创建 App 任务、不写 Flash、不替代 realtime 租约。明确合同和验收状态见[现有任务与 Sketch timer](DEVICE_V2_TASK_AND_SKETCH_TIMER_EXECUTION_PLAN.md)。
+
+可选授时诊断：`blinker::WallClockSnapshot clock; bool valid = Blinker.timeStatus(clock);` 读取原业务时钟，false 时区分 `Unsynchronized`／`Stale`，true 时可观察来源、样本年龄和不确定度。未启用／未绑定时初始化输出；不新增时钟、协议请求或 facade 字段，不以该接口推断任务授权或来源可信。
+
 可选本机任务（2026-09-24，封闭普通ESP32 WiFi试点）：维护者匹配候选下，在`#include <Blinker.h>`前定义`BLINKER_ENABLE_TASKS 1`，在原`begin(...)`前调用并检查`Blinker.enableTasks(power, ...)`。只选择允许调度的现有标量Property，自动复用业务授时；属性仍须注册写回调并传入`begin()`，存活覆盖整个会话。没有新的begin参数、workspace或用户侧Python步骤；维护者提供容量/policy/签发配置。普通可写不等于允许调度，初始化owner authority仍需App明确操作。默认源码不准入、缺profile编译失败；其他模式不开放。精确合同以[执行器§8.17](DEVICE_V2_TASK_EXECUTOR_DESIGN.md#817-第四十三批最小任务启用入口与维护者profile)为准，不把软件/编译通过冒充该新入口的真机验收。
 
 可选业务 UTC（B3-4c，2026-09-13）：普通 WiFi / 纯 BLE / ESP32 WiFiBLE 在原 `begin(...)` 之前调用 `Blinker.enableTime()`；
@@ -31,7 +35,7 @@ WidgetCatalog、组件类型、布局、颜色、标题、JS 或推荐卡片。
 WiFi 云授时与 ESP32 BLE Control 的首次授时/断连保持/普通重启已有真机证据；Observer 与 R4/Wio 当前硬件仍待验。
 LAN 共用 responder 已接线，普通 ESP32 + 真实 App 的明文自然刷新/Observer 负例短闭环已过；内部 LAN 尚未产品化、默认开关不变。
 WiFiBLE/内部 Hub 已接自身可选授时；Hub 已通过可选模块接南向协商/回应的软件链路，不新增公开 Hub facade；真实子设备授时仍待短真机。
-共享读取接口仅供内部扩展，普通 Sketch 不需要接触快照/权限/ITimeSync。ESP32 3.3.11 混合/Hub 自身默认/开启单 ZIP 对照已过；
+ITimeSync共享扩展接口仍属内部；普通Sketch仅在需要诊断时选择本节新增timeStatus快照，不接触权限/ITimeSync。ESP32 3.3.11 混合/Hub 自身默认/开启单 ZIP 对照已过；
 增量分别为程序/RAM +3,076/+120 B 与 +2,992/+112 B，均未刷板，不能替代这两种 composition 的真实授时验证。
 Hub 自身 enableTime 不等于所有孩子支持授时；内部两个独立 16 B module 借用同一业务服务，仅实际安装才协商，普通 Sketch 无需配置这些内部接口。
 资源、协商、单槽 scope 接替限制与剩余入口统一见[业务授时 §15](DEVICE_V2_TIME_SYNC_IMPLEMENTATION_PLAN.md#15-b3-4c-3唯一南向-executor-的可选授时2026-09-13)。

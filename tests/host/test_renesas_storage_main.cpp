@@ -38,6 +38,12 @@ void testLifecycleCapacityAndIsolation() {
     CHECK(bank.begin());
     CHECK(bank.begin());
     CHECK(fake_preferences::state().beginCalls == 1U);
+    {
+        blinker::RenesasUnoPreferencesBlobBank contender;
+        const unsigned calls = fake_preferences::state().rpcCalls;
+        CHECK(!contender.begin());
+        CHECK(fake_preferences::state().rpcCalls == calls);
+    }
 
     blinker::IAtomicBlobStore* stores[] = {
         &bank.wifiSelectorBlob(),
@@ -107,13 +113,26 @@ void testFaultRecoveryAndCorruption() {
     fake_preferences::failNext(fake_preferences::RejectNextPut);
     CHECK(store.replace(blinker::ByteView(second, sizeof(second))).code() ==
           blinker::ErrorCode::WouldBlock);
+    CHECK(blinker::renesasUnoModemOwner().quarantined());
+    CHECK(fake_preferences::state().getCalls == fake_preferences::state().getCallsAtPut);
+    CHECK(fake_preferences::state().metadataCalls == fake_preferences::state().metadataCallsAtPut);
+    const unsigned blockedCalls = fake_preferences::state().rpcCalls;
+    CHECK(!store.replace(blinker::ByteView(second, sizeof(second))));
+    bank.end(); CHECK(!bank.begin());
+    CHECK(fake_preferences::state().rpcCalls == blockedCalls);
+    fake_preferences::reboot(); CHECK(bank.begin());
     expect(store, first, sizeof(first));
     fake_preferences::failNext(fake_preferences::CorruptNextPut);
     CHECK(store.replace(blinker::ByteView(second, sizeof(second))).code() ==
           blinker::ErrorCode::InternalError);
+    bank.end(); fake_preferences::reboot(); CHECK(bank.begin());
     expect(store, first, sizeof(first));
     fake_preferences::failNext(fake_preferences::ApplyButReportFailure);
-    CHECK(store.replace(blinker::ByteView(second, sizeof(second))));
+    CHECK(store.replace(blinker::ByteView(second, sizeof(second))).code() == blinker::ErrorCode::WouldBlock);
+    CHECK(blinker::renesasUnoModemOwner().quarantined());
+    CHECK(fake_preferences::state().getCalls == fake_preferences::state().getCallsAtPut);
+    CHECK(fake_preferences::state().metadataCalls == fake_preferences::state().metadataCallsAtPut);
+    bank.end(); fake_preferences::reboot(); CHECK(bank.begin());
     expect(store, second, sizeof(second));
 
     CHECK(fake_preferences::corrupt("ac0"));
@@ -153,12 +172,26 @@ void testPortableWifiJournalComposition() {
     blinker::clearWifiCredentialProfile(profile);
 }
 
+void testModemInitializationFailure() {
+    fake_preferences::reset();
+    fake_preferences::state().modemBeginAllowed = false;
+    blinker::RenesasUnoPreferencesBlobBank bank;
+    CHECK(!bank.begin());
+    CHECK(blinker::renesasUnoModemOwner().quarantined());
+    CHECK(fake_preferences::state().modemBeginCalls == 1U);
+    CHECK(fake_preferences::state().beginCalls == 0U && fake_preferences::state().rpcCalls == 0U);
+    CHECK(!bank.begin()); bank.end();
+    CHECK(fake_preferences::state().modemBeginCalls == 1U && fake_preferences::state().rpcCalls == 0U);
+    fake_preferences::reboot(); CHECK(bank.begin());
+}
+
 } // namespace
 
 int main() {
     testLifecycleCapacityAndIsolation();
     testFaultRecoveryAndCorruption();
     testPortableWifiJournalComposition();
+    testModemInitializationFailure();
     std::cout << "UNO R4 Preferences storage adapter tests passed\n";
     return 0;
 }

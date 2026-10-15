@@ -296,9 +296,19 @@ void optionalApiAndClockBinding() {
     CHECK(!facade.enableTasks(option) && facade.lastError() == ErrorCode::UnsupportedFeature);
     uint64_t utc = 123U;
     CHECK(!facade.time(utc) && utc == 0U);
+    WallClockSnapshot status;
+    status.utcMillis = 123U;
+    status.source = WallTimeSource::Server;
+    status.state = WallClockState::Synchronized;
+    CHECK(!facade.timeStatus(status));
+    CHECK(status.utcMillis == 0U && status.source == WallTimeSource::None &&
+          status.state == WallClockState::Unsynchronized);
     CHECK(facade.enableTime());
     utc = 456U;
     CHECK(!facade.time(utc) && utc == 0U); // Enabled is not synchronized.
+    status.utcMillis = 456U;
+    CHECK(!facade.timeStatus(status) && status.utcMillis == 0U &&
+          status.state == WallClockState::Unsynchronized);
     TimeSyncService service;
     Tick tick, otherTick;
     Random random, otherRandom;

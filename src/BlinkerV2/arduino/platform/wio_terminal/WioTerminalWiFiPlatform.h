@@ -66,6 +66,7 @@ public:
     IAtomicBlobStore& deviceInstanceBlob() {
         return storage_.deviceInstanceBlob();
     }
+    WioTerminalFlashBlobBank& storage() { return storage_; }
     WifiCredentialStore& wifiCredentials() { return wifiStorage_; }
     IWifiStation& wifiStation() { return station_; }
     CloudSessionClient& controlNetwork() { return controlNetwork_; }

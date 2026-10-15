@@ -124,6 +124,53 @@ Gateway time adapters remain internal/preview, not a public product API.
 Do not treat missing time as a valid zero timestamp. Final-version hardware
 acceptance is tracked separately for each declared platform and mode.
 
+For diagnosis, `blinker::WallClockSnapshot clock; Blinker.timeStatus(clock)`
+reads that same optional clock. The return value means valid UTC; on false,
+`clock.state` distinguishes `Unsynchronized` from `Stale`. A valid snapshot also
+includes source, sample age and uncertainty. Source is not an authorization or
+security guarantee. This does not start another synchronization or change
+`Blinker.lastError()`.
+
+## Optional Sketch intervals and delays
+
+```cpp
+#include <BlinkerTimer.h>  // Same installed library; uses Arduino millis().
+#include <Blinker.h>       // Or your existing BLE / WiFi+BLE selector.
+
+blinker::Timer<4> timers;  // Explicit capacity, no heap or Flash writes.
+
+void sampleSensor() { /* Update a local cache without blocking. */ }
+void finishPulse() { /* Finish a local output pulse. */ }
+
+void setup() {
+    // Keep your usual component setup and Blinker.begin(...) unchanged.
+    const auto sampling = timers.setInterval(1000U, sampleSensor);
+    const auto delayed = timers.setTimeout(500U, finishPulse);
+    if (!sampling.valid() || !delayed.valid()) { /* Invalid input or full. */ }
+}
+void loop() {
+    Blinker.run();
+    timers.run();
+}
+```
+
+`setInterval` / `setTimeout` also accept a `void (*)(void*)` callback and its
+context. Use `cancel(handle)`, `active(handle)`, `clear()` and `size()` to manage
+callbacks; a valid handle is an issued token, not proof that it is still active.
+Use integer milliseconds from 1 through `INT32_MAX`. No catch-up burst occurs
+after a slow loop: an interval keeps its phase but runs at most once per call.
+Callbacks may cancel or register timers; newly registered timers wait until a
+later `run()`. Contexts must remain alive, and handles must not outlive their
+scheduler. Use only from the same loop, not interrupts or other tasks.
+
+This is boot-local `millis()` scheduling, not an App-editable persistent task.
+Restart requires registration again. Network disconnect and `Blinker.end()` do
+not cancel these independent timers. Keep callbacks short; continue polling at
+gaps below `2^31 ms`, and clear/re-register after an unmeasured sleep or tick
+reset. Real-time upload still uses `realtime()` / `onSample()` and its lease,
+not an always-on report timer. The portable `SketchTimer<N>` core accepts a
+monotonic clock function for non-Arduino use.
+
 ## Optional local tasks (closed ESP32 WiFi pilot)
 
 Tasks require a maintainer-built development candidate with the admitted

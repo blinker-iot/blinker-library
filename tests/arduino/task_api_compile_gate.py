@@ -33,7 +33,7 @@ def main():
     entries = json.loads(args.compile_commands.read_text(encoding='utf-8'))
     entry = next(e for e in entries if e['file'].endswith('.ino.cpp'))
     raw = iter(entry['arguments'][1:])
-    command = [entry['arguments'][0]]
+    command = [entry['arguments'][0], '-I' + str(ROOT / 'src')]
     for arg in raw:
         if arg == '-o':
             next(raw)
@@ -52,9 +52,9 @@ def main():
         ('over-capacity', ENABLE + POLICY + WIFI + PROPERTY + CALL.replace('(power)', '(' + ','.join(['power'] * 33) + ')'), 'Select 1..32 task Properties'),
     ]
     for mode in ('BLE', 'WIFI_BLE'):
-        cases.append((mode.lower(), ENABLE + f'#define BLINKER_PRODUCT_{mode} 1\n#include <BlinkerV2/api/BlinkerFacade.h>\n', 'ESP32 manual WiFi only'))
+        cases.append((mode.lower(), ENABLE + f'#define BLINKER_PRODUCT_{mode} 1\n#include <BlinkerV2/api/BlinkerFacade.h>\n', 'admitted manual WiFi platform'))
     for arch in ('ARDUINO_ARCH_RENESAS_UNO', 'SEEED_WIO_TERMINAL'):
-        cases.append((arch.lower(), ENABLE + f'#undef ARDUINO_ARCH_ESP32\n#define {arch} 1\n#define BLINKER_PRODUCT_WIFI 1\n#include <BlinkerV2/api/BlinkerFacade.h>\n', 'ESP32 manual WiFi only'))
+        cases.append((arch.lower(), ENABLE + f'#undef ARDUINO_ARCH_ESP32\n#define {arch} 1\n#define BLINKER_PRODUCT_WIFI 1\n#include <BlinkerV2/api/BlinkerFacade.h>\n', 'admitted manual WiFi platform'))
     for flag, error in [('BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL', 'Task pilot admits manual WiFi only'),
                         ('BLINKER_INTERNAL_LAN_WEBSOCKET', 'requires the shared LocalAccess cloud authority')]:
         cases.append((flag.lower(), ENABLE + POLICY + f'#define {flag} 1\n' + WIFI, error))

@@ -258,7 +258,22 @@ target_include_directories(blinker_esp32_storage_adapter_tests PRIVATE
     stubs "${BLINKER_SOURCE_ROOT}/BlinkerV2/arduino/ports/esp32")
 
 blinker_test(blinker_task_product_tests test_task_product_main.cpp "${ESP32_STORAGE_FRAGMENT}")
+blinker_test(blinker_task_module_tests test_task_module_main.cpp)
+blinker_test(blinker_portable_ed25519_adapter_tests test_portable_ed25519_main.cpp)
+target_include_directories(blinker_portable_ed25519_adapter_tests PRIVATE
+    stubs/portable_ed25519)
 blinker_test(blinker_task_facade_tests test_task_facade_main.cpp)
+blinker_test(blinker_wifi_facade_multitu_tests
+    test_facade_multitu_main.cpp test_facade_multitu_peer.cpp)
+blinker_test(blinker_ble_facade_multitu_tests
+    test_facade_multitu_main.cpp test_facade_multitu_peer.cpp)
+target_compile_definitions(blinker_ble_facade_multitu_tests PRIVATE
+    BLINKER_TEST_FACADE_BLE=1)
+blinker_test(blinker_wifi_ble_facade_multitu_tests
+    test_facade_multitu_main.cpp test_facade_multitu_peer.cpp)
+target_compile_definitions(blinker_wifi_ble_facade_multitu_tests PRIVATE
+    BLINKER_TEST_FACADE_WIFI_BLE=1)
+blinker_test(blinker_sketch_timer_tests test_sketch_timer_main.cpp)
 target_compile_definitions(blinker_task_product_tests PRIVATE ARDUINO_ARCH_ESP32=1)
 target_include_directories(blinker_task_product_tests PRIVATE stubs)
 
@@ -274,6 +289,41 @@ target_compile_definitions(blinker_renesas_storage_adapter_tests PRIVATE
 target_include_directories(blinker_renesas_storage_adapter_tests PRIVATE
     stubs/renesas_preferences
     "${BLINKER_SOURCE_ROOT}/BlinkerV2/arduino/ports/uno_r4")
+
+blinker_test(blinker_uno_r4_task_storage_tests
+    test_uno_r4_task_storage_main.cpp "${UNO_R4_STORAGE_FRAGMENT}")
+target_compile_definitions(blinker_uno_r4_task_storage_tests PRIVATE
+    ARDUINO_ARCH_RENESAS_UNO=1)
+target_include_directories(blinker_uno_r4_task_storage_tests PRIVATE
+    stubs/renesas_preferences
+    "${BLINKER_SOURCE_ROOT}/BlinkerV2/arduino/ports/uno_r4")
+
+# The station shares the same singleton as its real storage implementation.
+target_sources(blinker_renesas_wifi_adapter_tests PRIVATE "${UNO_R4_STORAGE_FRAGMENT}")
+target_include_directories(blinker_renesas_wifi_adapter_tests PRIVATE stubs/renesas_preferences)
+
+blinker_test(blinker_uno_r4_modem_owner_tests test_uno_r4_modem_owner_main.cpp)
+target_include_directories(blinker_uno_r4_modem_owner_tests PRIVATE stubs/renesas_modem_client)
+add_test(NAME blinker_uno_r4_modem_owner_tests COMMAND blinker_uno_r4_modem_owner_tests)
+
+blinker_test(blinker_task_rpc_fault_observer_tests test_task_rpc_fault_observer_main.cpp)
+target_include_directories(blinker_task_rpc_fault_observer_tests PRIVATE stubs/r4_rpc_fault_observer)
+add_test(NAME blinker_task_rpc_fault_observer_tests COMMAND blinker_task_rpc_fault_observer_tests)
+
+blinker_test(blinker_wio_qspi_owner_tests test_wio_qspi_owner_main.cpp)
+add_test(NAME blinker_wio_qspi_owner_tests COMMAND blinker_wio_qspi_owner_tests)
+blinker_test(blinker_wio_task_storage_tests test_wio_task_storage_main.cpp)
+add_test(NAME blinker_wio_task_storage_tests COMMAND blinker_wio_task_storage_tests)
+
+blinker_test(blinker_wio_task_probe_tests test_wio_task_probe_main.cpp)
+add_test(NAME blinker_wio_task_probe_tests COMMAND blinker_wio_task_probe_tests)
+foreach(mode IN ITEMS 0 1 2)
+    set(target blinker_wio_storage_gate_mode${mode}_tests)
+    blinker_test(${target} test_wio_storage_gate_main.cpp)
+    target_include_directories(${target} PRIVATE stubs/diagnostics)
+    target_compile_definitions(${target} PRIVATE BLINKER_INTERNAL_WIO_STORAGE_GATE_MODE=${mode})
+    add_test(NAME ${target} COMMAND ${target})
+endforeach()
 
 if(BLINKER_BUILD_FUZZ_SMOKE OR BLINKER_USE_LIBFUZZER)
     blinker_test(blinker_device_v2_protocol_fuzz fuzz_protocol_main.cpp)
@@ -342,7 +392,14 @@ add_test(NAME blinker_task_management_session_tests COMMAND blinker_task_managem
 add_test(NAME blinker_task_management_grant_tests COMMAND blinker_task_management_grant_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../golden/task_management_grant_vectors.properties)
 add_test(NAME blinker_task_product_tests COMMAND blinker_task_product_tests)
+add_test(NAME blinker_task_module_tests COMMAND blinker_task_module_tests)
+add_test(NAME blinker_portable_ed25519_adapter_tests COMMAND blinker_portable_ed25519_adapter_tests)
+add_test(NAME blinker_uno_r4_task_storage_tests COMMAND blinker_uno_r4_task_storage_tests)
 add_test(NAME blinker_task_facade_tests COMMAND blinker_task_facade_tests)
+add_test(NAME blinker_wifi_facade_multitu_tests COMMAND blinker_wifi_facade_multitu_tests)
+add_test(NAME blinker_ble_facade_multitu_tests COMMAND blinker_ble_facade_multitu_tests)
+add_test(NAME blinker_wifi_ble_facade_multitu_tests COMMAND blinker_wifi_ble_facade_multitu_tests)
+add_test(NAME blinker_sketch_timer_tests COMMAND blinker_sketch_timer_tests)
 add_test(NAME blinker_time_sync_runtime_tests COMMAND blinker_time_sync_runtime_tests)
 add_test(NAME blinker_time_sync_responder_tests COMMAND blinker_time_sync_responder_tests)
 add_test(NAME blinker_time_sync_tests COMMAND blinker_time_sync_tests

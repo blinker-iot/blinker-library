@@ -1,5 +1,6 @@
 #include <UnoR4WiFi.h>
 #include <WiFiS3.h>
+#include <UnoR4Storage.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -120,6 +121,30 @@ int main() {
         station.start(invalid).code() == blinker::ErrorCode::InvalidArgument,
         "invalid config rejected");
     expect(WiFi.beginCalls == 0U, "invalid config never reaches SDK");
+
+    fake_preferences::reset();
+    blinker::RenesasUnoPreferencesBlobBank bank;
+    expect(bank.begin().ok(), "shared modem namespace");
+    expect(station.start(secured).ok(), "station before task operation");
+    blinker::RenesasUnoModemOwner& owner = blinker::renesasUnoModemOwner();
+    {
+        blinker::RenesasUnoModemOwner::Operation operation(owner, &bank, 1000U);
+        expect(operation.result().ok(), "storage owns modem");
+        station.poll();
+        expect(WiFi.statusCalls == 0U, "station poll cannot take storage modem");
+        expect(owner.prepare().ok(), "prepare storage RPC");
+        expect(!owner.complete(false), "failed RPC quarantines modem");
+    }
+    station.poll();
+    expect(station.state() == blinker::WifiStationState::Failed &&
+           station.lastError() == blinker::ErrorCode::StateConflict,
+           "station exposes quarantined modem");
+    station.stop();
+    expect(WiFi.statusCalls == 0U && WiFi.disconnectCalls == 0U,
+           "poll and cleanup send no RPC after ambiguity");
+    expect(station.start(secured).code() == blinker::ErrorCode::StateConflict,
+           "reconnect does not bypass quarantine");
+    expect(WiFi.beginCalls == 1U, "no duplicate station begin");
 
     std::cout << "renesas wifi adapter tests passed" << std::endl;
     return 0;

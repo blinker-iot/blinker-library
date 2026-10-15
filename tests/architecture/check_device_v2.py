@@ -993,14 +993,22 @@ def main() -> int:
         )
     ):
         failures.append("public facade still exposes a redundant product tag")
+    facade_class = facade_text.split("class BlinkerClass {", 1)[-1].split("\n};", 1)[0]
     if (
         "IsInteraction" in facade_text
         or "#include <type_traits>" in facade_text
-        or "#if defined(BLINKER_PRODUCT_WIFI)" not in facade_text
-        or "#elif defined(BLINKER_PRODUCT_BLE)" not in facade_text
-        or "#elif defined(BLINKER_PRODUCT_WIFI_BLE)" not in facade_text
+        or "SelectedProfile" in facade_text
+        or "#if" in facade_class
+        or "#elif" in facade_class
+        or "EntryProfile<Interactions...>::make(" not in facade_class
+        or "EntryProfile<First, Rest...>::make()" not in facade_class
+        or "first.fieldAt(0U)" not in facade_class
+        or any(
+            "struct EntryProfile<First, Rest...>" not in header.read_text(encoding="utf-8")
+            for header in (WIFI_HEADER, BLE_HEADER, WIFI_BLE_HEADER)
+        )
     ):
-        failures.append("public facade product overload boundary regression")
+        failures.append("public facade must remain product-independent across translation units")
     lifecycle_api_text = "\n".join(
         path.read_text(encoding="utf-8")
         for path in (
@@ -1342,6 +1350,80 @@ def main() -> int:
             for label, pattern in FORBIDDEN_NO_HEAP_TOKENS.items():
                 if pattern.search(code):
                     failures.append(f"{path}: forbidden {label} in no-heap layer")
+
+    r4_port = PORT_ROOT / "uno_r4"
+    r4_storage = strip_comments((r4_port / "UnoR4Storage.inc").read_text(encoding="utf-8"))
+    r4_header = strip_comments((r4_port / "UnoR4Storage.h").read_text(encoding="utf-8"))
+    if (
+        "Preferences preferences_" in r4_header
+        or "preferences_." in r4_storage
+        or "modem.passthrough" not in r4_storage
+        or "RenesasUnoModemOwner::Operation" not in r4_storage
+    ):
+        failures.append("R4 storage bypasses shared modem deadline/quarantine or restores SDK destructor RPC")
+    r4_wifi = strip_comments((PRODUCT_UNO_R4 / "UnoR4WiFiPlatform.h").read_text(encoding="utf-8"))
+    r4_ble = strip_comments((PRODUCT_UNO_R4 / "UnoR4BLEPlatform.h").read_text(encoding="utf-8"))
+    if "RenesasUnoModemClient<" not in r4_wifi or "RenesasUnoModemBleLink<" not in r4_ble:
+        failures.append("R4 native network/HCI bypasses the shared modem owner")
+    r4_probe = strip_comments((REPOSITORY / "tests" / "internal" / "arduino" /
+                              "UnoR4TaskStorageProbe" / "UnoR4TaskStorageProbe.ino").read_text(encoding="utf-8"))
+    if "modem.timeout(" in r4_probe or "RenesasUnoModemOwner::Operation" not in r4_probe:
+        failures.append("R4 storage probe bypasses the shared modem budget")
+
+    wio_port = PORT_ROOT / "wio_terminal"
+    wio_storage = strip_comments((wio_port / "WioTerminalStorage.inc").read_text(encoding="utf-8"))
+    wio_header = strip_comments((wio_port / "WioTerminalStorage.h").read_text(encoding="utf-8"))
+    wio_tasks = strip_comments((wio_port / "WioTerminalTaskStorage.h").read_text(encoding="utf-8"))
+    if (
+        "WioTerminalQspiOwner::Operation" not in wio_storage
+        or "WioTerminalQspiOwner& owner_" not in wio_header
+        or any(token in wio_storage for token in ("QSPI->", "endQspi(", "beginQspi("))
+        or "taskSnapshotBlob" in wio_header
+        or "present ? ErrorCode::InvalidEncoding : ErrorCode::NotFound" not in wio_storage
+    ):
+        failures.append("Wio credential bank bypasses shared QSPI owner or adds default task storage")
+    if not all(token in wio_tasks for token in (
+        "bool regionReserved = false", "Region::Tasks", "pageSize = 256U",
+        "owner_.program(", "owner_.verificationFailed(", "ErrorCode::UnsupportedVersion",
+        "ErrorCode::CapacityExceeded",
+    )) or "TaskEngine" in wio_tasks or "TaskCloudTransport" in wio_tasks:
+        failures.append("Wio optional task view loses region/page/fault guards or duplicates execution")
+    wio_product = strip_comments((ARDUINO_ROOT / "platform" / "wio_terminal" /
+                                 "WioTerminalWiFiProduct.h").read_text(encoding="utf-8"))
+    if not all(token in wio_product for token in (
+        "BLINKER_INTERNAL_WIO_TASKS", "BLINKER_INTERNAL_WIO_TASK_REGION_RESERVED",
+        "BLINKER_TASK_CAPACITY != 4", "WioTerminalWifiTaskExtension<",
+    )):
+        failures.append("Wio task product loses explicit four-slot/profile admission")
+
+    wio_gate_dir = REPOSITORY / "tests" / "internal" / "arduino" / "PlatformStorageBackupGate"
+    wio_raw_gate = strip_comments((wio_gate_dir / "WioRawQspi.h").read_text(encoding="utf-8"))
+    wio_owned_gate = strip_comments((wio_gate_dir / "WioOwnedQspi.h").read_text(encoding="utf-8"))
+    wio_gate = strip_comments((wio_gate_dir / "WioStorageGate.h").read_text(encoding="utf-8"))
+    if ("WioOwnedQspi.h" not in wio_raw_gate or "wioTerminalQspiOwner()" not in wio_raw_gate or
+            any(token in wio_raw_gate for token in ("QSPI->", "NVMCTRL->", "beginQspi(", "endQspi(")) or
+            not all(token in wio_owned_gate for token in (
+                "Owner::Operation", "remainingBudget(", "restoreSector(", "verificationFailed(",
+            ))):
+        failures.append("Wio maintenance duplicates raw SDK driver or bypasses owner/budget")
+    if not all(token in wio_gate for token in (
+        "BLINKER_INTERNAL_WIO_STORAGE_GATE_MODE == 1", "BLINKER_INTERNAL_WIO_STORAGE_GATE_MODE == 2",
+        "BLINKER_INTERNAL_WIO_TASK_REGION_RESERVED", "BLINKER_INTERNAL_WIO_STORAGE_SOURCE_ID",
+        "BLINKER_INTERNAL_WIO_STORAGE_BASELINE_SHA256_HEX", "validHexDigest(",
+        "memcmp(desired + identityOffset, current + identityOffset, 8192U) == 0",
+        "originalBackup(desired, desiredSize)",
+    )):
+        failures.append("Wio maintenance loses fixed-region/original-backup/identity guards")
+    wio_probe_dir = REPOSITORY / "tests" / "internal" / "arduino" / "WioTerminalTaskStorageProbe"
+    wio_probe = strip_comments((wio_probe_dir / "WioTerminalTaskStorageProbe.ino").read_text(encoding="utf-8"))
+    wio_probe_port = strip_comments((wio_probe_dir / "TaskStorageProbePort.h").read_text(encoding="utf-8"))
+    if ("void setup() { Serial.begin(115200U); }" not in wio_probe or
+            not all(token in wio_probe_port for token in (
+                "OwnedQspiAccess", "TaskSnapshotCodec::encode(", "tasks_.replace(", "tasks_.clear(",
+            )) or any(token in wio_probe + wio_probe_port for token in (
+                "TaskEngine", "TaskCloudTransport", "WiFi.begin(", "loadOrCreate(", "NVIC_SystemReset(",
+            ))):
+        failures.append("Wio storage-only probe adds boot-time IO/network/executor or bypasses real store")
 
     if failures:
         print("\n".join(failures), file=sys.stderr)

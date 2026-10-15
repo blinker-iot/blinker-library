@@ -1,4 +1,26 @@
-# DeviceKey cloud-login freeze v41 (2026-09-24; reviewed typed task facade opt-in)
+# DeviceKey cloud-login freeze v45 (2026-10-14; reviewed internal Wio task admission)
+# Only the Facade platform guard adds the opt-in internal Wio task candidate.
+# Shared class layout, defaults, APIs, login/session and MQTT remain unchanged.
+# Previous v44 (2026-10-14; reviewed stable multi-TU facade)
+# Product selection is a dependent entry helper, never conditional members or
+# SelectedProfile binding in the shared BlinkerClass definition. The three
+# public entry headers select only call-site packs; the global facade, 12 B
+# ABI, begin arguments and existing TaskSupport/factory remain unchanged.
+# Renesas Print is forward-declared as the Core's arduino::Print entity in
+# every TU, preserving the existing native debug API independent of include order.
+# Only the Facade digest changes; login/session/MQTT digests are preserved.
+# Previous v43 (2026-10-14; reviewed internal R4 task seam)
+# Facade admits only explicitly gated R4 manual-WiFi tasks. The R4 product
+# selects the shared optional lifecycle/carrier only under that gate and an
+# explicit capacity/policy; default remains the original WiFi composition.
+# No facade fields, begin arguments, DeviceKey/login wire or MQTT changes.
+# Only Facade and R4 product digests change in this revision.
+# Previous v42 (2026-10-13; reviewed timeStatus observation)
+# Facade adds only a read of the existing business clock snapshot, resetting
+# output before the read. No fields, begin/login wire, credentials or time
+# negotiation changes. Sketch Timer is separate and never enters this graph.
+# All other frozen implementation digests remain unchanged.
+# Previous v41 (2026-09-24; reviewed typed task facade opt-in)
 # TaskSupport adds an explicit property allowlist before begin; no facade
 # instance fields, login credentials, begin signature or MQTT changes.
 # WiFi lifecycle selects one optional carrier and task lifecycle wrapper;
@@ -35,7 +57,7 @@
 # layout lines. Dependency/layout changes have separate architecture/package
 # gates. Implementation changes still require review and an explicit update.
 4f1287f4c37e08b02189859766b5c3b708ea7226ed0fa177033b49accc4a2d47  src/BlinkerV2/api/WifiDeviceKeyProfile.h
-f38d2cd5cf55185ac00a28b1f4ac8d3b93fccafbcd2b18458457eb11b4221d99  src/BlinkerV2/api/BlinkerFacade.h
+99cad57f2d6292b14a96561deaecfb5851316e7cd60b5d06f0794ed80e1fe1ba  src/BlinkerV2/api/BlinkerFacade.h
 7347cdea171a30c0277a99b01290b40e9b4df98bbfad7319d5c7a33e67371c00  src/BlinkerV2/identity/DeviceKey.h
 db599ad42759a06951c3b5e5ba64f14254668ce0104bf3e9764f1d0505b5c46d  src/BlinkerV2/identity/DeviceKey.inc
 e7da166a0c243a354019e7c21d4bf9d7bfaac6c1b4b62a16b34ae2ee70f200cd  src/BlinkerV2/identity/ConfiguredDeviceKeySource.h
@@ -55,5 +77,5 @@ f0cfe0fcc6832216a3a5302cd164b886508ddf37af8e270828aba5604b059abf  src/BlinkerV2/
 d99a25cdada22ebe933acb40286ea06da82492207ff2f5a04786d4fec040052f  src/BlinkerV2/arduino/ports/esp32/Esp32WiFiProv.ipp
 fe91b8c62dafe51965cdf977c3961bdbcb9dac884f923a67a2b16f6398ac0a36  src/BlinkerV2/arduino/platform/esp32/Esp32WiFiProduct.h
 adef23aab205e127d98920a526c6c4cd45a3d78341663a190fba6490a4c26e39  src/BlinkerV2/arduino/platform/esp32/Esp32WiFiBLEProduct.h
-41b4a39b146983a688cc8fc4fab7711586019861ff3795ade89b9064f2f70dd2  src/BlinkerV2/arduino/platform/uno_r4/UnoR4WiFiProduct.h
+50f3512dd962f0508dd4470be206e296d43ae47d399789ce777c67d475a63515  src/BlinkerV2/arduino/platform/uno_r4/UnoR4WiFiProduct.h
 6f2f7e75f56826eeaf7df8fc171886d751055058ef3c460e2ee57138b08742a3  tests/golden/device_key_session_golden_vectors.properties

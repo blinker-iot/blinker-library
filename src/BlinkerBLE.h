@@ -8,6 +8,11 @@
 #define BLINKER_PRODUCT_BLE 1
 #include "BlinkerV2/api/BlinkerFacade.h"
 
+namespace blinker { namespace facade_detail {
+template <typename First, typename... Rest>
+struct EntryProfile<First, Rest...> : LocalEntryProfile<BleProfile> {};
+} }
+
 #if defined(ARDUINO_ARCH_ESP32)
 #include "BlinkerV2/arduino/platform/esp32/Esp32BLEProduct.h"
 #elif defined(ARDUINO_ARCH_RENESAS_UNO) || \

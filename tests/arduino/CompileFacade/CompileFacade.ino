@@ -14,7 +14,19 @@
 #error "BLINKER_FACADE_PROFILE must be 1 or 2"
 #endif
 
-#include <Blinker.h>
+// This portable facade fixture provides its own lifecycle below. Public
+// product/SDK linkage is covered separately by CompilePublicWiFi/BleQuickStart.
+#include <BlinkerV2/api/BlinkerFacade.h>
+
+namespace blinker { namespace facade_detail {
+template <typename First, typename... Rest>
+struct EntryProfile<First, Rest...>
+#if BLINKER_FACADE_PROFILE == 1
+    : WifiEntryProfile {};
+#else
+    : LocalEntryProfile<BleProfile> {};
+#endif
+} }
 
 BLINKER_PROPERTY(power, bool, blinker::readWrite());
 BLINKER_PROPERTY(temperature, float, blinker::readOnly());

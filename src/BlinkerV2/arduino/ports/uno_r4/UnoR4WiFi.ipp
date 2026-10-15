@@ -1,6 +1,7 @@
 #include <BlinkerV2/core/SecureMemory.h>
 #include <BlinkerV2/provisioning/WifiCredential.h>
 #include <WiFiS3.h>
+#include "UnoR4ModemOwner.h"
 
 #include <string.h>
 
@@ -16,6 +17,9 @@ inline void RenesasUnoWifiStation::fail(ErrorCode error) {
 }
 
 inline Result RenesasUnoWifiStation::start(const WifiNetworkConfig& config) {
+    if (!renesasUnoModemOwner().networkAllowed()) {
+        return Result::failure(ErrorCode::StateConflict);
+    }
     if (state_ != WifiStationState::Stopped) {
         return Result::failure(ErrorCode::StateConflict);
     }
@@ -57,6 +61,10 @@ inline void RenesasUnoWifiStation::poll() {
         state_ == WifiStationState::Failed) {
         return;
     }
+    if (!renesasUnoModemOwner().networkAllowed()) {
+        if (renesasUnoModemOwner().quarantined()) fail(ErrorCode::StateConflict);
+        return;
+    }
     const wl_status_t nativeState =
         static_cast<wl_status_t>(WiFi.status());
     if (nativeState == WL_CONNECTED) {
@@ -72,7 +80,7 @@ inline void RenesasUnoWifiStation::poll() {
 }
 
 inline void RenesasUnoWifiStation::stop() {
-    if (state_ != WifiStationState::Stopped) {
+    if (state_ != WifiStationState::Stopped && renesasUnoModemOwner().networkAllowed()) {
         (void)WiFi.disconnect();
     }
     state_ = WifiStationState::Stopped;

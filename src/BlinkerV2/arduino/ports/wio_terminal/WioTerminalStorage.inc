@@ -1,310 +1,19 @@
-#if defined(SEEED_WIO_TERMINAL) || defined(WIO_TERMINAL)
-
 #include "WioTerminalStorage.h"
 
 #include <BlinkerV2/core/Crc32.h>
 #include <limits.h>
 #include <string.h>
-#include <wiring_private.h>
-
-/*
- * The SAMD51 QSPI transaction flow is adapted from Adafruit_SPIFlash.
- * Copyright (c) 2019 Ha Thach and Dean Miller for Adafruit Industries LLC.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to
- * deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
- * sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
 
 namespace {
 
-enum : uint8_t {
-    kCommandRead = 0x03U,
-    kCommandPageProgram = 0x02U,
-    kCommandReadStatus = 0x05U,
-    kCommandWriteEnable = 0x06U,
-    kCommandWriteDisable = 0x04U,
-    kCommandSectorErase = 0x20U,
-    kCommandReadJedec = 0x9fU,
-    kCommandEnableReset = 0x66U,
-    kCommandReset = 0x99U
-};
-
-enum : uint32_t {
-    kExpectedCapacity = 4UL * 1024UL * 1024UL,
-    kPageSize = 256U,
-    kSectorSize = 4096U,
-    kInstructionTimeoutMs = 100U,
-    kReadyTimeoutMs = 1000U,
-    kEraseTimeoutMs = 10000U
-};
-
-uint32_t qspiCapacity = 0U;
-bool qspiOpened = false;
-
-bool elapsed(uint32_t started, uint32_t timeout) {
-    return static_cast<uint32_t>(millis() - started) >= timeout;
-}
-
-bool disableCache() {
-    const bool enabled = CMCC->SR.bit.CSTS != 0U;
-    if (enabled) {
-        CMCC->CTRL.bit.CEN = 0U;
-        while (CMCC->SR.bit.CSTS != 0U) {}
-    }
-    CMCC->MAINT0.bit.INVALL = 1U;
-    return enabled;
-}
-
-void restoreCache(bool enabled) {
-    if (enabled) CMCC->CTRL.bit.CEN = 1U;
-}
-
-bool runInstruction(
-    uint8_t command,
-    uint32_t frame,
-    uint32_t address,
-    uint8_t* buffer,
-    size_t size) {
-    const bool restore = buffer != nullptr && size != 0U
-                             ? disableCache()
-                             : false;
-
-    if ((frame & QSPI_INSTRFRAME_ADDREN) != 0U &&
-        (buffer == nullptr || size == 0U)) {
-        QSPI->INSTRADDR.reg = address;
-    }
-    QSPI->INTFLAG.reg = QSPI_INTFLAG_INSTREND;
-    QSPI->INSTRCTRL.bit.INSTR = command;
-    QSPI->INSTRFRAME.reg = frame;
-    volatile uint32_t synchronizedFrame = QSPI->INSTRFRAME.reg;
-    (void)synchronizedFrame;
-
-    if (buffer != nullptr && size != 0U) {
-        uint8_t* qspiMemory =
-            reinterpret_cast<uint8_t*>(QSPI_AHB + address);
-        const uint32_t transfer = frame & QSPI_INSTRFRAME_TFRTYPE_Msk;
-        if (transfer == QSPI_INSTRFRAME_TFRTYPE_READ ||
-            transfer == QSPI_INSTRFRAME_TFRTYPE_READMEMORY) {
-            memcpy(buffer, qspiMemory, size);
-        } else {
-            memcpy(qspiMemory, buffer, size);
-        }
-    }
-
-    QSPI->CTRLA.reg = QSPI_CTRLA_ENABLE | QSPI_CTRLA_LASTXFER;
-    const uint32_t started = millis();
-    while (QSPI->INTFLAG.bit.INSTREND == 0U) {
-        if (elapsed(started, kInstructionTimeoutMs)) {
-            restoreCache(restore);
-            return false;
-        }
-        yield();
-    }
-    QSPI->INTFLAG.reg = QSPI_INTFLAG_INSTREND;
-    restoreCache(restore);
-    return true;
-}
-
-bool runCommand(uint8_t command) {
-    const uint32_t frame = QSPI_INSTRFRAME_WIDTH_SINGLE_BIT_SPI |
-                           QSPI_INSTRFRAME_ADDRLEN_24BITS |
-                           QSPI_INSTRFRAME_TFRTYPE_READ |
-                           QSPI_INSTRFRAME_INSTREN;
-    return runInstruction(command, frame, 0U, nullptr, 0U);
-}
-
-bool readCommand(uint8_t command, uint8_t* output, size_t size) {
-    const uint32_t frame = QSPI_INSTRFRAME_WIDTH_SINGLE_BIT_SPI |
-                           QSPI_INSTRFRAME_ADDRLEN_24BITS |
-                           QSPI_INSTRFRAME_TFRTYPE_READ |
-                           QSPI_INSTRFRAME_INSTREN |
-                           QSPI_INSTRFRAME_DATAEN;
-    return runInstruction(command, frame, 0U, output, size);
-}
-
-bool readMemory(uint32_t address, uint8_t* output, size_t size) {
-    const uint32_t frame = QSPI_INSTRFRAME_WIDTH_SINGLE_BIT_SPI |
-                           QSPI_INSTRFRAME_ADDRLEN_24BITS |
-                           QSPI_INSTRFRAME_TFRTYPE_READMEMORY |
-                           QSPI_INSTRFRAME_INSTREN |
-                           QSPI_INSTRFRAME_ADDREN |
-                           QSPI_INSTRFRAME_DATAEN;
-    return runInstruction(kCommandRead, frame, address, output, size);
-}
-
-bool writeMemory(uint32_t address, const uint8_t* input, size_t size) {
-    const uint32_t frame = QSPI_INSTRFRAME_WIDTH_SINGLE_BIT_SPI |
-                           QSPI_INSTRFRAME_ADDRLEN_24BITS |
-                           QSPI_INSTRFRAME_TFRTYPE_WRITEMEMORY |
-                           QSPI_INSTRFRAME_INSTREN |
-                           QSPI_INSTRFRAME_ADDREN |
-                           QSPI_INSTRFRAME_DATAEN;
-    return runInstruction(
-        kCommandPageProgram,
-        frame,
-        address,
-        const_cast<uint8_t*>(input),
-        size);
-}
-
-bool eraseSectorCommand(uint32_t address) {
-    const uint32_t frame = QSPI_INSTRFRAME_WIDTH_SINGLE_BIT_SPI |
-                           QSPI_INSTRFRAME_ADDRLEN_24BITS |
-                           QSPI_INSTRFRAME_TFRTYPE_WRITE |
-                           QSPI_INSTRFRAME_INSTREN |
-                           QSPI_INSTRFRAME_ADDREN;
-    return runInstruction(
-        kCommandSectorErase,
-        frame,
-        address,
-        nullptr,
-        0U);
-}
-
-bool waitReady(uint32_t timeout) {
-    const uint32_t started = millis();
-    uint8_t status = 0xffU;
-    do {
-        if (!readCommand(kCommandReadStatus, &status, sizeof(status))) {
-            return false;
-        }
-        if ((status & 0x01U) == 0U) return true;
-        yield();
-    } while (!elapsed(started, timeout));
-    return false;
-}
-
-bool enableWrite() {
-    uint8_t status = 0U;
-    return runCommand(kCommandWriteEnable) &&
-           readCommand(kCommandReadStatus, &status, sizeof(status)) &&
-           (status & 0x02U) != 0U;
-}
-
-bool beginQspi(uint32_t& capacity) {
-    if (qspiOpened) {
-        capacity = qspiCapacity;
-        return true;
-    }
-
-    MCLK->APBCMASK.bit.QSPI_ = true;
-    MCLK->AHBMASK.bit.QSPI_ = true;
-    MCLK->AHBMASK.bit.QSPI_2X_ = false;
-
-    QSPI->CTRLA.bit.SWRST = 1U;
-    const uint32_t resetStarted = millis();
-    while (QSPI->CTRLA.bit.SWRST != 0U) {
-        if (elapsed(resetStarted, kInstructionTimeoutMs)) return false;
-    }
-
-    pinPeripheral(PIN_QSPI_SCK, PIO_COM);
-    pinPeripheral(PIN_QSPI_CS, PIO_COM);
-    pinPeripheral(PIN_QSPI_IO0, PIO_COM);
-    pinPeripheral(PIN_QSPI_IO1, PIO_COM);
-    pinPeripheral(PIN_QSPI_IO2, PIO_COM);
-    pinPeripheral(PIN_QSPI_IO3, PIO_COM);
-
-    QSPI->BAUD.reg = QSPI_BAUD_BAUD(VARIANT_MCK / 4000000UL);
-    QSPI->CTRLB.reg = QSPI_CTRLB_MODE_MEMORY |
-                      QSPI_CTRLB_DATALEN_8BITS |
-                      QSPI_CTRLB_CSMODE_LASTXFER;
-    QSPI->CTRLA.bit.ENABLE = 1U;
-
-    if (!waitReady(kReadyTimeoutMs) ||
-        !runCommand(kCommandEnableReset) ||
-        !runCommand(kCommandReset)) {
-        return false;
-    }
-    delayMicroseconds(30U);
-
-    uint8_t jedec[3] = {};
-    if (!readCommand(kCommandReadJedec, jedec, sizeof(jedec)) ||
-        jedec[0] == 0U || jedec[0] == 0xffU || jedec[2] != 0x16U ||
-        !runCommand(kCommandWriteDisable) ||
-        !waitReady(kReadyTimeoutMs)) {
-        return false;
-    }
-
-    qspiCapacity = kExpectedCapacity;
-    qspiOpened = true;
-    capacity = qspiCapacity;
-    return true;
-}
-
-void endQspi() {
-    if (qspiOpened) runCommand(kCommandWriteDisable);
-    QSPI->CTRLA.bit.ENABLE = 0U;
-    MCLK->APBCMASK.bit.QSPI_ = false;
-    MCLK->AHBMASK.bit.QSPI_ = false;
-    MCLK->AHBMASK.bit.QSPI_2X_ = false;
-    qspiOpened = false;
-    qspiCapacity = 0U;
-}
-
-bool readQspi(uint32_t address, uint8_t* output, size_t size) {
-    if (!qspiOpened || output == nullptr || size == 0U ||
-        address > qspiCapacity || size > qspiCapacity - address) {
-        return false;
-    }
-    return waitReady(kReadyTimeoutMs) &&
-           readMemory(address, output, size);
-}
-
-bool eraseQspiSector(uint32_t address) {
-    if (!qspiOpened || (address % kSectorSize) != 0U ||
-        address > qspiCapacity - kSectorSize) {
-        return false;
-    }
-    return waitReady(kReadyTimeoutMs) && enableWrite() &&
-           eraseSectorCommand(address) && waitReady(kEraseTimeoutMs);
-}
-
-bool programQspi(uint32_t address, const uint8_t* input, size_t size) {
-    if (!qspiOpened || input == nullptr || size == 0U ||
-        address > qspiCapacity || size > qspiCapacity - address) {
-        return false;
-    }
-
-    size_t remaining = size;
-    while (remaining != 0U) {
-        const size_t pageRemaining =
-            kPageSize - static_cast<size_t>(address % kPageSize);
-        const size_t written = remaining < pageRemaining
-                                   ? remaining
-                                   : pageRemaining;
-        if (!waitReady(kReadyTimeoutMs) || !enableWrite() ||
-            !writeMemory(address, input, written) ||
-            !waitReady(kReadyTimeoutMs)) {
-            return false;
-        }
-        address += static_cast<uint32_t>(written);
-        input += written;
-        remaining -= written;
-    }
-    return true;
-}
-
-bool qspiMatches(uint32_t address, const uint8_t* expected, size_t size) {
+bool qspiMatches(blinker::WioTerminalQspiOwner& owner, const void* token,
+                 uint32_t address, const uint8_t* expected, size_t size) {
     uint8_t actual[64];
     while (size != 0U) {
         const size_t checked = size < sizeof(actual) ? size : sizeof(actual);
-        if (!readQspi(address, actual, checked) ||
-            memcmp(actual, expected, checked) != 0) {
+        if (!owner.read(token, address, actual, checked)) return false;
+        if (memcmp(actual, expected, checked) != 0) {
+            (void)owner.verificationFailed(token);
             return false;
         }
         address += static_cast<uint32_t>(checked);
@@ -314,14 +23,14 @@ bool qspiMatches(uint32_t address, const uint8_t* expected, size_t size) {
     return true;
 }
 
-bool qspiBlank(uint32_t address, size_t size) {
+bool qspiBlank(blinker::WioTerminalQspiOwner& owner, const void* token,
+               uint32_t address, size_t size) {
     uint8_t bytes[64];
     while (size != 0U) {
         const size_t checked = size < sizeof(bytes) ? size : sizeof(bytes);
-        if (!readQspi(address, bytes, checked)) return false;
-        for (size_t index = 0U; index < checked; ++index) {
+        if (!owner.read(token, address, bytes, checked)) return false;
+        for (size_t index = 0U; index < checked; ++index)
             if (bytes[index] != 0xffU) return false;
-        }
         address += static_cast<uint32_t>(checked);
         size -= checked;
     }
@@ -380,36 +89,38 @@ StorageProtection WioTerminalFlashBlobBank::BlobView::protection() const {
     return StorageProtection::PlainFlash;
 }
 
-WioTerminalFlashBlobBank::WioTerminalFlashBlobBank()
+WioTerminalFlashBlobBank::WioTerminalFlashBlobBank(WioTerminalQspiOwner& owner)
     : deviceInstance_(*this, BlobDeviceInstance),
       wifiSelector_(*this, BlobWifiSelector),
       wifiSlot0_(*this, BlobWifiSlot0),
       wifiSlot1_(*this, BlobWifiSlot1),
       deviceAccess_(*this, BlobDeviceAccess),
-      flashSize_(0U),
+      owner_(owner),
       opened_(false) {}
 
 Result WioTerminalFlashBlobBank::begin() {
-    if (opened_) return Result::success();
-    if (!beginQspi(flashSize_) ||
-        flashSize_ < kEraseBlockSize * 2U) {
-        endQspi();
-        flashSize_ = 0U;
-        return Result::failure(ErrorCode::InternalError);
+    if (opened_) return owner_.quarantined()
+        ? Result::failure(ErrorCode::StateConflict) : Result::success();
+    Result result = owner_.acquire(this, WioTerminalQspiOwner::Region::Identity);
+    if (!result) return result;
+    {
+        WioTerminalQspiOwner::Operation operation(
+            owner_, this, WioTerminalQspiOwner::identityBudgetMillis);
+        result = operation.result();
+        if (result && !storageRegionAvailable())
+            result = Result::failure(owner_.quarantined()
+                ? ErrorCode::WouldBlock : ErrorCode::StateConflict);
     }
-    if (!storageRegionAvailable()) {
-        endQspi();
-        flashSize_ = 0U;
-        return Result::failure(ErrorCode::StateConflict);
+    if (!result) {
+        (void)owner_.release(this);
+        return result;
     }
     opened_ = true;
     return Result::success();
 }
 
 void WioTerminalFlashBlobBank::end() {
-    opened_ = false;
-    flashSize_ = 0U;
-    endQspi();
+    if (opened_ && owner_.release(this)) opened_ = false;
 }
 
 IAtomicBlobStore& WioTerminalFlashBlobBank::deviceInstanceBlob() {
@@ -524,8 +235,8 @@ bool WioTerminalFlashBlobBank::validImage(
 }
 
 uint32_t WioTerminalFlashBlobBank::slotAddress(uint8_t slot) const {
-    return flashSize_ -
-           static_cast<uint32_t>((2U - slot) * kEraseBlockSize);
+    return owner_.regionAddress(WioTerminalQspiOwner::Region::Identity) +
+           static_cast<uint32_t>(slot * kEraseBlockSize);
 }
 
 bool WioTerminalFlashBlobBank::storageRegionAvailable() const {
@@ -534,11 +245,11 @@ bool WioTerminalFlashBlobBank::storageRegionAvailable() const {
     for (uint8_t slot = 0U; slot < 2U; ++slot) {
         uint8_t image[kImageSize] = {};
         uint32_t generation = 0U;
-        if (!readQspi(slotAddress(slot), image, sizeof(image))) return false;
+        if (!owner_.read(this, slotAddress(slot), image, sizeof(image))) return false;
         claimable[slot] =
             validImage(image, generation) ||
             memcmp(image, magic, sizeof(magic)) == 0 ||
-            qspiBlank(slotAddress(slot), kEraseBlockSize);
+            qspiBlank(owner_, this, slotAddress(slot), kEraseBlockSize);
     }
     // An interrupted inactive-slot update is either erased or already starts
     // with our magic. Refuse unrelated data even when the peer is valid.
@@ -552,10 +263,14 @@ Result WioTerminalFlashBlobBank::newest(
     generation = 0U;
     selectedSlot = 1U;
     bool valid = false;
+    bool present = false;
     uint8_t scratch[kImageSize] = {};
     for (uint8_t slot = 0U; slot < 2U; ++slot) {
-        if (!readQspi(slotAddress(slot), scratch, sizeof(scratch))) {
+        if (!owner_.read(this, slotAddress(slot), scratch, sizeof(scratch))) {
             return Result::failure(ErrorCode::InternalError);
+        }
+        for (size_t i = 0U; i < sizeof(scratch); ++i) {
+            if (scratch[i] != 0xffU) { present = true; break; }
         }
         uint32_t candidate = 0U;
         if (!validImage(scratch, candidate)) continue;
@@ -572,7 +287,7 @@ Result WioTerminalFlashBlobBank::newest(
     }
     return valid
                ? Result::success()
-               : Result::failure(ErrorCode::NotFound);
+               : Result::failure(present ? ErrorCode::InvalidEncoding : ErrorCode::NotFound);
 }
 
 Result WioTerminalFlashBlobBank::writeImage(
@@ -592,9 +307,10 @@ Result WioTerminalFlashBlobBank::writeImage(
     writeU32(image + 12U, computeCrc32(ByteView(image, kImageSize)));
 
     const uint32_t address = slotAddress(slot);
-    if (!eraseQspiSector(address) ||
-        !programQspi(address, image, kImageSize) ||
-        !qspiMatches(address, image, kImageSize)) {
+    Result result = owner_.erase(this, address);
+    if (result) result = owner_.program(this, address, image, kImageSize);
+    if (!result) return result;
+    if (!qspiMatches(owner_, this, address, image, kImageSize)) {
         return Result::failure(ErrorCode::InternalError);
     }
     return Result::success();
@@ -606,6 +322,9 @@ Result WioTerminalFlashBlobBank::load(
     size_t& written) {
     written = 0U;
     if (!opened_) return Result::failure(ErrorCode::NotConfigured);
+    WioTerminalQspiOwner::Operation operation(
+        owner_, this, WioTerminalQspiOwner::identityBudgetMillis);
+    if (!operation.result()) return operation.result();
     uint8_t image[kImageSize] = {};
     uint32_t generation = 0U;
     uint8_t slot = 0U;
@@ -629,6 +348,9 @@ Result WioTerminalFlashBlobBank::replace(BlobId id, ByteView value) {
     if (value.size > maximumSize(id)) {
         return Result::failure(ErrorCode::CapacityExceeded);
     }
+    WioTerminalQspiOwner::Operation operation(
+        owner_, this, WioTerminalQspiOwner::identityBudgetMillis);
+    if (!operation.result()) return operation.result();
     uint8_t image[kImageSize] = {};
     uint32_t generation = 0U;
     uint8_t slot = 1U;
@@ -650,6 +372,9 @@ Result WioTerminalFlashBlobBank::replace(BlobId id, ByteView value) {
 
 Result WioTerminalFlashBlobBank::clear(BlobId id) {
     if (!opened_) return Result::failure(ErrorCode::NotConfigured);
+    WioTerminalQspiOwner::Operation operation(
+        owner_, this, WioTerminalQspiOwner::identityBudgetMillis);
+    if (!operation.result()) return operation.result();
     uint8_t image[kImageSize] = {};
     uint32_t generation = 0U;
     uint8_t slot = 1U;
@@ -669,5 +394,3 @@ Result WioTerminalFlashBlobBank::clear(BlobId id) {
 }
 
 } // namespace blinker
-
-#endif

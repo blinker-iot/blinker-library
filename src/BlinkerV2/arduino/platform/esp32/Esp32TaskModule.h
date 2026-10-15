@@ -2,7 +2,7 @@
 #define BLINKER_ARDUINO_PLATFORM_ESP32_TASKMODULE_H
 
 #include "../../ports/esp32/Esp32Storage.h"
-#include "../../../runtime/TaskEngine.h"
+#include "../TaskModule.h"
 
 namespace blinker {
 namespace integration {
@@ -17,18 +17,14 @@ public:
     Esp32TaskModule(ITaskEnvironment& environment, ITaskTarget& target,
                     const TaskWritePolicy& policy,
                     const Esp32NvsBlobStoreConfig& storage = Esp32NvsBlobStoreConfig())
-        : nvs_(blobConfig(storage)), workspace_(), records_(), slots_(),
-          store_(nvs_, MutableByteSpan(workspace_, sizeof(workspace_))),
-          engine_(store_, environment, target, records_, slots_, Capacity, policy), begun_(false) {
-        static_assert(Capacity > 0U && Capacity <= TaskSnapshotCodec::maxTasks, "Invalid task capacity");
-    }
+        : nvs_(blobConfig(storage)), tasks_(nvs_, environment, target, policy), begun_(false) {}
     Result begin() {
         if (begun_) return Result::failure(ErrorCode::AlreadyExists);
         begun_ = true; // No retry against a potentially dirty persistence handle.
         Result result = nvs_.begin();
-        return result ? engine_.begin() : result;
+        return result ? tasks_.begin() : result;
     }
-    TaskEngine& engine() { return engine_; }
+    TaskEngine& engine() { return tasks_.engine(); }
 
 private:
     static Esp32NvsBlobStoreConfig blobConfig(const Esp32NvsBlobStoreConfig& input) {
@@ -39,12 +35,7 @@ private:
         return config; // Preserve optional partition/encryption policy only.
     }
     Esp32NvsAtomicBlobStore nvs_;
-    uint8_t workspace_[TaskSnapshotCodec::headerSize + Capacity * TaskSnapshotCodec::recordSize +
-                       TaskSnapshotCodec::trailerSize];
-    TaskSnapshotRecord records_[Capacity];
-    TaskRuntimeSlot slots_[Capacity];
-    TaskSnapshotStore store_;
-    TaskEngine engine_;
+    TaskModule<Capacity> tasks_;
     bool begun_;
     Esp32TaskModule(const Esp32TaskModule&) = delete;
     Esp32TaskModule& operator=(const Esp32TaskModule&) = delete;
