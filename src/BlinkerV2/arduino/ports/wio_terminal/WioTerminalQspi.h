@@ -18,8 +18,10 @@ public:
     virtual bool program(uint32_t address, const uint8_t* input, size_t size) = 0;
 };
 
-// One cooperative owner for the physical QSPI peripheral. These address bounds
-// are layout contracts, NOT proof that a blank sector is available to claim.
+// One cooperative owner for the physical QSPI peripheral. Blinker products
+// reserve the final 16 KiB even with tasks disabled; no independent onboard
+// QSPI/FS driver may share this peripheral. SD is a separate storage device.
+// These address bounds are contracts, NOT proof that blank sectors are free.
 // The optional task profile must attest its region before acquiring a lease.
 // A failed/late native call freezes this owner; there is no end/begin unlock.
 // UART/WiFi on the separate RTL module remains independent of this latch.
@@ -32,8 +34,17 @@ public:
         expectedCapacity = 4UL * 1024UL * 1024UL,
         eraseBlockSize = 4096U,
         regionSize = eraseBlockSize * 2U,
+        taskAddress = expectedCapacity - regionSize * 2U,
+        identityAddress = expectedCapacity - regionSize,
+        reservedAddress = taskAddress,
+        reservedSize = regionSize * 2U,
         identityBudgetMillis = 10000U
     };
+    static_assert(taskAddress % eraseBlockSize == 0U &&
+                  identityAddress % eraseBlockSize == 0U &&
+                  taskAddress + regionSize == identityAddress &&
+                  reservedAddress + reservedSize == expectedCapacity,
+                  "Wio QSPI layout must retain four disjoint tail sectors");
 
     WioTerminalQspiOwner(IWioTerminalQspiFlash& flash, Now now)
         : flash_(flash), now_(now), leases_(), active_(nullptr), capacity_(0U),

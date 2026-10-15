@@ -1425,6 +1425,24 @@ def main() -> int:
             ))):
         failures.append("Wio storage-only probe adds boot-time IO/network/executor or bypasses real store")
 
+    wio_cold_dir = REPOSITORY / "tests" / "internal" / "arduino" / "WioTerminalTaskColdRecovery"
+    wio_cold = strip_comments((wio_cold_dir / "WioTerminalTaskColdRecovery.ino").read_text(encoding="utf-8"))
+    wio_cold_port = strip_comments((wio_cold_dir / "ColdRecoveryPort.h").read_text(encoding="utf-8"))
+    if ("void setup() { Serial.begin(115200U); }" not in wio_cold or
+            not all(token in wio_cold for token in (
+                "BLINKER_INTERNAL_WIO_COLD_RECOVERY", "BLINKER_INTERNAL_WIO_STORAGE_BASELINE_SHA256_HEX",
+                "BLINKER_INTERNAL_WIO_IDENTITY_SHA256_HEX", "BLINKER_INTERNAL_WIO_COLD_CURRENT_SHA256_HEX",
+                "BLINKER_INTERNAL_WIO_INTENT_SHA256_HEX", "BLINKER_INTERNAL_WIO_BOARD_UID_HEX",
+                "writeConfirmed",
+            )) or not all(token in wio_cold_port for token in (
+                "TaskSnapshotStore snapshot_", "snapshot_.load(", "ReadOnlyBlob", "ErrorCode::UnsupportedFeature",
+                "identity.load(instance_)", "expectedFixture()", "captureCurrent(2U)", "captureCurrent(1U)",
+            )) or any(token in wio_cold + wio_cold_port for token in (
+                "tasks_.replace(", "tasks_.clear(", "TaskEngine", "TaskCloudTransport", "WiFi.begin(",
+                "loadOrCreate(", "NVIC_SystemReset(",
+            ))):
+        failures.append("Wio cold recovery loses immutable bindings/read-only store or adds a second execution path")
+
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1

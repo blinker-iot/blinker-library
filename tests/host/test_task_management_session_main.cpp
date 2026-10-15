@@ -1144,6 +1144,48 @@ void testRetirementCloudDispatch(bool rotated) {
     CHECK(value.kind == TaskManagementResultKind::Retired && value.retirementId[0] == 81U);
 }
 
+void testSameConnectionHelloCancelsPendingCloudRead() {
+    CloudFixture f; f.hello(); f.enqueueAuthority(); f.runtime.poll(1000U);
+    f.commitCloud(f.challenge());
+    CHECK(f.engine.state() == TaskEngineState::Ready);
+
+    f.clock.now += 10U;
+    TaskReadPrepare read; read.requestId[0] = 83U; read.catalog = true;
+    uint8_t bytes[kTaskReadPrepareMaxSize]; ByteView encoded;
+    CHECK(encodeTaskReadPrepare(read, MutableByteSpan(bytes, sizeof(bytes)), encoded));
+    f.enqueue(TaskWireOperation::Read, encoded); f.runtime.poll(1000U);
+    const auto pending = f.challenge();
+    CHECK(f.session.pending());
+    const unsigned verified = f.verifier.calls, writes = f.flash.writes;
+    const uint32_t connection = f.mqtt.connectionGeneration(), root = f.cache.generation();
+
+    // A repeated Hello renegotiates this protocol session without replacing
+    // MQTT or its authority. It invalidates the pending nonce, not the store.
+    // This models an early Failure shape; it is not evidence that a Hello
+    // occurred in the real R4 catalog incident.
+    f.hello();
+    CHECK(f.mqtt.connectionGeneration() == connection && f.socket.connects == 1U);
+    CHECK(f.cache.generation() == root && !f.session.pending());
+    f.commitCloud(pending);
+    const ByteView failure = f.response(TaskWireOperation::Failure);
+    CHECK(failure.size == 3U && failure.data[0] == 0x82U &&
+          failure.data[1] == 3U && failure.data[2] == 2U);
+    CHECK(f.verifier.calls == verified && f.flash.writes == writes);
+    CHECK(f.engine.state() == TaskEngineState::Ready && f.target.applied == 0U);
+
+    // Never revive/replay the invalidated exchange. A fresh request obtains a
+    // new nonce through the existing path, with no persistence or target I/O.
+    f.clock.now += 10U; read.requestId[0] = 84U;
+    CHECK(encodeTaskReadPrepare(read, MutableByteSpan(bytes, sizeof(bytes)), encoded));
+    f.enqueue(TaskWireOperation::Read, encoded); f.runtime.poll(1000U);
+    const auto fresh = f.challenge();
+    CHECK(!constantTimeEqual(ByteView(pending.nonce, 16U), ByteView(fresh.nonce, 16U)));
+    f.commitCloud(fresh); f.verifyReceipt(fresh);
+    CHECK(f.verifier.calls == verified + 1U && f.flash.writes == writes);
+    CHECK(f.cache.generation() == root && f.mqtt.connectionGeneration() == connection);
+    CHECK(f.target.applied == 0U && f.socket.connects == 1U);
+}
+
 void testRealCloudDispatch() {
     for (unsigned mode = 0U; mode < 3U; ++mode) {
         CloudFixture f;
@@ -1222,6 +1264,7 @@ int main() {
     testLifecycle(); testOperations(); testWindows(); testRebindAndDurability(); testDigestCoverage(); testStartAndLostReceipt();
     testEncodedManagementFlow();
     testCommandAdapter(); testManagementProductLifecycle();
+    testSameConnectionHelloCancelsPendingCloudRead();
     testRealCloudDispatch();
     std::cout << "task management session: lifecycle/operations/nonce windows/durability/digests passed; cache="
               << sizeof(TaskAuthorityCache) << " session=" << sizeof(TaskManagementSession) << " bytes\n";

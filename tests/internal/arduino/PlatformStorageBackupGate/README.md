@@ -54,6 +54,10 @@ payload 恰为 8192 B：固定 4 MiB QSPI 的 `0x3fe000` 与 `0x3ff000` 两个 4
 
 ### Wio 可选固定 16 KiB 模式
 
+已知Blinker Wio产品统一保留板载4 MiB QSPI的尾16 KiB：任务`[0x3fc000,0x3fe000)`，身份`[0x3fe000,0x400000)`；任务关闭也不借出任务区。地址和大小以生产`WioTerminalQspiOwner`常量为唯一来源，维护夹具复用同一布局。此合同不代表原opaque固件或任意第三方文件系统已获区域准入。
+
+原SDK的通用`Seeed_FS`／外置SD不等于使用板载QSPI，可以保留。整片容量的`Seeed_Arduino_SFUD`及其它独立板载QSPI驱动不能与本owner共存：不只存在地址重叠，其reset／end也会干扰整个外设。仅缩短FS容量仍不够；本阶段不实现共享FS适配、不自动format或迁移。真实产品候选应核对源码和最终ELF，确认没有第二板载QSPI owner，不能仅靠头文件宏或空白内容判断。
+
 默认 `BLINKER_INTERNAL_WIO_STORAGE_GATE_MODE=0` 保持上述 8 KiB `d/r` 合同及身份恢复顺序，不增加任务 workspace 或任务擦除权限。新增模式仅供内部准入维护，不成为用户 API：
 
 | mode | 导出范围 | 恢复权限 | 必需配置 |
@@ -98,11 +102,17 @@ python tests/hardware/wio_storage_gate.py capture --port <PORT> --uid <USB_UID> 
 
 主机每个UID只保留一个session claim。capture两读失败且尚未创建original／state／`.next`时，可在同一目录、同source、确认真实整板复电后重新执行仅读capture；不会删除claim或换目录。存在部分备份、state或`.next`时保留并停止，不能覆盖文件“恢复成功”。只有完整私有备份和state落盘后才seal claim、允许probe。
 
+`prepare-cold`和`restore-tasks`各自首次介质读取前，主机以exclusive新建、fsync持久phase（`prepare-cold-phase.json`／`restore-tasks-phase.json`）。只在本阶段全部验证及必要状态落盘成功后封口；失败、损坏或残留`.next`均保持隔离。后续probe／prepare／observe／restore在串口I/O前拒绝；再次传入复电确认不能清锁或重发写。显式复电后的只读reconcile保留原phase与意图，不自动重新开放。原备份和state／unknown语义保持，phase不是第二执行器。
+
 每条probe及raw恢复请求在发送前fsync意图；丢回执、尾随数据或部分请求保留unknown，不重发。复电后只读`reconcile`需要匹配mode1（或显式mode2），仅执行`p,d,d`并私有保存新鲜raw；它不能重新初始化probe或解锁已消耗的恢复意图。原raw精确相同才关闭session；不同且身份变动则停止，不修身份。不同但身份相同、从未发送raw恢复时，才可在独占确认下显式执行`restore-tasks`的一次受限恢复。恢复回执丢失后，即使复电也不能再发`r`，只读对账仍不相同则人工协调。
 
 这些动作不产生自动硬件准入；实际存储耗时、真实断电及产品任务／ACK／State仍按主线独立验收。离线回归用`python -m unittest discover -s tests/hardware -p test_wio_storage_gate.py`，不导入pyserial、不打开USB。完整物理操作顺序取任务与Sketch执行计划§11.13。
 
-现storage-only probe是单启动fixture：写入后冷启动时原完整baseline／全空预检不再满足，不能重发OPEN_CAPTURE／REGION_ATTEST证明TaskStore恢复。mode1／2冷后raw双读只是原字节协调，不等于真实TaskStore fresh load；不得替换原baseline绕过。只读冷恢复候选及产品恢复仍是主线待办。
+现storage-only probe是单启动fixture：写入后冷启动时原完整baseline／全空预检不再满足，不能重发OPEN_CAPTURE／REGION_ATTEST证明TaskStore恢复。mode1／2冷后raw双读只是原字节协调，不等于真实TaskStore fresh load；不得替换原baseline绕过。
+
+独立`WioTerminalTaskColdRecovery`候选及主机`prepare-cold`／`observe-cold`按任务执行计划§11.14补齐。真实整板复电后，prepare仅对匹配mode1做`p,d,d`，保护冷后raw及联合材料；原raw／state／unknown／intent不写。匹配只读BIN经profile核对后仅一次OBSERVE，用原TaskSnapshotStore／Codec观察并发布前复核完整16 KiB。无快照是code19，不是零值或写成功；读到完整fixture也不会追认原unknown写。冷观察另有独立pending文件，丢回复不重发。原始恢复仍是另一个显式阶段，不由观察顺带执行。§11.15已通过同一Wio的限定维护单笔／真实断电／原样恢复；产品动态预算与真实App任务仍未验收，不能据此开放普通产品准入。
+
+所有成功结果还须经过共享`OwnedQspiAccess::finish()`：读取成功不等于整会话健康完成，末次读取之后、关闭前或关闭自身返回后首次发现的超期同样失败。维护事务显式消费关闭结果再导出或ACK，snapshot失败时长度为0；cold／probe／临时身份port共用同一判据。native关闭已释放外设才发现迟到时，仅锁定当前helper，不伪造owner隔离。不依赖析构中被忽略的`end()`判定成功，未知结果仍不重放。
 
 ## 失败处理
 

@@ -241,19 +241,20 @@ uint32_t WioTerminalFlashBlobBank::slotAddress(uint8_t slot) const {
 
 bool WioTerminalFlashBlobBank::storageRegionAvailable() const {
     static const uint8_t magic[4] = {'B', 'W', 'B', '2'};
-    bool claimable[2] = {};
+    bool compatible[2] = {};
     for (uint8_t slot = 0U; slot < 2U; ++slot) {
         uint8_t image[kImageSize] = {};
         uint32_t generation = 0U;
         if (!owner_.read(this, slotAddress(slot), image, sizeof(image))) return false;
-        claimable[slot] =
+        compatible[slot] =
             validImage(image, generation) ||
             memcmp(image, magic, sizeof(magic)) == 0 ||
             qspiBlank(owner_, this, slotAddress(slot), kEraseBlockSize);
     }
-    // An interrupted inactive-slot update is either erased or already starts
-    // with our magic. Refuse unrelated data even when the peer is valid.
-    return claimable[0] && claimable[1];
+    // This checks content compatibility, not physical ownership or FS layout.
+    // An interrupted inactive-slot update is erased or starts with our magic.
+    // Refuse unrelated data even when the peer is valid.
+    return compatible[0] && compatible[1];
 }
 
 Result WioTerminalFlashBlobBank::newest(

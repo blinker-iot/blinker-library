@@ -14,8 +14,8 @@ public:
     typedef blinker::WioTerminalQspiOwner Owner;
     enum : uint32_t {
         capacityBytes = Owner::expectedCapacity,
-        identityAddress = capacityBytes - Owner::regionSize,
-        taskAddress = identityAddress - Owner::regionSize,
+        identityAddress = Owner::identityAddress,
+        taskAddress = Owner::taskAddress,
         sectorBytes = Owner::eraseBlockSize
     };
 
@@ -53,6 +53,18 @@ public:
         if ((leases_ & 2U) != 0U && owner_.release(&tokens_[1])) leases_ &= 1U;
         if ((leases_ & 1U) != 0U && owner_.release(&tokens_[0])) leases_ &= 2U;
         if (leases_ == 0U) opened_ = false;
+    }
+
+    // A successful read/compare is not complete until close has checked the
+    // shared deadline. Do not publish success from a destructor's ignored end.
+    bool finish() {
+        if (ioActive_) return false;
+        const bool opened = opened_;
+        end();
+        if (!opened || failed_ || owner_.quarantined() || busy()) return false;
+        // Native end is void. A late cleanup cannot be reported as confirmed;
+        // leases are already released, so lock this helper, not a fake owner.
+        return remainingBudget() != 0U || fail();
     }
 
     bool read(uint32_t address, uint8_t* output, size_t size) {

@@ -317,6 +317,12 @@ add_test(NAME blinker_wio_task_storage_tests COMMAND blinker_wio_task_storage_te
 
 blinker_test(blinker_wio_task_probe_tests test_wio_task_probe_main.cpp)
 add_test(NAME blinker_wio_task_probe_tests COMMAND blinker_wio_task_probe_tests)
+blinker_test(blinker_wio_task_cold_recovery_tests test_wio_task_cold_recovery_main.cpp)
+add_test(NAME blinker_wio_task_cold_recovery_tests COMMAND blinker_wio_task_cold_recovery_tests)
+blinker_test(blinker_wio_identity_transition_tests test_wio_identity_transition_main.cpp)
+add_test(NAME blinker_wio_identity_transition_tests COMMAND blinker_wio_identity_transition_tests)
+blinker_test(blinker_wio_transition_serial_tests test_wio_transition_serial_main.cpp)
+add_test(NAME blinker_wio_transition_serial_tests COMMAND blinker_wio_transition_serial_tests)
 foreach(mode IN ITEMS 0 1 2)
     set(target blinker_wio_storage_gate_mode${mode}_tests)
     blinker_test(${target} test_wio_storage_gate_main.cpp)

@@ -118,20 +118,27 @@ void reentrantCommandsDoNotTouchPort() {
 }
 
 uint32_t tick = 0U;
-uint32_t now() { return tick; }
+uint32_t expireAfterNextClock = 0U;
+uint32_t now() {
+    const uint32_t value = tick;
+    tick += expireAfterNextClock; expireAfterNextClock = 0U;
+    return value;
+}
 class Flash final : public IWioTerminalQspiFlash {
 public:
     std::vector<uint8_t> bytes;
     unsigned begins = 0U, ends = 0U, reads = 0U, erases = 0U, programs = 0U;
-    unsigned failProgram = 0U;
-    uint32_t pageDelay = 0U;
+    unsigned failProgram = 0U, expireCloseRead = 0U;
+    uint32_t pageDelay = 0U, endCost = 0U;
     Flash() : bytes(WioTerminalQspiOwner::expectedCapacity, uint8_t(0xffU)) {}
     bool begin(uint32_t& capacityBytes) override {
         ++begins; capacityBytes = static_cast<uint32_t>(bytes.size()); return true;
     }
-    void end() override { ++ends; }
+    void end() override { ++ends; tick += endCost; }
     bool read(uint32_t address, uint8_t* output, size_t size) override {
-        ++reads; std::memcpy(output, bytes.data() + address, size); return true;
+        ++reads; std::memcpy(output, bytes.data() + address, size);
+        if (reads == expireCloseRead) expireAfterNextClock = 10000U;
+        return true;
     }
     bool erase(uint32_t address) override {
         ++erases; std::fill(bytes.begin() + address, bytes.begin() + address + 4096U, uint8_t(0xffU)); return true;
@@ -146,7 +153,8 @@ void putBig32(uint8_t* output, uint32_t value) {
     for (size_t i = 0U; i < 4U; ++i) output[i] = static_cast<uint8_t>(value >> ((3U - i) * 8U));
 }
 void initializeIdentity(Flash& flash) {
-    tick = 0U; WioTerminalQspiOwner owner(flash, now); WioTerminalFlashBlobBank bank(owner);
+    tick = expireAfterNextClock = 0U;
+    WioTerminalQspiOwner owner(flash, now); WioTerminalFlashBlobBank bank(owner);
     CHECK(bank.begin()); uint8_t anchor[28U] = {};
     std::memcpy(anchor, "BDN2", 4U); anchor[4] = 1U;
     std::memset(anchor + 8U, 0x51U, 16U);
@@ -195,6 +203,9 @@ void realPortAdmissionFailures() {
     }
 }
 void realPortHealthySequence() {
+    static_assert(TaskStorageProbePort::taskBase == 0x3fc000UL &&
+                  TaskStorageProbePort::identityBase == 0x3fe000UL && TaskStorageProbePort::regionBytes == 8192U,
+                  "Probe must preserve the shared fixed layout");
     Flash flash; initializeIdentity(flash); const std::string expected = baseline(flash);
     const std::vector<uint8_t> original = identityBytes(flash); WioTerminalQspiOwner owner(flash, now);
     TaskStorageProbePort p(owner, now, expected.c_str()); ProbeController c(p); admit(c);
@@ -224,6 +235,26 @@ void realPortUnknownNeverContinues(bool late) {
     CHECK(!c.execute(Command::OpenCapture)); CHECK(c.execute(Command::Ping)); CHECK(c.execute(Command::Status));
     CHECK(flash.reads == reads && flash.programs == programs && flash.erases == erases);
 }
+void realPortCaptureCloseDeadline() {
+    Flash flash; initializeIdentity(flash); const std::string expected = baseline(flash);
+    flash.expireCloseRead = 128U; // Final native read of the two 16 KiB streaming passes.
+    WioTerminalQspiOwner owner(flash, now); TaskStorageProbePort p(owner, now, expected.c_str()); ProbeController c(p);
+    CHECK(!c.execute(Command::OpenCapture));
+    CHECK(c.state() == State::Failed && owner.quarantined() && !p.identitySame());
+    CHECK(flash.reads == 128U && flash.begins == 1U && flash.ends == 0U);
+    CHECK(flash.erases == 0U && flash.programs == 0U);
+    CHECK(!c.execute(Command::OpenCapture)); CHECK(c.execute(Command::Status)); CHECK(flash.reads == 128U);
+}
+void realPortNativeCloseDeadline() {
+    Flash flash; initializeIdentity(flash); const std::string expected = baseline(flash); flash.endCost = 10000U;
+    WioTerminalQspiOwner owner(flash, now); TaskStorageProbePort p(owner, now, expected.c_str()); ProbeController c(p);
+    CHECK(!c.execute(Command::OpenCapture));
+    CHECK(c.state() == State::Failed && !owner.quarantined() && !p.healthy() && !p.identitySame());
+    CHECK(flash.reads == 128U && flash.begins == 1U && flash.ends == 1U);
+    CHECK(!p.captureBaseline()); CHECK(!c.execute(Command::OpenCapture)); CHECK(c.execute(Command::Status));
+    CHECK(flash.reads == 128U && flash.begins == 1U && flash.ends == 1U);
+    CHECK(flash.erases == 0U && flash.programs == 0U);
+}
 }
 int main() {
     noAutomaticIo(); healthySequence();
@@ -232,5 +263,7 @@ int main() {
     reentrantCommandsDoNotTouchPort();
     realPortAdmissionFailures(); realPortHealthySequence();
     realPortUnknownNeverContinues(false); realPortUnknownNeverContinues(true);
+    realPortCaptureCloseDeadline();
+    realPortNativeCloseDeadline();
     std::cout << "Wio task probe controller: finite admission and no-replay checks passed\n";
 }

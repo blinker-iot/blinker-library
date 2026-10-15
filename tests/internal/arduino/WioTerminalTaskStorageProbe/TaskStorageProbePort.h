@@ -15,7 +15,9 @@ using namespace blinker;
 class TaskStorageProbePort final : public ProbePort {
 public:
     enum : size_t { capacity = 4U, payloadSize = 644U, journalSize = 664U };
-    enum : uint32_t { taskBase = 0x003fc000UL, identityBase = 0x003fe000UL, regionBytes = 8192U };
+    enum : uint32_t { taskBase = WioTerminalQspiOwner::taskAddress,
+                      identityBase = WioTerminalQspiOwner::identityAddress,
+                      regionBytes = WioTerminalQspiOwner::regionSize };
     TaskStorageProbePort(WioTerminalQspiOwner& owner, WioTerminalQspiOwner::Now now,
                          const char* baselineHex)
         : owner_(owner), bank_(owner), tasks_(bank_, true, 1000U), access_(owner, now),
@@ -30,7 +32,7 @@ public:
         static_assert(WioTerminalTaskSnapshotBlobStore<capacity>::journalScratchSize == journalSize,
                       "Task journal size changed");
     }
-    bool healthy() const override { return !owner_.quarantined(); }
+    bool healthy() const override { return !access_.failed() && !owner_.quarantined(); }
     bool identitySame() const { return identitySame_; }
     bool snapshotAvailable() const { return snapshotAvailable_; }
     const uint8_t* snapshotDigest() const { return snapshotDigest_; }
@@ -51,7 +53,8 @@ public:
             if (result) result = hash_.finish(MutableByteSpan(capture_, sizeof(capture_)));
             if (result && memcmp(capture_, baseline_, sizeof(capture_)) != 0) result = conflict();
         }
-        access_.end(); wipeChunk();
+        const bool closed = access_.finish(); wipeChunk();
+        if (result && !closed) result = conflict();
         if (!result) return result;
         result = bank_.begin();
         if (!result) return result;

@@ -168,13 +168,15 @@ inline bool snapshot(uint8_t* output, size_t& size) {
         storage_gate_qspi::access().read(baseAddress, output, maximumSnapshot) &&
         decode(output, maximumSnapshot, active, identity);
     wipe(identity, sizeof(identity));
-    if (result) size = maximumSnapshot;
-    return result;
+    const bool complete = transaction.complete(result);
+    if (complete) size = maximumSnapshot;
+    return complete;
 }
 inline bool matchesSnapshot(const uint8_t* expected, size_t size) {
     if (size != maximumSnapshot) return false;
     storage_gate_qspi::Transaction transaction(BLINKER_INTERNAL_WIO_STORAGE_GATE_MODE != 0);
-    return transaction.ready() && storage_gate_qspi::access().matches(baseAddress, expected, size);
+    const bool result = transaction.ready() && storage_gate_qspi::access().matches(baseAddress, expected, size);
+    return transaction.complete(result);
 }
 #if BLINKER_INTERNAL_WIO_STORAGE_GATE_MODE == 2
 inline bool originalBackup(const uint8_t* desired, size_t size) {
@@ -237,7 +239,7 @@ inline bool restore(const uint8_t* desired, size_t desiredSize,
         const uint8_t* next = desired + slot * sectorSize;
         if (!storage_gate_qspi::access().restoreSector(address, before, next)) return false;
     }
-    return true;
+    return transaction.complete(true);
 #endif
 }
 

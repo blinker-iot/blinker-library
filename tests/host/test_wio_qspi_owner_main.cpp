@@ -79,6 +79,11 @@ private:
 };
 
 void testTwoRegionLeasesAndLastEnd() {
+    static_assert(WioTerminalQspiOwner::taskAddress == 0x3fc000UL &&
+                  WioTerminalQspiOwner::identityAddress == 0x3fe000UL &&
+                  WioTerminalQspiOwner::reservedAddress == 0x3fc000UL &&
+                  WioTerminalQspiOwner::reservedSize == 16384UL,
+                  "Product and maintenance must share the fixed tail layout");
     clockValue = 0U;
     FakeFlash flash;
     WioTerminalQspiOwner owner(flash, fakeNow);
@@ -93,6 +98,8 @@ void testTwoRegionLeasesAndLastEnd() {
     CHECK(flash.beginCalls == 1U && owner.capacity() == WioTerminalQspiOwner::expectedCapacity);
     CHECK(owner.regionAddress(WioTerminalQspiOwner::Region::Identity) == owner.capacity() - 8192U);
     CHECK(owner.regionAddress(WioTerminalQspiOwner::Region::Tasks) == owner.capacity() - 16384U);
+    CHECK(owner.regionAddress(WioTerminalQspiOwner::Region::Identity) == WioTerminalQspiOwner::identityAddress);
+    CHECK(owner.regionAddress(WioTerminalQspiOwner::Region::Tasks) == WioTerminalQspiOwner::taskAddress);
     CHECK(owner.regionAddress(static_cast<WioTerminalQspiOwner::Region>(2U)) == 0U);
     CHECK(!owner.acquire(&duplicate, WioTerminalQspiOwner::Region::Identity));
     CHECK(!owner.acquire(&identity, WioTerminalQspiOwner::Region::Tasks));

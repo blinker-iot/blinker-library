@@ -1,6 +1,6 @@
 # Device V2：现有任务与 Sketch 周期／延时收口
 
-更新：2026-10-15。V4／V5既有ESP32四槽复测及恢复保持关闭，取§10.8。R4共享owner／预算取§11.10，最新实物未知写入及待复电／十二键恢复取§11.11，X1未关闭。Wio共享QSPI与四槽产品软件取§11.12；当前§11.13补齐固定16 KiB维护／受限恢复、存储专用探针及主机防重放工具。现场仅COM9 R4、COM11 ESP32，无Wio；本批不操作串口或刷板。下一实物批先保护原固件及精确区域，确认独占，再做存储准入，不能直接跳到任务App。普通通信、实时已通过项不重派，H1只补平台Cloud State差异，不扩槽或重造执行链。
+更新：2026-10-15。§11.23必要源码／支持说明审阅、有限回归及同一公共占位配置ZIP的七目标隔离安装编译、独立终审已完成。原ESP32队列正常结束，没有重跑已通过目标、另开重复队列或升级SDK；Docker保持运行。本批临时ZIP与stage已精确清理，编译产物、日志和审计保留。§11.22的R4／Wio普通Cloud H1有限差异及恢复保持关闭，§11.21历史UNKNOWN不补成功、诊断源码尚未部署。普通任务默认仍0，正式资源准入另记；本批未刷板、部署服务、暂存、提交或推送。
 
 ## 1. 目标与边界
 
@@ -432,9 +432,9 @@ Gateway／Broker1 的两项 allowlist 均恢复原 1 项，目标容器 healthy�
 | 顺序 | 最小内容 | 关闭条件 | 状态 |
 | --- | --- | --- | --- |
 | X0 平台契约 | 核对共享存储 owner、644 B 原子快照、停止后退休清除、verifier／profile 和预算 | 下述边界已冻结；参数在平台测量后准入，不直接沿用 ESP32 提交时限 | 共享契约／ABI、独立 store 耗时及有限分配边界已测；完整产品资源待补 |
-| X1 R4 WiFi 持久任务 | 共用连接模块后端，独立双键任务 store，复用任务模块／Cloud carrier；匹配便携 verifier 和服务 profile | host 与真实 SDK 完整链接、默认无任务大缓冲；644 B 读写／重启／故障恢复、凭据保护、App 创建／Start／Interrupted／删除和原控制短验收 | §11.5／§11.7有限闭环保持；Facade一致性已修正，§11.11真实未知写后的整板复电、十二键／固件恢复及新owner产品差异仍待验，不开放默认产品 |
-| X2 Wio WiFi 持久任务 | 共用原生 QSPI 端口，核准独立预留区的原子双扇区 store；复用 X1 的共享模块和合同 | 区域归属／备份明确、读回／断点／重启恢复、身份银行不变、匹配 App 任务及原控制短验收 | §11.12共享owner、任务视图、薄WiFi组合、模型及最终普通／四槽隔离完整链接通过；区域归属与实物仍待验，默认不开放 |
-| X3 平台 H1／实时差异 | R4／Wio 的 Cloud State 变化、去重、重连基线、范围分页、名称及现有读取 ACL；回归任务接线影响的实时租约 | 原 Cloud ACK／State 与历史记录相符，离页停止／返回恢复未退步 | 可与相应平台任务准备并行，不重跑无关已通过项 |
+| X1 R4 WiFi 持久任务 | 共用连接模块后端，独立双键任务 store，复用任务模块／Cloud carrier；匹配便携 verifier 和服务 profile | host 与真实 SDK 完整链接、默认无任务大缓冲；644 B 读写／重启／故障恢复、凭据保护、App 创建／Start／Interrupted／删除和原控制短验收 | §11.5／§11.7保持；§11.19存储恢复及§11.20有限产品／未知恢复通过。§11.21完成读取差异的有限排查与诊断源码，历史唯一根因未确认；完整动态峰值／生产硬截止／正式准入另记，默认不开放 |
+| X2 Wio WiFi 持久任务 | 共用原生 QSPI 端口，核准独立预留区的原子双扇区 store；复用 X1 的共享模块和合同 | 区域归属／备份明确、读回／断点／重启恢复、身份银行不变、匹配 App 任务及原控制短验收 | §11.15存储门禁及§11.18匹配Ed签发／任务短闭环／预算与原样恢复已限定通过。旧算法错配及未知记录保留，测试overlay已撤；正式／普通默认准入不因此开放 |
+| X3 平台 H1／实时差异 | R4／Wio 的 Cloud State 变化、去重、重连基线、范围分页、名称及现有读取 ACL；回归任务接线影响的实时租约 | 原 Cloud ACK／State 与历史记录相符，离页停止／返回恢复未退步 | §11.22普通Cloud H1有限实物差异及安全恢复通过；当前owner读／名称回退实测，通用ACL复用既有真机及本批软件回归，未另测每平台撤权。同值Patch送达、正式资源准入另记；实时原结果保持，不重复长循环 |
 
 ### 11.1 一个存储后端 owner 与独立任务视图
 
@@ -686,6 +686,8 @@ App账号／请求数据7,366,656 B、原APK、三端脏工作树、数据库与
 
 下一批只按以下顺序，不重派两个Countdown或普通通信：
 
+以下第1、2项已由§11.19完成；此处保留历史顺序，现行待办只取§11.19末尾，不重派断电与相同恢复。
+
 1. 用户能操作COM9时仅整板断电复插；先确认RAM隔离／arm状态重新建立，再只读协调那一笔实际介质结果，SDK false不等于未落盘，不重放REPLACE1。
 2. 正常维护程序恢复全部十二键raw到本批1004 B基线，并独立双读确认task键原absent。不能直接把synthetic fixture交给新TaskEngine：非空介质必须拒绝新Initialize，新逻辑ID不能绕过该条件。操作工具已阻止缺复电证明的再次上传及未恢复十二键的产品上传。
 3. 核对现网，冻结新逻辑设备的最小服务准入／Ed签发子集与实际Broker；仅使用已核准匹配闭包，合并后整组部署不作为本轮附带操作。再审本批产品构建与有限资源范围，才标准上传。
@@ -808,3 +810,534 @@ replace与clear各自一次性消耗意图，执行前进入失败保留态。�
 4. 只在存储与预算实物准入后接入原App／scope／Ed签发，补保存不Start、显式Countdown、Completed／Interrupted、删除及ACK／State。实时与H1只补受影响差异；纯BLE不等同云历史。
 
 X2区域归属、真实擦写、整板复电、运行峰值、App短闭环及正式平台支持仍待办。X1待R4复电；不扩槽、BLE持久任务、H2、离线历史／Bulk或整组服务维护。本批没有暂存、提交或推送，已有无关修改与删除保留。
+
+### 11.14 Wio只读冷恢复候选
+
+2026-10-15按用户要求先审阅并推送当前必要三端变更，再开始此候选。必要源码／回归／方案已推至原分支：库`device_v2`的`eb95392011dab77ac78cc659d20df0acf8fcf66f`（99文件），App`i3w-dev-v2`的`96887b20997a76d9c3397a3365a5109ad67c53e9`（本批4文件），Service`dev_v2`的`93d74ed1621a4ea5a48593c90d7aaaad01cbb9ba`（本批6文件）；均核对本地／远端HEAD一致。App／Service包含此前用户授权合并的xwd历史，不改写历史。
+
+库的`ISSUE_TEMPLATE.md`删除与空`docs/partition.csv`、App的`.gitignore`／自动生成插件路径／个人工作流文档仍留本地。私有备份、账号凭据、网络口令、真实运行profile和构建产物未纳入提交。推送前86项Host、45项发布、35项硬件工具离线回归及架构／profile通过；App定向75/75、Service26通过／2项真实数据库集成跳过／0失败。源码推送不是部署、真实数据库验收或平台发布。
+
+本节新增冷恢复候选与文档在上述推送后实施，暂不再次提交／推送。生产423源、原单启动probe、任务槽数、线协议、SDK及普通产品配置保持不变；无串口、ADB、刷板、数据库或服务操作。
+
+#### 绑定与只读边界
+
+新`tests/internal/arduino/WioTerminalTaskColdRecovery`只有显式`PING`、`OBSERVE`、`STATUS`。setup只初始化Serial，不开QSPI，不自动加载、初始化、清表或reset。独立小controller只允许一次OBSERVE，错误／重入不能进入第二次读取；它不是任务执行器。
+
+| 材料 | 核对位置 | 含义 |
+| --- | --- | --- |
+| 原16 KiB备份与其SHA | 主机原文件全字节／SHA；匹配夹具profile | 不以写后current取代原baseline |
+| 原身份8 KiB SHA及实际USB UID | 主机原raw；设备真实UID／原BDN2 load | 不新建、认领或改写身份 |
+| 真实整板复电确认及冷后current SHA | 操作者确认；mode1独立双读；候选前两遍／后一次完整复核 | 软件reset和摘要本身不能证明人已拔电 |
+| 原REPLACE1意图及pinned source | 主机canonical JSON摘要／索引；匹配profile | pending可没有成功snapshot事件，不事后补造receipt |
+| 原state完整字节SHA | 准备前后、profile后、发OBSERVE前及观察后 | 期间阶段、意图或`.next`变化即停止，不据旧材料继续 |
+
+设备只核对实际介质、UID及编译profile；原备份来源、意图来源和复电属于主机／操作者证据，公开SHA不是认证或安全启动证明。仍要求原区域独占、没有SFUD／FS旁路；软件owner不能拦截第三方driver。
+
+OBSERVE先双遍校验冷后16 KiB及原身份摘要，再加载既有BDN2；直接调用原四槽blob begin及`TaskSnapshotStore::load()`，由既有Codec检查完整快照。只接受原四条停用／None／startSequence=0 fixture，核对实例、scope、revision、key、value和timing，不另写journal解析器或恢复算法。原bad-peer、版本、容量及generation政策保持；损坏／不支持不能折为空。
+
+薄只读blob的replace／clear一律返回UnsupportedFeature，不到达物理端口。健康load或NotFound之后释放自身view，再复核一次完整16 KiB，防止加载期间区域变化；只有一致才发布观察。native false、迟到或Codec失败立即停止，不cleanup／重开、补写或读后“修复”。原预算仍是调用准入与迟到检测，不宣称SDK硬截止。
+
+#### 观察不是写入确认
+
+状态只有`Fresh → ObservedSnapshot / ObservedNotFound`，错误进入`Failed`。读到完整644 B仅说明冷后由真实store／Codec观察到预期快照；NotFound明确返回code19、0条、无payload SHA。两种结果的`writeConfirmed`始终false，不追认原pending写成功，不产生TaskEngine结果或服务器receipt。
+
+主机新增`prepare-cold`只使用匹配mode1执行`p,d,d`，另以exclusive新建`cold-current.raw`及`cold-request.json`。原任务基线必须全FF，限定唯一既有REPLACE1、无clear／实际raw恢复意图；丢回复的pending意图也可准备，不要求它虚构成功摘要。原`state.json`、原raw、intents和unknown逐字节保留，不调用会修改旧恢复标记的reconcile来替代准备。
+
+匹配只读BIN与材料后，`observe-cold`先校验profile，再在发命令前独立落盘`cold-attempt.json`。已存在pending／observed都不自动重发；超时、部分或异常响应保留现场。观察仅写自己的新结果文件，不解除旧写入隔离；原raw恰好未改变时，也不能称写已提交。资料／介质变化或身份不符即停止，不顺带恢复。
+
+#### 软件门禁与下一实物批
+
+本批87项Release＋ASan Host、53项Wio主机离线回归（硬件工具总57项）及架构检查通过。新增模型覆盖原baseline与current不同、真实fresh load、NotFound／墓碑、坏peer／版本／代际、语义错误、前／后媒体变化、native失败／迟到与重入；所有观察路径零erase／program。主机模型补阶段在PING期间变化的拒绝，确保不先发OBSERVE再报错。严格警告未放宽；原MSVC ASan诊断符号建议保持。
+
+原Seeed1.8.5、CLI1.5.1、jobs1完成1项正向对象及12项精确负向守卫13/13、单个cold完整链接；生产423源不变，17实现来自本次安装投影，未重新编译普通产品双图或升级SDK。最终ELF包含真实`TaskSnapshotStore::load`与`TaskSnapshotCodec::decode`，薄只读wrapper实际load／replace拒绝／clear拒绝均在图内；无TaskEngine／云传输／登录／Ed验签图。底层虚表仍保留五个既有写函数符号，**只读来自私有能力边界及全路径模型，不是宣称整个ELF没有写函数**。
+
+| 原SDK cold完整链接 | 结果 |
+| --- | ---: |
+| BIN | 50,540 B |
+| `.text`／ARM exidx／`.data` | 49,892／8／640 B |
+| `.bss`／静态RAM总计 | 6,356／6,996 B |
+| 32位cold port／controller／owner | 3,440／8／36 B |
+
+静态值不代表调用栈／IRQ／动态峰值或实际同步等待。固定输入摘要`d65e936768079722757cbe23b837652c54634ca184dff52b1773d2343ba165fd`；BIN SHA-256为`061eaf318149bdb4252585609a2fa589a6d34843c475ca7d733cc4753834e119`。输入、原生符号、对象、ELF／BIN和日志留在忽略的`build/wio-task-cold-20261015/`，仅机械投影相邻helper include，源码／投影前后摘要一致。SDK与依赖缓存复用，不称SDK全冷构建；公开placeholder只供编译，不能直接烧录作为匹配运行候选。
+
+首对象编译实际成功，但验证工具错误地要求本TU包含分离实现的decoder符号；原失败保留，仅将对象检查对齐真实store调用，完整ELF继续强制检查decoder，独立attempt2对象及最终链接通过。87项Host、45项发布、57项硬件工具回归、架构／profile均完成；未放宽生产守卫。本批只关闭此候选的软件边界，不证明真实整板断电、介质独占、运行预算或产品任务恢复。
+
+下一步仅在Wio接入后核对身份和外部Flash归属，保护原固件／精确16 KiB，再冻结真实profile。先执行单笔停用fixture写入；用户整板复电后mode1双读并生成只读材料，再编译／核对／部署对应cold候选，验证fresh load或真实NotFound，最后按原受限路径精确恢复任务raw及原固件。身份8 KiB原字节不变、完整意图及请求日志保留；没有通过存储／预算准入前不进入App任务Start。R4仍等待§11.11的独立复电协调，不重放其未知PUT。
+
+### 11.15 Wio限定维护存储实物验收
+
+2026-10-15用户接回Wio，另报告R4已经拔插。本批只打开实际Wio的串口，不操作R4、ESP32、ADB、App、服务或数据库；R4报告不代替其十二键新鲜读取／恢复证据。原SDK保持Seeed1.8.5、CLI1.5.1、jobs1，不扩槽、不新建身份或执行任务。
+
+#### 保护与限定许可
+
+- 实际USB UID为`03c8d76f53544c3257202020ff051c07`，运行COM6／bootloader COM7，两个USB态均绑定同UID；不按第一个串口选择开发板。
+- 原SAMD51完整512 KiB独立双读相同，SHA256为`3ba233c8cf8fdf56f001b461175194771e5b617280e6aef5476f0a007d77ff9a`。应用起点`0x4000`，保护原bootloader16 KiB；原应用507,904 B另存并校验。匹配旧opaque备份仅证明二进制相同，**未证实原程序无FS或其外部Flash布局**。
+- 原固定16 KiB两次导出一致，SHA256为`299b9ae2da81bb11a7519cfcd9f2feff1b32d7cb20fb4fc6283f2eb634a8ef58`；原身份8 KiB SHA为`bef19469823be93db48458b576691b48fbf5544ae95247b88bd45715ead68396`，BWB2／BDN2 anchor合法。原任务8 KiB全FF不是区域独占证据。native验证容量字节及4 MiB边界，未导出完整三字节JEDEC。
+- 因原固件FS布局未知，另取得用户明确许可：**仅在原程序停止、实际无FS维护图内临时独占任务8 KiB，单笔试写后精确恢复**。原程序恢复启动前必须还原全部16 KiB；本许可不形成产品永久预留区、不打开普通Wio任务准入。
+- 原BIN、raw、意图与上传／独立读回证据存放忽略的私有`build/wio-storage-live-20261015/`，核对私有ACL，不输出raw或凭据。UID固定session claim和原文件不覆盖、不换目录规避；未知结果不得重放。
+
+#### 匹配图与实际单笔
+
+本次真实source ID为`ca58fd8330f83e07731a4f49027f106780cdcee8ad87e098ba41c3c4dfcb6e5c`，生产423文件／17实现单元不变。capture／restore／probe均使用真实原baseline而非前节placeholder；实际编译输入和最终符号无FS，恢复BIN在试写前已就绪。只按SDK按需擦写应用，不加整应用`-e`，每次上传后独立读回image并核对原bootloader再运行。
+
+`OPEN_CAPTURE → REGION_ATTEST → READ(NotFound)`通过后，只执行一次`REPLACE1`：code0、121,216 µs，644 B四条停用fixture SHA为`3cd22cfdb133441f663ae9c6dfdce011adefa6633fbbf60cc0ad8ceb7d4da707`。后续READ、IDENTITY_END及再次READ完全相同，身份摘要不变，attemptedMask始终1。没有CLEAR_FIXTURE、TaskEngine、Start、联网或认领。
+
+用户明确确认只将Wio断电约5秒再接回，核对同UID并单独保存复电证据；软件reset／上传不算真实断电。复电后mode1双读一致，冷后完整16 KiB SHA为`8bd6e5610283a7cf83eb9e792e7914eb74d85c0a2c45fb3a4969407cba0a2fc6`，原身份仍一致；原state／写入意图不改，生成独立cold材料。绑定这些真实材料的cold候选完成编译、独立上传读回后，只执行一次OBSERVE：code0、ObservedSnapshot、4条／644 B、SHA与原写后快照相同，identitySame=true。writeConfirmed始终false，表示观察不追认未知写入，也不生成产品执行receipt；本次原REPLACE1本来已有confirmed回复，二者分开保留。
+
+#### 精确恢复与结果边界
+
+mode2以编译绑定的原baseline限制恢复，只对原任务8 KiB做必要恢复，身份8 KiB不写；恢复前检查当前完整16 KiB稳定及身份相同，恢复后独立双读全16 KiB均逐字节等于原备份。主机得到rawRestored=true，保留restoreStarted=true的已消耗意图，并记restored=true／unknown=false；没有删除原REPLACE1、cold观察或原备份。恢复前置读取另有落盘phase意图，失败也不能凭旧复电证据重刷解锁。
+
+随后只恢复本次新鲜原应用507,904 B。独立读回应用、原bootloader及完整524,288 B均与原备份逐字节相同，完整SHA仍为`3ba233c8cf8fdf56f001b461175194771e5b617280e6aef5476f0a007d77ff9a`，通过后才运行原程序。未改RTL固件，最终同UID回到COM6。原固件恢复不是重新验证其联网业务，不顺带操作App或其他板。
+
+| 本次真实profile完整链接及上传 | BIN | 静态RAM | 限定作用 |
+| --- | ---: | ---: | --- |
+| capture mode1 | 36,524 B | 36,276 B | 原／冷后16 KiB只读双读 |
+| restore mode2 | 39,116 B | 36,276 B | 精确恢复原任务区，身份绝不写 |
+| 单启动probe | 50,540 B | 7,452 B | 唯一单笔fixture，不运行任务 |
+| cold | 50,756 B | 6,996 B | 原Store.load／Codec.decode冷观察 |
+
+cold实际BIN SHA为`89ea1b53c1b717e8174ad1dc126abbfee76a59e46e5b0d546bb3f692387c56e0`；本表与前节编译placeholder分开。原423生产源与冻结输入不变，完整图和实际编译输入无FS。cold底层虚表仍保留写函数，不能宣称整ELF剔除全部写代码；只读来自能力边界和既有模型。静态RAM及单次121 ms不能证明产品栈／IRQ峰值、异常擦写硬截止、签验与Cloud carrier的1 s端到端预算；本轮未测每页／扇区独立耗时。
+
+本次复核57项硬件工具回归（其中Wio53项）及架构检查通过；另3项有限检查确认原镜像即使误标capture／cold也不能绕过原raw恢复守卫。未重新执行87项Host或全部平台编译；其结果仍只取§11.14。全部原备份、完整意图和真实构建／上传证据留在忽略的私有路径，不提交到Git。
+
+该实物批曾留下通用CLI首次读取phase缺口，原操作实际成功且恢复另有外层保护，未发生未知读；现已按§11.16补齐并回归。它不改变本节原实物结果，不需重跑单笔写入／断电门禁。
+
+本次关闭的是**同一Wio的限定维护存储子门禁**，不是X2正式准入。下一批最小顺序：
+
+1. 先审阅已知Wio产品图的QSPI／FS调用者及固定布局，把任务`[0x3fc000,0x3fe000)`、身份`[0x3fe000,0x400000)`的独占范围写成明确产品合同。任何FS必须按配置避开，不能仅靠全FF、宏或软件owner推断物理独占；原opaque固件本轮仅临时停用，不据此宣称兼容。
+2. 采用匹配、明确不使用重叠FS的内部四槽产品，保护原材料后补有限运行预算／正常任务路径；现有任务Codec／Store／Engine／Cloud carrier、可信profile和App原链复用，不新增恢复执行器。预算不足先缩减阻塞或调整明确的调用准入，不靠长循环掩盖。
+3. 产品区域与预算通过后才补真实App保存不Start、显式Countdown／Completed、运行中复位Interrupted／不续跑、删除及ACK／State。实时／H1仅做实际接线影响的差异，不重开BLE长循环、H2、离线历史／Bulk或整组服务。
+
+本批未暂存、提交或推送；用户无关删除、修改及空文件保留。R4用户已报告整板拔插，后续仅按§11.11进行其独立新鲜只读协调／精确恢复，不再把“待用户拔插”列为当前阻塞，也不得重放其未知PUT。
+
+### 11.16 维护读取保护与 Wio 产品区域合同
+
+本批依次收口读取失败隔离、已知产品固定布局、运行预算，再进入真实App任务验收。不扩槽、SDK、线协议、FS框架或任务执行器；共用原Codec／Store／Engine／Cloud carrier和App客户端。§11.15单笔维护验收不重跑，旧未知意图及全部备份保留。
+
+#### 读取阶段的持久保护
+
+`wio_storage_gate.py`在prepare-cold及restore-tasks的首次`p/d`前，exclusive新建并fsync独立phase，绑定UID、原baseline、source及原state摘要。全部双读、输入复核及必要状态落盘成功后才原子封口。失败、重复字段、坏schema、绑定错误或残留`.next`都拒绝继续，不通过再次传入复电布尔值、覆盖文件或重刷解锁。
+
+普通CLI在导入／打开串口前检查，直接prepare／restore／probe／observe入口复用同一检查。新鲜复电后的显式reconcile仍可只读协调，但不会清phase或重放恢复。原state、unknown和写入意图语义不变；健康恢复的原intent仍为已消耗。现场私有uploader也复用此检查，不另建恢复执行链。
+
+另修正同一类关闭边界：最后一次原生读取成功后，`end()`仍可能首次发现整会话超期，或native关闭调用自身返回已晚。原维护RAII、cold及probe曾忽略关闭结果；新临时身份port审查时也发现了同类缺口。现在共用`OwnedQspiAccess::finish()`核对关闭后的失败／隔离、lease状态及剩余预算，维护事务在关闭前消费自身ownership，各调用者在返回成功前显式消费结果。若native关闭已释放外设才发现迟到，仅永久锁定当前helper，不重新获取lease或伪造owner隔离。失败的snapshot长度保持0，不发布冷观察、恢复成功或继续下一次I/O；析构只保留失败路径的兜底释放，不再承担成功判据。
+
+有限模型覆盖末次读取正常而close才超期、mode0导出／mode1比较／mode2已恢复原字节但仍须报失败、cold首末capture、probe捕获，以及close中重入／无ownership的事务不关闭别人的lease。新身份模型另覆盖7个精确close截止点。没有改生产native／owner的超时语义，也没有把调用准入包装成SDK可抢占硬截止；§11.15历史实物结果保持原范围，不事后改写或重跑。
+
+新增21项Wio相位回归，Wio74／全部硬件工具78项通过，均离线、不导入pyserial或访问USB。原current-host配置Release＋ASan先重建并通过88／88，登记下述身份模型后最终89／89通过（含既有fuzz smoke）；保持`/W4 /WX`，既有ASan链接符号诊断建议未放宽为生产修改。45项发布回归及架构／profile检查通过。
+
+#### 已知产品的永久布局
+
+所有已知Blinker Wio WiFi／BLE产品共用以下4 MiB板载QSPI合同，任务关闭也不将保留区借给其他用途。唯一常量来源为生产`WioTerminalQspiOwner`，维护夹具直接引用；增加对齐／连续／终点断言，不增加对象字段，不改地址、journal或旧身份字节。
+
+| 固定范围 | 大小 | 使用边界 |
+| --- | ---: | --- |
+| `[0,0x3fc000)` | 4,177,920 B | 本owner不使用；本批不提供板载FS接入 |
+| `[0x3fc000,0x3fe000)` | 8,192 B | 四槽内部任务双扇区；仍需显式准入 |
+| `[0x3fe000,0x400000)` | 8,192 B | 原身份／网络／授权BWB2银行，格式不变 |
+
+FS边界来自本机实际依赖：通用Seeed_FS和外置SD可以保留，rpcWiFi引用FS接口不等于挂载板载QSPI。另装的`Seeed_Arduino_SFUD`按整个芯片容量暴露块设备，并可能自动mkfs，不能与此合同共存；任何第二板载QSPI driver都不支持。即使其FS缩到前段，独立reset／end仍可能干扰外设，不能仅凭地址不重叠宣称兼容。本批不修改SDK、自动format、收缩已有FS或新增FS适配。
+
+冻结候选必须结合实际源及最终ELF确认没有SFUD／第二板载QSPI owner，不能依赖头文件顺序或库安装状态。身份的FF／BWB2预检已明确只表示内容兼容，不证明物理归属；任务原regionReserved／内部profile守卫继续保留。此处是已知新产品图的固定合同，不把原opaque固件转换成已准入产品，也不沿用上轮临时试写许可做永久迁移。
+
+#### 产品预算与 App 前置条件
+
+新增内部`WioTerminalWiFiTaskGate`只复用公开组件和enableTime／enableTasks／begin／run。串口`j`只读指标，没有arm／reset／Initialize／Start或自动任务；公开占位构建保留产品图但不调用begin／run，不能当实物运行固件。
+
+原SDK的Sketch实际运行于20,480 B的runClient任务，另有8,192 B的runServer和48 KiB RTOS heap。预算观察使用既有trace／栈水位，固定最多8个任务并明确实际数量及截断；RTOS剩余／历史最低值与newlib heap观测值分开。原48 KiB已属于静态BSS，不能把任务栈再加一次；不能套用R4的MSP减heap推断Sketch栈。newlib标明采样观测，不称瞬态分配峰值；原eRPC每消息4096 B分配及同步等待边界保留。
+
+验签包装只单次委派原Crypto，记录真实验签及run最长用时，不修改返回值或生产hook。1 s carrier年龄与1 s提交预算仍分别是返回前后判据，不是SDK硬截止；单次维护121 ms不代替签验／存储／排队／回复及RTOS栈的产品验收。
+
+App新鲜备份已保存账号、请求日志和原APK；本机服务schema51且健康。通过原实例解析接口匹配到已有自有Wio云设备，并正常reveal现有Key，未刷新、重绑或创建新设备。该设备无历史task scope，Gateway管理／Ed及Broker任务准入均未开放；服务公钥与源码KeyId1匹配。当前只有只读前置核对，尚未初始化任务或修改准入。
+
+真实验收必须先确定收尾：在原逻辑设备Initialize后又恢复旧空任务raw，会造成服务active scope与设备不一致，不能靠DB回滚或重放Initialize解决。用户已明确批准临时测试身份／真实App临时设备、仅该设备任务准入及必要的单台临时额度；结束走正常移除并保留请求记录，精确恢复原固件及16 KiB和测试配置。原账号／逻辑设备、其他板、未知意图和无关本地修改保留。
+
+普通维护mode0／2刻意校验同实例或身份原字节，不能用于跨临时实例恢复，也不能为验收将其放宽。下一前置是独立、固定真实UID＋原16 KiB SHA限定的身份过渡／原样恢复候选：复用原owner、bank和DeviceInstanceIdStore，不复制原生驱动；无anchor过渡窗口也必须先有可恢复路径。恢复候选及有限模型／原SDK验证完成前，不清Wio身份、不调整额度或服务准入。本批已收到许可不等同恢复工具已经就绪。
+
+#### 本批软件收口与下一实物批
+
+预算观测候选已用原Seeed1.8.5、CLI1.5.1、jobs1完成task4完整链接，以及default／task4必要对象和32位ABI检查；生产423文件／17实现单元均来自本次安装投影。最终ELF保留真实Ed25519及单次委派wrapper、RTOS trace和两类heap观测，只含一个36 B QSPI owner，没有SFUD／第二板载QSPI图。通用FS／SD依赖没有被错误禁止。
+
+| 观测候选的编译结果 | 数值／限定范围 |
+| --- | --- |
+| task4 BIN／`.text` | 188,440／187,680 B |
+| `.data`＋`.bss` | 752＋71,936＝72,688 B，含观测夹具及原49,152 B RTOS heap |
+| 32位Facade／owner | 12／36 B，布局常量未增加对象字段 |
+| 可选TaskBlob／TaskModule | 1,344／2,912 B |
+| 固定八任务trace／Resources | 312／24 B，仅测试观测开销 |
+| default检查 | 仅必要对象，无任务／Ed执行图；本批未再做default完整链接 |
+
+输入摘要`15328465c4781b1c8aca86dc3201144c05488a1ad1fb6bcb81fc448f3fb71c1c`始末一致；BIN SHA为`225d9621e12c245b8a1100a3b335e54be9201e5b4e8b842373892a7fe7b49286`。证据留在忽略的`build/wio-task-runtime-20261015/`。它是GATE_COMPILE_ONLY=1的公开占位构建，**禁止烧录**；实际运行必须重新冻结真实网络／Key／信任及恢复材料。首轮链接本身exit0，后验工具误把4 B静态guard算成第二owner；对象工具还遗漏Crypto include。原失败保留，仅修忽略工具并独立复核成功ELF／重编必要对象，不改作者源或用旧BIN代替。静态结果不代替任何实测动态预算。
+
+独立`WioTerminalIdentityTransitionGate`当前只完成便携controller／真实存储port及Host模型，尚无`.ino`、串口适配、固定profile或可执行主机编排。它不进入用户库，也不修改普通mode0／2。prepare先核对固定UID／原16 KiB摘要／稳定双读和原BDN2，再经真实bank清除五个blob、原loadOrCreate生成不同临时实例；task区原全FF不变。restore仅允许profile绑定的原16 KiB，当前区允许无anchor，通过原owner的task／identity固定lease逐扇区恢复并双读核对；不新增journal、驱动或恢复算法。
+
+原文件的合法BDN2来源依赖严格mode1捕获及冻结原摘要；restore port自身不重新解析desired anchor，不能宣称做了额外decoder检查。失败不cleanup／重开，controller消费一次性意图；模型覆盖清除／随机失败的无anchor窗口、擦写false／late、媒体变化、恢复故障、参数和重入。用户已有条件许可，但Host通过不代表清身份的安全前置已满足：薄适配必须持久保存每次prepare／restore意图并遵守新整板复电协调，任何未知不重放。
+
+关闭保护最终修订后，重新以原SDK完成maintenance mode0／1／2、probe、cold、transition共6个必要对象及仅mode2的一次完整链接，不重编WiFi大图。固定输入`bb6c1e5db3d1ca57681d5f1ebf5b1c786a9565353a39e9381cac5f4115ade3d5`始末一致，生产423源与上表预算观测冻结map相同。mode2 BIN39,276 B、`.text`38,652 B、`.data`624＋`.bss`35,652＝36,276 B；单个36 B owner，无产品／RPC／执行器／Ed／SFUD图，原擦写接口保留属于受限恢复图预期。BIN SHA为`9b8ffaebb3b8c2d4daf48ed04beac6765cdefd550daa62d89b35ebb788d07fc4`，实际文件重新计算一致。32位helper24 B、transition controller／port为12／16,608 B，后两者仅维护测试开销，不进入普通用户产品。证据在忽略的`build/wio-maint-finish-20261015/objects-attempt2/`及`mode2-full-attempt2/`；原094b修订材料保留但不作为最终源码证明。此处均为编译占位材料，禁止烧录；transition仍只有对象验证，没有可运行薄适配，cold／probe本批不重复完整链接。最终Host89／89重新通过，未放宽任何警告或SDK守卫。
+
+本批App前／后账号及请求归档7,382,528／7,386,112 B、APK SHA核对保留，仅作真实只读解析和既有Key reveal；结束释放本批USB转发，不清数据、不回滚请求。未刷Wio或其他板、未清身份、未创建临时设备、未改额度／准入／服务、未Start或部署App，原Wio保持上批恢复状态。未暂存、提交或推送，无关本地修改保留。
+
+下一批只按以下顺序，不重跑本批软件门禁或§11.15单笔／冷读：
+
+1. 完成身份过渡薄串口适配、固定UID／原摘要／非placeholder profile和主机持久phase，补有限回归及原SDK完整链接；恢复候选先于任何清身份操作就绪。仍复用上述controller／port，不放宽普通维护模式。
+2. 重新核对COM6同UID并新鲜保护原主固件、完整16 KiB和App／请求状态；验证恢复材料后，按用户许可准备临时身份、真实App临时设备及仅该设备的任务管理／Ed／Broker准入。必要单台额度临增，原账号和其他设备不动。
+3. 先观察原WiFi控制与RTOS资源，再做一次初始化／停用保存、短Countdown、真实Completed、运行中复位Interrupted／不续跑、删除及原ACK／State；同步测签验、存储、carrier与各任务栈／heap。若未知或预算不足停止，不换ID重放、不以长循环掩盖。
+4. 临时候选仍在线时从App正常移除临时设备，保存`localTasks`及`brokerCleanupPending`；DELETE成功不等于MCU退休已验证。现有Service删除事务会退休该临时logicalId的scopes并将未决attempts标unknown，保留全部审计；不能DB硬删、回滚或事后补verified。
+5. 精确恢复原16 KiB与主固件、独立读回一致，再恢复准入／额度与本批网络配置并保留请求日志。云端临时身份退休与原物理实例恢复分别取证，成功后才关闭本次产品差异；正式Wio任务准入仍需按真实预算结果决策。
+
+### 11.17 Wio 身份过渡薄适配与有限产品验收
+
+2026-10-15继续§11.16。本批仅操作同UID的COM6／COM7 Wio，复用原SDK1.8.5、四槽Codec／Store／Engine、Cloud carrier及真实App页面；R4、ESP32、RTL固件和普通产品默认配置不变。下列软件结果和现场过程分别记录，过程完成不等于产品发布准入。
+
+#### 串口与主机意图边界
+
+内部`SerialAdapter`只把USB的`p/d/t/r`映射到原controller／port，不把串口、QSPI、网络或执行器混为一个模块。setup不读介质、不自动切换身份或恢复；固定物理UID、原16 KiB摘要和source必须来自私有实际profile。占位图只允许元数据，禁止介质操作。`BlinkerV2Advanced.h`仅用于Arduino依赖发现，不构造产品对象。
+
+响应使用定长magic、长度和CRC；元数据包含controller状态，正常写入后再核状态和捕获。`r`只接受编译绑定的完整原16 KiB，恢复前后仍走原共享owner／双读；不放宽普通维护mode0／2、不增加bank或journal算法。收发均核对最后一次阻塞调用返回后的15 s截止；部分输出不再附加第二帧或扫描重同步。两块16 KiB缓冲属于独立维护夹具，不进入产品RAM。
+
+主机`wio_identity_transition_gate.py`复用既有帧、摘要和持久文件原语；首次串口请求前exclusive＋fsync保存phase，写入另留不可覆盖intent和独立receipt。新建另一个目录不能绕过同UID的全局claim。prepare、restore、只读capture及原样复核分开，pending／残留`.next`／坏schema／重复字段／摘要变化均拒绝继续；上传器也消费同一许可，不凭重刷重建RAM状态来解除未知结果。
+
+未知prepare可能停在无anchor窗口：只能保留原未知意图，经**未知发生后的真实整板断电证据**和新物理epoch只读捕获，授权第一笔精确恢复；不重发`t`。未知restore不再次授权`r`。该故障恢复分支本批只有有限模型证明，不能冒称现场实际故障／断电演练。健康路径独立mode1最终读取相符后，才允许启动原固件。
+
+独立审查另补共享`read_exact()`的post-read截止检查：最后metadata／raw字节即使已经全部返回，若返回时越截止仍拒绝。两项新增模型与全部硬件Python最终**115／115**通过；同一最终C++图Release＋ASan **90／90**通过，保持`/W4 /WX`；架构检查及diff检查通过。模型、ASan和软件计数不代替实物擦写、动态预算或App结果。
+
+#### 原SDK及现场过程
+
+- 新鲜双读完整主MCU524,288 B，SHA `3ba233c8cf8fdf56f001b461175194771e5b617280e6aef5476f0a007d77ff9a`；原应用507,904 B和bootloader分开保护。新鲜mode1双读完整16 KiB，SHA `299b9ae2da81bb11a7519cfcd9f2feff1b32d7cb20fb4fc6283f2eb634a8ef58`，任务原全FF、原身份anchor有效。原备份及§11.15已关闭状态不覆写。
+- 首次导出在设备重新枚举时、构造Serial和发送请求前停止。原pending与实际失败另存；只在绑定该pre-open失败且确认未发送后，独立只读协调`p/d/d`完成新鲜原始保护，没有以重刷或重复介质请求解除未知。
+- mode1只读图BIN36,716 B／SHA `fd3a9861f3b943305ddaa39cfd65530d72e70128f2ebf4212751617aad5e4227`，身份过渡实际图BIN43,604 B／SHA `302cbb56a19f194552803e9124c63dd682fc50195774fe28205e17e6b09a9475`均已原SDK完整链接并独立读回。过渡图固定输入`41fa16383a9f30588d89d114f659cb63edde497a51041998db6cfef3e38e69ee`，真实HardwareRandom、loadOrCreate、恢复接口保留，单owner／无SFUD／无产品网络图；初次缺根头的Arduino依赖发现失败保留。
+- 临时身份prepare一次成功，状态及16 KiB捕获确认，原任务区保持FF。真实App正常创建并reveal一台临时WiFi设备；仅本机该账号额度10→23，创建后立即恢复10、active override归零，旧账号／设备／请求保留。临时Key只在私有目录保存。
+- 正常离开Key页后的旧观察器失败保留；另做只读协调确认首页、原设备加临时设备、Key页DOM已消失、设备及BLE资源为零。不伪造原home成功，也不把销毁页面等同于堆内字节清零证明。
+- 服务只为新逻辑ID增加Gateway管理／Ed和实际Broker三个已有准入列表；两服务原镜像、源码、mount和网络不变，schema51。PG／SQLite、配置、日志已新鲜备份。prepare末次审计的VM跨域JSON原型比较失败保留；独立协调先只读核对完整原材料，修正纯JSON clone域后才apply，不重跑prepare或回灌数据库。P-256／Ed25519原公钥字节与实际设备profile匹配。
+
+真实运行候选已完成原SDK完整链接及独立实际profile消费检查，输入摘要`65b40c472bc72953c96e34e62cacfef6c501eb428a2a88850a22669e143858b5`始末一致，生产423源／17实现单元不变，仅私有安装投影三个已有config头。BIN **188,400 B**、SHA `1d7e7fcae5ec7bc8f492c4ae022b288dad5d796e0a3299f7cc9213af8cd377fa`；`.text`187,640 B，`.data`752＋`.bss`71,928＝静态72,680 B，包含原48 KiB RTOS heap及观测夹具。冷库图实际耗时约18分40秒，不冒称复制的cache被CLI实际复用；未升级SDK或改并发参数。烧录后独立读回BIN与bootloader一致，再启动实际产品图。
+
+#### 实测结果：普通通信通过，任务在签发算法错配处停止
+
+真实App进入临时设备页，能力和新鲜State正常。首次且唯一一次Initialize实际HTTP409 `TASK_OUTCOME_UNKNOWN`，立即停止后续任务写入；不Start、不创建替代scope／身份、不重放Initialize。随后只点击一次“查询当前任务”，实际catalog仍返回409，容量与任务表未确认；界面展示零条不能当作设备已确认空表。原pending、请求号和完整journal在离页前归档，离页只回收controller／连接，不伪造原请求完成或停止追踪。
+
+只读账本及实际运行代码核对将原因定位为**服务运行版本不匹配，而非Wio包长或存储预算失败**：
+
+1. Prepare已到设备并返回138 B Challenge，Gateway实际签发172 B grant；instance／scope／nonce／root／请求及会话绑定均匹配。编码后BBP frame187 B，在原限制内，不需增加buffer或协商新协议。
+2. 实际grant为算法2（P-256），用本机对应P-256公钥验签通过；Wio任务端有意仅接算法1（Ed25519），在进入Crypto前拒绝其他算法。最终ELF反汇编核对了真实Arduino Ed verifier→计数wrapper→单次真实验签的调用链，`signatureCalls=0`不是观测漏计，不能拿0微秒当作Ed验签性能。
+3. Gateway实际运行`/app/services/gateway/dist`旧代码：配置没有`ed25519DeviceIds`、无`signerForDevice`／`task-grant-profiles`，默认仍用P-256；Env中的新名单被忽略。运行文件与准入前快照相同，但与当前工作树支持按设备选择Ed的源码不同。**schema51、Env含ID和两套公钥存在不等于签发实现匹配。** 本批没有为了掩盖错配给Wio加入P-256、放宽验签或改写已签发grant。
+
+为区分普通通信与Task授权问题，独立真实App普通Property操作`power=false→true→false`，两次原ACK校验Promise及新鲜Cloud State通过，revision1→2→3、MCU回调0→2、最终power=false；不将它称为任务动作或Completed，不操作物理负载。普通页面离页后资源归零。
+
+| 此运行候选的有限观测 | 实测／边界 |
+| --- | --- |
+| 全局最长`Blinker.run()` | 257,372 μs；包含SDK、网络和原控制，不是独立store提交时间 |
+| Sketch最低栈余量 | 17,792 B；真实trace共4任务、无截断 |
+| 原SDK其他任务最低栈余量 | RPC server 7,820 B、Idle 516 B、Timer service 180 B；仅本轮普通运行观测，不冒称Task签验后的余量或长期安全阈值 |
+| RTOS历史最低可用 | 17,568 B；与已在BSS中的48 KiB总heap分开 |
+| newlib最大采样用量 | 7,684 B；是采样而非瞬态分配峰值，不能与RTOS重复计算 |
+| Ed25519及Task提交 | 未进入Ed验签、未取得verified Initialize，**未测得**成功签验／任务擦写／Completed／Interrupted预算，不准入正式Wio持久任务 |
+
+#### 完整恢复及保留的未知结果
+
+临时候选仍在线时，通过真实App一次正常DELETE移除临时设备，实际返回`localTasks=not_confirmed`、`brokerCleanupPending=true`；原22台设备ID及同账号保持。服务scope正常退休，`confirmed_root`／`retirement_verified_at`为空；Initialize、只读catalog及正常删除产生的退休三笔请求仍为pending、对应三attempt为unknown。它们不是三次Initialize，不删日志、不恢复DB、不补verified或把DELETE成功说成MCU退休已验证。退休身份不再获得管理准入；已签过的旧grant／请求不重放。
+
+恢复使用同一个已验身份过渡BIN：一次精确`r`得到设备内部原摘要确认后，另刷无写入的mode1，通过独立`p/d/d`取得与本批原16 KiB逐字节相同的材料；再恢复原应用507,904 B，并独立读取原bootloader及完整524,288 B，完整SHA仍为上文`3ba233c8…77ff9a`，相同后才启动原程序。原身份／网络／授权随完整尾区恢复，RTL不变；这证明原字节恢复，不额外声称原opaque固件重新云登录。
+
+Gateway／Broker三个准入列表回原配置，两容器原镜像、源码、mount、网络不变且健康；原账号额度10、临时override0。服务恢复前后的scope、全部捕获写请求／回执及未知attempt保留。App前／后完整数据归档 **7,386,112／7,428,096 B**，APK沿用`f2bc1828…`，没有安装新包；保留账号、日志，不回滚App数据，只移除本批拥有的USB转发。R4／ESP32不动。最终115项硬件Python、架构及diff检查重新通过；未暂存、提交或推送。
+
+现场材料在忽略目录`build/wio-task-product-20261015-b2/`，不提交账号、Key、raw、数据库、完整Env或构建产物。最终独立离线证据审计分别输出`safeRestorationClosure=verified`及`limitedProductAcceptance=not-verified`，整体`passed=false`；审计不是额外的设备执行证明。**软件薄适配与安全恢复完成，X2任务短闭环仍未通过。**
+
+#### 下一批最小顺序（替代上节已经完成的前置待办）
+
+以下三项已由§11.18执行；本节的失败与原始未知结果仍按历史保留，不再作为待重复的实物步骤。
+
+1. 先核对并部署匹配的Gateway任务签发代码，保持现有App、协议、四槽和设备Ed实现；只更新必需运行文件，不以schema号推定代码版本，也不顺带升级其他服务。准入前必须用**实际运行代码**确认该设备选中的signer算法为Ed25519、keyId和公钥匹配；补一个“Env已写但运行代码仍旧”的有限失败回归。不能只查容器Env或工作树src。
+2. 本批未知请求、临时身份退休记录与同UID全局claim继续封存，不手工删除claim或换目录解锁。确需新批次时，先以本批完整介质／主MCU恢复证据和已退休云身份建立显式、独立的新批准入；旧未知不可变，不在旧pending scope上恢复Initialize。
+3. 匹配签发环境与恢复前置均核实后，才做一次新的有限App任务闭环：初始化、停用保存、启用编辑但不Start、6 s完成、15 s运行中软件复位后中止／原到期后不续跑、删除及原控制；同步记录真实Ed、提交判据和RTOS资源。未通过的项继续保留，不复测§11.15存储断电门禁、不扩槽、SDK、BLE长循环、H2／Bulk或其他板。
+
+### 11.18 匹配 Ed25519 签发与 Wio 四槽任务短验收
+
+2026-10-15按用户批准的新批次，仅操作同UID的COM6／COM7 Wio。本批关闭的是**匹配内部产品的有限任务短闭环**，不等于全部X2、长期稳定性、任意外部FS或普通产品默认准入。沿用原App与协议、四槽、Seeed1.8.5／CLI1.5.1／jobs1；R4、ESP32及RTL固件未操作，未扩槽或重造执行链。
+
+#### 先匹配实际运行签发代码，再开放新批次
+
+新鲜双读主MCU524,288 B及完整16 KiB，分别仍为§11.17的`3ba233c8…77ff9a`和`299b9ae2…a8ef58`；App账号／数据、PG、Broker SQLite、运行代码、配置与公钥先备份。Gateway不升级镜像或schema，只临时覆盖四个必要运行文件：`config.js`、`index.js`中任务装配块、`task-management-repository.js`、`task-grant-profiles.js`，不将工作树中其他功能一起部署。新增有限回归明确：**配置Ed名单不等于旧repository真的选择Ed signer**。
+
+对实际运行`dist`的配置、装配块与resolver作无网络／无DB的签发选择诊断，确认新设备选择Ed25519／keyId1、公钥匹配；该合成诊断不当作设备任务成功。真实首次Initialize之后，另按实际HTTP requestId读取PG的Prepare／Challenge／grant／session及设备结果，确认172 B grant算法1、真实Ed签名、instance／scope／request／nonce／digest绑定，以及原DeviceKey结果认证均通过，不能再用Env、schema或工作树代码推断运行版本。
+
+同UID原claim与§11.17未知写入不删除。主机新增显式后继准入：只在原固件／全部介质精确恢复、旧临时云身份已正常退休且原证据摘要匹配时，以exclusive＋fsync追加后继claim；每次I/O消费当前leaf，不能换目录复用旧许可。B2原未知请求与closure文件逐字节保留。新身份只执行一次prepare，新Key只来自真实App正常创建，不重放旧Initialize、复用退役身份或手写业务SQL。
+
+首次创建设备被Gateway旧额度快照明确403拒绝，核对没有创建副作用；保留原拒绝后，通过正常页面及正常查询独立创建成功。两个独立的临时额度调整记录均已恢复10、active override为0，不将明确拒绝改成成功记录。新设备仅追加Gateway管理／Ed及实际Broker三个已有准入列表。
+
+#### 匹配固件与实际任务结果
+
+本批真实新Key候选完成原SDK完整链接及实际配置消费检查：423源文件、17实现单元、唯一36 B QSPI owner、真实Ed25519及单次计数wrapper、原Store／Engine／Cloud carrier与RTOS观测；无SFUD／第二板载Flash驱动。新BIN **188,400 B**、SHA `d7638b2cf0aef39308a8351b79ab4f7a60e481fdc3115e694331e5fd5558ee0c`；输入摘要`e1a2a24712cd22c9f9ad0d2856d56ef915b6a357f13b31b5960569fdd54cfc52`始末一致。`.data`752＋`.bss`71,928＝静态72,680 B，含原48 KiB RTOS heap及测试观测开销。真实链接约17分16秒，CLI缓存复用行0，不把同字节库路径或复制对象称缓存加速。维护与身份过渡BIN另按原实物、源摘要和图逐项核对后复用，不冒称新编译。
+
+以下均为真实Android WebView生产DOM交互及实际网络／设备结果，不是API替身或手工触屏验收：
+
+| 有限门禁 | 实际结果 |
+| --- | --- |
+| Initialize、停用保存 | Initialize verified，设备真实容量4；保存6 s定义为disabled／Idle／Start序号0 |
+| 启用编辑 | 同TaskId，定义revision1→2、enabled=true，仍Idle／Start序号0；不把编辑当Start |
+| 6 s执行 | 显式Start一次，随后鲜读Completed／sequence1，串口power=true、属性回调1次 |
+| 运行中复位 | 同任务改为15 s／定义revision3，显式Start一次；请求后约10.4 s内完成同BIN软件复位，未刷写、不冒称整板断电 |
+| 恢复与不续跑 | 新会话鲜读Interrupted／sequence1；原到期时间后再次鲜读仍Interrupted，MCU power=false／回调0。恢复只持久化运行checkpoint，管理表revision仍5，不凭恢复自行加1 |
+| 删除及原控制 | 正常删除verified，表revision6／count0；完成前后两次普通Cloud开关控制均有原生产ACK Promise及新鲜State，无额外Start或写入重放 |
+
+#### 已知读取故障与预算边界
+
+- 快速连续UI操作的catalog／read触发原共享HTTP 30次／分钟限流，最后一读明确429；保存／启用写入已有verified结果，不是未知写入。保留原拒绝后等待窗口，只作新鲜只读查询；未放宽限流。恢复观察器曾错误要求刷新更换controller／代次，原5笔网络读成功但UI后验失败；原工具与失败归档，独立鲜读协调，不修改生产生命周期或补造原成功。
+- 复位后过早catalog使用旧proofSession，返回未知；只读PG确认其Prepare存在而Challenge／grant／result为空、attempt已过期，设备新session已产出State。保留原请求，正常新查询才取得Interrupted；未重发原catalog或Start。该只读记录后来按既有60 s read retention自然回收，原始请求／日志与当时snapshot继续保留，不手工删除或补verified；B2原未知写入／退休记录仍逐字节保持。
+- 后续进入编辑时一次catalog成功、下一笔503，实际落在原CloudCredential **480 s刷新窗口**：原`ManagedMqttTransport`在generation变化时stop／configure／start，新session与State随后自动恢复。约1.2 s是服务器时间上的恢复观测，不是抓包测得精确断线时长；没有持续离线／presence TTL错误证据，不据此重启服务或重造无缝通信。正常返回／重进取得鲜读后才删除。
+- 正常Home导航后，缓存视图与路由的后置观察触发guard失败，原HTTP0记录保留，**不推断没有发生导航**。独立只读观察确认同账号／epoch、Home、缓存任务视图0及连接资源0后，才进入正常移除。所有续接都保留原失败，使用独立证明，不伪造原步骤verified。
+
+8份串口只读观测中，最长真实Ed验签 **113,873 μs**、最长全局`Blinker.run()` **299,546 μs**；最高单启动观测56次验签全部通过，重启后计数另算，不拼成一个连续运行样本。Sketch最低栈余量 **17,272 B**、RTOS历史最低可用 **17,568 B**、newlib最大采样用量 **7,684 B**，实际4任务、无trace截断。原SDK Timer任务低余量仍属短时观测边界；不把这些值当瞬时分配峰值、独立store耗时、SDK硬抢占截止或长期安全证明。verified提交和有界观测通过本批门禁，不新增RAM阈值或用§11.15单笔121 ms代替产品测量。
+
+#### 精确恢复与收尾
+
+临时设备仍运行时，经真实App正常DELETE移除：`localTasks=retired_verified`，原响应`brokerCleanupPending=true`保留；后续只读确认正常invalidation已delivered、当前pending=false，Key／session撤销、target deleted、scope retired。App正常移除后的同账号原22个ID完整相等；本批没有为重复取证重启已归档App或补一次全量fresh库存GET，不把客户端字典冒称独立服务端全量查询。
+
+随后三个准入列表先恢复，再撤四文件Gateway overlay；实际完整运行文件、镜像／配置／mount／网络及两套公钥回原基线，Gateway／Broker／PG健康，不回灌DB或更改其他服务。**此次签发修正已验证，但测试overlay已撤回；后续实物任务仍必须部署匹配签发实现，不能使用原旧dist直接宣称Ed已生效。**
+
+同一个已验过渡BIN精确恢复原16 KiB，再用独立mode1双读取得与新鲜备份逐字节相同的材料；原应用507,904 B、bootloader及完整524,288 B均读回一致后启动。原授权／身份／网络随原raw恢复，RTL不变；不额外宣称原opaque程序重新云登录。App前／后完整数据归档 **7,428,096／7,337,984 B**，账号和请求日志不回滚，仅移除本批自有USB转发。
+
+本批重新通过126项硬件Python（其中46项身份过渡）、架构及diff检查；未重跑C++全Host／其他平台编译，其历史结果只取前节。所有私有备份、Key、完整Env、DB、App数据及构建证据留在忽略的`build/wio-task-product-20261015-b3/`，不进入源码交付。无关本地修改保留，未暂存、提交或推送。
+
+最终离线协调审计 **12／12通过**，分别确认`limitedProductAcceptance=verified`、`safeRestorationClosure=verified`，`releaseAdmissionGranted=false`。保留账本中的26份真实Ed grant逐一验签通过，不以合成预检替代。首份9／12报告保留；仅修正scope摘要按producer的JSON序列化计算、VM／宿主JSON原型比较及库存证据来源三项审计假设，独立新报告不重跑业务、补造原成功或放宽介质／任务指标。终审SHA为`9f550f12aa70fa8936090ebb6b2dd6976ebebf0fd2ca47184b0de35fe96bdf8e`，原失败及协调说明均独立封存。
+
+下一步回到R4已有未知结果的新鲜只读协调／原样恢复及其未完成产品差异，不重派本次Wio存储断电／任务Start、BLE长循环、H2／Bulk、SDK升级或新功能。既有限流下减少重复catalog／read、480 s凭据刷新窗口的交互恢复可分别列为有限后续优化，不在本批重造执行链或宣称已实现无缝会话刷新。
+
+### 11.19 R4 未知 PUT 的只读协调与原样恢复
+
+2026-10-15仅操作COM9／UID `F412FA6F2F88`，沿用用户已报告的整板拔插及既有主程序覆盖／known WiFi恢复许可；不再要求重复拔插，不操作COM6 Wio、COM11 ESP32、手机或服务。此节关闭的是§11.11 **storage-only探针**的介质协调与恢复，不是云任务产品验收。
+
+#### 先确认介质，不重放未知写
+
+新批次在独立忽略目录建立受限session，每步串口前exclusive＋fsync保存意图，保留原始RX及解析摘要。仅允许`STATUS_RAM → OPEN → READ → STATUS_RAM`；OPEN前必须是未打开bank、无隔离、arm／PUT／payload及RPC计数全0。旧意图、未确认回应、raw备份与归档构建只读使用，不创建伪造的旧cold证明或精确历史断电时间。断电来源仍为用户先前报告；RAM只证明新生命周期，不冒称仪器独立测得整板掉电。
+
+历史审计仍复用原事件断言与Codec／journal，不要求当前整棵源码等于10月14日。固定6个Sketch、419个安装投影、三个原Core1.5.3 BIN及旧证据共462项全部匹配，当前七个源码差异明确列出，未把后续Wio修改误判为原BIN变化。新增薄适配与离线审计仅在忽略测试目录，不增加生产解锁、重试或平台专用任务API。
+
+| 本批有限检查 | 真实结果 |
+| --- | --- |
+| 新鲜RAM | 无隔离、无arm／PUT／payload／注入；OPEN前RPC计数全0。末次仍健康，无新增PUT |
+| 唯一READ | 成功加载644 B，耗时81,797 μs；与原phase1 fixture完整匹配，4条均停用／Idle，Start序号全0 |
+| 实际介质 | `ts0` absent，`ts1`为664 B journal；身份及授权摘要与原OPEN一致 |
+| 原未知解释 | **SDK false／未确认不等于未落盘**。原完整写实际已持久化，但原回应仍未确认；不改历史false、不补任务receipt或重放REPLACE1 |
+
+读取没有TaskEngine或物理输出；合成fixture必须先恢复原raw，不能直接交给新产品、新logicalId或Initialize绕过。
+
+#### 精确恢复与独立复核
+
+新只读准入仅允许维护恢复，不开放产品任务。标准上传固定59,328 B维护BIN成功；维护`d/d`取得两份相同1668 B，较原1004 B只增加上述664 B任务journal。一次恢复命令后收到真实CRC ACK，再两次读到原1004 B完整字节，十二键／immutable anchor与原身份、网络及授权一致，任务两键恢复absent；不清namespace、不刷连接模块固件。
+
+随后标准上传已批准的144,536 B known WiFi BIN，返回0且实际日志写至100%并reset。新鲜串口`j`独立观察到`begun=1`、`timeEnabled=1`、`timeValid=1`、`timeSource=1`、`activeTimers=0`。它确认已启动既有WiFi程序，不等于本批主Flash读回、新owner任务产品测试或普通控制ACK／State重验。十二键精确证明发生在维护恢复后、启动WiFi前；启动后没有另刷维护图读取NVS，不声称其正常运行时全部键仍逐字节不变。
+
+原1004 B SHA为`6a657b02246a1a4c03b9b1a526c88645abb7a948766eca74ce7d46c51ff427e7`。恢复沿用已批准BIN，**没有本轮主MCU新鲜备份或主Flash读回**，不更改这一授权／证据边界。两个上传各执行一次，本批没有握手失败或重试，没有重开SWD／上传器诊断。
+
+独立离线终审不只读成功JSON：复用固定原decoder解析真实维护RX，确认检查包3356 B为两份1668 B，恢复包5392 B为两份1668 B、一个CRC ACK及两份原1004 B；原前十键完全一致、任务payload与真实冷读SHA／CRC相符。462项原材料及原未知证据未变，恢复／运行观测分别核对。
+
+证据在忽略的`build/r4-rpc-recovery-20261015/`，终审SHA为`4be17f764da148a2dcfefb826ce02bf20810727b0e87056ba7dc0e7144b7ab7a`；账号、Key、raw和私有备份不进入交付。25项协调模型与5项stale生命周期拒绝检查、架构及diff检查通过；不冒称重新编译全部平台或重跑全部Host。App／服务未部署，账号、云scope／请求不修改；无暂存、提交或推送，无关本地修改保留。
+
+#### 下一批仅补新 owner 的产品差异
+
+以下有限产品差异已由§11.20执行；现行下一步取该节末尾，不重派本清单已完成的操作。
+
+1. 只读核对§11.11正常App新建的测试logicalId仍有效、Key代次／归属及当前scope，不复活退役身份、不选中同instance旧Direct记录，也不改原active scope／历史verified请求。
+2. 新鲜保护该板十二键、App账号／请求和服务日志，固定恢复目标。核实际Gateway运行代码为该logicalId选择与候选trust匹配的Ed25519，及现有Broker／管理准入；§11.18测试overlay已撤，不能凭Env、schema51或公钥存在宣称实际signer匹配，也不把Wio归因套成R4历史根因。
+3. 独立审阅匹配R4产品候选、原SDK／ABI及wrapper预算。§11.11产品`compiled.json`的后验失败与未准入保持原记录，另立协调结果，不借本节存储成功直接放行产品。
+4. 前置满足后，正常App仅补一次停用定义保存及原ACK／State，再对一次停用Replace做受控真实回应检查：不伪造SDK失败；真实成功则保留并停止，不追加第二PUT制造故障。若未确认，验证无成功receipt／后续RPC／第二PUT／目标执行，经真实整板复电和新会话fresh查询协调，最后原样恢复并保留全部请求。
+
+不重跑两个Countdown、已通过的普通通信／Wio Task Start或BLE长循环，不扩槽、升级SDK、实现H2／Bulk或重造执行链。此剩余产品差异与X1整体、平台H1差异及正式任务准入分别记录。
+
+### 11.20 R4 新 owner 产品回执与未知写恢复短验收
+
+2026-10-15仅操作同UID的COM9 R4，沿用原App `f2bc1828…`、Core1.5.3和四槽执行链。用户明确选择本批结束恢复原固件／十二键，并正常移除专用测试云设备；原BLE授权、旧云设备及全部请求历史保留。Wio、ESP32、SDK和普通产品配置未改，不重跑Countdown／BLE门禁。
+
+#### 身份、候选与实际签发匹配
+
+先前真实App新建的专用测试身份仍active、owner／Key代次1匹配，开始时session／scope均0。原R4旧身份的active scope、20个verified请求／20个attempt独立逐字段保护，不在旧scope重新Initialize、不按相同instance选错Direct记录。本批不创建新账号、调额或清BLE授权。
+
+App新鲜数据归档7,337,984 B及原APK先保护；维护程序标准上传后双读本板十二键1004 B，task双键absent、immutable anchor匹配，再开放有限候选上传。仍沿用此前允许覆盖主程序及known WiFi恢复的边界，**没有本轮主Flash新鲜备份或读回**。
+
+独立审阅冻结的184,164 B产品BIN（SHA `38d0507e113761fe57894af0ffb037241676b4f8122b9e514788ed699e317a60`）、实际ELF、4个Sketch／419个投影、三依赖、131条Core1.5.3编译命令及17实现单元。七个wrapper均为实际强符号；五个自身SU帧16／24／16／32／24 B，两varargs实际自身帧168／176 B。当前差异仅Wio图，R4图等价，故复用实际BIN而非重新编译；原`compiled.json passed=false`保持，新独立准入只授权有限上传，不伪装原后验已通过或完整调用峰值已测。
+
+实际Gateway旧dist仍用P-256签Task，虽Ed公钥存在也不匹配R4。新鲜保护代码、PG、Broker SQLite、配置及阶段日志后，仅临时覆盖原四个Task运行文件／装配块，并在三个已有名单增加本专用ID；镜像、schema51、Controller P-256及其余服务保持。真实bootstrap的无DB／无网络／不签Grant诊断确认该ID选择Ed25519/key1，再独立核实际首次Initialize的Prepare／Challenge／Grant／session、Ed签名及DeviceKey结果HMAC。实际session instance与新鲜raw的immutable anchor相同，不以COM或MAC代替绑定证明。
+
+#### 正常基线与唯一故障写
+
+| 有限检查 | 实际结果 |
+| --- | --- |
+| 普通Cloud控制 | `power true→false`、`duty 25→0`四个原生产命令ACK Promise及新鲜State通过；MCU回调2／2、最终值0／0 |
+| 任务基线 | 正常App Initialize一次、Create一次，实际回执Ed／结果HMAC通过；容量4、表revision1、6 s定义停用／Idle／Start序号0，不Start或启用 |
+| 唯一Replace | 编辑为7 s仍停用，串口`f`仅arm下一PUT且不自动写，再通过原App保存一次。完整PUT／payload计数2→3、注入1；SDK原bool=false、原passthrough25,479 μs |
+| 故障隔离 | owner `WriteUncertain`／quarantine1／networkAllowed0。两次RAM观察的RPC计数87,919／118／118不变、循环551,917→1,027,312；无第二PUT、回调或任务输出 |
+| 原请求结果 | App真实`TASK_OUTCOME_UNKNOWN`，PG原mutation保持pending、result为空；attempt随原到期策略issued→unknown，不重发、补receipt或升为verified |
+
+观察器没有改写SDK返回值。故障发生在停用定义保存，不证明物理负载恰好一次、生产1000 ms硬截止或任意SDK复合调用上界。
+
+#### 新整板复电后的 fresh 协调
+
+用户仅将COM9整板断电约5 s再接回，独立记录本次新报告，不借用§11.19的历史断电。新鲜RAM显示arm／PUT／payload／注入全0、无隔离；输出与回调均0。该报告加真实新session／介质结果用于本批恢复，不冒称仪器直接测得掉电。
+
+最终通过正常Home→设置→任务页重新进入，真实旧App controller已abort、Home资源及任务DOM为0，再建立新App controller。五条实际新catalog／read均为fresh、Ed签名及结果HMAC独立通过：容量4、表revision2、task1 definitionRevision2、7000 ms、停用／Idle／Start0。它证明未知Replace实际已持久化，**不把原未知mutation变成成功回执**；原pending、payload／grant及requestId保持，读取没有重放原ID。新App controller不等同于第二条用户MQTT或设备物理连接换代。
+
+观测中重启前26／26、重启后12／12验签通过，分开计数；最长真实Ed286.467 ms、最长`Blinker.run()`484.362 ms，分配边界最低采样gap7,764 B。它们是本批有限观测，不是全瞬态峰值、独立store耗时、IRQ栈证明或长期准入阈值。
+
+#### 保留的读取差异与工具失败
+
+恢复期间一次独立查询的前两个catalog真实fresh／HMAC通过，第三个有138 B Challenge、172 B Ed Grant，但没有已认证Result，HTTP409。三条钉住同一旧session／connection；旧session当时未撤销或到期，设备owner后续仍健康。§11.21进一步发现实际新登录与第三条重叠，故不能再以旧session有效排除刷新／换连接竞态；也没有P-256错配或存储隔离的证据。此动作没有定义Read，不能用页面已有revision2缓存称其通过。原请求及日志保留；后续上述一次正常重入的新完整查询才通过，未放宽限流、重发旧写或重启设备／服务掩盖差异。**历史没有已认证Result，不等于证明设备没回Failure或Commit必已发出；后续定位边界取§11.21。**
+
+两处测试导航后验在Ionic过渡期过早检查旧controller／exact route；原失败及HTTP0保留，用独立真实Home／DOM检查与后续正常重入协调，不补造原步骤成功。最终新Home关闭还实际观察到当前controller abort。恢复适配器另因host／VM数组原型不同误拒绝旧scope；独立逐字段确认旧1／20／20完全相同后，只改同域读取，不弱化比较或改数据库。
+
+#### 正常退役、原样恢复与收口
+
+经真实App一次DELETE正常移除该专用云设备，实际返回`localTasks=retired_verified`；新scope真实退休、Key代次1→2且全部凭据／session撤销，Broker revoked／offline，无未过期attempt。原旧scope和20／20仍精确不变，原故障mutation仍pending／unknown／result null。此后才撤三项名单与四文件临时覆盖，不恢复DB或手工改scope。
+
+再标准上传固定维护图，一次精确恢复本批新鲜1004 B baseline；独立解析实际RX的前双读、CRC ACK及后双读，十二键／anchor／身份及BLE授权完全一致、task双键回原absent。恢复已批准WiFi BIN返回0，新鲜运行`begun=1/timeValid=1/timeSource=1/activeTimers=0`；字节精确证明在启动WiFi前，启动后不额外刷维护图读NVS，不称主Flash已读回。
+
+App结束归档7,352,320 B，保留账号、journal和全部已捕获请求，不回滚数据，只撤本批自有USB转发。PG最终备份3,613,771 B、完整相关账本和实际捕获阶段服务日志保留；不宣称能恢复已重建容器中未捕获的stdout。私有Key、raw、备份、完整Env及构建材料仅在忽略的`build/r4-owner-product-20261015-b1/`。
+
+独立离线终审**12／12通过**，SHA `2c2ac8050b8c1dfa8a0a837f0fe933e955b3f2f28d69ce18f7ce7abc1080f3a6`。首份10／12与第二份11／12保留：只协调审计把精简SQL session投影当全session的假设，按同sessionId与已捕获完整行核所有共同字段；恢复初版被阶段输出清单捕获的审计文件原字节，新薄runner消费独立修正，不忽略输出hash、不重跑业务。架构、diff及必要工具检查通过；本批没有生产源码修改、SDK升级、C++全库重编、暂存／提交／推送，无关工作树保留。
+
+本节只关闭新owner的有限ACK／任务回执／未知写恢复及安全收尾；普通任务默认仍0，正式／长期资源准入与X3平台H1另记。读取差异的有限排查已由§11.21继续，现行下一步取该节；不重复故障写、整板断电或两个Countdown，不扩协议、槽位、SDK、BLE长循环、H2／Bulk或新功能。
+
+### 11.21 R4 读取差异与未知结果诊断
+
+2026-10-15复用§11.20已归档的真实HTTP、PG、MCU计数及阶段日志，未操作开发板、手机、Docker或业务API，也未重建已退役测试身份。修正的是历史解释和诊断缺口，不把软件模型当成现场根因。
+
+#### 归档事实与结论修正
+
+同一服务时间源显示：旧session于08:01:58.329 UTC签发、08:11:58.329到期；新session于08:10:00.319签发，间隔481.990 s。第三个catalog attempt于08:10:00.413创建，比新session签发晚94 ms，但仍钉住旧proof session及原connection。旧session尚有效与实际发生新登录可以同时成立；新签发本身又不证明Broker在那一次检查时已经换socket，不能直接断定唯一根因。
+
+| 观察 | 能确定的边界 |
+| --- | --- |
+| 前两笔HTTP耗时1531.551／645.670 ms，第三笔767.839 ms返回UNKNOWN | HTTP耗时来自同一CDP单调时钟；第三笔不是普通等满3 s Broker／15 s Service截止才返回 |
+| Challenge已接受、Ed Grant已持久化，PG result null | 失败可发生在issue后的连接检查、Commit交换、结果后的连接检查或结果验真；不证明Commit已发，也不排除设备Failure回包 |
+| 失败段前后累计Ed调用5／5→7／7，后续五笔成功后12／12；owner健康、PUT及输出0 | 未观察到第三笔额外进入Ed校验；累计计数没有逐request关联，不能独立定位具体拒绝点 |
+| 后续成功的同index／fingerprint／读取语义相同，实际Result101 B、完整帧116 B | 小于固定212 B Task帧上限，没有确定的固定长度溢出证据；不是BLE分片问题，不改workspace或分片合同 |
+| 已捕获阶段日志没有该请求内部cause、BBP sequence或Failure op/code | 保留历史未知；不能靠重跑或猜测补造原事件。新登录重叠是优先线索，不再排除刷新竞态，也不把它直接升为已证实缺陷 |
+
+每页读取均独立Prepare／Challenge／Commit／Result，App在上一笔结束后约550 ms再发下一笔；三catalog加两Read是五笔请求，不是同nonce持续五页，也不是分片转发。验收工具25 s等待窗口不等于生产协议TTL，故本批不扩大超时、限流或队列。
+
+#### 最小源码与有限回归
+
+Gateway复用原任务service及logger端口，仅在已持有attempt后产生UNKNOWN时记录固定阶段、允许列表内的原因码、operation、单调耗时和16 B requestId的hex关联值。Broker Client保留合法Failure的1～6数值hint，明确它未经结果认证；不记录账号／设备身份、session、Key、Grant正文、原始Error消息或SQL。HTTP仍只返回原公开UNKNOWN，日志失败不改变请求结果，不释放lease、不补receipt、不增加重试或新的执行链。
+
+Service阶段区分Challenge、签发、Commit前连接检查、Commit、结果后连接检查和验真；acceptResult已返回后的截止检查另记`result-accepted`。新字段不改变wire、数据库、任务容量或设备运行内存。设备生产源码未改；同连接Hello模型只加入原Host测试，验证旧pending被取消时会在Crypto前返回Failure，而非把这个假设硬编码为生产修复。
+
+| 有限回归 | 结果 |
+| --- | --- |
+| Grant后connection换代／proof session与connection一起换代 | UNKNOWN、仅一次Prepare，零Commit／验真／自动重试，原未知意图及issued／result-null模型保留 |
+| 未知结果诊断与HTTP边界 | 阶段／原因码／hint正确；私有正文及任意错误码不进日志；logger抛错不改变UNKNOWN，hint不进入公开HTTP响应 |
+| Broker Client本机HTTP stub | Read／Commit各6个合法hint及8种非法形态通过，每笔仅一次HTTP，无重试或秘密透出 |
+| 设备既有TaskCloud图 | 原Host目标Release＋ASan及CTest1／1通过；同MQTT generation重复Hello→旧Commit返回`[0x82,3,2]`，无额外验签／写入／执行；新request／nonce可正常读回并验HMAC |
+| Gateway任务套件 | 与更新后`test:task-management`相同的六个文件，43通过／2个PG集成按原条件跳过；没有访问业务数据库或宣称PG实测通过 |
+| 额外Broker门禁 | 本机缺少`better_sqlite3.node`，9项stub在独立fixture初始化阶段中止，未进入业务断言；后2项loopback未运行。记录环境阻断，不算通过或功能缺陷，本批未修改Broker生产源码、安装或重建依赖 |
+
+架构门禁与diff检查通过。当前shell没有独立npm可执行程序，直接用原Node执行脚本中的同一组文件；不为此安装工具或升级依赖。设备、服务及账号配置未部署或改写，没有暂存、提交或推送，原三端无关修改保留。历史请求／原备份不改名、不重放，也不清理其未知记录。
+
+#### 平台 H1 差异的有限执行范围
+
+本次有限排查与软件诊断完成；历史唯一根因及新日志的真实运行覆盖保持待观察，不以无限重跑故障写作为X3前置。下列普通Cloud H1范围已由§11.22执行，现行下一步取该节，不重新排队。三处Gateway诊断源码尚未部署；后续只有部署后新日志才可作为新事件证据，不能回填§11.20。
+
+1. 核对现场R4／Wio身份、当前网络和已生效的普通WiFi配置，优先使用现有有效云设备；先保护固件／存储、授权及App／服务请求日志。不复活退役logicalId，不为H1重新开Task Initialize、写入或Start。
+2. 复用现有Cloud State、历史记录、鉴权与名称展示，仅补每个平台真实变化入库及不变值去重；同值／同revision重连后的真实完整Snapshot允许新建baseline段，但不得伪装change或用户操作，相同Reliable帧重传不重复入库。核原控制ACK与fresh State，只查平台真实新增记录，不拿旧ESP32结果代签。
+3. 补有界范围分页、名称和现有只读访问／撤权的实际差异；已通过通用ACL无需重复全矩阵，缺可用第二身份时明确保留真机待测，不写DB造权限。实时离页／返回只在接线受影响时回归，不重跑已通过周期采样。
+4. 按本批明确的恢复目标收尾并保存日志；没有真实缺陷不新增设备历史缓存、第二鉴权链或平台专用API。普通任务默认仍0，正式资源／生产准入、H2、Bulk、OTA和新网关协议继续后置。
+
+### 11.22 R4 与 Wio Cloud H1 短验收及恢复
+
+2026-10-15沿用mostfun2026、当前本机服务和原App `f2bc1828…`；仅测试COM9 R4及COM6 Wio，COM11 ESP32不动。复用各自既有active／Key版本1的普通WiFi身份，不创建新设备、调整额度、刷新Key或开放任务准入。未部署App／服务，未调用任务Initialize、Start、故障写或BLE循环。
+
+先保护App APK及7,352,320 B完整私有目录、PG归档3,617,668 B、实际相关服务日志和运行配置；账号／网络密钥、raw及构建材料只入忽略且受限的`build/x3-h1-20261015/`。R4实际UID与既有普通WiFi图匹配，RAM观察有效授时／无活动Timer，本批不覆盖固件，也未声称新鲜备份其主Flash或精确读回NVS。Wio离线，因此不能把10月13日缓存历史当本批新State。
+
+#### Wio 普通候选和存储保护
+
+Wio先用既有Bossac双读完整524,288 B主Flash，保护507,904 B应用及16,384 B bootloader；新鲜SHA `3ba233c8cf8fdf56f001b461175194771e5b617280e6aef5476f0a007d77ff9a`与前次原程序一致。再复用原mode1只读维护BIN，核UID／source／布局后独立双读完整16 KiB，原SHA `299b9ae2da81bb11a7519cfcd9f2feff1b32d7cb20fb4fc6283f2eb634a8ef58`；前8 KiB任务字节保持opaque，不以空白、CRC或一次读取获得任务区所有权。
+
+旧普通WiFi候选不匹配当前本机地址，故仅更新临时测试Sketch的现网／控制地址，保留原Key和instance。原Seeed1.8.5／CLI1.5.1完整链接839.9 s；423源码、432安装文件、225编译命令、17实现单元及依赖闭包通过。BIN151,208 B，SHA `655e5d3f7293ccf0e223a40965d42be1cd3685b6463024cb9cd05efdb8aa94d7`；标准上传及独立读回一致，原bootloader不写。
+
+真实符号图仅保留普通DeviceKey HMAC登录、唯一QSPI owner；任务执行器／carrier／store、独立Flash图、Ed25519／P-256 verifier及Crypto库均未保留。静态.data752 B＋.bss67,696 B，不代表运行峰值。构建归档中沿用的通用signer提示不是本批普通登录的Task前置条件；没有为此部署Ed签发overlay或复用已退役任务身份。
+
+#### 实际控制与历史查询
+
+两平台均由真实App进入原设备页，普通开／关走原DOM，额外同值关命令经原production command接口发送；被动观察原ACK Promise及fresh State，并以Broker只读事务独立核对。读证据限定真实新记录，使用数值历史ID排序，不沿用旧工具的文本别名排序。
+
+| 有限检查 | R4 | Wio |
+| --- | --- | --- |
+| 原Cloud控制 | 开／关ACK161／241 ms，fresh State为revision2／3 | 开／关ACK155／195 ms，fresh State为revision2／3 |
+| 真实变化 | 新增两条power change：开→关，与State及实际命令ledger对应 | 同样新增两条change，与State及ledger对应 |
+| 同值关 | ACK187 ms；State revision／更新时间及历史无新增 | ACK136 ms；State及历史同样不变 |
+| 完整Snapshot基线 | 中间自然接收revision2／power=true的新段，两条baseline，不冒称物理重启或确定刷新原因 | 重新上线后同revision1、同值false／0建立新baseline段，未把初始状态伪装change |
+| App与范围查询 | 正常历史DOM、当前设备名／默认key回退；本批power记录三页limit1，数值倒序、无重复、末页无cursor，半开范围通过 | 相同真实链路三页通过；离线期间7天范围可读原六条历史，未伪造新记录；上线后当前范围显示本批四条真实记录 |
+| 收尾值与观察器 | power=false／buttonPresses=0，RAM有效授时／无Timer；观察器移除并回Home | 同样恢复false／0、无Timer启动，观察器移除并回Home后才维护恢复 |
+
+同值ACK证明端到端没有伪造新历史，**不证明同值Patch实际送达Broker**，设备可能已抑制。实时uptime采样没有被当成H1状态记录；本批只观察它与普通通信共存，不重开既有实时租约全矩阵。名称验证为现有设备名及默认key回退，没有新增别名写入，也未逐平台重验分享／撤权；共享鉴权／名称Gateway软件12项及App纯模型59项通过，通用真机ACL继续取原H1结论。本机Broker隔离SQLite测试仍因原生binding缺失未进入断言，不能记为通过或产品缺陷。
+
+#### 精确恢复与日志保全
+
+Wio业务结束后先上传原mode1、再独立`p → d → d`，16,384 B与本批原备份逐字节相同，因此**没有发送raw恢复命令，维护链路无需原始区恢复写入**。这不以相同字节反推普通运行期间所有原生写调用均为0。再恢复本批原应用，独立读回完整524,288 B主片及原bootloader全部一致后启动；字节精确证明发生在启动原程序前，不额外刷维护图声称启动后全部介质仍相同。恢复的是原opaque程序，不把它宣称为已永久更新网络的新候选。R4全程未刷写，原授权未清。
+
+App结束完整归档7,321,088 B，原账号一致；5条任务intent和0条自动化journal的全部内容指纹精确不变，不回滚App数据，撤本批自有USB转发。最终PG备份3,622,470 B和阶段日志保留；独立只读比较全部19个task scopes、288个requests、291个attempts，与§11.20最终归档逐行完全相同，所有原未知均未提升成功。两个普通设备仍active／Key版本1，四个相关容器的Id／Image／Config／HostConfig／Mounts与开始时一致且健康。
+
+原R4离线审计保持；Wio独立审计同时复核原始控制／历史／介质／编译和最终保全，报告SHA `840912aaf50771be8c5489fc1f0dea77729e862fdad0a7a7ea8dc2e1ccbdd993`。两次测试select定位为空，未派发选择事件；核实际模板后用正确query-form选择器完成Wio离线范围查询。Wio维护上传后一次枚举在guard前停止，尚无compare意图、串口打开或介质请求；待同UID重新稳定后才执行首笔真实比较，没有重刷、复位或重发已送读取。
+
+本批没有生产源码改动，测试薄适配／私有证据仅在忽略目录；架构与diff检查通过。没有暂存、提交或推送，无关本地修改保留。X3的普通Cloud有限差异收口，不等于X1／X2的完整动态资源、同步SDK硬截止或默认任务准入已经开放。
+
+#### 下一批只做必要源码与交付收口
+
+1. 审阅并冻结已有R4共享modem owner、Wio共享QSPI／任务store、Gateway诊断及必要回归；保留无关改动，不为整理目录重写执行链。
+2. 对齐支持矩阵与最短说明：普通WiFi／实时／Cloud H1、Sketch Timer与四槽内部任务试点分开，写清默认任务0、维护者profile／区域独占和恢复边界，不把内部测试入口当初学者API。
+3. 用原SDK和既有依赖完成当前单一Arduino库的隔离安装及受影响声明目标差异编译；复用未受影响输入与已有实物结果，不重跑BLE或任务故障。ZIP只作临时编译门禁，后续仍以Git源码交付，不另留本地交接包；提交／推送另依明确要求。
+4. 同值Patch送达、平台逐项分享撤权、完整瞬态资源／同步RPC上界和诊断真实事件覆盖保持各自边界，不以重复已通过短验替代。H2、Bulk、OTA、复杂规则及新网关协议继续后置。
+
+### 11.23 必要源码冻结与单库隔离编译
+
+本批仅处理§11.22的源码与安装编译收口，不重复平台业务验收，不部署App／Gateway／Broker或操作开发板。源码审阅没有发现需要重写现有owner、Store、Codec、Engine或Cloud carrier的阻断缺陷。保留无关本地修改，不为文件数量合并模块，也不把内部维护程序放入公开示例。
+
+#### 冻结范围与支持说明
+
+- R4继续共用modem owner和Preferences bank；超时只能限制调用准入及检测迟到返回，不能抢占原SDK同步RPC。Wio共用单一QSPI owner，固定尾部16 KiB仍由任务8 KiB与身份8 KiB组成；任务关闭也不把预留区借给其他板载QSPI／FS实现。
+- Wio维护读取显式检查结束结果后才发布成功；冷恢复使用原TaskSnapshotStore／Codec，只读blob拒绝replace／clear。未知写意图和原备份保留，成功读回不自动确认旧写入或重开操作许可。
+- Gateway诊断只记固定阶段、白名单原因、requestId、操作、耗时及合法Failure hint，不记录Grant／账号／设备身份／凭据／SQL。hint不能证明执行或回滚；logger失败不改变UNKNOWN，未决lease和禁止自动重试保持。诊断源码尚未部署，不能回填旧现场事件。
+- README已区分普通WiFi／BLE、授权租约实时采样、Cloud H1、RAM内Sketch Timer和App管理的持久任务。普通任务默认0；ESP32、R4与Wio四槽内部候选不等于正式平台准入。R4／Wio还需匹配内部profile、实际Ed25519签发与存储归属，用户不能仅定义一个宏就开放任务。
+
+#### 有限软件回归
+
+| 检查 | 本批结果 |
+| --- | --- |
+| R4／Wio共享owner、任务存储、维护／冷恢复、任务会话 | 14个受影响Host目标增量构建，Release＋现有ASan配置14／14通过 |
+| 已有Host可执行集 | 90／90运行通过；不称其余76个目标全部重新构建 |
+| Wio存储与身份过渡工具 | Python122／122通过 |
+| 发布／安装工具软件回归 | 45／45通过 |
+| Gateway原六文件任务套件 | 43通过、2项PostgreSQL按原条件跳过；不称PG集成通过 |
+| 官方S3 SDK配置与二进制固定摘要 | 原3.3.11通过，IPC2048 B／Host5120 B；未升级SDK |
+
+Host首次裸`ctest`命令因shell路径未配置而未执行；随后使用现有CMakeCache记录的绝对路径完成90项，不将首条错误输出覆盖或计为通过。架构检查通过。
+
+#### 单一安装候选与编译范围
+
+公共development profile只使用占位控制地址和公开测试验签材料，不含账号、DeviceKey、现场SSID／密码、私钥或备份。单ZIP为432成员／423源码／17个实现单元；相对仓库仅三个配置头按profile生成，README及其他输入逐字节相同。任务容量0，无task profile。ZIP摘要`91340e8c97e931d4dc61786ffde6c697634afc2a96ef3c470b6f69ea8e9910d5`，719,219 B；它是编译门禁，不是可上线的服务配置包。
+
+旧完整安装基线仅410源码，当前公共facade、入口和便携实现均有变化，不能据当前未提交diff只涉及Wio便沿用旧七目标结论。本批改为同一ZIP、三个新空sketchbook、既有离线依赖和原SDK，顺序运行三个目标组；R4／Wio为jobs1，ESP32为jobs2，实际命令保存在本批日志。不引入新的构建框架。桌面可用内存约280 MiB且换页较多，用户明确要求保持Docker运行；不为加速编译停止或重启本机服务。
+
+| 声明目标 | 原SDK | 当前状态 |
+| --- | --- | --- |
+| ESP32 WiFi | Arduino-ESP32 3.3.6 | 隔离编译及独立终审通过，CLI程序996,007 B／静态RAM50,920 B |
+| ESP32 CloudSmoke | Arduino-ESP32 3.3.6 | 隔离编译及独立终审通过，CLI程序1,013,495 B／静态RAM51,024 B |
+| ESP32S3 BLE | Arduino-ESP32 3.3.11 | 隔离编译及独立终审通过，CLI程序695,108 B／静态RAM36,008 B |
+| ESP32S3 WiFi+BLE | Arduino-ESP32 3.3.11 | 隔离编译及独立终审通过，CLI程序1,283,992 B／静态RAM56,660 B |
+| UNO R4 WiFi | Renesas UNO 1.5.3 | 隔离编译及独立终审通过，CLI程序141,640 B／静态RAM13,092 B |
+| UNO R4 BLE | Renesas UNO 1.5.3 | 隔离编译及独立终审通过，CLI程序197,748 B／静态RAM17,024 B |
+| Wio WiFi | Seeed SAMD 1.8.5 | 隔离编译及独立终审通过，CLI程序145,416 B／ELF.data736＋.bss67,392＝68,128 B |
+
+既有`verify_installed_release.py`执行ZIP安装原字节、依赖版本／闭包及符号／来源检查；忽略目录的薄审计及独立只读复核已核对全部七目标：每目标17个实现单元恰好一次、实际SDK／FQBN、隔离依赖版本与来源、公开示例路径、无全库产品宏及实际ELF链接闭包均匹配，73个产物摘要一致。四个ESP32目标的`build_opt.h`和`file_opts`均为空，不存在未展开响应文件中的额外产品宏。Wio只有一个生产QSPI owner，无TaskSnapshotStore／Cloud任务／Ed25519／P-256 verifier或独立Flash／SFUD图；不泛禁FS／SD通用依赖。上述内存均为静态链接值，不是运行峰值。Wio BLE仍为显式preview，内部任务不属于这七个普通目标，不能用本批默认图编译代签其正式准入。
+
+本批源码与安装编译门禁按上述范围关闭；不另留本地交接包，同事交付仍使用Git源码。当前未暂存、提交或推送。
+
+#### 七目标终审与临时输入清理
+
+R4 WiFi／BLE及Wio WiFi三项实际门禁耗时770.7／1148.4／814.4 s。原ESP32队列顺序完成stock→nimble，四项实际耗时为WiFi 5138.7 s、CloudSmoke 4939.0 s、S3 BLE 161.0 s、S3 WiFi+BLE 315.5 s，原队列exit 0。已通过目标没有重复编译，未另开重复队列。
+
+七项完成后，同批`audit_closeout.py --output audit-all.json`通过；独立复核另行交叉检查七个实际ELF和73个产物摘要，没有重编译。最终审计文件SHA256为`ac8629ba7e60932e92253d4cf3ad7b6fe7d517526a64cb997dab8387a62b3d99`。SDK配置／flags、依赖和来源沿用原环境；桌面低内存期间保持Docker运行，未为加速改SDK、停止服务或绕过检查。不同目标耗时不是SDK性能对照实验。
+
+终审后重新核对432成员、当前公共源码投影与ZIP／stage逐字节相同、ZIP摘要未变，确认清理目标及祖先／后代无reparse point。使用精确绝对路径完成清理，仅删除`build/source-closeout-20261015/artifacts/BlinkerDeviceV2-0.1.0.zip`和同批`stage/`。这两项是可用现有构建工具及同一公开profile重建的生成输入；保留`SHA256SUMS`、七目标编译工作目录、全部门禁／审计日志和原备份，不清理其他批次或无关本地文件。
+
+本节关闭的是必要源码与普通七目标安装编译，不是任务正式准入、动态内存峰值、同步RPC硬截止或全部平台实物门禁。默认任务仍0，历史未知意图与请求不重放，Gateway新诊断事件覆盖另按实际缺口处理，不因编译收口启动新功能或重复业务验收。

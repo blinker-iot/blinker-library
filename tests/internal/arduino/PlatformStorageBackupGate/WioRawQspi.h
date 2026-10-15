@@ -24,6 +24,12 @@ public:
     }
     ~Transaction() { if (owns_) access().end(); }
     bool ready() const { return ready_; }
+    bool complete(bool result) {
+        if (!owns_) return false; // Nested/rejected transactions own no leases.
+        owns_ = false;
+        const bool closed = access().finish();
+        return ready_ && result && closed;
+    }
 private:
     bool ready_, owns_;
     Transaction(const Transaction&) = delete;

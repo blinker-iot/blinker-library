@@ -17,7 +17,7 @@ int WioTerminalQspiOwner::regionIndex(const void* token) const {
 uint32_t WioTerminalQspiOwner::regionAddress(Region region) const {
     if (capacity_ != expectedCapacity ||
         (region != Region::Identity && region != Region::Tasks)) return 0U;
-    return capacity_ - (region == Region::Identity ? regionSize : regionSize * 2U);
+    return region == Region::Identity ? identityAddress : taskAddress;
 }
 
 Result WioTerminalQspiOwner::acquire(const void* token, Region region) {

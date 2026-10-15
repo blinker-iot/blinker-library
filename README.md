@@ -171,12 +171,13 @@ reset. Real-time upload still uses `realtime()` / `onSample()` and its lease,
 not an always-on report timer. The portable `SketchTimer<N>` core accepts a
 monotonic clock function for non-Arduino use.
 
-## Optional local tasks (closed ESP32 WiFi pilot)
+## Optional persistent tasks
 
-Tasks require a maintainer-built development candidate with the admitted
-`esp32-wifi-t2-lab-v1` task profile and a matching Service device allowlist.
-The stock source and production profiles do not enable tasks. Arduino users
-do not generate profiles, supply storage budgets, or assemble internal objects.
+Persistent tasks are disabled by default (capacity 0). The public development
+profile and ordinary examples do not enable them. The closed ESP32 manual-WiFi
+pilot requires the maintainer-built `esp32-wifi-t2-lab-v1` profile and a matching
+Service device allowlist. Arduino users do not generate profiles, supply storage
+budgets, or assemble internal objects.
 
 In that candidate, define `BLINKER_ENABLE_TASKS 1` before `#include <Blinker.h>`.
 Register the usual write callback, then call `Blinker.enableTasks(power)` before
@@ -188,9 +189,25 @@ still requires explicit owner initialization and confirmed management results.
 Targets must be global/long-lived, writable, have a write callback, and also be
 passed to `begin()`. Ordinary writable Properties are not automatically allowed.
 Repeated configuration is rejected, including after `end()`. Disabled products
-return `UnsupportedFeature`; opting into BLE, WiFi+BLE or non-ESP32 fails compilation.
-No task graph is linked when the compile-time opt-in is absent. This pilot is
-not production admission, an offline clock guarantee, or support for every MCU.
+return `UnsupportedFeature`; BLE and WiFi+BLE persistent tasks are not admitted.
+Defining the opt-in alone cannot admit R4/Wio: their separate internal guards,
+storage ownership and matching Ed25519 signer must also be satisfied. No task
+graph is linked when the compile-time opt-in is absent.
+
+R4 and Wio manual-WiFi four-slot candidates have passed finite internal task
+acceptances using the same Store/Codec/Engine and App management chain. They
+are not ordinary release profiles or a production/long-term resource admission.
+R4 uses the shared modem owner and existing Preferences bank; synchronous SDK
+calls are not preemptible by a wrapper deadline. Wio uses one onboard QSPI owner:
+the final 16 KiB is reserved (8 KiB tasks followed by 8 KiB identity), even when
+tasks are off. An independent onboard QSPI/filesystem driver cannot be added to
+that product graph. A blank region does not establish ownership of an unknown
+firmware's storage.
+
+Unknown writes are queried/reconciled, not automatically replayed. Restore
+identity, authorization and task scope consistently; restoring empty local
+storage alone does not retire a cloud scope. Maintainer admission and recovery
+steps are in [the task execution plan](docs/DEVICE_V2_TASK_AND_SKETCH_TIMER_EXECUTION_PLAN.md#11-r4-与-wio-新能力适配). None of these pilots guarantees offline UTC after a reboot.
 
 ## Current platform matrix
 
@@ -199,6 +216,22 @@ not production admission, an offline clock guarantee, or support for every MCU.
 | ESP32 | device API and hardware E2E complete; production config pending | App/Service/device hardware E2E passed | BLE WiFiProv and Direct hardware E2E passed; release profile pending |
 | UNO R4 | device API and hardware E2E complete; production config pending | App/Service/device hardware E2E passed | not planned for the current release |
 | Wio Terminal | device/cloud hardware E2E passed | experimental opt-in; hardware E2E passed, not released | not planned for the current release |
+
+The following capabilities share the existing API; they are not separate
+Arduino packages:
+
+| Capability | ESP32 | UNO R4 WiFi | Wio Terminal |
+|---|---|---|---|
+| Lease-driven realtime sampling | WiFi/BLE finite hardware acceptance | WiFi/BLE finite hardware acceptance | WiFi and experimental BLE finite hardware acceptance |
+| Cloud H1 state-change history | existing Cloud State chain | ordinary WiFi finite hardware acceptance | ordinary WiFi finite hardware acceptance |
+| Sketch periodic/delay Timer | optional, RAM-only | optional, RAM-only | optional, RAM-only |
+| App-managed persistent tasks | closed manual-WiFi four-slot pilot | internal manual-WiFi four-slot candidate | internal manual-WiFi four-slot candidate with reserved QSPI region |
+
+H1 stores state changes received by the cloud, not all realtime samples or
+offline device history. Pure BLE direct operation does not upload Cloud H1 by
+itself. All ordinary products retain persistent-task capacity 0. Finite
+acceptance covers the stated workload, not full transient resource peaks or
+every third-party peripheral combination.
 
 Wio Terminal BLE development builds must define
 `BLINKER_ENABLE_WIO_BLE_PREVIEW=1` before including `BlinkerBLE.h`. The opt-in
@@ -259,12 +292,12 @@ has passed hardware acceptance. See the
 [official release](https://github.com/espressif/arduino-esp32/releases/tag/3.3.11)
 and `docs/DEVICE_V2_C4_REPRODUCIBLE_DEPLOYMENT_PLAN.md` for the remaining gates.
 
-The next work is a minimal matched internal candidate containing the validated
-BLE packet negotiation and integer-step fixes; see
-[the current execution plan](docs/DEVICE_V2_USABILITY_FOLLOWUP_EXECUTION_PLAN.md#10-核心稳定与最小内部交付).
-The N1–N5 finite acceptances are not a production publication or a claim that
-the restored boards permanently run the new firmware. Ordinary LAN/P1 and
-unadmitted task/automation modes stay disabled.
+BLE packet negotiation, integer-step validation, Sketch Timer and finite
+platform acceptances are recorded in
+[the current task and platform execution plan](docs/DEVICE_V2_TASK_AND_SKETCH_TIMER_EXECUTION_PLAN.md).
+Source/install compile gates and production admission remain separate. Restored
+test boards do not necessarily retain the accepted candidate firmware.
+Ordinary LAN/P1 and unadmitted persistent-task modes stay disabled.
 
 Production publication separately requires the declared build/reliability gates,
 real service configuration and matching public server key rings. The repository

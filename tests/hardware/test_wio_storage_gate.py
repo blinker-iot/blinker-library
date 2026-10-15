@@ -5,9 +5,11 @@ import copy
 import json
 from pathlib import Path
 import struct
+import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 import zlib
 
 import wio_storage_gate as gate
@@ -92,6 +94,34 @@ class WioStorageGateTests(unittest.TestCase):
     def test_exact_frame(self):
         self.assertEqual(gate.frame(Wire(pending=framed(b"BVS1", ORIGINAL)), b"BVS1", gate.SIZE,
                                     time.monotonic() + 1), ORIGINAL)
+
+    def test_metadata_last_read_at_deadline_is_rejected(self):
+        clock = [0.0]
+        class LateWire(Wire):
+            def read(wire, count):
+                value = super().read(count)
+                if not wire.pending:
+                    clock[0] = 15.0
+                return value
+        port = LateWire(pending=metadata())
+        with mock.patch.object(gate.time, "monotonic", side_effect=lambda: clock[0]), self.assertRaises(gate.GateError):
+            gate.frame(port, b"BVP1", 63, 15.0)
+        self.assertEqual(port.writes, [])
+        self.assertEqual(port.in_waiting, 0)  # Fully delivered is not timely confirmation.
+
+    def test_raw_last_read_after_deadline_is_rejected(self):
+        clock = [0.0]
+        class LateWire(Wire):
+            def read(wire, count):
+                value = super().read(count)
+                if not wire.pending:
+                    clock[0] = 15.001
+                return value
+        port = LateWire(pending=framed(b"BVS1", ORIGINAL))
+        with mock.patch.object(gate.time, "monotonic", side_effect=lambda: clock[0]), self.assertRaises(gate.GateError):
+            gate.frame(port, b"BVS1", gate.SIZE, 15.0)
+        self.assertEqual(port.writes, [])
+        self.assertEqual(port.in_waiting, 0)
 
     def test_wrong_prefix_no_magic_scan(self):
         for raw in (b"text" + framed(b"BVS1", ORIGINAL), framed(b"ABCD", ORIGINAL)):
@@ -242,6 +272,13 @@ class WioStorageGateTests(unittest.TestCase):
         self.assertTrue(self.persisted()["unknown"])
 
     def restore_wire(self, reply=None, current=CHANGED, final=ORIGINAL):
+        # Match the real CLI: immutable original raw and current state already
+        # exist before a media phase is admitted. No fixture fabricates backup
+        # state during the serial operation itself.
+        if not (self.path.parent / "original-qspi.raw").exists():
+            gate.save_new(self.path.parent / "original-qspi.raw", ORIGINAL)
+        if not self.path.exists():
+            gate.save_state(self.path, self.state)
         request = b"rBVR1" + struct.pack("<HII", gate.SIZE, zlib.crc32(current), zlib.crc32(ORIGINAL)) + ORIGINAL
         return Wire([(b"p", metadata(2)), (b"d", framed(b"BVS1", current)),
                      (b"d", framed(b"BVS1", current)),
@@ -370,6 +407,546 @@ class WioStorageGateTests(unittest.TestCase):
             gate.capture_session(port, folder, claim, UID, SOURCE, True)
         self.assertEqual(path.read_bytes(), b"partial")
         self.assertEqual(port.writes, [])
+
+
+class WioColdObservationTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.folder = Path(self.temporary.name)
+        self.state = {"boardUid": UID, "baselineSha256": gate.digest(ORIGINAL), "unknown": True,
+                      "probeSourceId": SOURCE, "probeState": "Admitted", "attemptedMask": 0,
+                      "intents": [{"command": "REPLACE1", "sourceId": SOURCE, "stateBefore": "Admitted",
+                                   "outcome": "pending"}]}
+        gate.save_new(self.folder / "original-qspi.raw", ORIGINAL)
+        self.persist()
+        self.original_state = (self.folder / "state.json").read_bytes()
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def persist(self):
+        gate.save_state(self.folder / "state.json", self.state)
+
+    def prepare(self, current=CHANGED):
+        port = Wire([(b"p", metadata()), (b"d", framed(b"BVS1", current)),
+                     (b"d", framed(b"BVS1", current))])
+        request = gate.prepare_cold(port, self.folder, UID, SOURCE, True)
+        self.assertEqual(port.writes, [b"p", b"d", b"d"])
+        return request
+
+    def assert_original_untouched(self):
+        self.assertEqual((self.folder / "state.json").read_bytes(), self.original_state)
+        self.assertEqual((self.folder / "original-qspi.raw").read_bytes(), ORIGINAL)
+
+    def handshake(self, request):
+        return [{"event": "cold-profile", "fixture": "wio-task-cold-v1", "sourceId": SOURCE,
+                 "boardUid": UID, **{key: request[key] for key in
+                    ("baselineSha256", "identitySha256", "currentSha256", "intentSha256")},
+                 "capacity": 4, "payloadBytes": 644, "taskBase": gate.TASK_BASE,
+                 "identityBase": gate.IDENTITY_BASE, "regionBytes": gate.REGION},
+                {"event": "cold-done", "command": "PING", "code": 0, "state": "Fresh"}]
+
+    def observation(self, missing=False):
+        return [{"event": "cold-observation", "bytes": 0 if missing else 644,
+                 "sha256": "" if missing else "56" * 32, "records": 0 if missing else 4,
+                 "identitySame": True, "writeConfirmed": False},
+                {"event": "cold-done", "command": "OBSERVE", "code": 19 if missing else 0,
+                 "state": "ObservedNotFound" if missing else "ObservedSnapshot"}]
+
+    def observe_wire(self, request, result=None, handshake=None):
+        return Wire([(b"PING\n", events(self.handshake(request) if handshake is None else handshake)),
+                     (b"OBSERVE\n", events(self.observation() if result is None else result))])
+
+    def test_prepare_retains_original_unknown_and_binds_all_inputs(self):
+        request = self.prepare()
+        self.assertEqual(request["intentSha256"], gate.intent_digest(self.state["intents"][0]))
+        self.assertEqual(request["stateSha256"], gate.digest(self.original_state))
+        self.assertEqual(request["identitySha256"], gate.digest(ORIGINAL[gate.REGION:]))
+        self.assertEqual(request["currentSha256"], gate.digest(CHANGED))
+        self.assertEqual(gate.cold_request(self.folder, UID), request)
+        self.assert_original_untouched()
+
+    def test_unknown_write_needs_no_success_snapshot(self):
+        self.assertNotIn("events", self.state["intents"][0])
+        self.prepare()
+        self.assert_original_untouched()
+
+    def test_prepare_requires_explicit_cold_before_any_io(self):
+        port = Wire()
+        with self.assertRaises(gate.GateError):
+            gate.prepare_cold(port, self.folder, UID, SOURCE, False)
+        self.assertEqual(port.writes, [])
+
+    def test_second_mutation_clear_or_restore_intent_rejected(self):
+        original = copy.deepcopy(self.state)
+        for changes in ({"restoreStarted": True}, {"intents": original["intents"] * 2},
+                        {"intents": original["intents"] + [{"command": "CLEAR_FIXTURE"}]}):
+            self.state = {**copy.deepcopy(original), **changes}
+            self.persist()
+            port = Wire()
+            with self.assertRaises(gate.GateError):
+                gate.prepare_cold(port, self.folder, UID, SOURCE, True)
+            self.assertEqual(port.writes, [])
+
+    def test_intent_source_phase_or_missing_rejected(self):
+        for intent in ({"command": "READ"}, {**self.state["intents"][0], "sourceId": "99" * 32},
+                       {**self.state["intents"][0], "stateBefore": "Fresh"},
+                       {**self.state["intents"][0], "outcome": "invented"}):
+            state = {**self.state, "intents": [intent]}
+            with self.assertRaises(gate.GateError):
+                gate.cold_intent(state, ORIGINAL)
+
+    def test_nonblank_original_task_region_rejected(self):
+        state = {**self.state, "baselineSha256": gate.digest(CHANGED)}
+        with self.assertRaises(gate.GateError):
+            gate.cold_intent(state, CHANGED)
+
+    def test_changed_identity_preserves_raw_evidence_not_proof(self):
+        current = b"x" * gate.SIZE
+        port = Wire([(b"p", metadata()), (b"d", framed(b"BVS1", current)),
+                     (b"d", framed(b"BVS1", current))])
+        with self.assertRaises(gate.GateError):
+            gate.prepare_cold(port, self.folder, UID, SOURCE, True)
+        self.assertEqual((self.folder / "cold-current.raw").read_bytes(), current)
+        self.assertFalse((self.folder / "cold-request.json").exists())
+        self.assert_original_untouched()
+
+    def test_proof_or_raw_or_state_change_rejected(self):
+        request = self.prepare()
+        state_file = self.folder / "state.json"
+        gate.save_state(state_file, {**self.state, "unknown": False})
+        with self.assertRaises(gate.GateError):
+            gate.cold_request(self.folder, UID)
+        gate.save_state(state_file, self.state)
+        self.assertEqual(gate.cold_request(self.folder, UID), request)
+        gate.save_state(self.folder / "cold-request.json", {**request, "intentSha256": "99" * 32})
+        with self.assertRaises(gate.GateError):
+            gate.cold_request(self.folder, UID)
+
+    def test_pending_state_file_blocks_prepare(self):
+        gate.save_new(self.folder / "state.json.next", b"pending transition")
+        with self.assertRaises(gate.GateError):
+            gate.prepare_cold(Wire(), self.folder, UID, SOURCE, True)
+
+    def test_state_changes_during_cold_reads_reject_proof(self):
+        outer = self
+        class ChangedStateWire(Wire):
+            def write(self, raw):
+                if raw == b"d":
+                    gate.save_state(outer.folder / "state.json", {**outer.state, "unknown": False})
+                return super().write(raw)
+        port = ChangedStateWire([(b"p", metadata()), (b"d", framed(b"BVS1", CHANGED)),
+                                 (b"d", framed(b"BVS1", CHANGED))])
+        with self.assertRaises(gate.GateError):
+            gate.prepare_cold(port, self.folder, UID, SOURCE, True)
+        self.assertFalse((self.folder / "cold-request.json").exists())
+        self.assertFalse((self.folder / "cold-current.raw").exists())
+
+    def test_cold_capture_unstable_media_never_creates_proof(self):
+        port = Wire([(b"p", metadata()), (b"d", framed(b"BVS1", ORIGINAL)),
+                     (b"d", framed(b"BVS1", CHANGED))])
+        with self.assertRaises(gate.GateError):
+            gate.prepare_cold(port, self.folder, UID, SOURCE, True)
+        self.assertFalse((self.folder / "cold-request.json").exists())
+        self.assert_original_untouched()
+
+    def test_intent_hash_is_canonical_but_value_sensitive(self):
+        intent = self.state["intents"][0]
+        self.assertEqual(gate.intent_digest(intent), gate.intent_digest(dict(reversed(list(intent.items())))))
+        self.assertNotEqual(gate.intent_digest(intent), gate.intent_digest({**intent, "outcome": "confirmed"}))
+
+    def test_original_raw_without_actual_restore_may_be_observed_missing(self):
+        # Historical reconcile can close raw recovery without sending r. It
+        # must neither prove the write nor prevent a strictly read-only look.
+        self.state["restored"] = True
+        self.persist()
+        self.original_state = (self.folder / "state.json").read_bytes()
+        request = self.prepare(ORIGINAL)
+        gate.observe_cold(self.observe_wire(request, self.observation(True)), self.folder, UID, SOURCE)
+        self.assert_original_untouched()
+
+    def test_snapshot_observation_does_not_confirm_original_write(self):
+        request = self.prepare()
+        port = self.observe_wire(request)
+        result = gate.observe_cold(port, self.folder, UID, SOURCE)
+        self.assertIs(result["writeConfirmed"], False)
+        self.assertEqual(port.writes, [b"PING\n", b"OBSERVE\n"])
+        self.assert_original_untouched()
+        self.assertEqual(json.loads((self.folder / "cold-attempt.json").read_bytes())["outcome"], "observed")
+
+    def test_notfound_observation_is_not_zero_snapshot_or_write_success(self):
+        request = self.prepare(ORIGINAL)
+        result = gate.observe_cold(self.observe_wire(request, self.observation(True)), self.folder, UID, SOURCE)
+        self.assertEqual((result["bytes"], result["sha256"], result["records"]), (0, "", 0))
+        self.assertIs(result["writeConfirmed"], False)
+        self.assert_original_untouched()
+
+    def test_profile_mismatch_rejects_before_observe(self):
+        request = self.prepare()
+        for key, value in (("sourceId", "99" * 32), ("boardUid", "99" * 16),
+                           ("currentSha256", "99" * 32), ("intentSha256", "99" * 32),
+                           ("baselineSha256", "99" * 32), ("identitySha256", "99" * 32)):
+            handshake = self.handshake(request)
+            handshake[0][key] = value
+            port = self.observe_wire(request, handshake=handshake)
+            with self.subTest(key=key), self.assertRaises(gate.GateError):
+                gate.observe_cold(port, self.folder, UID, SOURCE)
+            self.assertEqual(port.writes, [b"PING\n"])
+        self.assertFalse((self.folder / "cold-attempt.json").exists())
+
+    def test_confirmed_phase_from_other_baseline_rejects_before_cold_handshake(self):
+        self.prepare()
+        path = self.folder / gate.READ_PHASE_FILES["prepare-cold"]
+        changed = {**json.loads(path.read_bytes()), "baselineSha256": gate.digest(CHANGED)}
+        gate.save_state(path, changed) # Models independent metadata corruption, not a recovery action.
+        port = Wire()
+        with self.assertRaises(gate.GateError):
+            gate.observe_cold(port, self.folder, UID, SOURCE)
+        self.assertEqual(port.writes, [])
+
+    def test_lost_reply_remains_pending_and_never_retries(self):
+        request = self.prepare()
+        port = self.observe_wire(request, [])
+        with self.assertRaises(gate.GateError):
+            gate.observe_cold(port, self.folder, UID, SOURCE)
+        self.assertEqual(json.loads((self.folder / "cold-attempt.json").read_bytes())["outcome"], "pending")
+        retry = Wire()
+        with self.assertRaises(gate.GateError):
+            gate.observe_cold(retry, self.folder, UID, SOURCE)
+        self.assertEqual(retry.writes, [])
+        self.assert_original_untouched()
+
+    def test_stage_change_during_profile_stops_before_observe(self):
+        request = self.prepare()
+        outer = self
+        class StageChangedWire(Wire):
+            def write(self, raw):
+                if raw == b"PING\n":
+                    gate.save_state(outer.folder / "state.json", {**outer.state, "restoreStarted": True})
+                return super().write(raw)
+        port = StageChangedWire([(b"PING\n", events(self.handshake(request)))])
+        with self.assertRaises(gate.GateError):
+            gate.observe_cold(port, self.folder, UID, SOURCE)
+        self.assertEqual(port.writes, [b"PING\n"])
+        self.assertFalse((self.folder / "cold-attempt.json").exists())
+
+    def test_incomplete_transition_during_profile_stops_before_observe(self):
+        request = self.prepare()
+        outer = self
+        class PendingTransitionWire(Wire):
+            def write(self, raw):
+                if raw == b"PING\n":
+                    gate.save_new(outer.folder / "state.json.next", b"incomplete transition")
+                return super().write(raw)
+        port = PendingTransitionWire([(b"PING\n", events(self.handshake(request)))])
+        with self.assertRaises(gate.GateError):
+            gate.observe_cold(port, self.folder, UID, SOURCE)
+        self.assertEqual(port.writes, [b"PING\n"])
+        self.assertFalse((self.folder / "cold-attempt.json").exists())
+        self.assert_original_untouched()
+
+    def test_observation_cannot_claim_write_success(self):
+        request = self.prepare()
+        result = self.observation()
+        result[0]["writeConfirmed"] = True
+        with self.assertRaises(gate.GateError):
+            gate.observe_cold(self.observe_wire(request, result), self.folder, UID, SOURCE)
+        self.assert_original_untouched()
+
+    def test_old_fixture_completion_not_accepted(self):
+        request = self.prepare()
+        with self.assertRaises(gate.GateError):
+            gate.observe_cold(self.observe_wire(request, [completion("OBSERVE")]), self.folder, UID, SOURCE)
+        self.assert_original_untouched()
+
+    def test_corrupt_cold_private_raw_rejected_before_handshake(self):
+        self.prepare()
+        raw_path = self.folder / "cold-current.raw"
+        # Test-only overwrite models independent corruption, not a gate action.
+        with raw_path.open("r+b") as handle:
+            handle.seek(0)
+            handle.write(b"x")
+        port = Wire()
+        with self.assertRaises(gate.GateError):
+            gate.observe_cold(port, self.folder, UID, SOURCE)
+        self.assertEqual(port.writes, [])
+        self.assert_original_untouched()
+
+
+class WioReadPhaseTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.folder = self.root / "build" / "private"
+        self.folder.mkdir(parents=True)
+        self.path = self.folder / "state.json"
+        self.state = {"boardUid": UID, "baselineSha256": gate.digest(ORIGINAL), "unknown": False,
+                      "probeSourceId": SOURCE, "probeState": "IdentityEnded", "attemptedMask": 1,
+                      "intents": [{"command": "REPLACE1", "sourceId": SOURCE, "stateBefore": "Admitted",
+                                   "outcome": "confirmed"}]}
+        gate.save_new(self.folder / "original-qspi.raw", ORIGINAL)
+        gate.save_state(self.path, self.state)
+        self.original_state = self.path.read_bytes()
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def phase_path(self, phase):
+        return self.folder / gate.READ_PHASE_FILES[phase]
+
+    def phase(self, phase):
+        return json.loads(self.phase_path(phase).read_bytes())
+
+    def assert_original_untouched(self):
+        self.assertEqual(self.path.read_bytes(), self.original_state)
+        self.assertEqual((self.folder / "original-qspi.raw").read_bytes(), ORIGINAL)
+
+    def prepare_wire(self, second=CHANGED):
+        return Wire([(b"p", metadata()), (b"d", framed(b"BVS1", CHANGED)),
+                     (b"d", framed(b"BVS1", second))])
+
+    def restore_wire(self, current=CHANGED, final=ORIGINAL):
+        packet = b"rBVR1" + struct.pack("<HII", gate.SIZE, zlib.crc32(current), zlib.crc32(ORIGINAL)) + ORIGINAL
+        stages = [(b"p", metadata(2)), (b"d", framed(b"BVS1", current)), (b"d", framed(b"BVS1", current))]
+        if current != ORIGINAL:
+            stages.append((packet, b"BVA1" + struct.pack("<I", zlib.crc32(ORIGINAL))))
+        stages.extend([(b"d", framed(b"BVS1", final)), (b"d", framed(b"BVS1", final))])
+        return Wire(stages)
+
+    def pending(self, phase="prepare-cold"):
+        return gate.begin_read_phase(self.folder, phase, UID, SOURCE, ORIGINAL, self.original_state)
+
+    def test_prepare_phase_is_durable_before_first_request(self):
+        outer = self
+        class CheckedWire(Wire):
+            def write(self, raw):
+                value = outer.phase("prepare-cold")
+                outer.assertEqual(value["outcome"], "pending")
+                outer.assertEqual(value["stateSha256"], gate.digest(outer.original_state))
+                outer.assert_original_untouched()
+                return super().write(raw)
+        port = CheckedWire(self.prepare_wire().exchanges)
+        gate.prepare_cold(port, self.folder, UID, SOURCE, True)
+        self.assertEqual(self.phase("prepare-cold")["outcome"], "confirmed")
+        self.assert_original_untouched()
+
+    def test_restore_phase_precedes_preflight_and_remains_until_final_reads(self):
+        outer = self
+        class CheckedWire(Wire):
+            def write(self, raw):
+                outer.assertEqual(outer.phase("restore-tasks")["outcome"], "pending")
+                return super().write(raw)
+        port = CheckedWire(self.restore_wire().exchanges)
+        gate.restore_tasks(port, self.path, self.state, ORIGINAL, True, False, SOURCE)
+        self.assertEqual(self.phase("restore-tasks")["outcome"], "confirmed")
+        self.assertEqual(json.loads(self.path.read_bytes())["intents"], json.loads(self.original_state)["intents"])
+        self.assertTrue(self.state["restoreStarted"])
+        self.assertTrue(self.state["restored"])
+        self.assertEqual((self.folder / "original-qspi.raw").read_bytes(), ORIGINAL)
+
+    def test_prepare_first_read_failure_is_not_hidden_by_old_unknown_false(self):
+        port = Wire([(b"p", metadata()), (b"d", b"")])
+        with self.assertRaises(gate.GateError):
+            gate.prepare_cold(port, self.folder, UID, SOURCE, True)
+        self.assertEqual(self.phase("prepare-cold")["outcome"], "pending")
+        self.assert_original_untouched()
+        for cold in (False, True):
+            retry = Wire()
+            with self.assertRaises(gate.GateError):
+                gate.prepare_cold(retry, self.folder, UID, SOURCE, cold)
+            self.assertEqual(retry.writes, [])
+
+    def test_prepare_independent_read_mismatch_keeps_phase_and_old_intent(self):
+        with self.assertRaises(gate.GateError):
+            gate.prepare_cold(self.prepare_wire(ORIGINAL), self.folder, UID, SOURCE, True)
+        self.assertEqual(self.phase("prepare-cold")["outcome"], "pending")
+        self.assertFalse((self.folder / "cold-request.json").exists())
+        self.assert_original_untouched()
+
+    def test_restore_preflight_read_failure_preserves_state_and_sends_no_restore(self):
+        port = Wire([(b"p", metadata(2)), (b"d", b"")])
+        with self.assertRaises(gate.GateError):
+            gate.restore_tasks(port, self.path, self.state, ORIGINAL, True, False, SOURCE)
+        self.assertEqual(port.writes, [b"p", b"d"])
+        self.assertEqual(self.phase("restore-tasks")["outcome"], "pending")
+        self.assert_original_untouched()
+        retry = Wire()
+        with self.assertRaises(gate.GateError):
+            gate.restore_tasks(retry, self.path, self.state, ORIGINAL, True, True, SOURCE)
+        self.assertEqual(retry.writes, [])
+
+    def test_restore_second_preflight_read_failure_is_also_pending(self):
+        port = Wire([(b"p", metadata(2)), (b"d", framed(b"BVS1", CHANGED)), (b"d", b"")])
+        with self.assertRaises(gate.GateError):
+            gate.restore_tasks(port, self.path, self.state, ORIGINAL, True, False, SOURCE)
+        self.assertEqual(port.writes, [b"p", b"d", b"d"])
+        self.assert_original_untouched()
+        self.assertEqual(self.phase("restore-tasks")["outcome"], "pending")
+
+    def test_noop_restore_final_read_failure_cannot_close_session(self):
+        port = Wire([(b"p", metadata(2)), (b"d", framed(b"BVS1", ORIGINAL)),
+                     (b"d", framed(b"BVS1", ORIGINAL)), (b"d", b"")])
+        with self.assertRaises(gate.GateError):
+            gate.restore_tasks(port, self.path, self.state, ORIGINAL, True, False, SOURCE)
+        self.assertFalse(any(raw.startswith(b"rBVR1") for raw in port.writes))
+        self.assertEqual(self.phase("restore-tasks")["outcome"], "pending")
+        self.assert_original_untouched()
+
+    def test_phase_creation_failure_prevents_prepare_io(self):
+        port = Wire()
+        with mock.patch.object(gate, "save_new", side_effect=OSError("unavailable")), self.assertRaises(OSError):
+            gate.prepare_cold(port, self.folder, UID, SOURCE, True)
+        self.assertEqual(port.writes, [])
+        self.assert_original_untouched()
+
+    def test_phase_creation_failure_prevents_restore_io(self):
+        port = Wire()
+        with mock.patch.object(gate, "save_new", side_effect=OSError("unavailable")), self.assertRaises(OSError):
+            gate.restore_tasks(port, self.path, self.state, ORIGINAL, True, False, SOURCE)
+        self.assertEqual(port.writes, [])
+        self.assert_original_untouched()
+
+    def test_partial_phase_creation_is_preserved_and_not_overwritten(self):
+        save_new = gate.save_new
+        def partial(path, raw):
+            save_new(path, raw[:5])
+            raise OSError("partial private record")
+        port = Wire()
+        with mock.patch.object(gate, "save_new", side_effect=partial), self.assertRaises(OSError):
+            gate.prepare_cold(port, self.folder, UID, SOURCE, True)
+        retained = self.phase_path("prepare-cold").read_bytes()
+        self.assertEqual(port.writes, [])
+        with self.assertRaises(gate.GateError):
+            gate.prepare_cold(Wire(), self.folder, UID, SOURCE, True)
+        self.assertEqual(self.phase_path("prepare-cold").read_bytes(), retained)
+        self.assert_original_untouched()
+
+    def test_prepare_seal_failure_keeps_pending_even_with_complete_proof(self):
+        with mock.patch.object(gate, "save_state", side_effect=OSError("cannot seal")), self.assertRaises(OSError):
+            gate.prepare_cold(self.prepare_wire(), self.folder, UID, SOURCE, True)
+        self.assertTrue((self.folder / "cold-request.json").exists())
+        self.assertEqual(self.phase("prepare-cold")["outcome"], "pending")
+        self.assert_original_untouched()
+        with self.assertRaises(gate.GateError):
+            gate.observe_cold(Wire(), self.folder, UID, SOURCE)
+
+    def test_restore_seal_failure_does_not_reissue_consumed_restore(self):
+        save_state = gate.save_state
+        def fail_seal(path, value):
+            if path == self.phase_path("restore-tasks"):
+                raise OSError("cannot seal")
+            save_state(path, value)
+        port = self.restore_wire()
+        with mock.patch.object(gate, "save_state", side_effect=fail_seal), self.assertRaises(OSError):
+            gate.restore_tasks(port, self.path, self.state, ORIGINAL, True, False, SOURCE)
+        self.assertTrue(json.loads(self.path.read_bytes())["restored"])
+        self.assertEqual(self.phase("restore-tasks")["outcome"], "pending")
+        self.assertEqual(sum(raw.startswith(b"rBVR1") for raw in port.writes), 1)
+        with self.assertRaises(gate.GateError):
+            gate.check_read_phases(self.folder, UID, gate.digest(ORIGINAL))
+
+    def test_pending_phase_blocks_all_direct_active_entries_before_handshake(self):
+        self.pending()
+        port = Wire()
+        calls = (
+            lambda: gate.prepare_cold(port, self.folder, UID, SOURCE, True),
+            lambda: gate.restore_tasks(port, self.path, self.state, ORIGINAL, True, True, SOURCE),
+            lambda: gate.probe_command(port, self.path, self.state, "READ", SOURCE, True),
+            lambda: gate.observe_cold(port, self.folder, UID, SOURCE),
+        )
+        for call in calls:
+            with self.assertRaises(gate.GateError):
+                call()
+        self.assertEqual(port.writes, [])
+        self.assert_original_untouched()
+
+    def test_incomplete_phase_transition_is_not_an_unlock(self):
+        path, value = self.pending()
+        gate.save_state(path, {**value, "outcome": "confirmed"})
+        gate.save_new(path.with_name(path.name + ".next"), b"partial transition")
+        with self.assertRaises(gate.GateError):
+            gate.check_read_phases(self.folder, UID)
+
+    def test_confirmed_phase_must_bind_the_same_board_and_backup(self):
+        path, value = self.pending()
+        gate.seal_read_phase(path, value)
+        gate.check_read_phases(self.folder, UID, gate.digest(ORIGINAL))
+        for uid, baseline in (("99" * 16, gate.digest(ORIGINAL)), (UID, gate.digest(CHANGED))):
+            with self.assertRaises(gate.GateError):
+                gate.check_read_phases(self.folder, uid, baseline)
+
+    def test_corrupt_or_ambiguous_phase_never_becomes_confirmed(self):
+        value = {"phase": "prepare-cold", "boardUid": UID, "baselineSha256": gate.digest(ORIGINAL),
+                 "sourceId": SOURCE, "stateSha256": gate.digest(self.original_state), "outcome": "confirmed"}
+        variants = (b"{", b"[]", json.dumps({"outcome": "confirmed"}).encode(),
+                    json.dumps({**value, "extra": True}).encode(),
+                    json.dumps({**value, "sourceId": "invalid"}).encode(),
+                    json.dumps(value).replace('"outcome": "confirmed"',
+                                             '"outcome": "pending", "outcome": "confirmed"').encode())
+        for index, raw in enumerate(variants):
+            folder = self.folder / str(index)
+            folder.mkdir()
+            path = folder / gate.READ_PHASE_FILES["prepare-cold"]
+            gate.save_new(path, raw)
+            with self.subTest(index=index), self.assertRaises(gate.GateError):
+                gate.check_read_phases(folder, UID)
+            self.assertEqual(path.read_bytes(), raw)
+
+    def test_failed_phase_cannot_restart_backup_when_other_files_are_lost(self):
+        folder = self.folder / "lost-inputs"
+        folder.mkdir()
+        gate.begin_read_phase(folder, "restore-tasks", UID, SOURCE, ORIGINAL, self.original_state)
+        port = Wire()
+        with self.assertRaises(gate.GateError):
+            gate.capture_session(port, folder, folder / "claim.json", UID, SOURCE, True)
+        self.assertEqual(port.writes, [])
+        self.assertFalse((folder / "original-qspi.raw").exists())
+
+    def test_cli_pending_phase_rejects_before_serial_import_or_open(self):
+        self.pending()
+        real_import = __import__
+        def guarded_import(name, *args, **kwargs):
+            if name == "serial" or name.startswith("serial."):
+                raise AssertionError("pending CLI must not import/open hardware transport")
+            return real_import(name, *args, **kwargs)
+        for action in ("prepare-cold", "restore-tasks", "probe", "observe-cold", "reconcile"):
+            argv = ["gate", action, "--private-dir", str(self.folder), "--uid", UID,
+                    "--port", "COM6", "--source-id", SOURCE]
+            if action != "reconcile":
+                argv.append("--confirm-whole-board-power-cycle")
+            with self.subTest(action=action), mock.patch.object(gate, "ROOT", self.root), \
+                    mock.patch.object(sys, "argv", argv), mock.patch("builtins.__import__", side_effect=guarded_import), \
+                    self.assertRaises(gate.GateError):
+                gate.main()
+
+    def test_cli_wrong_confirmed_baseline_rejects_before_serial_import(self):
+        path, value = self.pending()
+        gate.save_state(path, {**value, "outcome": "confirmed", "baselineSha256": gate.digest(CHANGED)})
+        real_import = __import__
+        def guarded_import(name, *args, **kwargs):
+            if name == "serial" or name.startswith("serial."):
+                raise AssertionError("mismatched private phase must not reach hardware transport")
+            return real_import(name, *args, **kwargs)
+        argv = ["gate", "restore-tasks", "--private-dir", str(self.folder), "--uid", UID,
+                "--port", "COM6", "--source-id", SOURCE, "--confirm-whole-board-power-cycle"]
+        with mock.patch.object(gate, "ROOT", self.root), mock.patch.object(sys, "argv", argv), \
+                mock.patch("builtins.__import__", side_effect=guarded_import), self.assertRaises(gate.GateError):
+            gate.main()
+
+    def test_explicit_cold_reconcile_is_read_only_and_never_seals_phase(self):
+        self.pending()
+        phase_bytes = self.phase_path("prepare-cold").read_bytes()
+        port = Wire()
+        with self.assertRaises(gate.GateError):
+            gate.reconcile(port, self.path, self.state, ORIGINAL, False, SOURCE)
+        self.assertEqual(port.writes, [])
+        port = Wire([(b"p", metadata()), (b"d", framed(b"BVS1", ORIGINAL)), (b"d", framed(b"BVS1", ORIGINAL))])
+        self.assertTrue(gate.reconcile(port, self.path, self.state, ORIGINAL, True, SOURCE))
+        self.assertEqual(port.writes, [b"p", b"d", b"d"])
+        self.assertEqual(self.phase_path("prepare-cold").read_bytes(), phase_bytes)
+        self.assertEqual(self.state["intents"], json.loads(self.original_state)["intents"])
+        with self.assertRaises(gate.GateError):
+            gate.check_read_phases(self.folder, UID)
 
 
 if __name__ == "__main__":
