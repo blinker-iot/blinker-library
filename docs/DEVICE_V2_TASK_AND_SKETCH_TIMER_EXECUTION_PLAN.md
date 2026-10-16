@@ -1,6 +1,12 @@
 # Device V2：现有任务与 Sketch 周期／延时收口
 
-更新：2026-10-15。三端必要源码与文档已按§11.24推送当前分支，现行后续顺序取该节。§11.23七目标隔离安装编译与独立终审保持关闭，临时ZIP／stage已清理，原SDK与Docker运行保持。源码同步不等于部署：合入xwd的App／Service及Gateway新诊断未随本轮更新运行环境。普通任务默认仍0，内部四槽不等于正式准入，历史UNKNOWN不补成功；本轮未刷板或重放请求。
+> 当前交付（2026-10-16）：§11.30～§11.33任务体验必要App源码／回归已提交并推送`i3w-dev-v2`的`1ce8f1b`，方案与跨链路时延只读审查取§11.34。§11.33匹配App＋COM11停用单任务短验／恢复保持原结论：唯一手动刷新2个HTTP、1791.3 ms；保存确认520.8 ms，随后列表2028.7 ms，无Start。App生产／测试10文件与该批冻结输入逐字节匹配，本轮README仅同步文档；不重建或重复部署。账号、授权、UNKNOWN与完整日志保留，R4／Wio正式任务继续关闭，Error 8待定位。单次样本不是严格A/B或时延保证；较早各批“未提交”等语句仅是历史状态。
+
+> 前一软件结果：§11.32列表刷新最小优化、173项有限回归及App类型／模板、完整spec类型通过；当时未部署。随后匹配实物现取§11.33，不能继续把“手机未含优化”作为当前状态，也不重算或重跑原测试。550 ms、fresh行读取、CAS、UNKNOWN不变；R4／Wio正式任务准入仍关闭，Error 8待定位。
+
+上一批§11.31的合并App与COM11短验／恢复已完成：保存、Start确认735.8／607.4 ms，后续列表4820.7／3076.2 ms；设备10秒期限后真实属性回调晚62.543 ms，主要为Claim持久化62.060 ms。这些是旧读取图的单次实物，不是§11.32新性能。原8 MiB／授权、账号／旧请求、准入及额度已恢复，详见该节，不重复采样或倒填历史。
+
+上一批结果（2026-10-16）：§11.30「定时／倒计时操作体验」已完成App源码／161项软件回归及COM11真实App有限短验：确认先于列表刷新、完整目录缓存命中、客户端分段耗时与倒计时起算提示四项通过。启用／停用提交至确认约526／576 ms，随后列表刷新约3.2／3.0 s；不是设备RX或物理动作耗时。原账号／5条journal、固件／授权及恢复均保留其当批证明。该批保存后的三个读取漏抓及离线退休未签名确认仍是历史限制，不改写旧记录；本次§11.31独立取得完整保存窗口及任务退休回执，不能倒填为§11.30当时已通过。此前获批的Gateway当前测试公布／绑定地址继续保留，未在本批重复调整。
 
 ## 1. 目标与边界
 
@@ -1364,3 +1370,255 @@ R4 WiFi／BLE及Wio WiFi三项实际门禁耗时770.7／1148.4／814.4 s。原ES
 4. **R4／Wio持久任务正式准入独立处理。** 默认容量继续0，四槽仅内部候选。R4仍需SDK同步UART／RPC等待、异常接收内存和完整动态峰值预算；1000 ms只是调用准入和迟到检测，不是可抢占硬截止。Wio保持单一QSPI owner与尾部16 KiB合同，未知固件或第三方FS布局不能靠空白字节推定独占。明确可支持的配置与失败恢复边界，再决定是否开放，不把这些门禁设为普通WiFi／BLE候选交付前置。
 
 本轮只完成Git交付和后续分析，没有执行上述部署／真机验收。H2、OTA、离线历史／Bulk、复杂自动化、新网关协议、Wio BLE正式发布与通用LAN产品化继续后置；没有新的缺陷或测量依据，不启动整组服务器维护、扩槽或SDK升级。
+
+> 本次Git交付按章节取§11.30～§11.34；§11.25～§11.29为独立资源／诊断本地草稿，未随本次提交，不应因编号跳跃认定这些实现已发布。R4／Wio正式任务准入继续关闭。以下“本批未提交”等语句保留当时历史边界，当前交付状态取§11.34。
+
+### 11.30 定时／倒计时操作体验
+
+#### 本轮分析与范围冻结
+
+三条能力分开：Sketch周期／延时为RAM内协作调度；App本地持久任务在R4／Wio只有内部四槽短验，正式默认0；云自动化观察State并投递普通Command，不依赖设备TaskStore，不据此声称两平台自动化完整验收已通过。R4尚有固定产品heap／栈／物理停机及普通SDK增长风险；Wio尚有分配器并发、RPC退出与完整图存储独占边界。本批不以UI优化放宽这些准入。
+
+源码确认不是每5～10秒才下发：单个任务HTTP包含Prepare／Challenge和Commit／Result两个设备往返；App每请求结束后间隔550 ms，完整刷新为`2+属性数F+任务数T`个串行请求。例F=3、T=4时9请求，仅内部间隔约4.4秒，另有网络／鉴权／验签／存储。设备确认后的刷新不能继续表现为“还未下发”；但静态代码不能证明现场5～10秒全发生在刷新段。服务3／4／15秒deadline是失败上限，设备写配额也不是隐式排队发送周期。
+
+本批最小实施顺序：
+
+1. **目录缓存。** 复用DeviceTaskClient；每次仍新鲜取catalog metadata，capacity／total／fingerprint一致才复用完整targets。内存最多8项，账号／authority／sessionEpoch／设备隔离；初始化、失败、取消与上下文变化不能复用半成品。不得缓存Grant、任务表或未确认结果，不新增持久缓存格式。
+2. **确认与读取解耦。** 有效设备回执到达立即反馈，操作调用不再等待后续整表读取；同一页面只发一套只读刷新，编辑页返回时由列表读取。目录命中后省去F次target查询，仍新鲜核目录metadata与实际任务rows；不并发请求、不取消550 ms节拍。刷新完成前ready=false，不允许用旧revision写入；失败保留已收到的确认和原日志，不宣称未执行或自动重放。
+3. **分段观测及文案。** 可选本地HTTP开始通知只用于计时，不改wire；分别显示本地提交准备／节拍、HTTP开始至确认、列表刷新。没有设备RX时间时不得伪造“实际下发耗时”；historical仅历史确认，不称本次实时ACK。倒计时在设备接受并持久化Start后起算，保存定义不自动Start；导航时确认提示仍应可见。
+4. **有限回归。** 覆盖确认早于悬挂刷新、刷新失败不撤回确认、目录命中／变化／失败／取消／账号隔离、有界缓存、同revision进度仍fresh读取、离页／后台晚响应抑制、历史回执及原UNKNOWN／journal、倒计时起算提示。只运行任务相关测试、类型／模板检查；不部署或重复真机／SDK矩阵。本批软件通过不代替后续匹配APK短验收。
+
+不能按tableRevision缓存TaskRecord：自主完成、跳过或重启中断会persist原header而不增加定义修订，旧row可能将完成显示为等待。方案不增加第二执行器、云定时后备、新队列、槽位或协议；现有CAS、回执验证、账号边界、持久意图及明确恢复操作保持。实施结果在本节续记。
+
+#### 前一软件批实施与有限回归结果
+
+- `DeviceTaskClient`仅缓存完整认证目录，最多8个设备的LRU条目；账号／authority／sessionEpoch变化清空，initialize在发送前清空并使旧读取失去缓存发布资格。每次先新鲜查询metadata，对比capacity／total／fingerprint，再决定是否省去targets分页；失败／取消不返回旧缓存、半成品不发布。缓存不包含TaskRecord、Grant或任务结果，原journal存储键／格式／持久屏障不变。
+- `TimerService`在有效回执及原客户端结算后立即呈现fresh／historical确认，不await后续整表读取；编辑器复用NoticeService提示后返回，列表负责单次新鲜查询。刷新期间ready=false、容量／revision未知，不开放旧CAS写入；读取失败保留确认，未确认写继续保留原意图，不自动重发、改ID或替换revision。成功确认不等于到期动作或物理输出已完成。
+- 只读刷新命中目录时由`2+F+T`减为`2+T`个HTTP请求，任务表仍逐条读取。同样F=3、T=4的模型从9次降为6次，刷新内部550 ms间隔从约4.4秒降为约2.75秒；**这是请求数推导，不是本批真机测量或时延承诺**。编辑器不再为导航前后重复整表查询，未改原节拍、Broker限流或协议。
+- 通过可选且不影响结果的HTTP开始观察回调区分提交准备、HTTP开始至确认及列表刷新。确认段仍包括响应验证／journal结算，不冒称设备RX或物理动作耗时；历史回执标“历史确认”。计时放在折叠详情中，主状态显示准备、等待确认或刷新，避免整段都显示“等待设备”。列表与编辑器均明确：保存定义不Start，设备接受并持久化Start后起算，重启中止。
+- 复用AppVisibilityService取消后台UI请求；回前台仅新鲜读取，后台已离开的视图不自动重开。取消、换账号、导航后的晚回调不能更新旧页面或清除UNKNOWN。未新增后台定时器、持久缓存、恢复队列或执行器。
+
+有限验证使用现有Angular正式测试构建：客户端**39**、TimerService **36**、页面逻辑**51**、真实模板**16**、模型**19**，共**161项通过／0 skip**。覆盖目录命中、变化、初始化、失败、取消、账号及LRU边界，HTTP观察回调抛错／同步取消、确认先于悬挂刷新、刷新失败不撤回确认、同revision进度变化仍fresh读取、UNKNOWN保留、后台回收／返回和离页、历史确认、导航提示、分段计时与倒计时起算。只对旧断言依赖的“write返回即整表就绪”改为显式等待新鲜读取，仍保留旧revision禁写、原日志及恢复断言，没有让生产write重新等待刷新来绕过测试。
+
+首轮构建的新增测试类型错误已修正；首次实际回归的9个旧同步时序／目录请求数断言失败保留，修正为上述新合同后只重跑受影响TimerService组36项通过，其余四组已通过项不重复计数。另运行`ngc -p tsconfig.app.json --noEmit`通过，核查实际App类型、依赖注入及Angular模板；独立只读审阅未发现本批阻断缺陷。软件验证使用替身HTTP／存储，不等于新APK、Android后台实测或MCU新固件验收。
+
+前一软件批只改App任务客户端／页面适配及相关回归和方案文档；当时未改设备、Service生产实现、wire、数据库或配置，也未操作ADB、串口、Docker、API／数据库、部署或刷板。后续匹配APK／COM11实物验收另记下文，不能继续把“未部署”用作本节当前状态。原授权、全部旧请求／UNKNOWN、日志及无关本地修改保持。**R4／Wio正式任务准入继续关闭，默认容量0、内部四槽不变；Error 8仍待定位。**
+
+#### 真机范围收缩，不重开资源审计
+
+原计划含保存／启停／Start及失败恢复；现场没有可安全复用的已准入身份，改按用户另批的COM11独立临时身份完成四项体验短验。实际范围仅Initialize、保存停用定义、enable／disable、remove及取消Start对话框，**没有发送Start、普通控制或重新制造刷新故障**；这些更大矩阵不在本批验收声明内，也不自动作为下一轮重复任务。原UNKNOWN只核对保留，不访问旧scope或重放。R4／Wio正式准入、资源审计、SDK及BLE／断电循环均不扩展。
+
+#### 有限真机短验范围及保护（已完成）
+
+短验最初使用mostfun2026及原服务镜像，测试完成后中断并切至“带翅膀的蜗牛”，恢复终核按当前网络办理，不重复已通过项。本机核对发现：账号21个设备，但唯一精确准入的ESP32身份已经正常退休；三个active旧scope均不在准入，普通Read也可能触发旧历史清理，不能直接用其替代。用户因此明确批准仅COM11新鲜全备份、既有四槽候选、新正常App身份和独立scope、临时名单及所需1台额度，完成后正常移除临时设备并恢复原固件／授权／配置。其他板不动，不复活旧身份或修改旧scope。
+
+- 新鲜App备份：原APK 86,440,988 B、SHA256 `43bcb15ac10d27271b8d6696b6740c172d574aede45e050ae0dadccf8121242d`；完整应用数据7,422,976 B，原账号及5条任务journal、空自动化journal另有私有指纹。敏感证据目录已设置仅当前账号／SYSTEM／Administrators访问，不纳入Git。
+- 匹配当前工作树的local-device AOT、Capacitor copy及原依赖离线单worker Android构建通过，无cap sync、依赖安装或SDK升级。新APK 86,440,988 B、SHA256 `c10a24ca5561bd6eefb652925cdddd05aeeaae73c3e459e5fb59caaeeb9bd396`；HTTPS origin、公开CA、网络信任策略、签名及全部Web资产逐项一致，正常`install -r`后整包读回相同，未清数据。账号与sessionEpoch保持，旧journal保留。
+- 测试时原HTTP代理可用，未为短验重建代理。运行Gateway实际P-256／keyId 1公钥与原SDK候选的公开development profile精确匹配；Ed选择保持空。IoT／真实业务Auth备份、三Broker一致性SQLite和完整日志已保留；旧20scope／296request／299attempt逐行冻结，不调用旧任务API。最初另有一份1069 B的bootstrap库误选记录，已明确标记为**非Auth业务备份**，保留原记录并补齐正确43表业务库备份，不以错误文件代签保护。
+- 当前账号原设备额度10、活动设备21；经用户授权及既有Auth domain service临时调整22。第一次正常App创建因旧权益缓存明确拒绝、无落库，保留失败；随后仅通过App现有refreshSession／getAllInfo正常刷新，未导出／伪造token，账号和epoch不变，IoT权益正常传播后新UI操作创建成功。新临时身份使用独立scope，Gateway／Broker1同镜像仅追加其精确名单；短验后已恢复原名单、撤销临时额度，正常App再次refresh／me后IoT额度为原10，无活动Auth override。
+- COM11已官方ROM新鲜备份完整8 MiB并独立整盘verify，SHA256 `7e3616e0d311672e4d13291dc8172180e55f1a6a5ec756e618dbab4ba127ed21`。候选沿原SDK3.3.11及TaskStore／Codec，用独立`bl_u30_*`namespace，不启动原任务或Sketch Timer。唯一完整编译通过：BIN 993,472 B、静态RAM 54,176 B，BIN SHA256 `28f54987ba30c9116f1ac4c56f667d6a907025e891d6dd51d5aa0526201bba27`；未升级SDK或另开重复队列。仅写factory，首次启动前核原NVS／分区；全程一次只读诊断显示任务／Timer及属性回调计数为0，不使用串口创建任务或触发动作。
+
+本轮最小动作只含新Initialize、保存一个停用60秒倒计时、可逆enable／disable及remove；**不Start，不实际触发任务动作**。起算只验证编辑页文案及Start确认框后取消。用真实App DOM及限定本设备的被动CDP网络记录，核fresh响应、确认已可见而列表仍在刷新、旧CAS禁写、两目标目录首次分页／后续metadata命中、任务rows仍fresh及各段客户端耗时；不拦截／替换响应或调用第二执行链。
+
+##### 四项体验结果与证据边界
+
+真实App首次进入得到预期`TASK_SCOPE_REQUIRED`，没有自动初始化；明确Initialize后取得四槽、`power:boolean`／`duty:uint`两个目标及空表。保存停用60秒倒计时后为taskId 1／revision 1，enable、disable、remove分别得到fresh revision 2、3、4；最终新鲜表count 0。Start确认框说明设备接受并持久化后起算、保存不开始，取消后没有Start HTTP；startSequence／progress保持0。没有额外普通Command。
+
+| 操作 | 提交至确认（ms） | 本地准备／节拍（ms） | HTTP开始至确认（ms） | 后续列表刷新（ms） |
+| --- | ---: | ---: | ---: | ---: |
+| Initialize | 1073.2 | 31.7 | 1041.5 | 4164.2 |
+| enable | 525.9 | 27.7 | 498.2 | 3202.6 |
+| disable | 576.2 | 27.5 | 548.7 | 3000.5 |
+
+这些是客户端有限样本，确认段包括响应验证／journal结算，不是设备RX、物理动作或稳定时延保证。enable／disable的真实DOM在`refreshing、busy=true、ready=false、canWrite=false`时已显示确认提示；离散采样显示提示约比新表就绪早3.0～3.2秒，不能解读成硬件精确时延。折叠详情和截图核对了实际文案，无须等待整表才给用户确认。
+
+- **目录命中直接证明：** 冷Initialize后读取两个target；再次查询空表仅catalog metadata＋task metadata两次，无target分页。enable／disable各一次写＋三次新鲜读取（catalog metadata、task metadata、row 0），各共4个HTTP；同目录未缓存模型为6个。行仍以新请求取得、fresh／no-store且核对精确revision和内容，不按revision复用旧进度。冷／热不同业务样本的时延不能当作严格A/B因果对照。
+- **实际采集范围：** 17份DOM／被动网络JSON引用摘要均核对，合计25个真实任务HTTP：1个预期scope拒绝、24个fresh成功，Start为0。它不是服务持久账本总量；短期只读记录有既有TTL。确认前两次适配器选择器失败均未点击、0 HTTP，核对后才首次发送；错误记录保留，不计算为设备失败或偷偷重复业务写。
+- **保存窗口限制：** 保存直接捕获fresh Create及跨导航Toast，但Ionic导航使观察器提前结束，其后三个只读HTTP未完整抓到。后续enable前的新鲜revision 1／停用定义仅是协调旁证；服务既有60秒Read保留及15秒attempt窗口已自然清理部分记录，不能重建原抓包或为了补证再Create。后续enable／disable／remove窗口完整，足以限定验证确认／刷新和目录命中；**不宣称保存窗口全量抓包完成**。
+- 未重新测试真实Start、任务到期、普通控制、刷新故障或后台故障矩阵；这些仍引用原限定证据，不将本次UI提示／取消Start外推成新的执行验收。本批没有发现需再改生产实现的确定性缺陷，未重造执行链。
+
+##### 恢复终核与保留项
+
+1. 通过真实App正常删除临时设备，返回202、cloudAuthorization=revoked、brokerCleanupPending=true、localTasks／localAccess=not_confirmed；云端新scope retired，Key／session撤销。新scope保留17 requests／16 attempts；唯一未verified项为删除产生的pending retire，不能声称取得设备签名退休证明。删除发生在切网／设备离线后，**正常云移除、设备签名退休、物理Flash恢复三者必须区分**。
+2. COM11只恢复原factory和NVS，随后官方ROM逐盘核对全部8,388,608 B，摘要与上述新鲜备份一致，原固件／授权恢复。其他板未刷写；没有重复BLE、断电或任务业务测试。
+3. 原任务20 scopes／296 requests／299 attempts逐行精确保持，三Broker命令账本原57／0／0行全同；原39布局／6授权／26邀请及65旧逻辑身份的保护字段相同，旧UNKNOWN没有重放或清理。完整日志、原始失败和新请求保留，不回滚业务库掩盖验收记录。
+4. 原任务准入名单、Auth额度已恢复。Gateway按原配置回启时旧`192.168.1.156:18884`绑定不可用；用户明确批准**仅**保留public MQTT host与18884 HostIp改为当前`192.168.2.76`。Gateway／Broker健康，所有原镜像不变，其他保护配置相同；两个旧IP HTTP代理配置未动、仍exited，不能据此声称整组服务运行状态全恢复。Docker保持运行，未额外升级／部署服务源码。
+5. 新版App保留正常安装，不回滚全量应用数据。最终原账号／sessionEpoch、21台设备、0活动UI scope及原5条task journal／空automation journal核对通过；任务日志聚合摘要与备份精确相同。收尾全量App数据7,486,976 B再次归档并读回，SHA256 `f7309578bca9fe62ed90d383948b3102e13e414e662e2fbd0c52640a3fd6b43d`；仅移除本批9339调试forward，原USB reverse保留。
+
+私有证据仅在忽略目录，不提交账号、Key、网络密钥、日志或备份：App `build/task-ux-1130-20261016/finite-task-acceptance-summary.json`／`phone-finished.json`；设备库 `build/task-ux-1130-20261016-device/restore-verified.json`；Service `build/task-ux-1130-20261016-server/final-safety-audit-1792150921440/summary.json`及`post-refresh-check-1792151091043.json`。Service实际业务Auth备份见`final-auth-archive-1792150754509/`，原错误备份的说明与正确IoT／三Broker／日志归档另保留，不删除或改写证据。
+
+部署输入终核：App冻结的902项跟踪输入中，仅本次验收更新的`device-timer/readme.md`有文档差异，其余901项逐字相同；不把当前README变化误称全部输入未变。三仓暂存和未解决冲突均为0，私有build／备份未纳入Git；库与Service的既有脏项保留，未以状态清单冒称其全源码另有逐字节冻结证明。上述体验摘要SHA256为`e22dd9a3ae102e96971f98af9db5a2da08a707d781abd90c7f206813b29cad9e`，设备恢复记录为`cb295c374043db7e7a334b43b7250ba402908405f49550c4457fa9a008a4b1bd`，服务终审摘要为`ae144adcaa8a77f69cb57a1db4d901847f6a27b416dccf6c92f472743c9b94af`。
+
+**结论：§11.30四项核心体验与本轮保护／恢复限定收口，不再因记录窗口不足重复业务写或扩大测试。** 原资源／正式支持问题不因体验通过而关闭：R4／Wio正式任务准入继续关闭，默认容量0、内部四槽不变；Error 8待定位。本批仅追加验收文档，不新增生产代码、槽位、协议、SDK或功能，保留无关本地修改，未暂存、提交或推送。后续另按明确的真实缺陷或支持决策排范围，不自动重派七目标、BLE或断电矩阵。
+
+### 11.31 合并版App与ESP32任务分段短验
+
+#### 最小范围与匹配部署（已完成）
+
+2026-10-16，用户要求先备份、部署合并后的App，沿用现有服务，在ESP32一次短验中测保存确认、Start接受、到期回调与列表刷新。App当前`ff9873a`，原19项未提交修改不混入合并提交；Service `d11f0d8`已包含其`xwd`，本轮不更新服务源码／镜像。R4／Wio正式任务准入继续关闭，Error 8待定位，不扩槽、不升级SDK或重复BLE／断电矩阵。
+
+原准入只剩已删除身份，因此用户另批仅COM11通过真实App创建独立临时身份、精确临时名单及必要1台额度，结束正常移除、恢复准入／额度及原固件／授权；不得复活旧scope或重放UNKNOWN。当前使用“带翅膀的蜗牛”，仅按批准将既有Plain HTTP测试代理绑定改到当前`192.168.2.76:17002`，同镜像／其他配置不变，旧退出容器保留；Gateway此前批准的当前18884公布／绑定地址不再修改。
+
+- App新鲜原APK及完整应用数据已备份、读回，原账号／5条任务journal及空自动化journal精确保持。合并版匹配APK `6d6a9146a5fb049dd010283bb17a7a3e4bfe3720a3290c08499e66fd2fdfd525`，86,440,988 B，正常`install -r`并整包读回；1927项源码／资产与202项实际原生插件文件已冻结，无依赖安装或cap sync。App私有备份、凭据和网络密钥不纳入Git。
+- COM11本批新鲜8 MiB ROM备份及独立verify完成，SHA256 `7e3616e0d311672e4d13291dc8172180e55f1a6a5ec756e618dbab4ba127ed21`。虽然与上轮恢复目标相同，仍是独立新读。原SDK3.3.11唯一jobs1完整编译通过：Flash 990032 B、静态RAM 56720 B；实际BIN 990176 B（含镜像开销），SHA256 `e182f19b2b8352a83418005b2b74ec22654df5c574e088c19cafbb31af24b918`。旧构建器的链接后检查仍假定SketchTimer专用依赖和旧policy标识，因此其失败记录保留；未重编、改冻结源码或绕过实际检查，而在刷写前独立核对当前ELF／map／依赖文件、唯一探针绑定、真实OfficialConfig及原policy。四槽及原60秒信用窗口／10次写额度／30秒Start冷却／100 ms commit边界未变。
+- 原TaskStore／Codec／policy复用；仅忽略目录的测试stage机械插入RAM时间探针，无生产`src`变化。48项×48 B环、满时不覆盖且报告overflow，串口缓冲384 B；同源`esp_timer_get_time`／引擎millis记录Create、Start持久化与实际倒计时起点／期限、Claim、真实属性回调和Completed。只在到期后读出，不在执行路径打印，不伪造设备时间或物理效果。
+- 仅正常UI Initialize、Create一个**启用但未Start的10秒`power=true`定义**，再明确Start一次。冷启动冷却／信用先自然成熟，不用失败Start探测或修改policy。完整捕获保存导航后的新列表，避免上一批观察器提前结束；每个mutation均一次意图屏障，不自动重提。
+- App客户端、CDP网络和MCU各用各自单调时钟计算段内耗时，以requestId关联，不直接跨时钟相减。Save在原Notice调用前同步留存实际TimerService分段值，原方法／this／参数／Promise不变，finally还原；DOM25 ms采样只是首个观察到的提示，不冒称精确首帧。Start使用本次fresh响应／timer状态，不把遗留Save Toast当新确认。
+
+本批服务基线21 scopes／313 requests／315 attempts、三Broker命令57／0／0已新鲜备份，真实Auth43表与IoT备份及SQLite一致性核查完成。临时身份通过真实App创建，使用独立`bl_u31_*`namespace和新scope，原账号／sessionEpoch不变；临时准入同镜像仅追加本批ID。原账号额度10、已存设备21台，获批后临时调22并通过正常App刷新权益，结束恢复10；不是新增长期额度或修改其他账号。服务没有部署新源码或升级镜像。
+
+#### 客户端确认与列表刷新分段
+
+| 操作 | 管理提交至fresh确认（ms） | 准备／journal／发送等待（ms） | HTTP开始至确认结算（ms） | 确认后的新鲜列表刷新（ms） |
+| --- | ---: | ---: | ---: | ---: |
+| 保存10秒启用定义 | 735.8 | 15.4 | 720.4 | 4820.7 |
+| Start一次 | 607.4 | 22.9 | 584.5 | 3076.2 |
+
+“管理提交”起点是`TimerService.write()`，并非总等于用户按键；Start确认先等待Ionic对话框关闭再进入write。HTTP确认段包括回执验签及journal结算，不称设备收到消息的纯传输耗时。真实UI另以25 ms名义周期采样：保存按钮至首次观察到新Toast为766.9 ms；Start确认按钮至首次观察到**本次新inline状态**为874.6 ms，包含对话框关闭，未把旧Save Toast当Start确认，也不冒称浏览器精确首帧。
+
+保存及Start各完整捕获一次写＋catalog metadata＋task metadata＋row 0，共4个HTTP；导航后等待新鲜revision及行到齐，未发生§11.30的窗口提前结束。完整目录相同后不再取两个target页，但TaskRecord仍新鲜读取。最终只读Query另耗2912.6 ms；该Query状态中保留的旧submission指标不计作新查询提交耗时。确认均早于刷新完成，刷新前仍禁止以旧revision写入。
+
+本批真实App合计19个任务HTTP：首次预期`TASK_SCOPE_REQUIRED`一次，其余18次fresh／verified；catalog 8、read 8、Initialize／Create／Start各1，requestId各不相同、无重放。Create后taskId 1／definitionRevision 1／tableRevision 1／startSequence 0；Start后tableRevision 2／sequence 1，最终Query为同一定义／表修订／sequence，进度`Completed`。不能按表修订缓存进度；没有再次Create、Start或额外enable／disable／remove。
+
+#### MCU接受、起算与到期回调
+
+探针仅在忽略测试stage内机械插入8个锚点，移除后能恢复规范化原TaskEngine源码；实际编译绑定由ELF及依赖核对。48×48 B环共2304 B及384 B串口缓冲不进入生产源码。冷启动等待信用／冷却自然成熟后才首次管理请求；到期后仅一次读出，共21个事件、overflow 0，未在执行路径打印或通过串口创建／Start任务。Create／Start原始16字节requestId与App一致。
+
+| 同一MCU单调时钟内的阶段 | 本次耗时（ms） |
+| --- | ---: |
+| Create引擎进入→接受 | 4.951 |
+| 其中Create `store.replace` | 4.435 |
+| Start引擎进入→接受 | 5.221 |
+| 其中Start `store.replace` | 4.745 |
+| 设备Start接受事件→真实`onPower`入口 | 10062.086 |
+| 设备期限→真实`onPower`入口 | 62.543 |
+| 其中执行前Claim持久化 | 62.060 |
+| `onPower`回调体 | 0.225 |
+| Completed持久化 | 2.758 |
+
+实际引擎起算tick为192873 ms、期限202873 ms，恰为10000 ms；poll记录较该量化期限晚0.034 ms，随后先持久化Claim再进入回调。`MutationAccepted`在192873457 µs，实际回调在202935543 µs；相邻`CountdownStarted`记录早3 µs，其到回调为10062.089 ms，不能混写成接受事件的同一个数值。倒计时从设备持久化Start后的引擎tick起算，不是从保存、App确认或列表刷新后起算。
+
+本次到期约62.5 ms延迟主要在执行前持久Claim，不是5～10秒固定下发周期。不能为了缩短数字移除Claim或重造执行器：它属于原故障恢复语义。结果只是一组带观察器的短样本，探针有未标定开销；引擎期限为1 ms量化，不能据微秒日志承诺亚毫秒期限或p95／最坏值。真实属性回调仅证明固件回调执行，不证明GPIO、机械动作等物理完成。App与MCU只在各自时钟内相减，以requestId关联，不把客户端确认耗时再加10062.086 ms冒称精确按键到物理动作时延。
+
+#### 恢复终核、日志与保留边界
+
+1. 通过真实App正常移除临时设备，202结果为`cloudAuthorization=revoked`、`localTasks=retired_verified`；scope签名退休已确认，全部新Key／session撤销。返回仍有`localAccess=not_confirmed`和`brokerCleanupPending=true`，不能将任务退休泛化为Direct清除或Broker异步清理全部完成。本次没有§11.30的离线退休缺证，但不修改其旧记录。
+2. COM11仅恢复原factory及NVS，再由官方ROM核对完整8388608 B，与本批新鲜备份精确相同，原固件／授权恢复并启动。426项冻结生产源仍全同；其他板不动，无BLE／断电循环或SDK升级。
+3. 原21 scopes／313 requests／315 attempts逐行精确保持，三Broker原57／0／0命令精确保持。原39布局／6授权／26邀请／Console 0全行及原66设备身份／ownership／access保护字段不变，原64 Key全行、3908 session不可变凭据／路由元组不变；session自然过期／在线字段不当作冻结凭据。旧UNKNOWN不重放、不抹除或改成功，不回滚业务库。
+4. 为避免既有只读TTL自然清理造成漏证，在保存、Start及最终Query后分别留存11、15、6条请求／attempt的只读快照；合并这些历史快照及最终退休记录，得到19个verified请求／19个attempt，分别Initialize／Create／Start／Retire各1及只读15。它不含没有scope落行的首次HTTP拒绝，且不是最终数据库当前保留量；最终该scope为7／7。全部已存Grant按实际运行P-256／keyId 1公钥独立验签，不重建已自然清理的行，也不将历史合并数量与App的19个HTTP混同。
+5. 原Gateway／Broker1精确准入名单及Auth额度10已恢复，无活动额度override；正常App刷新后原账号／epoch、21设备、0活动UI scope、原5条任务journal和空自动化journal精确保留。新版App保留，不回滚全量数据；最终完整应用数据7521280 B读回归档，SHA256 `c4e8264b0a7b58bce0594ec469dd3e5aff70842ed7fb9854b9e6918d617d6069`。仅移除本批9339 forward，原USB reverse保持。
+6. 原服务镜像、保护配置及健康状态终核通过，Docker保持运行；本批唯一保留差异是获批的既有Plain HTTP代理`7001/tcp→17002`绑定从`192.168.50.13`改到`192.168.2.76`，原退出容器保留。Gateway此前获批的当前18884公布／绑定地址未在本批再改，不能与旧H1代理或上一批网络差异混写。IoT／真实Auth43表备份及三Broker在线一致性副本、完整新旧日志均保留。额度恢复预检曾在导入DB前因源枚举内存不足退出，无事务写入；改为流式校验后仅一次实际恢复，失败记录不删除。
+
+App构建及最终只读终核的1927项源码／资产输入逐字节一致，202项实际插件和1637项APK内Web资产已匹配；原19项dirty清单精确不变，index／冲突为0。Service原8项本地修改保持。独立只读计时终审另核对原始串口、环事件、完整保存窗口和requestId，没有新增测试或业务动作；恢复／账号／准入证明由各自收尾记录独立核对，不用计时审核代签。
+
+私有原始证据只在三仓忽略的`build/task-latency-1131-20261016*`目录：App的`phone-finished.json`、构建目录`final-measurement-audit.json`；设备的`device-finished.json`／`restore-verified.json`及私有`device-latency-summary.private.json`；Service的批次根`history-union-summary.json`、`final-audit-1792155772555/summary.json`／`archive-summary.json`及各请求快照。APK、BIN、网络密钥、用户Key、账号、私有备份／日志均不暂存或提交。MCU计时摘要与设备恢复记录的SHA256分别为`3eeb6bf7026b839740a8d3bc0dab5857e3d9df31dc57b60d3f83943e0899cc7e`、`3ec3c022a6d88acdceb0af0c196d85873eea81ac1d7f634ed474e403979b2d2c`；不能以文件名存在替代原始证据验核。
+
+**结论：本次合并App、保存／Start／到期回调与列表分段测量及恢复按限定范围收口。** 客户端管理确认约0.6～0.74秒，列表新鲜读取仍3～4.8秒；后者若继续优化应另限定读取／展示范围，不据此更换执行链、取消Claim、扩槽或默认开放R4／Wio。正式任务资源准入仍关闭，Error 8待定位。本批仅更新验收文档，无生产源码改动；不重复已通过项、不提交推送，无关本地修改保持。
+
+### 11.32 列表刷新冗余表头的有限优化
+
+#### 原因及最小范围冻结
+
+2026-10-16，续§11.31，仅分析并优化App现有任务列表读取，不部署、不刷板、不调用业务API／数据库。原实测热目录单任务刷新依次为Catalog metadata、Read metadata、Read row 0；每个HTTP沿既有Prepare→Commit两次认证设备往返，并在前次完成后等待550 ms。保存后这三次HTTP分别约1359／1087／737 ms，请求前等待约561／557／559 ms；Start后分别432／490／471 ms，等待约562／567／560 ms。CDP请求窗口与UI刷新计时起点不同，只作各段分解，不强行相加成为同一个精确UI耗时。设备Create／Start引擎仅约5 ms，不能把3～4.8秒列表读取归咎为固件固定发送周期。
+
+这些记录能确认请求数及节拍的成本，不能再把每个HTTP内部耗时全部归因于签名、网络、数据库或某一SDK调用；本批不为拆分它们重开部署／采样。先删除明确重复且不提供额外必需新鲜度保证的一次表头读取。
+
+既有`Catalog/Target`认证结果已携带当前`tableRevision/count`：设备Session校验当前authority及绑定后，与Read(metadata)共用末尾的引擎头读取；两字段进入Result认证，Gateway原样映射，App已有身份／requestId／fresh／容量校验。因此不新增接口、wire或设备实现，只省随后重复的Read(metadata)。
+
+最小实施合同：
+
+1. 在DeviceTaskClient新增一次性`snapshot()`读取组合，复用原目录校验及逐行读取。热目录使用本次新鲜Catalog头；冷目录完整分页后使用**最后一份新鲜Target响应**的头，既有fingerprint／total／capacity匹配不变，不额外要求目录分页期间任务表停止变化。头只活在本次调用，缓存仍仅完整TaskCatalog，不缓存任务表／行／进度、Grant或回执。
+2. 表内每行仍单独fresh Read，沿用该头的expectedRevision、count及重复taskId校验；中途定义改变仍失败，不自动拿新revision重读。空表来自本次认证头count 0，不复用旧空表。调用末尾补账号／authority／epoch及abort检查，空表也不能绕过边界；不声称多个行构成同一时刻的原子进度快照。
+3. TimerService只改为消费这一组合，确认后立即反馈、刷新期ready=false／旧CAS禁写、UNKNOWN／journal、后台／离页取消及失败状态保持。旧独立catalog/table调用保留原合同，不新增后台刷新、重试、并发或第二执行器。
+4. 550 ms完成后节拍保持：Broker是每物理连接固定1秒窗内最多4次exchange，Prepare和Commit各计一次，不是4个HTTP。直接换成HTTP开始间隔可能在慢Commit跨窗后聚集5次exchange；没有逐exchange调度证明前不缩短。
+5. 有限回归只跑受影响的任务客户端／服务／页面及类型模板检查；覆盖请求数、空表、冷目录末页头、同revision进度、混表拒绝、账号／取消、UNKNOWN及确认不被刷新失败撤回。不扩槽、不升级SDK、不重复BLE／断电或既有MCU验收；R4／Wio正式任务继续关闭，Error 8待定位。
+
+热目录T条任务从`2+T`减为`1+T`个HTTP；冷目录F个target从`2+F+T`减为`1+F+T`。按§11.31旧窗口删除冗余Read(metadata)及一个节拍推导，单任务约可省1.05～1.64秒；**只是反事实请求数／耗时模型，不是新APK实测或性能保证**。实施／软件回归与匹配APK后续短验分开记录，不用旧现场数据签新性能。
+
+#### 实施及有限回归结果（软件收口）
+
+- `DeviceTaskClient`共用`readCatalog()`返回本次局部表头，新增`snapshot()`组合目录和行；原逐行循环抽为唯一`readRecords()`，旧独立catalog／table接口仍复用相同实现。缓存仅原完整TaskCatalog，没有新持久格式、任务记录缓存、后台队列或新协议。
+- 冷目录末页的头取自本次认证Target；各页目录fingerprint／total／capacity仍严格校验。行统一使用最后锚点的expectedRevision／count，遇改变、重复ID、历史／非法响应或失败不发布部分表、不自动重读。空表每次鲜读，snapshot及保留的catalog返回边界均检查取消／账号；不增加“目录分页期间任务表不得变化”的新wire要求。
+- TimerService仅替换原两次catalog＋table调用为snapshot；先确认后异步刷新、刷新期ready=false／capacity未知／旧CAS禁写、失败保留确认、journal／UNKNOWN、后台离页／返回链路均保持。原写入／恢复实现、设备和Service生产代码、配置、授权／准入不动。
+- 新增客户端10项、页面服务2项回归；原161项不删。Angular正式runner五组共**173个不同用例通过／0 skip**：客户端49、TimerService 38、页面逻辑51、真实模板16、模型19。首次2处旧请求序列断言仍预期冗余metadata而失败，已按新序列修正，其他CAS／日志断言保留；只重跑受影响客户端／服务87项通过，原三组86项不重复累计。不是删除失败用例或恢复旧请求凑通过。
+- `ngc -p tsconfig.app.json --noEmit`通过，核对App类型／依赖注入及Angular模板；`tsc -p tsconfig.spec.json --noEmit`通过，覆盖完整spec类型。独立只读审查未发现本批阻断缺陷；未将替身HTTP／存储测试写成MCU、WebView或新APK时延验收。
+
+本批只改App两个生产文件、三个相关spec及最短readme，另更新设备库两份既有计划。App原19项dirty及无关文件保留，原SDK／依赖／默认开关／服务和硬件不动；原账号、授权、UNKNOWN及完整请求日志没有新增操作、清理或回滚。上一批匹配APK继续保留，**尚未包含本批snapshot优化**。未新建任务／临时身份、部署、刷板、重放、扩槽、升级、暂存、提交或推送。
+
+**后续若继续验收，只安排匹配新App的一次列表读取差异短验**：沿用已准入ESP32和现有服务，先备份账号／日志，核对热目录单任务2个HTTP、进度fresh、确认先于刷新与旧CAS禁写；测量本次实际刷新时间再决定是否仍有真实缺口。无需修改固件、Start新任务或重复到期／BLE／断电测试。若无可安全复用身份先报告，不自动临时准入、增额度或重用旧scope／UNKNOWN。软件范围现已收口，性能签收仍独立。
+
+#### 后续实物前置核对：当前无可复用试点
+
+2026-10-16，按用户要求准备匹配App及一次只读列表差异短验，先只读核对现场。手机ADB在线／解锁，电脑仍在“带翅膀的蜗牛”；Gateway与Broker1均healthy，实际镜像revision为`d11f0d8`。两端精确任务准入集合一致，但唯一成员“T2c 首次未知根 COM3”已经deleted／retired且有签名退休记录；§11.31 COM11临时设备也已正常删除／退休。其余3个历史active scope不在准入，现存ESP32身份MQTT离线，不能拿旧请求推断当前设备仍有单任务，更不能访问已退休scope补测。
+
+本轮停在前置核对，**尚未开始新鲜App备份、构建、安装或本次任务HTTP**，没有新的2请求／耗时／进度或CAS实物结果；软件173项结果不变。只完成现有构建脚本、依赖及202项实际原生输入的只读准备，未重跑测试。没有刷板、Start、重放UNKNOWN、创建身份、增加额度、修改准入／服务配置或数据库；授权及完整旧日志保持。本次只更新进度说明，不提交推送。
+
+继续条件是明确一块仍有有效任务身份、已准入且保留一条任务的ESP32；若现场没有，需要用户另行决定是否安排受限试点准备，不能将本轮“不刷固件、沿用既有身份”的要求自行扩大为临时建号／刷候选。当前手机仍为§11.31安装包，不把构建准备记作新版部署完成。
+
+### 11.33 COM11受限临时试点的只读列表差异短验
+
+2026-10-16，用户另行明确批准仅COM11：新鲜完整备份，必要时原SDK既有四槽候选、正常App建立独立身份及所需临时额度／精确准入；只保存一条停用任务，不Start、不重用旧scope，结束正常移除并恢复原固件／授权／配置。其他板不动，不升级SDK或扩槽，UNKNOWN和完整日志保留。
+
+本批保护及部署：App原账号／epoch、5条任务journal／空自动化journal及原APK、完整7463424 B应用数据已新鲜备份读回。新匹配App SHA256 `e449e43b767dc2b9c0d9884ef13f904a6cccf4c698886fdfbbe067e425a4af9b`已正常更新安装并整包核对，不清数据；单队列原依赖AOT、copy非sync、offline单worker Android及1927源码／资产、202实际插件、1637 APK Web资产核对通过。服务IoT、真实Auth43表、三Broker一致性副本和完整日志／原保护投影已备份，原镜像不变。正常App只新建“U32 列表短验 COM11”独立身份，随后仅该新ID临时准入，再明确Initialize新scope；原21设备不改，原额度10临时到22后已恢复，不作为正式额度变化。
+
+现场服务、网络及公开P-256／keyId 1匹配原候选，既有代理不再调整；准入替换后又从实际Gateway核对公开point，与本批baseline及development profile逐字节一致，未更换公钥。COM11身份核对、新鲜整8388608 B读取及独立ROM verify通过，SHA256 `7e3616e0d311672e4d13291dc8172180e55f1a6a5ec756e618dbab4ba127ed21`，不是复用旧备份。App唯一构建结束后才做MCU原SDK3.3.11唯一完整编译／链接：Flash993332 B、静态RAM54176 B，BIN993488 B、SHA256 `406a2779b7164822a21ffbcf44acb9824fcde1a7d1d9f4e9ff844a3afa566a37`。保留原未armed的Esp32SketchTimerTaskGate，不加上批observer，实际四槽／60000 ms窗口／10次写／30000 ms Start冷却／100 ms commit不变。仅写factory并核原NVS／partition未变；唯一只读`j`显示begun=1、armed=0、activeTimers及Timer／属性写计数均0。原fixture没有uptime字段，未伪造设备启动时间。没有发送`s`、Start或普通Command。
+
+最小验收：正常App初始化后仅Create一个停用60秒`power=true`倒计时，再一次手动只读列表刷新；核热目录Catalog metadata＋Read row 0共2个HTTP、独立requestId／fresh／no-store、实际客户端刷新时长及expectedRevision关联。采集刷新中ready=false／旧revision清除及写控件不可用；不为测试CAS真的发送旧Start或其他业务写。停用且未Start的进度可保持0，只证明新鲜查询，不宣称运行→Completed变化。正常移除所需认证Retire与普通任务Start是两种操作，必须分别留证。
+
+#### 本次有限实物结果
+
+| 阶段 | 实际任务HTTP | 本次客户端耗时 |
+| --- | --- | ---: |
+| 唯一Create的fresh确认 | Create 1次 | 提交至确认520.8 ms；准备21.1 ms，HTTP开始至确认／journal结算499.7 ms |
+| 保存返回列表后的完整刷新 | Catalog metadata＋Read row 0 | 2028.7 ms |
+| 唯一手动只读Query | Catalog metadata＋Read row 0 | 1791.3 ms |
+
+保存窗口完整捕获Create＋2次读取，共3个HTTP；Query完整捕获2个，无target分页、无Read(metadata)。本次Query同CDP时钟内两次HTTP分别573.789／637.965 ms，中间finish→下一请求开始556.626 ms；仍保持原550 ms完成后节拍。客户端刷新还含验证／页面结算，不能与CDP窗口当完全相同起止点。保存经原NoticeService调用的fresh确认早于最终新列表JS观测2098.5 ms；这是原presentation seam及离散DOM观察，不是精确绘制帧。本次刷新中inline确认notice样本为0，**不声称已采到该具体画面**，不为此重做保存。
+
+新任务为taskId 1／definitionRevision 1／tableRevision 1、停用60秒`power=true`。保存后的row和唯一Query row均是不同requestId的真实fresh／verified／no-store响应、非磁盘或ServiceWorker缓存；每条Read的expectedRevision都等于本次新鲜Catalog的revision 1，index 0／count 1一致。任务一直sequence 0／progress 0／consumed 0，未Start、enable、replace、remove或发普通控制；“进度新鲜读取”仅指真正再读了当前进度字段，不是进度发生迁移或物理动作已执行。
+
+保存后两份、Query中一份refreshing样本均ready=false、busy=true、revision=0、capacity=null、旧行清空且没有可用写控件，完成后才ready／revision 1。未实际发送stale-CAS写入或并发改表；只读UI禁写及wire expectedRevision关联与§11.32原CAS软件回归共同保留边界，不冒称本批又完成设备拒绝旧写的故障门禁。
+
+全程11个实际任务HTTP：首次新scope查询1个预期409 `TASK_SCOPE_REQUIRED`，其余10个fresh成功；Initialize 1、Create 1、成功只读8，无Start及重放。独立离线审核核对完整导航／网络窗口、原始响应、requestId、刷新期状态及冻结输入；没有为审计再发业务请求或重采，也未重复原173项回归。本次仅补真机差异，无生产代码修正。
+
+#### 恢复终核与归档
+
+1. 真实App仅一次正常DELETE202，临时设备从列表移除，`cloudAuthorization=revoked`、`localTasks=retired_verified`，scope已认证退休，Key／session撤销；`localAccess=not_confirmed`及`brokerCleanupPending=true`仍按实际回执保留，不能把任务退休等同所有Direct／Broker清理完成。
+2. 收到退休回执后，COM11仅恢复本批新鲜备份的原factory及NVS，再独立ROM核对整个8388608 B，摘要仍为上述`7e3616…ed21`，原固件／授权已恢复并启动。426生产源逐一重核全同，其他板未操作；唯一编译、刷写和恢复，无重试，恢复后不再发送测试串口命令。
+3. 原Gateway／Broker1精确准入、额度10及原镜像／保护配置全部恢复，本批没有保留网络或其他配置差异。正常App refresh／me后原账号、epoch、21设备、0活动UI scope、原5条任务journal及空自动化journal精确保持；新APK保留，不回滚应用数据。最终完整7501312 B数据归档读回，SHA256 `02d857f05593c90574f2794ec4435d7919239c5caa26078dae0189edabee779c`；仅移除本批9339 forward，原USB reverse保持。
+4. 服务原22 scopes／320 requests／322 attempts全行精确保持，三Broker原57／0／0命令全同，旧UNKNOWN不重放／改写。原39布局／6授权／26邀请／Console 0全行，67设备的身份／ownership／access保护字段、65 Key全行、3910 session不可变凭据／路由元组保持；自然过期／在线字段不伪装冻结。服务原dirty／index／HEAD不变，无原源码部署或镜像升级。
+5. 新scope退休后11 requests／11 attempts全verified：Initialize 1、Create 1、Read 8、Retire 1；所捕获Grant签名按实际Gateway P-256／keyId 1公钥独立验签通过，Result的verified取实际Service验收链，不冒称离线另算了Result MAC。两份active快照均为10／10，第一份已覆盖并行很快结束的Query，**不能称第一份是Save-only**；窗口与耗时只取CDP。离线union与退休快照均11／11、重复行字节一致，没有重建DB或重放。它与App的11个HTTP不是相同集合：后者含首次无scope落行的409，前者含正常设备DELETE产生的认证Retire。
+6. 初始及最终IoT、实际Auth43表、3个Broker原生一致性SQLite及完整stdout／stderr均归档，副本integrity、SHA及PG restore-list核对通过；最终IoT PGDMP3805194 B、Auth143598 B。账号、授权、UNKNOWN、原始新旧请求／日志不清理。所有私有文件在新忽略目录且严格ACL，不提交凭据、网络密钥、APK／BIN或备份。
+
+私有证据：App `build/task-refresh-1132-20261016/finite-list-audit1132.json`／`phone-finished.json`及完整CDP窗口；构建 `build/task-refresh-1132-20261016-app-build/build-finished.json`；设备库 `build/task-refresh-1132-20261016-device/device-finished.json`／`restore-verified.json`（恢复记录SHA256 `af0e204db37ae393f62515f5b1ec6a99d7182d83b734de2cbc40f75ce14621a0`）；Service `build/task-refresh-1132-20261016-server/final-audit-1792160236039/summary.json`／`archive-summary.json`及`history-union-summary.json`。App1927输入／202原生及设备426源保持冻结内容，原无关修改保留；仅追加两份库内进度文档，不暂存、提交或推送。
+
+**结论：§11.32新读取图的匹配App部署及本次单任务热目录只读短验／恢复限定收口。** 本次手动刷新1791.3 ms，保存后的自动刷新2028.7 ms；少一次认证往返已由真实请求序列证实，但与§11.31的旧样本不构成同固件／同任务状态的严格A/B，不给出百分比提速、p95或最坏时延承诺。原550 ms仍保留；后续只有真实缺陷才另限范围，不为了继续降低数字扩大请求并发或自动重试。R4／Wio正式任务准入继续关闭，Error 8待定位；不扩槽、不升级SDK，不重复Start、BLE或断电矩阵。
+
+### 11.34 任务体验Git交付与跨链路时延审查
+
+#### 本批交付范围与证据
+
+本批按用户要求仅提交／推送§11.30～§11.33相关源码、回归和说明，并只读审查其他链路；没有新增优化功能、部署服务／App、操作开发板或重跑业务。各旧节的“当批未提交”保留原时间边界，以本节为当前交付状态。
+
+- **App：** 当前`i3w-dev-v2`新增`1ce8f1b2bf3e568056bac4069073be4c182bfa40`，11文件包含任务client、TimerService、状态／列表／编辑适配、4个相关spec和README。保持现有执行链、fresh行读取、CAS、550 ms节拍、持久意图及UNKNOWN；不缓存任务进度或自动重放。远端分支SHA已读回核对。此次正常推送同时带上此前未推送的`9c5b921`及`ff9873a`合并历史，不改写历史、不强推。
+- **设备库：** 当前`device_v2`只收录本方案§11.30～§11.34及总进度的对应索引；没有这几节新增的设备生产源码。混在同一工作树的R4资源／RPC边界、候选脚本、测试及删除项不随本批发布。§11.25～§11.29是独立本地资源／诊断草稿，仍完整保留但不因本次交付而发布；Git版本故有章节编号跳跃。
+- **Service：** 当前`dev_v2`仍复用远端`d11f0d8aee3ed96b9b6f462edb0ca94b07b3dbcc`，本范围没有新增服务器业务实现或迁移，不造空提交、不夹带未提交的诊断／数据库测试。本文链接到现有源码进行分析，不表示已改造或部署服务。
+- **验证：** 复用§11.32的49项client、38项service、51项页面、16项真实模板、19项模型，共173项有限回归，以及当批App模板／类型和spec类型检查。本轮不重跑或把旧软件结果当新全量测试。§11.33安装读回APK为`e449e43b767dc2b9c0d9884ef13f904a6cccf4c698886fdfbbe067e425a4af9b`；本次提交的10个生产／测试文件与其构建冻结输入逐字节相同，README只补文档。已安装、未清数据及最终账号／journal保持另取该批安装／收尾证据，不用构建时的`installed=false`字段否认后来安装。
+- **发布排除与保留：** 只暂存精确名单／文档章节；没有APK、BIN、ZIP、Flash／数据库／App备份、原始CDP／日志、账号凭据、DeviceKey、网络密码或私有profile。公共文档可保留证据摘要和忽略目录索引，不含私有文件内容。其余本地修改不撤销；完整新旧请求日志、授权和UNKNOWN仍在原处。公开仓库依赖告警另作既有维护项，本批不升级依赖／SDK。
+
+#### 时延审查：区分已证实机制与未测性能
+
+以下为当前源码审查，不是本轮新增端到端测量；ACK代表协议确认，不等同物理动作完成。任务样本不能推广为全部控制／同步都慢。
+
+| 链路 | 当前事实／疑点 | 后续最小范围与保护 |
+| --- | --- | --- |
+| 任务保存／Start与列表 | §11.30确认已与刷新解耦；§11.32热目录由`2+T`降为`1+T`个HTTP，冷目录`2+F+T`降为`1+F+T`。每HTTP仍含Prepare／Commit两个设备往返；550 ms是上个请求完成后的保护间隔，不是设备每550 ms才执行。单任务实物2HTTP／1791.3 ms见§11.33 | 本批已交付，不以降低列表数字为由并发请求、删除鉴权／Claim或缓存同revision的动态进度。没有当前新缺陷，不重复任务／断电循环 |
+| 普通设备控制与State | [设备控制页](../../blinker-app/src/app/device/v2/device-v2.page.ts)在匹配`sendCommand` ACK返回后解除pending；[会话](../../blinker-app/src/app/core/protocol/device-v2/session.ts)收到匹配ACK即结算。[DeviceUiPort](../../blinker-app/src/app/core/device-v2/device-ui.port.ts)订阅选定通道Store并直接发布State；不等待任务列表式全刷 | 未发现同类固定3～5秒等待，不新增轮询。后续若有现场慢样本，分别量排队、发送、ACK与fresh State，不把旧State或HTTP结束称作新设备状态 |
+| 自动化保存／启停／退役 | [AutomationService](../../blinker-app/src/app/sections/scene/automation/automation.service.ts)的`submit()`确认后虽已显示“配置已保存”，仍在同一`run()`等待`list()`，finally再读pending才结束busy；[页面](../../blinker-app/src/app/sections/scene/automation/automation.page.ts)等待submit结束才离开编辑，列表失败与写确认仍共用错误入口 | **下一项首选。** 复用任务体验模式，把已验证写确认与后续列表刷新状态／错误分开；用真实返回detail反馈。保持journal持久屏障、确认验证与UNKNOWN；列表未新鲜前禁止使用旧revision写入，不重造执行链 |
+| 自动化State→动作 | [观测](../../aily-blinker-services/services/gateway/src/device-v2/automation-worker.js)及[执行worker](../../aily-blinker-services/services/gateway/src/device-v2/automation-execution-worker.js)各使用`watchPollMs=1000`；[共用驱动](../../aily-blinker-services/services/gateway/src/device-v2/bounded-reconcile-worker.js)整轮在途时复用runningPromise。Broker采纳已验证State本身不是这两段轮询 | 先量`State接受→observation提交→execution claim→publish→ACK`。轻载相位可能接近两轮等待，长轮还会推迟，不是2秒严格上界或本轮实测。仅当相位占主因再评估提交后有界唤醒原worker，保留定期扫描、并发上限、fence／Claim／去重，不另设sender |
+| 自动化列表 | [管理仓储](../../aily-blinker-services/services/gateway/src/device-v2/automation-management-repository.js)在owner事务内逐规则查询目标UNKNOWN，构成N+1；单页上限16，现行tenant活跃规则4 | 次级候选：量查询和锁持有时间后，再考虑同事务按本页tenant／target批查UNKNOWN集合。不得陈旧缓存、去owner锁或取消UNKNOWN禁发；目前不能断言它导致秒级等待 |
+| WiFi+BLE兼容one-shot读 | [DeviceUiPort](../../blinker-app/src/app/core/device-v2/device-ui.port.ts)非persistent分支先等待Direct候选，BLE窗口5秒，失败才Cloud；[DeviceService](../../blinker-app/src/app/core/services/device.service.ts)的connectDevice／显式get仍可到达该入口。正式控制页persistent连接已用`Promise.any`并行，不应全局误报 | 先核实际页面覆盖及失效候选样本；若确实使用，可评估让已有可用Cloud先完成只读。不允许未知写／Action跨通道自动重放，保留账号／页面取消和实际通道选择 |
+| BLE／LAN Direct排队 | [Direct会话](../../blinker-app/src/app/core/protocol/device-v2/direct-session.ts)的控制、实时租约、重同步共用single-flight；弱链路续租等待可能排住后续控制。6秒响应超时／1秒可靠重试是失败预算，不是正常固定等待 | 后续只补排队／发送／ACK分段证据；不取消single-flight或并发GATT。ATT20的30 ms分片间隔是分离无线模块消费保护，大包10 ms依协商，不能当作无用sleep直接删 |
+| 历史／配置同步 | [历史页](../../blinker-app/src/app/sections/device/device-storage/device-storage.page.ts)每次范围／分页一次GET，15秒为失败上限，未见任务式冗余串行读取。控制台配置有4秒轮询，外部布局／权限变更显示可能等下一轮，但它不阻塞普通ACK | 历史暂无同类证据；保留no-store、账号／取消／游标。控制页由同事处理，4秒配置同步先列观察项，后续可评估复用已有变更通知，不能削弱分享撤权保护 |
+
+最小后续顺序：**先自动化确认与刷新体验解耦 → 再按真实样本关联自动化执行分段及兼容one-shot候选等待 → 最后依证据决定worker唤醒／列表批查或Direct队列优化。** 本轮只分析、不提前实施上述新项；不把普通控制／历史、已有BLE／断电门禁或全部服务器维护重新列作重复任务。R4／Wio正式任务准入继续关闭，Error 8单列待定位。
