@@ -441,6 +441,10 @@ private:
     }
 
     Result startActive() {
+        if (state_ == Esp32WifiBleProductState::Provisioning) {
+            platform_.bleLink().markServicesChanged();
+        }
+
         Result result = direct_.prepare();
         if (result) result = stack_.begin();
         if (result) result = cloud_.start();

@@ -38,6 +38,7 @@ inline Esp32NimBleLink::Esp32NimBleLink(
       ownAddressType_(0U),
       receiveHandle_(0U),
       transmitHandle_(0U),
+      serviceChangedHandle_(0U),
       connectionHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingConnectHandle_(BLE_HS_CONN_HANDLE_NONE),
       pendingDisconnectHandle_(BLE_HS_CONN_HANDLE_NONE),
@@ -51,6 +52,7 @@ inline Esp32NimBleLink::Esp32NimBleLink(
       pendingIndicateEnabled_(false),
       indicateEnabled_(false),
       indicationInFlight_(false),
+      serviceChangedPending_(false),
       pendingEncrypted_(false),
       pendingBonded_(false),
       connectPending_(false),
@@ -421,6 +423,12 @@ inline Result Esp32NimBleLink::refreshBleProfile(
     return result;
 }
 
+inline void Esp32NimBleLink::markServicesChanged() {
+    portENTER_CRITICAL(&lock_);
+    serviceChangedPending_ = true;
+    portEXIT_CRITICAL(&lock_);
+}
+
 inline void Esp32NimBleLink::hostTask(void*) {
     nimble_port_run();
     nimble_port_freertos_deinit();
@@ -479,6 +487,7 @@ inline void Esp32NimBleLink::initializeGatt() {
     memset(services_, 0, sizeof(services_));
     receiveHandle_ = 0U;
     transmitHandle_ = 0U;
+    serviceChangedHandle_ = 0U;
 
     characteristics_[0].uuid = &receiveUuid_.u;
     characteristics_[0].access_cb = &Esp32NimBleLink::onGattAccess;
@@ -632,6 +641,30 @@ inline int Esp32NimBleLink::handleGapEvent(const ble_gap_event& event) {
     }
 
     if (event.type == BLE_GAP_EVENT_SUBSCRIBE &&
+        event.subscribe.prev_indicate == 0U &&
+        event.subscribe.cur_indicate != 0U) {
+        portENTER_CRITICAL(&lock_);
+        const bool changed = serviceChangedPending_;
+        portEXIT_CRITICAL(&lock_);
+
+        const ble_uuid16_t service = BLE_UUID16_INIT(0x1801U);
+        const ble_uuid16_t characteristic = BLE_UUID16_INIT(0x2A05U);
+        uint16_t serviceChangedHandle = 0U;
+
+        if (changed && ble_gatts_find_chr(
+                &service.u, &characteristic.u,
+                nullptr, &serviceChangedHandle) == 0 &&
+            event.subscribe.attr_handle == serviceChangedHandle) {
+            portENTER_CRITICAL(&lock_);
+            serviceChangedHandle_ = serviceChangedHandle;
+            portEXIT_CRITICAL(&lock_);
+            // Only a real database transition invalidates the peer cache.
+            ble_svc_gatt_changed(0x0001U, 0xFFFFU);
+            return 0;
+        }
+    }
+
+    if (event.type == BLE_GAP_EVENT_SUBSCRIBE &&
         event.subscribe.attr_handle == transmitHandle_) {
         portENTER_CRITICAL(&lock_);
         pendingSubscribeHandle_ = event.subscribe.conn_handle;
@@ -645,6 +678,11 @@ inline int Esp32NimBleLink::handleGapEvent(const ble_gap_event& event) {
     if (event.type == BLE_GAP_EVENT_NOTIFY_TX &&
         event.notify_tx.indication != 0U) {
         portENTER_CRITICAL(&lock_);
+        if (event.notify_tx.attr_handle == serviceChangedHandle_ &&
+            event.notify_tx.status == BLE_HS_EDONE) {
+            serviceChangedPending_ = false;
+            serviceChangedHandle_ = 0U;
+        }
         if (event.notify_tx.conn_handle == connectionHandle_ &&
             event.notify_tx.attr_handle == transmitHandle_) {
             if (event.notify_tx.status == BLE_HS_EDONE) {

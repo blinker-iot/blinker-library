@@ -1,7 +1,14 @@
+#if defined(BLINKER_DEMO_WIFI_BLE)
+#include <BlinkerWiFiBLE.h>
+#else
 #include <Blinker.h>
+#endif
+
 #include <WiFi.h>
 
+#if !defined(BLINKER_DEMO_WIFI_BLE)
 #include "secrets.h"
+#endif
 
 // Controls drive the onboard addressable RGB LED.
 BLINKER_PROPERTY(demoPower, bool, blinker::readWrite());
@@ -76,7 +83,9 @@ void setup() {
     pressButton.onInvoke(onPressButton);
 
     started = Blinker.begin(
+#if !defined(BLINKER_DEMO_WIFI_BLE)
         DEMO_DEVICE_KEY, DEMO_WIFI_SSID, DEMO_WIFI_PASSWORD,
+#endif
         demoPower, demoBrightness, demoLabel, buttonPresses, pressButton,
         wifiRssi, uptimeSeconds, freeHeapBytes, totalHeapBytes);
 

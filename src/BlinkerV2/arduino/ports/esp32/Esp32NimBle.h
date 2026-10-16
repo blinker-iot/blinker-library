@@ -68,6 +68,7 @@ public:
         void* context) override;
     Result configureBleProfile(const ble::ModeProfile& profile) override;
     Result refreshBleProfile(const ble::ModeProfile& profile) override;
+    void markServicesChanged();
     ble::ModeProfile bleProfile() const override { return profile_; }
 
 private:
@@ -140,6 +141,7 @@ private:
     uint8_t ownAddressType_;
     uint16_t receiveHandle_;
     uint16_t transmitHandle_;
+    uint16_t serviceChangedHandle_;
     uint16_t connectionHandle_;
     uint16_t pendingConnectHandle_;
     uint16_t pendingDisconnectHandle_;
@@ -153,6 +155,7 @@ private:
     bool pendingIndicateEnabled_;
     bool indicateEnabled_;
     bool indicationInFlight_;
+    bool serviceChangedPending_;
     bool pendingEncrypted_;
     bool pendingBonded_;
     bool connectPending_;
