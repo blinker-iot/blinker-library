@@ -2,7 +2,14 @@
 
 `compile_matrix.py` 验证 Core 可移植性、独立 Port 和 internal 候选；它不会生成或模拟用户产品包。正式 Arduino
 库的唯一构建器是 `tools/build_arduino_release.py`；`verify_installed_release.py` 将同一个 ZIP 安装到独立
-sketchbook，再编译安装目录的四个公开示例。源码树编译/历史成功不能替代 ZIP 安装证据。
+sketchbook，再按七目标矩阵编译安装目录的四个普通通信示例。源码树编译/历史成功不能替代 ZIP 安装证据。
+
+同一ZIP另含`R4TasksQuickStart`受维护四槽Plain参考。它在无匹配profile时明确编译拒绝，
+不属于上述普通七目标；其原Core／Modem保护／heap与全消费者配置由
+`tools/prepare_r4_restricted_release.py`单独构建并核最终ELF。该矩阵不据此增加一个普通R4任务目标，
+也不将“普通R4默认0槽”误写成“受维护固定图未获有限准入”。IDE维护profile安装工具另取
+`tools/install_r4_arduino_profile.py`及[安装说明](../../docs/DEVICE_V2_R4_ARDUINO_PROFILE_INSTALLATION.md)，
+侧装`blinker:renesas_uno:r4tasks`，不改原SDK／库；只安装库或在Sketch写宏不等于补齐接线。
 
 ## 三类门禁
 
@@ -64,5 +71,23 @@ python tools/build_arduino_release.py --check-only
 python tests/arduino/verify_installed_release.py --zip-path <同一个ZIP> --work-dir <新独立目录> --data-dir <目标SDK目录> --target uno-r4-wifi --target uno-r4-ble
 ```
 
-最新结果/未完成项见 [B1 安装矩阵](../../docs/DEVICE_V2_B1_INSTALLATION_MATRIX_REPORT.md)。Wio BLE 长稳、B2c、授时和
-LAN 产品化仍各自验收，不以扩大内部探针数量替代普通产品门禁。
+普通安装矩阵的范围及历史结果见 [B1 安装矩阵](../../docs/DEVICE_V2_B1_INSTALLATION_MATRIX_REPORT.md)。Wio BLE 长稳、B2c、授时和
+LAN 产品化仍各自验收，不以扩大内部探针数量替代普通产品门禁，也不追加为已收口R4固定任务图的前置条件。
+
+## R4固定任务图：按受影响范围选择窄入口（§11.58）
+
+以下是后续发生对应代码变化时的维护入口，不是每批必跑清单；本次仅同步文档，未重跑：
+
+```powershell
+python -m unittest discover -s tests/release -p 'test_r4_arduino_profile.py'
+python -m unittest discover -s tests/release -p 'test_r4_profile_binding.py'
+python -m unittest discover -s tests/release -p 'test_r4_restricted_release.py'
+```
+
+- `test_r4_arduino_profile.py`：安装／核验／撤销及升级fixture，不执行真实SDK、编译器或硬件。
+- `test_r4_profile_binding.py`：公开身份fixture与`OriginalCompilerBinding`的原ARM三语言预处理，二者证据分开。该类当前使用脚本内固定的本机原GCC路径；缺工具会`SkipTest`。通用discover退出0但含skip，不代表取得新ARM证据，不将fixture通过算成原工具通过；跨机路径便携性另列维护范围，不改SDK或静默换版本。
+- `test_r4_restricted_release.py`：维护者生成器的准备合同fixture，不代替真实链接、签发选择或设备运行。
+
+原有安装／发布护栏软件证据复用§11.54／§11.56，新护栏实际链接及必要实物差异复用§11.57；
+现行范围取[§11.58](../../docs/DEVICE_V2_TASK_AND_SKETCH_TIMER_EXECUTION_PLAN.md#1158-有限支持收口后的剩余范围与文档对齐)。
+普通七目标与受维护固定图不混算；本机通过不扩大任意Sketch、IDE GUI、公开分发、其他SDK或Wio的支持。

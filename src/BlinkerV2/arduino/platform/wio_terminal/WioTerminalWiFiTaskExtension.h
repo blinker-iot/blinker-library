@@ -3,6 +3,7 @@
 
 #include "../TaskModule.h"
 #include "../../ports/wio_terminal/WioTerminalTaskStorage.h"
+#include "../../ports/wio_terminal/WioTerminalNewlibLock.h"
 #include "../../ports/arduino/PortableEd25519.h"
 #include "../../config/PortableServerKeys.h"
 #include "../../internal/WiFiTaskExtension.h"
@@ -22,6 +23,7 @@ public:
                 policy.maximumCommitMillis),
           tasks_(blob_, environment, target, policy), begun_(false) {
         static_assert(Capacity == 4U, "Wio task candidate admits four slots only");
+        blinker_wio_newlib_lock_anchor();
     }
     ~WioTerminalTaskModule() { blob_.end(); }
 

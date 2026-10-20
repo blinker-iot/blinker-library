@@ -3,6 +3,7 @@
 
 #include "UnoR4ModemOwner.h"
 #include <WiFiS3.h>
+#include <stdio.h>
 
 namespace blinker {
 
@@ -14,7 +15,16 @@ template <typename Native>
 class RenesasUnoModemClient : public Native {
 public:
     int connect(IPAddress ip, uint16_t port) override {
-        return allowed() ? Native::connect(ip, port) : 0;
+        if (!allowed()) return 0;
+        if (ip.type() != arduino::IPv4) return Native::connect(ip, port);
+        // The SDK IPv4 overload allocates an Arduino String without exposing
+        // allocation failure. Keep the same native hostname path, without it.
+        char host[16];
+        const int length = snprintf(host, sizeof(host), "%u.%u.%u.%u",
+            static_cast<unsigned int>(ip[0]), static_cast<unsigned int>(ip[1]),
+            static_cast<unsigned int>(ip[2]), static_cast<unsigned int>(ip[3]));
+        return length > 0 && static_cast<size_t>(length) < sizeof(host)
+            ? Native::connect(host, port) : 0;
     }
     int connect(const char* host, uint16_t port) override {
         return allowed() ? Native::connect(host, port) : 0;

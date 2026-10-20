@@ -37,7 +37,8 @@ void number(const char* key, unsigned long value) {
 void observe() {
     wio_task_probe::sample(resources, true);
     wio_task_probe::capture(taskSnapshot);
-    const struct mallinfo heap = mallinfo();
+    const struct mallinfo heap = wio_task_probe::newlibSnapshot();
+    const bool newlibValid = resources.newlibValid && wio_task_probe::validNewlibSnapshot(heap);
     blinker::WallClockSnapshot clock;
     const bool timeValid = Blinker.timeStatus(clock);
     Serial.print("{\"fixture\":\"wio-wifi-task-product\"");
@@ -49,15 +50,24 @@ void observe() {
     number("signatureCalls", signatureCalls); number("signaturePassed", signaturePassed);
     number("longestSignatureMicros", longestSignatureMicros);
     number("resourceSamples", resources.samples); number("sketchStackLowestBytes", resources.lowestSketchStackBytes);
+    number("resourceSampleIntervalMillis", wio_task_probe::sampleIntervalMillis);
+    number("resourceFirstSampleMillis", resources.firstSampleMillis);
+    number("resourceLastSampleMillis", resources.lastSampleMillis);
+    number("resourceMaximumSampleGapMillis", resources.maximumSampleGapMillis);
     number("rtosFreeBytes", xPortGetFreeHeapSize()); number("rtosMinimumEverFreeBytes", xPortGetMinimumEverFreeHeapSize());
     number("rtosLowestObservedFreeBytes", resources.lowestObservedRtosFree);
-    number("newlibValid", resources.newlibValid && heap.uordblks >= 0 && heap.fordblks >= 0 && heap.arena >= 0);
-    number("newlibUsedBytes", heap.uordblks >= 0 ? static_cast<unsigned>(heap.uordblks) : 0U);
-    number("newlibFreeBytes", heap.fordblks >= 0 ? static_cast<unsigned>(heap.fordblks) : 0U);
-    number("newlibArenaBytes", heap.arena >= 0 ? static_cast<unsigned>(heap.arena) : 0U);
+    number("newlibValid", newlibValid);
+    number("newlibUsedBytes", newlibValid ? static_cast<unsigned>(heap.uordblks) : 0U);
+    number("newlibFreeBytes", newlibValid ? static_cast<unsigned>(heap.fordblks) : 0U);
+    number("newlibArenaBytes", newlibValid ? static_cast<unsigned>(heap.arena) : 0U);
     number("newlibMaximumObservedUsedBytes", resources.maximumObservedNewlibUsed);
+    number("newlibTransientPeakTracked", 0U); // Samples miss allocations freed between observations.
     number("taskLimit", wio_task_probe::taskLimit); number("taskCount", taskSnapshot.total);
     number("tasksCaptured", taskSnapshot.captured); number("tasksTruncated", taskSnapshot.truncated);
+    number("taskCaptures", taskSnapshot.captures); number("taskIncompleteCaptures", taskSnapshot.incompleteCaptures);
+    number("taskMaximumObservedCount", taskSnapshot.maximumTaskCount);
+    number("taskCaptureMicros", taskSnapshot.captureMicros); number("taskLongestCaptureMicros", taskSnapshot.longestCaptureMicros);
+    number("taskWatermarksLiveTasksOnly", 1U);
     number("traceWorkspaceBytes", sizeof(taskSnapshot)); number("stackWordBytes", sizeof(StackType_t));
     Serial.print(",\"tasks\":[");
     for (UBaseType_t i = 0U; i < taskSnapshot.captured && i < wio_task_probe::taskLimit; ++i) {
@@ -71,6 +81,7 @@ void observe() {
     Serial.println("]}");
 }
 void startProduct() {
+    wio_task_probe::sample(resources, true);
     power.onWrite(onPower); duty.onWrite(onDuty); uptimeSeconds.onSample(sampleUptime);
     bool ready = Blinker.enableTime();
 #if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
@@ -79,6 +90,7 @@ void startProduct() {
     begun = ready && Blinker.begin(GATE_DEVICE_KEY, GATE_WIFI_SSID, GATE_WIFI_PASSWORD,
                                   power, duty, uptimeSeconds);
     if (begun) Blinker.report(power, currentPower, duty, currentDuty);
+    wio_task_probe::sample(resources, true);
 }
 void runProduct() {
     wio_task_probe::sample(resources);

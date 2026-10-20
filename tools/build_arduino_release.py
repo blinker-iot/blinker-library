@@ -27,7 +27,13 @@ PUBLIC_EXAMPLES = (
     "BleQuickStart",
     "WiFiBleQuickStart",
     "CloudSmokeTest",
+    "R4TasksQuickStart",
 )
+R4_TASK_CREDENTIALS = {
+    "R4_DEVICE_KEY": "REPLACE_DEVICE_KEY",
+    "R4_WIFI_SSID": "REPLACE_SSID",
+    "R4_WIFI_PASSWORD": "REPLACE_PASSWORD",
+}
 EXPECTED_DEPENDENCIES = {
     "PubSubClient",
     "ArduinoBLE",
@@ -88,6 +94,19 @@ def dependency_names(value: str) -> set[str]:
         for item in value.split(",")
         if item.strip()
     }
+
+
+def validate_r4_task_example(example: Path) -> None:
+    """Publish only placeholders, never a maintainer's rendered credentials."""
+    credentials = example / "UserCredentials.h"
+    if not credentials.is_file() or not (example / "README.md").is_file():
+        raise ValueError("R4 task reference requires placeholder credentials and its build-profile README")
+    lines = [line.strip() for line in credentials.read_text(encoding="utf-8").splitlines()
+             if line.strip() and not line.lstrip().startswith("//")]
+    expected = ["#pragma once", *(f'#define {name} "{value}"'
+                                 for name, value in R4_TASK_CREDENTIALS.items())]
+    if lines != expected:
+        raise ValueError("R4 task reference credentials must remain the three public placeholders")
 
 
 def validate() -> tuple[dict[str, str], tuple[Path, ...]]:
@@ -164,6 +183,7 @@ def validate() -> tuple[dict[str, str], tuple[Path, ...]]:
     for name in PUBLIC_EXAMPLES:
         if not (example_root / name / f"{name}.ino").is_file():
             raise ValueError(f"example sketch is missing: {name}")
+    validate_r4_task_example(example_root / "R4TasksQuickStart")
 
     files: list[Path] = []
     for name in ROOT_FILES:
@@ -177,11 +197,12 @@ def validate() -> tuple[dict[str, str], tuple[Path, ...]]:
             path for path in (example_root / name).rglob("*") if path.is_file()
         )
     root_files = {REPOSITORY / name for name in ROOT_FILES}
+    reference_docs = {example_root / "R4TasksQuickStart/README.md"}
     source_suffixes = {".h", ".hpp", ".c", ".cpp", ".inc", ".ipp", ".ino"}
     invalid = [
         path for path in files
         if path.is_symlink() or "__pycache__" in path.parts
-        or (path not in root_files and path.suffix not in source_suffixes)
+        or (path not in root_files | reference_docs and path.suffix not in source_suffixes)
     ]
     if invalid:
         raise ValueError(f"non-portable release file: {invalid[0]}")

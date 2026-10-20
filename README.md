@@ -174,7 +174,7 @@ monotonic clock function for non-Arduino use.
 ## Optional persistent tasks
 
 Persistent tasks are disabled by default (capacity 0). The public development
-profile and ordinary examples do not enable them. The closed ESP32 manual-WiFi
+profile and ordinary communication examples do not enable them. The closed ESP32 manual-WiFi
 pilot requires the maintainer-built `esp32-wifi-t2-lab-v1` profile and a matching
 Service device allowlist. Arduino users do not generate profiles, supply storage
 budgets, or assemble internal objects.
@@ -190,15 +190,33 @@ Targets must be global/long-lived, writable, have a write callback, and also be
 passed to `begin()`. Ordinary writable Properties are not automatically allowed.
 Repeated configuration is rejected, including after `end()`. Disabled products
 return `UnsupportedFeature`; BLE and WiFi+BLE persistent tasks are not admitted.
-Defining the opt-in alone cannot admit R4/Wio: their separate internal guards,
+Defining the opt-in alone cannot admit R4/Wio: their separate build guards,
 storage ownership and matching Ed25519 signer must also be satisfied. No task
 graph is linked when the compile-time opt-in is absent.
 
-R4 and Wio manual-WiFi four-slot candidates have passed finite internal task
-acceptances using the same Store/Codec/Engine and App management chain. They
-are not ordinary release profiles or a production/long-term resource admission.
-R4 uses the shared modem owner and existing Preferences bank; synchronous SDK
-calls are not preemptible by a wrapper deadline. Wio uses one onboard QSPI owner:
+The maintained UNO R4 manual-Plain-WiFi four-slot **fixed graph** has passed
+limited admission using the same Store/Codec/Engine and App management chain.
+[R4TasksQuickStart](examples/R4TasksQuickStart/README.md) is its single public
+reference: `BlinkerWiFi.h`, `enableTasks(power, duty)` and the unchanged
+`begin()` / `run()`. It requires the protected build profile and exact Service
+device-ID admission; an ordinary IDE build rejects this reference with an
+explanation instead of silently running with zero slots. The ordinary library
+still defaults to zero, and no second library ZIP is needed.
+
+Maintainers use the [fixed R4 build/support contract](docs/DEVICE_V2_R4_RESTRICTED_TASK_ADMISSION.md).
+The generator consumes that same reference and keeps credentials private. The
+profile binds the original SDK overlay, all-consumer configuration, heap adapter
+and link flags; a Sketch macro cannot supply them. The maintainer's
+[IDE profile installer](docs/DEVICE_V2_R4_ARDUINO_PROFILE_INSTALLATION.md) adds a
+separate local Tasks4 Plain board alongside the official board, without editing
+the installed SDK or this library. Select it explicitly for this reference;
+select the official board for ordinary default-zero tasks. This is not task
+support for arbitrary Sketches. The shared modem owner latches faults and stops
+service; its 1000 ms RPC budget is not an arbitrary-callback hard-return SLA.
+Manual cold recovery and fresh reconciliation, not automatic retry, are required.
+
+Wio remains an internal manual-WiFi four-slot candidate, with further admission
+paused. It uses one onboard QSPI owner:
 the final 16 KiB is reserved (8 KiB tasks followed by 8 KiB identity), even when
 tasks are off. An independent onboard QSPI/filesystem driver cannot be added to
 that product graph. A blank region does not establish ownership of an unknown
@@ -225,7 +243,7 @@ Arduino packages:
 | Lease-driven realtime sampling | WiFi/BLE finite hardware acceptance | WiFi/BLE finite hardware acceptance | WiFi and experimental BLE finite hardware acceptance |
 | Cloud H1 state-change history | existing Cloud State chain | ordinary WiFi finite hardware acceptance | ordinary WiFi finite hardware acceptance |
 | Sketch periodic/delay Timer | optional, RAM-only | optional, RAM-only | optional, RAM-only |
-| App-managed persistent tasks | closed manual-WiFi four-slot pilot | internal manual-WiFi four-slot candidate | internal manual-WiFi four-slot candidate with reserved QSPI region |
+| App-managed persistent tasks | closed manual-WiFi four-slot pilot | maintained fixed Plain four-slot profile only; ordinary default 0 | internal manual-WiFi four-slot candidate with reserved QSPI region; paused |
 
 H1 stores state changes received by the cloud, not all realtime samples or
 offline device history. Pure BLE direct operation does not upload Cloud H1 by
@@ -253,7 +271,7 @@ src/BlinkerV2/                 platform-independent Core
 src/BlinkerV2/arduino/internal Product composition
 src/BlinkerV2/arduino/ports/   SDK/external-library Ports
 src/BlinkerV2/arduino/platform platform binding
-examples/                      four public Arduino examples
+examples/                      four ordinary examples + profile-gated R4 task reference
 tests/internal/                unreleased probes only
 ```
 

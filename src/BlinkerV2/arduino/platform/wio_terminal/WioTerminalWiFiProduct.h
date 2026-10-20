@@ -36,6 +36,12 @@ namespace integration {
 namespace official_detail {
 
 #if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+static_assert(BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_SMALL &&
+    BLINKER_DEVICE_FRAME_SIZE == 256,
+    "Wio task candidate requires the reviewed Small256 profile");
+static_assert(kDeviceKeyMqttPacketBufferSize == 361U &&
+    MQTT_MAX_PACKET_SIZE == kDeviceKeyMqttPacketBufferSize,
+    "Wio task candidate requires consistent initial MQTT packet size");
 typedef DeviceKeyWifiProduct<WioTerminalWifiNetworkPlatform,
     WioTerminalWifiTaskExtension<DeviceKeyWifiStack<WioTerminalWifiNetworkPlatform>, BLINKER_TASK_CAPACITY>>
 #else

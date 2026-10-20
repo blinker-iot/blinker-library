@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -11,6 +12,7 @@ import re
 HOST = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?$")
 FIRMWARE_VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$")
 HEX = re.compile(r"^[0-9A-Fa-f]+$")
+LIBRARY_IDENTITY_HEADER = "src/BlinkerV2/arduino/config/LibraryBuildIdentity.h"
 TEST_P256_KEY = (
     "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296"
     "4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
@@ -274,8 +276,51 @@ static const size_t serverSigningKeysCount =
 """
 
 
+def library_identity_words(files: dict) -> tuple[int, ...]:
+    """Content identity, not an authenticity check or arbitrary-Sketch admission."""
+    digest = hashlib.sha256()
+    for name, value in sorted(files.items()):
+        if name == LIBRARY_IDENTITY_HEADER:
+            continue  # The generated identity must not hash itself.
+        encoded = name.encode("utf-8")
+        data = value if isinstance(value, bytes) else value.read_bytes()
+        digest.update(len(encoded).to_bytes(4, "big"))
+        digest.update(encoded)
+        digest.update(len(data).to_bytes(8, "big"))
+        digest.update(data)
+    raw = digest.digest()
+    return tuple(int.from_bytes(raw[offset:offset + 4], "big") for offset in range(0, 32, 4))
+
+
+def render_library_identity(files: dict) -> str:
+    # No C++ types/includes: the maintained Core also force-includes this in
+    # C and assembly preprocessing. No credential/example input is in files.
+    lines = ["// Generated public library identity; no runtime data or secrets.",
+             "#ifndef BLINKER_LIBRARY_BUILD_IDENTITY_H",
+             "#define BLINKER_LIBRARY_BUILD_IDENTITY_H",
+             "#define BLINKER_LIBRARY_BUILD_IDENTITY_VERSION 1"]
+    lines += [f"#define BLINKER_LIBRARY_BUILD_IDENTITY_{index} 0x{word:08X}UL"
+              for index, word in enumerate(library_identity_words(files))]
+    return "\n".join([*lines, "#endif", ""])
+
+
+def configured_library_files(root: Path, profile: ReleaseProfile) -> dict:
+    """One rendered source map shared by normal ZIP and R4 preparation."""
+    files = {"library.properties": root / "library.properties"}
+    for file in sorted((root / "src").rglob("*")):
+        if file.is_symlink():
+            raise ValueError("library identity inputs cannot contain symbolic links")
+        if file.is_file():
+            files[file.relative_to(root).as_posix()] = file
+    prefix = "src/BlinkerV2/arduino/config/"
+    files[prefix + "OfficialConfig.h"] = render_config(profile).encode()
+    files[prefix + "Esp32ServerKeys.h"] = render_key_header(profile, p256=True).encode()
+    files[prefix + "PortableServerKeys.h"] = render_key_header(profile, p256=False).encode()
+    files[LIBRARY_IDENTITY_HEADER] = render_library_identity(files).encode()
+    return files
+
+
 def apply_profile(stage_root: Path, profile: ReleaseProfile) -> None:
-    config = stage_root / "src/BlinkerV2/arduino/config"
-    (config / "OfficialConfig.h").write_text(render_config(profile), encoding="utf-8", newline="\n")
-    (config / "Esp32ServerKeys.h").write_text(render_key_header(profile, p256=True), encoding="utf-8", newline="\n")
-    (config / "PortableServerKeys.h").write_text(render_key_header(profile, p256=False), encoding="utf-8", newline="\n")
+    for name, value in configured_library_files(stage_root, profile).items():
+        if isinstance(value, bytes):
+            (stage_root / name).write_bytes(value)

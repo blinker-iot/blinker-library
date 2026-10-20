@@ -9558,8 +9558,17 @@ void testPubSubClientAdapter() {
     connect.password = blinker::StringView("password", 8);
     connect.keepAliveSeconds = 45;
 
-    CHECK_TRUE(adapter.connect(connect).ok());
+    // This SDK entry returns false on buffer allocation failure. Preserve that
+    // recoverable contract; it is not the R4 std::string/new abort path.
+    native.setBufferResult = false;
+    CHECK_EQ(blinker::ErrorCode::BufferTooSmall, adapter.connect(connect).code());
     CHECK_EQ(static_cast<uint32_t>(1), native.setBufferCalls);
+    CHECK_EQ(static_cast<uint32_t>(0), native.connectCalls);
+    CHECK_EQ(static_cast<uint32_t>(0), native.setSocketTimeoutCalls);
+    CHECK_TRUE(!adapter.connected());
+    native.setBufferResult = true;
+    CHECK_TRUE(adapter.connect(connect).ok());
+    CHECK_EQ(static_cast<uint32_t>(2), native.setBufferCalls);
     CHECK_EQ(static_cast<uint16_t>(128), native.bufferSize);
     CHECK_EQ(static_cast<uint32_t>(1), native.setSocketTimeoutCalls);
     CHECK_EQ(static_cast<uint16_t>(2), native.socketTimeout);
@@ -9569,7 +9578,7 @@ void testPubSubClientAdapter() {
     CHECK_TRUE(std::strcmp(native.clientId, "device") == 0);
 
     CHECK_TRUE(adapter.connect(connect).ok());
-    CHECK_EQ(static_cast<uint32_t>(1), native.setBufferCalls);
+    CHECK_EQ(static_cast<uint32_t>(2), native.setBufferCalls);
     CHECK_EQ(static_cast<uint32_t>(1), native.setSocketTimeoutCalls);
 
     const char invalidHost[] = {'b', 'a', 'd', '\0', 'x'};

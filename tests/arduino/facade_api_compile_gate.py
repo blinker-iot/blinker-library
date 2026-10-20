@@ -18,11 +18,19 @@ ROOT = Path(__file__).resolve().parents[2]
 PRODUCT_FLAGS = ('BLINKER_PRODUCT_WIFI', 'BLINKER_PRODUCT_BLE', 'BLINKER_PRODUCT_WIFI_BLE')
 RESET = '#include <Arduino.h>\n' + ''.join('#undef ' + name + '\n' for name in PRODUCT_FLAGS) + '''#undef BLINKER_ENABLE_TASKS
 #undef BLINKER_INTERNAL_UNO_R4_TASKS
+#undef BLINKER_INTERNAL_R4_LIBRARY_BINDING
 #undef BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL
 #undef BLINKER_INTERNAL_LAN_WEBSOCKET
 '''
+# Load official defaults first so case-specific preprocessor overrides cannot
+# be silently overwritten by the header. This tests compilation, not TLS I/O.
+TLS_OVERRIDES = '''#include <BlinkerV2/arduino/config/OfficialConfig.h>
+#undef BLINKER_OFFICIAL_CLOUD_SESSION_TLS
+#undef BLINKER_OFFICIAL_MQTT_TLS
+'''
 TASKS = '''#define BLINKER_ENABLE_TASKS 1
 #define BLINKER_INTERNAL_UNO_R4_TASKS 1
+#define BLINKER_INTERNAL_R4_LIBRARY_BINDING 1
 #undef BLINKER_TASK_CAPACITY
 #undef BLINKER_TASK_WINDOW_MS
 #undef BLINKER_TASK_WRITES
@@ -33,6 +41,20 @@ TASKS = '''#define BLINKER_ENABLE_TASKS 1
 #define BLINKER_TASK_WRITES 10U
 #define BLINKER_TASK_MIN_START_MS 30000U
 #define BLINKER_TASK_MAX_COMMIT_MS 1000U
+#undef BLINKER_RESOURCE_PROFILE
+#undef BLINKER_DEVICE_FRAME_SIZE
+#undef MQTT_MAX_PACKET_SIZE
+#undef BLINKER_INTERNAL_R4_MODEM_COMMAND_BYTES
+#undef BLINKER_INTERNAL_R4_MODEM_RESPONSE_BYTES
+#undef BLINKER_INTERNAL_R4_MODEM_RPC_MS
+#undef BLINKER_INTERNAL_R4_HEAP_BOUNDARY
+#define BLINKER_RESOURCE_PROFILE 1
+#define BLINKER_DEVICE_FRAME_SIZE 256
+#define MQTT_MAX_PACKET_SIZE 361
+#define BLINKER_INTERNAL_R4_MODEM_COMMAND_BYTES 32
+#define BLINKER_INTERNAL_R4_MODEM_RESPONSE_BYTES 1024
+#define BLINKER_INTERNAL_R4_MODEM_RPC_MS 1000
+#define BLINKER_INTERNAL_R4_HEAP_BOUNDARY 1
 '''
 PROPERTY = 'BLINKER_PROPERTY(power, bool, blinker::readWrite());\n'
 BLE = '#define BLINKER_V2_ARDUINO_UNO_R4_BLE_PRODUCT_H\n#include <BlinkerBLE.h>\n'
@@ -48,6 +70,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compile-commands', type=Path, required=True)
     parser.add_argument('--out-dir', type=Path, required=True)
+    parser.add_argument('--start-at', help='Run only this case and its suffix; earlier evidence is not rerun or claimed')
     args = parser.parse_args()
     out = args.out_dir.resolve()
     if not out.is_relative_to(ROOT / 'build') or out == ROOT / 'build':
@@ -65,9 +88,9 @@ def main():
     for arg in raw:
         if arg in ('-o', '-MF', '-MT', '-MQ'):
             next(raw)
-        elif arg not in ('-MMD', '-MD', '-c', '-fstack-usage', entry['file']) and not any(
-                arg.startswith('-D' + name) for name in PRODUCT_FLAGS):
+        elif arg not in ('-MMD', '-MD', '-c', '-fstack-usage', entry['file']) and not arg.startswith('-DBLINKER_'):
             command.append(arg)
+    task_reference = '#include "' + (ROOT / 'examples/R4TasksQuickStart/R4TasksQuickStart.ino').as_posix() + '"\n'
     cases = [
         ('wifi-property-only', '#include <Blinker.h>\n' + PROPERTY, None),
         ('wifi-literals', '#include <Blinker.h>\n' + PROPERTY + WIFI_CALL, None),
@@ -84,8 +107,29 @@ def main():
          'void setup() { Blinker.enableTasks(power); }\n', None),
         ('wifi-tasks-admitted-r4', TASKS + '#include <BlinkerWiFi.h>\n' + PROPERTY +
          'void setup() { Blinker.enableTasks(power); Blinker.begin("key", "ssid", "password", power); }\n', None),
+        ('r4-reference-needs-profile', task_reference, 'Select the maintained R4 task build profile'),
+        ('r4-reference-sketch-opt-in-alone-rejects', '#define BLINKER_ENABLE_TASKS 1\n' + task_reference,
+         'Select the maintained R4 task build profile'),
+        ('r4-reference-matching-profile', TASKS + task_reference, None),
         ('wifi-tasks-unadmitted-r4', TASKS.replace('#define BLINKER_INTERNAL_UNO_R4_TASKS 1\n', '') +
          '#include <BlinkerWiFi.h>\n', 'admitted manual WiFi platform'),
+        ('wifi-tasks-invalid-admission-r4', TASKS.replace('#define BLINKER_INTERNAL_UNO_R4_TASKS 1',
+         '#define BLINKER_INTERNAL_UNO_R4_TASKS 2') + '#include <BlinkerWiFi.h>\n',
+         'internal storage and signing-profile admission'),
+        *[(f'wifi-tasks-reject-capacity-{capacity}-r4',
+           TASKS.replace('#define BLINKER_TASK_CAPACITY 4', f'#define BLINKER_TASK_CAPACITY {capacity}') +
+           '#include <BlinkerWiFi.h>\n', 'four slots only') for capacity in (1, 8, 10)],
+        *[(f'wifi-tasks-reject-{name}-r4', TASKS + f'#define {macro} 1\n' +
+           '#include <BlinkerWiFi.h>\n', 'manual WiFi only')
+          for name, macro in (('lan', 'BLINKER_INTERNAL_LAN_WEBSOCKET'),
+                              ('local-control', 'BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL'))],
+        *[(f'wifi-tasks-reject-{name}-tls-r4', TASKS + TLS_OVERRIDES +
+           f'#define BLINKER_OFFICIAL_CLOUD_SESSION_TLS {cloud}\n#define BLINKER_OFFICIAL_MQTT_TLS {mqtt}\n' +
+           '#include <BlinkerWiFi.h>\n', 'plain WiFi profile only')
+          for name, cloud, mqtt in (('session', 1, 0), ('mqtt', 0, 1))],
+        ('wifi-no-tasks-tls-r4', TLS_OVERRIDES +
+         '#define BLINKER_OFFICIAL_CLOUD_SESSION_TLS 1\n#define BLINKER_OFFICIAL_MQTT_TLS 1\n' +
+         '#include <BlinkerWiFi.h>\n' + PROPERTY + WIFI_CALL, None),
         ('ble-entry', BLE + PROPERTY + LOCAL_CALL, None),
         ('ble-reject-credentials', BLE + PROPERTY + WIFI_CALL, 'no matching function'),
         ('ble-reject-tasks', TASKS + BLE, 'admitted manual WiFi platform'),
@@ -100,6 +144,11 @@ def main():
          '#include <type_traits>\nstatic_assert(std::is_same<Print, arduino::Print>::value, "Canonical SDK Print");\n'
          'auto debugMember = static_cast<void (blinker::BlinkerClass::*)(arduino::Print&, blinker::LogLevel)>(&blinker::BlinkerClass::debug);\n', None),
     ]
+    if args.start_at:
+        names = [name for name, _, _ in cases]
+        if args.start_at not in names:
+            parser.error('unknown start-at case')
+        cases = cases[names.index(args.start_at):]
     rows = []
     for name, source, error in cases:
         file = out / (name + '.cpp')
@@ -130,10 +179,15 @@ def main():
     if len({row['classTokensSha256'] for row in definitions}) != 1:
         raise RuntimeError('BlinkerClass differs between Sketch/product and ordinary library TUs')
     inputs = [ROOT / 'src' / name for name in
-              ('BlinkerWiFi.h', 'BlinkerBLE.h', 'BlinkerWiFiBLE.h', 'BlinkerV2/api/BlinkerFacade.h')]
+              ('BlinkerWiFi.h', 'BlinkerBLE.h', 'BlinkerWiFiBLE.h', 'BlinkerV2/api/BlinkerFacade.h',
+               'BlinkerV2/arduino/platform/uno_r4/UnoR4WiFiProduct.h',
+               'BlinkerV2/arduino/ports/uno_r4/UnoR4TaskBuildContract.h')]
+    inputs += [ROOT / 'examples/R4TasksQuickStart' / name for name in
+               ('R4TasksQuickStart.ino', 'UserCredentials.h', 'README.md')]
     report.write_text(json.dumps({
         'scope': 'real R4 SDK object compilation/12 B ABI; BLE native bindings mocked; no firmware link or hardware',
         'buildWideProductFlag': False, 'cases': rows, 'definitions': definitions,
+        'startAt': args.start_at, 'compileCommands': str(args.compile_commands.resolve()),
         'inputs': {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
                    for path in inputs}, 'passed': True,
     }, indent=2), encoding='utf-8')

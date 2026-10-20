@@ -18,6 +18,8 @@ import zipfile
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPOSITORY / "tools"))
+from arduino_release_profile import TASK_PILOT, TASK_PILOT_ID
 
 
 @dataclass(frozen=True)
@@ -97,6 +99,11 @@ TARGETS = (
     ),
 )
 
+# Packaged in the same library, but intentionally not a stock-IDE compile
+# target: its matching isolated Core/Modem/heap profile is verified separately.
+# Do not silently add it to the ordinary seven task-disabled targets.
+PROFILE_GATED_EXAMPLES = ("R4TasksQuickStart",)
+
 # Explicit maintainer opt-in only: not part of the ordinary release matrix.
 TASK_PILOT_TARGET = Target(
     "esp32-wifi-tasks",
@@ -114,6 +121,49 @@ def select_targets(names: list[str] | None) -> tuple[Target, ...]:
     if len(names) != len(set(names)) or any(n not in available for n in names):
         raise ValueError("unknown or duplicate installed target")
     return tuple(available[n] for n in names)
+
+
+def verify_installed_task_profile(config: str, targets: tuple[Target, ...]) -> str | None:
+    """Bind the explicit task consumer to the installed development policy.
+
+    Reading the tuple only identifies the existing ESP32 candidate; ordinary
+    task-disabled links do not verify it or admit another platform's tasks.
+    """
+    definitions = re.findall(
+        r"^[ \t]*#[ \t]*define[ \t]+BLINKER_TASK_([A-Z_]+)\b([^\r\n]*)$",
+        config, re.MULTILINE,
+    )
+    profile = None
+    if definitions:
+        values = {}
+        for name, raw in definitions:
+            number = re.fullmatch(r"([0-9]+)[uU]?", raw.strip())
+            if name not in TASK_PILOT or name in values or not number:
+                raise SystemExit("installed task policy is not the supported development profile")
+            values[name] = int(number[1])
+        channels = re.findall(r'\breleaseChannel\[\]\s*=\s*"([^"]+)"\s*;', config)
+        if values != TASK_PILOT or channels != ["development"]:
+            raise SystemExit("installed task policy is not the supported development profile")
+        profile = TASK_PILOT_ID
+    task_targets = tuple(target for target in targets if target.tasks_enabled)
+    if task_targets and (profile != TASK_PILOT_ID or task_targets != (TASK_PILOT_TARGET,)):
+        raise SystemExit("explicit task target requires the installed ESP32 development task profile")
+    return profile
+
+
+def task_verification_scope(targets: tuple[Target, ...], profile: str | None) -> str:
+    """Report only after every selected compile/link/provenance check passed."""
+    boundary = ("ordinary installed R4/Wio task targets not verified by this gate; "
+                "the separately admitted fixed R4 Plain candidate is outside this matrix")
+    if any(target.tasks_enabled for target in targets):
+        return f"installed task compile/link target verified: {TASK_PILOT_TARGET.name} ({profile}); {boundary}"
+    return f"installed task targets not verified: none selected (ordinary task-disabled targets only); {boundary}"
+
+
+def profile_gated_example_scope() -> str:
+    return ("profile-gated reference packaged, not compiled by the ordinary installed matrix: "
+            + ", ".join(PROFILE_GATED_EXAMPLES)
+            + "; requires the separately verified isolated R4 Core/Modem/heap build profile")
 
 # compiled library directory -> (Library Manager install spec, reported name,
 # pinned version). A single-target gate installs only that target's closure;
@@ -392,6 +442,79 @@ def verify_time_closure(symbols: str, *, enabled: bool) -> None:
             raise SystemExit(f"optional business time link mismatch: enabled={enabled}, {marker}")
 
 
+def verify_wio_qspi_closure(
+    symbols: str, *, task_capacity: int = 0, region_reserved: bool = False
+) -> None:
+    """Check a known Wio link graph, not physical ownership or release admission.
+
+    Task callers must separately attest the installed source/profile's tail
+    reservation. The allocator symbols identify the reviewed internal closure,
+    not hook behavior, concurrency safety or formal admission. SDK, actual macros
+    and provenance remain compile-gate checks; symbols cannot detect arbitrary
+    unknown/inline third-party QSPI drivers.
+    """
+    if type(task_capacity) is not int or task_capacity not in (0, 4):
+        raise SystemExit("Wio task graph supports only capacity 0 or 4")
+    if type(region_reserved) is not bool or (task_capacity and not region_reserved):
+        raise SystemExit("Wio task graph requires explicit tail-region attestation")
+    owners = [line for line in symbols.splitlines()
+              if "guard variable for " not in line
+              and re.search(r"\s[bBdD]\s+blinker::wioTerminalQspiOwner\(\)::owner$", line)]
+    if len(owners) != 1:
+        raise SystemExit("Wio link requires exactly one default Blinker QSPI owner")
+    # Reuse the finite candidate's known conflict list; generic FS/SD interfaces
+    # are permitted. Unrecognized physical layouts still need source attestation.
+    conflicts = re.compile(
+        r"sfud_|SFUD::|SPIFlash|Arduino_QSPI|QSPIFlash|Seeed_FS::(?:beginFlash|formatFlash)"
+    )
+    if conflicts.search(symbols):
+        raise SystemExit("Wio link includes a conflicting onboard QSPI/Flash driver")
+    capacities = {int(value) for value in re.findall(
+        r"blinker::WioTerminalTaskSnapshotBlobStore<(\d+)[uUlL]*>", symbols
+    )}
+    task_markers = ("blinker::TaskEngine::", "blinker::TaskSnapshotStore::",
+                    "blinker::TaskCloudTransport<")
+    allocator_symbols = ("blinker_wio_newlib_lock_anchor", "__malloc_lock", "__malloc_unlock")
+    defined = {name: [] for name in allocator_symbols}
+    for line in symbols.splitlines():
+        row = re.fullmatch(r"\s*[0-9A-Fa-f]+(?:\s+[0-9A-Fa-f]+)?\s+([A-Za-z?])\s+(.+?)\s*", line)
+        if row and row[1] != "U" and row[2] in defined:
+            defined[row[2]].append(row[1])
+    if not task_capacity:
+        if capacities or any(marker in symbols for marker in task_markers):
+            raise SystemExit("Wio default link unexpectedly retains a task graph")
+        # The unmodified SDK may contain its own empty malloc hooks. Only the
+        # exact internal anchor proves accidental inclusion of our experiment.
+        if defined[allocator_symbols[0]]:
+            raise SystemExit("Wio default link retained the internal allocator anchor")
+    elif (capacities != {4} or not all(marker in symbols for marker in task_markers)
+          or "Ed25519::verify(" not in symbols):
+        raise SystemExit("Wio task4 link requires the original store/engine/carrier/Ed25519 graph")
+    elif any(types != ["T"] for types in defined.values()):
+        raise SystemExit("Wio task4 link requires exactly one strong allocator anchor and each malloc hook")
+
+
+def verify_ordinary_r4_closure(symbols: str) -> None:
+    """Keep the internal Modem/UART and heap experiment out of ordinary links.
+
+    Inspect actual ``nm --defined-only`` rows, not source/header names. This
+    rejects an accidentally patched SDK/cache even when tasks are disabled;
+    it does not certify the native SDK or admit an internal candidate.
+    """
+    forbidden = re.compile(
+        r"(?:blinker_r4_rpc_[A-Za-z0-9_]+|__wrap__sbrk|__blinker_r4_heap_limit)"
+        r"(?: \[clone [^\]]+\])?"
+    )
+    leaked = []
+    for line in symbols.splitlines():
+        row = re.fullmatch(r"\s*[0-9A-Fa-f]+\s+([A-Za-z?])\s+(.+?)\s*", line)
+        if row and row[1] != "U" and forbidden.fullmatch(row[2]):
+            leaked.append(row[2])
+    if leaked:
+        raise SystemExit("ordinary R4 link retained internal resource candidate: "
+                         + ", ".join(sorted(set(leaked))))
+
+
 def verify_link_closure(
     target: Target, link_map: Path, symbols: str, *, time_enabled: bool | None = None
 ) -> None:
@@ -442,6 +565,10 @@ def verify_link_closure(
         for name in PLATFORMS
         if target.name.startswith(name + "-")
     )
+    if platform == "wio-terminal":
+        verify_wio_qspi_closure(symbols)
+    elif platform == "uno-r4":
+        verify_ordinary_r4_closure(symbols)
     platform_leaks = sorted(
         marker
         for name, marker in (
@@ -576,6 +703,8 @@ def main() -> int:
     if installed_root != expected_root:
         raise SystemExit(f"Blinker was not installed in the empty sketchbook: {installed_root}")
     verify_installed_bytes(archive, installed_root)
+    config = (installed_root / "src/BlinkerV2/arduino/config/OfficialConfig.h").read_text(encoding="utf-8")
+    task_profile = verify_installed_task_profile(config, selected_targets)
 
     for target in selected_targets:
         build = work / "build" / target.name
@@ -604,8 +733,7 @@ def main() -> int:
             raise SystemExit(f"Arduino size summary missing: {target.name}")
         linked_libraries = compiled_libraries(build)
         verify_library_closure(
-            target, linked_libraries,
-            (installed_root / "src/BlinkerV2/arduino/config/OfficialConfig.h").read_text(encoding="utf-8"),
+            target, linked_libraries, config,
         )
         maps = tuple(build.glob("*.map"))
         if len(maps) != 1:
@@ -623,6 +751,8 @@ def main() -> int:
         + ", ".join(target.name for target in selected_targets),
         flush=True,
     )
+    print(task_verification_scope(selected_targets, task_profile), flush=True)
+    print(profile_gated_example_scope(), flush=True)
     print(
         f"installed Arduino ZIP gate completed in "
         f"{time.perf_counter() - gate_started:.1f}s",

@@ -1,0 +1,21 @@
+execute_process(COMMAND "${CMAKE_COMMAND}" --build "${BUILD_DIR}"
+    --config "${CONFIG}" --target "${TARGET}" --parallel 1
+    RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+set(log "${output}\n${error}")
+file(WRITE "${BUILD_DIR}/${TARGET}.expected-failure.log" "${log}")
+if(NOT result MATCHES "^[1-9][0-9]*$")
+    message(FATAL_ERROR "Expected a compiler/linker rejection, got ${result}: ${log}")
+endif()
+if(EXPECT STREQUAL "graph")
+    if(NOT log MATCHES "Wio newlib locking requires the complete internal four-slot task graph")
+        message(FATAL_ERROR "Build failed without the required graph diagnostic: ${log}")
+    endif()
+elseif(EXPECT STREQUAL "anchor")
+    if(NOT log MATCHES "blinker_wio_newlib_lock_anchor" OR
+       NOT log MATCHES "(LNK2019|LNK2001|undefined reference|undefined symbol)")
+        message(FATAL_ERROR "Build failed without an unresolved anchor: ${log}")
+    endif()
+else()
+    message(FATAL_ERROR "Unknown expected failure kind")
+endif()
+message(STATUS "${TARGET}: rejected for the expected ${EXPECT} reason")

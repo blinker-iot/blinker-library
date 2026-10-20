@@ -358,6 +358,67 @@ def strip_comments(text: str) -> str:
     return re.sub(r"//.*", "", text)
 
 
+def wio_task_product_failures(product: str) -> list[str]:
+    """Guard the existing internal profile, not physical/formal admission."""
+    code = strip_comments(product)
+    required = (
+        "BLINKER_INTERNAL_WIO_TASKS != 1", "BLINKER_INTERNAL_WIO_TASK_REGION_RESERVED != 1",
+        "BLINKER_TASK_CAPACITY != 4", "WioTerminalWifiTaskExtension<",
+        "BLINKER_PRODUCT_BLE", "BLINKER_PRODUCT_WIFI_BLE",
+        "BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL", "BLINKER_INTERNAL_LAN_WEBSOCKET",
+        "BLINKER_OFFICIAL_CLOUD_SESSION_TLS", "BLINKER_OFFICIAL_MQTT_TLS",
+        "BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_SMALL",
+        "BLINKER_DEVICE_FRAME_SIZE == 256", "kDeviceKeyMqttPacketBufferSize == 361U",
+        "MQTT_MAX_PACKET_SIZE == kDeviceKeyMqttPacketBufferSize",
+    )
+    return [] if all(token in code for token in required) else [
+        "Wio task product loses explicit four-slot/plain/manual-WiFi admission"
+    ]
+
+
+def wio_allocator_wiring_failures(
+    implementation: str, header: str, source: str, extension: str,
+) -> list[str]:
+    """Check known source wiring only; behavior needs separate Host/SDK proof."""
+    implementation, header, source, extension = map(
+        strip_comments, (implementation, header, source, extension)
+    )
+    failures = []
+    include = "#include <BlinkerV2/arduino/ports/wio_terminal/WioTerminalNewlibLock.inc>"
+    if implementation.count(include) != 1:
+        failures.append("Wio allocator requires its one implementation-unit include")
+    if (header.count('extern "C" void blinker_wio_newlib_lock_anchor();') != 1
+            or extension.count("blinker_wio_newlib_lock_anchor();") != 1
+            or '#include "../../ports/wio_terminal/WioTerminalNewlibLock.h"' not in extension):
+        failures.append("Wio task module loses the strong allocator anchor reference")
+    if not all(token in source for token in (
+        "defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS",
+        "BLINKER_ENABLE_TASKS != 1", "BLINKER_INTERNAL_WIO_TASKS != 1",
+        "BLINKER_TASK_CAPACITY != 4", "BLINKER_INTERNAL_WIO_TASK_REGION_RESERVED != 1",
+        "INCLUDE_xTaskGetSchedulerState != 1 && configUSE_TIMERS != 1",
+    )):
+        failures.append("Wio allocator loses internal four-slot/region/scheduler guards")
+    for name, parameters in (("__malloc_lock", r"struct\s+_reent\s*\*"),
+                             ("__malloc_unlock", r"struct\s+_reent\s*\*"),
+                             ("blinker_wio_newlib_lock_anchor", "")):
+        pattern = r'extern\s+"C"\s+void\s+' + name + r"\s*\(\s*" + parameters + r"\s*\)\s*\{"
+        if len(re.findall(pattern, source)) != 1:
+            failures.append("Wio allocator loses its unique native C hook/anchor definitions")
+    ordered = (
+        "if (__get_IPSR() != 0U) wioAllocatorContextFault();",
+        "const BaseType_t state = xTaskGetSchedulerState();",
+        "if (state == taskSCHEDULER_NOT_STARTED) return false;",
+        "if (state != taskSCHEDULER_RUNNING && state != taskSCHEDULER_SUSPENDED)",
+    )
+    positions = [source.find(token) for token in ordered]
+    if (any(position < 0 for position in positions) or positions != sorted(positions)
+            or "if (wioAllocatorSchedulerStarted()) vTaskSuspendAll();" not in source
+            or "if (wioAllocatorSchedulerStarted()) (void)xTaskResumeAll();" not in source
+            or "[[noreturn]] void wioAllocatorContextFault()" not in source):
+        failures.append("Wio allocator loses cold/IRQ/fault guards or paired scheduler wiring")
+    return failures
+
+
 def ble_packet_boundary_failures(
     port_header: str, port_source: str, frame_header: str,
     frame_source: str, record_source: str, noise_source: str,
@@ -1365,6 +1426,22 @@ def main() -> int:
     r4_ble = strip_comments((PRODUCT_UNO_R4 / "UnoR4BLEPlatform.h").read_text(encoding="utf-8"))
     if "RenesasUnoModemClient<" not in r4_wifi or "RenesasUnoModemBleLink<" not in r4_ble:
         failures.append("R4 native network/HCI bypasses the shared modem owner")
+    r4_product = strip_comments((PRODUCT_UNO_R4 / "UnoR4WiFiProduct.h").read_text(encoding="utf-8"))
+    r4_task_contract = strip_comments((r4_port / "UnoR4TaskBuildContract.h").read_text(encoding="utf-8"))
+    if not all(token in r4_product for token in (
+        '"../../ports/uno_r4/UnoR4TaskBuildContract.h"',
+        "official_detail::renesasUnoTaskBuildReady()", "if (!ready) return ready;",
+        "RenesasUnoWifiTaskExtension<",
+    )) or not all(token in r4_task_contract for token in (
+        "BLINKER_INTERNAL_UNO_R4_TASKS != 1", "BLINKER_TASK_CAPACITY != 4",
+        "BLINKER_INTERNAL_LAN_WEBSOCKET", "BLINKER_OFFICIAL_CLOUD_SESSION_TLS",
+        "BLINKER_OFFICIAL_MQTT_TLS", "BLINKER_DEVICE_FRAME_SIZE != 256",
+        "MQTT_MAX_PACKET_SIZE != 361", "BLINKER_INTERNAL_R4_HEAP_BOUNDARY != 1",
+        'extern "C" bool blinker_r4_rpc_faulted();',
+        'extern "C" void* __wrap__sbrk(ptrdiff_t increment);',
+        "if (blinker_r4_rpc_faulted())", "if (__wrap__sbrk(0)",
+    )):
+        failures.append("R4 task product loses protected four-slot/plain/manual-WiFi build admission")
     r4_probe = strip_comments((REPOSITORY / "tests" / "internal" / "arduino" /
                               "UnoR4TaskStorageProbe" / "UnoR4TaskStorageProbe.ino").read_text(encoding="utf-8"))
     if "modem.timeout(" in r4_probe or "RenesasUnoModemOwner::Operation" not in r4_probe:
@@ -1390,11 +1467,19 @@ def main() -> int:
         failures.append("Wio optional task view loses region/page/fault guards or duplicates execution")
     wio_product = strip_comments((ARDUINO_ROOT / "platform" / "wio_terminal" /
                                  "WioTerminalWiFiProduct.h").read_text(encoding="utf-8"))
-    if not all(token in wio_product for token in (
-        "BLINKER_INTERNAL_WIO_TASKS", "BLINKER_INTERNAL_WIO_TASK_REGION_RESERVED",
-        "BLINKER_TASK_CAPACITY != 4", "WioTerminalWifiTaskExtension<",
-    )):
-        failures.append("Wio task product loses explicit four-slot/profile admission")
+    failures.extend(wio_task_product_failures(wio_product))
+    wio_allocator_include = "BlinkerV2/arduino/ports/wio_terminal/WioTerminalNewlibLock.inc"
+    allocator_consumers = [path for path in source_files(SOURCE_ROOT)
+                           if re.search(r'#\s*include\s*[<"]' + re.escape(wio_allocator_include) + r'[>"]',
+                                        strip_comments(path.read_text(encoding="utf-8")))]
+    if allocator_consumers != [IMPLEMENTATION_ROOT / "BlinkerWioTerminal.cpp"]:
+        failures.append("Wio allocator implementation must remain in its unique platform TU")
+    failures.extend(wio_allocator_wiring_failures(
+        (IMPLEMENTATION_ROOT / "BlinkerWioTerminal.cpp").read_text(encoding="utf-8"),
+        (wio_port / "WioTerminalNewlibLock.h").read_text(encoding="utf-8"),
+        (wio_port / "WioTerminalNewlibLock.inc").read_text(encoding="utf-8"),
+        (PRODUCT_WIO_TERMINAL / "WioTerminalWiFiTaskExtension.h").read_text(encoding="utf-8"),
+    ))
 
     wio_gate_dir = REPOSITORY / "tests" / "internal" / "arduino" / "PlatformStorageBackupGate"
     wio_raw_gate = strip_comments((wio_gate_dir / "WioRawQspi.h").read_text(encoding="utf-8"))

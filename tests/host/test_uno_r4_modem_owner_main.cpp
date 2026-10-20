@@ -303,10 +303,10 @@ void testClientAdmissionAndNativeReentry() {
     CHECK(owner.networkAllowed());
     CHECK(bleLink.marker == 73U);
     assertBleApisForwarded(bleLink);
-    CHECK(first.connect(IPAddress(1U), 1883U) == 1 && first.calls == 4U);
-    CHECK(first.write(static_cast<uint8_t>(1U)) == 1U && first.calls == 6U);
-    CHECK(first.read() == 42 && first.calls == 8U);
-    CHECK(first.connected() == 1U && first.calls == 10U);
+    CHECK(first.connect(IPAddress(1U), 1883U) == 1 && first.calls == 3U);
+    CHECK(first.write(static_cast<uint8_t>(1U)) == 1U && first.calls == 5U);
+    CHECK(first.read() == 42 && first.calls == 7U);
+    CHECK(first.connected() == 1U && first.calls == 9U);
     int token = 0;
     CHECK(owner.claimNamespace(&token));
     {

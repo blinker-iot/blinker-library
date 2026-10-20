@@ -80,6 +80,7 @@ struct Flash : IAtomicBlobStore {
     Bytes bytes;
     unsigned writes = 0U, loads = 0U;
     bool fail = false;
+    ErrorCode failureCode = ErrorCode::InternalError;
     std::function<void()> hook;
     Result load(MutableByteSpan output, size_t& written) override {
         ++loads; written = 0U;
@@ -90,7 +91,7 @@ struct Flash : IAtomicBlobStore {
     Result replace(ByteView value) override {
         ++writes; bytes.assign(value.data, value.data + value.size);
         if (hook) hook();
-        return fail ? Result::failure(ErrorCode::InternalError) : Result::success();
+        return fail ? Result::failure(failureCode) : Result::success();
     }
     Result clear() override { bytes.clear(); return Result::success(); }
     StorageProtection protection() const override { return StorageProtection::PlainFlash; }
@@ -237,6 +238,31 @@ void testAuthenticatedRejection() {
         CHECK(!bad.commit(challenge, out));
         CHECK(out.kind != TaskManagementResultKind::Rejected && out.rejection == TaskMutationRejection::None);
         CHECK(bad.flash.writes == (fault == 2U ? 2U : 1U));
+    }
+}
+
+void testReturnedStorageFailureSessionContract() {
+    // Returned failures only, not allocator fault injection or MCU OOM recovery.
+    // This provider deliberately persists BEFORE reporting each failure code.
+    for (const auto code : {ErrorCode::WouldBlock, ErrorCode::StateConflict,
+                            ErrorCode::BufferTooSmall, ErrorCode::InternalError}) {
+        Fixture f; f.initialize();
+        TaskManagementChallenge challenge, completed;
+        CHECK(f.session.prepareMutation(channel, f.create(), challenge));
+        const Bytes grant = f.verifier.sign(challenge);
+        f.flash.fail = true; f.flash.failureCode = code;
+        TaskManagementResult out;
+        CHECK(f.session.commit(channel, ByteView(grant.data(), grant.size()), out, &completed).code() == code);
+        CHECK(f.store.failed() && f.engine.state() == TaskEngineState::Fault);
+        CHECK(out.kind != TaskManagementResultKind::Rejected && out.rejection == TaskMutationRejection::None);
+        CHECK(out.tableRevision == 0U && out.count == 0U && !completed.authority.valid());
+        CHECK(!f.session.pending() && f.flash.writes == 2U && f.target.applied == 0U);
+        const unsigned writes = f.flash.writes, loads = f.flash.loads, verified = f.verifier.calls;
+        // A generic returned code cannot certify a write-before rejection or
+        // authorize consuming the same Grant again to hide the unknown result.
+        CHECK(!f.session.commit(channel, ByteView(grant.data(), grant.size()), out, &completed));
+        CHECK(f.flash.writes == writes && f.flash.loads == loads && f.verifier.calls == verified);
+        CHECK(f.target.applied == 0U && !completed.authority.valid());
     }
 }
 
@@ -642,6 +668,28 @@ struct WireFixture : Fixture {
         CHECK(verified.kind == TaskManagementResultKind::Authority);
     }
 };
+
+void testReturnedStorageFailureWireContract() {
+    for (const auto code : {ErrorCode::WouldBlock, ErrorCode::StateConflict,
+                            ErrorCode::BufferTooSmall, ErrorCode::InternalError}) {
+        WireFixture f; f.initializeWire();
+        uint8_t bytes[kTaskMutationPrepareMaxSize]; ByteView encoded;
+        CHECK(encodeTaskMutationPrepare(f.create(), MutableByteSpan(bytes, sizeof(bytes)), encoded));
+        const auto pending = f.prepare(TaskCommand::Mutation, encoded);
+        const Bytes grant = f.verifier.sign(pending);
+        f.flash.fail = true; f.flash.failureCode = code;
+        const unsigned keyLoads = f.key.loads, loads = f.flash.loads;
+        CHECK(f.call(TaskCommand::Commit, ByteView(grant.data(), grant.size())).code() == code);
+        CHECK(f.response.empty() && !f.session.pending());
+        CHECK(f.store.failed() && f.engine.state() == TaskEngineState::Fault);
+        CHECK(f.flash.writes == 2U && f.flash.loads == loads && f.target.applied == 0U);
+        CHECK(f.key.loads == keyLoads); // No successful result HMAC is produced.
+        const unsigned verified = f.verifier.calls;
+        CHECK(!f.call(TaskCommand::Commit, ByteView(grant.data(), grant.size())) && f.response.empty());
+        CHECK(f.flash.writes == 2U && f.flash.loads == loads && f.verifier.calls == verified);
+        CHECK(f.key.loads == keyLoads && f.target.applied == 0U);
+    }
+}
 
 void testRetirementSession() {
     {
@@ -1256,6 +1304,8 @@ void testRealCloudDispatch() {
 
 int main() {
     testAuthenticatedRejection();
+    testReturnedStorageFailureSessionContract();
+    testReturnedStorageFailureWireContract();
     testTargetCatalog();
     testRetirementSession(); testRetirementCloudDispatch(false); testRetirementCloudDispatch(true);
     testCrossRootRetirement(); testCrossRootRetirementFailures();

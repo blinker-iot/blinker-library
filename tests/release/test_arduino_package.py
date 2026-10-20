@@ -17,6 +17,7 @@ import build_arduino_release as release
 import verify_installed_release as gate
 import verify_esp32_ble_sdk as ble_sdk
 import check_device_v2 as architecture
+from arduino_release_profile import parse_profile, render_config, TASK_PILOT_ID
 
 
 class PackageBoundary(unittest.TestCase):
@@ -91,6 +92,9 @@ class PackageBoundary(unittest.TestCase):
         properties, files = release.validate()
         self.assertTrue(any(p.name == 'BlinkerEsp32LocalWebSocket.cpp' for p in files))
         self.assertFalse(any(p.relative_to(REPOSITORY).parts[0] in ('docs', 'tests', 'tools', 'build') for p in files))
+        reference = {'examples/R4TasksQuickStart/' + name for name in
+                     ('R4TasksQuickStart.ino', 'UserCredentials.h', 'README.md')}
+        self.assertTrue(reference <= {p.relative_to(REPOSITORY).as_posix() for p in files})
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             release.stage(root / 'stage', files)
@@ -98,6 +102,46 @@ class PackageBoundary(unittest.TestCase):
             b = release.archive(root / 'stage', root / 'b', properties)
             self.assertEqual(a.read_bytes(), b.read_bytes())
             gate.verify_installed_bytes(a, root / 'stage')
+            with zipfile.ZipFile(a) as bundle:
+                self.assertTrue({f"{properties['name']}-{properties['version']}/" + name
+                                 for name in reference} <= set(bundle.namelist()))
+
+    def test_r4_task_reference_never_publishes_rendered_or_extra_credentials(self):
+        _, files = release.validate()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            release.stage(root, files)
+            header = root / 'examples/R4TasksQuickStart/UserCredentials.h'
+            original = header.read_text(encoding='utf-8')
+            with patch.object(release, 'REPOSITORY', root):
+                for placeholder in release.R4_TASK_CREDENTIALS.values():
+                    header.write_text(original.replace(placeholder, 'PRIVATE_RENDERED_VALUE'), encoding='utf-8')
+                    with self.subTest(placeholder=placeholder), self.assertRaisesRegex(ValueError, 'three public placeholders'):
+                        release.validate()
+                header.write_text(original + '#define EXTRA_PRIVATE_INPUT "hidden"\n', encoding='utf-8')
+                with self.assertRaisesRegex(ValueError, 'three public placeholders'):
+                    release.validate()
+                header.write_text(original, encoding='utf-8')
+                for path in (header, header.parent / 'README.md'):
+                    content = path.read_bytes()
+                    path.unlink()
+                    with self.subTest(missing=path.name), self.assertRaisesRegex(ValueError, 'placeholder credentials'):
+                        release.validate()
+                    path.write_bytes(content)
+
+    def test_only_the_explicit_r4_reference_readme_enters_the_library(self):
+        _, files = release.validate()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            release.stage(root, files)
+            with patch.object(release, 'REPOSITORY', root):
+                for relative in ('src/private-notes.md', 'examples/R4TasksQuickStart/private-notes.md',
+                                 'examples/WiFiQuickStart/README.md'):
+                    path = root / relative
+                    path.write_text('not a published reference', encoding='utf-8')
+                    with self.subTest(relative=relative), self.assertRaisesRegex(ValueError, 'non-portable release file'):
+                        release.validate()
+                    path.unlink()
 
     def test_build_artifacts_cannot_enter_public_source_or_examples(self):
         _, files = release.validate()
@@ -208,6 +252,53 @@ class InstalledBoundary(unittest.TestCase):
                 with self.assertRaisesRegex(SystemExit, 'optional business time link mismatch'):
                     gate.verify_time_closure(''.join(m for m in markers if m != marker), enabled=True)
 
+    def test_ordinary_r4_native_wifi_and_ble_do_not_require_internal_overlay(self):
+        link_map = self.root / 'r4.map'
+        link_map.write_text('BlinkerDeviceV2.a(BlinkerApi.cpp.o)\nBlinkerDeviceV2.a(BlinkerTransport.cpp.o)\n')
+        native = ('00001000 T ModemClass::write()\n'
+                  '00002000 T UART::write(unsigned char)\n'
+                  '20007b00 A __HeapLimit\n00003000 T _sbrk\n')
+        for name, required in (('uno-r4-wifi', 'blinker::MqttFrameTransport::poll()'),
+                               ('uno-r4-ble', 'blinker::BleFrameTransport::poll()')):
+            with self.subTest(name=name):
+                target = next(t for t in gate.TARGETS if t.name == name)
+                gate.verify_link_closure(target, link_map, native + '00004000 T ' + required + '\n')
+
+    def test_ordinary_r4_wifi_and_ble_reject_linked_internal_candidate(self):
+        link_map = self.root / 'r4.map'
+        link_map.write_text('BlinkerDeviceV2.a(BlinkerApi.cpp.o)\nBlinkerDeviceV2.a(BlinkerTransport.cpp.o)\n')
+        leaked = ('00001000 T blinker_r4_rpc_active',
+                  '00001000 t blinker_r4_rpc_fail_stop',
+                  '00001000 T blinker_r4_rpc_fault [clone .constprop.0]',
+                  '00002000 T __wrap__sbrk',
+                  '20006700 u __blinker_r4_heap_limit',
+                  '20006700 A __blinker_r4_heap_limit')
+        for name, required in (('uno-r4-wifi', 'blinker::MqttFrameTransport::poll()'),
+                               ('uno-r4-ble', 'blinker::BleFrameTransport::poll()')):
+            target = next(t for t in gate.TARGETS if t.name == name)
+            for symbol in leaked:
+                with self.subTest(name=name, symbol=symbol):
+                    with self.assertRaisesRegex(SystemExit, 'ordinary R4 link retained internal'):
+                        gate.verify_link_closure(target, link_map,
+                                                '00004000 T ' + required + '\n' + symbol + '\n')
+
+    def test_r4_candidate_guard_matches_defined_names_not_substrings(self):
+        gate.verify_ordinary_r4_closure(
+            'UnoR4ModemRpcBoundary.h\n'
+            '00001000 T unrelated_blinker_r4_rpc_active\n'
+            '00002000 T __wrap__sbrk_diagnostic\n'
+            '00003000 T blinker::diagnostic(__blinker_r4_heap_limit)\n'
+            '         U blinker_r4_rpc_active\n')
+        # The guard is platform-specific; the existing ESP32 task target and
+        # its installed profile/graph checks remain unchanged.
+        link_map = self.root / 'esp32-task.map'
+        link_map.write_text('BlinkerDeviceV2.a(BlinkerApi.cpp.o)\nBlinkerDeviceV2.a(BlinkerTransport.cpp.o)\n')
+        symbols = ('blinker::MqttFrameTransport::blinker::TimeSyncService::'
+                   'blinker::TimeSyncCoordinator::blinker::WallClock::'
+                   'blinker::TaskEngine::blinker::TaskManagementSession::'
+                   'blinker::TaskPropertyTarget::\n00002000 T __wrap__sbrk\n')
+        gate.verify_link_closure(gate.TASK_PILOT_TARGET, link_map, symbols)
+
     def test_cloud_smoke_requires_the_time_it_explicitly_enables(self):
         link_map = self.root / 'smoke.map'
         link_map.write_text('BlinkerDeviceV2.a(BlinkerApi.cpp.o)\nBlinkerDeviceV2.a(BlinkerTransport.cpp.o)\n')
@@ -239,6 +330,66 @@ class InstalledBoundary(unittest.TestCase):
         self.assertIn('#include <Blinker.h>', source)
         self.assertIn('Blinker.enableTasks(power)', source)
         self.assertNotIn('official_detail', source)
+
+    def task_config(self):
+        payload = json.loads((REPOSITORY / 'tests/release/development_profile.json').read_text())
+        payload['task_profile'] = TASK_PILOT_ID
+        return render_config(parse_profile(payload))
+
+    def test_explicit_task_target_requires_installed_task_profile(self):
+        targets = gate.select_targets(['esp32-wifi-tasks'])
+        payload = json.loads((REPOSITORY / 'tests/release/development_profile.json').read_text())
+        ordinary = render_config(parse_profile(payload))
+        self.assertIsNone(gate.verify_installed_task_profile(ordinary, gate.select_targets(None)))
+        with self.assertRaisesRegex(SystemExit, 'requires the installed ESP32'):
+            gate.verify_installed_task_profile(ordinary, targets)
+        self.assertEqual(gate.verify_installed_task_profile(self.task_config(), targets), TASK_PILOT_ID)
+
+    def test_installed_task_policy_rejects_partial_changed_or_wrong_channel(self):
+        config = self.task_config()
+        for changed in (
+            config.replace('#define BLINKER_TASK_CAPACITY 4U\n', ''),
+            config.replace('BLINKER_TASK_MAX_COMMIT_MS 100U', 'BLINKER_TASK_MAX_COMMIT_MS 1000U'),
+            config.replace('releaseChannel[] = "development"', 'releaseChannel[] = "production"'),
+            config + '#define BLINKER_TASK_CAPACITY 4U\n',
+            config.replace('BLINKER_TASK_CAPACITY 4U', 'BLINKER_TASK_CAPACITY OTHER_PROFILE'),
+        ):
+            with self.subTest(changed=changed), self.assertRaisesRegex(SystemExit, 'not the supported development profile'):
+                gate.verify_installed_task_profile(changed, gate.select_targets(None))
+        for name in ('uno-r4-wifi', 'wio-terminal-wifi'):
+            ordinary = next(t for t in gate.TARGETS if t.name == name)
+            task = gate.Target(ordinary.name, ordinary.fqbn, ordinary.example, ordinary.libraries, tasks_enabled=True)
+            with self.subTest(name=name), self.assertRaisesRegex(SystemExit, 'requires the installed ESP32'):
+                gate.verify_installed_task_profile(config, (task,))
+
+    def test_task_scope_report_distinguishes_ordinary_and_verified_task_targets(self):
+        ordinary = gate.select_targets(None)
+        config = self.task_config()
+        profile = gate.verify_installed_task_profile(config, ordinary)
+        self.assertEqual(profile, TASK_PILOT_ID)  # Identified, not compile/link verified.
+        self.assertIn('task targets not verified: none selected', gate.task_verification_scope(ordinary, profile))
+        tasks = gate.select_targets(['esp32-wifi-tasks'])
+        profile = gate.verify_installed_task_profile(config, tasks)
+        report = gate.task_verification_scope(tasks, profile)
+        self.assertIn('task compile/link target verified: esp32-wifi-tasks', report)
+        for selected, selected_profile in ((ordinary, None), (ordinary, profile), (tasks, profile)):
+            report = gate.task_verification_scope(selected, selected_profile)
+            self.assertIn('ordinary installed R4/Wio task targets not verified by this gate', report)
+            self.assertIn('separately admitted fixed R4 Plain candidate is outside this matrix', report)
+            self.assertNotIn('R4/Wio tasks not admitted', report)
+
+    def test_profile_gated_r4_reference_does_not_expand_the_seven_target_matrix(self):
+        self.assertEqual(len(gate.TARGETS), 7)
+        self.assertEqual(gate.PROFILE_GATED_EXAMPLES, ('R4TasksQuickStart',))
+        self.assertTrue(set(gate.PROFILE_GATED_EXAMPLES) <= set(release.PUBLIC_EXAMPLES))
+        self.assertTrue(set(gate.PROFILE_GATED_EXAMPLES).isdisjoint(t.example for t in gate.TARGETS))
+        self.assertTrue(all(not t.tasks_enabled for t in gate.TARGETS))
+        with self.assertRaises(ValueError):
+            gate.select_targets(['uno-r4-wifi-tasks'])
+        report = gate.profile_gated_example_scope()
+        self.assertIn('R4TasksQuickStart', report)
+        self.assertIn('not compiled by the ordinary installed matrix', report)
+        self.assertIn('isolated R4 Core/Modem/heap build profile', report)
 
     def test_task_link_closure_rejects_missing_graph_and_default_leak(self):
         link_map = self.root / 'task.map'

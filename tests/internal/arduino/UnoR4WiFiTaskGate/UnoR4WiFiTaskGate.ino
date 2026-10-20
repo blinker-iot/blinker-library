@@ -41,6 +41,15 @@ void observe() {
     number("mallocCalls", value.mallocCalls); number("reallocCalls", value.reallocCalls);
     number("freeCalls", value.freeCalls); number("allocationSamples", value.samples);
     number("invalidBreakSamples", value.invalidBreakSamples);
+    number("heapBoundarySamples", value.heapSamples); number("invalidHeapSamples", value.invalidHeapSamples);
+    number("nestedAllocatorSamples", value.nestedSamples);
+    number("handlerBoundarySamples", value.handlerSamples); number("threadPspSamples", value.threadPspSamples);
+    number("maximumObservedHeapUsed", value.maximumObservedHeapUsed);
+    number("maximumObservedHeapArena", value.maximumObservedHeapArena);
+    number("maximumObservedHeapBreak", value.maximumObservedHeapBreak);
+    number("minimumObservedThreadMsp", value.minimumMsp);
+    if (value.handlerSamples != 0U) number("minimumObservedHandlerMsp", value.minimumHandlerMsp);
+    Serial.print(",\"fullStackPeakMeasured\":false,\"fullHeapPeakMeasured\":false,\"irqPeakMeasured\":false");
     Serial.print(",\"minimumAllocationGap\":"); Serial.print(value.minimumGap);
     Serial.print(",\"minimumSignatureEntryGap\":"); Serial.print(minimumSignatureEntryGap);
     number("heapUsed", heap.uordblks); number("heapFree", heap.fordblks); number("heapArena", heap.arena);
@@ -67,7 +76,8 @@ extern "C" bool __real__ZN7Ed255196verifyEPKhS1_PKvj(const uint8_t*, const uint8
 extern "C" bool __wrap__ZN7Ed255196verifyEPKhS1_PKvj(
     const uint8_t* signature, const uint8_t* key, const void* message, unsigned size) {
     task_probe::sampleAllocationBoundary();
-    const uintptr_t heapBreak = reinterpret_cast<uintptr_t>(_sbrk(0));
+    const uintptr_t heapBreak = task_probe::observing && __get_IPSR() == 0U && (__get_CONTROL() & 2U) == 0U
+        ? reinterpret_cast<uintptr_t>(_sbrk(0)) : 0U;
     if (heapBreak != 0U && heapBreak != UINTPTR_MAX) {
         const int32_t gap = static_cast<int32_t>(task_probe::currentMsp() - heapBreak);
         if (gap < minimumSignatureEntryGap) minimumSignatureEntryGap = gap;

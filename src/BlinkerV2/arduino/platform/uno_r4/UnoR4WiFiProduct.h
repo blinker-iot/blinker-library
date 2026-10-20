@@ -12,12 +12,7 @@
 #include <BlinkerV2/api/TaskSupport.h>
 #include "../../config/TaskConfig.h"
 #if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
-#if !defined(BLINKER_INTERNAL_UNO_R4_TASKS) || !BLINKER_INTERNAL_UNO_R4_TASKS
-#error "UNO R4 tasks require internal storage and signing-profile admission"
-#endif
-#if defined(BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL) && BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL
-#error "Task pilot admits manual WiFi only; combined LAN/control profile is not yet admitted"
-#endif
+#include "../../ports/uno_r4/UnoR4TaskBuildContract.h"
 #include "UnoR4WiFiTaskExtension.h"
 #endif
 
@@ -45,6 +40,8 @@ template <>
 struct TaskSupport<WifiDeviceKeyProfile> {
     template <typename... T>
     static Result configure(Property<T>&... properties) {
+        const Result ready = official_detail::renesasUnoTaskBuildReady();
+        if (!ready) return ready;
         return official_detail::renesasUnoWifiProduct().extension().configure(properties...);
     }
 };

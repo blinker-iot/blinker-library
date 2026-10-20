@@ -1,4 +1,11 @@
-# DeviceKey cloud-login freeze v45 (2026-10-14; reviewed internal Wio task admission)
+# DeviceKey cloud-login freeze v48 (2026-10-17; R4 release/profile binding guard)
+# Only the task build contract gains the required maintained-library binding.
+# Existing SDK fault/heap entries, disabled graph, shared Facade and all other
+# DeviceKey/login/session/MQTT implementation digests remain unchanged.
+# Previous v46 (2026-10-16; reviewed R4 task candidate bounds)
+# Only task-enabled R4 guards tighten to four-slot plain manual WiFi. The
+# ordinary task-disabled graph, DeviceKey/login/session and MQTT stay unchanged.
+# Previous v45 (2026-10-14; reviewed internal Wio task admission)
 # Only the Facade platform guard adds the opt-in internal Wio task candidate.
 # Shared class layout, defaults, APIs, login/session and MQTT remain unchanged.
 # Previous v44 (2026-10-14; reviewed stable multi-TU facade)
@@ -77,5 +84,6 @@ f0cfe0fcc6832216a3a5302cd164b886508ddf37af8e270828aba5604b059abf  src/BlinkerV2/
 d99a25cdada22ebe933acb40286ea06da82492207ff2f5a04786d4fec040052f  src/BlinkerV2/arduino/ports/esp32/Esp32WiFiProv.ipp
 fe91b8c62dafe51965cdf977c3961bdbcb9dac884f923a67a2b16f6398ac0a36  src/BlinkerV2/arduino/platform/esp32/Esp32WiFiProduct.h
 adef23aab205e127d98920a526c6c4cd45a3d78341663a190fba6490a4c26e39  src/BlinkerV2/arduino/platform/esp32/Esp32WiFiBLEProduct.h
-50f3512dd962f0508dd4470be206e296d43ae47d399789ce777c67d475a63515  src/BlinkerV2/arduino/platform/uno_r4/UnoR4WiFiProduct.h
+cf61b235ac4464c7fac9446523da0f3c831802032cbb58c5cc6bbd0948668dfb  src/BlinkerV2/arduino/platform/uno_r4/UnoR4WiFiProduct.h
+00e0683f7f375ff31060feff62111b04c38502251834bfe182125cb00358db56  src/BlinkerV2/arduino/ports/uno_r4/UnoR4TaskBuildContract.h
 6f2f7e75f56826eeaf7df8fc171886d751055058ef3c460e2ee57138b08742a3  tests/golden/device_key_session_golden_vectors.properties
