@@ -1,6 +1,28 @@
 # Device V2：核心稳定版进度与后续执行计划
 
-> 当前 R4 收口（2026-10-19，[§11.58](DEVICE_V2_TASK_AND_SKETCH_TIMER_EXECUTION_PLAN.md#1158-有限支持收口后的剩余范围与文档对齐)）：**R4固定四槽Plain的核心接入闭环已关闭，本批六份文档及窄回归入口对齐完成。** 独立文档审阅、新增链接／命令文件检查及无关修改保护通过，不重复功能门禁。§11.52任务保存／Start／执行、§11.54安装、§11.56发布匹配及§11.57新产物短验／恢复各自有效，不互相冒充同一产物，也不再自动重测。普通库默认0槽；GUI／公开分发／新产品组合仍后置，Wio暂停、Error8独立待定位。本批未改运行或测试源码、未部署／刷板／重开资源审计，不扩槽／升级SDK，未提交推送。下方带日期的“当前结果”等内容保留历史口径，不是自动执行清单。
+> D4续批核对与网络恢复（2026-10-21）：**限定验收无新增未完成核心项，不重复已过闭环。** COM11恢复枚举后核为原四槽候选，但原WiFi不通；用户确认mostfun2026后，仅重编1个Sketch、复用原SDK及93单元，保持原D4冻结产物。新应用区写入并逐字验证，现有20 KiB NVS与4 KiB分区在启动前精确保持；未备份整片或回灌旧空Flash。随后设备授时／Cloud Active，真实App仅3笔全新Catalog／Read取得fresh／verified，仍容量4／tableRevision3／task1 Completed／startSequence1，原定义、TaskStore和scope直接续用；无Initialize、保存、启停或Start。离页5秒无任务HTTP，账号／原两journal及授权保留，专属连接回收。未部署或提交推送；[剩余范围和执行决定](DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#d4-后续核对与剩余范围2026-10-21)已分开记录，公开0槽及其他平台／后置功能不计作本次D4欠验项。
+
+> 当前收口（2026-10-20）：**[D4：现有COM11的ESP32云端四槽TLS短验已通过](DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#d4-esp32云端四槽任务最小准入与部署差异2026-10-20)。** 真实P256算法2／keyId1及公钥匹配、双侧唯一ID、原SDK3.3.11四槽TLS完整链接、匹配beta安装与同镜像服务／精确入口均完成。真实App初始化后新鲜0/4、保存停用10秒任务、启用及唯一Start，设备到期回调0→1／State revision2=true，App新鲜读回完成；原控制唯一ACK200及State revision3=false／回调1→2也通过。Task请求／attempt各6均verified、UNKNOWN0，App两journal均0，原账号／两设备记录及完整日志保留。
+>
+> **不自动派发新一轮核对或重复任务矩阵。** 当前COM11保留匹配四槽固件＋TaskStore＋active云scope及一条已完成、不会自动重启的倒计时；未恢复旧空Flash，未创建／删除设备或刷新Key。云端保持tasks＋automation显式接线，普通公开Arduino profile仍0槽；只有此ID获本次有限准入，不扩大为全部ESP32、R4四槽TLS或Wio支持。没有新增整包备份、扩槽／升级SDK或Git写入；下一步仅按真实缺陷与独立功能验收安排，不把已完成核心又排成“待实现”。
+>
+> 已完成主线不重新排队：**[D3a～D3c新云端最小自动化已收口](DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#d3c-两设备云端自动化与恢复收口2026-10-20)**，真实App后台State变化取得唯一execution／Command、ACK及目标新鲜State，规则已正常停用／删除，两板原固件／授权恢复。D1云接入、H2a／D2b历史短验仍有效；原后台trace间隙、UNKNOWN及完整日志保留。下方日期批次为历史证据，当前执行只取以上入口，不重跑M5／N5、H2、BLE或断电矩阵。
+
+> 周期与离页保护（2026-10-20，[H2 §9～§9.1](DEVICE_V2_H2_ONLINE_HISTORY_EXECUTION_PLAN.md#91-退出实时页后的保护合同)）：60秒是Broker H2a归档节拍，不是设备全局上报限制。同批多字段一包，页面需求可共享1秒上游；离页／后台立即停续租并尽力Close，最后观看者消失则仅归档60秒或完全停此采样流。App／设备各30秒租约与Broker断连／5秒清扫兜底，异常双丢不能宣传“退出后统一30秒硬停”。本批仅补双观看者自然到期／降频／迟到包不复活回归，归档测试32/32，生产链和普通State／ACK不改，不新增真机故障循环。
+
+> 最新收口（2026-10-20，[D1d](DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#d1d-精确公开页面配置与-d1-收口2026-10-20)）：**已修正普通 `/console`、`/ui-config` 的Nginx精确白名单漏项**；Gateway实际handlers和原ACL／CAS保持，不改App或重建镜像／迁移。新鲜配置／PG／SQLite／完整日志备份后，单文件语法验证和平滑加载通过；3项路由回归、13项公网边界检查及同一生产beta的真实只读页面／后台回收通过。两接口GET200、配置错误消失，后台／离页各10秒不续读、前台恢复；原账号／全部journals／原两包保持、完整native与日志保全、forward和SSH回收。全Docker容器／镜像／env／启动时间不变，已检查的关闭路径仍404；不隐藏D1c原始失败。设备未动，不重跑控制／H2／BLE／断电、不扩槽／升级SDK或提交推送。
+
+> 前批控制证据（2026-10-20，[D1c](DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#d1c-匹配-beta-与公开-profile-的有限运行差异2026-10-20)）：公开profile／原SDK3.3.11的XIAO新候选、同一beta唯一真实控制ACK247ms、新鲜State234ms／revision1→2已核；COM11原完整8MiB／授权精确恢复并独立整片验证。D1d只修当时保留的页面配置公开缺口，不将只读页面误称硬件控制重测；D1a～D1d证据分层保留。
+
+> 构建来源（2026-10-20，[D1b](DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#d1b-两目标与匹配-beta-的唯一构建2026-10-20已完成)）：原Core3.3.11两目标隔离编译、单库443项、beta原Node22.22.3／pnpm11.19.0／SDK36／JDK21／Gradle8.14.3及原签名均通过。APK `ead0d442…f84332d4`、HTTPS／禁明文、19注册类／20原生工程及1150项Web资产来源已核；D1c未重建APK或重复两目标矩阵。D1b当时仅构建的范围保持，后续安装／真机证据以上节D1c为准。
+
+> 当前主线（2026-10-20）：[独立云端内测部署与 H2 续验](DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md)。**C1～C6受限云端部署、新设备接入及H2剩余短验已通过，COM11恢复收尾完成。** 统一当前测试Auth（含Blockly用户）、原单一共享Broker；原Pro资格、设备ACL／配额及Key保护保持，不自动互通正式Auth。真实邮件重新登录、正常App创建／reveal新Key、原SDK3.3.11唯一完整链接、HTTPS DeviceKey／MQTTS／App Cloud控制ACK及新鲜State均通过。H2真实60s同值样本、仅目标板90s离线期间不补点、恢复新段及曲线断段、正常停用后77.829s记录不增长已核；前三条历史及停用策略保留。COM11从本批新鲜备份精确恢复完整8MiB及授权，独立ROM全量验证并恢复运行；不声称恢复后原业务云在线也已复验。App当前真实登录、原任务／自动化journals及完整请求日志保全，离页scope／BLE连接均0，本批专属调试连接已回收；共享Broker未重启或重建、其他板未操作，服务配置保持。
+>
+> 后续有限收尾（2026-10-20）：[Key提示与发码生命周期](DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#c6-后续key-提示与发码生命周期2026-10-20)源码及128项有限回归已通过；**[匹配beta安装与只读Key短差异](DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#c6-匹配-beta-安装与只读-key-提示短验2026-10-20)也已完成**。仅6项生产输入派生、原依赖／SDK／签名／19类注册表保持，新APK `8d6b001d…33ad71c4`安装读回一致。一次正常settings查看Key取得真实403和重新登录提示，无owner误报、Key保持掩码；原trace只读协调证明5s窗内无Key／认证重试。额外通知注册POST属于原独立链，响应未捕获仍未知，不把它称为重放或已成功，也不宣称零其他POST；没有第二次点击。前后App原账号／journals／设备凭据上下文及原两包保持，完整日志保全、首页scope／BLE为0、专属forward回收；新版beta保留，不刷板／发码／创建或刷新Key，不重复H2或已过软件矩阵，未提交推送。
+>
+> 剩余边界：现场单次发码倒计时未显示的根因仍待自然登录机会核对，不为此重复发码；通知链本批不扩适配。[H2 §8](DEVICE_V2_H2_ONLINE_HISTORY_EXECUTION_PLAN.md#8-h2a-4部分真机证据现场中断与有限续批)旧本机策略最后已知enabled／revision1，待原环境可用再正常owner只读协调并停用，不迁移或重放UNKNOWN，本批不操作Docker。当前云端策略disabled／revision2及三条历史保留，COM11原身份恢复后的云端测试设备离线符合预期。受限内测不等于生产发行／同事签收，MCU证书有效期检查边界、Wio暂缓及Error8待定位保持；不自动派发新功能、扩槽、升级SDK、离线存储／Bulk或R4§11.58重测。
+
+> 前序 R4 收口（2026-10-19，[§11.58](DEVICE_V2_TASK_AND_SKETCH_TIMER_EXECUTION_PLAN.md#1158-有限支持收口后的剩余范围与文档对齐)）：**R4固定四槽Plain的核心接入闭环已关闭，本批六份文档及窄回归入口对齐完成。** 独立文档审阅、新增链接／命令文件检查及无关修改保护通过，不重复功能门禁。§11.52任务保存／Start／执行、§11.54安装、§11.56发布匹配及§11.57新产物短验／恢复各自有效，不互相冒充同一产物，也不再自动重测。普通库默认0槽；GUI／公开分发／新产品组合仍后置，Wio暂停、Error8独立待定位。本批未改运行或测试源码、未部署／刷板／重开资源审计，不扩槽／升级SDK，未提交推送。下方带日期的“当前结果”等内容保留历史口径，不是自动执行清单；现行入口为最上方 H2 阶段。
 
 > 当前运行收口（2026-10-17，§11.57）：**先清理约2.96 GiB可重建缓存，再完成新发布身份护栏产物的COM9短差异及恢复。** 原SDK、单库、维护板型唯一完整编译／postverify与132TU新identity接线通过；真实App四槽空表Catalog及一次power ACK／新鲜State通过，ACK样本170.077 ms，不保存／Start任务。临时身份正常在线退休后，十二键授权精确双读恢复、指定WiFi BIN恢复上传成功；服务准入／额度／账号与日志终核完成，原21设备／五journal／14UNKNOWN保持，本批端口及管理员session均回收。所有恢复BIN、私有备份、原SDK及完整首错保留；未动COM11、未扩槽／升级SDK、未提交推送。详见[§11.57](DEVICE_V2_TASK_AND_SKETCH_TIMER_EXECUTION_PLAN.md#1157-构建缓存清理及新护栏候选的有限运行差异)。本批关闭新产物必要运行差异，不冒称IDE GUI／线上发布或恢复后原网络云登录；普通默认0槽、固定图有限支持、Wio暂停及Error8待定位保持，不自动派发新的审计或长循环。
 

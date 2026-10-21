@@ -324,3 +324,31 @@ defaults are development templates, not production trust material. See
 `docs/DEVICE_V2_CANONICAL_API.md`,
 `docs/DEVICE_V2_DEVICE_KEY_CONTRACT.md`, and
 `docs/DEVICE_V2_ARCHITECTURE_CLOSURE_AUDIT.md`.
+
+### Restricted cloud beta profile
+
+Maintainers can build the **same single library** for the currently admitted
+ESP32 manual-WiFi cloud path without copying a private stage or inventing
+unused BLE/task signing keys:
+
+```sh
+python -B tools/build_arduino_release.py --profile profiles/cloud-beta.json --stage-dir build/cloud-beta/stage --output-dir build/cloud-beta/artifacts
+```
+
+Use fresh/empty output locations; this command does not overwrite the repository
+source defaults. Install the generated ZIP once, then use `WiFiQuickStart` or
+`CloudSmokeTest` with that environment's DeviceKey and your WiFi credentials.
+The public profile selects HTTPS `iot.yiyu.pro:443` and MQTTS with the accepted
+public Sectigo E46 root; MQTT host/port still come from the authenticated cloud
+session (`mqtt.yiyu.pro:8883` in this deployment). It contains no account,
+DeviceKey, WiFi credentials, private keys or RFC fixture signing keys.
+
+This is an internal **ESP32 WiFi, zero-task-slot** profile, not a general
+multi-platform cloud release. BLE/WiFiBLE, provisioning, LAN, gateway and tasks
+fail closed; ordinary self-hosted profiles and the R4 fixed Plain profile are
+unchanged. `channel: production` applies the existing strict configuration
+validator; it does not claim production release, new firmware runtime acceptance
+or R4/Wio TLS admission. The seven-target baseline remains a separate full-profile
+gate; this profile's installed targets are only `esp32-wifi` and
+`esp32-cloud-smoke`. Current evidence and next steps are in
+[the cloud execution plan](docs/DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#6-h2a-收口后的执行顺序2026-10-20).

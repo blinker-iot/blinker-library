@@ -26,6 +26,28 @@ MISENCODED_TEST_ED25519_KEY = (
     "d75a980182b10ab7d54bfed3c964073a0ee1723fdaa62325af021a68f707511a"
 )
 TASK_PILOT_ID = "esp32-wifi-t2-lab-v1"
+TASK_CLOUD_PILOT_ID = "esp32-cloud-task-d4-v1"
+CLOUD_WIFI_PROFILE_ID = "esp32-cloud-wifi-v1"
+# This is one admitted graph, not another library or a general feature matrix.
+CLOUD_WIFI_ZERO_FEATURES = (
+    "BLINKER_TASK_CAPACITY", "BLINKER_ENABLE_TASKS",
+    "BLINKER_INTERNAL_LAN_WEBSOCKET", "BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL",
+    "BLINKER_INTERNAL_LAN_ENCRYPTED", "BLINKER_INTERNAL_UNO_R4_TASKS",
+    "BLINKER_INTERNAL_WIO_TASKS",
+)
+CLOUD_WIFI_FORBIDDEN_GRAPHS = (
+    "BLINKER_PRODUCT_BLE", "BLINKER_PRODUCT_WIFI_BLE",
+    "BLINKER_V2_ARDUINO_ESP32_EDGEHUB_PRODUCT_H",
+    "BLINKER_V2_ARDUINO_ESP32_EDGEHUB_PLATFORM_H",
+    "BLINKER_ESP32_PROVISIONING_BLE", "BLINKER_ESP32_PROVISIONING_SOFTAP",
+    "BLINKER_V2_ARDUINO_ESP32_BLE_PLATFORM_H",
+    "BLINKER_V2_ARDUINO_UNO_R4_BLE_PLATFORM_H",
+    "BLINKER_V2_ARDUINO_WIO_TERMINAL_BLE_PLATFORM_H",
+    "BLINKER_V2_ARDUINO_ESP32_WIFI_BLE_PRODUCT_H",
+    "BLINKER_ESP32_WIFI_TASK_EXTENSION_H",
+    "BLINKER_UNO_R4_WIFI_TASK_EXTENSION_H",
+    "BLINKER_WIO_TERMINAL_WIFI_TASK_EXTENSION_H",
+)
 # Finite measured workload only; not an endurance/production admission.
 TASK_PILOT = {"CAPACITY": 4, "WINDOW_MS": 60000, "WRITES": 10,
               "MIN_START_MS": 30000, "MAX_COMMIT_MS": 100}
@@ -51,10 +73,19 @@ class ReleaseProfile:
     p256_keys: tuple[ServerKey, ...]
     ed25519_keys: tuple[ServerKey, ...]
     task_profile: str | None = None
+    product_profile: str | None = None
 
     @property
     def production(self) -> bool:
         return self.channel == "production"
+
+    @property
+    def cloud_wifi_only(self) -> bool:
+        return self.product_profile == CLOUD_WIFI_PROFILE_ID
+
+    @property
+    def cloud_task_pilot(self) -> bool:
+        return self.task_profile == TASK_CLOUD_PILOT_ID
 
 
 def require_object(value: object, name: str) -> dict:
@@ -86,9 +117,10 @@ def require_keys(value: dict, expected: set[str], name: str) -> None:
         )
 
 
-def parse_keys(value: object, name: str, size: int) -> tuple[ServerKey, ...]:
-    if not isinstance(value, list) or not 1 <= len(value) <= 4:
-        raise ValueError(f"release profile {name} must contain 1 to 4 keys")
+def parse_keys(value: object, name: str, size: int, *, empty: bool = False) -> tuple[ServerKey, ...]:
+    minimum = 0 if empty else 1
+    if not isinstance(value, list) or not minimum <= len(value) <= 4:
+        raise ValueError(f"release profile {name} must contain {minimum} to 4 keys")
     result: list[ServerKey] = []
     identifiers: set[int] = set()
     for index, raw in enumerate(value):
@@ -121,7 +153,7 @@ def parse_profile(payload: object) -> ReleaseProfile:
             "control",
             "allow_plain_storage",
             "server_keys",
-        } | ({"task_profile"} if "task_profile" in payload else set()),
+        } | ({"task_profile", "product_profile"} & payload.keys()),
         "root",
     )
     if payload.get("schema") != 1:
@@ -129,10 +161,17 @@ def parse_profile(payload: object) -> ReleaseProfile:
     channel = require_string(payload.get("channel"), "channel")
     if channel not in ("development", "production"):
         raise ValueError("release profile channel must be development or production")
+    product_profile = payload.get("product_profile")
+    if "product_profile" in payload and product_profile != CLOUD_WIFI_PROFILE_ID:
+        raise ValueError("product_profile admits only esp32-cloud-wifi-v1")
+    cloud_wifi_only = product_profile == CLOUD_WIFI_PROFILE_ID
+    if cloud_wifi_only and (channel != "production" or "task_profile" in payload):
+        raise ValueError("cloud WiFi profile requires production transport without task_profile")
     task_profile = payload.get("task_profile")
     if "task_profile" in payload:
-        if task_profile != TASK_PILOT_ID or channel != "development":
-            raise ValueError("task_profile admits only esp32-wifi-t2-lab-v1 in development")
+        if task_profile not in (TASK_PILOT_ID, TASK_CLOUD_PILOT_ID) or channel != "development":
+            raise ValueError("task_profile admits only fixed internal development profiles")
+    cloud_task_pilot = task_profile == TASK_CLOUD_PILOT_ID
     firmware_version = require_string(payload.get("firmware_version"), "firmware_version")
     if not FIRMWARE_VERSION.fullmatch(firmware_version):
         raise ValueError("release profile firmware_version is invalid")
@@ -167,6 +206,18 @@ def parse_profile(payload: object) -> ReleaseProfile:
         raise ValueError("release profile CA certificate exceeds 8192 UTF-8 bytes")
     keys = require_object(payload.get("server_keys"), "server_keys")
     require_keys(keys, {"p256", "ed25519"}, "server_keys")
+    if cloud_wifi_only:
+        if port != 443 or not cloud_tls or not mqtt_tls:
+            raise ValueError("cloud WiFi profile requires HTTPS 443 and MQTTS")
+        if keys != {"p256": [], "ed25519": []}:
+            raise ValueError("cloud WiFi profile requires empty business signing rings")
+    if cloud_task_pilot:
+        if port != 443 or not cloud_tls or not mqtt_tls:
+            raise ValueError("cloud Task pilot requires HTTPS 443 and MQTTS")
+        if (not isinstance(keys.get("p256"), list) or len(keys["p256"]) != 1 or
+                not isinstance(keys["p256"][0], dict) or
+                keys["p256"][0].get("id") != 1 or keys.get("ed25519") != []):
+            raise ValueError("cloud Task pilot requires one P-256 keyId 1 and no Ed25519 key")
     profile = ReleaseProfile(
         channel,
         firmware_version,
@@ -177,14 +228,17 @@ def parse_profile(payload: object) -> ReleaseProfile:
         cloud_ca,
         mqtt_ca,
         require_bool(payload.get("allow_plain_storage"), "allow_plain_storage"),
-        parse_keys(keys.get("p256"), "server_keys.p256", 65),
-        parse_keys(keys.get("ed25519"), "server_keys.ed25519", 32),
+        parse_keys(keys.get("p256"), "server_keys.p256", 65, empty=cloud_wifi_only),
+        parse_keys(keys.get("ed25519"), "server_keys.ed25519", 32, empty=cloud_wifi_only or cloud_task_pilot),
         task_profile,
+        product_profile,
     )
     if any(key.public_key.hex() == MISENCODED_TEST_ED25519_KEY
            for key in profile.ed25519_keys):
         raise ValueError("release profile contains the misencoded Ed25519 test key")
-    if profile.production:
+    if cloud_task_pilot and any(key.public_key.hex() == TEST_P256_KEY for key in profile.p256_keys):
+        raise ValueError("cloud Task pilot cannot use the P-256 test key")
+    if profile.production or cloud_task_pilot:
         if host.endswith((".example", ".invalid")) or "replace-with" in host:
             raise ValueError("production release profile contains a placeholder host")
         if any(key.public_key.hex() == TEST_P256_KEY for key in profile.p256_keys):
@@ -202,13 +256,59 @@ def cpp_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=True)
 
 
+def cloud_wifi_guard() -> str:
+    # Outside header guards: check again if a consumer selects a forbidden graph
+    # after another include has already loaded configuration or the empty ring.
+    lines = ["// Restricted release: ESP32 manual Cloud WiFi, no business signer.",
+             "#if !defined(ARDUINO_ARCH_ESP32)",
+             '#error "Cloud WiFi profile supports ESP32 only"', "#endif"]
+    for name in CLOUD_WIFI_FORBIDDEN_GRAPHS:
+        lines += [f"#if defined({name})",
+                  '#error "Cloud WiFi profile forbids BLE, provisioning, gateway and signing consumers"',
+                  "#endif"]
+    for name in CLOUD_WIFI_ZERO_FEATURES:
+        lines += [f"#if defined({name}) && {name} != 0",
+                  '#error "Cloud WiFi profile requires zero tasks and no local extensions"',
+                  "#endif"]
+    return "\n".join(lines) + "\n"
+
+
+def cloud_task_guard() -> str:
+    # Internal single graph; do not broaden the public zero-slot profile.
+    lines = ["// Internal Cloud Task pilot: ESP32 manual WiFi, P-256 only.",
+             "#if !defined(ARDUINO_ARCH_ESP32)",
+             '#error "Cloud Task pilot supports ESP32 only"', "#endif"]
+    forbidden = [name for name in CLOUD_WIFI_FORBIDDEN_GRAPHS
+                 if name != "BLINKER_ESP32_WIFI_TASK_EXTENSION_H"]
+    for name in forbidden:
+        lines += [f"#if defined({name})",
+                  '#error "Cloud Task pilot forbids BLE, provisioning, gateway and non-ESP32 task graphs"',
+                  "#endif"]
+    for name in CLOUD_WIFI_ZERO_FEATURES:
+        if name in ("BLINKER_TASK_CAPACITY", "BLINKER_ENABLE_TASKS"):
+            continue
+        lines += [f"#if defined({name}) && {name} != 0",
+                  '#error "Cloud Task pilot forbids local and non-ESP32 extensions"', "#endif"]
+    for key, value in TASK_PILOT.items():
+        name = f"BLINKER_TASK_{key}"
+        lines += [f"#if defined({name}) && {name} != {value}U",
+                  '#error "Cloud Task pilot requires the fixed four-slot policy"', "#endif"]
+    lines += ["#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS != 1",
+              '#error "Cloud Task pilot requires tasks enabled"', "#endif"]
+    return "\n".join(lines) + "\n"
+
+
 def render_config(profile: ReleaseProfile) -> str:
     cloud_tls = "true" if profile.cloud_session_tls else "false"
     mqtt_tls = "true" if profile.mqtt_tls else "false"
     plain_storage = "true" if profile.allow_plain_storage else "false"
     task_config = "\n".join(f"#define BLINKER_TASK_{key} {value}U"
                             for key, value in TASK_PILOT.items()) if profile.task_profile else ""
-    return f"""#ifndef BLINKER_V2_ARDUINO_OFFICIAL_CONFIG_H
+    if profile.product_profile:
+        task_config = f'#define BLINKER_OFFICIAL_PRODUCT_PROFILE {cpp_string(profile.product_profile)}'
+    guard = (cloud_wifi_guard() if profile.cloud_wifi_only else
+             cloud_task_guard() if profile.cloud_task_pilot else "")
+    return guard + f"""#ifndef BLINKER_V2_ARDUINO_OFFICIAL_CONFIG_H
 #define BLINKER_V2_ARDUINO_OFFICIAL_CONFIG_H
 
 #include <stdint.h>
@@ -242,6 +342,25 @@ def render_key_header(profile: ReleaseProfile, *, p256: bool) -> str:
     guard = "BLINKER_V2_ARDUINO_ESP32_SERVER_KEYS_H" if p256 else "BLINKER_V2_ARDUINO_PORTABLE_SERVER_KEYS_H"
     include = "BlinkerV2/security/P256ServerKeyRingVerifier.h" if p256 else "BlinkerV2/security/Ed25519ServerKeyRingVerifier.h"
     key_type = "P256ServerPublicKey" if p256 else "Ed25519ServerPublicKey"
+    if not keys:
+        graph_guard = cloud_wifi_guard() if profile.cloud_wifi_only else cloud_task_guard()
+        return graph_guard + f"""#ifndef {guard}
+#define {guard}
+
+#include <{include}>
+
+// Absent capability fails closed; no fixture, JWT or invented signing key.
+#define BLINKER_OFFICIAL_HAS_SERVER_SIGNATURE 0
+
+namespace blinker {{
+namespace official {{
+static const {key_type}* const serverSigningKeys = nullptr;
+static const size_t serverSigningKeysCount = 0U;
+}} // namespace official
+}} // namespace blinker
+
+#endif
+"""
     arrays: list[str] = []
     descriptors: list[str] = []
     for index, key in enumerate(keys):
@@ -252,7 +371,8 @@ def render_key_header(profile: ReleaseProfile, *, p256: bool) -> str:
             f"    {key_type}({key.key_id}U, ByteView(serverSigningKey{index}Bytes, sizeof(serverSigningKey{index}Bytes)))"
         )
     descriptor_body = ",\n".join(descriptors)
-    return f"""#ifndef {guard}
+    graph_guard = cloud_task_guard() if profile.cloud_task_pilot else ""
+    return graph_guard + f"""#ifndef {guard}
 #define {guard}
 
 #include <{include}>

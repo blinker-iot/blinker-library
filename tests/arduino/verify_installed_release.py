@@ -19,7 +19,7 @@ import zipfile
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY / "tools"))
-from arduino_release_profile import TASK_PILOT, TASK_PILOT_ID
+from arduino_release_profile import CLOUD_WIFI_PROFILE_ID, TASK_PILOT, TASK_PILOT_ID
 
 
 @dataclass(frozen=True)
@@ -121,6 +121,22 @@ def select_targets(names: list[str] | None) -> tuple[Target, ...]:
     if len(names) != len(set(names)) or any(n not in available for n in names):
         raise ValueError("unknown or duplicate installed target")
     return tuple(available[n] for n in names)
+
+
+def verify_installed_product_profile(config: str, targets: tuple[Target, ...]) -> str | None:
+    values = re.findall(
+        r"^[ \t]*#[ \t]*define[ \t]+BLINKER_OFFICIAL_PRODUCT_PROFILE\b([^\r\n]*)$",
+        config, re.MULTILINE,
+    )
+    if not values:
+        return None  # Existing full profiles keep their original target matrix.
+    if [value.strip() for value in values] != [f'"{CLOUD_WIFI_PROFILE_ID}"']:
+        raise SystemExit("installed product profile marker is invalid or duplicated")
+    if any(target.name not in ("esp32-wifi", "esp32-cloud-smoke") or target.tasks_enabled
+           for target in targets):
+        raise SystemExit("cloud WiFi profile admits only esp32-wifi and esp32-cloud-smoke; "
+                         "select them explicitly, not the full seven-target matrix")
+    return CLOUD_WIFI_PROFILE_ID
 
 
 def verify_installed_task_profile(config: str, targets: tuple[Target, ...]) -> str | None:
@@ -704,6 +720,7 @@ def main() -> int:
         raise SystemExit(f"Blinker was not installed in the empty sketchbook: {installed_root}")
     verify_installed_bytes(archive, installed_root)
     config = (installed_root / "src/BlinkerV2/arduino/config/OfficialConfig.h").read_text(encoding="utf-8")
+    verify_installed_product_profile(config, selected_targets)
     task_profile = verify_installed_task_profile(config, selected_targets)
 
     for target in selected_targets:
