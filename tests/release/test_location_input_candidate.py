@@ -30,6 +30,31 @@ WRAPPERS = (
 
 
 class LocationInputCandidateTests(unittest.TestCase):
+    def test_public_facade_location_consumers_have_only_exact_architecture_exceptions(self):
+        specification = importlib.util.spec_from_file_location(
+            "location_input_architecture_gate", ROOT / "tests/architecture/check_device_v2.py")
+        architecture = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(architecture)
+        expected = frozenset(ROOT / relative for relative in (
+            "tests/arduino/CompileCloudLocation/CompileCloudLocation.ino",
+            "tests/arduino/CompileLocationInput/CompileLocationInput.ino",
+        ))
+        self.assertEqual(architecture.PUBLIC_LOCATION_COMPILE_PROBES, expected)
+        for path in expected:
+            with self.subTest(path=path):
+                self.assertTrue(architecture.public_facade_test_probe_allowed(path))
+        for relative in (
+            "tests/arduino/CompileCloudLocation/Other.ino",
+            "tests/arduino/CompileLocationInput/Other.ino",
+            "tests/internal/CompileLocationInput/CompileLocationInput.ino",
+            "tests/arduino/CompileLocationInput/nested/CompileLocationInput.ino",
+        ):
+            with self.subTest(relative=relative):
+                self.assertFalse(architecture.public_facade_test_probe_allowed(ROOT / relative))
+        for name in ("CompileFacade", "CompileTaskWiFi"):
+            self.assertTrue(architecture.public_facade_test_probe_allowed(
+                ROOT / "tests/arduino" / name / f"{name}.ino"))
+
     def test_only_single_original_sdk_target_and_no_business_time_or_matrix_growth(self):
         baseline = gate.TARGETS
         target, = gate.location_input_targets(gate.select_targets(["esp32-cloud-smoke"]))

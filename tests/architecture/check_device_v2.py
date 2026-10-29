@@ -277,6 +277,15 @@ PUBLIC_WIFI_COMPILE_PROBE = (
     / "CompilePublicWiFi"
     / "CompilePublicWiFi.ino"
 )
+# Optional installed consumers deliberately exercise the existing public WiFi
+# entry. These are exact files, not exemptions for their surrounding folders.
+PUBLIC_LOCATION_COMPILE_PROBES = frozenset(
+    REPOSITORY / relative
+    for relative in (
+        "tests/arduino/CompileCloudLocation/CompileCloudLocation.ino",
+        "tests/arduino/CompileLocationInput/CompileLocationInput.ino",
+    )
+)
 CI_WORKFLOW = REPOSITORY / ".github" / "workflows" / "device-v2-ci.yml"
 RETIRED_PACKAGE_PATHS = (
     REPOSITORY / "tools" / "build_official_arduino_package.py",
@@ -356,6 +365,11 @@ def source_files(root: Path):
 def strip_comments(text: str) -> str:
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
     return re.sub(r"//.*", "", text)
+
+
+def public_facade_test_probe_allowed(path: Path) -> bool:
+    return (path.parent.name in ("CompileFacade", "CompileTaskWiFi")
+            or path in PUBLIC_LOCATION_COMPILE_PROBES)
 
 
 def wio_task_product_failures(product: str) -> list[str]:
@@ -1391,7 +1405,7 @@ def main() -> int:
         text = path.read_text(encoding="utf-8")
         if (
             re.search(r'#\s*include\s*<Blinker\.h>', text)
-            and path.parent.name not in ("CompileFacade", "CompileTaskWiFi")
+            and not public_facade_test_probe_allowed(path)
         ):
             failures.append(f"{path}: internal probe must select Advanced entry")
 

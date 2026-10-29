@@ -1,4 +1,10 @@
-# DeviceKey cloud-login freeze v48 (2026-10-17; R4 release/profile binding guard)
+# DeviceKey cloud-login freeze v49 (2026-10-29; reviewed LOC-5 local input facade)
+# Compared with c719d29, Facade adds only the location include, four location
+# overloads and local loss/clear forwarding methods (21 added lines). No
+# fields, begin arguments or DeviceKey/login/session/MQTT paths change.
+# Local observation acceptance neither sends nor grants Cloud authorization.
+# Only the Facade digest changes; every other frozen entry is preserved.
+# Previous v48 (2026-10-17; R4 release/profile binding guard)
 # Only the task build contract gains the required maintained-library binding.
 # Existing SDK fault/heap entries, disabled graph, shared Facade and all other
 # DeviceKey/login/session/MQTT implementation digests remain unchanged.
@@ -64,7 +70,7 @@
 # layout lines. Dependency/layout changes have separate architecture/package
 # gates. Implementation changes still require review and an explicit update.
 4f1287f4c37e08b02189859766b5c3b708ea7226ed0fa177033b49accc4a2d47  src/BlinkerV2/api/WifiDeviceKeyProfile.h
-99cad57f2d6292b14a96561deaecfb5851316e7cd60b5d06f0794ed80e1fe1ba  src/BlinkerV2/api/BlinkerFacade.h
+34a5d892729ac4c9479f8626f3d5b887d0a90a6e425d8e96af03ae69552ec200  src/BlinkerV2/api/BlinkerFacade.h
 7347cdea171a30c0277a99b01290b40e9b4df98bbfad7319d5c7a33e67371c00  src/BlinkerV2/identity/DeviceKey.h
 db599ad42759a06951c3b5e5ba64f14254668ce0104bf3e9764f1d0505b5c46d  src/BlinkerV2/identity/DeviceKey.inc
 e7da166a0c243a354019e7c21d4bf9d7bfaac6c1b4b62a16b34ae2ee70f200cd  src/BlinkerV2/identity/ConfiguredDeviceKeySource.h

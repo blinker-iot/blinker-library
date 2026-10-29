@@ -65,7 +65,8 @@ class PackageBoundary(unittest.TestCase):
         self.assertLess(job.index('--target wio-terminal-wifi'), job.index('esp32:esp32@3.3.11'))
         self.assertLess(job.index('esp32:esp32@3.3.11'), job.index('verify_esp32_ble_sdk.py'))
         self.assertLess(job.index('verify_esp32_ble_sdk.py'), job.index('--target esp32-ble '))
-        self.assertIn('ARDUINO_DIRECTORIES_DATA: ${{ runner.temp }}/arduino-unified-data', job)
+        self.assertIn("printf 'ARDUINO_DIRECTORIES_DATA=%s\\n' \"$RUNNER_TEMP/arduino-unified-data\" >> \"$GITHUB_ENV\"", job)
+        self.assertLess(job.index('Initialize isolated Arduino directories'), job.index('arduino-cli core install'))
         self.assertIn('verify_esp32_ble_sdk.py --data-dir "$ARDUINO_DIRECTORIES_DATA"', job)
 
     def test_ble_sdk_pin_rejects_missing_or_changed_inputs(self):
