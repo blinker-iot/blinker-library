@@ -653,3 +653,18 @@ package 与 libFuzzer 成功，但完整 host 构建揭示旧测试／工程接�
 所有尺寸、静态断言和测试默认值保留，Golden 改动不影响产品分配工作集。
 新一轮仍需匹配远端 GNU 编译和 sanitizer 的实际结果，MSVC 通过不代替它。
 独立的旧 UNO port 暂存缺头、ESP8266 平台不支持等未修改，不开启新平台以满足旧矩阵；整套 CI 红灯与受限候选结果继续分别如实记录。
+
+### 14.8 GNU 安全门禁通过后的最后入口对齐
+
+修正提交 `f631b4981250c2d7218389a687da5870cec05354` 的
+[实际 run](https://github.com/blinker-iot/blinker-library/actions/runs/40824036668)已通过架构、package、libFuzzer、
+96/96 的 GNU ASan／UBSan／LSan 运行测试以及 200,000 次确定性 fuzz；上一轮 `.inc`／fixture 阻点已关闭。
+ESP32 旧端口矩阵亦通过。Host 最后停在跨语言入口，未发生向目标候选放行或 artifact 误上传。
+
+原因是工作流只显式传了已有 8 个 golden 程序中的 7 个，遗漏 Edge Gateway 路径；脚本默认查找的本机目录不等于 CI 的 `build/sanitized`。
+最小修正仅新增原 `-EdgeGatewayCppExecutable` 参数，复用已有程序、向量及 PowerShell 脚本，不改 oracle 或默认解析语义。
+第 4 项入口回归从脚本解析现有参数与程序映射，要求 CI 逐项且仅一次传入同 build 目录；先精确失败、补参后 1/1 通过，前三项不重跑。
+
+旧矩阵的后续明确缺口保留：部分 probe staging 未带 `PortableEd25519.h`／`UnoR4ModemOwner.h`，
+不支持平台的 `HardwareRandom` 仍 fail-closed，Wio 的传递依赖自动装成 FS 2.1.5 而门禁固定 2.1.3。
+本批不升级或放宽依赖，也不为旧矩阵开放平台；不能把受限候选通过写成整套 CI 全绿。

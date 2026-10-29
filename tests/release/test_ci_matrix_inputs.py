@@ -88,6 +88,24 @@ class CiMatrixInputs(unittest.TestCase):
             'https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json',
         ])
 
+    def test_host_golden_passes_every_cpp_executable_from_the_sanitized_build(self):
+        script = (ROOT / 'tests/golden/run_cross_language_golden.ps1').read_text(encoding='utf-8')
+        parameters = script.split('param(\n', 1)[1].split('\n)', 1)[0]
+        names = re.findall(r'\[string\]\$([A-Za-z]*CppExecutable)\s*=', parameters)
+        self.assertTrue(names)
+        resolutions = re.findall(
+            r'^\$([A-Za-z]*CppExecutable) = Resolve-GoldenExecutable `\n    \$\1 "([^"]+)"$',
+            script, flags=re.MULTILINE)
+        self.assertCountEqual([name for name, _ in resolutions], names)
+        step = self.step(self.job('host-quality'), 'Cross-language exact golden vectors')
+        arguments = re.findall(r'^            -([A-Za-z]*CppExecutable) (.+)$',
+                               step, flags=re.MULTILINE)
+        self.assertCountEqual([name for name, _ in arguments], names)
+        self.assertCountEqual(arguments, [
+            (name, f'"$PWD/build/sanitized/{executable}" `')
+            for name, executable in resolutions
+        ])
+
 
 if __name__ == '__main__':
     unittest.main()
