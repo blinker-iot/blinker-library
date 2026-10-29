@@ -1,6 +1,7 @@
 # Device V2 设备定位实施方案
 
 更新日期：2026-10-29。当前进度：LOC-0／LOC-1软件、LOC-2私有Cloud、LOC-3／LOC-4 App按已记范围有限收口；LOC-5统一Sketch定位输入、有限host及LOC-5b隔离安装／原SDK完整链接完成；LOC-5c 同库交付说明和可选 CI 接线在 §20 收口。
+源码已随后交付；现行发行状态取[库发布方案 §14.9](DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md#149-现行结果与发行决定源码已交付私有-oracle-授权待补hold)：真实 CI 已越过 GNU 安全门禁，私有服务 oracle 读取授权待补，候选仍跳过、发行 HOLD。不重复定位实现、SDK／硬件验证或缺前置的远端队列。
 云端接线与原 SDK S3 完整链接取 §10～§11；COM11 非卫星测试输入及 App 页面生命周期结果取 §12～§13。
 匹配 beta 已保留，已恢复已验四槽 WiFi BIN 及本批 NVS／授权，临时定位准入／背景均为 `[]`。
 网络参考源码准入默认关闭，云端按§16保留匹配Gateway／只读月库及COM11单设备名单；原GNSS／背景仍0/0。

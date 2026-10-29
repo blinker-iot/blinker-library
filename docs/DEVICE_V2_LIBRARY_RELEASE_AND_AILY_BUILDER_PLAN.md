@@ -668,3 +668,43 @@ ESP32 旧端口矩阵亦通过。Host 最后停在跨语言入口，未发生向
 旧矩阵的后续明确缺口保留：部分 probe staging 未带 `PortableEd25519.h`／`UnoR4ModemOwner.h`，
 不支持平台的 `HardwareRandom` 仍 fail-closed，Wio 的传递依赖自动装成 FS 2.1.5 而门禁固定 2.1.3。
 本批不升级或放宽依赖，也不为旧矩阵开放平台；不能把受限候选通过写成整套 CI 全绿。
+
+### 14.9 现行结果与发行决定：源码已交付，私有 oracle 授权待补，HOLD
+
+当前设备库源码提交为
+[`b3f0b106ca2eaecab991048889ab1fedc5bcc532`](https://github.com/blinker-iot/blinker-library/commit/b3f0b106ca2eaecab991048889ab1fedc5bcc532)，
+位于 `device_v2`；Builder 为 §14.1 的 `e18855124a03e40ec10f47912e62db113dbf2716`，位于 `i3w-builder`。
+均已核对远端，未改默认分支、发布 npm／tag／GitHub Release，也未纳入无关本地修改、凭据或产物。
+
+同提交的[真实 CI run](https://github.com/blinker-iot/blinker-library/actions/runs/40824833992)结果：
+
+| 检查 | 实际结论 |
+| --- | --- |
+| 架构、Python／发布合同及确定性 package | 通过 |
+| GNU ASan／UBSan／LSan | 96/96 通过，另 200,000 次确定性 fuzz 通过 |
+| libFuzzer、ESP32 既有端口矩阵 | 通过 |
+| C++／App TS golden | 8 个 C++ 和 7 个 TS 程序通过；没有删向量或跳过程序 |
+| 服务端 golden | 前 4 个独立 oracle 通过，BLE enrollment 随后明确 `MODULE_NOT_FOUND`，后续项未运行 |
+| 受限 cloud-beta 候选 | 依照 `needs` 跳过，**未执行远端两目标／定位安装链接，无可发行候选或同批校验值** |
+| 整套质量 CI | 失败；旧矩阵剩余问题取 §14.8，不声明全平台通过 |
+
+本次不是服务器业务、账号、设备或新定位接口故障。两个服务端 golden 真实引用私有
+`ailyProject/aily-blinker-services` 的协议包和 BLE signer，而当前 CI 只有设备库 checkout。
+已只读确认服务仓库是 private，公开 npm 也没有该私有包；现有 Actions 配置无专用服务仓库读取凭据。
+只核对了 secret 名称，没有读取或挪用服务器部署密钥，更没有将个人管理员凭据写入 CI。
+
+匹配服务源码的可获取固定提交为
+`44ebe5e997eff861c98bf7debc1bf7870621938e`；最小读取闭包仅
+`packages/device-v2-protocol/package.json`、该包 `src/` 和
+`services/gateway/src/device-v2/ble-enrollment-signer.js`。
+signer 还需这个真实协议包的 scoped package 链接，无需启动服务、复制账号库、安装整套服务依赖或重新部署云端。
+不得用自造独立实现、镜像私有源码到公开库或跳过跨语言检查代替此依赖。
+
+**后续唯一最小前置是新增明确的私有仓库只读 CI 授权，需用户确认后实施。** 建议专用于该服务仓库的只读 Deploy Key，
+私钥仅加密保存到设备库 Actions secret `DEVICE_V2_SERVICE_READ_KEY`，不使用服务器 SSH key／管理员 token，不在聊天或源码中保存私钥。
+授权后再接同一 workspace 的并列 checkout、固定服务 SHA 和真实本地 package 链接，限制在受信任的 `device_v2` 运行，
+取得匹配 CI 与候选 ZIP／校验值后复核发行；当前不自动创建密钥、写 secret、公开仓库或继续重复失败运行。
+
+已检查是否能停止本轮无前置运行，检查时它已因上述真实缺依赖而结束，没有另开取消／重跑队列。
+本批发行确认结论为 **HOLD，不发布**；源码交付与前述实测成果保留，不把它们表述为候选通过。
+收尾仅提交此结果和现行进度入口，使用 docs-only `[skip ci]`，避免未获授权前重开已知必败队列。

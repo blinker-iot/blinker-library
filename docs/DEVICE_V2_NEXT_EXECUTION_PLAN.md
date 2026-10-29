@@ -1,6 +1,20 @@
 # Device V2：核心稳定版进度与后续执行计划
 
-## 现行入口：限定核心已收口，整理三端必要源码交付（2026-10-26）
+## 现行入口：源码已交付，CI 私有 oracle 授权待补，发行 HOLD（2026-10-29）
+
+以[发布方案 §14.9](DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md#149-现行结果与发行决定源码已交付私有-oracle-授权待补hold)为唯一发行停点，统一输入用法见[API 说明](DEVICE_V2_LOCATION_INPUT_API.md)。
+设备库 `device_v2` 已交付 `b3f0b106ca2eaecab991048889ab1fedc5bcc532`；Builder `i3w-builder` 已交付 `e18855124a03e40ec10f47912e62db113dbf2716`。
+必要源码／门禁／使用说明已在远端；无关本地修改、账号／授权／UNKNOWN／完整业务日志保留，无服务部署、刷板或 SDK 升级。
+匹配[真实 CI](https://github.com/blinker-iot/blinker-library/actions/runs/40824833992)中，package、GNU sanitizer 96/96、200,000 次确定性 fuzz、libFuzzer 和 ESP32 原端口通过。
+C++／App TS golden 通过，服务端 BLE oracle 明确缺少私有 `aily-blinker-services` 源码；当前没有专用跨仓库只读 CI 凭据。
+Host 总门禁未过，受限 cloud-beta 两目标及定位输入候选被正确跳过；**没有匹配可发行 ZIP，不批准发行**。旧多平台矩阵问题另列，不放宽门禁或支持范围。
+
+**下一步只补经用户确认的私有服务仓库只读 CI 授权与匹配 checkout／真实 package 链接。**
+建议专用只读 Deploy Key，仅存 Actions secret；不使用服务器部署密钥或个人管理员凭据，不复制私有源码到公开库，不自造 oracle。
+前置满足后再完成同提交 CI、候选校验与发行复核；此前不重复必败队列，也不重开定位、SDK、硬件、App H1／H2 或资源审计。
+R5／LOC-5b 的旧摘要和安装／完整链接证据保持历史身份，不冒充本次远端候选结果。
+
+## 前期核心交付记录（2026-10-26，历史）
 
 目标仍是已有核心功能稳定可用，不把环境接线、历史记录或后置扩展重新算成设备功能欠缺。[D7及失败恢复已限定收口](DEVICE_V2_DEVICE_ACTIVITY_EXECUTION_PLAN.md#8-失败恢复修正版app安装与限定短验2026-10-23)；D1～D6原功能／有限证据冻结。剩余分类取[活动方案§9](DEVICE_V2_DEVICE_ACTIVITY_EXECUTION_PLAN.md#9-d7c收口后的主线分类与相邻读取恢复2026-10-23)，不自动生成新测试队列。App的D7c、H1／H2读取恢复已在远端`a7c4ab1`，不重复提交；本批仅整理尚未提交的地图／定位维护、Service地图／活动接口及对应回归／文档，交付范围取[§10](DEVICE_V2_DEVICE_ACTIVITY_EXECUTION_PLAN.md#10-三端必要源码交付2026-10-26)。没有打包部署或重新核验手机／云端运行状态，不用Git源码状态替代已冻结的真实验收。
 
