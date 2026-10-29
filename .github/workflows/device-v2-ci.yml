@@ -214,7 +214,6 @@ jobs:
         run: >-
           python3 tests/arduino/compile_matrix.py
           --target "${{ matrix.target }}"
-          --target "${{ matrix.target }}-example"
           --target "${{ matrix.target }}-crypto"
 
   arduino-cloud:
@@ -277,7 +276,7 @@ jobs:
         run: >-
           arduino-cli core install "Seeeduino:samd@1.8.5"
           --additional-urls
-           "https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json"
+          "https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json"
       - name: Compile ESP32, UNO R4 and Wio Small SizeProbe gates
         run: python3 tests/arduino/compile_matrix.py --group size-probes
       - name: Install pinned Wio BLE preview dependencies

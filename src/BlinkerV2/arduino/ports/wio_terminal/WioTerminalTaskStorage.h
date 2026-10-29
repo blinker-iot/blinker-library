@@ -28,7 +28,8 @@ public:
           reserved_(regionReserved), opened_(false), failed_(false), encoded_(), verified_() {
         static_assert(Capacity > 0U && Capacity <= TaskSnapshotCodec::maxTasks,
                       "Invalid Wio task snapshot capacity");
-        static_assert(journalScratchSize <= WioTerminalQspiOwner::eraseBlockSize,
+        static_assert(static_cast<size_t>(journalScratchSize) <=
+                          static_cast<size_t>(WioTerminalQspiOwner::eraseBlockSize),
                       "Wio task record exceeds its sector");
     }
     ~WioTerminalTaskSnapshotBlobStore() { end(); }

@@ -34,7 +34,8 @@ public:
           attempted_(false), observed_(false), hasSnapshot_(false), identitySame_(false),
           expectedCurrent_(), expectedIdentity_(), currentDigest_(), identityDigest_(),
           payloadDigest_(), chunk_(), instance_(), header_(), records_(), fullHash_(), identityHash_() {
-        static_assert(WioTerminalTaskSnapshotBlobStore<capacity>::maximumSnapshotSize == payloadSize,
+        static_assert(static_cast<size_t>(WioTerminalTaskSnapshotBlobStore<capacity>::maximumSnapshotSize) ==
+                          static_cast<size_t>(payloadSize),
                       "Cold fixture task codec size changed");
     }
     bool observed() const override { return observed_; }

@@ -9,12 +9,12 @@
 namespace {
 
 static_assert(
-    blinker::kPresenceKeyMutationMaxEncodedSize ==
-        blinker::bbp2::kPresenceKeyMutationMaximumSize,
+    static_cast<size_t>(blinker::kPresenceKeyMutationMaxEncodedSize) ==
+        static_cast<size_t>(blinker::bbp2::kPresenceKeyMutationMaximumSize),
     "PresenceKey mutation bounds drifted between contract and BBP/2");
 static_assert(
-    blinker::kPresenceKeyReceiptMaxEncodedSize ==
-        blinker::bbp2::kPresenceKeyReceiptMaximumSize,
+    static_cast<size_t>(blinker::kPresenceKeyReceiptMaxEncodedSize) ==
+        static_cast<size_t>(blinker::bbp2::kPresenceKeyReceiptMaximumSize),
     "PresenceKey receipt bounds drifted between contract and BBP/2");
 
 #define CHECK_TRUE(condition)                                                   \

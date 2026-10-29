@@ -10,7 +10,7 @@ blinker::Esp32NvsBlobStoreConfig makeAccessConfig() {
 }
 
 blinker::Esp32NvsAtomicBlobStore accessBlob(makeAccessConfig());
-blinker::DeviceAccessStore access(accessBlob);
+blinker::DeviceAccessStore accessStore(accessBlob);
 
 blinker::Esp32NvsWifiCredentialSinkConfig makeWifiConfig() {
     blinker::Esp32NvsWifiCredentialSinkConfig config;
@@ -22,7 +22,7 @@ blinker::Esp32NvsWifiCredentialSink wifi(makeWifiConfig());
 
 void setup() {
     (void)accessBlob.begin();
-    (void)access.protection();
+    (void)accessStore.protection();
     (void)wifi.begin();
 }
 

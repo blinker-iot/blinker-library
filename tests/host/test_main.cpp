@@ -6770,7 +6770,7 @@ public:
             blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
         CHECK_TRUE(buildTestFrame(blinker::bbp2::MessageKind::Patch,
             static_cast<uint8_t>(blinker::bbp2::FlagAckRequired |
-                (idMode ? blinker::bbp2::FlagIdMode : 0U)), sequence, body,
+                (idMode ? static_cast<uint8_t>(blinker::bbp2::FlagIdMode) : 0U)), sequence, body,
             blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
         source.inject(frame, 0U, true, 7U);
         CHECK_TRUE(parseSource());
@@ -7210,7 +7210,7 @@ void testSingleSlotCommandAck() {
             blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
         port.inject(frame, 0U, true, sessionId);
     };
-    auto command = [&](uint16_t sequence, bool button, bool value = true) {
+    auto command = [&](uint16_t sequence, bool button, bool value) {
         static const uint8_t action[] = {0xa1U, 0x66U, 'b', 'u', 't', 't', 'o', 'n', 0xf6U};
         blinker::bbp2::KeyedBodyWriter writer(
             blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)));
@@ -7242,7 +7242,7 @@ void testSingleSlotCommandAck() {
     };
     hello(local, 7U);
     hello(cloud, 0U);
-    command(10U, false);
+    command(10U, false, true);
     CHECK_EQ(1U, capture.calls);
     CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Patch), kind(local));
     CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Patch), kind(cloud));
@@ -7258,10 +7258,10 @@ void testSingleSlotCommandAck() {
     const uint32_t accepted = local.sendCount;
     client.poll(1000U);
     CHECK_EQ(accepted, local.sendCount); // Accepted ACK isn't resent by poll.
-    command(11U, false); // Unchanged value needs no state Patch.
+    command(11U, false, true); // Unchanged value needs no state Patch.
     ack(11U);
     client.poll(1000U);
-    command(12U, true);
+    command(12U, true, true);
     CHECK_EQ(static_cast<uint8_t>(blinker::bbp2::MessageKind::Patch), kind(local));
     local.inject(frame, 0U, true, 7U); // Same Action while ACK still blocked.
     CHECK_EQ(3U, capture.calls);
@@ -7272,14 +7272,14 @@ void testSingleSlotCommandAck() {
     ack(12U);
     CHECK_EQ(3U, capture.calls);
     client.poll(1000U);
-    command(13U, false);
+    command(13U, false, true);
     local.permissions = blinker::kAuthorizationPermissionObserve;
     const uint32_t revokedSends = local.sendCount;
     client.poll(1000U);
     local.permissions |= blinker::kAuthorizationPermissionControl;
     client.poll(1000U);
     CHECK_EQ(revokedSends, local.sendCount); // No dormant auto-ACK after revoke.
-    command(14U, true);
+    command(14U, true, true);
     local.disconnect(7U);
     hello(local, 8U);
     const uint32_t closedSends = local.sendCount;
@@ -7290,8 +7290,8 @@ void testSingleSlotCommandAck() {
 
     // One-slot negotiated receive window: replacement keeps only the newest
     // result, without growing a separate pending queue.
-    command(15U, false);
-    command(16U, false);
+    command(15U, false, true);
+    command(16U, false, true);
     client.poll(1000U);
     ack(16U);
     client.poll(1000U);
@@ -9034,8 +9034,8 @@ void testTransportScopedAccess() {
 
     uint16_t sequence = 1U;
     auto deliver = [&](FakeTransport& port, blinker::bbp2::MessageKind kind,
-                       blinker::ByteView body, bool encrypted = true,
-                       uint32_t sessionId = 77U) {
+                       blinker::ByteView body, bool encrypted,
+                       uint32_t sessionId) {
         blinker::ByteView frame;
         CHECK_TRUE(buildTestFrame(kind, blinker::bbp2::FlagNone, sequence++, body,
             blinker::MutableByteSpan(frameBytes, sizeof(frameBytes)), frame).ok());
@@ -9052,17 +9052,17 @@ void testTransportScopedAccess() {
     peerHello.authorizationMethods[0] = 1U;
     peerHello.authorizationMethods[1] = 2U;
     peerHello.authorizationMethodCount = 2U;
-    auto negotiate = [&](FakeTransport& port, uint32_t sid = 77U) {
+    auto negotiate = [&](FakeTransport& port, uint32_t sid) {
         blinker::ByteView body;
         CHECK_TRUE(blinker::bbp2::encodeHelloBody(peerHello,
             blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
         deliver(port, blinker::bbp2::MessageKind::Hello, body, true, sid);
     };
-    negotiate(cloud);
-    negotiate(ble);
-    negotiate(lan);
+    negotiate(cloud, 77U);
+    negotiate(ble, 77U);
+    negotiate(lan, 77U);
     CHECK_EQ(0U, hello(cloud).features & accessFeatures);
-    auto authenticate = [&](FakeTransport& port, uint16_t method, bool encrypted = true) {
+    auto authenticate = [&](FakeTransport& port, uint16_t method, bool encrypted) {
         const uint8_t proof = 0xA5U;
         blinker::bbp2::AuthRequestBody request;
         request.method = method;
@@ -9070,35 +9070,35 @@ void testTransportScopedAccess() {
         blinker::ByteView body;
         CHECK_TRUE(blinker::bbp2::encodeAuthRequestBody(request,
             blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
-        deliver(port, blinker::bbp2::MessageKind::Authenticate, body, encrypted);
+        deliver(port, blinker::bbp2::MessageKind::Authenticate, body, encrypted, 77U);
     };
-    auto open = [&](FakeTransport& port, uint32_t sid = 77U) {
+    auto open = [&](FakeTransport& port, uint32_t sid) {
         blinker::ByteView body;
         CHECK_TRUE(blinker::bbp2::encodeControllerControlOpenBody(
             blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), body).ok());
         deliver(port, blinker::bbp2::MessageKind::ControllerControlOpen, body, true, sid);
     };
-    authenticate(ble, 2U); // Another transport's method never reaches a provider.
-    authenticate(cloud, 1U);
+    authenticate(ble, 2U, true); // Another transport's method never reaches a provider.
+    authenticate(cloud, 1U, true);
     authenticate(ble, 1U, false); // LAN's secure-establishment flag cannot leak.
     CHECK_EQ(0U, bleAuth.calls);
     CHECK_EQ(0U, lanAuth.calls);
-    authenticate(ble, 1U);
+    authenticate(ble, 1U, true);
     CHECK_EQ(1U, bleAuth.calls);
     CHECK_EQ(1U, bleAuth.queuedCalls);
     CHECK_EQ(1U, bleAuth.lastTransportId);
     CHECK_EQ(77U, bleAuth.lastSessionId);
-    open(lan);
+    open(lan, 77U);
     CHECK_EQ(0U, lanControl.beginCalls); // Same sessionId is not shared authority.
-    open(ble);
+    open(ble, 77U);
     CHECK_EQ(1U, bleControl.beginCalls);
     authenticate(lan, 2U, false);
     CHECK_EQ(1U, lanAuth.calls);
     CHECK_EQ(1U, lanAuth.queuedCalls);
     CHECK_EQ(2U, lanAuth.lastTransportId);
-    open(lan);
+    open(lan, 77U);
     CHECK_EQ(1U, lanControl.beginCalls);
-    open(cloud);
+    open(cloud, 77U);
     open(ble, 78U);
     CHECK_EQ(1U, bleControl.beginCalls);
     CHECK_EQ(1U, lanControl.beginCalls);
@@ -9112,21 +9112,21 @@ void testTransportScopedAccess() {
     blinker::ByteView mutationBody;
     CHECK_TRUE(blinker::bbp2::encodeControllerMutationBody(mutation,
         blinker::MutableByteSpan(bodyBytes, sizeof(bodyBytes)), mutationBody).ok());
-    deliver(ble, blinker::bbp2::MessageKind::ControllerMutation, mutationBody);
+    deliver(ble, blinker::bbp2::MessageKind::ControllerMutation, mutationBody, true, 77U);
     CHECK_EQ(1U, bleControl.mutationCalls);
     CHECK_EQ(0U, lanControl.mutationCalls);
-    deliver(lan, blinker::bbp2::MessageKind::ControllerMutation, mutationBody);
+    deliver(lan, blinker::bbp2::MessageKind::ControllerMutation, mutationBody, true, 77U);
     CHECK_EQ(1U, bleControl.mutationCalls);
     CHECK_EQ(1U, lanControl.mutationCalls);
-    deliver(cloud, blinker::bbp2::MessageKind::ControllerMutation, mutationBody);
+    deliver(cloud, blinker::bbp2::MessageKind::ControllerMutation, mutationBody, true, 77U);
     CHECK_EQ(1U, bleControl.mutationCalls);
     CHECK_EQ(1U, lanControl.mutationCalls);
     deliver(ble, blinker::bbp2::MessageKind::PresenceKeyMutation,
-        blinker::ByteView(&emptyMap, 1U));
+        blinker::ByteView(&emptyMap, 1U), true, 77U);
     CHECK_EQ(0U, bleControl.presenceCalls);
     CHECK_EQ(0U, lanControl.presenceCalls);
     deliver(lan, blinker::bbp2::MessageKind::PresenceKeyMutation,
-        blinker::ByteView(&emptyMap, 1U));
+        blinker::ByteView(&emptyMap, 1U), true, 77U);
     CHECK_EQ(1U, lanControl.presenceCalls);
 
     // Non-native failure closes only the bound session; ordinary Cloud has
@@ -9143,7 +9143,7 @@ void testTransportScopedAccess() {
     CHECK_EQ(1U, bleAuth.resetCalls);
     runtime.poll(1000U);
     CHECK_EQ(1U, bleAuth.closedCalls);
-    open(lan);
+    open(lan, 77U);
     CHECK_EQ(2U, lanControl.beginCalls);
     lan.disconnect(77U);
     CHECK_EQ(1U, lanAuth.closedCalls);
@@ -9161,13 +9161,13 @@ void testTransportScopedAccess() {
     runtime.poll(1000U);
     CHECK_EQ(1U, hello(ble).authorizationMethods[0]);
     CHECK_EQ(2U, hello(lan).authorizationMethods[0]);
-    negotiate(ble);
-    negotiate(lan);
-    authenticate(lan, 2U);
+    negotiate(ble, 77U);
+    negotiate(lan, 77U);
+    authenticate(lan, 2U, true);
     CHECK_EQ(1U, lanAuth.lastTransportId);
-    open(ble);
+    open(ble, 77U);
     CHECK_EQ(1U, bleControl.beginCalls); // Old permission did not survive restart.
-    open(lan);
+    open(lan, 77U);
     CHECK_EQ(3U, lanControl.beginCalls);
     runtime.stop();
     CHECK_TRUE(hub.removeTransport(lan).ok());

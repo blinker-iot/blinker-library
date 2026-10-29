@@ -11,12 +11,12 @@
 namespace {
 
 static_assert(
-    blinker::kControllerGrantMaxEncodedSize ==
-        blinker::bbp2::kControllerGrantMaximumSize,
+    static_cast<size_t>(blinker::kControllerGrantMaxEncodedSize) ==
+        static_cast<size_t>(blinker::bbp2::kControllerGrantMaximumSize),
     "Controller grant bounds drifted between contract and BBP/2");
 static_assert(
-    blinker::kControllerReceiptMaxEncodedSize ==
-        blinker::bbp2::kControllerMutationReceiptMaximumSize,
+    static_cast<size_t>(blinker::kControllerReceiptMaxEncodedSize) ==
+        static_cast<size_t>(blinker::bbp2::kControllerMutationReceiptMaximumSize),
     "Controller receipt bounds drifted between contract and BBP/2");
 
 #define CHECK_TRUE(condition)                                                   \

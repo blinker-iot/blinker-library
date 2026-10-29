@@ -27,9 +27,11 @@ public:
           chunk_(), expected_(), loaded_(), instance_(), header_(), records_(), hash_() {
         // The constructor initializes no hardware; digest workspace is fixed.
         baselineValid_ = decodeHex(baselineHex, baseline_);
-        static_assert(WioTerminalTaskSnapshotBlobStore<capacity>::maximumSnapshotSize == payloadSize,
+        static_assert(static_cast<size_t>(WioTerminalTaskSnapshotBlobStore<capacity>::maximumSnapshotSize) ==
+                          static_cast<size_t>(payloadSize),
                       "Task codec size changed");
-        static_assert(WioTerminalTaskSnapshotBlobStore<capacity>::journalScratchSize == journalSize,
+        static_assert(static_cast<size_t>(WioTerminalTaskSnapshotBlobStore<capacity>::journalScratchSize) ==
+                          static_cast<size_t>(journalSize),
                       "Task journal size changed");
     }
     bool healthy() const override { return !access_.failed() && !owner_.quarantined(); }

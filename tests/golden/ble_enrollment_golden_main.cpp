@@ -73,7 +73,7 @@ blinker::ByteView view(const std::vector<uint8_t>& value) {
 }
 
 uint64_t number(const Properties& values, const char* key) {
-    const std::string& text = required(values, key);
+    const std::string text = required(values, key);
     char* end = nullptr;
     const unsigned long long parsed = std::strtoull(text.c_str(), &end, 10);
     check(end != text.c_str() && *end == '\0', std::string("invalid number: ") + key);

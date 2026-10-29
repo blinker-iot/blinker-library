@@ -110,7 +110,8 @@ void task(Flash& flash, unsigned variant = 0U, bool tombstone = false) {
     WioTerminalQspiOwner owner(flash, now); WioTerminalFlashBlobBank bank(owner);
     WioTerminalTaskSnapshotBlobStore<4U> tasks(bank, true); CHECK(tasks.begin());
     const auto value = fixture(variant); CHECK(tasks.replace(ByteView(value.data(), value.size())));
-    if (tombstone) CHECK(tasks.clear()); tasks.end();
+    if (tombstone) CHECK(tasks.clear());
+    tasks.end();
 }
 struct Config {
     std::string source, original, identityHash, currentHash, intent;

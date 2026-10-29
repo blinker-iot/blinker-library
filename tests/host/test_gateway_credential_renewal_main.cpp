@@ -286,8 +286,8 @@ public:
         blinker::ByteView expectedKey,
         blinker::ByteView expectedAad,
         blinker::ByteView plaintext)
-        : expectedKey_(expectedKey), expectedAad_(expectedAad),
-          plaintext_(plaintext), calls(0U) {}
+        : calls(0U), expectedKey_(expectedKey), expectedAad_(expectedAad),
+          plaintext_(plaintext) {}
 
     blinker::Result x25519PublicKey(
         blinker::ByteView, blinker::MutableByteSpan) override {

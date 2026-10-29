@@ -248,6 +248,14 @@ set_source_files_properties(
     "${ESP32_STORAGE_FRAGMENT}" "${ESP32_SECURITY_FRAGMENT}"
     "${UNO_R4_STORAGE_FRAGMENT}"
     PROPERTIES LANGUAGE CXX)
+if(NOT MSVC AND CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+    # CMake's pre-CMP0119 LANGUAGE behavior selects the driver but does not
+    # tell GCC/Clang that an unknown .inc extension contains C++ source.
+    set_property(SOURCE
+        "${ESP32_STORAGE_FRAGMENT}" "${ESP32_SECURITY_FRAGMENT}"
+        "${UNO_R4_STORAGE_FRAGMENT}"
+        APPEND PROPERTY COMPILE_OPTIONS -x c++)
+endif()
 
 blinker_test(blinker_esp32_security_adapter_tests
     test_esp32_security_main.cpp "${ESP32_SECURITY_FRAGMENT}")

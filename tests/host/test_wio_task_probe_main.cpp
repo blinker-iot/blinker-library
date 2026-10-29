@@ -5,6 +5,7 @@
 #include <BlinkerV2/core/Crc32.h>
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <functional>
 #include <iostream>
 #include <vector>

@@ -165,7 +165,7 @@ private:
         uint32_t actualCapacity = 0U;
         if (!access_.begin(actualCapacity, tasks, tasks, 10000U) || actualCapacity != WioTerminalQspiOwner::expectedCapacity)
             return conflict();
-        const size_t offset = tasks ? 0U : regionSize;
+        const size_t offset = tasks ? 0U : static_cast<size_t>(regionSize);
         const uint32_t address = tasks ? WioTerminalQspiOwner::taskAddress : WioTerminalQspiOwner::identityAddress;
         for (size_t slot = 0U; slot < 2U; ++slot) {
             const size_t within = slot * sectorSize;
