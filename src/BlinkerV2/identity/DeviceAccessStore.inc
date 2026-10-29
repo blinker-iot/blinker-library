@@ -198,7 +198,7 @@ Result decodeState(ByteView input, AccessState& state) {
         ? kLegacyCrcOffset
         : (previous ? kPreviousCrcOffset : kCrcOffset);
     const size_t slotCapacity = current
-        ? ControllerCredentialTable::capacity
+        ? static_cast<size_t>(ControllerCredentialTable::capacity)
         : 2U;
     if (input.data[5] != static_cast<uint8_t>(slotCapacity) ||
         input.data[6] > slotCapacity ||

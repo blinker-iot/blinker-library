@@ -42,8 +42,8 @@ float sampleTemperature() {
     return 21.5f;
 }
 
+} // namespace
+
 void compileTelemetrySampler() {
     (void)liveTemperature.onSample(&sampleTemperature);
 }
-
-} // namespace

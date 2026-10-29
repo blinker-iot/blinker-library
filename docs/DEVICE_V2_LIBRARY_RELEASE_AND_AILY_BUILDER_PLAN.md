@@ -617,3 +617,17 @@ Builder 的本机冻结记录包含 CRLF，Git 标准 blob 是 LF；规范化文
 架构门禁与 8 项受影响定位输入回归通过；目录断言只重验对应失败方法，原已过项不本地重跑。
 该轮同时暴露旧多平台开发矩阵的独立 fixture／脚本问题（如 `access` 全局名与 POSIX 同名、Wio 安装参数折行），
 不把它们冒充本受限 ESP32 TLS 候选的失败或通过。本批不扩到旧平台修复；完整质量状态必须单列，不能据此宣布全平台稳定发行。
+
+### 14.6 严格 Host 编译兼容的必要修正
+
+门禁对齐提交 `8de5bf53c1c7f71ce1d670c396436ab50e9a69e1` 的
+[实际 run](https://github.com/blinker-iot/blinker-library/actions/runs/40822048571)中，package 已通过 219 项（1 项跳过）及双次确定性归档校验；
+host 的架构、Python、签名 oracle 和 183 项硬件工具自测通过，随后 GCC 严格编译停止，候选仍按依赖跳过。
+这不是候选 SDK 编译失败，也不能凭 package 已过就确认发行。
+
+只修复实际两项：`DeviceAccessStore` 的条件表达式将既有容量常量显式转为 `size_t`，不改任何容量、格式、分支或恢复语义；
+compile-only 的采样 API wrapper 移到外部链接范围，让其继续编译实例化，不被误认为匿名空间的无用函数。
+不执行这个 wrapper、不改采样回调、不关闭告警或弱化 `-Werror`，其余冻结及 host 门禁保持。
+架构通过；复用原 LOC-0 host 树仅编译 interaction 与 access-store 目标，保留 `/W4 /WX`，9 项原序列化／迁移／槽位／恢复检查通过。
+本机为 MSVC，不冒称它已经替代远端 GCC；没有本地全队列或 SDK 编译。
+后续仍只在匹配修正提交上取得真正的 host／受限候选结果，未知业务请求、设备授权和原日志不受影响。
