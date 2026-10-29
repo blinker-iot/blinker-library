@@ -5,6 +5,7 @@ on:
     branches: [device_v2]
     paths:
       - ".github/workflows/device-v2-ci.yml"
+      - ".github/workflows/device-v2-cloud-beta.yml"
       - "src/**"
       - "examples/**"
       - "library.properties"
@@ -12,12 +13,14 @@ on:
       - "keywords.txt"
       - "README.md"
       - "release/**"
+      - "profiles/**"
       - "tools/**"
       - "docs/**"
       - "tests/**"
   pull_request:
     paths:
       - ".github/workflows/device-v2-ci.yml"
+      - ".github/workflows/device-v2-cloud-beta.yml"
       - "src/**"
       - "examples/**"
       - "library.properties"
@@ -25,6 +28,7 @@ on:
       - "keywords.txt"
       - "README.md"
       - "release/**"
+      - "profiles/**"
       - "tools/**"
       - "docs/**"
       - "tests/**"
@@ -150,6 +154,14 @@ jobs:
         with:
           name: blinker-device-v2-arduino-development
           path: build/release-a/artifacts
+
+  # Same-commit candidate delivery for device_v2; no default-branch write or secrets.
+  cloud-beta-candidate:
+    needs: [host-quality, package-boundary]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/device_v2' }}
+    uses: ./.github/workflows/device-v2-cloud-beta.yml
+    with:
+      verify_location_input: true
 
   arduino-core:
     runs-on: ubuntu-24.04

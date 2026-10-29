@@ -256,6 +256,7 @@ DeviceRuntime::DeviceRuntime(
       timeSync_(nullptr),
       telemetryClock_(nullptr),
       telemetrySampleEncoder_(nullptr),
+      telemetrySamplePreparer_(nullptr),
       telemetrySampleContext_(nullptr),
       telemetryLeases_(),
       telemetryCounters_(),
@@ -629,7 +630,8 @@ Result DeviceRuntime::setReliableOutbox(ReliableOutbox* outbox) {
 Result DeviceRuntime::setTelemetrySampler(
     IClock* clock,
     TelemetrySampleEncoder encoder,
-    void* context) {
+    void* context,
+    TelemetrySamplePreparer prepare) {
     if (started_) return Result::failure(ErrorCode::NotConfigured);
     if ((clock == nullptr) != (encoder == nullptr) ||
         (encoder != nullptr && context == nullptr)) {
@@ -637,6 +639,7 @@ Result DeviceRuntime::setTelemetrySampler(
     }
     telemetryClock_ = clock;
     telemetrySampleEncoder_ = encoder;
+    telemetrySamplePreparer_ = encoder != nullptr ? prepare : nullptr;
     telemetrySampleContext_ = context;
     if (encoder != nullptr) {
         config_.protocolFeatures |= bbp2::FeatureTelemetry;
@@ -1941,7 +1944,9 @@ Result DeviceRuntime::sendTelemetryStatus(
 
 Result DeviceRuntime::sendTelemetrySample(
     TelemetryLeaseSlot& lease,
-    uint32_t nowMillis) {
+    uint32_t nowMillis,
+    bool& sent) {
+    sent = false;
     SendTarget target;
     target.kind = lease.sessionId == 0U
                       ? SendTargetKind::Transport
@@ -1967,15 +1972,35 @@ Result DeviceRuntime::sendTelemetrySample(
     const size_t valueCapacity = maximumFrame < transmitBuffer_.size
                                      ? maximumFrame - reserve
                                      : transmitBuffer_.size - reserve;
+    ByteView selectedFields(lease.fields, sizeof(lease.fields));
+    size_t fieldCount = lease.fieldCount;
+    if (telemetrySamplePreparer_ != nullptr) {
+        // The eventual envelope is not encoded until after value sampling.
+        // Borrow its reserved scratch instead of allocating a second frame or
+        // keeping a mutable bitmap in every session/lease.
+        static_assert(sizeof(lease.fields) <= reserve, "Telemetry selection must fit reserved envelope scratch");
+        memcpy(transmitBuffer_.data, lease.fields, sizeof(lease.fields));
+        RxContext source;
+        source.transportId = session->transportId;
+        source.sessionId = session->sessionId;
+        source.encrypted = session->encrypted;
+        source.bonded = session->bonded;
+        source.authenticated = session->transportAuthenticated;
+        const Result prepared = telemetrySamplePreparer_(telemetrySampleContext_, source, nowMillis,
+            MutableByteSpan(transmitBuffer_.data, sizeof(lease.fields)), fieldCount);
+        if (!prepared) return prepared;
+        if (fieldCount == 0U) return Result::success(); // No empty-map heartbeat.
+        selectedFields = ByteView(transmitBuffer_.data, sizeof(lease.fields));
+    }
     bbp2::IdBodyWriter writer(MutableByteSpan(
         transmitBuffer_.data + reserve,
         valueCapacity));
-    Result result = writer.begin(lease.fieldCount);
+    Result result = writer.begin(fieldCount);
     if (result) {
         result = telemetrySampleEncoder_(
             telemetrySampleContext_,
-            ByteView(lease.fields, sizeof(lease.fields)),
-            lease.fieldCount,
+            selectedFields,
+            fieldCount,
             writer);
     }
     ByteView values;
@@ -1996,12 +2021,14 @@ Result DeviceRuntime::sendTelemetrySample(
             maximumFrame - bbp2::kBaseHeaderSize),
         body);
     if (!result) return result;
-    return sendEncodedBody(
+    result = sendEncodedBody(
         bbp2::MessageKind::TelemetryData,
         bbp2::FlagIdMode,
         nextSequence(),
         body.size,
         target);
+    sent = result.ok();
+    return result;
 }
 
 void DeviceRuntime::pollTelemetry() {
@@ -2036,10 +2063,11 @@ void DeviceRuntime::pollTelemetry() {
         // this sampling opportunity before sending so congestion drops the
         // old sample, advances sequence and cannot create a hot retry loop.
         telemetryLeases_.sampled(*due, now);
-        const Result result = sendTelemetrySample(*due, now);
-        if (result) {
+        bool sent = false;
+        const Result result = sendTelemetrySample(*due, now, sent);
+        if (result && sent) {
             incrementDiagnostic(telemetryCounters_.samplesSent);
-        } else {
+        } else if (!result) {
             incrementDiagnostic(telemetryCounters_.samplesDropped);
         }
     }

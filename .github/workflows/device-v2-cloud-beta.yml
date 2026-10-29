@@ -1,0 +1,79 @@
+name: Device V2 restricted cloud beta candidate
+
+# Explicit candidate preparation only: no deployment or GitHub Release publish.
+# This job covers Arduino CLI; the pinned local R4 Aily evidence is separate.
+on:
+  workflow_dispatch:
+    inputs:
+      verify_location_input:
+        description: "Also verify the optional location input (does not enable device location)"
+        type: boolean
+        required: false
+        default: false
+  workflow_call:
+    inputs:
+      verify_location_input:
+        description: "Also verify the optional location input (does not enable device location)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  cloud-beta-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ARDUINO_DIRECTORIES_DATA: ${{ runner.temp }}/arduino-cloud-beta-data
+      ARDUINO_DIRECTORIES_DOWNLOADS: ${{ runner.temp }}/arduino-cloud-beta-downloads
+    steps:
+      - uses: actions/checkout@v6
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: "1.5.1"
+      - name: Install the original public-cloud SDK
+        run: >-
+          arduino-cli core install "esp32:esp32@3.3.11"
+          --additional-urls
+          "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+      - name: Build the single restricted cloud library
+        run: >-
+          python3 tools/build_arduino_release.py
+          --profile profiles/cloud-beta.json
+          --stage-dir build/cloud-beta/library
+          --output-dir build/cloud-beta/artifacts
+      - name: Verify the generated checksum
+        working-directory: build/cloud-beta/artifacts
+        run: sha256sum --check SHA256SUMS
+      - name: Install and verify only the admitted cloud targets
+        run: >-
+          python3 tests/arduino/verify_installed_release.py
+          --zip-path build/cloud-beta/artifacts/BlinkerDeviceV2-0.1.0.zip
+          --work-dir "${RUNNER_TEMP}/cloud-beta-installed"
+          --data-dir "$ARDUINO_DIRECTORIES_DATA"
+          --downloads-dir "$ARDUINO_DIRECTORIES_DOWNLOADS"
+          --target esp32-wifi
+          --target esp32-cloud-smoke
+          --jobs 2
+      - name: Verify optional location input from the same ZIP
+        if: ${{ inputs.verify_location_input }}
+        run: >-
+          python3 tests/arduino/verify_installed_release.py
+          --zip-path build/cloud-beta/artifacts/BlinkerDeviceV2-0.1.0.zip
+          --work-dir "${RUNNER_TEMP}/cloud-beta-location-input-installed"
+          --data-dir "$ARDUINO_DIRECTORIES_DATA"
+          --downloads-dir "$ARDUINO_DIRECTORIES_DOWNLOADS"
+          --dependency-dir "${RUNNER_TEMP}/cloud-beta-installed/sketchbook/libraries"
+          --target esp32-cloud-smoke
+          --location-input
+          --jobs 1
+      - name: Retain the verified candidate and checksum only
+        uses: actions/upload-artifact@v4
+        with:
+          name: blinker-device-v2-cloud-beta-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            build/cloud-beta/artifacts/BlinkerDeviceV2-0.1.0.zip
+            build/cloud-beta/artifacts/SHA256SUMS

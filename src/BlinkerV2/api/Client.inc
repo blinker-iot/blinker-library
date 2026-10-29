@@ -56,6 +56,7 @@ Client::Client(
       stateApplyActive_(false),
       diagnostics_(diagnostics),
       clock_(nullptr),
+      cloudSampleProvider_(nullptr),
       blockedStateRevision_(0U),
       blockedStateFieldCount_(0U) {
     runtime_.setCommandHandler(&Client::commandThunk, this);
@@ -109,7 +110,8 @@ Result Client::prepare() {
     result = runtime_.setTelemetrySampler(
         hasTelemetry ? clock_ : nullptr,
         hasTelemetry ? &Client::telemetrySampleEncoderThunk : nullptr,
-        hasTelemetry ? this : nullptr);
+        hasTelemetry ? this : nullptr,
+        hasTelemetry ? &Client::telemetrySamplePreparerThunk : nullptr);
     if (!result) return result;
     result = outbound_.prepare(registry_.size());
     if (!result) return result;
@@ -277,7 +279,9 @@ Result Client::telemetrySampleEncoderThunk(
             return Result::failure(ErrorCode::InternalError);
         }
         Result result;
-        if (handle.slot_->callback.sample != nullptr) {
+        if (client->cloudSampleProvider_ != nullptr && client->cloudSampleProvider_->endpointId() == fieldId) {
+            result = client->cloudSampleProvider_->write(writer);
+        } else if (handle.slot_->callback.sample != nullptr) {
             result = handle.slot_->callback.sample(
                 handle.slot_->context,
                 fieldId,
@@ -295,6 +299,56 @@ Result Client::telemetrySampleEncoderThunk(
     return written == fieldCount
                ? Result::success()
                : Result::failure(ErrorCode::InvalidArgument);
+}
+
+Result Client::attachCloudSampleProvider(CloudTelemetrySampleProvider& provider) {
+    if (cloudSampleProvider_ != nullptr) return Result::failure(ErrorCode::AlreadyExists);
+    const EndpointDescriptor* field = registry_.findById(provider.endpointId());
+    if (field == nullptr || field->kind != EndpointKind::Property || field->type != ValueType::Object ||
+        (field->access != AccessRead && field->access != (AccessRead | AccessNotify)) ||
+        field->telemetryMinimumIntervalMs < 100U || field->telemetryMinimumIntervalMs > 60000U) {
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    if (field->constraints != nullptr && (field->constraints->flags & ConstraintMaxLength) != 0U &&
+        field->constraints->maxLength < 8U) return Result::failure(ErrorCode::InvalidArgument);
+    ByteView value;
+    cbor::Type type;
+    const Result current = stateStore_.valueById(provider.endpointId(), value, type);
+    if (current) return Result::failure(ErrorCode::StateConflict);
+    if (current.code() != ErrorCode::NotFound) return current;
+    cloudSampleProvider_ = &provider;
+    return Result::success();
+}
+
+Result Client::telemetrySamplePreparerThunk(void* context, const RxContext& source,
+    uint32_t nowMillis, MutableByteSpan fields, size_t& count) {
+    Client* client = static_cast<Client*>(context);
+    if (client == nullptr) return Result::failure(ErrorCode::InvalidArgument);
+    CloudTelemetrySampleProvider* provider = client->cloudSampleProvider_;
+    if (provider == nullptr) return Result::success();
+    const size_t index = provider->endpointId() - 1U;
+    if (fields.data == nullptr || index / 8U >= fields.size) return Result::failure(ErrorCode::InvalidArgument);
+    const uint8_t mask = static_cast<uint8_t>(1U << (index % 8U));
+    if ((fields.data[index / 8U] & mask) == 0U) return Result::success();
+    const IFrameTransport* transport = client->transports_.at(source.transportId);
+    const uint16_t features = transport != nullptr ? transport->capabilities().features : 0U;
+    const uint16_t required = TransportFeatureCloud | TransportFeatureAuthenticated;
+    const bool cloud = source.authenticated && (features & required) == required &&
+                       (features & TransportFeatureLocal) == 0U;
+    if (!cloud || !provider->prepare(nowMillis)) {
+        if (count == 0U) return Result::failure(ErrorCode::InvalidArgument);
+        fields.data[index / 8U] &= static_cast<uint8_t>(~mask);
+        --count;
+    }
+    return Result::success();
+}
+
+Result Client::privateStateGuardThunk(void* context, StringView key, ByteView, cbor::Type) {
+    Client* client = static_cast<Client*>(context);
+    const EndpointDescriptor* field = client->registry_.find(key);
+    return field != nullptr && client->cloudSampleProvider_ != nullptr &&
+           field == client->registry_.findById(client->cloudSampleProvider_->endpointId())
+               ? Result::failure(ErrorCode::UnsupportedFeature) : Result::success();
 }
 
 Result Client::stateApplyTransactionThunk(
@@ -657,6 +711,10 @@ Result Client::commitState(ByteView values) {
             diagnostics_->recordState(false, result, runtime_.stateRevision());
         }
         return result;
+    }
+    if (cloudSampleProvider_ != nullptr) {
+        const Result guard = bbp2::visitKeyedBody(values, &Client::privateStateGuardThunk, this);
+        if (!guard) return guard;
     }
     bool changed = false;
     Result result = stateStore_.applyKeyed(

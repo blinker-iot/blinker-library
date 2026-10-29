@@ -88,6 +88,12 @@ typedef Result (*TelemetrySampleEncoder)(
     size_t fieldCount,
     bbp2::IdBodyWriter& writer);
 
+// Optional per-send preparation. May remove unavailable private fields from a
+// borrowed copy, never change the retained lease or add ordinary fields.
+typedef Result (*TelemetrySamplePreparer)(
+    void* context, const RxContext& source, uint32_t nowMillis,
+    MutableByteSpan selectedFields, size_t& fieldCount);
+
 struct DeviceRuntimeConfig {
     uint32_t protocolFeatures;
     uint16_t maxFrameSize;
@@ -141,7 +147,8 @@ public:
     Result setTelemetrySampler(
         IClock* clock,
         TelemetrySampleEncoder encoder,
-        void* context);
+        void* context,
+        TelemetrySamplePreparer prepare = nullptr);
 
     Result sendPatch(ByteView keyedBody, const SendTarget& target);
     Result sendPatchById(ByteView idBody, const SendTarget& target);
@@ -413,7 +420,8 @@ private:
         bool response);
     Result sendTelemetrySample(
         TelemetryLeaseSlot& lease,
-        uint32_t nowMillis);
+        uint32_t nowMillis,
+        bool& sent);
     void pollTelemetry();
     void pollTimeSync();
     WallTimeSource timeSource(uint8_t transportId) const;
@@ -484,6 +492,7 @@ private:
     ITimeSync* timeSync_;
     IClock* telemetryClock_;
     TelemetrySampleEncoder telemetrySampleEncoder_;
+    TelemetrySamplePreparer telemetrySamplePreparer_;
     void* telemetrySampleContext_;
     TelemetryLeaseTable telemetryLeases_;
     TelemetryCounters telemetryCounters_;

@@ -10,6 +10,7 @@
 #include "../core/Diagnostics.h"
 #include "../interface/IDiagnosticOutput.h"
 #include "../runtime/TimeSyncService.h"
+#include "../location/Location.h"
 
 #if defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_ARCH_RENESAS)
 // Core API exposes arduino::Print via a using declaration. Match that entity
@@ -139,6 +140,26 @@ public:
         snapshot = WallClockSnapshot();
         return time_ != nullptr && time_->readTime(snapshot);
     }
+
+    // Accept one user-supplied WGS84 observation locally. This does not send,
+    // authorize a stream, acknowledge delivery or set business/system UTC.
+    // Without sampledAtMillis the caller asserts this is a new observation.
+    bool location(Location& target, const LocationFix& observation) {
+        return remember(target.update(observation));
+    }
+    bool location(Location& target, const LocationFix& observation, uint32_t sampledAtMillis) {
+        return remember(target.update(observation, sampledAtMillis));
+    }
+    bool location(Location& target, double latitude, double longitude) {
+        return remember(target.update(latitude, longitude));
+    }
+    bool location(Location& target, double latitude, double longitude, uint32_t sampledAtMillis) {
+        return remember(target.update(latitude, longitude, sampledAtMillis));
+    }
+    // Loss suppresses further sampling but keeps the last local fix. Clear
+    // also forgets that observation/sequence; neither writes ordinary State.
+    bool locationLost(Location& target) { return remember(target.loseFix()); }
+    bool clearLocation(Location& target) { return remember(target.clear()); }
 
     // Before begin(), explicitly allow only these scalar Properties. The
     // product copies bindings into fixed static storage; Property objects must

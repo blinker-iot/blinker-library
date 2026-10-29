@@ -1,5 +1,11 @@
 # Device V2 Arduino 发布、CI 与平台矩阵
 
+> **当前入口（2026-10-27）：**本页保留历史打包、编译与资源证据，不作为当前首发支持声明。
+> 下文的“91 个普通 TU”、外部 NimBLE-Arduino 依赖和“八个正式目标”均为当时的记录，不能套用于当前库或新 profile。
+> 当前首发平台、连接模式、固定 SDK、公开 profile 与待验边界以
+> [设备库发布与 Aily Builder 兼容实施方案](DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md) 的 R3（§9）为准；
+> Aily 代表目标证据不能外推为全部平台通过，受限 cloud-beta profile 也不能外推为全库云端支持。
+
 > **2026-08-23 复核：**此前安装 ZIP/ELF 数据仍是历史有效基线，但删减后版本必须重新跑完整矩阵。当前 `src`
 > 有 91 个普通 `.cpp`；最新隔离安装已完成，ESP32 WiFi clean compile 在本机 6 分钟仍未结束，说明已有门禁验证了
 > 链接闭包，却没有冻结可接受的首次编译成本。新增 P0：收敛到约 8～16 个普通 translation unit，随后再跑 8 个

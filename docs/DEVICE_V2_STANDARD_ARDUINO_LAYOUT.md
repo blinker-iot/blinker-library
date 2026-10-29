@@ -1,5 +1,9 @@
 # Device V2 单库 Arduino 架构与实施方案（2026-08-19）
 
+> 当前发行入口（2026-10-27）：本文保留单库架构及历史资源证据。公开 ESP32 云端受限候选的
+> 配置／安装以[发布方案 R3～R5](DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md)及
+> [安装说明](DEVICE_V2_ESP32_CLOUD_BETA_INSTALLATION.md)为准；仓库默认 development 头或 GitHub 源码 ZIP 不能替代 profile 化候选。
+
 2026-09-13 B1 修订：当前执行状态见[基础路线](DEVICE_V2_BASELINE_CLOSURE_ROADMAP.md)和
 [本批安装矩阵](DEVICE_V2_B1_INSTALLATION_MATRIX_REPORT.md)。下文历史资源数字不替代当前版本证据。
 

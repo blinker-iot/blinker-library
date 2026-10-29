@@ -5,6 +5,15 @@ contains the shared component/protocol runtime, ESP32 and UNO R4 WiFi/BLE,
 and Wio Terminal WiFi implementations. Wio Terminal BLE is an explicit
 experimental preview and is not part of the current release claim.
 
+Release preparation and current Aily Builder validation are tracked in the
+[library release execution plan](docs/DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md).
+
+For the current cloud beta ZIP, start with [its installation steps below](#install-the-cloud-beta-candidate):
+**ESP32 manual WiFi, TLS, zero persistent-task slots only**. The generic BLE,
+R4/Wio and task examples in this single library do not enable those modes in
+that restricted profile. A GitHub source ZIP or a bare clone contains development
+configuration and is not the configured cloud candidate.
+
 ## WiFi QuickStart
 
 ```cpp
@@ -231,9 +240,16 @@ steps are in [the task execution plan](docs/DEVICE_V2_TASK_AND_SKETCH_TIMER_EXEC
 
 | Board family | WiFi | BLE | WiFi+BLE provisioning |
 |---|---|---|---|
-| ESP32 | device API and hardware E2E complete; production config pending | App/Service/device hardware E2E passed | BLE WiFiProv and Direct hardware E2E passed; release profile pending |
-| UNO R4 | device API and hardware E2E complete; production config pending | App/Service/device hardware E2E passed | not planned for the current release |
-| Wio Terminal | device/cloud hardware E2E passed | experimental opt-in; hardware E2E passed, not released | not planned for the current release |
+| ESP32 | device API and hardware E2E complete; restricted cloud WiFi profile available below | App/Service/device hardware E2E passed; full public profile pending | BLE WiFiProv and Direct hardware E2E passed; release profile pending |
+| UNO R4 | device API and hardware E2E complete; public profile pending | App/Service/device hardware E2E passed; public profile pending | not planned for the current release |
+| Wio Terminal | device/cloud hardware E2E passed; public profile pending | experimental opt-in; hardware E2E passed, not released | not planned for the current release |
+
+The first-release source scope is frozen as six ordinary modes / seven compile
+targets, not every board covered by the architecture tags. SDK baselines,
+tool-specific evidence and the narrower publicly configured environment are
+separate in [release plan R3](docs/DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md#9-r3-首发边界与公开配置冻结).
+The only current public cloud profile is ESP32 manual WiFi with zero persistent
+task slots; it does not enable R4/Wio cloud release or BLE enrollment.
 
 The following capabilities share the existing API; they are not separate
 Arduino packages:
@@ -327,6 +343,62 @@ defaults are development templates, not production trust material. See
 
 ### Restricted cloud beta profile
 
+Profile selection, current environment and key-role boundaries are documented in
+[the public profile index](profiles/README.md).
+
+#### Install the cloud beta candidate
+
+Library version: **0.1.0**; embedded firmware label: `device-v2-0.1.0`.
+Use the candidate's `BlinkerDeviceV2-0.1.0.zip` together with its own `SHA256SUMS`.
+Check the ZIP before installing: run `sha256sum --check SHA256SUMS` in the download
+directory on Linux, or compare `Get-FileHash .\BlinkerDeviceV2-0.1.0.zip -Algorithm SHA256`
+with the supplied file in PowerShell. A checksum detects byte changes; it is not
+a signature. Do not compare a new build with an older candidate's checksum.
+
+1. Keep existing Sketches and credentials. Move older Blinker, split Core/Port
+   packages or duplicate V2 copies **outside the Sketchbook `libraries` directory**;
+   renaming them inside that directory does not remove the `Blinker.h` conflict.
+   Do not delete your sketches, erase device Flash or reset authorization.
+2. Use the already admitted **Espressif Arduino-ESP32 3.3.11** core and install
+   **PubSubClient 2.8**. `WiFi`, `Network` and `NetworkClientSecure` are supplied
+   by this core; do not install third-party replacements with those names.
+   No NimBLE-Arduino, ArduinoBLE, Crypto or Seeed library is required for this
+   restricted WiFi path. This cloud baseline is separate from the ordinary
+   Plain WiFi 3.3.6 baseline; do not switch SDKs to reuse unrelated evidence.
+3. In Arduino IDE, select **Sketch > Include Library > Add .ZIP Library** and
+   install only this configured ZIP. Select **ESP32 Dev Module**
+   (`esp32:esp32:esp32`, default 4 MB flash / default partition).
+4. Open **File > Examples > BlinkerDeviceV2 > WiFiQuickStart** (or
+   **CloudSmokeTest**). Use a WiFi device's DeviceKey from the matching Blinker
+   beta environment, and fill only that key, SSID and password in your private
+   Sketch. The device needs a reachable 2.4 GHz network. Do not change internal
+   service hosts, CA headers or key rings; keep calling `Blinker.run()` in `loop()`.
+5. Enable verbose compilation and confirm the selected `Blinker.h` comes from
+   this V2 installation. If Arduino reports **Multiple libraries were found**,
+   inspect the **Used / Not used** paths and resolve duplicates before uploading.
+   Compile first; changing this library does not require clearing device storage.
+
+The single library's `depends` metadata is a **flat multi-platform set**, not a
+per-mode installer. A Library Manager dependency prompt may offer libraries used
+by other modes; that is not additional cloud support. Manual ZIP/CLI installation
+does not guarantee dependency resolution. For this candidate, install the explicit
+WiFi dependency above rather than relying on automatic installation of the whole set.
+
+Equivalent CLI installation (the ESP32 core must already be installed):
+
+```sh
+arduino-cli lib install "PubSubClient@2.8"
+arduino-cli lib install --zip-path BlinkerDeviceV2-0.1.0.zip
+arduino-cli compile --fqbn esp32:esp32:esp32 /path/to/your/WiFiQuickStart
+```
+
+CLI may require `ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true` for a local ZIP;
+enable it only for the checksum-verified artifact. No account or device Key is
+needed to compile the unchanged placeholder examples. Detailed Chinese guidance
+is in [the installation guide](docs/DEVICE_V2_ESP32_CLOUD_BETA_INSTALLATION.md).
+
+#### Maintainer build and acceptance scope
+
 Maintainers can build the **same single library** for the currently admitted
 ESP32 manual-WiFi cloud path without copying a private stage or inventing
 unused BLE/task signing keys:
@@ -350,5 +422,61 @@ unchanged. `channel: production` applies the existing strict configuration
 validator; it does not claim production release, new firmware runtime acceptance
 or R4/Wio TLS admission. The seven-target baseline remains a separate full-profile
 gate; this profile's installed targets are only `esp32-wifi` and
-`esp32-cloud-smoke`. Current evidence and next steps are in
-[the cloud execution plan](docs/DEVICE_V2_CLOUD_BETA_H2_DEPLOYMENT_PLAN.md#6-h2a-收口后的执行顺序2026-10-20).
+`esp32-cloud-smoke`. Exact package evidence, version/checksum records and the
+manual candidate CI boundary are in the
+[library release plan](docs/DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md).
+
+### Optional device location input (current source)
+
+User code owns the GPS/other device driver and parsing; no GPS dependency is
+installed by Blinker. Use the same configured library, not an additional ZIP:
+
+```cpp
+#include <Blinker.h>
+BLINKER_PROPERTY(power, bool, blinker::readWrite());
+BLINKER_LOCATION(position);
+
+void setup() {
+    Blinker.begin("YOUR_DEVICE_KEY", "YOUR_WIFI_SSID", "YOUR_WIFI_PASSWORD",
+                  power, position);
+}
+
+// Call from your parser only for a new WGS84 observation, after begin succeeds.
+bool onNewPosition(double latitude, double longitude, uint32_t sampledAtMillis) {
+    return Blinker.location(position, latitude, longitude, sampledAtMillis);
+}
+
+void loop() { Blinker.run(); } // Advance your nonblocking parser here as well.
+```
+
+Latitude comes first, longitude second, in degrees. `sampledAtMillis` is the
+original sample tick from this device's boot-local `millis()` clock, not GPS UTC
+or a peripheral clock. The overload without a tick means a new observation now;
+do not repeatedly restamp an old point. The default maximum sample age is 30 s
+and device-side interval floor is 1 s; the authorized Cloud lease controls sends.
+
+A successful call accepts the local snapshot only, not an upload/delivery ACK.
+Read `Blinker.lastError()` on failure. Invalid values do not overwrite a fix;
+`(0,0)` is a valid coordinate, not a loss marker. `Blinker.locationLost(position)`
+suppresses new sampling; `Blinker.clearLocation(position)` also clears local
+sample ordering. Neither deletes the cloud's last position.
+
+`blinker::LocationFix` overloads retain E7 coordinates and optional accuracy/UTC.
+Unknown accuracy/time remain unknown; they never synchronize a clock. Keep
+Location/Spec alive for the session and call inputs serially with `Blinker.run()`,
+not from an IRQ. The existing exact Manifest/owner admission must match before
+Cloud location can be used: declaration or successful compilation is not a grant.
+
+For advanced metadata examples, a source checkout also contains
+`docs/DEVICE_V2_LOCATION_INPUT_API.md` (not bundled in the ZIP). The instructions
+above work without that document.
+This optional source API does not add a GPS dependency, change the frozen R5 ZIP,
+or open new BLE/LAN/platform/location-sharing support.
+
+The manual cloud-candidate workflow keeps its two ordinary targets by default.
+Maintainers claiming location-input validation must also select
+`verify_location_input`; it verifies the same ZIP in a separate sketchbook.
+That option does not enable location on a device or run a physical GPS test.
+The existing `device_v2` push quality workflow also calls this same candidate
+workflow with location-input verification enabled, after its host/package gates
+pass. Both workflows use the same commit; no default-branch update is required.

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Finite facade/object and ODR-token checks using an existing real R4 SDK command.
+"""Finite facade/object and ODR-token checks using an existing real SDK command.
 
 WiFi/task compilation loads the real product and its dependencies. BLE/WiFiBLE API
 cases intentionally omit native product bindings; host multi-TU tests supply
 their lifecycles, while the ordinary compile matrix owns native BLE linkage.
 This gate neither links nor uploads firmware and needs no global product flag.
+--location-input selects only the optional location input probe on the original
+ESP32 SDK; it does not rerun or enlarge the R4/task/native BLE matrix.
 Use object compilation: this Core's GCC 7 crashes with -fsyntax-only on existing
 constexpr PropertySpec initializers, including the old unrepaired facade.
 """
@@ -71,6 +73,7 @@ def main():
     parser.add_argument('--compile-commands', type=Path, required=True)
     parser.add_argument('--out-dir', type=Path, required=True)
     parser.add_argument('--start-at', help='Run only this case and its suffix; earlier evidence is not rerun or claimed')
+    parser.add_argument('--location-input', action='store_true', help='Only the user-owned location facade on an existing ESP32 SDK')
     args = parser.parse_args()
     out = args.out_dir.resolve()
     if not out.is_relative_to(ROOT / 'build') or out == ROOT / 'build':
@@ -81,7 +84,9 @@ def main():
         parser.error('choose a new evidence directory')
     entries = json.loads(args.compile_commands.read_text(encoding='utf-8'))
     entry = next(e for e in entries if e['file'].endswith('.ino.cpp'))
-    if not any('ARDUINO_ARCH_RENESAS' in arg for arg in entry['arguments']):
+    if args.location_input and not any('ARDUINO_ARCH_ESP32' in arg for arg in entry['arguments']):
+        parser.error('the finite location input probe requires an existing ESP32 SDK command')
+    if not args.location_input and not any('ARDUINO_ARCH_RENESAS' in arg for arg in entry['arguments']):
         parser.error('this finite admission gate requires an existing real R4 SDK command')
     raw = iter(entry['arguments'][1:])
     command = [entry['arguments'][0], '-I' + str(ROOT / 'src')]
@@ -144,6 +149,13 @@ def main():
          '#include <type_traits>\nstatic_assert(std::is_same<Print, arduino::Print>::value, "Canonical SDK Print");\n'
          'auto debugMember = static_cast<void (blinker::BlinkerClass::*)(arduino::Print&, blinker::LogLevel)>(&blinker::BlinkerClass::debug);\n', None),
     ]
+    if args.location_input:
+        probe = ROOT / 'tests/arduino/CompileLocationInput/CompileLocationInput.ino'
+        cases = [
+            ('location-user-input', '#include "' + probe.as_posix() + '"\n', None),
+            ('location-reject-temporary-spec', '#include <Blinker.h>\n'
+             'blinker::Location invalid(blinker::LocationSpec("position"));\n', 'deleted'),
+        ]
     if args.start_at:
         names = [name for name, _, _ in cases]
         if args.start_at not in names:
@@ -184,8 +196,15 @@ def main():
                'BlinkerV2/arduino/ports/uno_r4/UnoR4TaskBuildContract.h')]
     inputs += [ROOT / 'examples/R4TasksQuickStart' / name for name in
                ('R4TasksQuickStart.ino', 'UserCredentials.h', 'README.md')]
+    if args.location_input:
+        inputs = [probe] + [ROOT / 'src' / name for name in
+            ('BlinkerV2/api/BlinkerFacade.h', 'BlinkerV2/api/Client.h', 'BlinkerV2/location/Location.h',
+             'BlinkerV2/location/LocationFix.h', 'BlinkerV2/location/LocationSnapshot.h',
+             'BlinkerV2/location/CloudLocationBinding.h')]
     report.write_text(json.dumps({
-        'scope': 'real R4 SDK object compilation/12 B ABI; BLE native bindings mocked; no firmware link or hardware',
+        'scope': ('original ESP32 SDK location input object/12 B facade ABI; no firmware link or hardware'
+                  if args.location_input else
+                  'real R4 SDK object compilation/12 B ABI; BLE native bindings mocked; no firmware link or hardware'),
         'buildWideProductFlag': False, 'cases': rows, 'definitions': definitions,
         'startAt': args.start_at, 'compileCommands': str(args.compile_commands.resolve()),
         'inputs': {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 import os
@@ -19,7 +19,8 @@ import zipfile
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY / "tools"))
-from arduino_release_profile import CLOUD_WIFI_PROFILE_ID, TASK_PILOT, TASK_PILOT_ID
+from arduino_release_profile import (CLOUD_WIFI_PROFILE_ID, TASK_PILOT, TASK_PILOT_ID,
+                                     configured_library_files, load_profile)
 
 
 @dataclass(frozen=True)
@@ -121,6 +122,98 @@ def select_targets(names: list[str] | None) -> tuple[Target, ...]:
     if len(names) != len(set(names)) or any(n not in available for n in names):
         raise ValueError("unknown or duplicate installed target")
     return tuple(available[n] for n in names)
+
+
+def location_candidate_targets(targets: tuple[Target, ...]) -> tuple[Target, ...]:
+    """Explicit internal consumer, never an addition to the public matrix."""
+    if tuple(target.name for target in targets) != ("esp32-cloud-smoke",):
+        raise SystemExit("--location-candidate requires only --target esp32-cloud-smoke")
+    return (replace(targets[0], example="CompileCloudLocation"),)
+
+
+def location_input_targets(targets: tuple[Target, ...]) -> tuple[Target, ...]:
+    """The driver-free facade consumer is independent of LOC-2 and business UTC."""
+    if tuple(target.name for target in targets) != ("esp32-cloud-smoke",):
+        raise SystemExit("--location-input requires only --target esp32-cloud-smoke")
+    return (replace(targets[0], example="CompileLocationInput", time_enabled=False),)
+
+
+def verify_location_link(symbols: str) -> None:
+    for marker in ("blinker::CloudLocationBinding::prepare(", "blinker::CloudLocationBinding::write(",
+                   "blinker::Client::attachCloudSampleProvider(", "blinker::Client::telemetrySamplePreparerThunk("):
+        if marker not in symbols:
+            raise SystemExit(f"LOC-2 consumer is not retained in the link: {marker}")
+
+
+LOCATION_INPUT_WRAPPERS = (
+    r"acceptUserLocation\(double, double, (?:unsigned int|unsigned long)\)",
+    r"acceptUserLocation\(blinker::LocationFix const&, (?:unsigned int|unsigned long)\)",
+    r"acceptFreshUserLocation\(double, double\)",
+    r"acceptFreshUserLocation\(blinker::LocationFix const&\)",
+    r"userLocationLost\(\)",
+    r"userLocationClockReset\(\)",
+)
+
+
+def verify_location_input_link(symbols: str) -> None:
+    verify_location_link(symbols)
+    for signature in LOCATION_INPUT_WRAPPERS:
+        if not re.search(r"\b" + signature + r"(?:\s|$)", symbols, re.MULTILINE):
+            raise SystemExit(f"LOC-5 public input wrapper is not retained in the link: {signature}")
+    # The six probe-only function-address roots retain each public overload.
+    # Their inline Location/Facade bodies need not have separate ELF symbols;
+    # source hashes and host behavior checks cover those implementations.
+
+
+def verify_location_input_inputs(installed_root: Path | None = None, *, frozen: dict | None = None) -> dict:
+    """Freeze current source/profile, then reject stale ZIPs or mid-gate edits."""
+    profile_path = REPOSITORY / "profiles/cloud-beta.json"
+    probe = REPOSITORY / "tests/arduino/CompileLocationInput/CompileLocationInput.ino"
+    profile = load_profile(profile_path)
+    if profile.product_profile != CLOUD_WIFI_PROFILE_ID or profile.task_profile is not None:
+        raise SystemExit("LOC-5 input requires the existing task-disabled public cloud-beta profile")
+    files = configured_library_files(REPOSITORY, profile)
+    required = ("src/BlinkerV2/location/Location.h", "src/BlinkerV2/api/BlinkerFacade.h",
+                "src/BlinkerV2/api/Client.h", "src/BlinkerV2/api/Client.inc",
+                "src/BlinkerV2/location/CloudLocationBinding.h")
+    if any(name not in files for name in required):
+        raise SystemExit("LOC-5 current source is missing the public location input closure")
+    record = {
+        "schema": 1, "consumer": "CompileLocationInput", "sdk": "3.3.11",
+        "productProfile": CLOUD_WIFI_PROFILE_ID, "taskCapacity": 0, "businessTimeEnabled": False,
+        "inputs": {p.relative_to(REPOSITORY).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                   for p in (profile_path, probe)},
+        "installedFiles": {name: hashlib.sha256(value if isinstance(value, bytes) else value.read_bytes()).hexdigest()
+                           for name, value in sorted(files.items())},
+    }
+    if frozen is not None and record != frozen:
+        raise SystemExit("LOC-5 frozen source/profile/probe changed during the installed gate")
+    if installed_root is not None:
+        for name, expected in record["installedFiles"].items():
+            installed = installed_root / name
+            if installed.is_symlink() or not installed.is_file() or hashlib.sha256(installed.read_bytes()).hexdigest() != expected:
+                raise SystemExit(f"LOC-5 installed source/profile differs from frozen input: {name}")
+    return record
+
+
+def verify_location_inputs(installed_root: Path | None = None) -> dict:
+    candidate = REPOSITORY / "tests/arduino/CompileCloudLocation"
+    record = json.loads((candidate / "candidate.json").read_text(encoding="utf-8"))
+    for path, key in ((candidate / "Schema.h", "schemaSha256"),
+                      (candidate / "CompileCloudLocation.ino", "sketchSha256"),
+                      (REPOSITORY / "profiles/cloud-beta.json", "profileSha256")):
+        if hashlib.sha256(path.read_bytes()).hexdigest() != record[key]:
+            raise SystemExit(f"LOC-2 frozen input changed: {path.name}")
+    if (record["productProfile"] != CLOUD_WIFI_PROFILE_ID or record["sdk"] != "3.3.11"
+            or record["taskCapacity"] != 0
+            or hashlib.sha256(bytes.fromhex(record["canonicalManifestHex"])).hexdigest() != record["manifestFingerprint"]):
+        raise SystemExit("LOC-2 frozen profile/Manifest contract is invalid")
+    if installed_root is not None:
+        profile = load_profile(REPOSITORY / "profiles/cloud-beta.json")
+        for name, expected in configured_library_files(installed_root, profile).items():
+            if isinstance(expected, bytes) and (installed_root / name).read_bytes() != expected:
+                raise SystemExit(f"LOC-2 installed public profile differs: {name}")
+    return record
 
 
 def verify_installed_product_profile(config: str, targets: tuple[Target, ...]) -> str | None:
@@ -612,6 +705,11 @@ def parse_arguments() -> argparse.Namespace:
         help="optional local library cache for offline installation",
     )
     parser.add_argument("--jobs", type=int, default=4)
+    location = parser.add_mutually_exclusive_group()
+    location.add_argument("--location-candidate", action="store_true",
+                          help="internal LOC-2 consumer only; requires the single cloud-smoke target and SDK 3.3.11")
+    location.add_argument("--location-input", action="store_true",
+                          help="driver-free LOC-5 public input consumer only; requires the single cloud-smoke target and SDK 3.3.11")
     parser.add_argument(
         "--reuse-work-dir",
         action="store_true",
@@ -669,6 +767,26 @@ def main() -> int:
         )
 
     selected_targets = select_targets(arguments.target)
+    location_input = None
+    if arguments.location_input:
+        selected_targets = location_input_targets(selected_targets)
+        location_input = verify_location_input_inputs()
+        frozen_path = work / "location-input-inputs.json"
+        if frozen_path.exists():
+            if not arguments.reuse_work_dir or json.loads(frozen_path.read_text(encoding="utf-8")) != location_input:
+                raise SystemExit("LOC-5 existing input freeze is not the matching explicit resume")
+        else:
+            with frozen_path.open("x", encoding="utf-8") as stream:
+                json.dump(location_input, stream, indent=2)
+    if arguments.location_candidate:
+        selected_targets = location_candidate_targets(selected_targets)
+        verify_location_inputs()
+    if arguments.location_candidate or arguments.location_input:
+        if not 1 <= arguments.jobs <= 2:
+            raise SystemExit("location consumers admit only --jobs 1 or 2")
+        cores = run([cli, "core", "list"], environment)
+        if not re.search(r"^esp32:esp32\s+3\.3\.11(?:\s|$)", cores, re.MULTILINE):
+            raise SystemExit("location consumers require the existing ESP32 SDK 3.3.11")
     if not arguments.reuse_work_dir:
         install_started = time.perf_counter()
         run([cli, "lib", "install", "--zip-path", str(archive)], environment)
@@ -720,12 +838,18 @@ def main() -> int:
         raise SystemExit(f"Blinker was not installed in the empty sketchbook: {installed_root}")
     verify_installed_bytes(archive, installed_root)
     config = (installed_root / "src/BlinkerV2/arduino/config/OfficialConfig.h").read_text(encoding="utf-8")
-    verify_installed_product_profile(config, selected_targets)
+    product_profile = verify_installed_product_profile(config, selected_targets)
+    if (arguments.location_candidate or arguments.location_input) and product_profile != CLOUD_WIFI_PROFILE_ID:
+        raise SystemExit("location consumers require the existing public cloud-beta profile")
+    if arguments.location_candidate:
+        verify_location_inputs(installed_root)
+    if arguments.location_input:
+        verify_location_input_inputs(installed_root, frozen=location_input)
     task_profile = verify_installed_task_profile(config, selected_targets)
 
     for target in selected_targets:
         build = work / "build" / target.name
-        example = (REPOSITORY / "tests" / "arduino" if target.tasks_enabled
+        example = (REPOSITORY / "tests" / "arduino" if target.tasks_enabled or arguments.location_candidate or arguments.location_input
                    else installed_root / "examples") / target.example
         compile_started = time.perf_counter()
         output = run(
@@ -755,8 +879,18 @@ def main() -> int:
         maps = tuple(build.glob("*.map"))
         if len(maps) != 1:
             raise SystemExit(f"{target.name} must produce exactly one link map")
-        verify_link_closure(target, maps[0], defined_symbols(build))
+        symbols = defined_symbols(build)
+        verify_link_closure(target, maps[0], symbols)
+        if arguments.location_candidate:
+            verify_location_link(symbols)
+        if arguments.location_input:
+            verify_location_input_link(symbols)
         verify_provenance(build, installed_root)
+        if arguments.location_input:
+            verify_installed_bytes(archive, installed_root)
+            verify_location_input_inputs(installed_root, frozen=location_input)
+            if hashlib.sha256(archive.read_bytes()).hexdigest() != archive_digest:
+                raise SystemExit("LOC-5 ZIP changed during the installed gate")
         print(
             f"installed ZIP target passed: {target.name} "
             f"({time.perf_counter() - compile_started:.1f}s)",
