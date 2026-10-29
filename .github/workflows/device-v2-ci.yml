@@ -257,10 +257,12 @@ jobs:
   arduino-unified:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    env:
-      ARDUINO_DIRECTORIES_DATA: ${{ runner.temp }}/arduino-unified-data
     steps:
       - uses: actions/checkout@v6
+      - name: Initialize isolated Arduino directories
+        shell: bash
+        run: |
+          printf 'ARDUINO_DIRECTORIES_DATA=%s\n' "$RUNNER_TEMP/arduino-unified-data" >> "$GITHUB_ENV"
       - uses: arduino/setup-arduino-cli@v2
         with:
           version: "1.5.0"

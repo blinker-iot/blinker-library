@@ -37,10 +37,37 @@ class CloudBetaDelivery(unittest.TestCase):
         self.assertEqual(re.findall(r'--target ([a-z0-9-]+)', ordinary),
                          ['esp32-wifi', 'esp32-cloud-smoke'])
         self.assertIn('tests/arduino/verify_installed_release.py', self.workflow)
-        self.assertIn('ARDUINO_DIRECTORIES_DATA: ${{ runner.temp }}/arduino-cloud-beta-data', self.workflow)
         self.assertIn('--data-dir "$ARDUINO_DIRECTORIES_DATA"', self.workflow)
         self.assertIn('--work-dir "${RUNNER_TEMP}/cloud-beta-installed"', self.workflow)
         self.assertIn('--jobs 2', self.workflow)
+
+    def test_isolated_directories_use_step_runtime_before_sdk_install_not_job_runner_context(self):
+        quality = (ROOT / '.github/workflows/device-v2-ci.yml').read_text(encoding='utf-8')
+        for name, workflow, directories in (
+            ('cloud-beta', self.workflow, {
+                'ARDUINO_DIRECTORIES_DATA': 'arduino-cloud-beta-data',
+                'ARDUINO_DIRECTORIES_DOWNLOADS': 'arduino-cloud-beta-downloads',
+            }),
+            ('quality-unified', quality.split('\n  arduino-unified:\n', 1)[1], {
+                'ARDUINO_DIRECTORIES_DATA': 'arduino-unified-data',
+            }),
+        ):
+            with self.subTest(workflow=name):
+                initialization = workflow.split('      - name: Initialize isolated Arduino directories\n', 1)[1]
+                initialization = re.split(r'^      - ', initialization, maxsplit=1, flags=re.MULTILINE)[0]
+                self.assertIn('        shell: bash', initialization)
+                commands = [line.strip() for line in initialization.split('        run: |\n', 1)[1].splitlines()
+                            if line.strip()]
+                self.assertEqual(commands, [
+                    f"printf '{variable}=%s\\n' \"$RUNNER_TEMP/{directory}\" >> \"$GITHUB_ENV\""
+                    for variable, directory in directories.items()
+                ])
+                self.assertLess(workflow.index('Initialize isolated Arduino directories'),
+                                workflow.index('arduino-cli core install'))
+        for name, workflow in (('cloud-beta', self.workflow), ('quality', quality)):
+            for job_environment in re.findall(r'^    env:\n((?:^ {6,}.*\n)*)', workflow, re.MULTILINE):
+                with self.subTest(workflow=name, job_environment=job_environment):
+                    self.assertNotRegex(job_environment, r'\$\{\{\s*runner(?:\.|\[)')
 
     def test_location_input_is_opt_in_and_reuses_the_same_zip_sdk_and_dependency_cache(self):
         trigger = self.workflow.split('\non:\n', 1)[1].split('\npermissions:', 1)[0]

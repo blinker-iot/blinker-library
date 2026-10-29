@@ -579,3 +579,22 @@ CI 覆盖 Arduino CLI；既有 Aily 冻结输入证据保持独立，不据此�
 定位仍需原 Manifest／owner 精确准入，不因发行打开设备名单；现有任务／授权／UNKNOWN／完整业务日志均不操作。
 R4／Wio、多模式云端、物理 GNSS、定位分享／历史及公开稳定发行继续不包含。
 实际 run、提交和校验结果在执行完成后补入本节；未取得结果前不把 push 成功写成 CI／发行通过。
+
+### 14.4 首次远端执行与解析阻点
+
+首批 40 文件已交付至 `device_v2` 的 `0171921884ac038ff448ace608be4a12b3907034`，仅三项排除路径留在原工作树。
+Git HTTPS 连接先卡住、随后有界传输报告无法连接；没有强推或重写历史。
+改用已有仓库凭据通过 GitHub Git API 逐个核对 blob、tree 和完整 commit SHA，再以 `force: false` 更新原分支；
+服务器提交与本机提交完全一致，没有把 API 生成的另一份提交冒充原 SHA。凭据只在内存，未写日志或制品。
+
+同 SHA 的[质量 run](https://github.com/blinker-iot/blinker-library/actions/runs/40821113612)和
+[候选解析记录](https://github.com/blinker-iot/blinker-library/actions/runs/40821115037)在 runner job 创建前失败，不能算作软件／编译通过。
+静态核查发现新候选及原质量 workflow 在 job 级 `env` 使用 `runner.temp`，违反
+[GitHub 上下文作用域](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability)。
+本地 YAML 语法检查没有覆盖表达式作用域；最小修正把这几项目录初始化移到 SDK 安装前的运行步骤，
+从运行时 `RUNNER_TEMP` 写入本 job 的 `GITHUB_ENV`，保留原目录隔离和 SDK，不改产品源码。
+新增作用域／运行步骤初始化顺序保护后，受影响交付回归 11/11 与 YAML 结构核查通过；
+仅对修正提交继续一次匹配 CI，不重跑本地 SDK 或改默认分支。
+
+Builder 的本机冻结记录包含 CRLF，Git 标准 blob 是 LF；规范化文本与原冻结源码一致，
+不宣称不同平台检出的原始文件字节摘要完全相同。远端可获取性由固定提交确认，编译支持边界仍按原 R4 证据。

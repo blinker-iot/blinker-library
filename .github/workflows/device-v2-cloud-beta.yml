@@ -25,11 +25,13 @@ jobs:
   cloud-beta-candidate:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    env:
-      ARDUINO_DIRECTORIES_DATA: ${{ runner.temp }}/arduino-cloud-beta-data
-      ARDUINO_DIRECTORIES_DOWNLOADS: ${{ runner.temp }}/arduino-cloud-beta-downloads
     steps:
       - uses: actions/checkout@v6
+      - name: Initialize isolated Arduino directories
+        shell: bash
+        run: |
+          printf 'ARDUINO_DIRECTORIES_DATA=%s\n' "$RUNNER_TEMP/arduino-cloud-beta-data" >> "$GITHUB_ENV"
+          printf 'ARDUINO_DIRECTORIES_DOWNLOADS=%s\n' "$RUNNER_TEMP/arduino-cloud-beta-downloads" >> "$GITHUB_ENV"
       - uses: arduino/setup-arduino-cli@v2
         with:
           version: "1.5.1"
