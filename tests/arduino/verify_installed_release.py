@@ -21,6 +21,7 @@ REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY / "tools"))
 from arduino_release_profile import (CLOUD_WIFI_PROFILE_ID, TASK_PILOT, TASK_PILOT_ID,
                                      configured_library_files, load_profile)
+import build_esp32_softap_tasks as softap_tasks
 
 
 @dataclass(frozen=True)
@@ -100,10 +101,9 @@ TARGETS = (
     ),
 )
 
-# Packaged in the same library, but intentionally not a stock-IDE compile
-# target: its matching isolated Core/Modem/heap profile is verified separately.
-# Do not silently add it to the ordinary seven task-disabled targets.
-PROFILE_GATED_EXAMPLES = ("R4TasksQuickStart",)
+# Packaged in the same library, but each requires an explicit matching profile
+# and separate compile gate. Neither expands the ordinary seven zero-slot targets.
+PROFILE_GATED_EXAMPLES = ("R4TasksQuickStart", softap_tasks.EXAMPLE)
 
 # Explicit maintainer opt-in only: not part of the ordinary release matrix.
 TASK_PILOT_TARGET = Target(
@@ -114,11 +114,17 @@ TASK_PILOT_TARGET = Target(
     time_enabled=True, tasks_enabled=True,
 )
 
+SOFTAP_TASK_TARGET = Target(
+    "esp32-softap-tasks", softap_tasks.FQBN, softap_tasks.EXAMPLE,
+    frozenset(("BlinkerDeviceV2", "Network", "PubSubClient", "WiFi")),
+    time_enabled=True, tasks_enabled=True,
+)
+
 
 def select_targets(names: list[str] | None) -> tuple[Target, ...]:
     if not names:
         return TARGETS
-    available = {t.name: t for t in (*TARGETS, TASK_PILOT_TARGET)}
+    available = {t.name: t for t in (*TARGETS, TASK_PILOT_TARGET, SOFTAP_TASK_TARGET)}
     if len(names) != len(set(names)) or any(n not in available for n in names):
         raise ValueError("unknown or duplicate installed target")
     return tuple(available[n] for n in names)
@@ -238,6 +244,15 @@ def verify_installed_task_profile(config: str, targets: tuple[Target, ...]) -> s
     Reading the tuple only identifies the existing ESP32 candidate; ordinary
     task-disabled links do not verify it or admit another platform's tasks.
     """
+    if "#define BLINKER_INTERNAL_ESP32_PROVISIONED_TASKS" in config:
+        transport, signing = softap_tasks.load_inputs()
+        expected = (softap_tasks.BOARD_GUARD + softap_tasks.qa3.graph_guard()
+                    + softap_tasks.release.render_config(softap_tasks.qa3.internal_profile(transport, signing)))
+        if config != expected or targets != (SOFTAP_TASK_TARGET,):
+            raise SystemExit("limited SoftAP tasks require their exact profile and single explicit target")
+        return softap_tasks.qa3.PROFILE_ID
+    if SOFTAP_TASK_TARGET in targets:
+        raise SystemExit("limited SoftAP target requires its matching installed library")
     definitions = re.findall(
         r"^[ \t]*#[ \t]*define[ \t]+BLINKER_TASK_([A-Z_]+)\b([^\r\n]*)$",
         config, re.MULTILINE,
@@ -265,14 +280,16 @@ def task_verification_scope(targets: tuple[Target, ...], profile: str | None) ->
     boundary = ("ordinary installed R4/Wio task targets not verified by this gate; "
                 "the separately admitted fixed R4 Plain candidate is outside this matrix")
     if any(target.tasks_enabled for target in targets):
-        return f"installed task compile/link target verified: {TASK_PILOT_TARGET.name} ({profile}); {boundary}"
+        names = ", ".join(target.name for target in targets if target.tasks_enabled)
+        return f"installed task compile/link target verified: {names} ({profile}); {boundary}"
     return f"installed task targets not verified: none selected (ordinary task-disabled targets only); {boundary}"
 
 
 def profile_gated_example_scope() -> str:
     return ("profile-gated reference packaged, not compiled by the ordinary installed matrix: "
             + ", ".join(PROFILE_GATED_EXAMPLES)
-            + "; requires the separately verified isolated R4 Core/Modem/heap build profile")
+            + "; R4 requires the separately verified isolated R4 Core/Modem/heap build profile; "
+            "ESP32 SoftAP tasks require the explicit limited ZIP and original Core 3.3.11")
 
 # compiled library directory -> (Library Manager install spec, reported name,
 # pinned version). A single-target gate installs only that target's closure;
@@ -639,7 +656,7 @@ def verify_link_closure(
     if "BlinkerApi.cpp.o" not in members:
         raise SystemExit(f"{target.name} did not link the public facade")
 
-    if target.example == "WiFiBleQuickStart":
+    if target.example in ("WiFiBleQuickStart", softap_tasks.EXAMPLE):
         mode = "wifi-ble"
     elif target.example == "BleQuickStart":
         mode = "ble"
@@ -705,6 +722,8 @@ def parse_arguments() -> argparse.Namespace:
         help="optional local library cache for offline installation",
     )
     parser.add_argument("--jobs", type=int, default=4)
+    parser.add_argument("--softap-task-manifest", type=Path,
+                        help="explicit limited-profile.json; required only for esp32-softap-tasks")
     location = parser.add_mutually_exclusive_group()
     location.add_argument("--location-candidate", action="store_true",
                           help="internal LOC-2 consumer only; requires the single cloud-smoke target and SDK 3.3.11")
@@ -721,7 +740,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--target",
         action="append",
-        choices=tuple(target.name for target in (*TARGETS, TASK_PILOT_TARGET)),
+        choices=tuple(target.name for target in (*TARGETS, TASK_PILOT_TARGET, SOFTAP_TASK_TARGET)),
     )
     return parser.parse_args()
 
@@ -767,6 +786,17 @@ def main() -> int:
         )
 
     selected_targets = select_targets(arguments.target)
+    limited_softap = selected_targets == (SOFTAP_TASK_TARGET,)
+    if SOFTAP_TASK_TARGET in selected_targets and not limited_softap:
+        raise SystemExit("limited SoftAP tasks require a single explicit target")
+    if bool(arguments.softap_task_manifest) != limited_softap:
+        raise SystemExit("limited SoftAP target requires --softap-task-manifest, and no other target accepts it")
+    if limited_softap:
+        if arguments.location_candidate or arguments.location_input or not 1 <= arguments.jobs <= 2:
+            raise SystemExit("limited SoftAP tasks require their own consumer and --jobs 1 or 2")
+        cores = run([cli, "core", "list"], environment)
+        if not re.search(r"^esp32:esp32\s+3\.3\.11(?:\s|$)", cores, re.MULTILINE):
+            raise SystemExit("limited SoftAP tasks require the original ESP32 SDK 3.3.11")
     location_input = None
     if arguments.location_input:
         selected_targets = location_input_targets(selected_targets)
@@ -837,6 +867,8 @@ def main() -> int:
     if installed_root != expected_root:
         raise SystemExit(f"Blinker was not installed in the empty sketchbook: {installed_root}")
     verify_installed_bytes(archive, installed_root)
+    if limited_softap:
+        softap_tasks.verify_package(archive, installed_root, arguments.softap_task_manifest)
     config = (installed_root / "src/BlinkerV2/arduino/config/OfficialConfig.h").read_text(encoding="utf-8")
     product_profile = verify_installed_product_profile(config, selected_targets)
     if (arguments.location_candidate or arguments.location_input) and product_profile != CLOUD_WIFI_PROFILE_ID:
@@ -849,8 +881,20 @@ def main() -> int:
 
     for target in selected_targets:
         build = work / "build" / target.name
-        example = (REPOSITORY / "tests" / "arduino" if target.tasks_enabled or arguments.location_candidate or arguments.location_input
+        example = (REPOSITORY / "tests" / "arduino" if target == TASK_PILOT_TARGET or arguments.location_candidate or arguments.location_input
                    else installed_root / "examples") / target.example
+        if limited_softap:
+            # Only the copied compile fixture receives a public, non-secret PoP.
+            # Never edit installed bytes or treat this non-deployable BIN as a
+            # device provisioning candidate. Real users select their own PoP.
+            copied_example = work / "compile-fixture" / target.example
+            if copied_example.exists():
+                raise SystemExit("limited compile fixture already exists; preserve it and use a new gate directory")
+            shutil.copytree(example, copied_example)
+            header = copied_example / "UserProvisioning.h"
+            header.write_text(header.read_text(encoding="utf-8").replace(
+                "REPLACE_WITH_YOUR_DEVICE_POP", "compile-only-not-a-device-pop"), encoding="utf-8")
+            example = copied_example
         compile_started = time.perf_counter()
         output = run(
             [
@@ -886,6 +930,9 @@ def main() -> int:
         if arguments.location_input:
             verify_location_input_link(symbols)
         verify_provenance(build, installed_root)
+        if limited_softap:
+            verify_installed_bytes(archive, installed_root)
+            softap_tasks.verify_package(archive, installed_root, arguments.softap_task_manifest)
         if arguments.location_input:
             verify_installed_bytes(archive, installed_root)
             verify_location_input_inputs(installed_root, frozen=location_input)

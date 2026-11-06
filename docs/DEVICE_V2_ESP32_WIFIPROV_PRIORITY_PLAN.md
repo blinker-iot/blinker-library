@@ -1,9 +1,15 @@
 # Device V2 ESP32 WiFiProv 优先配网与跨平台安全实施计划
 
+> **2026-10-31 当前执行入口：**BLE／SoftAP 的有限首次接入按[统一入网执行方案](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md) §30 已完成；公开标准用法见根目录 README 的 `ESP32 WiFi+BLE provisioning`，保留同一 `WiFiBleQuickStart`，不重开历史测试队列。
+> 当前 `Esp32WiFiBLEProduct.h` 默认选择 BLE，要求 Core 已启用 IDF-NimBLE；不满足时编译拒绝，不存在经典 ESP32 自动 SoftAP 回退。
+> SoftAP 只能显式定义 `BLINKER_ESP32_PROVISIONING_SOFTAP`。§30 的非空私有 PoP 匹配候选仅代表受限 Android／COM11 首装链通过，不表示全部平台／OEM 已准入，私有 PoP／BIN 不发行；当前公开 `cloud-beta` 仍仅 ESP32 手动 WiFi／TLS／0 槽，不因示例存在而开放 WiFi+BLE。
+> 本处 BLE／SoftAP 均是 ESP32 的 WiFiProv 配网 bearer；成功完成身份／WiFi 安装后退出，日常 Direct BLE、BLE-only 认领、LAN WebSocket、Cloud MQTT 和网关子设备协议另有合同，不在本批重造。
+> 下列 2026-09-02 数值／实测是历史证据，不作为当前发行配置或待测项的唯一入口。
+
 > 状态：2026-09-02 G1B 真机收口批。P6 已从 `tests/internal` 迁入标准 Arduino `src`，增加
 > ESP32-only `<BlinkerWiFiBLE.h>` 和同一 ZIP 内的 QuickStart；源码/安装后单 ZIP clean link、ELF/Map 闭包与
 > Host ASan 已通过。配网 scheme 由产品入口选择的 `Esp32WiFiProv.ipp` 内联实例化：WiFi+BLE 产品默认 BLE
-> WiFiProv Security1，可定义 `BLINKER_ESP32_PROVISIONING_SOFTAP` 选择 SoftAP 回退，
+> WiFiProv Security1，可定义 `BLINKER_ESP32_PROVISIONING_SOFTAP` 显式选择 SoftAP，
 > 公开 `begin()` 不变。不得把 scheme factory 放回公共 `.cpp`，否则 Arduino 依赖扫描会污染纯 BLE 产品。
 > XIAO ESP32S3 已完成 Android BLE WiFiProv、同一设备 network-only reset、无断电 WiFiProv→NimBLE Direct、
 > WiFi 自动重连、正式 App 重新配网入口、原身份复用、Method 2/Manifest/State/Power 真机门禁。重新配网入口
@@ -21,7 +27,7 @@
 ## 1. 决策
 
 1. ESP32 的第一条 App 配网联调实现固定为 Espressif Unified Provisioning / WiFiProv Security1，并作为
-   WiFi+BLE 唯一业务 composition 进入 `src`；BLE 是当前默认 bearer，SoftAP 是编译期回退。
+   WiFi+BLE 唯一业务 composition 进入 `src`；BLE 是当前默认 bearer，SoftAP 是显式编译期替代，不自动回退。
    未通过真机/App/Service 门禁前仍是实验产品，不替换线上 `dev_edu`。
 2. 不把 `WiFiProvClass`、ESP-IDF 类型、Protocomm 或 Protobuf 暴露到 `<Blinker.h>`、Core 或公共 wire。
 3. portable Noise 只保留 BLE-only/LocalBLE 和 Enhanced 回归，不再作为 ESP32 WiFi+BLE 的第二配网图。
@@ -46,10 +52,11 @@
 
 ### 3.1 ESP32
 
-- 首发动态配网协议：WiFiProv + Security1。WiFi+BLE 产品默认 BLE transport；需要 SoftAP 回退时在
+- 首发动态配网协议：WiFiProv + Security1。WiFi+BLE 产品默认 BLE transport；需要显式选择 SoftAP 时在
   `<BlinkerWiFiBLE.h>` 前定义 `BLINKER_ESP32_PROVISIONING_SOFTAP`。
-- 这是编译期平台能力选择，不是用户 `begin()` 参数，也不产生第二个库/ZIP。替换真机通过 100 次
-  `Provisioning -> deinit -> Direct BLE` 循环后，才评估对 IDF-NimBLE 目标自动默认 BLE；经典 ESP32 保持 SoftAP。
+- 这是编译期平台能力选择，不是用户 `begin()` 参数，也不产生第二个库/ZIP。当前未显式选择时即定义 BLE；
+  Core 未启用 IDF-NimBLE 会编译拒绝，经典 ESP32 等目标若需 SoftAP 必须显式选择，不自动回退。
+  旧“通过 100 次后才评估默认 BLE”的规划已被实际 selector 覆盖；历史循环／资源／长稳证据仍各自保留，不能据此扩大生产准入或重复排队。
 - 已预置/已保存 DeviceKey 的重新配网必须核对 DeviceInstanceId 和服务器 logical-device 记录；当前
   Education 路径仍是无 PoP Security1 物理窗口，不得把“设备有 Key”误写成 Security1 已认证设备。
 - 全新 DIY 设备若没有 factory secret、QR、显示屏短码或预置 Key，任何协议都无法凭空证明硬件真实性。

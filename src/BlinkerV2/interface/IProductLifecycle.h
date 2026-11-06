@@ -69,6 +69,9 @@ public:
     virtual Result start() = 0;
     virtual void poll(uint32_t totalBudgetMicros) = 0;
     virtual void stop() = 0;
+    // An optional native-owner teardown may finish on later cooperative polls.
+    // This never authorizes ordinary control/task work after Product::end().
+    virtual bool hasPendingStop() const { return false; }
     // Clears the durable cloud/direct access root while preserving physical
     // transport configuration such as WiFi credentials and BLE bonds.
     // Product stops active sessions before calling this method.

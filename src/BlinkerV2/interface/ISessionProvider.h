@@ -31,6 +31,9 @@ public:
     virtual ErrorCode lastError() const = 0;
     virtual uint32_t credentialGeneration() const = 0;
     virtual Result credentials(SessionCredentials& output) const = 0;
+    // Optional: old borrowed credentials remain valid while poll is briefly
+    // deferred by an in-flight exchange. Never infer this from credentials().
+    virtual bool canDeferRefresh() const { return false; }
     virtual void stop() = 0;
 };
 

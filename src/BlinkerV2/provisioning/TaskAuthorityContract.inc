@@ -147,6 +147,23 @@ Result encodeTaskManagementReceipt(const DeviceInstanceId& instance,
     return result;
 }
 
+Result taskServiceConfirmationForRoots(const DeviceInstanceId& instance,
+    const TaskRootSources& sources, ByteView expectedRoot, ByteView exactResult,
+    uint16_t sequence, MutableByteSpan token) {
+    if (sources.deviceKey == nullptr || expectedRoot.data == nullptr || expectedRoot.size != 32U)
+        return Result::failure(ErrorCode::AuthenticationRequired);
+    task_authority_detail::RootSecrets roots;
+    uint8_t digest[32] = {};
+    Result result = task_authority_detail::loadRoots(instance, sources, roots);
+    if (result) result = task_authority_detail::rootDigest(instance, sources, roots, MutableByteSpan(digest, sizeof(digest)));
+    if (result && !constantTimeEqual(ByteView(digest, sizeof(digest)), expectedRoot))
+        result = Result::failure(ErrorCode::AuthenticationRequired);
+    secureZero(MutableByteSpan(digest, sizeof(digest)));
+    if (result) result = taskServiceConfirmation(exactResult, sequence, ByteView(roots.key.bytes, sizeof(roots.key.bytes)), token);
+    if (!result && token.data != nullptr) secureZero(token);
+    return result;
+}
+
 Result encodeTaskAuthorityChange(const TaskAuthorityChange& change,
     MutableByteSpan output, ByteView& encoded) {
     encoded = ByteView();

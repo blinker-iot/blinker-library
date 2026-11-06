@@ -1,0 +1,59 @@
+name: Device V2 limited SoftAP tasks candidate
+
+# Called only after the parent quality gates, including private golden inputs.
+# No deployment, formal admission or hardware verification is performed here.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  softap-tasks-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Initialize isolated Arduino directories
+        shell: bash
+        run: |
+          printf 'ARDUINO_DIRECTORIES_DATA=%s\n' "$RUNNER_TEMP/arduino-softap-tasks-data" >> "$GITHUB_ENV"
+          printf 'ARDUINO_DIRECTORIES_DOWNLOADS=%s\n' "$RUNNER_TEMP/arduino-softap-tasks-downloads" >> "$GITHUB_ENV"
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: "1.5.1"
+      - name: Install the original limited-profile SDK
+        run: >-
+          arduino-cli core install "esp32:esp32@3.3.11"
+          --additional-urls
+          "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+      - name: Build the existing fixed four-slot SoftAP library
+        run: >-
+          python3 tools/build_esp32_softap_tasks.py
+          --stage-dir build/softap-tasks/library
+          --output-dir build/softap-tasks/artifacts
+      - name: Verify the generated checksum
+        working-directory: build/softap-tasks/artifacts
+        run: sha256sum --check SHA256SUMS
+      - name: Install and completely link the single limited target
+        run: >-
+          python3 tests/arduino/verify_installed_release.py
+          --zip-path build/softap-tasks/artifacts/BlinkerDeviceV2-0.1.0.zip
+          --softap-task-manifest build/softap-tasks/artifacts/limited-profile.json
+          --work-dir "${RUNNER_TEMP}/softap-tasks-installed"
+          --data-dir "$ARDUINO_DIRECTORIES_DATA"
+          --downloads-dir "$ARDUINO_DIRECTORIES_DOWNLOADS"
+          --target esp32-softap-tasks
+          --jobs 1
+      - name: Retain only the limited candidate and public verification inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: blinker-device-v2-softap-tasks-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            build/softap-tasks/artifacts/BlinkerDeviceV2-0.1.0.zip
+            build/softap-tasks/artifacts/SHA256SUMS
+            build/softap-tasks/artifacts/limited-profile.json

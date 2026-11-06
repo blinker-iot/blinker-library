@@ -19,8 +19,8 @@ public:
         TaskCommandAdapter& adapter, MutableByteSpan workspace)
         : cloud_(cloud), mqtt_(mqtt), clock_(clock), adapter_(adapter), workspace_(workspace),
           receiver_(nullptr), receiverContext_(nullptr), connected_(nullptr), disconnected_(nullptr), sessionContext_(nullptr),
-          source_(), size_(0U), receivedAt_(0U), rootGeneration_(0U), sequence_(0U), stage_(Empty),
-          started_(false), negotiated_(false), polling_(false), processing_(false), error_(ErrorCode::Ok) {
+          source_(), receivedAt_(0U), rootGeneration_(0U), confirmationBudget_(0U), size_(0U), sequence_(0U), stage_(Empty),
+          started_(false), negotiated_(false), confirmation_(false), polling_(false), processing_(false), error_(ErrorCode::Ok) {
         cloud_.setReceiver(&receiveThunk, this);
         cloud_.setSessionHandlers(&connectedThunk, &disconnectedThunk, this);
     }
@@ -50,7 +50,7 @@ public:
     TransportCapabilities capabilities() const override { return cloud_.capabilities(); }
     uint32_t protocolFeatures() const override {
         return workspace_.data != nullptr && workspace_.size >= kTaskCarrierFrameMaxSize
-            ? static_cast<uint32_t>(bbp2::FeatureTaskManagement) : 0U;
+            ? static_cast<uint32_t>(bbp2::FeatureTaskManagement | bbp2::FeatureTaskServiceConfirmation) : 0U;
     }
     // Called by Runtime only after accepting Hello, never by native RX parsing.
     void protocolNegotiated(const RxContext& rx, uint32_t features, uint16_t maximum) override {
@@ -60,6 +60,7 @@ public:
         source_.transport = rx.transportId; source_.session = rx.sessionId;
         source_.generation = mqtt_.connectionGeneration();
         negotiated_ = source_.generation != 0U;
+        confirmation_ = negotiated_ && (features & bbp2::FeatureTaskServiceConfirmation) != 0U;
     }
     Result send(ByteView frame, const SendTarget& target) override { return cloud_.send(frame, target); }
     void setReceiver(FrameReceiver receiver, void* context) override { receiver_ = receiver; receiverContext_ = context; }
@@ -70,9 +71,14 @@ public:
         if (!started_ || polling_) return;
         PollGuard guard(*this);
         adapter_.poll();
-        cloud_.poll(budgetMicros);
+        // Keep the same proof/socket from Prepare through Commit and the one
+        // bounded reply, and (only when negotiated) Service durable confirmation.
+        // Original Session lifetime/credential expiry still bound it. No replay.
+        cloud_.poll(budgetMicros, &refreshPendingThunk, this);
         adapter_.poll();
         if (!current()) { resetConnection(); return; }
+        ageConfirmation();
+        if (stage_ == AwaitConfirmation) return;
         if (stage_ == Empty) return;
         if (rootGeneration_ != adapter_.rootGeneration() ||
             static_cast<uint32_t>(clock_.monotonicMillis() - receivedAt_) >= 1000U) {
@@ -80,8 +86,12 @@ public:
         }
         if (stage_ == Request) {
             Guard process(processing_);
-            TaskWireOperation operation; ByteView inner;
+            TaskWireOperation operation = TaskWireOperation::Failure; ByteView inner;
             Result result = decodeTaskCarrier(ByteView(workspace_.data + bbp2::kBaseHeaderSize, size_), operation, inner);
+            // Snapshot the ACTUAL remaining original Session before Commit
+            // consumes it. Conservative from RX time; never renew this budget.
+            confirmationBudget_ = result && confirmation_ && operation == TaskWireOperation::Commit
+                ? adapter_.remainingMillis(source_) : 0U;
             ByteView response;
             if (result) result = adapter_.receive(source_, static_cast<TaskCommand>(operation), inner,
                 MutableByteSpan(workspace_.data + 15U, kTaskManagementResultMaxSize), response);
@@ -93,7 +103,7 @@ public:
             error_ = result.code();
             uint8_t failure[3] = {0x82U, static_cast<uint8_t>(operation), static_cast<uint8_t>(wireError(result.code()))};
             TaskWireOperation reply = operation == TaskWireOperation::Commit ? TaskWireOperation::Result : TaskWireOperation::Challenge;
-            if (!result) { reply = TaskWireOperation::Failure; response = ByteView(failure, sizeof(failure)); }
+            if (!result) { reply = TaskWireOperation::Failure; response = ByteView(failure, sizeof(failure)); confirmationBudget_ = 0U; }
             ByteView encoded;
             result = encodeTaskCarrier(reply, response, MutableByteSpan(workspace_.data + 10U, workspace_.size - 10U), encoded);
             bbp2::FrameHeader header; header.kind = static_cast<uint8_t>(bbp2::MessageKind::TaskManagement);
@@ -111,10 +121,34 @@ public:
         target.transportId = source_.transport; target.sessionId = source_.session;
         const Result sent = cloud_.send(ByteView(workspace_.data, size_), target);
         if (!sent) error_ = sent.code();
-        if (sent || sent.code() != ErrorCode::WouldBlock) clear();
+        if (sent && confirmationBudget_ != 0U) {
+            // Local QoS0 success is NOT Service acceptance. Reuse the one
+            // workspace for a non-secret expected MAC, not a second RX queue.
+            bbp2::FrameView frame; TaskWireOperation operation = TaskWireOperation::Failure; ByteView inner;
+            Result result = bbp2::parseFrame(ByteView(workspace_.data, size_), frame);
+            if (result) result = decodeTaskCarrier(frame.body, operation, inner);
+            if (result && operation == TaskWireOperation::Result)
+                result = adapter_.serviceConfirmation(inner, sequence_, MutableByteSpan(workspace_.data, 32U));
+            else result = Result::failure(ErrorCode::InvalidEncoding);
+            if (!result || !current() || stage_ != Reply || rootGeneration_ != adapter_.rootGeneration()) {
+                secureZero(workspace_); clear(); error_ = result ? ErrorCode::StateConflict : result.code(); return;
+            }
+            secureZero(MutableByteSpan(workspace_.data + 32U, workspace_.size - 32U));
+            size_ = 32U; stage_ = AwaitConfirmation;
+            ageConfirmation();
+        } else if (sent || sent.code() != ErrorCode::WouldBlock) clear();
     }
 private:
-    enum Stage : uint8_t { Empty, Request, Reply };
+    static bool refreshPendingThunk(void* context) {
+        TaskCloudTransport& self = *static_cast<TaskCloudTransport*>(context);
+        self.adapter_.poll(); // Native RX may have advanced the original deadline.
+        self.ageConfirmation();
+        return self.current() && (self.adapter_.pending(self.source_) ||
+            (self.stage_ != Empty && self.rootGeneration_ == self.adapter_.rootGeneration() &&
+             (self.stage_ == AwaitConfirmation ||
+              static_cast<uint32_t>(self.clock_.monotonicMillis() - self.receivedAt_) < 1000U)));
+    }
+    enum Stage : uint8_t { Empty, Request, Reply, AwaitConfirmation };
     struct Guard { bool& value; explicit Guard(bool& v) : value(v) { value = true; } ~Guard() { value = false; } };
     struct PollGuard {
         TaskCloudTransport& self;
@@ -125,8 +159,14 @@ private:
         return started_ && negotiated_ && state() == TransportState::Online &&
             source_.generation == mqtt_.connectionGeneration();
     }
+    void ageConfirmation() {
+        if (stage_ == AwaitConfirmation && (rootGeneration_ != adapter_.rootGeneration() ||
+            static_cast<uint32_t>(clock_.monotonicMillis() - receivedAt_) >= confirmationBudget_)) {
+            clear(); error_ = ErrorCode::StateConflict; // Unconfirmed, never success or replay.
+        }
+    }
     void clear() {
-        stage_ = Empty;
+        stage_ = Empty; confirmationBudget_ = 0U;
         // Retain size only while a callback is unwinding. Idle polls need not
         // repeatedly erase an already empty workspace.
         if (!processing_) {
@@ -135,7 +175,7 @@ private:
         }
     }
     void resetConnection() {
-        adapter_.disconnect(source_); negotiated_ = false; clear();
+        adapter_.disconnect(source_); negotiated_ = false; confirmation_ = false; clear();
     }
     static TaskWireFailure wireError(ErrorCode code) {
         switch (code) {
@@ -169,11 +209,20 @@ private:
             return;
         }
         // Borrowed native buffer: no Flash, signing, sends or nested poll here.
-        if (!current() || !rx.authenticated || rx.sessionId != source_.session || stage_ != Empty || processing_) return;
+        if (!current() || !rx.authenticated || rx.sessionId != source_.session || processing_) return;
         bbp2::FrameView frame; TaskWireOperation operation; ByteView body;
         if (!bbp2::parseFrame(encoded, frame) || frame.header.flags != 0U || frame.header.sequence == 0U ||
             frame.header.headerLength != bbp2::kBaseHeaderSize ||
-            !decodeTaskCarrier(frame.body, operation, body) || !taskWireRequest(operation)) return;
+            !decodeTaskCarrier(frame.body, operation, body)) return;
+        ageConfirmation();
+        if (stage_ == AwaitConfirmation) {
+            if (confirmation_ && operation == TaskWireOperation::ServiceConfirmed && frame.header.sequence == sequence_ &&
+                rootGeneration_ == adapter_.rootGeneration() && constantTimeEqual(body, ByteView(workspace_.data, size_))) {
+                clear(); error_ = ErrorCode::Ok;
+            }
+            return; // No response, Flash, execution or implicit new operation.
+        }
+        if (stage_ != Empty || !taskWireRequest(operation)) return;
         memcpy(workspace_.data + 10U, frame.body.data, frame.body.size);
         size_ = static_cast<uint16_t>(frame.body.size); sequence_ = frame.header.sequence;
         receivedAt_ = clock_.monotonicMillis(); rootGeneration_ = adapter_.rootGeneration(); stage_ = Request;
@@ -183,8 +232,9 @@ private:
     FrameReceiver receiver_; void* receiverContext_;
     FrameSessionHandler connected_; FrameSessionHandler disconnected_; void* sessionContext_;
     TaskCommandSource source_;
-    uint16_t size_; uint32_t receivedAt_, rootGeneration_; uint16_t sequence_; Stage stage_;
-    bool started_, negotiated_, polling_, processing_; ErrorCode error_;
+    uint32_t receivedAt_, rootGeneration_, confirmationBudget_; uint16_t size_, sequence_; Stage stage_;
+    bool started_ : 1; bool negotiated_ : 1; bool confirmation_ : 1; bool polling_ : 1;
+    bool processing_; ErrorCode error_;
     TaskCloudTransport(const TaskCloudTransport&);
     TaskCloudTransport& operator=(const TaskCloudTransport&);
 };

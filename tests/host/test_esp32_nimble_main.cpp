@@ -1,6 +1,7 @@
 #include <BlinkerV2/arduino/ports/esp32/Esp32NimBle.h>
 #include <cstdlib>
 #include <iostream>
+#include <new>
 
 FakeHostConfig ble_hs_cfg = {};
 fake_nimble::State fake_nimble::state;
@@ -247,11 +248,88 @@ void receiveQueueBackpressure() {
                f.link.state() == blinker::BleLinkState::Ready,
            "bounded backpressure loses no accepted packet and does not reset the peer");
 }
+
+void waitForNativeAclRelease() {
+    Fixture f; const uint32_t session = f.connect();
+    fake_nimble::state.deferTermination = true;
+    f.link.stop(); // Existing void API must also preserve the claim on failure.
+    expect(!f.link.shutdownComplete() && f.link.state() == blinker::BleLinkState::Error &&
+        f.link.lastError() == blinker::ErrorCode::WouldBlock && f.link.sessionCount() == 0U,
+        "logical retirement does not prove native ACL release");
+    const uint8_t byte = 1U;
+    expect(!f.link.sendPacket(session, blinker::ByteView(&byte, 1U)), "stopping link rejects writes");
+    blinker::Esp32NimBleLink next;
+    expect(!next.start() && !next.shutdownComplete(), "another port cannot steal the retained claim");
+    ble_gap_event stale = {}; stale.type = BLE_GAP_EVENT_DISCONNECT;
+    stale.disconnect.conn.conn_handle = 7U; fake_nimble::emit(stale);
+    expect(!f.link.tryStop() && fake_nimble::state.stopCalls == 0U,
+        "GAP event alone cannot override live native ACL");
+    fake_nimble::disconnect(7U);
+    expect(f.link.tryStop().ok() && f.link.shutdownComplete() && f.disconnected == 1U &&
+        fake_nimble::state.stopCalls == 1U && fake_nimble::state.disableCalls == 1U &&
+        fake_nimble::state.deinitCalls == 1U && !fake_nimble::state.advertising,
+        "explicit continuation waits for each native release and does not re-advertise");
+    expect(next.start().ok() && next.tryStop().ok() && next.shutdownComplete(),
+        "normal next owner can start and stop after confirmed release");
+}
+
+void waitForHostTaskSuspension() {
+    Fixture f;
+    fake_nimble::state.deferHostReturn = true;
+    expect(!f.link.tryStop() && !f.link.shutdownComplete() &&
+        fake_nimble::state.stopCalls == 1U && fake_nimble::state.disableCalls == 0U,
+        "native stop return does not prove old loop returned");
+    fake_nimble::state.hostLoopMayReturn = true;
+    fake_nimble::state.deferHostSuspend = true;
+    fake_nimble::stepHostTask();
+    expect(!f.link.tryStop() && !f.link.shutdownComplete() &&
+        fake_nimble::state.stopCalls == 1U && fake_nimble::state.disableCalls == 0U &&
+        fake_nimble::state.deinitCalls == 0U,
+        "return latch is not positive FreeRTOS suspension proof");
+    fake_nimble::state.hostTaskSuspended = true;
+    expect(f.link.tryStop().ok() && f.link.shutdownComplete() &&
+        fake_nimble::state.stopCalls == 1U && fake_nimble::state.disableCalls == 1U &&
+        fake_nimble::state.deinitCalls == 1U,
+        "proof advances without repeating native stop");
+}
+
+void unenteredHostTaskDoesNotBlockStop() {
+    fake_nimble::state = fake_nimble::State();
+    fake_nimble::state.autoEnterHost = false;
+    fake_nimble::state.autoSync = false;
+    blinker::Esp32NimBleLink link;
+    expect(!link.start() && !link.tryStop() && !link.shutdownComplete() &&
+        fake_nimble::state.stopCalls == 0U && fake_nimble::state.deinitCalls == 0U,
+        "unproven SDK host task keeps the claim without waiting on its queue");
+    fake_nimble::stepHostTask();
+    expect(link.tryStop().ok() && link.shutdownComplete(), "late task entry can be explicitly retired");
+}
+
+void uncertainSdkResultRetainsOwner(bool failStop) {
+    fake_nimble::state = fake_nimble::State();
+    // This terminal scenario deliberately keeps the still-owned object alive
+    // until process exit: destroying an ambiguous SDK owner must fail-stop.
+    alignas(blinker::Esp32NimBleLink) static uint8_t storage[sizeof(blinker::Esp32NimBleLink)];
+    auto& link = *new (storage) blinker::Esp32NimBleLink;
+    expect(link.start().ok(), "start before native fault");
+    if (failStop) fake_nimble::state.stopResult = BLE_HS_EBUSY;
+    else fake_nimble::state.deinitResult = BLE_HS_EBUSY;
+    expect(link.tryStop().code() == blinker::ErrorCode::ProtocolError && !link.shutdownComplete(),
+        "failed SDK result cannot be treated as released");
+    fake_nimble::state.stopResult = 0; fake_nimble::state.deinitResult = 0;
+    blinker::Esp32NimBleLink next;
+    expect(!link.start() && !next.start() && !link.tryStop() && !link.shutdownComplete() &&
+        fake_nimble::state.stopCalls == 1U &&
+        fake_nimble::state.disableCalls == (failStop ? 0U : 1U) &&
+        fake_nimble::state.deinitCalls == (failStop ? 0U : 1U),
+        "ambiguous stage is sticky and neither retries nor releases another owner");
+}
 }
 int main(int argc, char** argv) {
     const char* selected = argc == 2 ? argv[1] : "all";
     expect(argc <= 2 && (!std::strcmp(selected, "all") || !std::strcmp(selected, "indication") ||
-                        !std::strcmp(selected, "handoff")), "unknown test selector");
+                        !std::strcmp(selected, "handoff") || !std::strcmp(selected, "shutdown") ||
+                        !std::strcmp(selected, "shutdown-stop-failure")), "unknown test selector");
     if (!std::strcmp(selected, "all") || !std::strcmp(selected, "indication")) indicationFailure();
     if (!std::strcmp(selected, "all") || !std::strcmp(selected, "handoff")) connectHandoff();
     if (!std::strcmp(selected, "all")) {
@@ -260,5 +338,10 @@ int main(int argc, char** argv) {
         actualMtuAndSendErrors(); unsupportedMtuPreference();
         actualMtuReceive(); receiveQueueBackpressure();
     }
+    if (!std::strcmp(selected, "all") || !std::strcmp(selected, "shutdown")) {
+        waitForNativeAclRelease(); waitForHostTaskSuspension(); unenteredHostTaskDoesNotBlockStop();
+        uncertainSdkResultRetainsOwner(false);
+    }
+    if (!std::strcmp(selected, "shutdown-stop-failure")) uncertainSdkResultRetainsOwner(true);
     std::cout << "ESP32 native peripheral lifecycle tests passed" << std::endl;
 }

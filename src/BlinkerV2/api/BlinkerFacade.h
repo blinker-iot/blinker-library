@@ -28,13 +28,21 @@ class Print;
 #endif
 
 #if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
-#if defined(BLINKER_PRODUCT_BLE) || defined(BLINKER_PRODUCT_WIFI_BLE) || \
+#if defined(BLINKER_PRODUCT_BLE) || \
+    (defined(BLINKER_PRODUCT_WIFI_BLE) && \
+     !(defined(ARDUINO_ARCH_ESP32) && defined(BLINKER_INTERNAL_ESP32_PROVISIONED_TASKS) && \
+       ((BLINKER_INTERNAL_ESP32_PROVISIONED_TASKS && defined(BLINKER_ESP32_PROVISIONING_SOFTAP) && \
+         !defined(BLINKER_ESP32_PROVISIONING_BLE)) || \
+        (BLINKER_INTERNAL_ESP32_PROVISIONED_TASKS == 1 && \
+         defined(BLINKER_INTERNAL_ESP32_BLE_PROVISIONED_TASKS) && BLINKER_INTERNAL_ESP32_BLE_PROVISIONED_TASKS == 1 && \
+         defined(BLINKER_ESP32_PROVISIONING_BLE) && BLINKER_ESP32_PROVISIONING_BLE == 1 && \
+         !defined(BLINKER_ESP32_PROVISIONING_SOFTAP))))) || \
     (defined(BLINKER_PRODUCT_WIFI) && !defined(ARDUINO_ARCH_ESP32) && \
      !((defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_ARCH_RENESAS)) && \
        defined(BLINKER_INTERNAL_UNO_R4_TASKS) && BLINKER_INTERNAL_UNO_R4_TASKS) && \
      !((defined(SEEED_WIO_TERMINAL) || defined(WIO_TERMINAL)) && \
        defined(BLINKER_INTERNAL_WIO_TASKS) && BLINKER_INTERNAL_WIO_TASKS))
-#error "Tasks require an admitted manual WiFi platform (ESP32 or internal UNO R4/Wio)"
+#error "Tasks require an admitted manual WiFi platform or internal ESP32 provisioned task profile"
 #endif
 #endif
 

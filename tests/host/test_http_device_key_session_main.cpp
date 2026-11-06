@@ -447,7 +447,7 @@ void completeSession(
     Fixture& fixture,
     const TransactionSnapshot& snapshot,
     uint32_t credentialVersion = 7U, uint8_t proofSeed = 0x91U,
-    uint32_t expiresInSeconds = 120U) {
+    uint32_t expiresInSeconds = 120U, bool process = true) {
     uint8_t sessionId[blinker::kDeviceKeySessionIdSize];
     for (size_t index = 0U; index < sizeof(sessionId); ++index) {
         sessionId[index] = static_cast<uint8_t>(proofSeed + index);
@@ -475,7 +475,7 @@ void completeSession(
         blinker::MutableByteSpan(encodedBuffer, sizeof(encodedBuffer)),
         encoded));
     fixture.http.complete(200U, encoded);
-    fixture.provider.poll(1000U);
+    if (process) fixture.provider.poll(1000U);
 }
 
 void completeError(
@@ -805,6 +805,76 @@ void testDeviceKeyToMqttDataPlane() {
     CHECK_TRUE(!mqtt.connected());
 }
 
+bool holdSessionRefresh(void*) { return true; }
+
+void testRefreshDeferralUsesActualCredentialLifetime() {
+    using namespace blinker;
+    Fixture f; FakeMqttClient mqtt;
+    MqttFrameTransport raw(mqtt, f.clock); ManagedMqttTransport cloud(f.provider, raw);
+    CHECK_TRUE(!f.provider.canDeferRefresh());
+    CHECK_TRUE(cloud.start());
+    CHECK_TRUE(!f.provider.canDeferRefresh()); // No authenticated credentials yet.
+    const auto first = readChallengeRequest(f);
+    completeChallenge(f, first); completeSession(f, first);
+    cloud.poll(2000U);
+    CHECK_TRUE(f.provider.canDeferRefresh());
+    f.clock.advance(60000U); // Scheduled refresh, with 60s still valid.
+    const auto starts = f.http.startCalls;
+    cloud.poll(2000U, &holdSessionRefresh, nullptr);
+    CHECK_EQ(starts, f.http.startCalls);
+    CHECK_EQ(SessionProviderState::Ready, f.provider.state());
+    CHECK_EQ(1U, mqtt.connectCalls);
+
+    cloud.poll(2000U); // Ordinary callers retain normal automatic renewal.
+    CHECK_EQ(SessionProviderState::Requesting, f.provider.state());
+    CHECK_TRUE(f.provider.canDeferRefresh()); // Existing refresh must be held too.
+    const auto second = readChallengeRequest(f);
+    completeChallenge(f, second);
+    completeSession(f, second, 7U, 0xB1U, 120U, false);
+    cloud.poll(2000U, &holdSessionRefresh, nullptr); // HTTP result staged, but old arena/proof unchanged.
+    CHECK_EQ(1U, f.provider.credentialGeneration());
+    CHECK_EQ(0x91U, f.provider.proofSessionId().data[0]);
+    CHECK_EQ(1U, mqtt.connectCalls);
+    cloud.poll(2000U);
+    CHECK_EQ(2U, f.provider.credentialGeneration());
+    CHECK_EQ(0xB1U, f.provider.proofSessionId().data[0]);
+    CHECK_EQ(2U, mqtt.connectCalls);
+
+    f.clock.advance(120000U); // Hard expiry overrides the requested deferral.
+    SessionCredentials expiredView;
+    CHECK_TRUE(f.provider.credentials(expiredView)); // Views alone do not prove validity.
+    CHECK_TRUE(!f.provider.canDeferRefresh());
+    cloud.poll(2000U, &holdSessionRefresh, nullptr);
+    CHECK_EQ(SessionProviderState::Requesting, f.provider.state());
+    completeError(f, 403U, DeviceKeySessionWireError::CredentialRevoked,
+        DeviceKeySessionRetryClass::AuthorizationRequired);
+    CHECK_TRUE(!f.provider.canDeferRefresh());
+    cloud.poll(2000U, &holdSessionRefresh, nullptr);
+    CHECK_EQ(TransportState::Error, cloud.state());
+    CHECK_TRUE(!mqtt.connected());
+    cloud.stop(); CHECK_TRUE(!f.provider.canDeferRefresh());
+}
+
+void testLocalControlForwardsRefreshDeferral() {
+    using namespace blinker;
+    Fixture f; FakeMqttClient mqtt; MqttFrameTransport raw(mqtt, f.clock);
+    ManagedMqttTransport managed(f.provider, raw); SelfLocalAccessTargetPolicy policy;
+    LocalAccessCloudTransport<1U> cloud(managed, raw, f.provider, f.instance,
+        f.keySource, f.random, f.clock, policy);
+    CHECK_TRUE(cloud.start());
+    const auto first = readChallengeRequest(f);
+    completeChallenge(f, first); completeSession(f, first); cloud.poll(2000U);
+    f.clock.advance(60000U);
+    const auto starts = f.http.startCalls;
+    cloud.poll(2000U, &holdSessionRefresh, nullptr);
+    CHECK_EQ(starts, f.http.startCalls);
+    CHECK_EQ(SessionProviderState::Ready, f.provider.state());
+    CHECK_EQ(1U, mqtt.connectCalls);
+    cloud.poll(2000U);
+    CHECK_TRUE(f.http.startCalls > starts);
+    CHECK_EQ(SessionProviderState::Requesting, f.provider.state());
+}
+
 size_t controlFrame(const blinker::DeviceKey& key, blinker::local_access::ControlView value,
                     uint8_t* output, size_t capacity) {
     uint8_t mac[32U];
@@ -1111,6 +1181,8 @@ int main() {
     testCompletedMalformedCborDoesNotRetry();
     testExpiredSessionDuringOutageKeepsRetrying();
     testDeviceKeyToMqttDataPlane();
+    testRefreshDeferralUsesActualCredentialLifetime();
+    testLocalControlForwardsRefreshDeferral();
     testLocalCloudControlComposition();
     testLocalCloudBootstrapBoundedRecovery();
     testConfiguredProgressRecovery(false);

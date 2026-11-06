@@ -1,5 +1,10 @@
 # Device V2 BLE 本地安全端点合同
 
+> **2026-10-29 范围澄清：**本文保留 BLE LocalSetup／Noise endpoint 的历史合同，不是当前 ESP32 WiFiProv 配网执行入口。
+> 当前按[接入修复方案](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md) §14 和[WiFiProv 优先计划](DEVICE_V2_ESP32_WIFIPROV_PRIORITY_PLAN.md)执行；实际 selector 默认 BLE且仅接受 IDF-NimBLE Core，否则编译拒绝，SoftAP 须显式选择。
+> WiFiProv BLE／SoftAP 均用于 ESP32 WiFi＋身份接入，与本文 BLE-only／LocalBLE 认领及入网后的 Direct BLE、LAN／MQTT 不同；不得将本 endpoint/saga 重新套入 `blinker-config`。
+> 完整 SoftAP App 首次接入仍未完成，UNO R4／Wio 不扩展组合配网。下列当批实测／未测状态保留为历史，不因文档纠偏改称当前已通过。
+
 > 状态：2026-08-17 R4b-4d Core 已完成。旧 Enrollment/1、ClaimProof、永久 localAccessKey 和只适用于
 > NNpsk0 的实验 application 已删除；本文只描述当前 `BleLocalProvisioningEndpoint + LocalSetupApplication`。
 > durable setup saga 已接入 application handler seam；official BLE-only/WiFi+BLE composition 与真机门禁
@@ -76,7 +81,7 @@ stack/heap、ATT MTU、notify 背压、断连、crypto stack、WiFi 共存和 24
 
 R4b-5 曾把 endpoint/application/saga 接入双平台 internal WiFi+BLE 实验图，并完成 GATT、BSG2 storage、
 WiFi candidate connect/confirm/recovery 与 Cloud Session lifecycle。当前该 8-operation saga 只保留为
-Enhanced/跨平台实验：正式 ESP32 WiFi+BLE 改用 SoftAP WiFiProv 最小 Bootstrap，UNO R4 不提供 WiFi+BLE；
+Enhanced/跨平台实验：ESP32 WiFi+BLE 改用 WiFiProv 最小 Bootstrap，而非此 8-operation saga；当时 SoftAP 默认的描述已被当前 BLE 默认／IDF-NimBLE 门槛及显式 SoftAP selector 覆盖。UNO R4 不提供 WiFi+BLE；
 普通 Platform BLE facade 已公开，LocalBLE 仍为 internal，二者真机门禁未完成。后续不得：
 
 - 把旧 `LocalProvisioningCoordinator`、Enrollment/1 或永久 setup key 接回；

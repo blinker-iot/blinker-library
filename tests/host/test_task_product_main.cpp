@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <string>
@@ -9,6 +10,8 @@
 #include "BlinkerV2/api/TaskProductLifecycle.h"
 #include "BlinkerV2/identity/DeviceAccessStore.h"
 #include "BlinkerV2/runtime/TaskTimeEnvironment.h"
+#include "BlinkerV2/runtime/TaskRootOwnerGate.h"
+#include "BlinkerV2/runtime/DeferredProvisioningShutdown.h"
 #include "BlinkerV2/runtime/TimeSyncService.h"
 #include "BlinkerV2/arduino/platform/esp32/Esp32TaskModule.h"
 
@@ -48,14 +51,25 @@ struct Lifecycle : IProductLifecycle {
     TaskAuthorityState* retiredScope = nullptr;
     Product* resetDuringPoll = nullptr;
     ErrorCode nestedReset = ErrorCode::Ok;
+    TaskRootOwnerGate* rootWriteDuringPoll = nullptr;
+    ErrorCode rootWriteResult = ErrorCode::Ok;
+    std::function<void()> duringPoll;
     unsigned starts = 0U, polls = 0U, stops = 0U, accessResets = 0U, networkResets = 0U, timeAttaches = 0U;
     uint16_t flags = 0U;
     bool running = false, polling = false;
+    bool cleanupPending = false;
+    unsigned cleanupPolls = 0U;
     Result attach(Client& value) override { client = &value; return Result::success(); }
     Result attachTime(Client&, ITimeSync&) override { ++timeAttaches; return Result::success(); }
     Result start() override { ++starts; running = true; return Result::success(); }
     void poll(uint32_t) override {
+        if (cleanupPending) { ++cleanupPolls; cleanupPending = false; return; }
         CHECK(running && !polling); polling = true; ++polls;
+        if (rootWriteDuringPoll != nullptr) {
+            rootWriteResult = rootWriteDuringPoll->beginDeviceAccessChange().code();
+            rootWriteDuringPoll = nullptr;
+        }
+        if (duringPoll) { const auto callback = duringPoll; duringPoll = nullptr; callback(); }
         if (retiredScope != nullptr) *retiredScope = TaskAuthorityState::Retired;
         if (resetDuringPoll != nullptr) {
             Product* product = resetDuringPoll; resetDuringPoll = nullptr;
@@ -65,6 +79,7 @@ struct Lifecycle : IProductLifecycle {
         polling = false;
     }
     void stop() override { CHECK(!polling); ++stops; running = false; }
+    bool hasPendingStop() const override { return cleanupPending; }
     Result resetAccess() override {
         CHECK(!running && tasks != nullptr && tasks->state() == TaskEngineState::Cleared);
         CHECK(nvs.durable.count("nvs/bl_v2_tasks/snapshot") == 0U);
@@ -214,6 +229,282 @@ void lifecycleRunAndNetwork() {
     static_assert(sizeof(TaskProductLifecycle<Esp32TaskModule<4>>) <= 28U, "Optional task lifecycle grew");
 #endif
     std::cout << "optional task lifecycle bytes=" << sizeof(t.lifecycle) << '\n';
+}
+
+void qa3DeferredTaskAdmission() {
+    nvs = Nvs(); Fixture f(false);
+    const TaskPropertyBinding bindings[] = {TaskPropertyBinding(f.power)};
+    TaskPropertyTarget target(bindings, 1U);
+    Esp32TaskModule<4> module(f.environment, target, policy());
+    TaskProductLifecycle<Esp32TaskModule<4>> lifecycle(f.lifecycle, module, target);
+    Product product(f.device, lifecycle);
+    lifecycle.setTaskReady(false);
+    CHECK(product.begin(&f.time));
+    CHECK(nvs.opens == 0U); // Provisioning does not even open TaskStore.
+    product.run(); CHECK(f.lifecycle.polls == 1U && nvs.opens == 0U);
+    lifecycle.setTaskReady(true); product.run();
+    CHECK(nvs.opens == 1U && lifecycle.taskError() == ErrorCode::Ok);
+    f.tick.now += 100U; CHECK(module.engine().initializeVerified(testAuthority()));
+    installCountdown(module.engine());
+    lifecycle.setTaskReady(false);
+    const unsigned commits = nvs.commits;
+    f.tick.now += 100U; product.run();
+    CHECK(f.calls == 0U && nvs.commits == commits);
+    lifecycle.setTaskReady(true); product.run();
+    CHECK(f.calls == 1U && nvs.opens == 1U); // Same engine/store; no reinitialize.
+    product.end();
+}
+
+struct Qa3Owner : ITaskProductOwner {
+    TaskRootOwnerGate gate;
+    unsigned enters = 0U, leaves = 0U;
+    bool held = false;
+    std::function<void()> onEnter, onLeave;
+    bool enterTaskOwner() override {
+        ++enters; held = gate.enterOwner(); if (held && onEnter) onEnter(); return held;
+    }
+    void leaveTaskOwner() override {
+        CHECK(held); held = false; ++leaves; gate.leaveOwner(); if (onLeave) onLeave();
+    }
+};
+
+void ip4CooperativePresenceGate() {
+    TaskRootOwnerGate gate;
+    CHECK(gate.enterOwner());
+    CHECK(gate.beginCooperativePresenceChange());
+    CHECK(gate.beginCooperativePresenceChange().code() == ErrorCode::WouldBlock);
+    CHECK(gate.beginDeviceAccessChange().code() == ErrorCode::WouldBlock);
+    CHECK(!gate.idle());
+    gate.endCooperativePresenceChange(Result::success());
+    CHECK(!gate.idle() && gate.takeDirty() && !gate.uncertain());
+    gate.leaveOwner(); CHECK(gate.idle());
+    CHECK(gate.beginCooperativePresenceChange().code() == ErrorCode::NotConfigured);
+    CHECK(gate.enterOwner() && gate.beginCooperativePresenceChange());
+    gate.endCooperativePresenceChange(Result::failure(ErrorCode::InternalError));
+    CHECK(!gate.idle() && gate.uncertain());
+    CHECK(gate.beginCooperativePresenceChange().code() == ErrorCode::StateConflict);
+    gate.leaveOwner();
+    CHECK(gate.idle() && gate.beginDeviceAccessChange().code() == ErrorCode::StateConflict);
+}
+
+ControllerCredential ip4Admin() {
+    ControllerCredential value;
+    value.domain = ControllerCredentialDomain::PlatformAccess;
+    value.ownershipGeneration = 1U; value.credentialVersion = 1U;
+    value.permissions = kControllerPermissionAll;
+    memset(value.controllerId, 0x11, sizeof(value.controllerId));
+    memset(value.secret, 0x22, sizeof(value.secret)); return value;
+}
+void ip4Bootstrap(DeviceAccessStore& access) {
+    DeviceKey key; memset(key.bytes, 0x33, sizeof(key.bytes));
+    const ControllerCredential admin = ip4Admin();
+    CHECK(access.bootstrap(key, 1U, admin));
+}
+DevicePresenceKey ip4Presence() {
+    DevicePresenceKey value; value.version = 1U;
+    memset(value.bytes, 0x44, sizeof(value.bytes)); return value;
+}
+struct Ip4PresenceObserver : IDeviceAccessChangeObserver {
+    TaskRootOwnerGate& gate;
+    std::function<void()> invalidate;
+    explicit Ip4PresenceObserver(TaskRootOwnerGate& value) : gate(value) {}
+    Result beginDeviceAccessChange() override { return gate.beginDeviceAccessChange(); }
+    void endDeviceAccessChange(Result result) override { gate.endDeviceAccessChange(result); }
+    Result beginCooperativePresenceChange() override {
+        const Result result = gate.beginCooperativePresenceChange();
+        if (result && invalidate) invalidate();
+        return result;
+    }
+    void endCooperativePresenceChange(Result result) override { gate.endCooperativePresenceChange(result); }
+};
+struct Ip4RejectVerifier : IServerSignatureVerifier {
+    Result verifyDigest(uint32_t, ServerSignatureAlgorithm, ByteView, ByteView) override {
+        return Result::failure(ErrorCode::AuthenticationRequired);
+    }
+};
+
+void ip4CooperativeStoreFailure() {
+    nvs = Nvs();
+    Esp32NvsAtomicBlobStore root(TaskProductFixture::rootConfig());
+    CHECK(root.begin()); DeviceAccessStore access(root); ip4Bootstrap(access);
+    TaskRootOwnerGate gate; access.setChangeObserver(&gate);
+    CHECK(gate.enterOwner());
+    nvs.failCommit = nvs.commits + 1U;
+    CHECK(!access.replacePresenceVerifiedCooperatively(1U, 0U, ip4Presence()));
+    CHECK(gate.uncertain() && !gate.idle());
+    const unsigned commits = nvs.commits;
+    // The same handle exposes the attempted bytes. Exact bytes are not proof
+    // of durable success and must still pass the poisoned cooperative fence.
+    CHECK(access.replacePresenceVerifiedCooperatively(1U, 0U, ip4Presence()).code() == ErrorCode::StateConflict);
+    CHECK(nvs.commits == commits);
+    gate.leaveOwner(); CHECK(gate.enterOwner());
+    CHECK(access.replacePresenceVerifiedCooperatively(1U, 0U, ip4Presence()).code() == ErrorCode::StateConflict);
+    gate.leaveOwner(); access.setChangeObserver(nullptr);
+}
+
+void ip4OwnerRefreshBeforeExecution() {
+    nvs = Nvs(); Fixture f(false); Qa3Owner owner;
+    const TaskPropertyBinding bindings[] = {TaskPropertyBinding(f.power)};
+    TaskPropertyTarget target(bindings, 1U);
+    Esp32NvsAtomicBlobStore root(TaskProductFixture::rootConfig());
+    CHECK(root.begin()); DeviceAccessStore access(root); ip4Bootstrap(access);
+    Esp32TaskModule<4> module(f.environment, target, policy());
+    TaskAuthorityCache cache; Ip4RejectVerifier verifier;
+    TaskManagementSession session(module.engine(), cache, f.random, verifier, f.tick, 15000U, 250U);
+    DeviceInstanceId instance; memcpy(instance.bytes, testAuthority().deviceInstanceId, sizeof(instance.bytes));
+    ControllerCredential admin = ip4Admin(); TaskRootSources roots;
+    roots.deviceKey = &access; roots.controllers = &access;
+    roots.adminControllerId = admin.id(); roots.accessEpoch = 1U;
+    TaskCommandAdapter management(session, cache, module.engine(), instance, roots);
+    TaskProductLifecycle<Esp32TaskModule<4>, BorrowedTaskProductOwner> lifecycle(
+        f.lifecycle, module, target, &management, BorrowedTaskProductOwner(&owner));
+    Product product(f.device, lifecycle);
+    CHECK(product.begin(&f.time));
+    f.tick.now += 100U; CHECK(module.engine().initializeVerified(testAuthority()));
+    installCountdown(module.engine()); f.tick.now += 100U;
+    unsigned refreshed = 0U; Ip4PresenceObserver observer(owner.gate);
+    observer.invalidate = [&]() {
+        lifecycle.setTaskReady(false);
+        TaskCommandSource source; uint8_t bytes[kTaskManagementResultMaxSize]; ByteView response;
+        CHECK(management.receive(source, TaskCommand::Read, ByteView(), MutableByteSpan(bytes, sizeof(bytes)), response).code() == ErrorCode::NotConfigured);
+    };
+    access.setChangeObserver(&observer);
+    owner.onEnter = [&]() {
+        if (owner.gate.takeDirty()) {
+            DeviceAccessAdminSelector selector; CHECK(access.loadAdminSelector(selector));
+            CHECK(selector.accessEpoch == 1U && !owner.gate.uncertain());
+            ++refreshed; lifecycle.setTaskReady(true);
+        }
+    };
+    f.lifecycle.duringPoll = [&]() {
+        CHECK(access.replacePresenceVerifiedCooperatively(1U, 0U, ip4Presence()));
+        CHECK(owner.gate.beginDeviceAccessChange().code() == ErrorCode::WouldBlock);
+    };
+    const unsigned opens = nvs.opens;
+    product.run();
+    CHECK(refreshed == 2U && f.calls == 1U);
+    CHECK(owner.enters == 2U && owner.leaves == 2U && owner.gate.idle());
+    CHECK(nvs.opens == opens); // Revalidate authority; do not reopen TaskStore.
+    product.end(); access.setChangeObserver(nullptr);
+}
+
+void ip4OwnerReacquireBusy() {
+    for (bool stop : {false, true}) {
+        nvs = Nvs(); Fixture f(false); Qa3Owner owner;
+        const TaskPropertyBinding bindings[] = {TaskPropertyBinding(f.power)};
+        TaskPropertyTarget target(bindings, 1U);
+        Esp32TaskModule<4> module(f.environment, target, policy());
+        TaskProductLifecycle<Esp32TaskModule<4>, BorrowedTaskProductOwner> lifecycle(
+            f.lifecycle, module, target, nullptr, BorrowedTaskProductOwner(&owner));
+        Product product(f.device, lifecycle);
+        CHECK(product.begin(&f.time)); f.tick.now += 100U;
+        CHECK(module.engine().initializeVerified(testAuthority()));
+        installCountdown(module.engine()); f.tick.now += 100U;
+        bool inject = true;
+        owner.onLeave = [&]() { if (inject) { inject = false; CHECK(owner.gate.beginDeviceAccessChange()); } };
+        if (stop) f.lifecycle.duringPoll = [&]() { product.end(); };
+        product.run();
+        CHECK(f.calls == 0U && !owner.gate.idle());
+        CHECK(f.lifecycle.stops == (stop ? 1U : 0U)); // Reacquire failure must still finish a deferred stop.
+        owner.gate.endDeviceAccessChange(Result::success()); owner.onLeave = nullptr;
+        CHECK(owner.gate.idle());
+        if (!stop) { product.run(); CHECK(f.calls == 1U); product.end(); }
+    }
+}
+
+void qa3OwnerMutationExclusion() {
+    nvs = Nvs(); Fixture f(false); Qa3Owner owner;
+    const TaskPropertyBinding bindings[] = {TaskPropertyBinding(f.power)};
+    TaskPropertyTarget target(bindings, 1U);
+    Esp32TaskModule<4> module(f.environment, target, policy());
+    TaskProductLifecycle<Esp32TaskModule<4>, BorrowedTaskProductOwner> lifecycle(
+        f.lifecycle, module, target, nullptr, BorrowedTaskProductOwner(&owner));
+    Product product(f.device, lifecycle);
+    lifecycle.setTaskReady(false); CHECK(product.begin(&f.time));
+    CHECK(owner.gate.beginDeviceAccessChange());
+    lifecycle.setTaskReady(true); product.run();
+    CHECK(nvs.opens == 0U && f.lifecycle.polls == 0U && owner.leaves == 0U);
+    owner.gate.endDeviceAccessChange(Result::success());
+    f.lifecycle.rootWriteDuringPoll = &owner.gate;
+    product.run();
+    CHECK(nvs.opens == 1U && f.lifecycle.polls == 1U && owner.leaves == 2U);
+    CHECK(f.lifecycle.rootWriteResult == ErrorCode::WouldBlock);
+    CHECK(owner.gate.idle());
+    product.end();
+#if UINTPTR_MAX <= UINT32_MAX
+    static_assert(sizeof(TaskProductLifecycle<Esp32TaskModule<4>>) <= 28U, "Default task lifecycle grew");
+    static_assert(sizeof(TaskProductLifecycle<Esp32TaskModule<4>, BorrowedTaskProductOwner>) <= 28U,
+        "Guarded task lifecycle exceeds bounded optional seam");
+#endif
+}
+
+void qa3UncertainRootPoisonsCurrentHandle() {
+    TaskRootOwnerGate gate;
+    CHECK(gate.takeDirty() && !gate.takeDirty());
+    CHECK(gate.enterOwner());
+    CHECK(gate.beginDeviceAccessChange().code() == ErrorCode::WouldBlock);
+    gate.leaveOwner();
+    CHECK(gate.beginDeviceAccessChange());
+    CHECK(!gate.enterOwner());
+    gate.endDeviceAccessChange(Result::failure(ErrorCode::InternalError));
+    CHECK(gate.uncertain() && gate.takeDirty());
+    CHECK(gate.enterOwner()); gate.leaveOwner();
+    CHECK(gate.beginDeviceAccessChange().code() == ErrorCode::StateConflict);
+    CHECK(gate.uncertain() && gate.idle() && !gate.takeDirty());
+    TaskRootOwnerGate restarted;
+    CHECK(!restarted.uncertain()); // A new product/handle, NOT a retry/reset of poison.
+}
+
+void qa3DeferredNativeShutdown() {
+    struct Native {
+        bool initialized = true, stopped = false;
+        unsigned ends = 0U;
+        void end() { ++ends; if (!initialized) stopped = true; }
+        bool shutdownComplete() const { return !initialized; }
+    } native;
+    DeferredProvisioningShutdown shutdown; TaskRootOwnerGate roots;
+    unsigned closes = 0U;
+    const auto poll = [&]() {
+        if (!shutdown.poll(native) || !native.stopped || !roots.enterOwner()) return false;
+        ++closes; roots.leaveOwner(); return true;
+    };
+    CHECK(!poll() && closes == 0U && native.ends == 1U);
+    CHECK(!poll() && closes == 0U && native.ends == 1U); // No end/timeout retry.
+    CHECK(roots.beginDeviceAccessChange());
+    native.initialized = false; // Actual DEINIT observation, not elapsed time.
+    CHECK(!poll() && native.stopped && closes == 0U);
+    roots.endDeviceAccessChange(Result::success());
+    CHECK(poll() && closes == 1U); // Now, and only now, Store may close.
+}
+
+void qa3StoppedFacadeOnlyPollsPendingCleanup() {
+    nvs = Nvs(); Fixture f(false); Qa3Owner owner;
+    const TaskPropertyBinding bindings[] = {TaskPropertyBinding(f.power)};
+    TaskPropertyTarget target(bindings, 1U);
+    Esp32TaskModule<4> module(f.environment, target, policy());
+    TaskProductLifecycle<Esp32TaskModule<4>, BorrowedTaskProductOwner> lifecycle(
+        f.lifecycle, module, target, nullptr, BorrowedTaskProductOwner(&owner));
+    Product product(f.device, lifecycle);
+    lifecycle.setTaskReady(false); CHECK(product.begin(&f.time));
+    product.end(); f.lifecycle.cleanupPending = true;
+    CHECK(!product.status().started && nvs.opens == 0U);
+    product.run(); CHECK(f.lifecycle.cleanupPolls == 1U && f.lifecycle.polls == 0U && nvs.opens == 0U);
+    product.run(); CHECK(f.lifecycle.cleanupPolls == 1U && f.lifecycle.polls == 0U && nvs.opens == 0U);
+}
+
+void qa3UnadmittedStoreCannotEraseAccess() {
+    nvs = Nvs(); Fixture f(false);
+    f.lifecycle.flags = ProductCapabilityAccessReset;
+    const TaskPropertyBinding bindings[] = {TaskPropertyBinding(f.power)};
+    TaskPropertyTarget target(bindings, 1U);
+    Esp32TaskModule<4> module(f.environment, target, policy());
+    TaskProductLifecycle<Esp32TaskModule<4>> lifecycle(f.lifecycle, module, target);
+    Product product(f.device, lifecycle);
+    lifecycle.setTaskReady(false); CHECK(product.begin(&f.time));
+    CHECK(product.resetAccess().code() == ErrorCode::NotConfigured);
+    CHECK(nvs.opens == 0U && nvs.erases == 0U && f.lifecycle.accessResets == 0U);
+    CHECK(module.engine().state() != TaskEngineState::Retired);
+    product.end();
 }
 
 void lifecycleResetTransactions() {
@@ -732,11 +1023,49 @@ extern "C" esp_err_t nvs_commit(nvs_handle_t handle) {
     return fail ? ESP_ERR_NVS_NOT_ENOUGH_SPACE : ESP_OK;
 }
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc == 2 && std::strcmp(argv[1], "--ip4-presence-only") == 0) {
+        ip4CooperativePresenceGate(); ip4CooperativeStoreFailure(); ip4OwnerRefreshBeforeExecution(); ip4OwnerReacquireBusy();
+        std::cout << "IP4 cooperative Presence/exclusive owner/revalidation: 5 host scenarios passed (fake NVS, no hardware)\n";
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--qa3-default-only") == 0) {
+        lifecycleRunAndNetwork(); lifecycleResetTransactions(); lifecycleReentrantRetirement();
+        lifecycleAdmissionFailures(); lifecycleScopeObservation(); lifecycleTerminalSnapshot(); lifecycleAuthorityResume();
+        std::cout << "QA3 affected default NoOwner lifecycle: 7 regression scenarios passed (host fake NVS)\n";
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--qa3-gate-only") == 0) {
+        qa3OwnerMutationExclusion(); qa3UncertainRootPoisonsCurrentHandle();
+        std::cout << "QA3 lock-free word gate: 2 affected scenarios passed (host, no hardware)\n";
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--qa3-reset-only") == 0) {
+        qa3UnadmittedStoreCannotEraseAccess();
+        std::cout << "QA3 deferred Store reset: 1 fail-closed scenario passed (host, no hardware)\n";
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--qa3-cleanup-only") == 0) {
+        qa3StoppedFacadeOnlyPollsPendingCleanup();
+        std::cout << "QA3 stopped Product: 1 pending-cleanup scenario passed (host, no hardware)\n";
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--qa3-shutdown-only") == 0) {
+        qa3DeferredNativeShutdown();
+        std::cout << "QA3 native-stop: 1 host scenario passed (fake native owner, no hardware)\n";
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--qa3-only") == 0) {
+        qa3DeferredTaskAdmission(); qa3OwnerMutationExclusion(); qa3UncertainRootPoisonsCurrentHandle(); qa3DeferredNativeShutdown(); qa3StoppedFacadeOnlyPollsPendingCleanup(); qa3UnadmittedStoreCannotEraseAccess();
+        std::cout << "QA3 task readiness/owner/root-poison/native-stop/cleanup/reset: 6 host scenarios passed (fake NVS, no hardware)\n";
+        return 0;
+    }
     propertyAdmissionAndCallbacks(); coherentTime();
     moduleAndRecovery<4>(); moduleAndRecovery<8>(); moduleAndRecovery<10>(); nvsFailureBoundaries(); nvsRetirement();
     nvsRetirementMarker();
     lifecycleRunAndNetwork(); lifecycleResetTransactions(); lifecycleReentrantRetirement(); lifecycleAdmissionFailures();
     lifecycleScopeObservation(); lifecycleTerminalSnapshot(); lifecycleAuthorityResume();
+    qa3DeferredTaskAdmission(); qa3OwnerMutationExclusion(); qa3UncertainRootPoisonsCurrentHandle(); qa3DeferredNativeShutdown(); qa3StoppedFacadeOnlyPollsPendingCleanup(); qa3UnadmittedStoreCannotEraseAccess();
     std::cout << "task product: property/time/NVS composition gates passed (host fake NVS, no hardware)\n";
+    return 0;
 }

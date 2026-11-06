@@ -33,7 +33,8 @@ struct WifiConnectionLifecycleConfig {
 // The product owns network intent; the station and durable store do not.
 enum class WifiCandidateFailurePolicy : uint8_t {
     Rollback = 0U, // Transactional provisioning may restore a confirmed profile.
-    Retry         // Explicit Sketch configuration keeps its selected network.
+    Retry,        // Explicit Sketch configuration keeps its selected network.
+    Stop          // One-shot initial network: failure requires explicit recovery.
 };
 
 // Portable, allocation-free WiFi connection policy. The caller owns the
@@ -42,6 +43,8 @@ enum class WifiCandidateFailurePolicy : uint8_t {
 // connection and confirmActive() have both succeeded durably. Transactional
 // candidates may roll back only to a confirmed previous slot; explicit manual
 // candidates instead reuse the same bounded retry state without Flash writes.
+// Stop candidates never roll back or automatically retry association or an
+// uncertain confirmation write. Confirmed profiles retain normal reconnects.
 class WifiConnectionLifecycle {
 public:
     WifiConnectionLifecycle(

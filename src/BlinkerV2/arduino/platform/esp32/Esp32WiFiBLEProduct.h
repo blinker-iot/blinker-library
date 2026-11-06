@@ -6,6 +6,7 @@
 #endif
 
 #include <sdkconfig.h>
+#include <exception>
 
 #if defined(BLINKER_ESP32_PROVISIONING_BLE) && \
     defined(BLINKER_ESP32_PROVISIONING_SOFTAP)
@@ -30,15 +31,30 @@
 #include "../../ports/esp32/Esp32WiFiProv.h"
 
 #include <BlinkerV2/api/BlinkerFacade.h>
+#include <BlinkerV2/arduino/config/Esp32WiFiProvOptions.h>
 #include <BlinkerV2/arduino/config/Esp32ServerKeys.h>
 #include <BlinkerV2/identity/DeviceAccessStore.h>
 #include <BlinkerV2/provisioning/ControllerControlCoordinator.h>
 #include <BlinkerV2/provisioning/ControllerControlEndpoint.h>
 #include <BlinkerV2/provisioning/ControllerGrantVerifier.h>
 #include <BlinkerV2/runtime/BleDirectProfile.h>
+#include <BlinkerV2/runtime/DeferredProvisioningShutdown.h>
+#include <BlinkerV2/runtime/InitialProvisioningWindowIntent.h>
 #include <BlinkerV2/security/ControllerHmacSha256Authorizer.h>
 #include <BlinkerV2/security/P256ServerKeyRingVerifier.h>
 #include <BlinkerV2/transport/BleFrameTransport.h>
+#include <BlinkerV2/arduino/config/TaskConfig.h>
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+#if defined(BLINKER_ESP32_PROVISIONING_SOFTAP) || (defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS)
+#error "The restricted ESP32 WiFiProv rekey candidate is BLE-only and excludes the task graph"
+#endif
+#endif
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+#if !defined(BLINKER_INTERNAL_ESP32_PROVISIONED_TASKS) || !BLINKER_INTERNAL_ESP32_PROVISIONED_TASKS
+#error "WiFiBLE tasks require the explicit internal provisioned task profile"
+#endif
+#include "Esp32ProvisionedTaskExtension.h"
+#endif
 
 namespace blinker {
 namespace integration {
@@ -52,10 +68,7 @@ public:
 
     Esp32WifiBlePlatform()
         : Esp32WifiNetworkPlatform(),
-          accessBlob_(esp32BlobStorageConfig(
-              "bl_v2_access",
-              "root",
-              DeviceAccessStore::serializedSize)),
+          accessBlob_(accessBlobConfig()),
           accessStore_(accessBlob_),
           crypto_(),
           signatureVerifier_(
@@ -79,6 +92,9 @@ public:
 
     DeviceAccessStore& deviceKeys() { return accessStore_; }
     IDeviceAccessStore& deviceAccessStore() { return accessStore_; }
+    static Esp32NvsBlobStoreConfig accessBlobConfig() {
+        return esp32BlobStorageConfig("bl_v2_access", "root", DeviceAccessStore::serializedSize);
+    }
     IServerSignatureVerifier& serverSignatureVerifier() {
         return signatureVerifier_;
     }
@@ -248,9 +264,17 @@ enum class Esp32WifiBleProductState : uint8_t {
 // ESP-IDF NimBLE Host. SoftAP remains an explicit low-resource fallback.
 // The ordinary education profile deliberately uses no Sketch setup secret and
 // does not claim active-MITM resistance.
-template <typename Platform>
+template <typename Platform, typename Extension = NoWifiProductExtension>
 class Esp32WifiBleProduct final : public IProductLifecycle {
 public:
+    typedef DeviceKeyWifiStack<Platform> Stack;
+    enum : bool { guardedProvisioning =
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        true
+#else
+        Extension::guardedRoots
+#endif
+    };
     Esp32WifiBleProduct()
         : platform_(),
           stack_(platform_, platform_.deviceKeys()),
@@ -259,19 +283,30 @@ public:
               stack_.deviceInstance(),
               stack_.clock(),
               stack_.random()),
+          extension_(stack_, *this),
           endpoint_(
               stack_.deviceInstance(),
               platform_.deviceKeys(),
               &platform_.deviceAccessStore()),
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+          rekey_(stack_.deviceInstance(), platform_.deviceKeys(), endpoint_, platform_.wifiCredentials(),
+                 stack_.random(), platform_.noiseCrypto(), Platform::accessBlobConfig()),
+#endif
           provisioner_(endpoint_, platform_.wifiCredentials()),
           cloud_(stack_.wifiLifecycle(), stack_.cloudTransport()),
           client_(nullptr),
           serviceName_(),
           provisioningStartedMs_(0U),
           state_(Esp32WifiBleProductState::Stopped),
-          lastError_(ErrorCode::Ok) {}
+          lastError_(ErrorCode::Ok), stopPending_(false), shutdown_() {}
 
-    ~Esp32WifiBleProduct() override { stop(); }
+    ~Esp32WifiBleProduct() override {
+        extension_.lifecycle(*this).stop();
+        // A borrowed native callback context cannot be freed while an admitted
+        // writer/SDK owner still uses it. Normal stop may remain pending and
+        // be polled; destruction has no safe continuation in that condition.
+        if (guardedProvisioning && stopPending_) std::terminate();
+    }
 
     Result attach(Client& client) override {
         if (client_ != nullptr) {
@@ -282,7 +317,8 @@ public:
 
         Result result = client.setMonotonicClock(&stack_.clock());
         if (result) result = direct_.attach(client);
-        if (result) result = cloud_.attach(client);
+        if (result) result = cloud_.attach(client, extension_.carrier(stack_));
+        if (result) result = extension_.attach(client);
         if (!result) {
             direct_.detach(client);
             lastError_ = result.code();
@@ -293,18 +329,44 @@ public:
     }
 
     Result attachTime(Client& client, ITimeSync& service) override {
-        return client.setTimeSync(service, stack_.clock(), stack_.random());
+        const Result result = extension_.attachTime(service);
+        return result ? client.setTimeSync(service, stack_.clock(), stack_.random()) : result;
+    }
+
+    IProductLifecycle& lifecycle() { return extension_.lifecycle(*this); }
+    Extension& extension() { return extension_; }
+
+    // Explicit internal maintenance preparation BEFORE the first attach.
+    // It preserves all durable roots/network/tasks; ordinary boot is unchanged.
+    // Not a runtime reconfiguration/reset API or an authorization grant.
+    Result requestInitialProvisioningWindow() {
+        return initialProvisioning_.request(
+            client_ == nullptr,
+            state_ == Esp32WifiBleProductState::Stopped,
+            stopPending_);
     }
 
     Result start() override {
+        if (stopPending_ && !finishStop()) return Result::failure(ErrorCode::WouldBlock);
         if (state_ != Esp32WifiBleProductState::Stopped) {
             return Result::failure(ErrorCode::AlreadyExists);
         }
         if (client_ == nullptr) {
             return failStart(ErrorCode::NotConfigured);
         }
+        // Consume once even when this startup later fails. Never turn an
+        // ordinary reconnect/retry into another maintenance window.
+        const bool requestedProvisioning = initialProvisioning_.consume();
+        extension_.provisioning();
+        shutdown_.reset();
 
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        Result result = Esp32WiFiProvRekeyCandidate::requireExistingInstance();
+        if (!result) return failStart(result.code());
+        result = stack_.open();
+#else
         Result result = stack_.open();
+#endif
         if (!result) return failStart(result.code());
 
         DeviceKey current;
@@ -315,14 +377,28 @@ public:
             return failStart(result.code());
         }
 
-        if (hasDeviceKey &&
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        if (!hasDeviceKey) return failStart(ErrorCode::NotConfigured);
+        if (!requestedProvisioning) {
+            result = rekey_.bootMayStartCloud();
+            if (!result || !platform_.wifiCredentials().hasActiveProfile())
+                return failStart(result ? ErrorCode::NotConfigured : result.code());
+            return startActive();
+        }
+#else
+        if (!requestedProvisioning && hasDeviceKey &&
             platform_.wifiCredentials().hasActiveProfile()) {
             return startActive();
         }
+#endif
 
         makeServiceName(stack_.deviceInstance(), serviceName_);
         const Esp32WifiProvConfig config = provisioningConfig(serviceName_);
-        result = provisioner_.begin(config);
+        result = provisioner_.begin(config
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+            , &rekey_
+#endif
+        );
         if (!result) return failStart(result.code());
 
         provisioningStartedMs_ = stack_.clock().monotonicMillis();
@@ -332,21 +408,25 @@ public:
     }
 
     void poll(uint32_t totalBudgetMicros) override {
+        if (stopPending_) { (void)finishStop(); return; }
         if (state_ == Esp32WifiBleProductState::Provisioning) {
             provisioner_.poll();
             const uint32_t elapsed =
                 stack_.clock().monotonicMillis() - provisioningStartedMs_;
             if (provisioner_.state() == Esp32WifiProvState::Fault) {
                 const ErrorCode error = provisioner_.lastError();
-                provisioner_.end();
+                if (!guardedProvisioning) provisioner_.end();
                 enterFault(error);
             } else if (elapsed >= kProvisioningWindowMs) {
-                provisioner_.end();
+                if (!guardedProvisioning) provisioner_.end();
                 enterFault(ErrorCode::NotConnected);
             } else if (provisioner_.state() ==
                        Esp32WifiProvState::Complete) {
                 provisioner_.end();
-                (void)startActive();
+                if (!guardedProvisioning ||
+                    (provisioner_.shutdownComplete() && provisioner_.state() == Esp32WifiProvState::Stopped)) {
+                    (void)startActive();
+                } else enterFault(ErrorCode::WouldBlock);
             }
         } else if (state_ == Esp32WifiBleProductState::Active) {
             cloud_.poll(totalBudgetMicros);
@@ -361,6 +441,13 @@ public:
     }
 
     void stop() override {
+        extension_.provisioning();
+        if (guardedProvisioning) {
+            stopPending_ = true;
+            state_ = Esp32WifiBleProductState::Stopped;
+            (void)finishStop();
+            return;
+        }
         provisioner_.end();
         cloud_.stop();
         direct_.resetProfile();
@@ -370,20 +457,38 @@ public:
     }
 
     Result resetAccess() override {
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        return Result::failure(ErrorCode::UnsupportedFeature);
+#else
+        if (Extension::guardedRoots) {
+            stop();
+            if (stopPending_) return Result::failure(ErrorCode::WouldBlock);
+            if (!extension_.quiescent()) return Result::failure(ErrorCode::WouldBlock);
+        }
         Result result = stack_.open();
         if (result) result = platform_.deviceKeys().eraseAccess();
         stack_.end();
         return result;
+#endif
     }
 
     Result resetNetwork() override {
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        return Result::failure(ErrorCode::UnsupportedFeature);
+#else
+        if (Extension::guardedRoots) {
+            stop();
+            if (stopPending_ || !extension_.quiescent()) return Result::failure(ErrorCode::WouldBlock);
+        }
         Result result = stack_.open();
         if (result) result = platform_.wifiCredentials().clear();
         stack_.end();
         return result;
+#endif
     }
 
     ProductLifecycleStatus status() const override {
+        if (stopPending_) return ProductLifecycleStatus(ProductLifecycleState::Fault, ErrorCode::WouldBlock, false);
         if (state_ == Esp32WifiBleProductState::Stopped) {
             return ProductLifecycleStatus();
         }
@@ -401,13 +506,19 @@ public:
         }
         return cloud_.status();
     }
+    bool hasPendingStop() const override { return stopPending_; }
 
     ProductCapabilities capabilities() const override {
         return ProductCapabilities(static_cast<uint16_t>(
             ProductCapabilityCloudData |
             direct_.capabilities() |
+            extension_.capabilities()
+#if !defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) || !BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+            |
             ProductCapabilityAccessReset |
-            ProductCapabilityNetworkReset));
+            ProductCapabilityNetworkReset
+#endif
+        ));
     }
 
 private:
@@ -418,9 +529,11 @@ private:
     static Esp32WifiProvConfig provisioningConfig(
         const char* serviceName) {
 #if defined(BLINKER_ESP32_PROVISIONING_SOFTAP)
-        return esp32SoftApWifiProvConfig(serviceName, nullptr, nullptr);
+        return esp32SoftApWifiProvConfig(
+            serviceName, official::wifiProvProofOfPossession(), nullptr);
 #else
-        return esp32BleWifiProvConfig(serviceName, nullptr);
+        return esp32BleWifiProvConfig(
+            serviceName, official::wifiProvProofOfPossession());
 #endif
     }
 
@@ -446,6 +559,7 @@ private:
         if (result) result = cloud_.start();
         if (!result) return failStart(result.code());
         state_ = Esp32WifiBleProductState::Active;
+        extension_.active(); // Next cooperative task-owner cycle, never this transition tick.
         lastError_ = ErrorCode::Ok;
         return Result::success();
     }
@@ -456,6 +570,14 @@ private:
     }
 
     void enterFault(ErrorCode error) {
+        if (guardedProvisioning) {
+            extension_.provisioning();
+            lastError_ = error == ErrorCode::Ok ? ErrorCode::InternalError : error;
+            state_ = Esp32WifiBleProductState::Fault;
+            stopPending_ = true;
+            (void)finishStop();
+            return;
+        }
         provisioner_.end();
         cloud_.stop();
         direct_.resetProfile();
@@ -466,10 +588,28 @@ private:
         state_ = Esp32WifiBleProductState::Fault;
     }
 
+    bool finishStop() {
+        const bool nativeStopped = shutdown_.poll(provisioner_);
+        cloud_.stop();
+        direct_.resetProfile();
+        if (!nativeStopped || provisioner_.state() != Esp32WifiProvState::Stopped)
+            return false; // Timeout/END request is not native-owner release.
+        if (!extension_.enterMaintenance()) return false;
+        stack_.end();
+        extension_.leaveMaintenance();
+        stopPending_ = false;
+        if (state_ == Esp32WifiBleProductState::Stopped) lastError_ = ErrorCode::Ok;
+        return true;
+    }
+
     Platform platform_;
     DeviceKeyWifiStack<Platform> stack_;
     DirectBleExtension<Platform> direct_;
+    Extension extension_; // Outlives provisioner_ during reverse-order destruction.
     DeviceKeyProvisioningEndpoint endpoint_;
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+    Esp32WiFiProvRekeyCandidate rekey_; // Outlives all SDK callbacks/provisioner_.
+#endif
     Esp32WifiProvAdapter provisioner_;
     BasicWifiCloudLifecycle<WifiConnectionLifecycle,
         typename DeviceKeyWifiStack<Platform>::CloudTransport> cloud_;
@@ -478,12 +618,20 @@ private:
     uint32_t provisioningStartedMs_;
     Esp32WifiBleProductState state_;
     ErrorCode lastError_;
+    bool stopPending_;
+    DeferredProvisioningShutdown shutdown_;
+    InitialProvisioningWindowIntent initialProvisioning_;
 
     Esp32WifiBleProduct(const Esp32WifiBleProduct&);
     Esp32WifiBleProduct& operator=(const Esp32WifiBleProduct&);
 };
 
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+typedef Esp32WifiBleProduct<Esp32WifiBlePlatform,
+    Esp32ProvisionedTaskExtension<DeviceKeyWifiStack<Esp32WifiBlePlatform>, BLINKER_TASK_CAPACITY> >
+#else
 typedef Esp32WifiBleProduct<Esp32WifiBlePlatform>
+#endif
     Esp32OfficialWifiBleProduct;
 
 inline Esp32OfficialWifiBleProduct& esp32WifiBleProduct() {
@@ -493,8 +641,18 @@ inline Esp32OfficialWifiBleProduct& esp32WifiBleProduct() {
 
 } // namespace official_detail
 
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+template <>
+struct TaskSupport<facade_detail::WifiBleProfile> {
+    template <typename... T>
+    static Result configure(Property<T>&... properties) {
+        return official_detail::esp32WifiBleProduct().extension().configure(properties...);
+    }
+};
+#endif
+
 inline IProductLifecycle& lifecycle(facade_detail::WifiBleProfile) {
-    return official_detail::esp32WifiBleProduct();
+    return official_detail::esp32WifiBleProduct().lifecycle();
 }
 
 } // namespace integration

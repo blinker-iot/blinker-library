@@ -224,6 +224,23 @@ Result TaskSnapshotStore::load(TaskSnapshotHeader& header, TaskSnapshotRecord* r
     return result;
 }
 
+Result TaskSnapshotStore::observeBinding(TaskStoreBindingObservation& output,
+                                         TaskSnapshotHeader& headerScratch,
+                                         TaskSnapshotRecord* recordScratch,
+                                         size_t capacity) {
+    output = TaskStoreBindingObservation();
+    headerScratch = TaskSnapshotHeader();
+    size_t count = 0U;
+    const Result result = load(headerScratch, recordScratch, capacity, count);
+    if (result.code() == ErrorCode::NotFound) {
+        output.state = TaskStoreBindingState::Unbound;
+        return Result::success();
+    }
+    if (result) output.state = headerScratch.retired
+        ? TaskStoreBindingState::Retired : TaskStoreBindingState::Bound;
+    return result;
+}
+
 Result TaskSnapshotStore::replace(const TaskSnapshotHeader& header,
                                   const TaskSnapshotRecord* records, size_t count) {
     if (failed()) return Result::failure(ErrorCode::StateConflict);

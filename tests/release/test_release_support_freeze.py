@@ -29,7 +29,11 @@ class ReleaseSupportFreeze(unittest.TestCase):
 
     def test_only_public_profile_keeps_matching_version_and_restricted_targets(self):
         self.assertEqual(sorted(path.name for path in (ROOT / 'profiles').glob('*.json')),
-                         ['cloud-beta.json'])
+                         ['cloud-beta.json', 'esp32-softap-tasks-limited.json'])
+        # The explicit fixed-graph manifest is not a second generic release
+        # profile and must not silently widen the normal public parser.
+        with self.assertRaises(ValueError):
+            profile.load_profile(ROOT / 'profiles/esp32-softap-tasks-limited.json')
         current = profile.load_profile(ROOT / 'profiles/cloud-beta.json')
         properties = dict(line.split('=', 1) for line in
                           (ROOT / 'library.properties').read_text().splitlines() if '=' in line)

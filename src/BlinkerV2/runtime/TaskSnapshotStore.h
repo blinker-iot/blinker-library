@@ -68,6 +68,15 @@ public:
                          TaskSnapshotRecord* records, size_t capacity, size_t& count);
 };
 
+enum class TaskStoreBindingState : uint8_t { Unknown, Unbound, Bound, Retired };
+
+// Storage observation only, never a root-transition/DeviceKey install permit.
+// A valid zero-record table still owns its persisted authority binding.
+struct TaskStoreBindingObservation {
+    TaskStoreBindingState state;
+    TaskStoreBindingObservation() : state(TaskStoreBindingState::Unknown) {}
+};
+
 // Persistence boundary only: TaskEngine owns verified scope checks, CAS,
 // request deduplication, write quotas, and Claim -> callback -> completion.
 // A storage/decode error latches this instance unusable. There is deliberately
@@ -79,6 +88,15 @@ public:
         : storage_(storage), workspace_(workspace), state_(State::Unloaded) {}
     Result load(TaskSnapshotHeader& header, TaskSnapshotRecord* records,
                 size_t capacity, size_t& count);
+    // The product must hold its exclusive owner and have independently known
+    // port durability. Reuses this Store's load/Codec and caller-owned scratch;
+    // it never retries, formats, clears or establishes authority. A fresh
+    // wrapper/handle must not be used to "prove" a previous unknown write.
+    // Missing storage alone yields Unbound. Header/record scratch is meaningful
+    // only after successful Bound/Retired; Unbound is not scratch evidence.
+    Result observeBinding(TaskStoreBindingObservation& output,
+                          TaskSnapshotHeader& headerScratch,
+                          TaskSnapshotRecord* recordScratch, size_t capacity);
     Result replace(const TaskSnapshotHeader& header,
                    const TaskSnapshotRecord* records, size_t count);
     // Trusted retirement only, after a validated load (including missing) or

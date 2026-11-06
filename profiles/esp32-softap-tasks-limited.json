@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "profile_id": "esp32-softap-task-qa3-v1",
+  "transport_profile": "cloud-beta.json",
+  "server_key": {
+    "algorithm": 2,
+    "key_id": 1,
+    "public_key_hex": "04278cc58bd41285c03291030352d1b35797e1a696452ce73ef6edb295b58301301ec4073a30446492925d359c07fc6156fc9b38492a40f4aabe0da143562d11f0",
+    "spki_sha256": "02879e20a6ad6e021ed7e6c857f0a351db14b1568c467db519aac09920b6d061"
+  }
+}

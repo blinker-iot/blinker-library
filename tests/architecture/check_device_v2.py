@@ -562,6 +562,29 @@ def verify_device_key_login_freeze(failures: list[str]) -> None:
         failures.append(f"{DEVICE_KEY_LOGIN_FREEZE}: empty freeze manifest")
 
 
+def product_selector_valid(
+    text: str, selected: str, platform_products: tuple[str, ...]
+) -> bool:
+    selectors = {"BLINKER_PRODUCT_WIFI", "BLINKER_PRODUCT_BLE", "BLINKER_PRODUCT_WIFI_BLE"}
+    if selected not in selectors or not platform_products:
+        return False
+    # Only WiFiBLE must expose its maintained profile before Facade guards.
+    # This is an exact prefix, not permission for arbitrary early dependencies.
+    prefix = (["BlinkerV2/arduino/config/OfficialConfig.h"]
+              if selected == "BLINKER_PRODUCT_WIFI_BLE" else [])
+    prefix.append("BlinkerV2/api/BlinkerFacade.h")
+    matches = list(re.finditer(r'^\s*#\s*include\s*[<"]([^>"]+)[>"]', text, re.MULTILINE))
+    includes = [match.group(1) for match in matches]
+    selection = re.search(rf'^\s*#\s*define\s+{selected}\s+1(?:\s|$)', text, re.MULTILINE)
+    return bool(
+        includes[:len(prefix)] == prefix
+        and selection
+        and selection.start() < matches[0].start()
+        and all(product in includes[len(prefix):] for product in platform_products)
+        and all(f"defined({other})" in text for other in selectors - {selected})
+    )
+
+
 def main() -> int:
     failures: list[str] = []
 
@@ -993,7 +1016,6 @@ def main() -> int:
         (
             WIFI_HEADER,
             "BLINKER_PRODUCT_WIFI",
-            "BLINKER_PRODUCT_BLE",
             (
                 "BlinkerV2/arduino/platform/esp32/Esp32WiFiProduct.h",
                 "BlinkerV2/arduino/platform/uno_r4/UnoR4WiFiProduct.h",
@@ -1003,7 +1025,6 @@ def main() -> int:
         (
             BLE_HEADER,
             "BLINKER_PRODUCT_BLE",
-            "BLINKER_PRODUCT_WIFI",
             (
                 "BlinkerV2/arduino/platform/esp32/Esp32BLEProduct.h",
                 "BlinkerV2/arduino/platform/uno_r4/UnoR4BLEProduct.h",
@@ -1013,27 +1034,14 @@ def main() -> int:
         (
             WIFI_BLE_HEADER,
             "BLINKER_PRODUCT_WIFI_BLE",
-            "BLINKER_PRODUCT_WIFI",
             (
                 "BlinkerV2/arduino/platform/esp32/Esp32WiFiBLEProduct.h",
             ),
         ),
     )
-    for header, selected, conflicting, platform_products in selector_contracts:
+    for header, selected, platform_products in selector_contracts:
         selector_text = header.read_text(encoding="utf-8")
-        selector_includes = re.findall(
-            r'#\s*include\s*[<"]([^>"]+)[>"]', selector_text
-        )
-        if (
-            not selector_includes
-            or selector_includes[0] != "BlinkerV2/api/BlinkerFacade.h"
-            or any(
-                product not in selector_includes
-                for product in platform_products
-            )
-            or f"#define {selected} 1" not in selector_text
-            or f"defined({conflicting})" not in selector_text
-        ):
+        if not product_selector_valid(selector_text, selected, platform_products):
             failures.append(f"{header}: product selector contract regression")
     for header, implementation, retired_source in MODE_SELECTED_IMPLEMENTATIONS:
         include = f'#include "{implementation.name}"'

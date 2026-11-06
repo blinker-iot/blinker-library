@@ -101,6 +101,11 @@ RFC 8949 的最短浮点 preferred serialization；三端必须按本规范和 g
 | `0x1C..0x1F` |  | reserved | 状态扩展 |
 | `0x20` | HistoryRequest | reserved experimental | Runtime 未实现 |
 | `0x21` | HistoryBatch | reserved experimental | Runtime 未实现 |
+| `0x38` | InitialCloudKeyInstall | internal candidate | 仅显式 PreCloudDirect 已认证 BLE 会话；不开放普通 Direct／Cloud 路由 |
+| `0x39` | InitialCloudKeyInstalled | internal candidate | 同会话精确成功回执；[BC-4 合同](DEVICE_V2_BLE_TO_CLOUD_REGISTRATION_CONTRACT_V2.md#8-bc-4专用安装报文与实际回执) |
+| `0x3A` | InitialCloudKeyHandoff | internal candidate | App 核同 intent 服务确认后，在原加密会话显式提交的一次交接；无协议回执，不是 WiFi 应用或 native 停止证明 |
+| `0x3B` | InitialCloudNetworkHandoff | internal candidate | 已安装 Key、首次网络三键全空的显式 task0 owner；新 operation，不携 Key，不复用安装 intent |
+| `0x3C` | InitialCloudNetworkAccepted | internal candidate | 原加密会话精确回显新 operation／原 locator；仅排队接受，不代表 WiFi 持久化或 Cloud 上线 |
 
 `Frame.h` 中存在枚举值不等于 Runtime 已实现；只有本表 current 项才可视为当前能力。
 

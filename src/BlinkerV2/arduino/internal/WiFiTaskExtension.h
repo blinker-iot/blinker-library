@@ -4,7 +4,9 @@
 #include "../../api/TaskProductLifecycle.h"
 #include "../../runtime/TaskTimeEnvironment.h"
 #include "../../runtime/TaskCloudTransport.h"
+#include "../../interface/IDeviceAccessStore.h"
 #include "../config/TaskConfig.h"
+#include <type_traits>
 
 namespace blinker {
 namespace integration {
@@ -13,10 +15,10 @@ namespace official_detail {
 // One optional task graph for all manual-WiFi products. The port supplies only
 // its store-owning/borrowing module and trusted signature implementation.
 // Identity, clock, Client, MQTT, authority and lifecycle remain the original ones.
-template <typename Stack, typename Port>
+template <typename Stack, typename Port, typename Owner = NoTaskProductOwner>
 class WifiTaskExtension {
 public:
-    WifiTaskExtension(Stack& stack, IProductLifecycle& wifi)
+    WifiTaskExtension(Stack& stack, IProductLifecycle& wifi, Owner owner = Owner())
         : authority_(), environment_(&TaskAuthorityCache::read, &authority_),
           target_(nullptr, 0U),
           tasks_(environment_, target_, policy(), Port::storage(stack)), crypto_(),
@@ -25,8 +27,8 @@ public:
           adapter_(session_, authority_, tasks_.engine(), stack.deviceInstance(), roots_), workspace_(),
           carrier_(stack.cloudTransport(), stack.mqttTransport(), stack.clock(), adapter_,
                    MutableByteSpan(workspace_, sizeof(workspace_))),
-          lifecycle_(wifi, tasks_, target_, &adapter_) {}
-    ~WifiTaskExtension() { lifecycle_.stop(); }
+          lifecycle_(wifi, tasks_, target_, &adapter_, owner) {}
+    ~WifiTaskExtension() { stopOnDestruction(std::integral_constant<bool, Owner::stopOnDestruction>()); }
 
     template <typename... T>
     Result configure(Property<T>&... properties) { return configureTaskProperties(target_, properties...); }
@@ -37,7 +39,22 @@ public:
     uint16_t capabilities() const { return 0U; }
     ErrorCode taskError() const { return lifecycle_.taskError(); }
 
+protected:
+    void setTaskReady(bool ready) { lifecycle_.setTaskReady(ready); }
+    TaskRootSources& rootSources() { return roots_; }
+    bool initialCloudKeyCommitActive() const { return tasks_.initialCloudKeyCommitActive(); }
+    bool taskStorageFailed() const { return tasks_.taskStorageFailed(); }
+    // Product-internal verified transaction; not a Facade/Sketch or wire API.
+    Result installInitialCloudKeyVerified(IDeviceAccessStore& access,
+        const DeviceKey& candidate, uint32_t expectedEpoch,
+        const ControllerCredential& expectedAdmin,
+        IInitialCloudKeyCommitGuard* guard = nullptr) {
+        return tasks_.installInitialCloudKeyVerified(access, candidate, expectedEpoch, expectedAdmin, guard);
+    }
+
 private:
+    void stopOnDestruction(std::true_type) { lifecycle_.stop(); }
+    void stopOnDestruction(std::false_type) {}
     static TaskRootSources roots(Stack& stack) {
         TaskRootSources value; value.deviceKey = &stack.deviceKeySource(); return value;
     }
@@ -61,7 +78,7 @@ private:
     TaskCommandAdapter adapter_;
     uint8_t workspace_[kTaskCarrierFrameMaxSize];
     TaskCloudTransport<typename Stack::CloudTransport> carrier_;
-    TaskProductLifecycle<Module> lifecycle_;
+    TaskProductLifecycle<Module, Owner> lifecycle_;
     WifiTaskExtension(const WifiTaskExtension&) = delete;
     WifiTaskExtension& operator=(const WifiTaskExtension&) = delete;
 };

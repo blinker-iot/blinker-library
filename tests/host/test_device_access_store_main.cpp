@@ -1,5 +1,7 @@
 #include <BlinkerV2/core/Crc32.h>
 #include <BlinkerV2/identity/DeviceAccessStore.h>
+#include <BlinkerV2/provisioning/TaskAuthorityContract.h>
+#include <BlinkerV2/runtime/TaskRootOwnerGate.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -44,12 +46,14 @@ public:
     MemoryStore()
         : data(), size(0U), present(false), failReplace(false), failClear(false),
           ignoreClear(false),
-          replaceCalls(0U), clearCalls(0U) {}
+          replaceCalls(0U), clearCalls(0U), loadCalls(0U), fence(nullptr),
+          corruptAfterReplace(false), failAfterReplace(false) {}
 
     blinker::Result load(
         blinker::MutableByteSpan output,
         size_t& written) override {
         written = 0U;
+        ++loadCalls;
         if (!present) {
             return blinker::Result::failure(blinker::ErrorCode::NotFound);
         }
@@ -63,6 +67,7 @@ public:
     }
 
     blinker::Result replace(blinker::ByteView value) override {
+        CHECK_TRUE(fence == nullptr || *fence);
         ++replaceCalls;
         if (failReplace) {
             failReplace = false;
@@ -73,10 +78,16 @@ public:
         std::memcpy(data, value.data, value.size);
         size = value.size;
         present = true;
+        if (failAfterReplace) {
+            failAfterReplace = false;
+            return blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+        }
+        if (corruptAfterReplace) data[0] ^= 1U;
         return blinker::Result::success();
     }
 
     blinker::Result clear() override {
+        CHECK_TRUE(fence == nullptr || *fence);
         ++clearCalls;
         if (failClear) {
             failClear = false;
@@ -104,6 +115,35 @@ public:
     bool ignoreClear;
     uint32_t replaceCalls;
     uint32_t clearCalls;
+    uint32_t loadCalls;
+    bool* fence;
+    bool corruptAfterReplace;
+    bool failAfterReplace;
+};
+
+class ChangeObserver final : public blinker::IDeviceAccessChangeObserver {
+public:
+    ChangeObserver() : held(false), refuse(false), dirty(false), poisoned(false),
+        before(0U), after(0U), failed(0U), lastOutcome(blinker::ErrorCode::Ok) {}
+    blinker::Result beginDeviceAccessChange() override {
+        ++before;
+        CHECK_TRUE(!held);
+        if (refuse) return blinker::Result::failure(blinker::ErrorCode::WouldBlock);
+        held = true;
+        dirty = true;
+        return blinker::Result::success();
+    }
+    void endDeviceAccessChange(blinker::Result outcome) override {
+        CHECK_TRUE(held);
+        ++after;
+        held = false;
+        dirty = true;
+        lastOutcome = outcome.code();
+        if (!outcome) { poisoned = true; ++failed; }
+    }
+    bool held, refuse, dirty, poisoned;
+    uint32_t before, after, failed;
+    blinker::ErrorCode lastOutcome;
 };
 
 blinker::DeviceKey deviceKey(uint8_t base) {
@@ -153,6 +193,28 @@ void repairCrc(MemoryStore& memory) {
     writeU32(
         memory.data + crcOffset,
         blinker::computeCrc32(blinker::ByteView(memory.data, crcOffset)));
+}
+
+// A trusted synthetic unit-test transaction, not TaskStore/transport admission.
+// These fixtures have a known successful clear and borrow a real exclusive
+// owner for the NEW internal entry; they never confirm an unknown write.
+blinker::Result installInitialKeyInTestOwner(
+    MemoryStore& memory, blinker::DeviceAccessStore& store,
+    const blinker::DeviceKey& key, uint32_t epoch,
+    const blinker::ControllerCredential& admin,
+    blinker::IDeviceAccessChangeObserver* restore = nullptr) {
+    blinker::TaskRootOwnerGate owner;
+    bool held = owner.enterOwner();
+    CHECK_TRUE(held);
+    bool* previousFence = memory.fence;
+    memory.fence = &held;
+    store.setChangeObserver(&owner);
+    const blinker::Result result = store.installInitialCloudKeyVerified(key, epoch, admin);
+    owner.leaveOwner(); held = false;
+    CHECK_TRUE(owner.idle());
+    store.setChangeObserver(restore);
+    memory.fence = previousFence;
+    return result;
 }
 
 void testBootstrapAndExactVector() {
@@ -232,7 +294,8 @@ void testKeyMutationPreservesDirectAccess() {
     CHECK_EQ(static_cast<uint32_t>(7U), epoch);
     CHECK_TRUE(store.loadActive(
         admin.id(), admin.domain, 7U, loaded));
-    CHECK_TRUE(store.replace(first));
+    CHECK_EQ(blinker::ErrorCode::StateConflict, store.replace(first).code());
+    CHECK_TRUE(installInitialKeyInTestOwner(memory, store, first, 7U, admin));
     CHECK_TRUE(store.load(ignored));
     CHECK_TRUE(blinker::sameDeviceKey(first, ignored));
 }
@@ -577,9 +640,319 @@ void testWholeAccessResetAndReclaim() {
     }
 }
 
+void testQa3AdminSelectorIsOneReadAndNeverSecret() {
+    MemoryStore memory;
+    blinker::DeviceAccessStore store(memory);
+    blinker::DeviceAccessAdminSelector selector;
+    CHECK_EQ(blinker::ErrorCode::NotFound, store.loadAdminSelector(selector).code());
+    CHECK_EQ(0U, selector.accessEpoch);
+    const blinker::ControllerCredential admin = credential(
+        0x10U, 0x20U, 3U, 1U, blinker::kControllerPermissionAll);
+    CHECK_TRUE(store.bootstrap(deviceKey(1U), 3U, admin));
+    const uint32_t reads = memory.loadCalls;
+    CHECK_TRUE(store.loadAdminSelector(selector));
+    CHECK_EQ(reads + 1U, memory.loadCalls);
+    CHECK_EQ(3U, selector.accessEpoch);
+    CHECK_TRUE(std::memcmp(selector.controllerId, admin.controllerId, sizeof(selector.controllerId)) == 0);
+    CHECK_TRUE(store.clearAll());
+    CHECK_EQ(blinker::ErrorCode::NotFound, store.loadAdminSelector(selector).code());
+    CHECK_EQ(0U, selector.accessEpoch);
+    for (size_t i = 0U; i < sizeof(selector.controllerId); ++i) CHECK_EQ(0U, selector.controllerId[i]);
+    memory.data[0] ^= 1U;
+    CHECK_EQ(blinker::ErrorCode::InvalidEncoding, store.loadAdminSelector(selector).code());
+    CHECK_EQ(0U, selector.accessEpoch);
+}
+
+void testQa3EveryAdmittedWriteIsFencedAndRetriesStayIdempotent() {
+    MemoryStore memory;
+    blinker::DeviceAccessStore store(memory);
+    ChangeObserver observer;
+    store.setChangeObserver(&observer);
+    memory.fence = &observer.held;
+    blinker::ControllerCredential admin = credential(
+        0x10U, 0x20U, 3U, 1U, blinker::kControllerPermissionAll);
+    CHECK_TRUE(store.bootstrap(deviceKey(1U), 3U, admin));
+    CHECK_EQ(1U, observer.before);
+    CHECK_EQ(observer.before, observer.after);
+    CHECK_TRUE(!observer.held && observer.dirty);
+    CHECK_TRUE(!observer.poisoned);
+    CHECK_TRUE(store.bootstrap(deviceKey(1U), 3U, admin));
+    CHECK_EQ(2U, observer.before); // Exact Bootstrap must also pass its fence.
+    CHECK_TRUE(store.replace(deviceKey(2U)));
+    CHECK_TRUE(store.replace(deviceKey(2U)));
+    CHECK_EQ(4U, observer.before); // Exact no-write replay also checks poison.
+    CHECK_TRUE(store.clear());
+    CHECK_TRUE(store.clear());
+    CHECK_EQ(5U, observer.before);
+    CHECK_EQ(blinker::ErrorCode::StateConflict, store.replace(deviceKey(2U)).code());
+    CHECK_TRUE(installInitialKeyInTestOwner(memory, store, deviceKey(2U), 3U, admin, &observer));
+    admin.credentialVersion = 2U;
+    admin.secret[0] ^= 1U;
+    CHECK_TRUE(store.rotateVerified(1U, admin));
+    CHECK_EQ(7U, observer.before);
+    const uint32_t sharedPermissions = blinker::kControllerPermissionObserve | blinker::kControllerPermissionControl;
+    blinker::ControllerCredential shared = credential(0x40U, 0x50U, 3U, 1U, sharedPermissions);
+    CHECK_TRUE(store.installVerified(shared));
+    shared.credentialVersion = 2U;
+    shared.secret[0] ^= 1U;
+    CHECK_TRUE(store.rotateVerified(1U, shared));
+    CHECK_TRUE(store.revokeVerified(shared.id(), shared.domain, 3U, 2U));
+    CHECK_TRUE(store.replacePresenceVerified(3U, 0U, presenceKey(1U, 0x60U)));
+    CHECK_EQ(11U, observer.before);
+    CHECK_TRUE(store.replacePresenceVerified(3U, 0U, presenceKey(1U, 0x60U)));
+    CHECK_EQ(11U, observer.before);
+    CHECK_TRUE(store.clearAll());
+    CHECK_TRUE(store.eraseAccess());
+    CHECK_EQ(13U, observer.before);
+    CHECK_EQ(observer.before, observer.after);
+    CHECK_TRUE(!observer.held);
+    // Explicit detach belongs to a quiescent product lifecycle, not a callback.
+    store.setChangeObserver(nullptr);
+    memory.fence = nullptr;
+    CHECK_TRUE(store.bootstrapAccessWithPresence(4U, credential(
+        0x80U, 0x90U, 4U, 1U, blinker::kControllerPermissionAll), presenceKey(1U, 0xa0U)));
+    CHECK_EQ(13U, observer.before);
+}
+
+void testQa3RejectedAndUncertainWritesNeverUnfenceEarly() {
+    MemoryStore memory;
+    blinker::DeviceAccessStore store(memory);
+    const blinker::ControllerCredential admin = credential(
+        0x10U, 0x20U, 3U, 1U, blinker::kControllerPermissionAll);
+    CHECK_TRUE(store.bootstrapWithPresence(deviceKey(1U), 3U, admin, presenceKey(1U, 0x60U)));
+    ChangeObserver observer;
+    store.setChangeObserver(&observer);
+    memory.fence = &observer.held;
+    const uint32_t writes = memory.replaceCalls;
+    observer.refuse = true;
+    CHECK_EQ(blinker::ErrorCode::WouldBlock, store.replace(deviceKey(2U)).code());
+    CHECK_EQ(writes, memory.replaceCalls);
+    CHECK_EQ(0U, observer.after);
+    CHECK_TRUE(!observer.poisoned);
+    observer.refuse = false;
+    memory.failReplace = true;
+    CHECK_EQ(blinker::ErrorCode::WouldBlock, store.replace(deviceKey(2U)).code());
+    CHECK_EQ(1U, observer.after);
+    CHECK_TRUE(observer.dirty && !observer.held);
+    CHECK_TRUE(observer.poisoned);
+    CHECK_EQ(blinker::ErrorCode::WouldBlock, observer.lastOutcome);
+    memory.corruptAfterReplace = true;
+    CHECK_EQ(blinker::ErrorCode::InvalidEncoding, store.replace(deviceKey(3U)).code());
+    CHECK_EQ(2U, observer.after);
+    CHECK_TRUE(observer.dirty && !observer.held);
+    CHECK_EQ(blinker::ErrorCode::InvalidEncoding, observer.lastOutcome);
+    memory.corruptAfterReplace = false;
+    CHECK_TRUE(store.eraseAccess());
+    CHECK_TRUE(store.bootstrapAccess(4U, credential(
+        0x80U, 0x90U, 4U, 1U, blinker::kControllerPermissionAll)));
+    memory.failClear = true;
+    CHECK_EQ(blinker::ErrorCode::WouldBlock, store.clearAll().code());
+    CHECK_TRUE(observer.dirty && !observer.held);
+    CHECK_EQ(blinker::ErrorCode::WouldBlock, observer.lastOutcome);
+    memory.ignoreClear = true;
+    CHECK_EQ(blinker::ErrorCode::InternalError, store.eraseAccess().code());
+    CHECK_EQ(observer.before, observer.after + 1U); // One veto never entered.
+    CHECK_TRUE(observer.dirty && !observer.held);
+    CHECK_EQ(blinker::ErrorCode::InternalError, observer.lastOutcome);
+    CHECK_EQ(4U, observer.failed);
+    CHECK_TRUE(observer.poisoned); // Later successful writes never clear doubt.
+}
+
+void testQa3UnknownWriteCannotBeConfirmedBySameHandleRead() {
+    MemoryStore memory;
+    blinker::DeviceAccessStore store(memory);
+    const blinker::ControllerCredential admin = credential(
+        0x10U, 0x20U, 3U, 1U, blinker::kControllerPermissionAll);
+    CHECK_TRUE(store.bootstrap(deviceKey(1U), 3U, admin));
+    ChangeObserver observer;
+    store.setChangeObserver(&observer);
+    memory.fence = &observer.held;
+    // Models a port that exposes its pending view after commit failure. A later
+    // read (or exact retry) on that handle is NOT evidence of durable outcome.
+    memory.failAfterReplace = true;
+    CHECK_EQ(blinker::ErrorCode::WouldBlock, store.replace(deviceKey(2U)).code());
+    CHECK_TRUE(observer.poisoned);
+    blinker::DeviceKey loaded;
+    CHECK_TRUE(store.load(loaded));
+    CHECK_TRUE(blinker::sameDeviceKey(loaded, deviceKey(2U)));
+    observer.refuse = true; // Models product poison admission, not durable confirmation.
+    const uint32_t reads = memory.loadCalls;
+    CHECK_EQ(blinker::ErrorCode::WouldBlock, store.replace(deviceKey(2U)).code());
+    CHECK_EQ(reads, memory.loadCalls);
+    CHECK_EQ(2U, observer.before);
+    CHECK_EQ(1U, observer.after);
+    blinker::DeviceAccessAdminSelector selector;
+    CHECK_TRUE(store.loadAdminSelector(selector));
+    CHECK_TRUE(observer.poisoned && observer.dirty && !observer.held);
+}
+
+class TestWifiprovRekeyCommitGuard final : public blinker::IWifiprovRekeyCommitGuard {
+public:
+    blinker::Result validateWifiprovRekeyCommit() override { return blinker::Result::success(); }
+};
+
+void testVerifiedWifiProvisioningKeyRotationPreservesRoot() {
+    using namespace blinker;
+    MemoryStore memory;
+    DeviceAccessStore store(memory);
+    TestWifiprovRekeyCommitGuard guard;
+    const DeviceKey oldKey = deviceKey(1U), newKey = deviceKey(0x40U);
+    const ControllerCredential admin = credential(0x10U, 0x20U, 7U, 2U, kControllerPermissionAll);
+    const ControllerCredential shared = credential(0x40U, 0x60U, 7U, 1U,
+        kControllerPermissionObserve | kControllerPermissionControl);
+    const DevicePresenceKey presence = presenceKey(3U, 0xA0U);
+    CHECK_TRUE(store.bootstrapWithPresence(oldKey, 7U, admin, presence));
+    CHECK_TRUE(store.installVerified(shared));
+    DeviceKeyLocator oldLocator = {}, newLocator = {};
+    CHECK_TRUE(deriveDeviceKeyLocator(oldKey, oldLocator));
+    CHECK_TRUE(deriveDeviceKeyLocator(newKey, newLocator));
+    const uint32_t writes = memory.replaceCalls;
+    const uint32_t reads = memory.loadCalls;
+    CHECK_EQ(ErrorCode::UnsupportedFeature,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 7U, 2U, oldLocator, newKey, guard).code());
+    CHECK_EQ(reads, memory.loadCalls);
+
+    ChangeObserver observer;
+    store.setChangeObserver(&observer);
+    memory.fence = &observer.held;
+    CHECK_EQ(ErrorCode::InvalidArgument,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 0U, 2U, oldLocator, newKey, guard).code());
+    CHECK_EQ(ErrorCode::StateConflict,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 7U, 2U, oldLocator, oldKey, guard).code());
+    CHECK_EQ(0U, observer.before);
+    CHECK_EQ(ErrorCode::StateConflict,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 8U, 2U, oldLocator, newKey, guard).code());
+    CHECK_EQ(ErrorCode::StateConflict,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 7U, 1U, oldLocator, newKey, guard).code());
+    CHECK_EQ(ErrorCode::StateConflict,
+        store.replaceWifiProvisioningKeyVerified(shared.id(), 7U, 2U, oldLocator, newKey, guard).code());
+    CHECK_EQ(ErrorCode::StateConflict,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 7U, 2U, newLocator, deviceKey(0x80U), guard).code());
+    CHECK_EQ(writes, memory.replaceCalls);
+    CHECK_EQ(4U, observer.before);
+    CHECK_EQ(4U, observer.after);
+    CHECK_TRUE(!observer.poisoned && !observer.held);
+
+    const uint32_t currentReads = memory.loadCalls;
+    CHECK_TRUE(store.replaceWifiProvisioningKeyVerified(admin.id(), 7U, 2U, oldLocator, newKey, guard));
+    CHECK_EQ(writes + 1U, memory.replaceCalls);
+    CHECK_EQ(currentReads + 2U, memory.loadCalls); // Compare and exact durable readback.
+    CHECK_EQ(5U, observer.before);
+    CHECK_EQ(5U, observer.after);
+    CHECK_TRUE(!observer.poisoned && !observer.held);
+    CHECK_TRUE(store.verifyInitialCloudWifiRoot(admin.id(), 7U, 2U, newLocator));
+    CHECK_EQ(ErrorCode::StateConflict, store.verifyInitialCloudWifiRoot(admin.id(), 7U, 2U, oldLocator).code());
+    CHECK_EQ(ErrorCode::StateConflict,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 7U, 2U, oldLocator, newKey, guard).code());
+    CHECK_EQ(writes + 1U, memory.replaceCalls);
+    ControllerCredential loaded;
+    CHECK_TRUE(store.loadActive(admin.id(), admin.domain, 7U, loaded));
+    CHECK_TRUE(sameControllerCredential(admin, loaded));
+    CHECK_TRUE(store.loadActive(shared.id(), shared.domain, 7U, loaded));
+    CHECK_TRUE(sameControllerCredential(shared, loaded));
+    DevicePresenceKey loadedPresence;
+    CHECK_TRUE(store.loadPresence(7U, loadedPresence));
+    CHECK_TRUE(sameDevicePresenceKey(presence, loadedPresence));
+}
+
+void testVerifiedWifiProvisioningKeyRotationCannotReopenAfterUnknown() {
+    using namespace blinker;
+    MemoryStore memory;
+    DeviceAccessStore store(memory);
+    TestWifiprovRekeyCommitGuard guard;
+    const DeviceKey oldKey = deviceKey(1U), newKey = deviceKey(0x40U);
+    const ControllerCredential admin = credential(0x10U, 0x20U, 7U, 2U, kControllerPermissionAll);
+    CHECK_TRUE(store.bootstrap(oldKey, 7U, admin));
+    DeviceKeyLocator oldLocator = {}, newLocator = {};
+    CHECK_TRUE(deriveDeviceKeyLocator(oldKey, oldLocator));
+    CHECK_TRUE(deriveDeviceKeyLocator(newKey, newLocator));
+    TaskRootOwnerGate gate;
+    store.setChangeObserver(&gate);
+    const uint32_t writes = memory.replaceCalls;
+    const uint32_t reads = memory.loadCalls;
+    CHECK_TRUE(gate.enterOwner());
+    CHECK_EQ(ErrorCode::WouldBlock,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 7U, 2U, oldLocator, newKey, guard).code());
+    gate.leaveOwner();
+    CHECK_EQ(reads, memory.loadCalls);
+    CHECK_EQ(writes, memory.replaceCalls);
+
+    // Store reports failure after exposing the candidate bytes on this handle.
+    memory.failAfterReplace = true;
+    CHECK_EQ(ErrorCode::WouldBlock,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 7U, 2U, oldLocator, newKey, guard).code());
+    CHECK_TRUE(gate.uncertain());
+    CHECK_EQ(writes + 1U, memory.replaceCalls);
+    CHECK_TRUE(store.verifyInitialCloudWifiRoot(admin.id(), 7U, 2U, newLocator));
+    const uint32_t uncertainReads = memory.loadCalls;
+    CHECK_EQ(ErrorCode::StateConflict,
+        store.replaceWifiProvisioningKeyVerified(admin.id(), 7U, 2U, newLocator, deviceKey(0x80U), guard).code());
+    CHECK_EQ(uncertainReads, memory.loadCalls);
+    CHECK_EQ(writes + 1U, memory.replaceCalls);
+}
+
+void testQa3ActualSelectorBindsBothRoots() {
+    MemoryStore memory;
+    blinker::DeviceAccessStore store(memory);
+    const blinker::ControllerCredential admin = credential(
+        0x10U, 0x20U, 5U, 3U, blinker::kControllerPermissionAll);
+    CHECK_TRUE(store.bootstrap(deviceKey(1U), 5U, admin));
+    blinker::DeviceAccessAdminSelector selector;
+    CHECK_TRUE(store.loadAdminSelector(selector));
+    blinker::DeviceInstanceId instance;
+    for (size_t i = 0U; i < sizeof(instance.bytes); ++i) instance.bytes[i] = static_cast<uint8_t>(i + 1U);
+    blinker::TaskRootSources roots;
+    roots.deviceKey = &store;
+    roots.controllers = &store;
+    roots.adminControllerId = blinker::ByteView(selector.controllerId, sizeof(selector.controllerId));
+    roots.accessEpoch = selector.accessEpoch;
+    uint8_t digest[32] = {};
+    CHECK_TRUE(blinker::taskAuthorityRootDigest(instance, roots, blinker::MutableByteSpan(digest, sizeof(digest))));
+    // Independent JS protocol oracle, synthetic key/Admin only. Fingerprint
+    // includes the existing NUL separator; not production credentials.
+    const std::vector<uint8_t> expected = fromHex("493c712480096569e17d3288080723743d9c048fd2664f9466f72bbf120adbb5");
+    CHECK_TRUE(std::memcmp(digest, expected.data(), sizeof(digest)) == 0);
+    CHECK_TRUE(store.clear());
+    CHECK_TRUE(!blinker::taskAuthorityRootDigest(instance, roots, blinker::MutableByteSpan(digest, sizeof(digest))));
+    CHECK_EQ(blinker::ErrorCode::StateConflict, store.replace(deviceKey(1U)).code());
+    CHECK_TRUE(installInitialKeyInTestOwner(memory, store, deviceKey(1U), 5U, admin));
+    CHECK_TRUE(blinker::taskAuthorityRootDigest(instance, roots, blinker::MutableByteSpan(digest, sizeof(digest))));
+    CHECK_TRUE(std::memcmp(digest, expected.data(), sizeof(digest)) == 0);
+    CHECK_TRUE(store.clearAll());
+    CHECK_TRUE(!blinker::taskAuthorityRootDigest(instance, roots, blinker::MutableByteSpan(digest, sizeof(digest))));
+}
+
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc == 2 && std::strcmp(argv[1], "--initial-key-contract-only") == 0) {
+        testKeyMutationPreservesDirectAccess();
+        testQa3EveryAdmittedWriteIsFencedAndRetriesStayIdempotent();
+        testQa3UnknownWriteCannotBeConfirmedBySameHandleRead();
+        testQa3ActualSelectorBindsBothRoots();
+        std::cout << "Initial Key contract: four affected legacy Store cases passed" << std::endl;
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--qa3-roots-only") == 0) {
+        testQa3ActualSelectorBindsBothRoots();
+        std::cout << "QA3 actual Store selector and dual-root oracle passed; missing Key/Admin rejected" << std::endl;
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--qa3-outcome-only") == 0) {
+        testQa3EveryAdmittedWriteIsFencedAndRetriesStayIdempotent();
+        testQa3RejectedAndUncertainWritesNeverUnfenceEarly();
+        testQa3UnknownWriteCannotBeConfirmedBySameHandleRead();
+        std::cout << "QA3 admitted write outcome and failure-latch tests passed" << std::endl;
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--qa3-only") == 0) {
+        testQa3AdminSelectorIsOneReadAndNeverSecret();
+        testQa3EveryAdmittedWriteIsFencedAndRetriesStayIdempotent();
+        testQa3RejectedAndUncertainWritesNeverUnfenceEarly();
+        testQa3UnknownWriteCannotBeConfirmedBySameHandleRead();
+        std::cout << "QA3 access selector and mutation fence tests passed" << std::endl;
+        return 0;
+    }
     testBootstrapAndExactVector();
     testKeyMutationPreservesDirectAccess();
     testAdminSharedRules();
@@ -589,6 +962,13 @@ int main() {
     testFaultsAndErase();
     testBleOnlyControllerClearReopensEnrollment();
     testWholeAccessResetAndReclaim();
+    testQa3AdminSelectorIsOneReadAndNeverSecret();
+    testQa3EveryAdmittedWriteIsFencedAndRetriesStayIdempotent();
+    testQa3RejectedAndUncertainWritesNeverUnfenceEarly();
+    testQa3ActualSelectorBindsBothRoots();
+    testQa3UnknownWriteCannotBeConfirmedBySameHandleRead();
+    testVerifiedWifiProvisioningKeyRotationPreservesRoot();
+    testVerifiedWifiProvisioningKeyRotationCannotReopenAfterUnknown();
     std::cout << "Device access store tests passed" << std::endl;
     return 0;
 }

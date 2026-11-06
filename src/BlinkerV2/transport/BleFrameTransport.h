@@ -48,6 +48,10 @@ public:
         const RxContext& rx,
         uint16_t requested) override;
     Result send(ByteView frame, const SendTarget& target) override;
+    // Optional operation replies must never fall back to the plaintext path
+    // used by the original Method 2 AuthResult. Caller snapshots the binding.
+    Result canSendBoundSecure(size_t frameSize, const SendTarget& target, ByteView binding) const;
+    Result sendBoundSecure(ByteView frame, const SendTarget& target, ByteView binding);
     Result disconnectSession(uint32_t sessionId) override;
     uint32_t sessionRevision() const override {
         return static_cast<uint32_t>(sessionRevision_);
@@ -64,6 +68,7 @@ public:
         const security::DirectSecureContext& context) override;
     void commit(uint32_t sessionId) override;
     void cancel(uint32_t sessionId) override;
+    ByteView committedSessionBinding(uint32_t sessionId) const override;
 
     size_t queuedFrameCount() const { return records_.queuedRecordCount(); }
     uint32_t droppedFragmentCount() const {
@@ -112,10 +117,12 @@ private:
         BleFrameTransport* owner;
         SecureSlot* slot;
         ByteView frame;
+        ByteView binding;
+        uint32_t sessionId;
         bool attempted;
 
         SealContext()
-            : owner(nullptr), slot(nullptr), frame(), attempted(false) {}
+            : owner(nullptr), slot(nullptr), frame(), binding(), sessionId(0U), attempted(false) {}
     };
 
     static BleRecordTransportConfig recordConfig(
@@ -134,6 +141,7 @@ private:
         void* context,
         MutableByteSpan storage,
         ByteView& record);
+    Result sendSecureFrame(ByteView frame, const SendTarget& target, SecureSlot& slot, ByteView binding);
 
     void onRecord(ByteView record, const RxContext& rx);
     void onConnected(const RxContext& rx);

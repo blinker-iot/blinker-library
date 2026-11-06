@@ -209,7 +209,7 @@ Result ControllerControlCoordinator::applyPresence(
     if (result) result = encodePresenceKeyReceipt(body, output, receipt);
     // Complete every fallible proof/encoding step before durable mutation.
     if (result) {
-        result = presenceAccess_->replacePresenceVerified(
+        result = presenceAccess_->replacePresenceVerifiedCooperatively(
             mutation.accessEpoch,
             mutation.expectedVersion,
             mutation.presence);

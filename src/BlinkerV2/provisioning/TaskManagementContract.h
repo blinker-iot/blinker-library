@@ -20,13 +20,19 @@ enum : size_t {
 // BBP TaskManagement body = [1, operation, bstr(exact inner CBOR)]. Request
 // flags=0, response flags=IsResponse; nonzero outer sequence is correlation
 // only, not an authorization or a durable/idempotency identifier.
-enum class TaskWireOperation : uint8_t { Authority, Mutation, Read, Commit, Challenge, Result, Failure, Retire, RetirementRead };
+enum class TaskWireOperation : uint8_t { Authority, Mutation, Read, Commit, Challenge, Result, Failure, Retire, RetirementRead, ServiceConfirmed };
 inline bool taskWireRequest(TaskWireOperation op) {
     return op <= TaskWireOperation::Commit || op == TaskWireOperation::Retire || op == TaskWireOperation::RetirementRead;
 }
 enum class TaskWireFailure : uint8_t { Malformed = 1U, Unauthorized, Busy, Conflict, Unavailable, Capacity };
 Result encodeTaskCarrier(TaskWireOperation operation, ByteView body, MutableByteSpan output, ByteView& encoded);
 Result decodeTaskCarrier(ByteView encoded, TaskWireOperation& operation, ByteView& body);
+// Only for the separately negotiated physical Cloud confirmation capability.
+// 32-byte MAC over ASCII domain (no NUL), original Commit sequence (BE16),
+// and the EXACT inner Result. Request/nonce/root are already bound by Result.
+// This does not execute, acknowledge a mutation locally or alter UNKNOWN.
+Result taskServiceConfirmation(ByteView exactResult, uint16_t sequence,
+    ByteView deviceKey, MutableByteSpan token);
 
 struct TaskReadPrepare {
     uint8_t requestId[16];

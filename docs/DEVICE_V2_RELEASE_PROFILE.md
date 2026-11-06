@@ -1,6 +1,6 @@
 # Device V2 Arduino 发布配置合同
 
-> 合同基线：2026-08-23；当前公开环境核对更新于2026-10-27。首发边界以[发布方案 R3](DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md#9-r3-首发边界与公开配置冻结)为准，公开配置入口见[profiles](../profiles/README.md)。不增加Sketch参数或改变BBP/2、DeviceKey、组件API，不重开整组C4维护。
+> 合同基线：2026-08-23；公开环境观测取2026-10-27历史材料，2026-11-06仅按DS-6对齐交付说明，没有新鲜部署核对。首发边界以[发布方案 R3](DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md#9-r3-首发边界与公开配置冻结)为准，公开配置入口见[profiles](../profiles/README.md)。不增加Sketch参数或改变BBP/2、DeviceKey、组件API，不重开整组C4维护。
 
 ## 1. 结论
 
@@ -73,7 +73,9 @@ python tools/build_arduino_release.py `
 
 完整多平台公开发行尚不能标记完成：当前云端 host／TLS CA 已核对，且已有 ESP32 WiFi 受限 profile；但仍缺可用的 Ed25519 业务签发及 BLE 公网入口，不能据此生成多平台完整 profile。取得对应环境的公开材料与开放范围后，再对精确ZIP执行所声明的安装门禁。当前`verify_installed_release.py`是七个普通目标，任务另显式opt-in；不是八个默认目标。不能用development profile或仓库模板替代生产准入，也不能继承旧ZIP的字节证明。
 
-设备 Gateway 域名 `iot.yiyu.pro` 与当前统一测试 Auth `api-test.yysc.tech` 不得混用。当前服务代码
+设备 Gateway 域名 `iot.yiyu.pro` 与 App 区域选择的账户 Auth 不得混用；Auth 域名不写入设备
+profile 或 `Blinker.begin()`。正式／Development 等区域沿各自现有Auth配置，不能从§5的2026-10-27
+历史部署材料推断当前账号环境，也不为切换App区域改设备控制面。服务代码
 已实现`ble-enrollment-signer.js`，`index.js`也可从配置文件装配P-256/Ed25519签发ring；“源码没有签发器”是早期缺口，不再作为当前事实。存在签发代码不等于所选生产环境已配置KMS、密钥/公开ring或完成验收；冻结production profile前须核对实际部署及公开材料，不能只填域名并继续沿用测试公钥。内部development候选按明确本机profile验收，无须以生产KMS完成作为前置。
 
 ## 5 R3 公开环境核对（2026-10-27）

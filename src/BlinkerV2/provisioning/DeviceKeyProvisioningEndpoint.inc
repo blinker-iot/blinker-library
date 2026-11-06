@@ -127,6 +127,10 @@ Result DeviceKeyProvisioningEndpoint::commitKey(
         result = keys_.load(current);
         const bool same = result && sameDeviceKey(current, candidate);
         clearDeviceKey(current);
+        // A failed commit can expose matching bytes through the same handle.
+        // Combined roots must still pass their ordinary zero-write fence;
+        // neither this session flag nor a matching read can clear uncertainty.
+        if (same && access_ != nullptr) result = keys_.replace(candidate);
         return writeStatus(
             operation,
             !result
@@ -187,9 +191,25 @@ Result DeviceKeyProvisioningEndpoint::install(
             written);
     }
 
-    if (access_ != nullptr && !installed_) {
+    if (access_ != nullptr) {
+        // A setup session's historical installed_ flag is not current root
+        // authority. Legacy Install may refresh an existing Cloud Key, but it
+        // cannot attach the first Cloud Key to an already claimed Direct root.
         uint32_t accessEpoch = 0U;
         result = access_->loadAccessEpoch(accessEpoch);
+        if (!result) {
+            clearDeviceKey(candidate);
+            return writeStatus(
+                operation,
+                result.code() == ErrorCode::NotFound
+                    ? DeviceKeyProvisioningStatus::AccessRequired
+                    : DeviceKeyProvisioningStatus::StorageFailure,
+                response,
+                written);
+        }
+        DeviceKey current;
+        result = keys_.load(current);
+        clearDeviceKey(current);
         if (!result) {
             clearDeviceKey(candidate);
             return writeStatus(

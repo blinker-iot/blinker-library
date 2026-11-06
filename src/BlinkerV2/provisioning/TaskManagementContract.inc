@@ -496,7 +496,8 @@ Result verifyTaskManagementResult(ByteView encoded, const TaskManagementChalleng
 
 Result encodeTaskCarrier(TaskWireOperation operation, ByteView body, MutableByteSpan output, ByteView& encoded) {
     encoded = ByteView();
-    if (operation > TaskWireOperation::RetirementRead || body.data == nullptr || body.empty() || body.size > kTaskManagementResultMaxSize)
+    if (operation > TaskWireOperation::ServiceConfirmed || body.data == nullptr || body.empty() || body.size > kTaskManagementResultMaxSize ||
+        (operation == TaskWireOperation::ServiceConfirmed && body.size != 32U))
         return Result::failure(ErrorCode::InvalidArgument);
     const size_t prefix = body.size < 24U ? 4U : 5U;
     if (output.data == nullptr || output.size < prefix + body.size) return Result::failure(ErrorCode::BufferTooSmall);
@@ -521,10 +522,27 @@ Result decodeTaskCarrier(ByteView encoded, TaskWireOperation& operation, ByteVie
     if (result) result = reader.readUnsigned(op);
     if (result) result = reader.readBytes(inner);
     if (!result) return result;
-    if (!reader.finished() || count != 3U || version != 1U || op > 8U || inner.empty())
+    if (!reader.finished() || count != 3U || version != 1U || op > 9U || inner.empty() || (op == 9U && inner.size != 32U))
         return Result::failure(ErrorCode::InvalidEncoding);
     operation = static_cast<TaskWireOperation>(op); body = inner;
     return Result::success();
+}
+
+Result taskServiceConfirmation(ByteView exactResult, uint16_t sequence, ByteView deviceKey, MutableByteSpan token) {
+    if (exactResult.data == nullptr || exactResult.empty() || exactResult.size > kTaskManagementResultMaxSize ||
+        sequence == 0U || deviceKey.data == nullptr || deviceKey.size != 32U || token.data == nullptr || token.size != 32U)
+        return Result::failure(ErrorCode::InvalidArgument);
+    static const uint8_t domain[] = "blinker.task.service-confirm.v1";
+    const uint8_t correlation[] = {static_cast<uint8_t>(sequence >> 8U), static_cast<uint8_t>(sequence)};
+    HmacSha256 mac;
+    Result result = mac.begin(deviceKey);
+    if (result) result = mac.update(ByteView(domain, sizeof(domain) - 1U));
+    if (result) result = mac.update(ByteView(correlation, sizeof(correlation)));
+    if (result) result = mac.update(exactResult);
+    // All input is consumed before finish: token may reuse the Result workspace.
+    if (result) result = mac.finish(token);
+    if (!result) secureZero(token);
+    return result;
 }
 
 } // namespace blinker

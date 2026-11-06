@@ -15,6 +15,7 @@
 #include "../protocol/bbp2/WireError.h"
 #include "ReliableOutbox.h"
 #include "TelemetryLease.h"
+#include "IPreCloudDirectEndpoint.h"
 #include "../transport/TransportHub.h"
 
 #if BLINKER_RELIABLE_RECEIVE_WINDOW < 1 || \
@@ -127,6 +128,9 @@ public:
     Result start();
     void stop();
     void poll(uint32_t totalBudgetMicros);
+    // Before start, only on a standalone runtime with an empty registry.
+    Result bindPreCloudDirect(const PreCloudDirectBinding& binding);
+    Result bindPreCloudDirect(const PreCloudDirectBinding&&) = delete;
     void setCommandHandler(CommandHandler handler, void* context);
     void setStateApplyHandler(StateApplyHandler handler, void* context);
     void setStateApplyTransactionHandler(
@@ -468,6 +472,9 @@ private:
     uint16_t nextSequence();
     static WireError mapError(ErrorCode error);
 
+    enum class PreCloudDirectPhase : uint8_t { None, Open, Exchanged, Retired };
+    bool isPreCloudDirect() const { return preCloudDirectPhase_ != PreCloudDirectPhase::None; }
+
     TransportHub& transports_;
     EndpointRegistry& endpoints_;
     MutableByteSpan transmitBuffer_;
@@ -477,7 +484,12 @@ private:
     StateApplyHandler stateApplyHandler_;
     void* stateApplyContext_;
     StateApplyTransactionHandler stateApplyTransactionHandler_;
-    void* stateApplyTransactionContext_;
+    // Dedicated PreCloudDirect never dispatches ordinary state transactions.
+    // The phase selects the active member without increasing Device RAM.
+    union {
+        void* stateApplyTransactionContext_;
+        const PreCloudDirectBinding* preCloudDirect_;
+    };
     StateSettlementHandler stateSettlementHandler_;
     void* stateSettlementContext_;
     RemoteErrorHandler remoteErrorHandler_;
@@ -510,6 +522,7 @@ private:
     uint8_t manifestFingerprint_[kSha256Size];
     bool hasManifestFingerprint_;
     bool started_;
+    PreCloudDirectPhase preCloudDirectPhase_;
 };
 
 } // namespace blinker

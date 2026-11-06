@@ -31,6 +31,7 @@
 #include "../../ports/esp32/Esp32WiFiProv.h"
 #include "../../ports/arduino/HardwareRandom.h"
 
+#include <BlinkerV2/arduino/config/Esp32WiFiProvOptions.h>
 #include <BlinkerV2/core/SecureMemory.h>
 #include <BlinkerV2/identity/DeviceKeyStore.h>
 #include <BlinkerV2/provisioning/DeviceKeyProvisioningEndpoint.h>
@@ -473,9 +474,11 @@ private:
     static Esp32WifiProvConfig provisioningConfig(
         const char* serviceName) {
 #if defined(BLINKER_ESP32_PROVISIONING_SOFTAP)
-        return esp32SoftApWifiProvConfig(serviceName, nullptr, nullptr);
+        return esp32SoftApWifiProvConfig(
+            serviceName, official::wifiProvProofOfPossession(), nullptr);
 #else
-        return esp32BleWifiProvConfig(serviceName, nullptr);
+        return esp32BleWifiProvConfig(
+            serviceName, official::wifiProvProofOfPossession());
 #endif
     }
 

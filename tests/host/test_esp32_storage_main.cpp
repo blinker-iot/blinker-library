@@ -34,6 +34,7 @@ struct FakeNvsState {
     bool committedPresent;
     bool workingPresent;
     bool opened;
+    nvs_open_mode_t lastMode;
     esp_err_t openResult;
     esp_err_t getResult;
     esp_err_t setResult;
@@ -141,6 +142,34 @@ void testDefaultLifecycleAndAtomicFailure() {
     CHECK_TRUE(std::memcmp(first, output, sizeof(first)) == 0);
     store.end();
     CHECK_EQ(static_cast<uint32_t>(2U), gNvs.closeCalls);
+}
+
+void testReadOnlyHandleDoesNotWriteOrPromote() {
+    using namespace blinker;
+    gNvs.reset();
+    Esp32NvsAtomicBlobStore writer;
+    const uint8_t value[] = {0xA3U, 0x32U};
+    CHECK_TRUE(writer.begin());
+    CHECK_EQ(NVS_READWRITE, gNvs.lastMode);
+    CHECK_TRUE(writer.replace(ByteView(value, sizeof(value))));
+    CHECK_EQ(ErrorCode::StateConflict, writer.beginReadOnly().code());
+    writer.end();
+
+    Esp32NvsAtomicBlobStore reader;
+    CHECK_TRUE(reader.beginReadOnly());
+    CHECK_EQ(NVS_READONLY, gNvs.lastMode);
+    CHECK_TRUE(reader.beginReadOnly());
+    CHECK_EQ(ErrorCode::StateConflict, reader.begin().code());
+    CHECK_EQ(ErrorCode::UnsupportedFeature, reader.replace(ByteView(value, sizeof(value))).code());
+    CHECK_EQ(ErrorCode::UnsupportedFeature, reader.clear().code());
+    uint8_t loaded[8] = {};
+    size_t written = 0U;
+    CHECK_TRUE(reader.load(MutableByteSpan(loaded, sizeof(loaded)), written));
+    CHECK_EQ(sizeof(value), written);
+    CHECK_TRUE(std::memcmp(value, loaded, written) == 0);
+    CHECK_EQ(1U, gNvs.setCalls);
+    CHECK_EQ(0U, gNvs.eraseCalls);
+    CHECK_EQ(1U, gNvs.commitCalls);
 }
 
 void testBoundsClearAndErrors() {
@@ -286,7 +315,7 @@ extern "C" esp_err_t nvs_open(
     const char* namespaceName,
     nvs_open_mode_t mode,
     nvs_handle_t* handle) {
-    (void)mode;
+    gNvs.lastMode = mode;
     ++gNvs.openCalls;
     copyText(gNvs.openedNamespace, sizeof(gNvs.openedNamespace), namespaceName);
     if (gNvs.openResult != ESP_OK) return gNvs.openResult;
@@ -373,6 +402,7 @@ extern "C" esp_err_t nvs_commit(nvs_handle_t handle) {
 
 int main() {
     testDefaultLifecycleAndAtomicFailure();
+    testReadOnlyHandleDoesNotWriteOrPromote();
     testBoundsClearAndErrors();
     testPartitionAndConfigurationValidation();
     testWifiCredentialSinkCompositionLifecycle();

@@ -36,6 +36,11 @@ Result encodeTaskManagementReceipt(const DeviceInstanceId& instance,
     const TaskRootSources& sources, TaskResultKey role,
     const TaskManagementChallenge& completed, const TaskManagementResult& result,
     MutableByteSpan output, ByteView& encoded);
+// Reload the installed roots, require the unchanged full root commitment, and
+// derive only a confirmation token. No secret ownership or storage mutation.
+Result taskServiceConfirmationForRoots(const DeviceInstanceId& instance,
+    const TaskRootSources& sources, ByteView expectedRoot, ByteView exactResult,
+    uint16_t sequence, MutableByteSpan token);
 
 enum : size_t { kTaskAuthorityChangeMaxSize = 121U };
 

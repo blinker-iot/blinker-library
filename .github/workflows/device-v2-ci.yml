@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/device-v2-ci.yml"
       - ".github/workflows/device-v2-cloud-beta.yml"
+      - ".github/workflows/device-v2-softap-tasks.yml"
       - "src/**"
       - "examples/**"
       - "library.properties"
@@ -21,6 +22,7 @@ on:
     paths:
       - ".github/workflows/device-v2-ci.yml"
       - ".github/workflows/device-v2-cloud-beta.yml"
+      - ".github/workflows/device-v2-softap-tasks.yml"
       - "src/**"
       - "examples/**"
       - "library.properties"
@@ -50,6 +52,8 @@ jobs:
         run: npm install --global typescript@4.3.5
       - name: Architecture boundary
         run: python3 tests/architecture/check_device_v2.py
+      - name: Selector and reviewed freeze regressions
+        run: python3 -m unittest discover -s tests/architecture -p 'test_*.py'
       - name: Python syntax boundary
         run: python3 -m compileall -q tools tests
       - name: Task resource evidence parser (no SDK or hardware)
@@ -163,6 +167,12 @@ jobs:
     uses: ./.github/workflows/device-v2-cloud-beta.yml
     with:
       verify_location_input: true
+
+  # Same-commit limited install/link gate; private golden HOLD remains blocking.
+  softap-tasks-candidate:
+    needs: [host-quality, package-boundary]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/device_v2' }}
+    uses: ./.github/workflows/device-v2-softap-tasks.yml
 
   arduino-core:
     runs-on: ubuntu-24.04

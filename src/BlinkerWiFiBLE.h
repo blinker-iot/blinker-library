@@ -10,6 +10,7 @@
 #endif
 
 #define BLINKER_PRODUCT_WIFI_BLE 1
+#include "BlinkerV2/arduino/config/OfficialConfig.h"
 #include "BlinkerV2/api/BlinkerFacade.h"
 
 namespace blinker { namespace facade_detail {

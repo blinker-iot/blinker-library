@@ -39,6 +39,7 @@ public:
     void cancel();
     void disconnect(uint64_t channel);
     bool pending() const { return pending_; }
+    uint32_t remainingMillis() const { return pending_ ? remaining_ : 0U; } // poll before observing.
 
 private:
     enum class Operation : uint8_t { Initialize, Rebind, Mutate, Read, Retire, RetirementRead, Catalog };

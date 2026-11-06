@@ -17,16 +17,43 @@ public:
     Esp32TaskModule(ITaskEnvironment& environment, ITaskTarget& target,
                     const TaskWritePolicy& policy,
                     const Esp32NvsBlobStoreConfig& storage = Esp32NvsBlobStoreConfig())
-        : nvs_(blobConfig(storage)), tasks_(nvs_, environment, target, policy), begun_(false) {}
+        : nvs_(blobConfig(storage)), tasks_(nvs_, environment, target, policy), begun_(false),
+          storageBegun_(false), storageError_(ErrorCode::NotConfigured) {}
     Result begin() {
+        if (tasks_.initialCloudKeyCommitActive()) return Result::failure(ErrorCode::WouldBlock);
         if (begun_) return Result::failure(ErrorCode::AlreadyExists);
         begun_ = true; // No retry against a potentially dirty persistence handle.
-        Result result = nvs_.begin();
+        const Result result = beginStorage();
         return result ? tasks_.begin() : result;
     }
     TaskEngine& engine() { return tasks_.engine(); }
+    bool initialCloudKeyCommitActive() const { return tasks_.initialCloudKeyCommitActive(); }
+    bool taskStorageFailed() const {
+        return (storageBegun_ && storageError_ != ErrorCode::Ok) || tasks_.taskStorageFailed();
+    }
+
+    // Storage may be observed before Engine begins, but is opened only once.
+    // A later normal begin() borrows this same handle, never a second view.
+    Result installInitialCloudKeyVerified(IDeviceAccessStore& access,
+        const DeviceKey& candidate, uint32_t expectedEpoch,
+        const ControllerCredential& expectedAdmin,
+        IInitialCloudKeyCommitGuard* guard = nullptr) {
+        if (begun_ || tasks_.engine().state() != TaskEngineState::Uninitialized)
+            return Result::failure(ErrorCode::NotConfigured);
+        const Result result = beginStorage();
+        return result ? tasks_.installInitialCloudKeyVerified(
+            access, candidate, expectedEpoch, expectedAdmin, guard) : result;
+    }
 
 private:
+    Result beginStorage() {
+        if (storageBegun_) return storageError_ == ErrorCode::Ok
+            ? Result::success() : Result::failure(ErrorCode::StateConflict);
+        storageBegun_ = true; // Opening failure never retries this module.
+        const Result result = nvs_.begin();
+        storageError_ = result.code();
+        return result;
+    }
     static Esp32NvsBlobStoreConfig blobConfig(const Esp32NvsBlobStoreConfig& input) {
         Esp32NvsBlobStoreConfig config = input;
         config.namespaceName = "bl_v2_tasks";
@@ -36,7 +63,8 @@ private:
     }
     Esp32NvsAtomicBlobStore nvs_;
     TaskModule<Capacity> tasks_;
-    bool begun_;
+    bool begun_, storageBegun_;
+    ErrorCode storageError_;
     Esp32TaskModule(const Esp32TaskModule&) = delete;
     Esp32TaskModule& operator=(const Esp32TaskModule&) = delete;
 };

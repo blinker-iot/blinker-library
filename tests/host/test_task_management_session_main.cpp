@@ -929,6 +929,7 @@ void testCommandAdapter() {
     CHECK(installed.kind == TaskManagementResultKind::Mutation && installed.mutation.taskId == 1U);
     auto challenge = f.prepareRead();
     const Bytes grant = f.verifier.sign(challenge);
+    CHECK(f.adapter.pending(f.source));
     // Every part of the source binding matters. Wrong peers cannot consume it.
     for (unsigned i = 0U; i < 7U; ++i) {
         TaskCommandSource other = f.source;
@@ -941,12 +942,14 @@ void testCommandAdapter() {
         case 5U: other.role = TaskResultKey::Admin; break;
         default: other.routed = false; memset(other.peerId, 0, 16U); other.peerKind = bbp2::RoutePeerKind::LogicalDevice; break;
         }
+        CHECK(!f.adapter.pending(other));
         CHECK(!f.adapter.receive(other, TaskCommand::Commit, ByteView(grant.data(), grant.size()),
             MutableByteSpan(f.wire, sizeof(f.wire)), f.response));
         f.adapter.disconnect(other);
         CHECK(f.response.empty() && f.session.pending());
     }
     CHECK(f.finish(challenge));
+    CHECK(!f.adapter.pending(f.source));
     CHECK(!f.finish(challenge) && f.response.empty()); // Consumed, even same bytes.
     // Authorized single-page retrieval returns owned definition and progress.
     TaskReadPrepare page; page.requestId[0] = 32U; page.expectedRevision = 1U; page.index = 0U;
@@ -1068,18 +1071,26 @@ struct TaskMqtt : IMqttClient {
     MqttMessageHandler handler = nullptr; void* context = nullptr;
     bool online = false, inside = false, block = false;
     unsigned connects = 0U; std::vector<Bytes> sent; std::vector<Bytes> incoming;
-    std::function<void()> afterRx;
+    std::function<void()> beforePoll, afterRx;
+    bool holdRemoteResult = false;
+    unsigned unobservedResults = 0U, droppedResults = 0U;
     Result connect(const MqttConnectOptions&) override { ++connects; online = true; return Result::success(); }
-    void disconnect() override { online = false; }
+    void disconnect() override { online = false; droppedResults += unobservedResults; unobservedResults = 0U; }
     bool connected() const override { return online; }
     Result subscribe(StringView, uint8_t) override { return Result::success(); }
     Result publish(StringView, ByteView bytes, const MqttPublishOptions& options) override {
         if (bytes.data[3] == static_cast<uint8_t>(bbp2::MessageKind::TaskManagement)) CHECK(!inside);
         CHECK(!options.retained);
         if (block) return Result::failure(ErrorCode::WouldBlock);
+        if (holdRemoteResult && bytes.data[3] == static_cast<uint8_t>(bbp2::MessageKind::TaskManagement)) {
+            bbp2::FrameView frame; TaskWireOperation operation; ByteView body;
+            CHECK(bbp2::parseFrame(bytes, frame)); CHECK(decodeTaskCarrier(frame.body, operation, body));
+            if (operation == TaskWireOperation::Result) ++unobservedResults;
+        }
         sent.emplace_back(bytes.data, bytes.data + bytes.size); return Result::success();
     }
     void poll(uint32_t) override {
+        if (beforePoll) beforePoll();
         auto frames = incoming; incoming.clear();
         for (auto& bytes : frames) {
             inside = true; MqttMessageInfo info;
@@ -1091,6 +1102,35 @@ struct TaskMqtt : IMqttClient {
     }
     void setMessageHandler(MqttMessageHandler value, void* state) override { handler = value; context = state; }
 };
+struct TaskCloudSession : ISessionProvider {
+    SessionCredentials value;
+    SessionProviderState status = SessionProviderState::Stopped;
+    uint32_t generation = 1U;
+    unsigned polls = 0U;
+    bool valid = true, deferrable = true, rotate = false;
+    std::function<void()> onPoll;
+    TaskCloudSession() {
+        value.broker = BrokerKind::Blinker; value.host = StringView("host");
+        value.port = 1883U; value.security = MqttSecurity::PlainTcp;
+        value.clientId = value.username = value.password = StringView("synthetic");
+        value.publishTopic = StringView("up"); value.subscribeTopic = StringView("down");
+    }
+    Result start() override { status = SessionProviderState::Ready; return Result::success(); }
+    Result requestRefresh() override { status = SessionProviderState::Requesting; rotate = true; return Result::success(); }
+    void setNetworkAvailable(bool) override {}
+    void poll(uint32_t) override {
+        ++polls;
+        const auto callback = onPoll;
+        if (callback) callback();
+        if (rotate) { ++generation; rotate = false; status = SessionProviderState::Ready; }
+    }
+    SessionProviderState state() const override { return status; }
+    ErrorCode lastError() const override { return ErrorCode::Ok; }
+    uint32_t credentialGeneration() const override { return generation; }
+    Result credentials(SessionCredentials& output) const override { output = value; return Result::success(); }
+    bool canDeferRefresh() const override { return valid && deferrable; }
+    void stop() override { status = SessionProviderState::Stopped; }
+};
 struct CloudFixture : Fixture {
     static DeviceRuntimeConfig config() {
         DeviceRuntimeConfig c; c.maxFrameSize = 256U; c.maxReassemblySize = 256U;
@@ -1098,37 +1138,36 @@ struct CloudFixture : Fixture {
     }
     TaskMqtt socket;
     MqttFrameTransport mqtt;
+    TaskCloudSession provider;
+    ManagedMqttTransport cloud;
     TaskCommandAdapter adapter;
     uint8_t wire[212] = {}, tx[256] = {};
-    TaskCloudTransport<MqttFrameTransport> transport;
+    TaskCloudTransport<> transport;
     TransportHub hub; EndpointDescriptor descriptor; EndpointRegistry endpoints; DeviceRuntime runtime;
     uint16_t sequence = 20U;
-    CloudFixture() : mqtt(socket, clock), adapter(session, cache, engine, instance, sources),
-        transport(mqtt, mqtt, clock, adapter, MutableByteSpan(wire, sizeof(wire))),
+    CloudFixture() : mqtt(socket, clock), cloud(provider, mqtt), adapter(session, cache, engine, instance, sources),
+        transport(cloud, mqtt, clock, adapter, MutableByteSpan(wire, sizeof(wire))),
         endpoints(&descriptor, 1U), runtime(hub, endpoints, MutableByteSpan(tx, sizeof(tx)), config()) {
         descriptor.key = StringView("p"); descriptor.type = ValueType::Boolean;
         descriptor.kind = EndpointKind::Property; descriptor.access = AccessRead | AccessWrite | AccessNotify;
-        SessionCredentials credentials; credentials.broker = BrokerKind::Blinker;
-        credentials.host = StringView("host"); credentials.port = 1883U; credentials.security = MqttSecurity::PlainTcp;
-        credentials.clientId = credentials.username = credentials.password = StringView("synthetic");
-        credentials.publishTopic = StringView("up"); credentials.subscribeTopic = StringView("down");
-        CHECK(mqtt.configure(credentials)); CHECK(adapter.start());
+        CHECK(adapter.start());
         CHECK(hub.addTransport(transport)); CHECK(runtime.start()); runtime.poll(1000U);
         flash.hook = [this]() { CHECK(!socket.inside); };
         key.hook = [this]() { CHECK(!socket.inside); };
         verifier.hook = [this]() { CHECK(!socket.inside); };
     }
     ~CloudFixture() { runtime.stop(); }
-    Bytes frame(bbp2::MessageKind kind, ByteView body, uint8_t flags = 0U) {
+    Bytes frame(bbp2::MessageKind kind, ByteView body, uint8_t flags = 0U, uint16_t correlation = 0U) {
         bbp2::FrameHeader header; header.kind = static_cast<uint8_t>(kind);
-        header.flags = flags; header.sequence = ++sequence; header.bodyLength = static_cast<uint16_t>(body.size);
+        header.flags = flags; header.sequence = correlation != 0U ? correlation : ++sequence; header.bodyLength = static_cast<uint16_t>(body.size);
         Bytes bytes(10U + body.size); CHECK(bbp2::encodeHeader(header, MutableByteSpan(bytes.data(), bytes.size())));
         memcpy(bytes.data() + 10U, body.data, body.size); return bytes;
     }
-    void hello(bool enabled = true, uint16_t maximum = 256U) {
+    void hello(bool enabled = true, uint16_t maximum = 256U, bool confirmation = false) {
         bbp2::HelloBody h; h.role = bbp2::PeerRole::Server; h.versions[0] = 2U; h.versionCount = 1U;
         h.maxFrameSize = maximum; h.maxReassemblySize = maximum;
         h.features = enabled ? static_cast<uint32_t>(bbp2::FeatureTaskManagement) : 0U;
+        if (confirmation) h.features |= bbp2::FeatureTaskServiceConfirmation;
         uint8_t bytes[128]; ByteView encoded;
         CHECK(bbp2::encodeHelloBody(h, MutableByteSpan(bytes, sizeof(bytes)), encoded));
         socket.incoming.push_back(frame(bbp2::MessageKind::Hello, encoded)); runtime.poll(1000U);
@@ -1162,7 +1201,249 @@ struct CloudFixture : Fixture {
         CHECK(verifyTaskManagementResult(response(TaskWireOperation::Result), pending, TaskResultKey::DeviceKey,
             ByteView(secret, sizeof(secret)), value));
     }
+    Bytes confirmationToken() {
+        Bytes token(32U); uint8_t secret[32]; memset(secret, key.version, sizeof(secret));
+        CHECK(taskServiceConfirmation(response(TaskWireOperation::Result), sequence, ByteView(secret, sizeof(secret)),
+            MutableByteSpan(token.data(), token.size()))); return token;
+    }
+    void enqueueConfirmation(const Bytes& token, uint16_t correlation = 0U, uint8_t flags = 0U) {
+        uint8_t bytes[kTaskCarrierMaxSize]; ByteView encoded;
+        CHECK(encodeTaskCarrier(TaskWireOperation::ServiceConfirmed, ByteView(token.data(), token.size()),
+            MutableByteSpan(bytes, sizeof(bytes)), encoded));
+        socket.incoming.push_back(frame(bbp2::MessageKind::TaskManagement, encoded, flags, correlation != 0U ? correlation : sequence));
+    }
 };
+
+void testServiceConfirmationVector() {
+    uint8_t key[32]; memset(key, 1U, sizeof(key));
+    const uint8_t result[] = {0x83U, 1U, 2U, 3U};
+    const uint8_t expected[] = {0x3e,0x68,0xe2,0x74,0x6c,0x89,0xb9,0x30,0x4a,0x6b,0x98,0xca,0xbd,0x0d,0x38,0x40,
+        0xda,0xd9,0xbd,0xe0,0xca,0x9a,0xbc,0xfa,0xb5,0x90,0xa1,0xb7,0xd1,0x26,0x96,0x15};
+    uint8_t token[32];
+    CHECK(taskServiceConfirmation(ByteView(result, sizeof(result)), 0x1234U, ByteView(key, sizeof(key)), MutableByteSpan(token, sizeof(token))));
+    CHECK(constantTimeEqual(ByteView(token, sizeof(token)), ByteView(expected, sizeof(expected)))); // Independent Node crypto oracle.
+    CHECK(!taskWireRequest(TaskWireOperation::ServiceConfirmed));
+    CHECK(!taskServiceConfirmation(ByteView(result, sizeof(result)), 0U, ByteView(key, sizeof(key)), MutableByteSpan(token, sizeof(token))));
+    uint8_t bytes[64]; ByteView encoded; TaskWireOperation operation; ByteView inner;
+    CHECK(!encodeTaskCarrier(TaskWireOperation::ServiceConfirmed, ByteView(token, 31U), MutableByteSpan(bytes, sizeof(bytes)), encoded));
+    CHECK(encodeTaskCarrier(TaskWireOperation::ServiceConfirmed, ByteView(token, 32U), MutableByteSpan(bytes, sizeof(bytes)), encoded));
+    CHECK(decodeTaskCarrier(encoded, operation, inner) && operation == TaskWireOperation::ServiceConfirmed && inner.size == 32U);
+    bytes[4] = 31U; CHECK(!decodeTaskCarrier(ByteView(bytes, encoded.size - 1U), operation, inner));
+}
+
+void testServiceConfirmationHoldsUntilExactAcceptance() {
+    CloudFixture f; f.hello(true, 256U, true); f.enqueueAuthority(); f.runtime.poll(1000U);
+    const auto challenge = f.challenge(); f.commitCloud(challenge); f.verifyReceipt(challenge);
+    const auto token = f.confirmationToken(); const auto sent = f.socket.sent.size();
+    const auto calls = f.verifier.calls, writes = f.flash.writes;
+    CHECK(f.provider.requestRefresh()); f.runtime.poll(1000U);
+    CHECK(!f.session.pending() && f.socket.connects == 1U && f.provider.generation == 1U);
+    // Opaque receipt, invalid MAC/sequence/flags, or another request cannot
+    // establish durable Service confirmation or consume this bounded tail.
+    for (unsigned mode = 0U; mode < 4U; ++mode) {
+        Bytes wrong = token;
+        if (mode == 0U) wrong[0] ^= 1U;
+        if (mode == 1U) wrong.back() ^= 1U; // Includes wrong request/nonce/result/root MAC.
+        f.enqueueConfirmation(wrong, mode == 2U ? static_cast<uint16_t>(f.sequence + 1U) : f.sequence,
+            mode == 3U ? bbp2::FlagIsResponse : 0U);
+        f.runtime.poll(1000U); CHECK(f.socket.connects == 1U && f.socket.sent.size() == sent);
+    }
+    f.enqueueAuthority(); f.runtime.poll(1000U); CHECK(f.socket.connects == 1U && f.socket.sent.size() == sent);
+    // Restore the ORIGINAL Commit correlation, not the intervening new request.
+    f.enqueueConfirmation(token, static_cast<uint16_t>(f.sequence - 1U)); f.runtime.poll(1000U);
+    CHECK(f.socket.connects == 2U && f.provider.generation == 2U && f.transport.managementError() == ErrorCode::Ok);
+    for (size_t i = sent; i < f.socket.sent.size(); ++i)
+        CHECK(f.socket.sent[i][3] != static_cast<uint8_t>(bbp2::MessageKind::TaskManagement));
+    CHECK(f.verifier.calls == calls && f.flash.writes == writes && f.target.applied == 0U);
+    for (uint8_t byte : f.wire) CHECK(byte == 0U);
+}
+
+void testServiceConfirmationLifetimeIsNotRenewed() {
+    CloudFixture f; f.hello(true, 256U, true); f.enqueueAuthority(); f.runtime.poll(1000U);
+    const auto challenge = f.challenge();
+    f.clock.now += 600U; f.commitCloud(challenge); const auto token = f.confirmationToken();
+    const auto sent = f.socket.sent.size(); CHECK(f.provider.requestRefresh());
+    f.clock.now += 399U; f.runtime.poll(1000U); CHECK(f.socket.connects == 1U);
+    f.clock.now += 1U; f.enqueueConfirmation(token); f.runtime.poll(1000U);
+    CHECK(f.socket.connects == 2U && f.transport.managementError() == ErrorCode::StateConflict);
+    for (size_t i = sent; i < f.socket.sent.size(); ++i)
+        CHECK(f.socket.sent[i][3] != static_cast<uint8_t>(bbp2::MessageKind::TaskManagement));
+    CHECK(f.flash.writes == 1U && f.target.applied == 0U);
+}
+
+void testServiceConfirmationWouldBlockDoesNotRecommit() {
+    CloudFixture f; f.hello(true, 256U, true); f.enqueueAuthority(); f.runtime.poll(1000U);
+    const auto challenge = f.challenge(); f.socket.block = true; f.commitCloud(challenge);
+    CHECK(!f.session.pending() && f.flash.writes == 1U && f.verifier.calls == 1U);
+    CHECK(f.provider.requestRefresh()); f.runtime.poll(1000U);
+    CHECK(f.socket.connects == 1U && f.flash.writes == 1U && f.verifier.calls == 1U);
+    f.socket.block = false; f.runtime.poll(1000U); f.verifyReceipt(challenge);
+    const auto token = f.confirmationToken();
+    f.runtime.poll(1000U); CHECK(f.socket.connects == 1U);
+    f.enqueueConfirmation(token); f.runtime.poll(1000U); CHECK(f.socket.connects == 2U);
+    CHECK(f.flash.writes == 1U && f.verifier.calls == 1U && f.target.applied == 0U);
+}
+
+void testServiceConfirmationDoesNotExtendExpiryInsideRx() {
+    CloudFixture f; f.hello(true, 256U, true); f.enqueueAuthority(); f.runtime.poll(1000U);
+    f.commitCloud(f.challenge()); const auto token = f.confirmationToken();
+    const auto writes = f.flash.writes, calls = f.verifier.calls;
+    CHECK(f.provider.requestRefresh());
+    // Model credentials expiring INSIDE the early native poll, not merely
+    // before its admission check. The MAC remains proof of an earlier durable
+    // result, never permission to keep expired credentials or execute again.
+    f.socket.beforePoll = [&]() { f.provider.valid = false; };
+    f.enqueueConfirmation(token); f.runtime.poll(1000U);
+    CHECK(f.socket.connects == 2U && f.provider.generation == 2U);
+    CHECK(f.flash.writes == writes && f.verifier.calls == calls && f.target.applied == 0U);
+    for (uint8_t byte : f.wire) CHECK(byte == 0U);
+}
+
+void testServiceConfirmationBoundaries() {
+    for (unsigned mode = 0U; mode < 6U; ++mode) {
+        CloudFixture f; f.hello(true, 256U, true); f.enqueueAuthority(); f.runtime.poll(1000U);
+        f.commitCloud(f.challenge()); const auto token = f.confirmationToken();
+        const auto calls = f.verifier.calls, writes = f.flash.writes;
+        CHECK(f.provider.requestRefresh());
+        if (mode == 0U) f.adapter.invalidateRoots();
+        else if (mode == 1U) f.provider.valid = false; // Real expiry overrides tail.
+        else if (mode == 2U) f.transport.setNetworkAvailable(false);
+        else if (mode == 3U) f.transport.stop();
+        else if (mode == 4U) f.hello(true, 256U, true); // Same socket, new negotiation.
+        else f.clock.now -= 1U; // Invalid monotonic tick is not a new lifetime.
+        f.enqueueConfirmation(token); f.runtime.poll(1000U);
+        CHECK(f.verifier.calls == calls && f.flash.writes == writes && f.target.applied == 0U);
+        if (mode == 0U || mode == 1U || mode == 4U || mode == 5U) CHECK(f.socket.connects == 2U);
+        for (uint8_t byte : f.wire) CHECK(byte == 0U);
+    }
+    // Root loading after local send can fail/reenter. No secret, stale token or
+    // successful state may survive; the already durable Engine is not undone.
+    for (unsigned mode = 0U; mode < 3U; ++mode) {
+        CloudFixture f; f.hello(true, 256U, true); f.enqueueAuthority(); f.runtime.poll(1000U);
+        unsigned loads = 0U;
+        f.key.hook = [&]() {
+            CHECK(!f.socket.inside);
+            if (++loads != 2U) return; // First = receipt, second = confirmation.
+            if (mode == 0U) f.key.fail = true;
+            else if (mode == 1U) f.transport.stop();
+            else f.adapter.invalidateRoots();
+        };
+        f.commitCloud(f.challenge()); CHECK(loads == 2U && f.flash.writes == 1U && f.target.applied == 0U);
+        CHECK(f.transport.managementError() != ErrorCode::Ok);
+        for (uint8_t byte : f.wire) CHECK(byte == 0U);
+    }
+    // No independent bit26 and no undersized Hello may opt into tail holding.
+    for (unsigned mode = 0U; mode < 2U; ++mode) {
+        CloudFixture f; f.hello(mode != 0U, mode == 0U ? 256U : 211U, true);
+        f.enqueueAuthority(); const auto sent = f.socket.sent.size(); f.runtime.poll(1000U);
+        CHECK(!f.session.pending() && f.socket.sent.size() == sent && f.flash.writes == 0U);
+    }
+}
+
+void testQueuedReadBeforeRenewalIsServicedBeforeProvider() {
+    CloudFixture f; f.hello(); f.enqueueAuthority(); f.runtime.poll(1000U); f.commitCloud(f.challenge());
+    f.clock.now += 10U;
+    TaskReadPrepare read; read.requestId[0] = 85U; read.catalog = true;
+    uint8_t bytes[kTaskReadPrepareMaxSize]; ByteView encoded;
+    CHECK(encodeTaskReadPrepare(read, MutableByteSpan(bytes, sizeof(bytes)), encoded));
+    f.enqueue(TaskWireOperation::Read, encoded); // Already waiting on the current MQTT socket.
+    std::vector<unsigned> order;
+    f.socket.beforePoll = [&]() { order.push_back(1U); };
+    f.provider.onPoll = [&]() { order.push_back(2U); };
+    CHECK(f.provider.requestRefresh());
+    f.runtime.poll(1000U);
+    CHECK(f.socket.connects == 1U && f.session.pending());
+    CHECK(!order.empty() && order.front() == 1U);
+    CHECK(f.provider.generation == 1U);
+    const auto pending = f.challenge(); f.commitCloud(pending); f.verifyReceipt(pending);
+    f.runtime.poll(1000U);
+    CHECK(f.provider.generation == 2U && f.socket.connects == 2U);
+    CHECK(f.flash.writes == 1U && f.target.applied == 0U);
+}
+
+void testArrivalInsideSynchronousProviderRemainsUnconfirmed() {
+    CloudFixture f; f.hello(); f.enqueueAuthority(); f.runtime.poll(1000U); f.commitCloud(f.challenge());
+    f.clock.now += 10U;
+    TaskReadPrepare read; read.requestId[0] = 86U; read.catalog = true;
+    uint8_t bytes[kTaskReadPrepareMaxSize]; ByteView encoded;
+    CHECK(encodeTaskReadPrepare(read, MutableByteSpan(bytes, sizeof(bytes)), encoded));
+    // Model bytes arriving while the synchronous control provider owns this
+    // turn. No native preemption/cancel or successful challenge is invented.
+    f.provider.onPoll = [&]() { f.provider.onPoll = nullptr; f.enqueue(TaskWireOperation::Read, encoded); };
+    const auto sent = f.socket.sent.size(); CHECK(f.provider.requestRefresh()); f.runtime.poll(1000U);
+    CHECK(f.socket.connects == 2U && !f.session.pending());
+    for (size_t i = sent; i < f.socket.sent.size(); ++i)
+        CHECK(f.socket.sent[i][3] != static_cast<uint8_t>(bbp2::MessageKind::TaskManagement));
+    CHECK(f.flash.writes == 1U && f.target.applied == 0U);
+}
+
+void testLocalResultSuccessIsNotRemoteConfirmation() {
+    CloudFixture f; f.hello(); f.enqueueAuthority(); f.runtime.poll(1000U); f.commitCloud(f.challenge());
+    f.clock.now += 10U;
+    TaskReadPrepare read; read.requestId[0] = 87U; read.catalog = true;
+    uint8_t bytes[kTaskReadPrepareMaxSize]; ByteView encoded;
+    CHECK(encodeTaskReadPrepare(read, MutableByteSpan(bytes, sizeof(bytes)), encoded));
+    f.enqueue(TaskWireOperation::Read, encoded); f.runtime.poll(1000U); const auto pending = f.challenge();
+    CHECK(f.provider.requestRefresh()); f.socket.holdRemoteResult = true; f.commitCloud(pending);
+    f.verifyReceipt(pending); // Bytes exist locally, not evidence of remote receipt.
+    CHECK(f.socket.unobservedResults == 1U && !f.session.pending());
+    f.runtime.poll(1000U);
+    CHECK(f.socket.connects == 2U && f.socket.droppedResults == 1U);
+    CHECK(f.flash.writes == 1U && f.target.applied == 0U);
+}
+
+void testCloudRefreshDuringPendingRead(bool defer, bool blockedReply) {
+    CloudFixture f; f.hello(); f.enqueueAuthority(); f.runtime.poll(1000U);
+    f.commitCloud(f.challenge());
+    f.clock.now += 10U;
+    TaskReadPrepare read; read.requestId[0] = 84U; read.catalog = true;
+    uint8_t bytes[kTaskReadPrepareMaxSize]; ByteView encoded;
+    CHECK(encodeTaskReadPrepare(read, MutableByteSpan(bytes, sizeof(bytes)), encoded));
+    f.enqueue(TaskWireOperation::Read, encoded); f.runtime.poll(1000U);
+    const auto pending = f.challenge(); CHECK(f.session.pending());
+    const auto writes = f.flash.writes, polls = f.provider.polls;
+    const auto connection = f.mqtt.connectionGeneration();
+    f.provider.deferrable = defer;
+    CHECK(f.provider.requestRefresh()); // Already in progress, not just Ready.
+    f.clock.now += 200U; f.runtime.poll(1000U);
+    if (!defer) {
+        // Legacy policy deterministically replaces the socket mid-exchange.
+        CHECK(f.socket.connects == 2U && !f.session.pending());
+        CHECK(f.mqtt.connectionGeneration() != connection && f.flash.writes == writes);
+        return;
+    }
+    CHECK(f.provider.polls == polls && f.provider.generation == 1U);
+    CHECK(f.session.pending() && f.socket.connects == 1U);
+    f.socket.block = blockedReply;
+    f.commitCloud(pending);
+    CHECK(!f.session.pending() && f.flash.writes == writes);
+    if (blockedReply) {
+        const auto sent = f.socket.sent.size();
+        f.clock.now += 200U; f.runtime.poll(1000U);
+        CHECK(f.provider.polls == polls && f.socket.sent.size() == sent);
+        f.socket.block = false; f.runtime.poll(1000U);
+    }
+    f.verifyReceipt(pending);
+    CHECK(f.socket.connects == 1U && f.mqtt.connectionGeneration() == connection);
+    f.runtime.poll(1000U); // Result sent: renew once, without replaying the read.
+    CHECK(f.provider.generation == 2U && f.socket.connects == 2U && f.flash.writes == writes);
+}
+
+void testCloudRefreshBoundaries() {
+    for (unsigned boundary = 0U; boundary < 4U; ++boundary) {
+        CloudFixture f; f.hello(); f.enqueueAuthority(); f.runtime.poll(1000U);
+        CHECK(f.session.pending()); CHECK(f.provider.requestRefresh());
+        const unsigned polls = f.provider.polls;
+        if (boundary == 0U) f.clock.now += 1000U; // Session's original lifetime.
+        if (boundary == 1U) f.provider.valid = false; // Real provider expiry wins.
+        if (boundary == 2U) f.adapter.invalidateRoots();
+        if (boundary == 3U) f.socket.online = false;
+        f.runtime.poll(1000U);
+        if (boundary == 3U) f.runtime.poll(1000U); // Detect lost MQTT, then renew.
+        CHECK(f.provider.polls > polls && !f.session.pending());
+        CHECK(f.flash.writes == 0U && f.target.applied == 0U);
+    }
+}
 
 void testRetirementCloudDispatch(bool rotated) {
     CloudFixture f; f.hello(); f.enqueueAuthority(); f.runtime.poll(1000U);
@@ -1302,7 +1583,29 @@ void testRealCloudDispatch() {
 }
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc == 2 && std::strcmp(argv[1], "--confirmation-expiry-only") == 0) {
+        testServiceConfirmationDoesNotExtendExpiryInsideRx();
+        std::cout << "Service confirmation does not extend expiry crossed inside native RX\n";
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--confirmation-only") == 0) {
+        testServiceConfirmationVector(); testServiceConfirmationHoldsUntilExactAcceptance();
+        testServiceConfirmationLifetimeIsNotRenewed(); testServiceConfirmationWouldBlockDoesNotRecommit(); testServiceConfirmationBoundaries();
+        testLocalResultSuccessIsNotRemoteConfirmation();
+        std::cout << "offline Service confirmation: exact MAC/lifetime/fences/old-peer boundaries passed\n";
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--renewal-order-only") == 0) {
+        testQueuedReadBeforeRenewalIsServicedBeforeProvider();
+        testCloudRefreshDuringPendingRead(true, false);
+        testCloudRefreshDuringPendingRead(true, true);
+        testArrivalInsideSynchronousProviderRemainsUnconfirmed();
+        testLocalResultSuccessIsNotRemoteConfirmation();
+        std::cout << "offline renewal order: queued RX / pending / local-only result boundaries passed\n";
+        return 0;
+    }
+    CHECK(argc == 1);
     testAuthenticatedRejection();
     testReturnedStorageFailureSessionContract();
     testReturnedStorageFailureWireContract();
@@ -1315,6 +1618,16 @@ int main() {
     testEncodedManagementFlow();
     testCommandAdapter(); testManagementProductLifecycle();
     testSameConnectionHelloCancelsPendingCloudRead();
+    testServiceConfirmationVector(); testServiceConfirmationHoldsUntilExactAcceptance();
+    testServiceConfirmationLifetimeIsNotRenewed(); testServiceConfirmationWouldBlockDoesNotRecommit(); testServiceConfirmationBoundaries();
+    testServiceConfirmationDoesNotExtendExpiryInsideRx();
+    testQueuedReadBeforeRenewalIsServicedBeforeProvider();
+    testArrivalInsideSynchronousProviderRemainsUnconfirmed();
+    testLocalResultSuccessIsNotRemoteConfirmation();
+    testCloudRefreshDuringPendingRead(false, false);
+    testCloudRefreshDuringPendingRead(true, false);
+    testCloudRefreshDuringPendingRead(true, true);
+    testCloudRefreshBoundaries();
     testRealCloudDispatch();
     std::cout << "task management session: lifecycle/operations/nonce windows/durability/digests passed; cache="
               << sizeof(TaskAuthorityCache) << " session=" << sizeof(TaskManagementSession) << " bytes\n";

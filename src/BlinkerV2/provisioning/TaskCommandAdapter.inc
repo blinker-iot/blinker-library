@@ -59,6 +59,19 @@ Result TaskCommandAdapter::start() {
     return result;
 }
 
+Result TaskCommandAdapter::serviceConfirmation(ByteView exactResult, uint16_t sequence, MutableByteSpan token) {
+    if (busy_) return Result::failure(ErrorCode::WouldBlock);
+    if (!started_) return Result::failure(ErrorCode::NotConfigured);
+    task_adapter_detail::Guard guard(busy_);
+    const uint32_t generation = authority_.generation();
+    TaskAuthorityBinding root;
+    Result result = authority_.root(root);
+    if (result) result = taskServiceConfirmationForRoots(instance_, roots_, ByteView(root.rootDigest, 32U), exactResult, sequence, token);
+    if (result && (!started_ || generation != authority_.generation())) result = Result::failure(ErrorCode::AuthenticationRequired);
+    if (!result && token.data != nullptr) secureZero(token);
+    return result;
+}
+
 Result TaskCommandAdapter::receive(const TaskCommandSource& source, TaskCommand command, ByteView body,
     MutableByteSpan output, ByteView& response) {
     response = ByteView();

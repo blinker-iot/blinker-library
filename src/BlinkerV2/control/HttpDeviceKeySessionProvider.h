@@ -67,6 +67,7 @@ public:
         return credentialGeneration_;
     }
     Result credentials(SessionCredentials& output) const override;
+    bool canDeferRefresh() const override;
     void stop() override;
 
     bool hasWireError() const { return hasWireError_; }

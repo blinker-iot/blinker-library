@@ -53,7 +53,9 @@ enum ProtocolFeature : uint32_t {
     // Optional business UTC exchange; not advertised until a handler is installed.
     // Bits 19..23 belong to existing App/Broker readiness/presence/state contracts.
     FeatureTimeSync = 1UL << 24,
-    FeatureTaskManagement = 1UL << 25
+    FeatureTaskManagement = 1UL << 25,
+    // Physical cloud only; requires TaskManagement and its full frame budget.
+    FeatureTaskServiceConfirmation = 1UL << 26
 };
 
 enum class RoutePeerKind : uint8_t {

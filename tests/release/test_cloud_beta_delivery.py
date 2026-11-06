@@ -174,6 +174,31 @@ class CloudBetaDelivery(unittest.TestCase):
                 self.assertIn(required, location)
         self.assertNotRegex(location, r'\b[0-9a-f]{64}\b')
 
+    def test_profile_index_matches_reusable_ci_and_preserves_release_hold(self):
+        index = (ROOT / 'profiles/README.md').read_text(encoding='utf-8')
+        ci = index.split('## 候选 CI 与正式发行边界', 1)[1].split('## 多平台', 1)[0]
+        self.assertIn('workflow_call:', self.workflow)
+        for required in ('workflow_dispatch', 'workflow_call', '同提交', 'HOLD', '14.9'):
+            with self.subTest(required=required):
+                self.assertIn(required, ci)
+        self.assertNotIn('仅允许手动触发', ci)
+
+    def test_task_instructions_distinguish_default_and_fixed_softap_admission(self):
+        readme = (ROOT / 'README.md').read_text(encoding='utf-8')
+        tasks = readme.split('## Optional persistent tasks', 1)[1].split('\n## ', 1)[0]
+        for required in ('ordinary/default profile', 'Esp32SoftApTasksQuickStart',
+                         'per-device Service admission', 'does not admit WiFiProv BLE tasks'):
+            with self.subTest(required=required):
+                self.assertIn(required, tasks)
+        self.assertNotIn('BLE and WiFi+BLE persistent tasks are not admitted.\n', tasks)
+
+    def test_device_profile_does_not_pin_a_historical_app_auth_environment(self):
+        contract = (ROOT / 'docs/DEVICE_V2_RELEASE_PROFILE.md').read_text(encoding='utf-8')
+        self.assertNotIn('当前统一测试 Auth `api-test.yysc.tech`', contract)
+        self.assertIn('App 区域', contract)
+        self.assertIn('不写入设备', contract)
+        self.assertIn('2026-10-27', contract)
+
     def test_existing_archive_writer_emits_the_digest_of_each_exact_zip(self):
         with tempfile.TemporaryDirectory(prefix='cloud-delivery-checksum-') as directory:
             work = Path(directory)

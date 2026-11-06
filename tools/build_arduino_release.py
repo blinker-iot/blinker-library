@@ -28,6 +28,7 @@ PUBLIC_EXAMPLES = (
     "WiFiBleQuickStart",
     "CloudSmokeTest",
     "R4TasksQuickStart",
+    "Esp32SoftApTasksQuickStart",
 )
 R4_TASK_CREDENTIALS = {
     "R4_DEVICE_KEY": "REPLACE_DEVICE_KEY",
@@ -109,6 +110,20 @@ def validate_r4_task_example(example: Path) -> None:
         raise ValueError("R4 task reference credentials must remain the three public placeholders")
 
 
+def validate_esp32_task_example(example: Path) -> None:
+    """Only a user-owned PoP placeholder may enter the limited reference."""
+    provisioning = example / "UserProvisioning.h"
+    if not provisioning.is_file() or not (example / "README.md").is_file():
+        raise ValueError("ESP32 task reference requires its public PoP placeholder and README")
+    if {file.relative_to(example).as_posix() for file in example.rglob("*") if file.is_file()} != {
+            "Esp32SoftApTasksQuickStart.ino", "UserProvisioning.h", "README.md"}:
+        raise ValueError("ESP32 task reference permits only the explicit sketch, public placeholder and README")
+    lines = [line.strip() for line in provisioning.read_text(encoding="utf-8").splitlines()
+             if line.strip() and not line.lstrip().startswith("//")]
+    if lines != ["#pragma once", '#define ESP32_TASK_PROVISIONING_POP "REPLACE_WITH_YOUR_DEVICE_POP"']:
+        raise ValueError("ESP32 task reference must retain the public PoP placeholder only")
+
+
 def validate() -> tuple[dict[str, str], tuple[Path, ...]]:
     properties = read_properties()
     required = {
@@ -184,6 +199,7 @@ def validate() -> tuple[dict[str, str], tuple[Path, ...]]:
         if not (example_root / name / f"{name}.ino").is_file():
             raise ValueError(f"example sketch is missing: {name}")
     validate_r4_task_example(example_root / "R4TasksQuickStart")
+    validate_esp32_task_example(example_root / "Esp32SoftApTasksQuickStart")
 
     files: list[Path] = []
     for name in ROOT_FILES:
@@ -196,8 +212,18 @@ def validate() -> tuple[dict[str, str], tuple[Path, ...]]:
         files.extend(
             path for path in (example_root / name).rglob("*") if path.is_file()
         )
+    private_configuration = next(
+        (path for path in files if path.name.casefold() == "privateprovisioningconfig.h"),
+        None,
+    )
+    if private_configuration is not None:
+        raise ValueError(
+            "private provisioning config must remain outside the release library: "
+            f"{private_configuration}"
+        )
     root_files = {REPOSITORY / name for name in ROOT_FILES}
-    reference_docs = {example_root / "R4TasksQuickStart/README.md"}
+    reference_docs = {example_root / name / "README.md" for name in
+                      ("R4TasksQuickStart", "Esp32SoftApTasksQuickStart")}
     source_suffixes = {".h", ".hpp", ".c", ".cpp", ".inc", ".ipp", ".ino"}
     invalid = [
         path for path in files

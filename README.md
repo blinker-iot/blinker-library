@@ -14,6 +14,13 @@ R4/Wio and task examples in this single library do not enable those modes in
 that restricted profile. A GitHub source ZIP or a bare clone contains development
 configuration and is not the configured cloud candidate.
 
+The separately maintained [XIAO ESP32S3 SoftAP + four-slot task profile](docs/DEVICE_V2_ESP32_SOFTAP_TASKS_LIMITED_DELIVERY.md)
+is explicit limited delivery, not a change to that default. It uses the original
+Core 3.3.11, a matching library-wide profile, the fixed
+`Esp32SoftApTasksQuickStart` example and per-device Service admission. Installing
+its ZIP alone neither initializes tasks nor opens admission. Do not install
+normal and restricted Blinker copies side by side or edit the SDK.
+
 ## WiFi QuickStart
 
 ```cpp
@@ -115,6 +122,63 @@ and return that cache from the callback; do not perform network sends there.
 Arduino IDE's **Include Library** action inserts `Blinker.h` by default.
 For a BLE sketch, replace it with `BlinkerBLE.h`; do not include both headers.
 
+## ESP32 WiFi+BLE provisioning
+
+Use the existing **WiFiBleQuickStart** example for both WiFiProv transports;
+there is no second SoftAP example or runtime mode argument. These transports
+install WiFi and access data, not a different daily-control protocol. BLE
+WiFiProv is the default. To select SoftAP, define
+`BLINKER_ESP32_PROVISIONING_SOFTAP` before `<BlinkerWiFiBLE.h>`; defining both
+transport macros is an error. Default BLE requires an ESP32 core built with
+IDF NimBLE. A missing capability is a compile error, not an automatic SoftAP
+fallback; do not modify the SDK to bypass it.
+
+In Arduino IDE, **Save As** the example into your own sketch directory. If you
+need explicit transport selection or PoP, create `PrivateProvisioningConfig.h`
+there and uncomment its include in the sketch, before `<BlinkerWiFiBLE.h>`:
+
+```cpp
+#pragma once
+// Optional: omit this line to keep the default BLE WiFiProv transport.
+#define BLINKER_ESP32_PROVISIONING_SOFTAP 1
+// Replace this placeholder privately; it is not a shared default.
+#define BLINKER_V2_WIFI_PROV_POP "YOUR_DEVICE_SPECIFIC_POP"
+```
+
+The optional PoP is a device-specific proof of possession for WiFiProv Security1.
+Use 1–64 UTF-8 bytes, a string literal/static lifetime, no embedded NUL and no
+blank-only value; the App must use the exact same text. Do not trim or derive it
+from an SSID, public device identifier, WiFi password or DeviceKey. Supply it to
+the owner privately (for example, a device label/QR); never print it in logs.
+
+Omitting `BLINKER_V2_WIFI_PROV_POP` preserves the existing `nullptr` no-PoP
+legacy education window; it is not active-MITM protection. An explicit empty
+string is invalid, not an alias for omission. Nonempty matching PoP is required
+by the current App's explicit manual SoftAP first-install/write path; leaving
+it out does not unlock that path. In BLE discovery, leave the App PoP empty
+only when the firmware really uses the legacy no-PoP configuration. Existing
+root/Admin authorization remains required for reconfiguration; PoP does not
+replace it.
+
+| Value | Purpose |
+| --- | --- |
+| PoP | WiFiProv Security1 proof used by both BLE and SoftAP. |
+| SoftAP hotspot password | Optional WPA password for joining the device AP (`serviceKey`); distinct from PoP, and not exposed by this public sketch facade. |
+| Router WiFi password | Target network credential entered in the App and delivered by WiFiProv. |
+| DeviceKey | Cloud device credential installed through the existing App identity flow; do not hardcode it in this provisioning example. |
+
+Keep private configuration in your own sketch, outside the installed library
+and repository. The Arduino release builder rejects `PrivateProvisioningConfig.h`
+(case-insensitive) rather than silently packaging it; it does not delete that
+file. Private configured BINs are not public release artifacts.
+
+This guide does not widen the configured public release: `profiles/cloud-beta.json`
+is **manual WiFi**/TLS/zero task slots and **does not enable WiFi+BLE**. A matching
+service/profile and trust configuration is still required for a provisioned
+cloud product; the limited BLE/SoftAP internal acceptance candidates are not
+an all-modes public cloud release. Users select a matching configured library
+and this sketch, not hand-edit Arduino SDK files.
+
 ## Optional business time (WiFi / BLE / ESP32 WiFi+BLE)
 
 Call `Blinker.enableTime()` before `Blinker.begin(...)` to request UTC over the
@@ -198,7 +262,12 @@ still requires explicit owner initialization and confirmed management results.
 Targets must be global/long-lived, writable, have a write callback, and also be
 passed to `begin()`. Ordinary writable Properties are not automatically allowed.
 Repeated configuration is rejected, including after `end()`. Disabled products
-return `UnsupportedFeature`; BLE and WiFi+BLE persistent tasks are not admitted.
+return `UnsupportedFeature`; BLE and WiFi+BLE persistent tasks are not admitted
+by the ordinary/default profile. The separately maintained XIAO ESP32S3 SoftAP
+fixed four-slot combination uses
+[Esp32SoftApTasksQuickStart](examples/Esp32SoftApTasksQuickStart/README.md),
+its matching library-wide profile and per-device Service admission. This
+does not admit WiFiProv BLE tasks or ordinary WiFi+BLE sketches.
 Defining the opt-in alone cannot admit R4/Wio: their separate build guards,
 storage ownership and matching Ed25519 signer must also be satisfied. No task
 graph is linked when the compile-time opt-in is absent.

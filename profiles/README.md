@@ -1,9 +1,18 @@
 # 公开发布配置
 
-当前只维护一个可用于云端内测的公开 profile：[`cloud-beta.json`](cloud-beta.json)。
+普通云端内测安装仍只使用公开 profile：[`cloud-beta.json`](cloud-beta.json)。
 它是同一库的受限配置，不是全部平台／连接模式已经开放的声明。首发支持冻结与证据见
 [发布方案 R3](../docs/DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md#9-r3-首发边界与公开配置冻结)。
 用户安装步骤、当前目标依赖和旧库冲突处理见[安装说明](../docs/DEVICE_V2_ESP32_CLOUD_BETA_INSTALLATION.md)。
+
+另外提供维护者显式选择的[`esp32-softap-tasks-limited.json`](esp32-softap-tasks-limited.json)：
+它是固定 QA-3 四槽组合的**公开签发材料投影**，只由
+`tools/build_esp32_softap_tasks.py`读取，不是通用发布器的 schema 1 输入，不能传给
+`build_arduino_release.py --profile`，也不改变普通七目标或默认 0 槽。
+它复用上述 TLS／CA 配置，仅加入 P256 keyId1（SPKI `02879e20…d061`），不含 PoP、Key、账号或准入 ID。
+该公钥来自§30已存运行证据，不代表本批新鲜读取或签发仍未变化；每次实际开通前须再次核对。
+受限板型、标准例程、打包／隔离编译及逐设备开通步骤见
+[四槽有限交付说明](../docs/DEVICE_V2_ESP32_SOFTAP_TASKS_LIMITED_DELIVERY.md)。
 
 | 配置项 | 冻结值／边界 |
 | --- | --- |
@@ -40,14 +49,19 @@ R5 的安装文档更新会改变 ZIP 的 README 和摘要，不改变编译输�
 
 ## 候选 CI 与正式发行边界
 
-`.github/workflows/device-v2-cloud-beta.yml` 仅允许手动触发，复用本发布器和
+`.github/workflows/device-v2-cloud-beta.yml` 提供 `workflow_dispatch` 手动入口和
+`workflow_call` 复用入口，复用本发布器和
 `verify_installed_release.py`，安装原 SDK 3.3.11，显式验证两个云端 WiFi 目标后，
 才保留一个 ZIP 与它自己的 `SHA256SUMS`。它不部署、不刷板、不发布 GitHub Release，也不需要账号或设备凭据。
 每个 CI 候选以提交 SHA 命名；未提交的本机工作树、不同检出字节或其他构建不能共用旧摘要。
 
-原 `device-v2-ci.yml` 是 development／多平台质量门禁，不作为这个受限云端候选的发行证明。
-新工作流只覆盖 Arduino CLI；Aily 继续引用 R4 冻结源码的本机证据，不从未包含这些修正的远端分支或任意最新版下载 builder。
-配置写入不等于 CI 已执行通过；本批尚未提交推送或触发远端 CI。
+原 `device-v2-ci.yml` 是 development／多平台质量门禁；仅在 `device_v2` push 且
+`host-quality`／`package-boundary` 成功后，以本地 `uses` 调用同提交候选，并显式开启
+`verify_location_input`。不跳过前置门禁、不继承 secrets，质量结果不自动等于受限候选的发行证明。
+候选工作流只覆盖 Arduino CLI；Aily 继续引用 R4 冻结源码的本机证据，不从未包含这些修正的远端分支或任意最新版下载 builder。
+最新已记录的远端结果及私有 oracle 读取授权阻点见[发布方案 §14.9](../docs/DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md#149-现行结果与发行决定源码已交付私有-oracle-授权待补hold)：
+候选因前置失败跳过，正式发行仍为 **HOLD**，没有可发行的同提交 ZIP／校验值。
+配置和历史本机安装不能代替远端成功；本轮未提交推送或重新触发 CI。
 
 ## 多平台／BLE 配置的后续条件
 

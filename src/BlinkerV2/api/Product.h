@@ -63,7 +63,7 @@ public:
     }
 
     void run(uint32_t totalBudgetMicros = 1000U) {
-        if (started_) lifecycle_.poll(totalBudgetMicros);
+        if (started_ || lifecycle_.hasPendingStop()) lifecycle_.poll(totalBudgetMicros);
     }
 
     void end() {

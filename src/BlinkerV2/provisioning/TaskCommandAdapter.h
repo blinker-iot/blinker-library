@@ -42,6 +42,9 @@ public:
     Result refreshRoots(); // AFTER serialized mutation; never from an ISR.
     void retire(); // Terminal authority retirement; erasure belongs to product.
     uint32_t rootGeneration() const { return authority_.generation(); }
+    bool pending(const TaskCommandSource& source) const { return matches(source) && session_.pending(); }
+    uint32_t remainingMillis(const TaskCommandSource& source) const { return matches(source) ? session_.remainingMillis() : 0U; }
+    Result serviceConfirmation(ByteView exactResult, uint16_t sequence, MutableByteSpan token);
     Result receive(const TaskCommandSource& source, TaskCommand command, ByteView body,
         MutableByteSpan output, ByteView& response);
 

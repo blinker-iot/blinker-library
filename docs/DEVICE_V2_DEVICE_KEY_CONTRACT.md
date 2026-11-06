@@ -238,7 +238,9 @@ ControllerCredential；服务器根据每用户每设备 ACL 转发。现有 Clo
 4. WiFi-only P3 调用 45 B `Install(version, op, DeviceKey[43])` 并写 44 B DeviceKeyStore。Direct-capable P6
    首次调用 101 B `Bootstrap(version, op, DeviceKey[43], accessEpoch, adminGroupId[16],
    credentialVersion, adminSecret[32])`，设备固定 Admin=All，并通过当前 260 B DeviceAccessStore schema v3 一次原子提交。
-   P6 已有 access state 后可用 Install 刷新 Key且保留 epoch/Admin/Shared；首次只发 Install 返回 AccessRequired。
+   P6 **已存在Key**时可用Install刷新并保留epoch/Admin/Shared；空根或已有Admin但缺Key时，旧Install返回AccessRequired。
+   后一种状态不得凭GetInfo flags推断任务区安全；内部首次Key事务及UNKNOWN零写fence取
+   [反向注册计划§7](DEVICE_V2_BLE_TO_CLOUD_REGISTRATION_PLAN.md#7-bc-2a内部保根首次key事务与旧旁路封堵)，尚非公开网络入口。
 5. App 再使用 WiFiProv 标准 endpoint 下发 WiFi。ESP32 adapter 把 credential candidate 写入 Blinker 双槽
    journal；Arduino WiFi 使用 RAM persistence，不在 SDK NVS 中再保存一份。
 6. 设备联网后直接用新 Key 执行普通 challenge-HMAC。服务器第一次验证 pending Key 成功时原子激活 N+1，

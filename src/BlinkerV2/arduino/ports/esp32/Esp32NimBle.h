@@ -20,6 +20,7 @@
 #include <host/ble_gatt.h>
 #include <host/ble_uuid.h>
 #include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 // Physical ATT capacity only. Direct/Noise start at ATT20 and the authenticated
 // Direct transport separately selects a per-session packet limit.
@@ -54,9 +55,16 @@ class Esp32NimBleLink : public IBleModeLink {
 public:
     explicit Esp32NimBleLink(
         const Esp32NimBleLinkConfig& config = Esp32NimBleLinkConfig());
+    ~Esp32NimBleLink() override;
+    Esp32NimBleLink(const Esp32NimBleLink&) = delete;
+    Esp32NimBleLink& operator=(const Esp32NimBleLink&) = delete;
 
     Result start() override;
     void stop() override;
+    // Cooperative owner only. A close request, dropped session or stopped
+    // logical transport is not proof that the native host can be handed off.
+    Result tryStop();
+    bool shutdownComplete() const;
     void poll(uint32_t budgetMicros) override;
     BleLinkState state() const override;
     ErrorCode lastError() const override;
@@ -74,6 +82,7 @@ public:
     ble::ModeProfile bleProfile() const override { return profile_; }
 
 private:
+    enum class HostPhase : uint8_t { Off, Initialized, Running, StopAccepted, Uncertain };
     enum : size_t {
         modeServiceDataSize = 16U + ble::kModeServiceDataSize
     };
@@ -105,6 +114,7 @@ private:
         uint8_t (&output)[modeServiceDataSize]);
     Result startAdvertising();
     Result terminateConnection(uint16_t handle);
+    Result releaseNativeHost();
     void markHostResult(ErrorCode error);
     int handleGapEvent(const ble_gap_event& event);
     int handleGattAccess(
@@ -165,8 +175,11 @@ private:
     bool securityPending_;
     bool hostResultPending_;
     bool hostReady_;
-    bool initialized_;
+    TaskHandle_t hostTaskHandle_;
+    bool hostLoopReturned_;
+    HostPhase hostPhase_;
     bool stopping_;
+    bool stopInProgress_;
     bool sessionAnnounced_;
     BleLinkState state_;
     ErrorCode lastError_;

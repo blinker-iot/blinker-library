@@ -74,6 +74,12 @@ public:
         return hasActiveProfile() ? activeGeneration_ : 0U;
     }
 
+    // Unlike begin()/hasActiveProfile(), checks all three raw blobs, including
+    // orphan slots. Only durable absence from the supplied ports is admissible;
+    // no record is decoded, repaired or removed and cached state is unchanged.
+    // The caller must serialize this check with the subsequent initial write.
+    Result verifyInitialNetworkEmpty();
+
     Result commit(const WifiNetworkConfig& config) override;
     Result load(WifiCredentialProfile& profile);
     Result loadPrevious(WifiCredentialProfile& profile);

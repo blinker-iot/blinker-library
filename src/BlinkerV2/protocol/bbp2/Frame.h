@@ -52,7 +52,14 @@ enum class MessageKind : uint8_t {
     // optional product control extension; never a Direct/virtual-child command.
     LocalAccessControl = 0x36,
     // Optional physical Service <-> device task management, never App Route.
-    TaskManagement = 0x37
+    TaskManagement = 0x37,
+    // Explicit PreCloudDirect only, after committed Method 2. Never routed.
+    InitialCloudKeyInstall = 0x38,
+    InitialCloudKeyInstalled = 0x39,
+    InitialCloudKeyHandoff = 0x3A,
+    // Separate installed-Key / empty-network purpose, never a Key install.
+    InitialCloudNetworkHandoff = 0x3B,
+    InitialCloudNetworkAccepted = 0x3C
 };
 
 enum FrameFlag : uint8_t {

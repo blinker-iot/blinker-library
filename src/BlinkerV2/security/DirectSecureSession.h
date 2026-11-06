@@ -72,6 +72,12 @@ public:
         const DirectSecureContext& context) = 0;
     virtual void commit(uint32_t sessionId) = 0;
     virtual void cancel(uint32_t sessionId) = 0;
+    // Non-secret binding of an actually active transport, not prepared keys or
+    // a caller-supplied context. Unsupported controllers fail closed by default.
+    virtual ByteView committedSessionBinding(uint32_t sessionId) const {
+        (void)sessionId;
+        return ByteView();
+    }
 };
 
 struct DirectSecureKeyMaterial {

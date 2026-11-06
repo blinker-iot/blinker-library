@@ -381,7 +381,7 @@ class InstalledBoundary(unittest.TestCase):
 
     def test_profile_gated_r4_reference_does_not_expand_the_seven_target_matrix(self):
         self.assertEqual(len(gate.TARGETS), 7)
-        self.assertEqual(gate.PROFILE_GATED_EXAMPLES, ('R4TasksQuickStart',))
+        self.assertEqual(gate.PROFILE_GATED_EXAMPLES, ('R4TasksQuickStart', 'Esp32SoftApTasksQuickStart'))
         self.assertTrue(set(gate.PROFILE_GATED_EXAMPLES) <= set(release.PUBLIC_EXAMPLES))
         self.assertTrue(set(gate.PROFILE_GATED_EXAMPLES).isdisjoint(t.example for t in gate.TARGETS))
         self.assertTrue(all(not t.tasks_enabled for t in gate.TARGETS))

@@ -15,6 +15,8 @@
 #define portMUX_INITIALIZER_UNLOCKED 0
 using portMUX_TYPE = int;
 using esp_err_t = int;
+using TaskHandle_t = void*;
+enum eTaskState { eRunning, eSuspended, eDeleted };
 enum {
     ESP_OK = 0, ESP_ERR_NO_MEM = 0x101,
     BLE_HS_CONN_HANDLE_NONE = 0xffff, BLE_HS_FOREVER = -1,
@@ -106,6 +108,10 @@ struct State {
     unsigned stopCalls = 0, deinitCalls = 0, scanCalls = 0, scanCancelCalls = 0;
     int initResult = 0, stopResult = 0, deinitResult = 0;
     bool autoSync = true;
+    bool autoEnterHost = true, deferHostReturn = false, deferHostSuspend = false;
+    bool hostTaskRunning = false, hostLoopMayReturn = false, hostTaskSuspended = false;
+    unsigned disableCalls = 0;
+    void (*hostTask)(void*) = nullptr;
     int terminateResult = 0, advertiseResult = 0;
     int sendResult = 0, preferredMtuResult = 0;
     uint16_t mtu = 23U, preferredMtu = 23U;
@@ -118,6 +124,15 @@ struct State {
     os_mbuf buffer = {};
 };
 extern State state;
+// Step only the public task boundaries used by the adapter. Unwinding here
+// substitutes for a scheduler wait, never for real SDK shutdown evidence.
+struct HostTaskWait {};
+inline void stepHostTask() {
+    if (!state.hostTask) return;
+    state.hostTaskRunning = true;
+    try { state.hostTask(nullptr); } catch (const HostTaskWait&) {}
+    state.hostTaskRunning = false;
+}
 inline NativeConnection* native(uint16_t handle) {
     for (auto& connection : state.connections) if (connection.handle == handle) return &connection;
     return nullptr;
@@ -175,11 +190,42 @@ inline void delay(uint32_t value) {
     if (fake_nimble::state.onDelay) fake_nimble::state.onDelay();
 }
 inline int nimble_port_init() { ++fake_nimble::state.initCalls; return fake_nimble::state.initResult; }
-inline int nimble_port_stop() { ++fake_nimble::state.stopCalls; return fake_nimble::state.stopResult; }
+inline int nimble_port_stop() {
+    auto& s = fake_nimble::state; ++s.stopCalls;
+    if (s.stopResult == 0 && !s.deferHostReturn) {
+        s.hostLoopMayReturn = true; fake_nimble::stepHostTask();
+    }
+    return s.stopResult;
+}
 inline int nimble_port_deinit() { ++fake_nimble::state.deinitCalls; return fake_nimble::state.deinitResult; }
-inline void nimble_port_run() {}
+inline void nimble_port_run() {
+    if (!fake_nimble::state.hostLoopMayReturn) throw fake_nimble::HostTaskWait();
+}
 inline void nimble_port_freertos_deinit() {}
-inline void nimble_port_freertos_init(void (*)(void*)) { if (fake_nimble::state.autoSync) ble_hs_cfg.sync_cb(); }
+inline void nimble_port_freertos_init(void (*hostTask)(void*)) {
+    auto& s = fake_nimble::state;
+    s.hostTask = hostTask; s.hostLoopMayReturn = false; s.hostTaskSuspended = false;
+    if (s.autoEnterHost) fake_nimble::stepHostTask();
+    if (s.autoSync) ble_hs_cfg.sync_cb();
+}
+inline TaskHandle_t xTaskGetCurrentTaskHandle() {
+    auto& s = fake_nimble::state;
+    return s.hostTaskRunning ? static_cast<void*>(&s.hostTask) : static_cast<void*>(&s);
+}
+inline eTaskState eTaskGetState(TaskHandle_t task) {
+    auto& s = fake_nimble::state;
+    return task != &s.hostTask || !s.hostTask ? eDeleted : s.hostTaskSuspended ? eSuspended : eRunning;
+}
+inline void vTaskSuspend(TaskHandle_t) {
+    fake_nimble::state.hostTaskSuspended = !fake_nimble::state.deferHostSuspend;
+    throw fake_nimble::HostTaskWait();
+}
+inline esp_err_t esp_nimble_disable() {
+    auto& s = fake_nimble::state; ++s.disableCalls;
+    if (!s.hostTaskSuspended) return BLE_HS_EBUSY;
+    s.hostTask = nullptr;
+    return ESP_OK;
+}
 inline void ble_svc_gap_init() {}
 inline void ble_svc_gatt_init() {}
 inline int ble_att_set_preferred_mtu(uint16_t mtu) {

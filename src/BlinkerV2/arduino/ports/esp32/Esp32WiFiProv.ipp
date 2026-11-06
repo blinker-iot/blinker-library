@@ -5,6 +5,10 @@
 #include <esp_wifi.h>
 #include <network_provisioning/manager.h>
 
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+#include "Esp32WiFiProvRekeyCandidate.h"
+#endif
+
 #if defined(BLINKER_ESP32_PROVISIONING_SOFTAP)
 #include <network_provisioning/scheme_softap.h>
 #else
@@ -112,7 +116,11 @@ inline void Esp32WifiProvAdapter::fail(ErrorCode error) {
 }
 
 inline Result Esp32WifiProvAdapter::begin(
-    const Esp32WifiProvConfig& config) {
+    const Esp32WifiProvConfig& config
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+    , Esp32WiFiProvRekeyCandidate* rekey
+#endif
+    ) {
     if (state() != Esp32WifiProvState::Stopped || managerInitialized_) {
         return Result::failure(ErrorCode::StateConflict);
     }
@@ -134,6 +142,16 @@ inline Result Esp32WifiProvAdapter::begin(
     stopRequested_ = false;
     lastError_ = static_cast<uint8_t>(ErrorCode::Ok);
 
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+    // This binary admits only the explicit rooted BLE window; missing PoP
+    // or a null candidate cannot silently select the legacy write endpoint.
+    if (rekey == nullptr || !validText(config.proofOfPossession, 1U, 64U))
+        return Result::failure(ErrorCode::AuthenticationRequired);
+    const Result scoped = rekey->beginWindow();
+    if (!scoped) return scoped;
+    rekey_ = rekey;
+#endif
+
     // Must happen before the first low-level WiFi initialization. Blinker's
     // WifiCredentialStore remains the only durable network credential source.
     WiFi.persistent(false);
@@ -149,6 +167,9 @@ inline Result Esp32WifiProvAdapter::begin(
 
     esp_err_t error = network_prov_mgr_init(manager);
     if (error != ESP_OK) {
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        releaseRekey();
+#endif
         fail(mapPlatformError(error));
         return Result::failure(lastError());
     }
@@ -171,7 +192,12 @@ inline Result Esp32WifiProvAdapter::begin(
     }
     if (error != ESP_OK) {
         const ErrorCode mapped = mapPlatformError(error);
-        shutdownManager();
+        const bool stopped = shutdownManager();
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        if (stopped) releaseRekey();
+#else
+        (void)stopped;
+#endif
         fail(mapped);
         return Result::failure(mapped);
     }
@@ -193,6 +219,9 @@ inline void Esp32WifiProvAdapter::handleEvent(
     network_prov_cb_event_t event,
     void* eventData) {
     if (event == NETWORK_PROV_WIFI_CRED_RECV) {
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        if (rekey_ == nullptr || !rekey_->acceptCredentials()) { fail(ErrorCode::AuthenticationRequired); return; }
+#endif
         const Result result = commitCredentials(eventData);
         if (result) {
             credentialsCommitted_ = true;
@@ -245,7 +274,6 @@ inline esp_err_t Esp32WifiProvAdapter::onRequest(
     uint8_t** output,
     ssize_t* outputSize,
     void* context) {
-    (void)sessionId;
     if (context == nullptr || output == nullptr || outputSize == nullptr ||
         inputSize < 0) {
         return ESP_ERR_INVALID_ARG;
@@ -255,6 +283,23 @@ inline esp_err_t Esp32WifiProvAdapter::onRequest(
 
     Esp32WifiProvAdapter& self =
         *static_cast<Esp32WifiProvAdapter*>(context);
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+    if (self.rekey_ == nullptr || static_cast<size_t>(inputSize) > kWifiprovRekeyInstallRequestSize)
+        return ESP_ERR_INVALID_STATE;
+    uint8_t* const allocated = static_cast<uint8_t*>(malloc(kWifiprovRekeySuccessResponseSize));
+    if (allocated == nullptr) return ESP_ERR_NO_MEM;
+    size_t written = 0U;
+    const Result handled = self.rekey_->handle(sessionId, ByteView(input, static_cast<size_t>(inputSize)),
+        MutableByteSpan(allocated, kWifiprovRekeySuccessResponseSize), written);
+    if (!handled || written == 0U || written > kWifiprovRekeySuccessResponseSize) {
+        free(allocated);
+        return ESP_FAIL;
+    }
+    *output = allocated;
+    *outputSize = static_cast<ssize_t>(written);
+    return ESP_OK;
+#else
+    (void)sessionId;
     uint8_t response[kDeviceKeyProvisioningMaxResponseSize] = {};
     size_t written = 0U;
     const Result result = self.deviceKey_.handle(
@@ -290,6 +335,7 @@ inline esp_err_t Esp32WifiProvAdapter::onRequest(
         }
     }
     return ESP_OK;
+#endif
 }
 
 inline void Esp32WifiProvAdapter::poll() {
@@ -305,11 +351,27 @@ inline void Esp32WifiProvAdapter::poll() {
     if (!ended_) return;
 
     if (!shutdownManager()) return;
-    if (state() == Esp32WifiProvState::Fault) return;
+    if (state() == Esp32WifiProvState::Fault) {
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        releaseRekey();
+#endif
+        return;
+    }
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+    if (rekey_ == nullptr || !credentialsCommitted_ || !wifiSucceeded_) {
+        releaseRekey();
+        fail(ErrorCode::NotConfigured);
+        return;
+    }
+    const Result complete = rekey_->finishSuccessfulWindow();
+    releaseRekey();
+    if (!complete) { fail(complete.code()); return; }
+#else
     if (!keyInstalled_ || !credentialsCommitted_ || !wifiSucceeded_) {
         fail(ErrorCode::NotConfigured);
         return;
     }
+#endif
     lastError_ = static_cast<uint8_t>(ErrorCode::Ok);
     state_ = static_cast<uint8_t>(Esp32WifiProvState::Complete);
 }
@@ -319,6 +381,9 @@ inline void Esp32WifiProvAdapter::end() {
         fail(ErrorCode::WouldBlock);
         return;
     }
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+    releaseRekey();
+#endif
     deviceKey_.reset();
     keyInstalled_ = false;
     credentialsCommitted_ = false;
@@ -328,6 +393,14 @@ inline void Esp32WifiProvAdapter::end() {
     lastError_ = static_cast<uint8_t>(ErrorCode::Ok);
     state_ = static_cast<uint8_t>(Esp32WifiProvState::Stopped);
 }
+
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+inline void Esp32WifiProvAdapter::releaseRekey() {
+    if (rekey_ == nullptr) return;
+    rekey_->endWindow();
+    rekey_ = nullptr;
+}
+#endif
 
 inline bool Esp32WifiProvAdapter::shutdownManager() {
     if (!managerInitialized_) return true;

@@ -32,9 +32,8 @@ struct Esp32NvsBlobStoreConfig {
           encryptionVerifier(nullptr) {}
 };
 
-// The Arduino ESP32 core owns NVS initialization. begin() only opens a
-// read-write handle. Lifecycle calls are single-threaded; ESP-IDF serializes
-// normal get/set/erase operations on an open handle.
+// The Arduino ESP32 core owns NVS initialization. Lifecycle calls are
+// single-threaded; ESP-IDF serializes normal operations on an open handle.
 class Esp32NvsAtomicBlobStore : public IAtomicBlobStore {
 public:
     explicit Esp32NvsAtomicBlobStore(
@@ -42,6 +41,9 @@ public:
     ~Esp32NvsAtomicBlobStore() override;
 
     Result begin();
+    // A distinct NVS_READONLY handle. This is not proof that a failed write
+    // is durable: the owner must exclude same-lifecycle uncertainty first.
+    Result beginReadOnly();
     void end();
     bool opened() const { return opened_; }
     size_t maximumSize() const { return maximumSize_; }
@@ -64,6 +66,7 @@ private:
         bool optional);
     static Result fromNvsError(esp_err_t error);
     bool validConfig() const;
+    Result open(nvs_open_mode_t mode);
 
     char namespaceName_[kNvsNameCapacity + 1U];
     char key_[kNvsNameCapacity + 1U];
@@ -75,6 +78,7 @@ private:
     bool encryptionVerified_;
     bool configValid_;
     bool opened_;
+    bool readOnly_;
 
     Esp32NvsAtomicBlobStore(const Esp32NvsAtomicBlobStore&);
     Esp32NvsAtomicBlobStore& operator=(const Esp32NvsAtomicBlobStore&);

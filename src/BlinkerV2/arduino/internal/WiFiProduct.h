@@ -223,12 +223,18 @@ private:
 // identity and authority. Optional work wraps this lifecycle and/or carrier;
 // extensions never duplicate the WiFi state machine, Client or MQTT connection.
 struct NoWifiProductExtension {
+    enum : bool { guardedRoots = false };
     template <typename Stack> NoWifiProductExtension(Stack&, IProductLifecycle&) {}
     Result attach(Client&) { return Result::success(); }
     Result attachTime(ITimeSync&) { return Result::success(); }
     template <typename Stack> IFrameTransport& carrier(Stack& stack) { return stack.cloudTransport(); }
     IProductLifecycle& lifecycle(IProductLifecycle& base) { return base; }
     uint16_t capabilities() const { return 0U; }
+    void provisioning() {}
+    void active() {}
+    bool enterMaintenance() { return true; }
+    void leaveMaintenance() {}
+    bool quiescent() const { return true; }
 };
 
 // Canonical manual/education WiFi product. It is kept beside its stack so a

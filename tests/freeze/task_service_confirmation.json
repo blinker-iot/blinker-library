@@ -1,0 +1,43 @@
+{
+  "contract": "task-service-confirmation-v1",
+  "review": "QA-3 section 23 / 2026-11-01",
+  "algorithm": "sha256-lf",
+  "positiveRelease": "exact Service durable-confirmation MAC only; original deadlines and CAS unchanged",
+  "formalAdmission": false,
+  "files": {
+    "src/BlinkerV2/control/HttpDeviceKeySessionProvider.h": "09168571243c0ab207b460df09a105db1df15e028f5aaf682f97bfc54bf36f6f",
+    "src/BlinkerV2/control/HttpDeviceKeySessionProvider.inc": "4a8d63b4c92bd3485d48227a840979bf5c512d275107236c7f96a549fe7d475b",
+    "src/BlinkerV2/interface/ISessionProvider.h": "d8ef3becf84c1508ac2bf92ede2b64b22d464b773e78e9b3fd75749349a4bd54",
+    "src/BlinkerV2/protocol/bbp2/Messages.h": "d85a9f1149c0e2f546d3ddbca97f7165eeb2052e151a56c422c42c151886947e",
+    "src/BlinkerV2/provisioning/TaskAuthorityContract.h": "8e5a734475f54847f7ab2ada7e64d382e88c9971fd545ddeed4474adfaf935f0",
+    "src/BlinkerV2/provisioning/TaskAuthorityContract.inc": "4e528ffd7be5df8e582cad95b956bcf500d637adc31871a2f8435177d06f8034",
+    "src/BlinkerV2/provisioning/TaskCommandAdapter.h": "15397f79b0eb8f8eec03f53ba53153528e785f6de7962708d41519f3e414d311",
+    "src/BlinkerV2/provisioning/TaskCommandAdapter.inc": "49b704bf8ecbc99efbfb66f3839ee8d56140e73bce227c82428cfaefdc674c04",
+    "src/BlinkerV2/provisioning/TaskManagementContract.h": "90105173fd68ab55e0b2771988f93427c83b297cf6aeb3cd284dbb9e5d7eddc2",
+    "src/BlinkerV2/provisioning/TaskManagementContract.inc": "699963daed30345dde45b83423ba509d05811dba03599fe4960d60414405a454",
+    "src/BlinkerV2/provisioning/TaskManagementSession.h": "9a3ede1e4cb04bc6989e67380506c08543c6f72e5e137e07832ed4712e5ac191",
+    "src/BlinkerV2/runtime/DeviceRuntime.inc": "d649eb6017bc4b16c7d62e20a1af9e877354cf999453382e5788bd9b22d6c6d0",
+    "src/BlinkerV2/runtime/LocalAccessCloudTransport.h": "ad5baa3e60a0d31437d9f7508c93f7a45715a41ee217c69d41cc3afbecc8e400",
+    "src/BlinkerV2/runtime/TaskCloudTransport.h": "d46f42dee5fb5c5245618b0477b681778f73b65547bb6393fe385708a3284b2e",
+    "src/BlinkerV2/transport/ManagedMqttTransport.h": "b6485c79f24c9b5e28fb36d98134aaa056943bcbcfe6ccd535c0ff8bc2380545",
+    "src/BlinkerV2/transport/ManagedMqttTransport.inc": "1007596206b186bbb3fe53cf5d7a651eacaf02af33952a72b1bc34556e0c81a6",
+    "tests/freeze/device_key_cloud_login.sha256": "7d4025aa6c1ebb2fea9d1c26469e0449969a158d17bbd1e1c51b299916271db7",
+    "tests/host/test_http_device_key_session_main.cpp": "36844a2fe37f5b1a4610f085697537c0448722838cb85d0eb2b1cf0fbc46ec29",
+    "tests/host/test_task_management_session_main.cpp": "4958c09741f2239257e70fcc011745b0f75c2827446829f12c8b1fffa27c876a"
+  },
+  "dependencyReviews": [
+    {
+      "review": "IP-4 section 14.7 / 2026-11-03",
+      "path": "tests/freeze/device_key_cloud_login.sha256",
+      "previousSha256": "8ee6a3b5a20a2cf6f4be88d99b1d67ac502ce7b9ce60f4300dbf0a76e50df72b",
+      "sha256": "7d4025aa6c1ebb2fea9d1c26469e0449969a158d17bbd1e1c51b299916271db7",
+      "preservedLoginEntriesSha256": "614c2d6156dff59cf7aa13cf74534afded14c45a113c5e82f114a5f0f328bc6a",
+      "preservedSourceFilesSha256": "f32f2ef53bd8f191977d10132694daa4de338cd30214958b16cc19ce24d2e3d7",
+      "changedEntries": [
+        "src/BlinkerV2/api/BlinkerFacade.h",
+        "src/BlinkerV2/arduino/platform/esp32/Esp32WiFiBLEProduct.h"
+      ],
+      "reason": "Review prior DA-4 internal BLE selectors and startup-only provisioning intent; update only the nested v53 manifest, not the original 18 implementation/test hashes or section 23 acceptance."
+    }
+  ]
+}

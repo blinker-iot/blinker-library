@@ -6,6 +6,10 @@
 
 namespace blinker {
 
+// Re-evaluated after servicing the current socket; no Task dependency or
+// retained callback. The caller owns its existing bounded exchange window.
+typedef bool (*SessionRefreshGate)(void* context);
+
 // Wraps the control-plane and MQTT data-plane as one transport. This lets a
 // TransportHub start BLE/local transports immediately while session exchange
 // is in progress. Authentication remains entirely inside ISessionProvider.
@@ -22,6 +26,7 @@ public:
     Result start() override;
     void stop() override;
     void poll(uint32_t budgetMicros) override;
+    void poll(uint32_t budgetMicros, SessionRefreshGate gate, void* context);
     TransportState state() const override;
     TransportCapabilities capabilities() const override;
     Result send(ByteView frame, const SendTarget& target) override;
@@ -32,6 +37,7 @@ public:
         void* context) override;
 
 private:
+    bool canHoldCurrentSession() const;
     Result applyCredentials();
 
     ISessionProvider& sessionProvider_;

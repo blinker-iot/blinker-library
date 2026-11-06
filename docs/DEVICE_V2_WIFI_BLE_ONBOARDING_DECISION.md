@@ -1,5 +1,14 @@
 # Device V2 WiFi / BLE / WiFi+BLE 接入、认领与凭据决策
 
+> **2026-11-02 现行复核入口：**同板BLE／WiFi身份连续性、发现与附近状态以[接入身份与附近执行计划](DEVICE_V2_ACCESS_IDENTITY_AND_NEARBY_EXECUTION_PLAN.md)为准，先复现手动WiFi→首次BLE的方向差异，不自动合并历史记录。下方2026-10-29的“SoftAP完整首次接入未完成”已被[统一入网方案](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md)§26／30的有限通过覆盖；旧状态保留为历史，不重新排队。本文早期Ownership／CloudCredential细节也不能替代当前DeviceKey／DeviceAccessStore合同。
+
+> **2026-10-29 配网执行口径：**本批 Android 配网修复以[接入修复方案](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md) §14 为当前执行入口；
+> 设备产品／bearer 以[WiFiProv 优先计划](DEVICE_V2_ESP32_WIFIPROV_PRIORITY_PLAN.md)及实际 `Esp32WiFiBLEProduct.h` selector 为准。
+> WiFiProv 的 BLE／SoftAP 都是给具备 WiFi 的 ESP32 安装身份与 WiFi 参数的配网通道，不是 BLE-only 认领、日常 Direct BLE、LAN WebSocket 或 Cloud MQTT。
+> 当前默认 BLE，仅底层 Core 已启用 IDF-NimBLE 的目标可用；不满足时编译拒绝，不自动降为 SoftAP。
+> SoftAP 须在 include 前显式定义 `BLINKER_ESP32_PROVISIONING_SOFTAP`，完整 App 首次接入仍未完成；不能以源码可选或安全门禁通过冒称已支持。
+> UNO R4／Wio 保留各自独立普通 WiFi／BLE，不因本批扩展组合配网。以下旧凭据、默认 bearer 与阶段证据保留为历史，不覆盖上述当前合同。
+
 > **2026-08-17 凭据与配网优先级修订：**本文保留 ID、Ownership、Controller、重置和历史软件证据；
 > 其中 `ManualDeviceKey/bdk_`、默认 CloudCredential、Key 刷新不掉线、默认 Noise 配网和 R4b 后续顺序已被
 > `DEVICE_V2_DEVICE_KEY_CONTRACT.md` 与 `DEVICE_V2_ESP32_WIFIPROV_PRIORITY_PLAN.md` 取代。
@@ -14,7 +23,7 @@
 > 但生产准入仍等待 App/Service 和真机。
 > 2026-08-18 公开 API 再收口：WiFi/BLE 分别由 `<BlinkerWiFi.h>`/`<BlinkerBLE.h>` 在编译期选择，
 > `Blinker.begin()` 不再携带 mode tag；ESP32 P6 使用 `<BlinkerWiFiBLE.h>` 编译期 selector，仍在同一个 ZIP 中。
-> 2026-08-22 WiFiProv bearer 再冻结：SoftAP 是跨 ESP32 默认；Arduino Core 已使用 IDF-NimBLE 的目标可在
+> 2026-08-22 历史 WiFiProv bearer 冻结（已由 2026-09-02 优先计划和当前 selector 覆盖）：当时 SoftAP 是跨 ESP32 默认；Arduino Core 已使用 IDF-NimBLE 的目标可在
 > include 前定义 `BLINKER_ESP32_PROVISIONING_BLE` 选择 BLE WiFiProv。公开 `begin()`、DeviceKey/bootstrap
 > wire、运行期 Direct BLE 与发布 ZIP 均不变化；经典 ESP32 因 Bluedroid + NimBLE 双 Host 被编译期拒绝。
 
@@ -23,8 +32,7 @@
 > R4b-4c LocalSetup application envelope、R4b-4d durable setup saga 与 R4b-5A 平台无关 WiFi+BLE
 > lifecycle 已冻结；2026-08-17 保留独立 RecoveryGrant，并撤回短期 RecoveryKey 双码 UX；其设备 codec/golden 与
 > App/Gateway 生产实现尚未完成；official platform object graph/真机 composition 尚未完成。
-> 本文是设备、App、Gateway 在接入、身份、
-> 凭据、重启和重置方面的最高优先级决策。原 `developerEnrollmentToken/setupKey/localAccessKey`、
+> 本文当时是设备、App、Gateway 在接入、身份、凭据、重启和重置方面的决策基线；当前执行优先级取顶部修订，不能用历史段落覆盖新合同。原 `developerEnrollmentToken/setupKey/localAccessKey`、
 > `DeveloperSetupCode` 单入口、P-256 Developer 默认身份和 Enrollment/1 均为未发布实验，不是兼容目标。
 
 ## 1. 冻结结论
@@ -117,7 +125,7 @@ physical/logical ID、setup session 与 generation 校验的结果；store 自�
 | Profile | 首次授权 | App 是否在场 | 认领后持久化 | 默认安全保证 |
 |---|---|---:|---|---|
 | WiFi-only 手动 DIY | `ManualDeviceKey` + WiFi credentials | 否 | OwnershipRecord + CloudCredential + WiFi | 长期可恢复的教育档授权；不宣称防固件复制 |
-| ESP32 WiFi+BLE DIY | App bootstrap intent + WiFiProv 物理配网窗口（SoftAP 默认，IDF-NimBLE 目标可选 BLE） | 是 | DeviceAccessStore + WiFi | server-authenticated App；无唯一 PoP 时设备真实性为教育档 |
+| ESP32 WiFi+BLE DIY | App bootstrap intent + WiFiProv 物理配网窗口（当前 BLE 默认且须 IDF-NimBLE；SoftAP 显式编译选择，完整 App 首次接入仍待） | 是 | DeviceAccessStore + WiFi | server-authenticated App；无唯一 PoP 时设备真实性为教育档 |
 | BLE-only 平台 | Ticket/OwnershipGrant + 物理配网窗口 | 是 | OwnershipRecord + ControllerCredential | 不需要 MQTT，不强制 SetupCode |
 | LocalBLE | 本地物理确认/可选短码 | 可不登录 | ControllerCredential | 无服务器所有权和云历史 |
 | Manufactured | DeviceBootstrapCredential + 可选 QR claim code | 视产品而定 | 按能力安装 Cloud/Controller credential | 每台资产可验证，可支持转让/售后 |
@@ -190,16 +198,18 @@ Blinker.begin(
 
 默认 Arduino/教育流程不要求把 SetupCode 写入 Sketch：
 
+本节为同一身份链的目标业务顺序；完整 SoftAP App 接入尚未完成，实际开放范围及修复顺序取顶部当前入口，不把以下目标步骤计为全部已验收。
+
 ~~~cpp
 #include <BlinkerWiFiBLE.h>
 
 Blinker.begin(power, temperature);
 ~~~
 
-1. 首次启动或明确 reset 后打开有时限的 WiFiProv provisioning window。SoftAP 是默认 bearer；只有底层
-   Arduino Core 已启用 IDF-NimBLE 的目标才允许编译期选择 BLE。设备服务名为
+1. 首次启动或明确 reset 后打开有时限的 WiFiProv provisioning window。当前默认 BLE，要求底层
+   Arduino Core 已启用 IDF-NimBLE，否则编译拒绝；SoftAP 必须显式定义 `BLINKER_ESP32_PROVISIONING_SOFTAP`，不自动回退。设备服务名为
    `BLINKER_<deviceInstanceId前6B十六进制>`；该名字只用于附近发现，不是 deviceId，也不提供认证。
-2. EducationPhysicalWindow 使用 WiFiProv Security1（无 PoP）；默认 SoftAP 是开放临时 AP，BLE bearer 不使用
+2. EducationPhysicalWindow 使用 WiFiProv Security1（无 PoP）；显式选用 SoftAP 时为开放临时 AP，BLE bearer 不使用
    AP `serviceKey`。Security1 建立临时 ECDH
    保护的 protocomm 会话，但没有唯一 PoP/factory root 时不宣称抗主动 MITM；UI 必须准确显示这个安全级别。
 3. App 按设备声明选择加入临时 AP 或连接 provisioning BLE service，通过标准 WiFiProv endpoint 写 WiFi
@@ -387,7 +397,7 @@ Key 合同见 `DEVICE_V2_MANUAL_DEVICE_KEY_CONTRACT.md`；Recovery exact wire �
 6. **R4b-5 WiFi+BLE（仅 ESP32 候选）**：R4b-5A 平台无关 lifecycle 已完成，在同一 composition 中复用 R4b-3 cloud session
    和 R4b-4 setup；Managed cloud 与 External Direct BLE 共享一个 Client/State，各自保持
    session/auth/sequence。BSG2 Complete + confirmed WiFi 才允许切 Direct，活动 setup session 断开前不强切。
-   ESP32 仅保留 P6 WiFiProv Security1 + NimBLE Direct 业务图；默认 SoftAP，IDF-NimBLE 目标可选 BLE scheme。
+   ESP32 仅保留 P6 WiFiProv Security1 + NimBLE Direct 业务图；该历史阶段的 SoftAP 默认已被当前 BLE 默认／IDF-NimBLE 编译门槛及显式 SoftAP selector 覆盖，见顶部修订。
    UNO R4 历史双无线图已删除；其 exact ATT handle
    encrypted 状态只服务独立普通 BLE。HC-05/Bluetooth Classic SPP 暂不支持。
 7. **R4b-6 BLE-only/LocalBLE**：6A/6B 已完成两种独立授权合同、Local application、共享 BLE setup

@@ -1,5 +1,7 @@
 // ESP32 WiFi+BLE QuickStart. The App installs WiFi and device access data over
-// the default BLE WiFiProv transport.
+// the default BLE WiFiProv transport. See README: ESP32 WiFi+BLE provisioning.
+// Optional private sketch-local settings must precede the product header:
+// #include "PrivateProvisioningConfig.h"
 #include <BlinkerWiFiBLE.h>
 
 BLINKER_PROPERTY(power, bool, blinker::readWrite());

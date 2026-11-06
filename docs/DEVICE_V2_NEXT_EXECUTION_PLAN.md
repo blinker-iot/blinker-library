@@ -1,6 +1,177 @@
 # Device V2：核心稳定版进度与后续执行计划
 
-## 现行入口：源码已交付，CI 私有 oracle 授权待补，发行 HOLD（2026-10-29）
+## 唯一当前执行入口（2026-11-06）
+
+当前取[有限支持交付与核心稳定完善方案§19](DEVICE_V2_CORE_DELIVERY_AND_STABILITY_EXECUTION_PLAN.md#19-ds-6设备库必要交付清单与最小修正2026-11-06)：DS-6首发范围、公开profile／例程、依赖／旧库冲突及历史构建证据已核对，仅修CI入口、Auth职责和任务范围三处表述，新增3项定向检查通过。未改设备实现、版本、profile或SDK，未打包／编译／部署；DS-5的`ae5d7736…176c2f`安装及两页真机结果沿§18保持。当前dirty不能冒充历史包或完整提交；必要源码交付、私有oracle专用只读授权及真实同提交候选仍待，发行HOLD保持，不重复审计／队列，暂不提交推送。
+
+## 历史执行入口（2026-11-03，以下当前状态不作为新排队依据）
+
+**产品主线：让用户在声明支持范围内正常接入设备、控制并看到真实状态、使用定时及最小自动化；优先稳定可用，不扩复杂功能。**
+渐进顺序仍是“基础接入 → 基础控制／状态 → 定时 → 自动化与分享差异 → App操作体验”。
+
+**当前分线：**本会话执行[独立接入注册方案§13](DEVICE_V2_INDEPENDENT_ACCESS_REGISTRATION_EXECUTION_PLAN.md#13-ip-3-共享根附近投影数据库及匹配发布)。IP-3单一presence writer、逐卡附近投影及有限回归完成；真实隔离PG 7／7，匹配Gateway部署／059及060迁移和内测App一次构建安装已完成。手机原生前后台及无自动业务调用有限通过，但当前账号本机Admin为0、COM11仍为维护固件，不能代签正向两卡。下一批仅按§13.5补具体前置与最短同板差异；Cloud→BLE限原Admin／Direct齐备，BLE→Cloud任务区证据门禁保持。旧signed UNKNOWN不按新120秒只读intent释放，不退回同ID升级、不清根补样本；原SDK、账号、授权、TaskStore及scope保持，暂不提交推送。
+
+§77／接入计划§15的单次WiFiProv BLE扫描、选择及取消有限结果继续冻结；COM11仍保留5f9a维护候选、原存储和授权，本批未打开串口或刷板。现装App为IP-3 `45d74e2b…baec3`，Direct／tasks／automation开启；账号、7secure及2journal保持。真正附近仍缺合法凭据／presence，不能由同MAC或instance给多张卡借用状态；不清根补样本、不重扫或重跑完整配网。软件S1～S3仍交[软件会话](../../blinker-app/docs/APP_CORE_SOFTWARE_OPTIMIZATION_HANDOFF_PLAN.md)，公共文件先协调。
+
+**阶段位置：QA-3已收口，停止默认追加任务验收。** [§30](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md#30-qa-3新批冷预检两类日历真实执行及受限支持收口2026-11-01)完成固定组合执行，
+[§31](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md#31-qa-3逐设备有限开通与普通arduino交付接线2026-11-01)完成受限Arduino包装／安装编译，
+[§32](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md#32-qa-3com11单id有限开通与新鲜目录read只读收口2026-11-01)完成COM11单ID实际签发／双根／scope及新鲜目录／Read，结束已关闭名单并恢复配置。
+关闭是本批收尾要求，不是任务功能失败；普通0槽、固定四槽支持和新包装尚未刷机是不同层级，不能互相制造未完成项。
+
+**最新执行见[§77](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md#77-da-4com11单次ble选择取消及原存储保持2026-11-03)，QA-5有限收口决定仍取§46。**
+Hold已完成原模板复现、原目标／单终态／busy释放及owner退休的最小修正，最终42项有限回归与原SDK runtime严格AOT通过；设备执行协议不变，不把失联本地取消或Legacy旧binding消失当物理停止已确认。
+§49.3的AI生成owner／取消已完成原模板复现和最小修正：43项回归及App严格模板编译通过，保留同owner好草稿、拒绝跨设备／账号／Manifest迟到结果，后台取消且返回不自动生成；不接管整页、不改采用／CAS或SDK，未调用真实AI。
+§51已按新授权补齐云端Agent及三个精确Nginx入口，沿原Auth／Gateway镜像，未重建Broker／数据库／Redis；health、未登录边界及App CORS通过。匹配beta `948d9211…bf9f8`已安装，原账号7secure和2journal完整保持。唯一真实原UI生成HTTP200却返回NDJSON error：Agent第一回合收到正式`api.yiyu.pro/v1/chat/completions` HTTP404，没有complete／成功预览、没有重试或Apply，不能签AI可用。
+**正式只读定位已按§52.6完成，不再重复访问／模型采样。** 用户指定Tabby连接后，已核实际AI1.0.98／Auth1.0.81／Kong3.4健康；Nginx通用原路径转Kong，当前Kong完整37路由无该POST入口，实际AI镜像又缺4个兼容模块，因此是未发布兼容链路，不是改Agent URL或SDK即可解决。正式没有发布、reload、模型／登录／数据库操作；本批独立SSH会话已关，用户原会话保持。
+**§54已完成stao合并、推送及129测试关闭式部署。** `i3w-operation-recovery/756034bd`包含全部`stao-update/572c1cf0`，一次真正merge纳入两支，六冲突保留原接口及恢复修复。**本地、`origin/stao`及129实际分支均为`stao / 3e2991c9319af237c1588d88fceabcd1fa6c3b1c`**，原97个未跟踪路径及远端私有修改保留。578份消费者与§53已验制品一致，沿用141项有限回归及原运行时静态／Kong／Lua结果，不重跑全套。
+独立原版本PG14.24的025演练15／15通过，必要配置／日志／AI专库保护后，实际唯一024→025迁移成功，新表0行，四张原表完整指纹保持；Auth无迁移／seed。仅重建AI／测试Auth／Kong并插入测试Nginx窄入口，另外23容器保持。一次部署检查因全机worker集合混入Docker Kong而误停，只读以实际宿主master／SIGHUP／新worker日志协调确认reload生效，没有二次reload／部署。随后唯一health首轮通过：AI／Auth各GET200，测试HTTPS无凭据POST401／invalid_api_key／no-store／TLS有效，模型及登录请求0。原失败与协调证据分别保留，不冒称整套首次全绿。
+以上§54当时为兼容／maintenance／outbox全关闭部署；**当前状态已由§55覆盖：Development真实生成有限通过。** 用户另行允许仅Development接`api-test.yiyu.pro`并正常登录测试账号，China／Global和正式服务器不变，不混用正式token。129测试AI仅对该账号启用compat及必要outbox，maintenance仍false，沿原SDK／镜像／stao提交；现有`glm-5.3-flash`、原Credits及四个显式容量域已就绪，平台共享并发保护1，不冒充供应商额度。真实App仅一次POST200，收到stage／draft／complete，约26秒显示电源和运行时长两个组件；未Apply、未控制设备，也未重发旧404／UNKNOWN。
+COM11临时独立0槽候选及实际新instance没有搬旧scope／TaskStore；短验后原程序与完整20 KiB NVS均精确恢复并ROMverify，原授权／任务保留。Development测试账号及新设备Manifest保留，但该独立测试身份不再由COM11在线承载。App回首页、临时CDP／forward和常亮已回收，无重复构建安装或生成。§55.8按真实namespaced run及两round hash逐一确认用量／Auth预留均结算、outbox已发布，各仅一条settle，原49条及空admission／outbox的完整行指纹保持；首次按raw workflow查0的harness报告原样保留，不再生成或修复业务。**§55有限生成收口仍有效，不代表采用／CAS通过。**
+**§56已核对采用前置，写验NOT_RUN。** 同APK／Development账号有效、授权及完整journal保持；原AI页只剩两个基础预览部件，真实生成草稿已不在，应用禁用。Console唯一GET200／revision0／layout null，不能代签保存后重入。Cloud采用实际走PUT `/console`，当前源码明确last-write-wins、没有客户端expectedRevision，不能套用旧page-layout CAS；部署Console模块未新鲜读回，本批不冒称运行保护已证实。没有Apply、补造草稿、生成、验证码、控制、刷板或部署，已回首页并释放自有forward。下一最小范围取§56.5：另行授权后仅补Cloud Console aggregate revision CAS及匹配消费者／有限回归；真实写验待自然草稿或明确新生成授权，不重排已过矩阵。
+**以上§56前提缺口已由§57必要实现及匹配部署覆盖，但AI采用仍待验。** Console PUT必需aggregate expectedRevision、旧版本409、不自动换版本覆盖；原权限／owner／Manifest围栏保持，App五消费者及迟到拒绝owner终态已接线，原SDK不变。App有限171项首轮＋3项修正／围栏续批通过，独立原PG15／15通过，唯一APK `b2468e65…37ff257`匹配安装，Gateway实际Console hash `4a0fefb2…22b524`已核。正常自动适配真实预览的同一Console保存链已真机通过：aggregate0→2／layout1、重入GET相同、旧0→409且内容未变。首次AI上游失败与用户明确服务器修复后继续的独立新调用INVALID_RESPONSE分别保留，均无草稿，不以自动适配代签AI采用，不继续生成。原账号／授权／journal／TaskStore／UNKNOWN保持，App回首页、常亮及forward回收，未提交推送。下一范围只取§57.7的现有AI校验证据，不再重跑CAS或旧矩阵。
+**§58已完成上述既有日志分析和最小诊断修正，未再次生成或部署。** 2edc两轮精确workflow日志均HTTP200，最终proposal校验拒绝，旧catch抹掉细因且warn缺workflow，无法恢复具体被拒字段。新增有界脱敏分类／单行工作流日志，原严格predicate、默认值、公共INVALID_RESPONSE和模型回合不变；22项离线首跑及原Agent类型检查通过。只修确认的诊断缺口，不猜测改prompt、不接受原非法输出，不冒称AI采用已过。线上仍旧Agent bundle，当前App／Gateway／账号／TaskStore／UNKNOWN不操作；后续最小范围取§58.5，不重跑CAS，新的模型请求另行明确安排。
+**以上§58运行快照已由§59的新授权执行覆盖：匹配诊断Agent已发布，唯一新生成被严格校验拒绝，未采用／保存。** 沿原工具链仅一次Agent bundle构建，SHA`66d97453…6059c`／61,950 B，复用§58已过22项及类型检查；原User下语法检查、实际hash及health200已核，只有Agent image变更，发布时其它25消费者及原AI配置精确保持。首制品文件mode导致的发布前EACCES保留，仅COPY公开JS为0644纠正，不改User／私有配置，不重复App／Gateway构建部署。当前beta仍`b2468e65…37ff257`，Console CAS仍§57通过。
+同Development账号7secure／2journal及新鲜Console GET revision2核对后，原UI只发一次workflow=`6d626e03-4ee4-4f44-a8cc-e74e02086e14`；POST200、约37.53秒原页面校验错误，Console PUT／Apply／MQTT命令均0。新Agent精确同workflow日志为`SCHEMA_VIOLATION`，两条`invalid_value`分别在`widgets[0].type`与`widgets[1].type`；两轮上游HTTP均200，未记录实际非法值，不能猜测具体输出或回填旧2edc。App已回首页、授权及完整journal保持、调试资源和常亮回收，COM11／TaskStore／UNKNOWN未操作；暂不提交推送。**下一最小范围只离线核对最终type枚举与variant／工具／提示词合同并补必要有限回归，不放宽校验、不自动再生成；合法AI草稿采用／保存及重入读取继续待验，CAS不重跑。**
+**上述离线范围已按§60完成，本批没有真实生成或部署。** 同事2026-10-15接口方案负责Aily模型／Auth／auto／计费层，不定义Widget类别；当前两字段App／Agent类型、外观与默认配置一致。原七类及严格校验早于近期修改，§55成功后首次内容拒绝仍运行同旧bundle；没有证据将本次失败归因CAS／诊断改坏或具体上游模型变化。仅三处说明修正：从原校验枚举动态列出type、区分type／variant／valueType及同一allowedComponents组合、去伪JSON并澄清工具按variant查询；工具参数／返回、validator、model、SDK和锁不变。新7项首轮5过／2夹具误读原SDK文本块数组，限定修夹具后仅续2项通过，原Agent类型检查通过；旧22不重跑，原失败保留。账号／授权／TaskStore／UNKNOWN及完整日志未操作，无关dirty保留，暂不提交推送。
+**当前云端仍§59诊断候选；源码已修不等于线上生成可靠性已验。** 后续另行授权后，只构建发布匹配Agent并一次原UI生成，合法才同页采用／保存／重入新GET，拒绝仍取安全分类即止；不重复App／Gateway构建、CAS或已过矩阵，不自动重试或放宽校验。
+**上述运行状态已由§61覆盖：Agent说明修正bundle `e57d505b…d55fdb`已单独发布，原App／Gateway及其它25消费者保持。** 实际bundle／原User语法／health200已核，复用§60通过证据不重跑；原账号7secure／2journal与新鲜Console revision2保持。唯一真实新workflow `32e45400-fa3d-48c2-814c-cd1b27ec4402`两轮上游均200，实际NDJSON stage→INVALID_RESPONSE，精确诊断是`JSON_SYNTAX`而非上次type枚举错误；无draft、Apply／PUT／设备命令0，已回首页并释放调试资源，SSH关闭，授权／TaskStore／UNKNOWN及完整日志保持，暂不提交推送。本批按被拒分支停止。
+**下一步不再用App真机循环猜改提示词。调用链已通，未闭合的是最终产物合同。** 先在Agent最小两字段路径建立有界脱敏失败样本／离线重放合同，确定输出边界，再按现有兼容能力收敛结构化约束；不盲加当前不支持的response_format／strict、不放宽schema、不改Auth或重跑CAS。本批没有追加样本、真实模型调用或实施下一项；AI采用／保存继续待验。
+**上述方案选择已按用户新授权由§62的双模式输出边界实施覆盖，本批没有额外真实调用或部署。** 历史核对确认631b743交付版本最终曾启用json_object，9a3b670因Aily兼容子集移除了它；此前只强调prompt／schema未变遗漏了输出语法约束变化，不能再将失败仅归为随机提示问题。借鉴ABS的候选／确定性转换／校验／提交分层，不新增DSL：组件仍原Proposal与App转换，第二轮强制submit_layout，参数schema从原校验派生；HTML改原始完整文档，宿主包装原data{html}，不要求双重JSON转义。共享层严格完整原始工具参数，不信SDK partial修复，保持单call／name／ID／finish／usage／DONE／大小／取消及零重试，App沙箱／权限／CAS不改。
+受影响六文件定向回归首跑72／72通过；首类型检查仅unknown→SDK JsonObject声明问题，纯类型修正后单独续查通过，没有重跑72；一次原工具链单bundle打包通过。源码本地已具两模式新边界，**云端仍§61旧bundle**，不能代签真实模型或采用成功。下一最小范围为匹配Agent发布后先验证组件两轮工具与HTML单轮原文，合法才做App采用／重入；不重建App／Gateway，不再重复账号／设备／CAS／配网矩阵，暂不提交推送。
+**上述运行状态已由§63覆盖：双模式Agent `17c7bcc3…048d2a`已实际发布，组件AI采用闭环有限通过。** 只封装§62已有制品，无重复构建测试；当前其余25消费者／AIoverlay／DevelopmentAuth及原App／Gateway保持。组件唯一workflow49b57e32…两轮200、stage／draft／complete，原UI一次PUT200 aggregate2→3／layout2，离页后新GET整体版本／layout／uiConfig一致，设备命令0；不再列“组件AI采用待验”或重复CAS。
+HTML在§63唯一请求400的输入拒绝保留；§64已最小修正15字段显式投影，原模板15／15、实际Agent严格schema离线对接及App严格模板编译通过，不改输出、组件链或CAS。**匹配安装与HTML采用已由§65关闭：beta `846a6126…056b5e7`，唯一生成200／stage→complete，约50.6秒；采用一次PUT200，aggregate3→4／原layout2保持，新GET与保存一致。** 原7secure／2完整journal逐字保持，设备命令0，TaskStore／scope／UNKNOWN未动，已回首页并恢复常亮／释放调试资源；构建／安装各一次及原工具停点分别保留。Service沿§63原发布证明，不冒充新鲜SSH健康检查。**§66核尺寸后未确认产品缺陷，用户实机正常，不改样式或追加采样；§67已将软件优化交另一会话，本会话回到接入身份／附近。** DA-1～3有限软件见§68～70；§73一次有界发现0命中／正常停止，§74 BLE候选完整链接，§75 Direct=true匹配App实际运行核验，§76原应用／NVS结构停驻均各自保留。**§77已按新授权仅app写入5f9a，WiFiProv BLE一次选择／Security1连接／14项目标WiFi／取消有限通过，结束保留候选及最新NVS，不恢复旧程序。** 首轮零写停点与精确phy/cal_data协调保留，账号7secure／2完整journal及资源回收通过；不重扫、重建、重复完整配网或以此签Direct附近。下一优先DA-1隔离数据库欠证，合法presence同步另列；两模式AI／CAS及既有任务／自动化不重排，暂不自动部署或提交推送。
+服务器Git仍需维护侧配置非交互只读凭据；§54以11,762 B双父前置bundle导入已推送提交，不假称长期pull已打通。旧quickstart描述旧42环境而非接口被删；正式发布链缺项、AI采用收尾及Gateway前置取消窗继续独立保留，云Console CAS已按§57通过，不再列作未修，不重排已过设备／配网／自动化矩阵。
+以下§47结果保留，不再默认排入库存、构建安装或采样队列：
+本次库存1次＋4份已发布Manifest GET均200，revision均1／指纹与库存一致；3台只有power可写布尔和uptimeSeconds只读数值，1台仅power，无text／数值可写候选。
+真实ACK／新鲜State写验因此NOT_RUN、保留待验，不是功能失败或通过；没有重跑布尔、打开其它通道、改能力或刷板补样本。
+§47当时App读回匹配§45 `df0dc68b…8cdae`；当前App以§57已安装候选`b2468e65…37ff257`为准，§51只作旧批来源。API未提供设备firmwareVersion，未读回固件，不把持久Manifest或presence当现场版本／新鲜State。
+已完成范围取§46.2、§48／50软件及§51部署边界，§51真实生成失败独立保留；待自然条件及同事分工取§46.3～46.4。已完成核对不重复，不重排§49.3，不新增设备安装、采样或QA-6／7队列。
+
+已过配网、开／关规则共存、日期／星期、Start、Read及资源矩阵不重跑。新Arduino包运行验收仅在明确选择交付该包时单列，
+不自动刷编译夹具；发行CI／推送、Wio、Error8、调试器WebView异常、纯BLE任务、OTA／Bulk等均不自动成为本轮前置。
+§51失败批次及其后台未测项仍保留，不写成通过；§55正常切测试账号后，原非session授权及完整journal终核保持，测试session正常保留，不恢复已注销的旧正式token。§55只创建一次独立测试设备／获取一次新Key并有限刷COM11，最终恢复原程序／授权／TaskStore；没有控制／任务命令或旧UNKNOWN重放，不升级SDK。§54仅按授权提交／推送Service的stao，§55暂不提交推送，App／设备库无关修改保留。
+
+### §31 冻结结果（不重复执行，后续取上方§32）
+
+当前取[测试对照计划§31](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md#31-qa-3逐设备有限开通与普通arduino交付接线2026-11-01)及
+[四槽有限交付说明](DEVICE_V2_ESP32_SOFTAP_TASKS_LIMITED_DELIVERY.md)：不重复§30已过功能矩阵，只补固定XIAO ESP32S3／原Core3.3.11／SoftAP→TLS／P256 keyId1／双根四槽的维护者打包、标准Arduino例程和显式单目标安装验证。
+普通库仍0槽，逐设备三名单保持关闭，不新增服务准入API或改SDK。新增16项及受影响既有5项有限检查分别通过；唯一ZIP隔离安装／原SDK单目标完整链接及provenance通过，Flash1436556 B／静态RAM59588 B；新包装编译BIN仅用公开测试PoP，不作可部署设备候选。ZIP摘要及完整证据取§31，不冒充新刷机或远端CI／发行通过。
+本批不操作账号、授权、TaskStore／scope／UNKNOWN或旧完整日志，不部署、刷板、发码、开名单、提交或推送。后续只有固定交付门槛通过后的明确单ID只读开通核验／匹配候选安排，不重跑已过日期、星期、Start、配网或资源审计；Error8和Wio另列。
+
+### §30 冻结结果（不重复执行，后续取上方§31）
+
+最新结果取[测试对照计划§30](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md#30-qa-3新批冷预检两类日历真实执行及受限支持收口2026-11-01)：**COM11当前SoftAP＋TLS／P256双根四槽组合的一次日期与一次星期到期均有限通过，QA-3本固定组合最小功能验收可收口。** 原控件及两种确认取消先冷预检，工具停点发生在0写入／无计划阶段并保留；最终冻结后才生成唯一新计划。#4消费UTC1793520900000、#5消费UTC1793521020000，均同id／definitionRevision1／fresh Completed／startSequence0，并对应新鲜power=false→true→false；两事件间正常换context，不外推同连接、GPIO或物理时延。两条定义先disabled保存、各启用一次，完成后正常停用及删除，原task1在21份认证Read完整保持，表revision10→18／count1，不回滚NVS。计划后56笔HTTP全部verified／fresh，8笔变更连续CAS且无重放，Start／Initialize／Replace0；冷未完整捕获响应单列。原scope、授权、UNKNOWN及11条非Read保持，8条旧Read自然retention单列，最终35request／attempt均verified。原配置精确恢复、单ID已关，账号7secure／2journal及APK保持，101份云端完整证据私有核验。**技术上具备固定图逐设备有限开通条件，但本批不保持开名单、不扩大默认0槽／公开安装包。** 后续只进入明确的有限开通／交付决策，不再默认重跑已过日期／星期、倒计时、UTC、配网、尾窗、分页或资源矩阵；Error8仍单列。无产品生产源码修正、刷板、重配、发码、SDK升级、stage／提交推送；下方旧历史不覆盖本段。
+
+### §12 QA-2冻结结果（不重复执行）
+
+[测试对照计划§12](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md#12-qa-2匹配内测安装及只读真机有限收口2026-10-31)：已装匹配beta `7e88a390…14a0f0`，首页4卡Cloud／离线、收到数真实0→失败隐藏→手动恢复0、H1自然24条本地时间及H2本地范围／失败手动恢复有限通过；后台返回无自动重试。附近正向、非零收到数、H2自然行／曲线真机欠证不造样本；原软件188项与失败保留，不重跑。
+
+### §10 只读真机冻结结果（不重复执行）
+
+最新结果取[测试对照计划§10](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md#10-qa-1冷启动与同页返回的只读真机短验2026-10-31)：原已装beta一次进程冷启动及owner详情200／no-store通过。首段路由重开实际新host／新初始化，sameHost断言首停保留，不误判为产品自动重试；不再冷启，续段真实HOME后台→同PID／同host返回，观察内owner GET增加0，原重新开始按钮点击1→新GET1。合计四次真实owner读取分别留存、同上下文；7secure及2个完整journal store逐字保持、原stop／clear清理确认、guard／CDP回收，App在首页。未连接／下发WiFi、构建、安装、部署、刷板、发码、升级SDK或提交推送。路由缓存ionViewWillEnter正向仍真机NOT_RUN，不用同页前后台代签；无生产新缺陷，下一批可选QA-2三项小修，不再重复配网／自动化。
+
+### §9 软件差异冻结结果（不重复执行）
+
+最新结果取[测试对照计划§9](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md#9-qa-0qa-1版本核对与冷重配软件差异2026-10-31)：QA-0新鲜只读核当前beta APK仍086d66c1…8386aad；选定App配网66项／插件6项与原构建记录一致，旧dist类型不等于原生实现过旧。QA-1新增真实模板冷账号恢复／显式重入及两项跨代生命周期组合共4项分批通过，首轮夹具异步前置失败保留；未确认新生产缺陷，仅改测试／文档，不部署、安装、刷板、发码或提交推送，账号授权／UNKNOWN／日志未操作。整段真机进程冷启动／取消重入NOT_RUN，不冒称通过；无新增接入阻断，下一批可选QA-2三项明确小修，不自动重跑配网或已过自动化。
+
+### 原始规划批（结果以上方§9为准）
+
+当前分析与后续顺序只取[测试问题对照与基础能力渐进计划](DEVICE_V2_TEST_REPORT_RECONCILIATION_AND_CORE_PLAN.md)：逐项区分旧报告、已修／有限通过、当前源码疑点、准入／组合缺口和后置扩展。建议QA-0必要版本核对→QA-1冷启动重配等未覆盖差异→QA-2首页实际通道／分享计数／历史本地时间→QA-3当前环境一个ESP32任务组合，再处理自动化未覆盖差异及App编辑体验。不重做已过BLE／SoftAP或两设备共存。本段为原始规划批，不代表后来§9～12的执行仍未发生；当前已安装App以本页首段／测试对照§12为准，发行CI HOLD和原授权／UNKNOWN／日志保持，不自动启动全表。
+
+§11已完成的派生单位修正、13项有限回归及原配置类型核查、源码交付闭包／构建顺序和058回退边界仍取[原计划§11](DEVICE_V2_STANDARD_DELIVERY_AND_RULE_COEXISTENCE_PLAN.md#11-10收口后的最小修正与源码交付索引2026-10-31)，不重复计入本批测试。
+
+### §10 冻结结果（不重新排队）
+
+最新结果见[标准接入交付与自动化共存收口计划§10](DEVICE_V2_STANDARD_DELIVERY_AND_RULE_COEXISTENCE_PLAN.md#10-r4正式环境接入及同目标开关共存真机有限收口2026-10-31)：R4正式环境一次CREATE／reveal成功、原SDK增量链接及普通上传／实际上线通过；与COM11原215身份两台真实设备的同目标开／关规则同时启用，源各点击一次→目标各真实ACK／新鲜State、attempt1、UNKNOWN0，最终各正常停用／退役至rev4，ACK历史保留。12407ms原生后台及实际LiveClose同requestId Closed/lease0、无续租／控制重发，返回1秒实时恢复；失败后台JS观察段如实保留缺口，不重跑业务。原授权／旧UNKNOWN／journal／完整业务日志保持、SSH/CDP回收，匹配App/Gateway/原Broker及R4普通WiFi0槽候选保留。设备额度10在测试期间保留，不重复询问；自动化仍每租户4／全库16、当前0／4、历史2条。§6.2有限收口，不默认再做登录／配网／重复矩阵；无SDK升级、新产品源码修改或提交推送，发行CI仍HOLD。
+
+## 历史冻结：基础设备接入（2026-10-29～31）
+
+以下“最新／当前／下一步”均保留其当时证据身份，不构成新队列；后续只以上方唯一入口为准。
+
+**最新结果：§30 BLE非空PoP空根首装和原状态精确恢复已真实有限收口。** 见[全流程入网方案§30](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#30-on-7ible非空pop空根首次接入及精确恢复有限收口2026-10-31)。新明确单次授权后登录200，同账号／新token及真实marker／额度3成立；原BLE Security1／PoP连接、完整空根新instance、独立Cloud身份／CAS／Admin、Bootstrap精确ACK、唯一WiFi7564ms官方成功及Cloud新会话／新鲜State通过，原自动进入一次，无人工check/open。16个正文不可读实为204空体预检，另存严格补证（24／24业务正文保持），旧false不改写，无重发。新BLE NVS c93354dc留存，原c051＋73d949完整NVS／分区ROM精确恢复，按合同留bootloader；原5项与新增2项secure／UNKNOWN／journal保持。与§26 SoftAP两条最小成功链均冻结，不再默认配网／验证码循环。额度仍3及原到期，不冒称恢复或新scope撤销；无SDK／服务变更或提交推送。
+
+**最新停点：§29单次发码成功，唯一登录被拒，设备操作尚未开始。** 见[全流程入网方案§29](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#29-on-7h已授权单次发码唯一登录被拒后停在设备操作前2026-10-31)。正常发码200、登录400／AUTH_VERIFICATION_FAILED，相隔9分14.67秒，与过期相符但线上未细分；未重发，原session／全部5项secure／UNKNOWN／journal及完整日志保持。旧冷读取过期后只真实刷新一项证据，冻结源码未改；未开COM11端口／清根／刷写／开窗，故无恢复写入。匹配App、候选、3台原期限额度保留。下一步需新的明确单次认证授权，不重用码或旧成功证明、不重复SoftAP、升级SDK或提交推送；BLE空根仍未验收。
+
+**最新结果：§28匹配App安装及BLE首装冷准备完成，等待一次明确执行授权。** 见[全流程入网方案§28](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#28-on-7g匹配app安装合法额度与ble首装入口冷预检收口2026-10-31)。新beta49e68eed…e29f8e6一次构建安装，原签名／SDK／HTTPS／1156资源核对，全部5项secure／账号／UNKNOWN／完整journal安装及终核保持。手机BLE PoP／扫描按钮冷检、登录控件与单TTY通过，无扫描连接或认证请求。正常Auth POST恰1，仅iot.devices2→3、原到期／套餐他项不变，Gateway一次读回3；未CREATE。BLE候选、七refs保护、新fixture／c051+73d949恢复及只读收尾入口已备并整体冻结49项；未打开COM11端口、清根、刷写或开窗，仍留ROM。下一步仅新单次认证＋明确限定fixture执行后连续首装，不再改脚本或重复SoftAP；无服务部署／SDK升级／提交推送。
+
+**最新结果：BLE非空PoP候选及App最小补线已有限通过，真机未开始。** 见[全流程入网方案§27](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#27-on-7fble非空pop空根首装候选与最小差异范围2026-10-31)。原Core3.3.11单jobs1编译／完整链接通过，BIN1,372,240B（1e600901…b1d356f）落入固定app0，实际BLE／私有PoP／0槽消费者匹配；原SDK／分区不变，私有测试产物不发行。App只补共享PoP输入及BLE select／connect同值传递，24／24及类型核通过，插件／依赖不改。现装App尚不含补线；下一批先打包安装及BLE入口冷预检、合法创建额度和限定新fixture齐备，再一次认证，不提前发码或清根。COM11原73d949根／scope、新旧授权／UNKNOWN及日志保持，§26 SoftAP不重复，无服务／SDK变更或提交推送。
+
+**最新结果：COM11手动SoftAP空根首装已真实有限收口。** 见[全流程入网方案§26](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#26-on-7e冻结入口连续执行softap空根首次接入有限收口2026-10-31)。本次发码／登录各1，冻结入口认证后连续执行且无刷写；独立Cloud CREATE／reveal／Admin、精确Bootstrap ACK及WiFi各1，WiFi7556ms成功，切回互联网显式确认同instance的新会话／新鲜State，再显式进入新设备1次。旧3项secure／UNKNOWN及journal保持，仅新增本次allocation／Admin；原Page回收、worker0及转发清理通过。只读捕获新的20KiB／root已安装，候选及授权保留，COM11留ROM；不把此收尾offline当入网失败。该路径冻结，不再重复。剩余为临时额度正常收尾、必要时BLE空根匹配PoP候选和自然UNKNOWN正样本，各单列；没有SDK／服务变更或提交推送。下方旧停点均历史冻结。
+
+**最新接续：一次认证前的入口已预检并冻结，等待本次单次发码授权。** 见[全流程入网方案§25.7](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#257-一次认证前的执行入口已预检并冻结)。真实手机Page预热、登录控件及持久TTY通过，15个运行文件摘要复核一致；认证后用单TTY连续跑原登录、精确marker、显式resume及原Page剩余首装，不再临时修脚本。冷预检的本地变量错误已修正，原意图保留，已过板侧文件检查不重跑。本批未发码／新登录、操作板端口、开窗／刷写或执行业务请求，COM11仍留ROM；原授权／UNKNOWN及新旧NVS保持。完整首装未关闭，不重复旧矩阵或使用旧发码授权；以下停点均历史冻结。
+
+**最新停点：login-2认证已明确通过，完整空根首装仍未关闭。** 见[全流程入网方案§25.6](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#256-login-2真实通过局部连接扫描及安全收尾完整首装未完成)。原App登录200／同账号新token及真实近期marker、旧授权UNKNOWN保持，COM11无刷写恢复及同owner连接233ms、15SSID扫描3999ms通过。记录器stdin／路由DOM挂载纠正耗尽Key窗口，是验收工具／操作耗时，不是用户／Auth／设备失败；GetInfo／Cloud创建／Bootstrap／WiFi均0，不试探或绕门禁。原Pageleave clearState68ms、手机WiFi／首页／worker0、原记录终核保持。新NVS整区由9415变fa4e，ROM差异后只读新鲜保留，完整instance／root=null／Empty任务未变；原0166及两份新快照保留，板留ROM不开窗，下次不能套旧9415整区恢复guard。下一批先在发码前预热页面并用持久终端，再一次认证后连续跑剩余首装，不重复烧录或登录排查；新发码另需明确授权，不自动重发、升级SDK、部署或推送。下方停点均历史冻结。
+
+**最新停点：新授权login-2的单次真实发码已200，等待用户新验证码。** 见[全流程入网方案§25.5](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#255-新授权login-2一次发码已接受等待用户新码)。当前内测包原控件、challenge1／code POST1／login0，实际经过iot.yiyu.pro；不logout、不重发，旧失败及手动记录保持。登录／显式resume／原Page首装工具已备齐，COM11仍留bootloader；收到码后一次登录、核同账号新session／旧授权UNKNOWN及真实近期marker，再恢复原已部署候选，不重刷，不用旧窗口时间。原NVS及新instance保持，无SDK升级或推送；下方旧停点冻结。
+
+**最新停点：COM11候选已安全暂停，先收敛实际登录证据，不再循环要求手动登录。** 见[全流程入网方案§25.4](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#254-再次登录报告后的实际核对与有界暂停)。用户再次报告登录后，beta实际完整session与前次相同，当前token真实marker MISSING／PTTL-2，不能认定新的近期认证；旧授权／UNKNOWN／journal保持，限定日志未取得可归因新请求，不猜用户操作错误。原10分钟窗口已结束，GETInfo／CREATE／Bootstrap／WiFi均0。只读保留新20KiB与真实全新instance215af06bebe01744006b9348d9a5e40c，无root／Key、任务Empty；COM11留bootloader，不自动reset／开窗，原20KiB／103c恢复材料仍在。下次有效认证后可显式resume同一候选，不重刷；首个WiFiProv GetInfo仍须核完整新instance／空根。下一步由同一内测包可关联的正常登录收敛认证，若需代发新码须另行允许一次，不重放旧码或配置。临时2台按§23保持期限／验收后撤销，无SDK／服务／产品源码改动或推送。下方旧停点冻结。
+
+**最新停点：用户已允许的一次真实验证码发送完成，等待本次验证码。** 见[全流程入网方案 §24](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#24-on-7c授权的一次真实发码等待用户验证码2026-10-31)。原App固定邮箱／原ALTCHA按钮链，challenge1、code POST1、login0，真实200；没有logout、直接认证fetch或重发。临时2台及原COM11 NVS保护沿§23，现装App／固件复用；收到码后仅原页面登录一次，核同账号新session及旧授权／UNKNOWN不变，再按真实近期门槛做一次同板空根首装。当前没有清NVS、创建身份、WiFi下发、新构建或推送。以下§23及更早停点历史冻结，不再询问已批准的单次发码或重新发送。
+
+**当前停点：COM11同板首装准备已推进，仅剩近期认证门槛，不清根。** 见[全流程入网方案 §23](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#23-on-7b同板首装准备限定额度及实际认证门槛2026-10-31)。用户已批准临时2台；正常正式Auth管理员POST／GET核2，直接Auth解析及me均200／revision2，套餐和其他权益不变，覆盖至2026-11-01 10:06:25上海时间、验收后正常撤本批覆盖。写后Gateway旧缓存1曾使原工具停止；自然过默认缓存期后仅一次显式GET协调200／264ms，Gateway已看见2／revision2，未重发POST、清缓存或重启。COM11原20KiB NVS已新鲜保留并ROM验证，103c／根／Key／任务／分区同原；App session、3项secure／旧UNKNOWN及完整journal／日志保持。精确近期认证marker为MISSING／PTTL-2；当前实际App没有密码登录UI，旧“已有密码重登录”假设纠正，不发码／退出当前会话或用refresh替代认证。现有e6c9／c051及PoP复用，新guard只在真实近期登录后允许全新instance／独立身份首装；未擦除／创建／Bootstrap／WiFi／构建／部署／升级SDK／提交推送。下一步需正常同账号primary login，若需代操作邮箱验证码须用户另行允许一次；先备齐工具，不重复§15～21或重放UNKNOWN。下方旧“当前／下一步”均历史冻结。
+
+**当前停点：ON-4正常前台入网→Cloud确认→一次自动进入已真机有限收口，可冻结，不再默认重复配网。** 见[全流程入网方案§15](DEVICE_V2_ONBOARDING_COMPLETION_EXECUTION_PLAN.md#15-on-4f匹配安装及正常自动进入真机有限收口2026-10-31)。匹配beta `95c7ada2…7a73bc`已安装一次，沿原COM11身份／Admin唯一新WiFi调用7647ms成功、clearState25ms；四次合法计划观察后三次unconfirmed转online，同instance／CAS的新会话及State成立，随后原owner context读取及目标路由自动进入恰一次，无人工open／check。账号／3项secure／UNKNOWN／完整journal及原固件、根、任务摘要、分区终核保持；观察器／9479转发回收，App停首页。未刷板、改服务、发码、升级SDK或提交推送。**限于已有根BLE正常路径**：新版后台显式恢复、自然超时／UNKNOWN、SoftAP／OEM、最终实时Close ACK及其他视觉专项仍单列，不冒称已验；LAN后置。后续只处理具体未覆盖路径或新缺陷，不重开同路径样本／审计循环。本段为唯一当前指针，下方为历史冻结记录。
+
+**当前停点：AR-4v BLE已有根保留身份重配的缺失段有限通过。** 见[修复方案 §39](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#39-ar-4v现有身份的ble-wifi-only补段2026-10-30)。当前COM11与本机active Admin匹配；补齐显式BLE只读身份准入，避免不必要的Key reveal／Admin重登记，并窄修云端Admin GET405。一次新WiFi调用7629ms后success=true，原clearState23ms完成并进入原设备；新云Presence／新请求State响应独立核对。新beta `b2aec069…34c660`和原Core BLE候选保留；根／instance／任务摘要及App账号、3项secure、完整journal不变，旧allocation／UNKNOWN未删除、未重放。无解绑／创建／Bootstrap、验证码、自动业务重试、SDK升级或提交推送。
+
+**剩余主线：SoftAP成功终态与受限入口，不重复BLE。** 手动SoftAP已有§34真实云上线但旧回执仍UNKNOWN，不能用BLE成功改写；自动managed在该手机继续冻结。新版UNKNOWN持久恢复的三项正向仍待自然样本，不补造。下一批只梳理新的必要差异条件与身份支持边界，不默认清根、解绑或重发旧请求。本段及§39替代下方所有历史阶段的“当前／下一步”，AR-4整体仍开放。
+
+**当前主线仍是设备接入，不是自动化或任务扩展。** 顺序为BLE／SoftAP发现连接→原身份与WiFi下发→云上线及异常收尾；本批已补BLE保留身份成功链，不转回已通过项反复校验。
+
+**当前停点：AR-4t持久只读恢复的软件有限通过，尚未部署。** 见[修复方案 §37](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#37-ar-4t同账号unknown持久只读恢复2026-10-30)。原allocation内仅保存新版真实UNKNOWN的非秘密metadata，固定24h、不补造旧记录；同账号初始化只列本地提示，用户点击才查询，过期／时钟异常／CAS变化禁读，清提示不删原意图或授权。58个不同新增有限用例及类型检查分批通过；无APK、云部署、设备操作、验证码、SDK升级或提交推送。软件到此冻结；后续仅按实际新记录安排自然重启短差异，没有样本就保留待测，不反复解绑／重配。主线及收口约束见§37.5，以下旧“当前／下一批”均为历史记录，不构成自动新队列。
+
+### 历史冻结记录（以本节上方的当前停点为准）
+
+**当前唯一接续：AR-4s匹配部署与一次UNKNOWN只读协调有限通过。** 见[修复方案 §36](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#36-ar-4s匹配部署与一次unknown只读协调短验2026-10-30)。workflow并未缺失，已由原TS构建及真实dist入口核清；云端仅更新必要3文件Gateway，新beta单次构建、同签名安装，账号／3项secure／完整journal不变。复用现有COM11身份／固件，原按钮一次POST200／no-store约2.1秒，当前会话／最近State关联有效，页面同时保留UNKNOWN并显示云上线；无Bootstrap／WiFi／控制／新身份请求。原记录、授权及完整日志保持，Page／工具已回收，Gateway与App保持新版，其他3个服务不重建。**该短验是已验证历史证据导入的真实只读链路，不是自然冷启动恢复。** 下一批仅补非秘密、有界、不可重放的公开checkpoint及显式只读恢复入口；不从旧allocation补造UNKNOWN、不重跑首装或已过矩阵。本批未发码、升级SDK、提交推送；以下AR-4r及更早段落均为历史冻结记录，其旧“当前／下一步”不构成新队列，以本段与§36.4为准。
+
+用户已选择按[设备接入修复方案](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md)顺序实施：先 AR-1 正常取消分类、扫描／发送互斥及离页回收，再 AR-2 冷重配新鲜上下文；SoftAP 原 SDK 网络隔离先核方案，S3 连接另需匹配候选。不得把正常返回未复现的 BUSY、既有身份恢复或未开放的组合直接写成已修／已验。不扩任务、OTA、动态双路配网、SDK 或云准入，不部署服务或提交推送。
+
+**最新唯一停点：AR-4r回执与只读协调软件有限通过，尚未部署／真机。** 见[修复方案 §35](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#35-ar-4r官方回执合同适配层竞争与只读协调2026-10-30)。官方状态查询／自动停止合同已核；host复现并修正typed成功回调排队后AP撤除被误判，仍保留同owner／request／原Security1与先取消／断链UNKNOWN。复用原resolve-instance的owner-only新鲜会话／State只读变体及App显式核对，真实owner死亡前不查询，不用ready解隔离；后台保留已提交未知checkpoint，晚回调不升级，已确认成功也不降级。原WiFi UNKNOWN不改写，账号／授权／完整日志及意图保留。原生9项、Gateway8＋3叶子、App读取15／协调13／Page8／模板1有限用例及最终TS通过（分批，不称完整集成）。Gateway原缺interface-workflow模块的启动阻点单列。下一步只核完整交付消费者后安排必要匹配部署和一次只读协调短验，不重发旧写、不重复已过矩阵。本批无APK／服务部署、设备操作、发码、SDK升级或提交推送；后文旧“当前／下一批”均是阶段历史，以本段及§35.5为准。
+
+**AR-1 结果冻结：软件有限通过。** 原生 owner 取消分类 8／8、App 4 文件 57 项通过／7 跳过，原 SDK 单次 beta Java 编译成功。函数／原模板互斥、缓存离页／后台清理、未知 close fence 和旧身份 Promise 跨重入禁写已补；未安装新版或开展真机连接，原生匿名连接晚事件仍单列。详见[修复方案 §8](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#8-ar-1-实施与有限结果2026-10-29)，AR-2 接续结果取下一段，不把 AR-3／4 设计或待测写成完成。
+
+**AR-2 结果冻结：软件有限收口。** 新鲜 owner 详情薄读取、成功／失败 no-store、首次账户恢复、固定重配意图及原 CAS／UNKNOWN fence 已实施；App 选定 7 文件 98 个不同用例分批通过，Gateway 有限组合 11／11 通过，另有既有 inventory 断言漏 displayMetadata 原失败单列。原模板仅补等待／禁用语义，旧 WebView 取消兼容已红绿验证。未部署服务、安装 App、刷板、发码或提交推送，原账号／授权／完整日志保留。详见[修复方案 §9](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#9-ar-2-冷重配上下文的软件收口2026-10-29)；AR-3 接续取下一段，不重复已过业务矩阵。
+
+**AR-3a 结果冻结：安全前置有限通过，SoftAP 全链路仍未完成。** 复用原身份链增加固定实际传输的 10 方法 Cloud 门禁，未确认的 SoftAP 在新建 HTTP／本地 pending 意图之前停止；本页未知网络状态不会因改 UI 或 clearState 返回而解除，AR-2 读取及成功后目录刷新也受保护。已确认身份的 WiFi-only 快路保留。四文件 82 个不同用例分批通过（最后受影响两文件 43／43）；当批无插件／服务／SDK变更或部署、刷板、发码、提交推送。原分批合同见[修复方案 §10.4](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#104-ar-3b-最小接续顺序原分批合同进度取-11)，当前进度取下一段；不是进程网络隔离或报告 #33 真机销项。
+
+**AR-3b-1 结果冻结：原生终态与只读观测软件有限通过。** 插件以薄 CallScope＋main actor 保护原 connect／selection／RPC／cleanup，取消／未知只终态一次，未确认 scope 保持禁入，SoftAP 自有晚 callback 不再访问新 device；新增 Android 四布尔 getInternetState，不含网络标识，不解禁门禁。原 JDK 主机合同 23／23、原 TS noEmit、匹配插件源码的原 SDK App Java 编译通过；不是 Android 运行时／物理关闭／Cloud 可达验收，正常已完成 BLE 会话的匿名事件窗口仍属 AR-4。App 产品源码与原账号／授权／UNKNOWN／日志不动，无服务／设备操作或部署、发码、升级 SDK、提交推送。见[修复方案 §11](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#11-ar-3b-1原生退出终态与网络只读观测2026-10-29)，后续夹具结果取下一段。
+
+**AR-3b-2 结果冻结：桥接主机回归完成。** 新夹具直接运行原插件，外部边界不吞重复终态／迟到回调；22／22 通过，真实复现并修复销毁后排队进度与连接元数据异常悬挂两处缺陷。两项严格断言定向复验及原 SDK 插件 Java 编译通过，无安装／设备／服务操作，不代表 Android、无线栈或完整 handoff 已验。详见[修复方案 §12](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#12-ar-3b-2实际桥接主机回归与有限缺陷修正2026-10-29)，支持合同接续取下一段。
+
+**AR-3c 结果冻结：受限支持与跨页门禁软件有限收口。** 已先冻结 BLE 原 Cloud／Local 链、SoftAP 仅本页已确认身份 WiFi-only 快路的边界；完整 SoftAP 首次认领／冷重配仍未开放。新增进程单向 SoftAP 标记及独立只读 API，页面重建不忘禁入，false／ready／等待均不解除；BLE UNKNOWN 保留云端只读协调。App 有限回归首组 50／50，终审仅受影响 26 项及收尾 2 项分批通过（不累加重复）；原生新增 6 项主机合同、原 TS 与实际插件原 SDK 定向编译通过。另修已确认 WiFi 被未知 close 降为失败，保留结果同时保持 fence／journal。详见[修复方案 §13](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#13-ar-3ccloudlocal-受限支持与跨页门禁2026-10-29)，选型与实施接续取下一段。
+
+**AR-3d 结果冻结：主线纠偏、方案选定及权限前置有限收口。** BLE／SoftAP 均为 ESP32 WiFiProv 配网 bearer，不是 BLE-only／日常 Direct；实际默认 BLE（需 IDF-NimBLE），SoftAP 需显式编译选择。旧默认冲突已纠正，选择原插件内部专用进程、保留 SDK2.4.4 与身份链。已修 API31／32 SoftAP 定位漏申、App 对 prompt／空状态误放行及原生网络前复查；新原生7项、App25项、原TS与SDK编译有限通过，非真机／部署证明。见[修复方案 §14](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#14-ar-3d配网主线复核与完整-softap-最小实施决定2026-10-29)，原生接续结果取下一段，不重复历史队列。
+
+**当前接续：AR-4a匹配安装及双路径真机已执行，整体未通过。** [修复方案 §17](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#17-ar-4a匹配安装与两种配网的实际短验2026-10-29)记录本批实际结果：同签名新版beta已覆盖安装并核APK含新WiFiProv worker／原SDK2.4.4；COM11同实例两种内部候选沿Core3.3.11串行完整链接、只写应用。BLE精确发现／连接1235ms、扫描6147ms、GetInfo153ms及原实例云解析200；因旧根缺当前App管理员凭据，原身份保护拒绝，未写身份或WiFi。SoftAP实际create隔离owner成功，但系统NetworkRequest授权Activity触发active=false，Page在72ms内取消connect；一次明确手动预连／返回重开仍65ms取消，未再循环。取消关闭和最终无worker已核，不等于完整回网／新入网成功。App账号／安全存储／完整intents精确不变，COM11原D4应用／完整20KiB NVS／原表已ROM verify恢复，手机回mostfun2026，COM9未动。下一批只先补系统授权遮挡与真实后台的生命周期关联及最小接线，再核正规旧根凭据恢复／WiFi-only合同；不忽略全体后台、不以ready／等待解禁、不删授权门禁或导出秘密伪造凭据。需要新身份／清根／近期登录须先明确范围，不发验证码。AR-3f的133个不同软件用例冻结不重复累计；两条身份→WiFi→云上线、AR-4和#33仍未关闭。本批无产品源码变更、服务部署、SDK升级、自动重试器或提交推送，授权／CAS／UNKNOWN／完整日志和无关修改保留。
+
+**AR-4b现行停点：生命周期修正及true stop有限通过，SoftAP全链路仍开放。** 见[修复方案 §18](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#18-ar-4b同owner连接的授权遮挡与后台边界2026-10-29)：App85个不同有限用例、受影响native8项及匹配原SDK构建通过；pause-only不再65～72ms取消，真正stop同owner在1ms启动关闭／68ms获death，返回不重连。系统截图证实另有“不可上网／继续使用”确认未接受，前三次仍到父RPC20s；不能称SDK缺陷／SoftAP通过，目标WiFi列表实际点选也未覆盖。下一批只先完成这个系统授权前提，再按首个停点决定是否补child阶段诊断；不再盲重连／延长截止，不用SSID／IP／ready解禁。原根管理员前提、完整身份→WiFi→云上线仍开放，不清授权。最终匹配beta已安装且diagnostics=false，COM11原D4应用／20KiB NVS／原表精确恢复，账号／session／授权／TaskStore／journal不变；无服务部署、发码、自动重试器、SDK升级或提交推送，COM9与无关修改不动。
+
+**AR-4g软件结果冻结：显式手动只读兼容软件完成，尚未安装真机。** 见[修复方案 §23](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#23-ar-4g显式手动连接的只读软件兼容2026-10-30)。原WiFiProv新增可协商的system-connected模式，保守限Android31+、真实Fine／Coarse／Nearby及定位服务、唯一主WiFi／精确SSID；worker只调原SDK无参入口，并在SDK结果／操作／扫描回调重核原网络与binding。App显式入口等待旧owner退休后新context／worker，只展示只读扫描；UI与原生均禁止custom／身份／Key／WiFi／reset，模式不自动fallback。修复旧密码透传、扫描失败退休及等待退休时换号三处边界；true stop、90／60、UNKNOWN／死亡释放不变。App32项不同有限用例、native31项不同host合同、TS及原SDKJava56s编译通过；Web运行／Swift静态及测试配置失败按专项单列，不算真机。唯一下一步为匹配TS／Java／权限的beta一次系统已连热点→SDK能力／真实扫描→离页回收短验，结束明确恢复，不接身份／WiFi写入。§22本机自动入口失败仍冻结，不再加预算／重跑BLE；完整CloudLocal手动重入及AR-4完整入网未关闭。当前现场沿用§22恢复态，本批无ADB／刷板／部署、验证码、SDK升级、自动重试器或提交推送，授权／UNKNOWN／完整日志及无关修改未动。
+
+**AR-4h真机结果冻结：匹配手动只读真机有限通过，已恢复现场。** 见[修复方案 §24](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#24-ar-4h匹配手动只读候选真机短验2026-10-30)。唯一匹配beta构建／安装，原SDK2.4.4、实际TS／Java消费者及精确AP NSC核同；仅COM11复用既有候选。错误SSID一次26ms拒绝并关闭；系统已连正确AP后新owner无参SDK一次connect243ms、设备scan3768ms，10行全只读、无身份／WiFi写入口。Home后pause→close8ms、close→dead99ms、随后stop；返回不重连，后续首页无资源。权限仅已授权路径，未独立重连测活连接离页；全局account/connection仍有GET／OPTIONS DNS失败，不声称全App零HTTP。原APK、原D4应用、新鲜20KiB NVS及原表已核恢复，账号／完整session／授权／TaskStore／intents精确保持，手机回mostfun2026；无服务部署、发码、SDK升级或提交推送。自动SoftAP失败继续冻结，AR-4完整入网与#33仍开放；下一阶段先定公开handoff／旧owner死亡／新context同实例根及Cloud恢复合同，不从只读成功放开写权限或以ready／等待解禁，不自动开始新测试队列。
+
+**AR-4i软件结果冻结：交接安全前置及全局账号查询隔离软件有限通过。** 见[修复方案 §25](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#25-ar-4i完整softap交接合同与最小安全接线2026-10-30)。后台仍取消旧generation／await／owner，仅死亡后显式阶段等待可保留无密钥、单次、不可反序列化导入的公开回执；返回不操作，原重新开始后新owner真实GetInfo与账号／CAS／instance／epoch／根状态匹配才消费，失配先停在身份操作之前。SoftAP create前独占Local租约暂停原account-client与凭据HTTP，取消在途订阅；缺隔离owner、legacy危险标记或关闭未知不释放，旧页不能清理另一页owner。释放不start，原退避不改，timer增加代次／重入保护。67个不同有限用例及最终TS通过，非真机／密码学同根／UNKNOWN协调成功证明；原GetInfo没有root指纹，手动仍两层禁止custom／身份／WiFi写。下一批只先定固定GetInfo窄能力合同，不直接开放完整手动写入；自动入口冻结、AR-4与#33仍开放。本批未部署、构建安装APK、操作设备／账号／授权／UNKNOWN、发码、升级SDK或提交推送，无关修改及完整日志保留。
+
+**AR-4j软件结果冻结：手动固定GetInfo窄读取软件及原SDK编译有限通过。** 见[修复方案 §26](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#26-ar-4j手动模式固定getinfo窄读取2026-10-30)。新独立cap与无参readBlinkerConfigInfo仅限API31+已连接manual隔离owner；固定原SDK端点／02 01，严格24B成功或3B明确拒绝，parent注入实际live owner，opaque UNKNOWN／原20s／单终态及禁写不变。App新能力true才只读核对，复用原decoder，handoff只比较不消费，无分配／Admin／身份／WiFi写入。另修旧读取finally清新run准备标记，使用本次preparation token。App30个不同用例、native14项host、Web实际1及两项静态合同通过；TS及SDK2.4.4定向Java40s通过，非iOS／APK／真机完成。GetInfo可能设置设备RAM重配门闩，不能称无副作用或授权。本软件批未部署、安装、操作账号／设备／授权／UNKNOWN、发码、升级SDK或提交推送，完整日志及无关修改保留；匹配短验的接续结果取下一段，完整手动入网、AR-4和#33仍开放。
+
+**AR-4k最新停点：新增固定GetInfo真机短验有限通过，原现场已恢复。** 见[修复方案 §27](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#27-ar-4k匹配固定getinfo的com11只读短验2026-10-30)。唯一匹配beta构建安装，仅COM11既有候选一次manual：新cap为true、connect226ms、固定24B读取472ms，instance／epoch与原NVS同一、owner标签一致；一次依赖scan十行只读。唯一无害generic GetInfo探针被READ_ONLY拒绝，无身份／WiFi写；这些写门禁由实际消费者、既有host及本次UI核对，未发有效写探针。Home后13ms启动close、78ms获dead，stop／resume仍退休，返回不重连／重读，后续首页无资源；不声称另测活连接离页。Local之前账号查询DNS失败及离页后新查询保留，Local期间未见新account GET，不冒称全App零HTTP。启动准备的PHY校准digest差异／离线blob块数拒绝及一次热网络reset失败已单列，最终先恢复初始NVS再用五WiFi键冷profile，未重发业务连接。原APK、原D4应用、完整20KiB NVS及原表均核恢复（非8MiB全片）；账号、完整session、安全存储、授权／TaskStore／intents精确保持，手机回mostfun2026。日志／截图及失败记录保留，无服务部署、发码、SDK升级或提交推送。下一批只先明确显式身份／WiFi写阶段与已有根授权及Cloud交接合同，不从公开GetInfo／RAM门闩授予写许可；AR-4完整入网与#33仍开放。
+
+**AR-4l当前停点：显式写入合同及安全前置软件有限通过，手动写路径仍关闭。** 见[修复方案 §28](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#28-ar-4l显式写入与已有根授权合同2026-10-30)。先分空根全新事务、已有完整根和旧未决意图；隔离SoftAP支持Bootstrap路径用只读inspectExisting核active全权限Admin／Cloud元数据／CAS，不再用可能重放的resume。新preflight涵盖legacy／enrollment记录，pending／rotation／UNKNOWN先停；fresh-only prepareNew在原锁内拒绝旧allocation，缺能力不fallback。原身份／阶段／CAS复用，BLE及未接本合同的旧恢复保持；当前system-connected始终两层只读。32个不同有限用例及App／选定回归TS通过，测试环境／fixture失败记录保留；非新手动写入或密码学根认证真机证明。下一批只接独立用途／新owner／实际Security1与约定非空PoP的空根窄Bootstrap→ACK→一次WiFi，仍禁任意custom／Install／reset；已有根新手动写继续关闭。无部署、安装、刷板、发码、SDK升级、授权／UNKNOWN改动或提交推送，无关修改及完整日志保留；AR-4和#33不关闭。
+
+**AR-4m结果冻结：原生空根首装窄能力软件有限通过，当批尚未接App／真机。** 见[修复方案 §29](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#29-ar-4m空根首次接入的原生窄写能力2026-10-30)。独立create-only用途＋新owner，实际Security1／原约定非空PoP／no_pop核对；首次真实空根GetInfo后仅固定101B Bootstrap（epoch／controller版本1），精确ACK后同owner一次原SDK WiFi。普通只读owner和已有根不放开，通用custom／Install／reset／generic provision仍拒绝；parent仅注入当前live owner，取消／网络漂移／不确定结果维持UNKNOWN及死亡隔离。另修SDK异步使用前提前清零请求：真实终态回收，未知待进程死亡，不允许迟到ACK续写。23个不同native host方法＋3项跨平台合同、插件／App TS及原SDK2.4.4单次离线Java51s通过，实际class消费者核同；非APK安装／无线／iOS验收。唯一接续是明确非空PoP来源／匹配候选，再接原App空根首装薄端口及既有Cloud／Local／allocation／Admin／CAS／意图链，先软件后有限真机。无部署、安装、刷板、发码、SDK／依赖升级、授权／UNKNOWN改动或提交推送；完整日志和无关修改保留，AR-4及#33不关闭。本段为AR-4m阶段冻结记录，最新接续见下一段。
+
+**AR-4n结果冻结：空根首装App薄端口及软件有限回归完成，当批仍待匹配构建／真机。** 见[修复方案 §30](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#30-ar-4npop匹配与app空根首装薄端口2026-10-30)。PoP由设备固件／提供者约定、用户显式输入，不从SSID／Key／账号派生或持久保存；普通产品默认仍无PoP，旧COM11镜像不匹配，新可选`BLINKER_V2_WIFI_PROV_POP`薄配置复用原adapter。App新用途先确认旧owner死亡，重新核cap，缺隔离owner在connect前停止；沿原Cloud／Local、fresh-only allocation、Admin、CAS及持久意图，回Local新owner／同instance／epoch／根、精确Bootstrap ACK后仅一次typed WiFi，无generic fallback或旧UNKNOWN重放。App32个不同有限用例、库侧6项及最终两组TS检查通过，测试／模板／类型失败和定向修正日志保留；非完整Arduino／APK或无线验收。已有根手动写继续关闭，真正后台不保活，AR-4及#33不关闭。下一批仅匹配非空PoP候选与App必要定向构建后再约COM11短验，不重开BLE／只读矩阵。本批未部署、安装、刷板、发码、升级SDK／依赖或提交推送，账号／授权／TaskStore／UNKNOWN、完整请求日志和无关修改保留；以上AR-4m及更早停点为历史冻结记录，以本段为准。
+
+**当前唯一停点：AR-4o匹配构建及COM11非空PoP读取有限通过，完整首装未通过。** 见[修复方案 §31](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#31-ar-4o匹配非空pop候选与com11空根短验2026-10-30)。匹配beta同签名安装并核1156份Web资产／原生class／SDK2.4.4；唯一Core3.3.11 SoftAP完整链接384.301s，0槽／1,396,416B。用户已明确允许COM11覆盖、结束不恢复；新鲜旧应用和20KiB授权／任务快照保留，板上现为新空根实例／PoP候选，原任务不恢复，COM9未动。真实create341ms／connect178ms／scan3889ms及同owner空根GetInfo120ms通过，Cloud前60ms关闭；首个只读resolve因仍在设备AP而DNS失败，没有CREATE／Admin／reveal。纠正后的一次新owner连接亦未确认，已越过原10分钟配网窗口，串口最终NotConnected；不据此认定PoP／SDK缺陷，不再循环。Bootstrap／WiFi均0次，云上线未完成，AR-4／#33不关闭。账号／session／原安全存储及journal哈希保持，原UNKNOWN不动；App仍登录，近期认证门禁未到达，不能说登录失败。手机回mostfun2026／首页，无worker／9479转发／采集器；匹配App及原始日志保留，无服务部署、发码、SDK升级或提交推送。下一批仅先核10分钟窗口内的实际Cloud互联网／Local精确AP切换，保留死亡／显式继续及真正stop取消，前提核清后才补ACK→一次WiFi→上线；不重编已过产物或重跑BLE。以上AR-4n及更早停点均为历史，以本段为准。
+
+**当前唯一接续：AR-4q原窗口的设备入网已证实，只处理WiFi回执UNKNOWN的定位／只读收尾。** 见[修复方案 §34.4～34.5](DEVICE_V2_DEVICE_ACCESS_REPAIR_EXECUTION_PLAN.md#344-一次原窗口实测云上线通过wifi回执unknown保留)。用户重新正常登录后，仅COM11一次复位、原10分钟内完成不同新owner、同instance／epoch0核对、唯一Bootstrap精确3B `[02,03,00]` ACK及一次typed WiFi调用。WiFi调用7675ms返回UNKNOWN，未重发；随后独立只读核Gateway同instance新TLS会话active、Broker在线／新Manifest及同session新State，窗口后约4分38秒完成，串口cloudReady1佐证。**不能将设备已上线补写成旧RPC成功，App完整成功收尾仍未通过。** 最终同一正式账号完整session及原journal不变，新增Admin凭据和allocation、云设备及UNKNOWN／完整日志保留；手机回互联网、worker／观察器／转发回收，COM9不动。无重建／刷写／清NVS／发码／SDK升级／提交推送。下一批只定位原SDK确认／网络失效分支，复用原owner只读协调分别展示上线与回执未知，不自动重发、重开Auth／Direct或重复已过owner／ACK／云上线矩阵；AR-4／报告#33整体仍开放。更早段落为历史结果，以本段为准。
+
+## 现行入口：核心剩余内容分类与最小执行顺序（2026-10-29）
+
+当前结果统一取[核心剩余计划 §10](DEVICE_V2_CORE_REMAINING_EXECUTION_PLAN.md#10-next-2-匹配-app-安装与两页只读短验2026-10-29完成)：**NEXT-1 软件修正与 NEXT-2 匹配 App 真机短差异均已有限收口。** 原 42 项有限软件证据冻结；原工具链唯一 Web→copy→离线 APK 构建及同签名覆盖安装完成。H1／H2 真实读取失败→后台→返回 3 秒均不新增目标 GET，原按钮恢复可用；各点击一次后 H1 取得 200／no-store 和 50 行，H2 history／policy 均取得 200／no-store，策略恢复、历史为空合法。账号／授权／完整请求意图库保持，最终首页及本批阻断／监听／转发全部回收；H2 初次取消 policy 的关联 OPTIONS 无终态原记录保留，不冒称全部 CORS 生命周期完整。未刷板、部署服务、发码、升级 SDK 或提交推送。
+当前两项队列结束，不自动转入其他阶段。已完成基线、受限准入、自然样本欠证及后置扩展分开记录；R4 固定四槽 Plain 已有限收口，普通默认 0 槽，Wio 正式准入暂缓。CI／发行仍由用户暂缓，不拼接旧批次的“下一步”生成新队列。
+
+## 发行分支快照：源码已交付，CI 授权及发行已暂缓（2026-10-29）
 
 以[发布方案 §14.9](DEVICE_V2_LIBRARY_RELEASE_AND_AILY_BUILDER_PLAN.md#149-现行结果与发行决定源码已交付私有-oracle-授权待补hold)为唯一发行停点，统一输入用法见[API 说明](DEVICE_V2_LOCATION_INPUT_API.md)。
 设备库 `device_v2` 已交付 `b3f0b106ca2eaecab991048889ab1fedc5bcc532`；Builder `i3w-builder` 已交付 `e18855124a03e40ec10f47912e62db113dbf2716`。
@@ -9,10 +180,31 @@
 C++／App TS golden 通过，服务端 BLE oracle 明确缺少私有 `aily-blinker-services` 源码；当前没有专用跨仓库只读 CI 凭据。
 Host 总门禁未过，受限 cloud-beta 两目标及定位输入候选被正确跳过；**没有匹配可发行 ZIP，不批准发行**。旧多平台矩阵问题另列，不放宽门禁或支持范围。
 
-**下一步只补经用户确认的私有服务仓库只读 CI 授权与匹配 checkout／真实 package 链接。**
+**仅在用户恢复发行阶段后，才补经确认的私有服务仓库只读 CI 授权与匹配 checkout／真实 package 链接；当前不执行。**
 建议专用只读 Deploy Key，仅存 Actions secret；不使用服务器部署密钥或个人管理员凭据，不复制私有源码到公开库，不自造 oracle。
-前置满足后再完成同提交 CI、候选校验与发行复核；此前不重复必败队列，也不重开定位、SDK、硬件、App H1／H2 或资源审计。
+前置满足后再完成同提交 CI、候选校验与发行复核；发行队列不重复必败运行或重开定位、SDK、硬件及资源审计。App H1／H2 真实缺陷独立按上述剩余计划处理，不受 CI 暂缓阻塞。
 R5／LOC-5b 的旧摘要和安装／完整链接证据保持历史身份，不冒充本次远端候选结果。
+
+### 已通过：LOC-4d App 网络参考按需入口
+
+结果取[定位方案 §17](DEVICE_V2_DEVICE_LOCATION_IMPLEMENTATION_PLAN.md#17-loc-4d-app-网络参考入口2026-10-29有限收口)。
+App复用原位置页／Bearer／可见性生命周期，新增严格有界DTO及GET薄服务；选“网络参考”不请求，按钮仅查一次，禁止鉴权重放。
+网络结果只显示文字／来源／时间／固定DB-IP回链，不进地图或改安装位置CAS／设备GNSS；后台、离页、切源及账户／owner变化取消并清空。
+5文件134项有限回归通过；原脚本一次匹配beta构建及同签名覆盖安装、1153份APK/Web资产匹配，原锁／dirty原生设置保持。
+真实DOM：选择0次GET、按钮一次GET200约191ms（另有正常OPTIONS204）；城市／时间／来源显示，后台返回清空且无自动补查，离页已回收。
+新版beta／原账号／原store／完整journal保留，journal未变；沿用§16服务／单设备名单，本批未刷板／重认证、改Key／TaskStore／云scope或部署服务，未提交推送。
+**网络城市owner按需入口至此有限收口，不重复§16～17。** 后续硬件／输入职责以用户确认后的§18为准，不再要求先提供具体模块。
+长期在线来源／多副本、换月运维、真实双账号撤权及完整视觉矩阵分别后置。
+原hint最多10分钟，超期／重启／缺失正常unknown，不强迫认证、延长旧来源或新增后台采集；GNSS绑定／背景仍0/0。
+
+LOC-3最近位置／后台与离页Close、返回新nonce已在[§13](DEVICE_V2_DEVICE_LOCATION_IMPLEMENTATION_PLAN.md#13-loc-3-app-最近位置与页面生命周期2026-10-29有限收口)有限收口；
+原匹配beta／已验四槽固件与关闭定位准入基线沿用上批，不冒称本轮重核运行现场。真实GNSS／物理停包、轨迹／分享／离线Bulk继续单列。
+
+## 既有实物失败记录：H1／H2按钮禁用，现已完成匹配 App 差异（2026-10-27原记录）
+
+**最新限定真机结果：** [活动方案§11](DEVICE_V2_DEVICE_ACTIVITY_EXECUTION_PLAN.md#11-h1h2相邻读取恢复的匹配app短验2026-10-27)完成原SDK唯一构建及同包同签名覆盖安装，账号／完整session／授权、两份完整intent及日志保留。两页真实读取失败后HOME→解除阻断→返回3秒均不新增GET，但刷新按钮仍保持后台disabled，**手动恢复未通过，不能关闭本项**。已回首页并回收阻断／监听／转发，没有发出恢复GET、HTTP写入、验证码、SDK升级或Git提交推送。H2规则实际同时命中policy的工具限制与调试连接首停均如实保留，不冒称精确独立policy验收。
+
+上述为当批原失败记录，不改写[§11.3](DEVICE_V2_DEVICE_ACTIVITY_EXECUTION_PLAN.md#113-真实首停两页新缺口及收尾)。响应式前台通知与模板红绿回归按[剩余计划 §9](DEVICE_V2_CORE_REMAINING_EXECUTION_PLAN.md#9-next-1-软件修正与有限回归2026-10-29完成)完成，后续匹配 App 安装／手动恢复按[§10](DEVICE_V2_CORE_REMAINING_EXECUTION_PLAN.md#10-next-2-匹配-app-安装与两页只读短验2026-10-29完成)有限通过；保留错误门槛／未知保存只读协调，不重新开D7c、归档、控制、任务或服务审计。
 
 ## 前期核心交付记录（2026-10-26，历史）
 
@@ -35,7 +227,7 @@ R5／LOC-5b 的旧摘要和安装／完整链接证据保持历史身份，不�
 
 剩余分类与最小启动顺序（不自动排成新测试队列）：
 
-1. **软件已关闭：H1／H2失败读取的手动恢复。** 17项有限回归及类型核查通过，已随App `a7c4ab1`进入远端；保存未知只读协调保持。原限定手机短差异未执行，不把Git交付当安装，亦不据此重跑D7c或其他已过闭环。
+1. **当前唯一已复现缺口：H1／H2失败返回后的按钮恢复。** 原17项页面类回归及已推源码保留，但§11真机证明它们漏了DOM按钮启用。只补前台signal投影及模板红绿回归；未确认前不把“无自动GET”当手动恢复通过，不重跑D7c或其他已过闭环。
 2. **D5／D6既有软件证据冻结。** D5组合配置护栏7/7及D6倒计时19/19保持；D6源码现已随后续匹配App纳入，历史当批“未安装”不是现行待办。没有重新真实发码验证，不冒称C6原现场问题的根因或真机通过。
 3. **自然覆盖欠证，不是新增实施阻点。** 自然UNKNOWN、超过20条活动UI分页、真实在途取消、独立GNSS／双账号位置继续列明未验；不造记录补证，不据此重部署或发码。
 4. **等待自然前置的运维与待定位项。** 旧本机H2仅在原库／原实例可用时正常owner只读协调并停用；云端disabled不代替它，不搬库、不重放。旧通知UNKNOWN、Error 8及SDK证书有效期支持边界保留，不重复采样。
@@ -1190,3 +1382,9 @@ S3 现场网络和 COM/设备身份必须重读；文档里的 SSID、IP、COM �
 - 恢复原板app／NVS授权并ROM verify：COM3 `0x9000+1,339,392 B` SHA`307c2e7f…514f6`，COM11 `0x9000+3,371,008 B` SHA`643cc58c…6ac7`；COM11本批fresh材料不同历史备份，不借旧SHA。system／分区／COM4不变，启动复位已发；安静原固件无登录指标，不能宣称恢复后新云登录。只撤本批proxy／17002／18884和ADB9334／17000／18885，保留新App／Gateway50／命名退休历史，不恢复DB／清App数据或降级旧APK。
 - 恢复后Gateway／Broker健康，env／ports／mount回baseline，原TLS／plain代理和CA保留，24个原非Gateway容器（含停止容器）ID／image／StartedAt不变。HTTPS healthz200、未认证自动化请求401且证书可信。证据保存在忽略目录`build/automation-product-m5-live-20261010`，含私有Flash／App数据／业务库／网络参数，不能整体上传／交付。
 - 后续仅修实际用户反馈或明确要求的独立交接／正式profile差异；不重新派发M5或自动扩多条件／多动作、Action、BLE-only／网关、全部scalar／平台、iOS、跨账号／片、长稳及生产发布。
+
+## 当前主线指针（2026-11-03）
+
+当前进度统一见[独立注册执行方案§14](DEVICE_V2_INDEPENDENT_ACCESS_REGISTRATION_EXECUTION_PLAN.md#14-ip-4-新身份-cloud-首装及保根注册差异2026-11-03)，以上历史结果不改。用户允许COM11覆盖、无需旧恢复；测试Auth本账号设备额度10留存。新Cloud首装、两卡独立ID／2→3→2计量、显式恢复、附近不串旧卡及仅删BLE保Cloud／根已有限通过。
+
+f878任务owner内同步Presence写自拒已修正，新BIN e48cffa…28f07及授权保留。最新[§15源码审阅与静态对齐](DEVICE_V2_INDEPENDENT_ACCESS_REGISTRATION_EXECUTION_PLAN.md#15-必要源码审阅选择器与发布冻结对齐2026-11-03)已关闭三项freeze／选择器差异，架构及App有限95项通过；下一仅在明确交付时冻结匹配WiFiProv旁仓及同提交CI。首次提交前未分类错误、BLE→Cloud及删源writer边界保持，不重采已过矩阵、不自动推送。
