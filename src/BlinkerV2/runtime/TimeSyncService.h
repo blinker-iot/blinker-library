@@ -19,6 +19,9 @@ public:
     void sendRejected(ErrorCode error) override;
     Result receive(const TimeSyncPeer& peer, const bbp2::FrameView& frame) override;
     bool readTime(WallClockSnapshot& snapshot) override;
+    // Internal coherent observation for consumers of UTC and elapsed time.
+    // Success means a configured monotonic source, not necessarily valid UTC.
+    Result observeTime(WallClockSnapshot& snapshot, uint32_t& observedMillis) override;
 private:
     WallClock clock_;
     TimeSyncCoordinator coordinator_;

@@ -5,6 +5,10 @@
 #error "WioTerminalBLEProduct requires a Wio Terminal target"
 #endif
 
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+#error "Wio persistent tasks are not admitted for the pure BLE product"
+#endif
+
 #include "../../internal/BleProduct.h"
 #include "WioTerminalBLEPlatform.h"
 #include <BlinkerV2/api/BlinkerFacade.h>

@@ -14,6 +14,10 @@
 
 namespace blinker {
 
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+class Esp32WiFiProvRekeyCandidate;
+#endif
+
 enum class Esp32WifiProvState : uint8_t {
     Stopped = 0U,
     Running,
@@ -56,9 +60,17 @@ public:
         IWifiCredentialSink& wifiCredentials);
     ~Esp32WifiProvAdapter();
 
-    Result begin(const Esp32WifiProvConfig& config);
+    Result begin(const Esp32WifiProvConfig& config
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        , Esp32WiFiProvRekeyCandidate* rekey = nullptr
+#endif
+    );
     void poll();
     void end();
+
+    // True only after actual manager deinitialization (or no manager start),
+    // never because an END request or a bounded shutdown timeout elapsed.
+    bool shutdownComplete() const { return !managerInitialized_; }
 
     Esp32WifiProvState state() const {
         return static_cast<Esp32WifiProvState>(state_);
@@ -107,6 +119,10 @@ private:
     volatile bool managerInitialized_;
     volatile bool serviceStarted_;
     volatile bool stopRequested_;
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+    Esp32WiFiProvRekeyCandidate* rekey_ = nullptr;
+    void releaseRekey();
+#endif
 
     Esp32WifiProvAdapter(const Esp32WifiProvAdapter&);
     Esp32WifiProvAdapter& operator=(const Esp32WifiProvAdapter&);
@@ -114,7 +130,12 @@ private:
 
 #if UINTPTR_MAX <= UINT32_MAX
 static_assert(
-    sizeof(Esp32WifiProvAdapter) <= 20U,
+    sizeof(Esp32WifiProvAdapter) <=
+#if defined(BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY) && BLINKER_INTERNAL_ESP32_WIFIPROV_REKEY
+        24U,
+#else
+        20U,
+#endif
     "ESP32 WiFiProv adapter exceeds its 32-bit ABI gate");
 #endif
 

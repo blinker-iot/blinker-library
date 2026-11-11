@@ -9,12 +9,23 @@
 #include "../../internal/WiFiProduct.h"
 #include "UnoR4WiFiPlatform.h"
 #include <BlinkerV2/api/WifiDeviceKeyProfile.h>
+#include <BlinkerV2/api/TaskSupport.h>
+#include "../../config/TaskConfig.h"
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+#include "../../ports/uno_r4/UnoR4TaskBuildContract.h"
+#include "UnoR4WiFiTaskExtension.h"
+#endif
 
 namespace blinker {
 namespace integration {
 namespace official_detail {
 
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+typedef DeviceKeyWifiProduct<RenesasUnoWifiNetworkPlatform,
+    RenesasUnoWifiTaskExtension<DeviceKeyWifiStack<RenesasUnoWifiNetworkPlatform>, BLINKER_TASK_CAPACITY>>
+#else
 typedef DeviceKeyWifiProduct<RenesasUnoWifiNetworkPlatform>
+#endif
     RenesasUnoDeviceKeyWifiProduct;
 
 inline RenesasUnoDeviceKeyWifiProduct& renesasUnoWifiProduct() {
@@ -24,6 +35,18 @@ inline RenesasUnoDeviceKeyWifiProduct& renesasUnoWifiProduct() {
 
 } // namespace official_detail
 
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+template <>
+struct TaskSupport<WifiDeviceKeyProfile> {
+    template <typename... T>
+    static Result configure(Property<T>&... properties) {
+        const Result ready = official_detail::renesasUnoTaskBuildReady();
+        if (!ready) return ready;
+        return official_detail::renesasUnoWifiProduct().extension().configure(properties...);
+    }
+};
+#endif
+
 inline IProductLifecycle& lifecycle(const WifiDeviceKeyProfile& profile) {
     official_detail::RenesasUnoDeviceKeyWifiProduct& selected =
         official_detail::renesasUnoWifiProduct();
@@ -31,7 +54,7 @@ inline IProductLifecycle& lifecycle(const WifiDeviceKeyProfile& profile) {
         profile.ssid(),
         profile.password(),
         profile.deviceKey());
-    return selected;
+    return selected.lifecycle();
 }
 
 } // namespace integration

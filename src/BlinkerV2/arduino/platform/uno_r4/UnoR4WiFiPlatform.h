@@ -2,6 +2,7 @@
 #define BLINKER_V2_ARDUINO_UNO_R4_WIFI_PLATFORM_H
 
 #include "../../ports/uno_r4/UnoR4Storage.h"
+#include "../../ports/uno_r4/UnoR4ModemClient.h"
 #include "../../ports/uno_r4/UnoR4WiFi.h"
 
 #include <BlinkerV2/arduino/config/OfficialConfig.h>
@@ -30,14 +31,14 @@ inline WifiCredentialStoreConfig renesasUnoWifiStorageConfig() {
 class RenesasUnoWifiNetworkPlatform {
 public:
 #if BLINKER_OFFICIAL_CLOUD_SESSION_TLS
-    typedef WiFiSSLClient CloudSessionClient;
+    typedef RenesasUnoModemClient<WiFiSSLClient> CloudSessionClient;
 #else
-    typedef WiFiClient CloudSessionClient;
+    typedef RenesasUnoModemClient<WiFiClient> CloudSessionClient;
 #endif
 #if BLINKER_OFFICIAL_MQTT_TLS
-    typedef WiFiSSLClient MqttClient;
+    typedef RenesasUnoModemClient<WiFiSSLClient> MqttClient;
 #else
-    typedef WiFiClient MqttClient;
+    typedef RenesasUnoModemClient<WiFiClient> MqttClient;
 #endif
 
     RenesasUnoWifiNetworkPlatform()
@@ -80,7 +81,8 @@ public:
     CloudSessionClient& controlNetwork() { return controlNetwork_; }
     MqttClient& mqttNetwork() { return mqttNetwork_; }
 
-protected:
+    // Internal optional stores borrow the same namespace owner. No second
+    // Preferences handle or default task workspace is created by this seam.
     RenesasUnoPreferencesBlobBank& storage() { return storage_; }
 
 private:

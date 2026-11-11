@@ -80,6 +80,29 @@ bool WifiCredentialStore::protectedStorage() const {
             slot1_.protection() != StorageProtection::PlainFlash);
 }
 
+Result WifiCredentialStore::verifyInitialNetworkEmpty() {
+    IAtomicBlobStore* const stores[] = {&selector_, &slot0_, &slot1_};
+    uint8_t encoded[serializedProfileSize] = {};
+    Result outcome = protectedStorage()
+        ? Result::success() : Result::failure(ErrorCode::NotConfigured);
+    for (size_t index = 0U; index < 3U; ++index) {
+        const size_t capacity = index == 0U
+            ? serializedSelectorSize : serializedProfileSize;
+        size_t written = 0U;
+        Result result = stores[index]->load(
+            MutableByteSpan(encoded, capacity), written);
+        secureZero(MutableByteSpan(encoded, sizeof(encoded)));
+        if (result) {
+            result = Result::failure(ErrorCode::StateConflict);
+        } else if (result.code() == ErrorCode::NotFound) {
+            result = written == 0U ? Result::success()
+                : Result::failure(ErrorCode::InvalidEncoding);
+        }
+        if (outcome && !result) outcome = result;
+    }
+    return outcome;
+}
+
 Result WifiCredentialStore::begin() {
     if (ready_) return Result::success();
     if (!protectedStorage()) {

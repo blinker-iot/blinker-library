@@ -4,6 +4,7 @@
 #include "../../ports/arduino/ArduinoBleLink.h"
 #include "../../ports/arduino/PortableCrypto.h"
 #include "../../ports/uno_r4/UnoR4Storage.h"
+#include "../../ports/uno_r4/UnoR4ModemBleLink.h"
 
 #include <BlinkerV2/security/Ed25519ServerKeyRingVerifier.h>
 #include <BlinkerV2/arduino/config/PortableServerKeys.h>
@@ -43,7 +44,7 @@ public:
     void stop() { link_.stop(); }
 
 private:
-    ArduinoBleLink link_;
+    RenesasUnoModemBleLink<ArduinoBleLink> link_;
 };
 
 #if BLINKER_OFFICIAL_HAS_SERVER_SIGNATURE

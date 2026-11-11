@@ -85,8 +85,16 @@ Result TimeSyncService::receive(const TimeSyncPeer& source, const bbp2::FrameVie
 }
 
 bool TimeSyncService::readTime(WallClockSnapshot& snapshot) {
+    uint32_t observed = 0U;
+    return observeTime(snapshot, observed) && snapshot.state == WallClockState::Synchronized;
+}
+
+Result TimeSyncService::observeTime(WallClockSnapshot& snapshot, uint32_t& observedMillis) {
     snapshot = WallClockSnapshot();
-    if (tick_ == nullptr) return false;
-    return clock_.read(tick_->monotonicMillis(), snapshot);
+    observedMillis = 0U;
+    if (tick_ == nullptr) return Result::failure(ErrorCode::NotConfigured);
+    observedMillis = tick_->monotonicMillis();
+    (void)clock_.read(observedMillis, snapshot);
+    return Result::success();
 }
 }

@@ -6,16 +6,44 @@
 #include "Product.h"
 #include "StateUpdate.h"
 #include "WifiDeviceKeyProfile.h"
+#include "TaskSupport.h"
 #include "../core/Diagnostics.h"
 #include "../interface/IDiagnosticOutput.h"
 #include "../runtime/TimeSyncService.h"
+#include "../location/Location.h"
 
+#if defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_ARCH_RENESAS)
+// Core API exposes arduino::Print via a using declaration. Match that entity
+// even when this portable facade is included before Arduino.h.
+namespace arduino { class Print; }
+using arduino::Print;
+#else
 class Print;
+#endif
 
 #if (defined(BLINKER_PRODUCT_WIFI) && defined(BLINKER_PRODUCT_BLE)) || \
     (defined(BLINKER_PRODUCT_WIFI) && defined(BLINKER_PRODUCT_WIFI_BLE)) || \
     (defined(BLINKER_PRODUCT_BLE) && defined(BLINKER_PRODUCT_WIFI_BLE))
 #error "Select exactly one Blinker product"
+#endif
+
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+#if defined(BLINKER_PRODUCT_BLE) || \
+    (defined(BLINKER_PRODUCT_WIFI_BLE) && \
+     !(defined(ARDUINO_ARCH_ESP32) && defined(BLINKER_INTERNAL_ESP32_PROVISIONED_TASKS) && \
+       ((BLINKER_INTERNAL_ESP32_PROVISIONED_TASKS && defined(BLINKER_ESP32_PROVISIONING_SOFTAP) && \
+         !defined(BLINKER_ESP32_PROVISIONING_BLE)) || \
+        (BLINKER_INTERNAL_ESP32_PROVISIONED_TASKS == 1 && \
+         defined(BLINKER_INTERNAL_ESP32_BLE_PROVISIONED_TASKS) && BLINKER_INTERNAL_ESP32_BLE_PROVISIONED_TASKS == 1 && \
+         defined(BLINKER_ESP32_PROVISIONING_BLE) && BLINKER_ESP32_PROVISIONING_BLE == 1 && \
+         !defined(BLINKER_ESP32_PROVISIONING_SOFTAP))))) || \
+    (defined(BLINKER_PRODUCT_WIFI) && !defined(ARDUINO_ARCH_ESP32) && \
+     !((defined(ARDUINO_ARCH_RENESAS_UNO) || defined(ARDUINO_ARCH_RENESAS)) && \
+       defined(BLINKER_INTERNAL_UNO_R4_TASKS) && BLINKER_INTERNAL_UNO_R4_TASKS) && \
+     !((defined(SEEED_WIO_TERMINAL) || defined(WIO_TERMINAL)) && \
+       defined(BLINKER_INTERNAL_WIO_TASKS) && BLINKER_INTERNAL_WIO_TASKS))
+#error "Tasks require an admitted manual WiFi platform or internal ESP32 provisioned task profile"
+#endif
 #endif
 
 namespace blinker {
@@ -24,6 +52,28 @@ namespace facade_detail {
 
 struct BleProfile {};
 struct WifiBleProfile {};
+struct NoProductProfile {};
+
+// Entry headers specialize only nonempty interaction packs at the call site.
+// Library translation units see the same facade and primary template, without
+// needing the Sketch's product macro or allocating another global facade.
+template <typename... Interactions>
+struct EntryProfile {
+    typedef NoProductProfile Profile;
+};
+
+struct WifiEntryProfile {
+    typedef WifiDeviceKeyProfile Profile;
+    static Profile make(StringView key, StringView ssid, StringView password) {
+        return Profile(key, ssid, password);
+    }
+};
+
+template <typename Selected>
+struct LocalEntryProfile {
+    typedef Selected Profile;
+    static Profile make() { return Profile(); }
+};
 
 Diagnostics& diagnostics();
 void observeProductStatus(const ProductStatus& status);
@@ -92,40 +142,72 @@ public:
         return time_ != nullptr && time_->time(utcSeconds);
     }
 
-#if defined(BLINKER_PRODUCT_WIFI)
-    // BlinkerWiFi.h selects the WiFi product before compilation, so begin()
-    // only needs the device credential, network and no-heap schema.
+    // Observe the same optional business clock, including unavailable/stale
+    // state. Source is provenance, not trust; false never means UTC zero.
+    bool timeStatus(WallClockSnapshot& snapshot) {
+        snapshot = WallClockSnapshot();
+        return time_ != nullptr && time_->readTime(snapshot);
+    }
+
+    // Accept one user-supplied WGS84 observation locally. This does not send,
+    // authorize a stream, acknowledge delivery or set business/system UTC.
+    // Without sampledAtMillis the caller asserts this is a new observation.
+    bool location(Location& target, const LocationFix& observation) {
+        return remember(target.update(observation));
+    }
+    bool location(Location& target, const LocationFix& observation, uint32_t sampledAtMillis) {
+        return remember(target.update(observation, sampledAtMillis));
+    }
+    bool location(Location& target, double latitude, double longitude) {
+        return remember(target.update(latitude, longitude));
+    }
+    bool location(Location& target, double latitude, double longitude, uint32_t sampledAtMillis) {
+        return remember(target.update(latitude, longitude, sampledAtMillis));
+    }
+    // Loss suppresses further sampling but keeps the last local fix. Clear
+    // also forgets that observation/sequence; neither writes ordinary State.
+    bool locationLost(Location& target) { return remember(target.loseFix()); }
+    bool clearLocation(Location& target) { return remember(target.clear()); }
+
+    // Before begin(), explicitly allow only these scalar Properties. The
+    // product copies bindings into fixed static storage; Property objects must
+    // still outlive the session. Also enables the existing business UTC source.
+    // This is firmware opt-in, NOT owner authorization or task initialization.
+    template <typename First, typename... Rest>
+    bool enableTasks(Property<First>& first, Property<Rest>&... rest) {
+        typedef typename facade_detail::EntryProfile<
+            Property<First>, Property<Rest>...>::Profile Profile;
+        return enableTaskProfile<Profile>(first, rest...);
+    }
+
+    // Product selection belongs to the entry's dependent helper, not this
+    // class definition. Wrong-product calls are rejected during substitution.
     template <typename... Interactions>
-    bool begin(
+    auto begin(
         StringView deviceKey,
         StringView ssid,
         StringView password,
-        Interactions&... interactions) {
+        Interactions&... interactions)
+        -> decltype(facade_detail::EntryProfile<Interactions...>::make(
+                        deviceKey, ssid, password), bool()) {
         return beginProfile(
-            WifiDeviceKeyProfile(deviceKey, ssid, password),
+            facade_detail::EntryProfile<Interactions...>::make(
+                deviceKey, ssid, password),
             interactions...);
     }
-#elif defined(BLINKER_PRODUCT_BLE)
-    // BLE needs no connectivity arguments. DeviceSchema enforces that at
-    // least one semantic interaction is present.
+
+    // BLE and WiFi+BLE use the same no-credential call shape. Checking fieldAt
+    // excludes string arguments before they can steal the WiFi overload.
     template <typename First, typename... Rest>
-    bool begin(First& first, Rest&... rest) {
+    auto begin(First& first, Rest&... rest)
+        -> decltype(first.fieldAt(0U),
+                    facade_detail::EntryProfile<First, Rest...>::make(),
+                    bool()) {
         return beginProfile(
-            facade_detail::BleProfile(),
+            facade_detail::EntryProfile<First, Rest...>::make(),
             first,
             rest...);
     }
-#elif defined(BLINKER_PRODUCT_WIFI_BLE)
-    // WiFi+BLE onboarding is App-driven. Sketch credentials are neither
-    // required nor accepted by this product selector.
-    template <typename First, typename... Rest>
-    bool begin(First& first, Rest&... rest) {
-        return beginProfile(
-            facade_detail::WifiBleProfile(),
-            first,
-            rest...);
-    }
-#endif
 
     void run(uint32_t totalBudgetMicros = 1000U) {
         if (product_ != nullptr) {
@@ -232,6 +314,13 @@ public:
     }
 
 private:
+    template <typename Profile, typename... T>
+    bool enableTaskProfile(Property<T>&... properties) {
+        if (product_ != nullptr) return remember(Result::failure(ErrorCode::AlreadyExists));
+        const Result result = integration::TaskSupport<Profile>::configure(properties...);
+        return result ? enableTime() : remember(result);
+    }
+
     template <typename Profile, typename... Interactions>
     bool beginProfile(Profile profile, Interactions&... interactions) {
         static facade_detail::Session<Interactions...> session(

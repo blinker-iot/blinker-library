@@ -194,19 +194,21 @@ private:
     Device& operator=(const Device&);
 
     friend class Product;
+    friend class CloudLocationBinding;
 };
 
 #if UINTPTR_MAX <= UINT32_MAX
 // These ceilings describe the exact default capacities, not every custom
 // transport/peer table that can be built with the same frame-size profile.
 // S3a-1b replaces two global pointers with two pointers per transport.
+// Backpressure retry metadata adds two 32-bit scalars (+8 B), not a frame queue.
 #if BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_SMALL && \
     BLINKER_DEVICE_MAX_FIELDS == 24 && BLINKER_DEVICE_FRAME_SIZE == 256 && \
     BLINKER_DEVICE_PATCH_SIZE == 192 && \
     BLINKER_DEVICE_STATE_ARENA_SIZE == 192 && \
     BLINKER_MAX_TRANSPORTS == 2 && BLINKER_MAX_PEER_SESSIONS == 2
 static_assert(
-    sizeof(Device) <= 1676U, // One optional borrowed ITimeSync pointer (+4 B).
+    sizeof(Device) <= 1692U, // Includes optional private-source/preparer pointers (+8 B).
     "Small public Device exceeds its 32-bit default profile gate");
 #elif BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_STANDARD && \
     BLINKER_DEVICE_MAX_FIELDS == 32 && BLINKER_DEVICE_FRAME_SIZE == 1024 && \
@@ -214,7 +216,7 @@ static_assert(
     BLINKER_DEVICE_STATE_ARENA_SIZE == 512 && \
     BLINKER_MAX_TRANSPORTS == 3 && BLINKER_MAX_PEER_SESSIONS == 4
 static_assert(
-    sizeof(Device) <= 3468U,
+    sizeof(Device) <= 3484U,
     "Standard public Device exceeds its 32-bit default profile gate");
 #elif BLINKER_RESOURCE_PROFILE == BLINKER_RESOURCE_PROFILE_LARGE && \
     BLINKER_DEVICE_MAX_FIELDS == 64 && BLINKER_DEVICE_FRAME_SIZE == 4096 && \
@@ -222,7 +224,7 @@ static_assert(
     BLINKER_DEVICE_STATE_ARENA_SIZE == 2048 && \
     BLINKER_MAX_TRANSPORTS == 4 && BLINKER_MAX_PEER_SESSIONS == 8
 static_assert(
-    sizeof(Device) <= 11012U,
+    sizeof(Device) <= 11028U,
     "Large public Device exceeds its 32-bit default profile gate");
 #endif
 #endif

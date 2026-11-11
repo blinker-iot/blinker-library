@@ -1,4 +1,5 @@
 #include <esp_err.h>
+#include <host/ble_att.h>
 #include <host/ble_hs.h>
 #include <host/ble_hs_adv.h>
 #include <host/ble_hs_id.h>
@@ -11,6 +12,7 @@
 #include <services/gap/ble_svc_gap.h>
 #include <services/gatt/ble_svc_gatt.h>
 
+#include <stdlib.h>
 #include <string.h>
 
 namespace blinker {
@@ -61,13 +63,22 @@ inline Esp32NimBleLink::Esp32NimBleLink(
       securityPending_(false),
       hostResultPending_(false),
       hostReady_(false),
-      initialized_(false),
+      hostTaskHandle_(nullptr),
+      hostLoopReturned_(false),
+      hostPhase_(HostPhase::Off),
       stopping_(false),
+      stopInProgress_(false),
       sessionAnnounced_(false),
       state_(BleLinkState::Stopped),
       lastError_(ErrorCode::Ok),
       lock_(portMUX_INITIALIZER_UNLOCKED) {
     initializeUuids();
+}
+
+inline Esp32NimBleLink::~Esp32NimBleLink() {
+    // A still-owned SDK callback can use this object's address. As for the
+    // Central Host, destruction without confirmed release cannot continue.
+    if (activeLink() == this && !tryStop()) abort();
 }
 
 inline Esp32NimBleLink*& Esp32NimBleLink::activeLink() {
@@ -76,7 +87,7 @@ inline Esp32NimBleLink*& Esp32NimBleLink::activeLink() {
 }
 
 inline Result Esp32NimBleLink::start() {
-    if (state_ != BleLinkState::Stopped || activeLink() != nullptr ||
+    if (state_ != BleLinkState::Stopped || hostPhase_ != HostPhase::Off || activeLink() != nullptr ||
         !esp32_nimble_detail::claim(this)) {
         return Result::failure(ErrorCode::AlreadyExists);
     }
@@ -96,6 +107,8 @@ inline Result Esp32NimBleLink::start() {
     }
     portENTER_CRITICAL(&lock_);
     resetRuntimeLocked();
+    hostTaskHandle_ = nullptr;
+    hostLoopReturned_ = false;
     stopping_ = false;
     portEXIT_CRITICAL(&lock_);
     initializeGatt();
@@ -105,8 +118,9 @@ inline Result Esp32NimBleLink::start() {
 
     const esp_err_t initError = nimble_port_init();
     if (initError != ESP_OK) {
-        activeLink() = nullptr;
-        esp32_nimble_detail::release(this);
+        // The SDK may have failed while rolling back partial initialization.
+        // It did not prove release; do not hand another owner the Host.
+        hostPhase_ = HostPhase::Uncertain;
         const ErrorCode error = initError == ESP_ERR_NO_MEM
                                     ? ErrorCode::CapacityExceeded
                                     : ErrorCode::InternalError;
@@ -114,7 +128,11 @@ inline Result Esp32NimBleLink::start() {
         lastError_ = error;
         return Result::failure(error);
     }
-    initialized_ = true;
+    hostPhase_ = HostPhase::Initialized;
+    // The central initiates MTU exchange. An SDK unable to accept this
+    // preference retains its default; sessionAt reports the ACTUAL ATT MTU.
+    (void)ble_att_set_preferred_mtu(
+        BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE + 3U);
 
     ble_hs_cfg.reset_cb = &Esp32NimBleLink::onHostReset;
     ble_hs_cfg.sync_cb = &Esp32NimBleLink::onHostSync;
@@ -138,6 +156,7 @@ inline Result Esp32NimBleLink::start() {
         state_ = BleLinkState::Error;
         return Result::failure(error);
     }
+    hostPhase_ = HostPhase::Running;
     nimble_port_freertos_init(&Esp32NimBleLink::hostTask);
 
     // Match the previous Arduino adapter contract: start() succeeds only after
@@ -174,43 +193,42 @@ inline Result Esp32NimBleLink::start() {
 }
 
 inline void Esp32NimBleLink::stop() {
+    (void)tryStop();
+}
+
+inline bool Esp32NimBleLink::shutdownComplete() const {
+    // This also excludes another Blinker Direct/Central owner, not an SDK
+    // WiFiProv owner. The product still owns the full radio ordering.
+    return hostPhase_ == HostPhase::Off && state_ == BleLinkState::Stopped &&
+        activeLink() == nullptr && esp32_nimble_detail::activeOwner() == nullptr;
+}
+
+inline Result Esp32NimBleLink::tryStop() {
+    if (stopInProgress_) return Result::failure(ErrorCode::WouldBlock);
+    if (hostPhase_ == HostPhase::Off) {
+        state_ = BleLinkState::Stopped;
+        lastError_ = ErrorCode::Ok;
+        return shutdownComplete() ? Result::success() : Result::failure(ErrorCode::WouldBlock);
+    }
+    if (activeLink() != this || esp32_nimble_detail::activeOwner() != this)
+        return Result::failure(ErrorCode::ProtocolError);
+
+    stopInProgress_ = true;
+    state_ = BleLinkState::Error;
+    lastError_ = ErrorCode::WouldBlock;
     portENTER_CRITICAL(&lock_);
     stopping_ = true;
-    const uint16_t handle = connectionHandle_ != BLE_HS_CONN_HANDLE_NONE
-                                ? connectionHandle_
-                                : pendingConnectHandle_;
+    clearPacketQueueLocked();
     portEXIT_CRITICAL(&lock_);
 
-    if (initialized_) {
-        (void)ble_gap_adv_stop();
-        if (handle != BLE_HS_CONN_HANDLE_NONE) {
-            (void)ble_gap_terminate(handle, BLE_ERR_REM_USER_CONN_TERM);
-            // nimble_port_stop() cannot stop a Host with a live connection.
-            // Give the asynchronous GAP disconnect a bounded opportunity to
-            // retire the session before releasing the process-wide Host.
-            const uint32_t disconnectStartedAt = millis();
-            while (static_cast<uint32_t>(
-                       millis() - disconnectStartedAt) < 1000U) {
-                bool pending = false;
-                bool connected = false;
-                portENTER_CRITICAL(&lock_);
-                pending = disconnectPending_ &&
-                          pendingDisconnectHandle_ == handle;
-                connected = connectionHandle_ == handle ||
-                            (connectPending_ &&
-                             pendingConnectHandle_ == handle);
-                portEXIT_CRITICAL(&lock_);
-                if (pending) processPendingEvents();
-                if (!connected || pending) break;
-                delay(1U);
-            }
-        }
-        if (nimble_port_stop() == 0) {
-            (void)nimble_port_deinit();
-        }
-        initialized_ = false;
+    const Result result = releaseNativeHost();
+    stopInProgress_ = false;
+    if (!result) {
+        state_ = BleLinkState::Error;
+        lastError_ = result.code();
+        return result; // Retain callbacks' owner and process-wide claim.
     }
-    if (activeLink() == this) activeLink() = nullptr;
+    activeLink() = nullptr;
     esp32_nimble_detail::release(this);
 
     session_ = BleSessionInfo();
@@ -222,6 +240,76 @@ inline void Esp32NimBleLink::stop() {
     stopping_ = false;
     portEXIT_CRITICAL(&lock_);
     state_ = BleLinkState::Stopped;
+    lastError_ = ErrorCode::Ok;
+    return Result::success();
+}
+
+inline Result Esp32NimBleLink::releaseNativeHost() {
+    if (hostPhase_ == HostPhase::Uncertain) return Result::failure(ErrorCode::ProtocolError);
+    const uint32_t startedAt = millis();
+    const auto waitExpired = [startedAt]() {
+        return static_cast<uint32_t>(millis() - startedAt) >= 1000U;
+    };
+    if (hostPhase_ == HostPhase::Running) {
+        portENTER_CRITICAL(&lock_);
+        const TaskHandle_t hostTask = hostTaskHandle_;
+        portEXIT_CRITICAL(&lock_);
+        // The SDK task starter returns void. If creation/entry is unproven,
+        // never wait in nimble_port_stop() on an unserviced event queue.
+        if (hostTask == nullptr || hostTask == xTaskGetCurrentTaskHandle())
+            return Result::failure(ErrorCode::WouldBlock);
+        if (ble_gap_adv_active() && ble_gap_adv_stop() != 0 && ble_gap_adv_active())
+            return Result::failure(ErrorCode::WouldBlock);
+        portENTER_CRITICAL(&lock_);
+        const uint16_t handle = connectionHandle_ != BLE_HS_CONN_HANDLE_NONE
+            ? connectionHandle_ : connectPending_ ? pendingConnectHandle_ : BLE_HS_CONN_HANDLE_NONE;
+        portEXIT_CRITICAL(&lock_);
+        if (handle != BLE_HS_CONN_HANDLE_NONE) {
+            const Result termination = terminateConnection(handle);
+            if (!termination) return termination;
+            // A pending GAP event or a timeout is not native ACL release.
+            ble_gap_conn_desc description = {};
+            while (ble_gap_conn_find(handle, &description) != BLE_HS_ENOTCONN) {
+                if (waitExpired()) return Result::failure(ErrorCode::WouldBlock);
+                delay(1U);
+            }
+            processPendingEvents();
+        }
+        if (nimble_port_stop() != 0) {
+            // A negative SDK result supplies no general rollback proof.
+            hostPhase_ = HostPhase::Uncertain;
+            return Result::failure(ErrorCode::ProtocolError);
+        }
+        hostPhase_ = HostPhase::StopAccepted;
+    }
+    if (hostPhase_ == HostPhase::StopAccepted) {
+        for (;;) {
+            portENTER_CRITICAL(&lock_);
+            const bool returned = hostLoopReturned_;
+            const TaskHandle_t hostTask = hostTaskHandle_;
+            portEXIT_CRITICAL(&lock_);
+            // The return latch alone may be visible on the other core while
+            // the task is still running. Do not delete that task yet.
+            if (returned && hostTask != nullptr && eTaskGetState(hostTask) == eSuspended) break;
+            if (waitExpired()) return Result::failure(ErrorCode::WouldBlock);
+            delay(1U);
+        }
+        // One owner retires the SDK's global task handle after its loop
+        // returned. An old task must not delete the next owner's task.
+        if (esp_nimble_disable() != ESP_OK) {
+            hostPhase_ = HostPhase::Uncertain;
+            return Result::failure(ErrorCode::ProtocolError);
+        }
+        hostPhase_ = HostPhase::Initialized;
+    }
+    if (nimble_port_deinit() != ESP_OK) {
+        // Deinit may have partially completed. Do not retry against unknown
+        // Host/controller resources or report a handoff proof.
+        hostPhase_ = HostPhase::Uncertain;
+        return Result::failure(ErrorCode::ProtocolError);
+    }
+    hostPhase_ = HostPhase::Off;
+    return Result::success();
 }
 
 inline void Esp32NimBleLink::poll(uint32_t) {
@@ -266,24 +354,33 @@ inline void Esp32NimBleLink::poll(uint32_t) {
 inline BleLinkState Esp32NimBleLink::state() const { return state_; }
 inline ErrorCode Esp32NimBleLink::lastError() const { return lastError_; }
 inline size_t Esp32NimBleLink::sessionCount() const {
-    return sessionAnnounced_ ? 1U : 0U;
+    return sessionAnnounced_ && !stopping_ ? 1U : 0U;
 }
 
 inline Result Esp32NimBleLink::sessionAt(
     size_t index,
     BleSessionInfo& session) const {
-    if (index != 0U || !sessionAnnounced_) {
+    if (index != 0U || !sessionAnnounced_ || stopping_) {
         return Result::failure(ErrorCode::NotFound);
     }
     session = session_;
+    session.maxPacketSize = packetCapacity(connectionHandle_);
     return Result::success();
+}
+
+inline uint16_t Esp32NimBleLink::packetCapacity(uint16_t handle) {
+    const uint16_t mtu = ble_att_mtu(handle);
+    if (mtu < 23U) return 0U;
+    const uint16_t payload = static_cast<uint16_t>(mtu - 3U);
+    return payload < BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE
+        ? payload : BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE;
 }
 
 inline Result Esp32NimBleLink::sendPacket(
     uint32_t sessionId,
     ByteView packet) {
     portENTER_CRITICAL(&lock_);
-    const bool closing = disconnectPending_ ||
+    const bool closing = stopping_ || disconnectPending_ ||
         pendingTerminateHandle_ != BLE_HS_CONN_HANDLE_NONE;
     portEXIT_CRITICAL(&lock_);
     if (closing || !sessionAnnounced_ || session_.sessionId != sessionId ||
@@ -291,11 +388,13 @@ inline Result Esp32NimBleLink::sendPacket(
         connectionHandle_ == BLE_HS_CONN_HANDLE_NONE || transmitHandle_ == 0U) {
         return Result::failure(ErrorCode::NotConnected);
     }
-    if (packet.data == nullptr || packet.empty() ||
-        packet.size > session_.maxPacketSize ||
-        packet.size > BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE) {
+    if (packet.data == nullptr || packet.empty()) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
+    const uint16_t capacity = packetCapacity(connectionHandle_);
+    if (capacity == 0U) return Result::failure(ErrorCode::NotConnected);
+    if (packet.size > capacity)
+        return Result::failure(ErrorCode::CapacityExceeded);
 
     os_mbuf* buffer = ble_hs_mbuf_from_flat(
         packet.data, static_cast<uint16_t>(packet.size));
@@ -323,13 +422,19 @@ inline Result Esp32NimBleLink::sendPacket(
         indicationInFlight_ = false;
         portEXIT_CRITICAL(&lock_);
     }
-    return result == 0
-               ? Result::success()
-               : Result::failure(ErrorCode::WouldBlock);
+    if (result == 0) return Result::success();
+    // Native rejection may consume the mbuf. Only the capacity check above
+    // establishes the no-transmission contract needed for record fallback.
+    if (result == BLE_HS_ENOTCONN)
+        return Result::failure(ErrorCode::NotConnected);
+    if (result == BLE_HS_EBUSY || result == BLE_HS_ENOMEM ||
+        result == BLE_HS_EAGAIN || result == BLE_HS_EALREADY)
+        return Result::failure(ErrorCode::WouldBlock);
+    return Result::failure(ErrorCode::ProtocolError);
 }
 
 inline Result Esp32NimBleLink::disconnectSession(uint32_t sessionId) {
-    if (!sessionAnnounced_ || session_.sessionId != sessionId ||
+    if (stopping_ || !sessionAnnounced_ || session_.sessionId != sessionId ||
         connectionHandle_ == BLE_HS_CONN_HANDLE_NONE) {
         return Result::failure(ErrorCode::NotFound);
     }
@@ -383,7 +488,7 @@ inline Result Esp32NimBleLink::configureBleProfile(
 
 inline Result Esp32NimBleLink::refreshBleProfile(
     const ble::ModeProfile& profile) {
-    if (state_ != BleLinkState::Ready || !initialized_) {
+    if (state_ != BleLinkState::Ready || hostPhase_ != HostPhase::Running) {
         return Result::failure(ErrorCode::StateConflict);
     }
     Result result = ble::validateModeProfile(profile);
@@ -430,8 +535,21 @@ inline void Esp32NimBleLink::markServicesChanged() {
 }
 
 inline void Esp32NimBleLink::hostTask(void*) {
+    Esp32NimBleLink* self = activeLink();
+    if (self != nullptr) {
+        portENTER_CRITICAL(&self->lock_);
+        self->hostTaskHandle_ = xTaskGetCurrentTaskHandle();
+        portEXIT_CRITICAL(&self->lock_);
+    }
     nimble_port_run();
-    nimble_port_freertos_deinit();
+    if (self != nullptr) {
+        portENTER_CRITICAL(&self->lock_);
+        self->hostLoopReturned_ = true;
+        portEXIT_CRITICAL(&self->lock_);
+    }
+    // No callback, SDK state or owner access past this point. The product
+    // owner deletes this task using the original SDK task retirement API.
+    for (;;) vTaskSuspend(nullptr);
 }
 
 inline void Esp32NimBleLink::onHostReset(int) {
@@ -525,6 +643,10 @@ inline Result Esp32NimBleLink::encodeProfile(
 }
 
 inline Result Esp32NimBleLink::startAdvertising() {
+    portENTER_CRITICAL(&lock_);
+    const bool stopping = stopping_;
+    portEXIT_CRITICAL(&lock_);
+    if (stopping) return Result::failure(ErrorCode::WouldBlock);
     if (ble_hs_util_ensure_addr(0) != 0 ||
         ble_hs_id_infer_auto(0, &ownAddressType_) != 0) {
         return Result::failure(ErrorCode::NotConfigured);
@@ -709,7 +831,7 @@ inline int Esp32NimBleLink::handleGattAccess(
     if (attributeHandle == receiveHandle_ &&
         context.op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
         const uint16_t size = OS_MBUF_PKTLEN(context.om);
-        if (size == 0U || size > BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE) {
+        if (size == 0U || size > packetCapacity(connectionHandle)) {
             return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
         }
         uint8_t packet[BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE] = {};
@@ -739,7 +861,7 @@ inline bool Esp32NimBleLink::queuePacket(
     const bool accepted =
         connectionHandle_ == connectionHandle ||
         (connectPending_ && pendingConnectHandle_ == connectionHandle);
-    if (accepted && !disconnectPending_ &&
+    if (accepted && !stopping_ && !disconnectPending_ &&
         pendingTerminateHandle_ == BLE_HS_CONN_HANDLE_NONE &&
         packetCount_ < BLINKER_ESP32_NIMBLE_RX_QUEUE_DEPTH) {
         QueuedPacket& packet = packets_[packetTail_];
@@ -818,7 +940,7 @@ inline void Esp32NimBleLink::processPendingEvents() {
     if (connect && !connectWasAlsoDisconnected && !session_.connected) {
         session_ = BleSessionInfo();
         session_.sessionId = nextSessionId();
-        session_.maxPacketSize = BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE;
+        session_.maxPacketSize = ble::kMinimumPacketSize;
         session_.connected = true;
         connectedAtMillis_ = millis();
         if (subscribe && subscribeHandle == connectHandle) {
@@ -839,7 +961,7 @@ inline void Esp32NimBleLink::processPendingEvents() {
         session_.bonded = bonded;
     }
 
-    if (!sessionAnnounced_ && session_.connected && session_.notifyEnabled) {
+    if (!stopping_ && !sessionAnnounced_ && session_.connected && session_.notifyEnabled) {
         sessionAnnounced_ = true;
         if (connectedHandler_ != nullptr) {
             connectedHandler_(sessionContext_, session_);
@@ -876,9 +998,11 @@ inline void Esp32NimBleLink::drainPackets() {
         if (sessionAnnounced_ &&
             packet.connectionHandle == connectionHandle_ &&
             packetReceiver_ != nullptr) {
+            BleSessionInfo current;
+            if (!sessionAt(0U, current)) continue;
             packetReceiver_(
                 packetContext_,
-                session_,
+                current,
                 ByteView(packet.data, packet.size));
         }
     }

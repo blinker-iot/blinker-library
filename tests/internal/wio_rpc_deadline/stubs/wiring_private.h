@@ -1,0 +1,4 @@
+#ifndef BLINKER_WIO_RPC_DEADLINE_HOST_WIRING_H
+#define BLINKER_WIO_RPC_DEADLINE_HOST_WIRING_H
+#include "Arduino.h"
+#endif

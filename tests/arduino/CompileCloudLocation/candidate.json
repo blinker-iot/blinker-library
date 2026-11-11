@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "scope": "internal-compile-only",
+  "productProfile": "esp32-cloud-wifi-v1",
+  "sdk": "3.3.11",
+  "taskCapacity": 0,
+  "manifestRevision": 1,
+  "fieldCount": 3,
+  "locationEndpointId": 3,
+  "locationCodec": "device-gnss-v1",
+  "manifestFingerprint": "ed2e47c19b210a924dbc991e5842ab08df495a5202780d031f2828485e3f3499",
+  "canonicalManifestHex": "a200010183a50065706f7765720100020003070401a6006d757074696d655365636f6e647301000202030104020b1903e8a70068706f736974696f6e010002070301040308080b1903e8",
+  "schemaSha256": "5bb8f47664ce720053ccec278989dd113fdc3da745bbe78c7afbc8c4622419a8",
+  "sketchSha256": "9fad0ca2526415f0c8dffbab350e0295074e47702f3685d8dcc851145ffa4470",
+  "profileSha256": "b4ef0cb36a7fdc654b71bfc4b1ab47850c0a58819f6559e028f67bf89b7bcd30"
+}

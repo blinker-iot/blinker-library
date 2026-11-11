@@ -40,7 +40,8 @@ Result WifiConnectionLifecycle::setCandidateFailurePolicy(
         return Result::failure(ErrorCode::StateConflict);
     }
     if (policy != WifiCandidateFailurePolicy::Rollback &&
-        policy != WifiCandidateFailurePolicy::Retry) {
+        policy != WifiCandidateFailurePolicy::Retry &&
+        policy != WifiCandidateFailurePolicy::Stop) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
     candidateFailurePolicy_ = policy;
@@ -129,6 +130,10 @@ Result WifiConnectionLifecycle::handleConnectionFailure(ErrorCode error) {
         candidateFailurePolicy_ == WifiCandidateFailurePolicy::Retry) {
         return scheduleRetry(error);
     }
+    if (candidateFailurePolicy_ == WifiCandidateFailurePolicy::Stop) {
+        enterFault(error);
+        return Result::failure(error);
+    }
     station_.stop();
     lastError_ = error;
 
@@ -168,6 +173,10 @@ Result WifiConnectionLifecycle::confirmCandidate() {
         profile_.setConfirmed(true);
         lastError_ = ErrorCode::Ok;
         state_ = WifiConnectionState::Online;
+        return result;
+    }
+    if (candidateFailurePolicy_ == WifiCandidateFailurePolicy::Stop) {
+        enterFault(result.code());
         return result;
     }
     lastError_ = result.code();

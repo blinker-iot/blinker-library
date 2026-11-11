@@ -15,6 +15,8 @@
 #include <BlinkerV2/runtime/OutboundScheduler.inc>
 #include <BlinkerV2/runtime/ReliableOutbox.inc>
 #include <BlinkerV2/runtime/TelemetryLease.inc>
+#include <BlinkerV2/runtime/TaskSnapshotStore.inc>
+#include <BlinkerV2/runtime/TaskEngine.inc>
 #include <BlinkerV2/runtime/TimeSyncCoordinator.inc>
 #include <BlinkerV2/runtime/TimeSyncService.inc>
 #include <BlinkerV2/runtime/TimeSyncResponder.inc>

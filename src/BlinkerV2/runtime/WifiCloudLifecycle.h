@@ -37,13 +37,18 @@ public:
     ~BasicWifiCloudLifecycle() override { stop(); }
 
     Result attach(Client& client) override {
+        return attach(client, cloud_);
+    }
+    // Optional decorator still uses this lifecycle's ONE underlying connection.
+    // Caller owns the decorator and must not also register cloud_ as a transport.
+    Result attach(Client& client, IFrameTransport& carrier) {
         if (state_ != WifiCloudLifecycleState::Stopped ||
             client_ != nullptr) {
             return client_ == &client
                        ? Result::success()
                        : Result::failure(ErrorCode::AlreadyExists);
         }
-        const Result result = client.addTransport(cloud_);
+        const Result result = client.addTransport(carrier);
         if (result) client_ = &client;
         return result;
     }

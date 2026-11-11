@@ -28,7 +28,8 @@ Esp32NvsAtomicBlobStore::Esp32NvsAtomicBlobStore(
       encrypted_(config.encrypted),
       encryptionVerified_(false),
       configValid_(false),
-      opened_(false) {
+      opened_(false),
+      readOnly_(false) {
     const bool validNamespace = copyIdentifier(
         config.namespaceName,
         namespaceName_,
@@ -103,7 +104,16 @@ bool Esp32NvsAtomicBlobStore::validConfig() const {
 }
 
 Result Esp32NvsAtomicBlobStore::begin() {
-    if (opened_) return Result::success();
+    return open(NVS_READWRITE);
+}
+
+Result Esp32NvsAtomicBlobStore::beginReadOnly() {
+    return open(NVS_READONLY);
+}
+
+Result Esp32NvsAtomicBlobStore::open(nvs_open_mode_t mode) {
+    const bool readOnly = mode == NVS_READONLY;
+    if (opened_) return readOnly_ == readOnly ? Result::success() : Result::failure(ErrorCode::StateConflict);
     if (!validConfig()) return Result::failure(ErrorCode::InvalidArgument);
     if (encrypted_) {
         const char* label = partitionLabel_[0] == '\0'
@@ -118,18 +128,19 @@ Result Esp32NvsAtomicBlobStore::begin() {
     const esp_err_t error = partitionLabel_[0] == '\0'
                                 ? nvs_open(
                                       namespaceName_,
-                                      NVS_READWRITE,
+                                      mode,
                                       &openedHandle)
                                 : nvs_open_from_partition(
                                       partitionLabel_,
                                       namespaceName_,
-                                      NVS_READWRITE,
+                                      mode,
                                       &openedHandle);
     Result result = fromNvsError(error);
     if (!result) return result;
     handle_ = openedHandle;
     encryptionVerified_ = encrypted_;
     opened_ = true;
+    readOnly_ = readOnly;
     return Result::success();
 }
 
@@ -139,6 +150,7 @@ void Esp32NvsAtomicBlobStore::end() {
     handle_ = 0;
     encryptionVerified_ = false;
     opened_ = false;
+    readOnly_ = false;
 }
 
 Result Esp32NvsAtomicBlobStore::load(
@@ -173,6 +185,7 @@ Result Esp32NvsAtomicBlobStore::load(
 
 Result Esp32NvsAtomicBlobStore::replace(ByteView value) {
     if (!opened_) return Result::failure(ErrorCode::NotConfigured);
+    if (readOnly_) return Result::failure(ErrorCode::UnsupportedFeature);
     if (value.data == nullptr || value.empty()) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
@@ -187,6 +200,7 @@ Result Esp32NvsAtomicBlobStore::replace(ByteView value) {
 
 Result Esp32NvsAtomicBlobStore::clear() {
     if (!opened_) return Result::failure(ErrorCode::NotConfigured);
+    if (readOnly_) return Result::failure(ErrorCode::UnsupportedFeature);
     const Result erased = fromNvsError(nvs_erase_key(handle_, key_));
     if (!erased && erased.code() != ErrorCode::NotFound) return erased;
     // An earlier erase may have succeeded while commit failed. NotFound is

@@ -38,6 +38,12 @@ public:
     // This is not a remote Error, timeout, RNG failure or session close.
     virtual void sendRejected(ErrorCode error) = 0;
     virtual Result receive(const TimeSyncPeer& peer, const bbp2::FrameView& frame) = 0;
+    // Optional coherent UTC/monotonic observation for local task consumers.
+    // Older/custom sources fail closed until they implement this contract.
+    virtual Result observeTime(WallClockSnapshot& snapshot, uint32_t& observedMillis) {
+        snapshot = WallClockSnapshot(); observedMillis = 0U;
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
     bool time(uint64_t& utcSeconds) {
         utcSeconds = 0U;
         WallClockSnapshot snapshot;

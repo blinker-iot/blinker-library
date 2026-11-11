@@ -46,9 +46,33 @@ void ManagedMqttTransport::stop() {
 }
 
 void ManagedMqttTransport::poll(uint32_t budgetMicros) {
+    poll(budgetMicros, nullptr, nullptr);
+}
+
+bool ManagedMqttTransport::canHoldCurrentSession() const {
+    return appliedGeneration_ != 0U &&
+        appliedGeneration_ == sessionProvider_.credentialGeneration() &&
+        mqttTransport_.state() == TransportState::Online && sessionProvider_.canDeferRefresh();
+}
+
+void ManagedMqttTransport::poll(uint32_t budgetMicros, SessionRefreshGate gate, void* context) {
     if (!started_ || !networkAvailable_) return;
     const uint32_t controlBudget = budgetMicros / 2U;
-    sessionProvider_.poll(controlBudget);
+    uint32_t transportBudget = budgetMicros - controlBudget;
+    if (gate != nullptr && canHoldCurrentSession()) {
+        // Deliver already queued RX before deciding to rotate credentials.
+        // A boolean sampled by the decorator before poll misses this window.
+        const uint32_t receiveBudget = transportBudget / 2U;
+        mqttTransport_.poll(receiveBudget);
+        transportBudget -= receiveBudget;
+        if (!started_ || !networkAvailable_) return;
+    }
+    // Deferring only applyCredentials would be too late: a successful provider
+    // poll also overwrites the credential arena borrowed by the old MQTT path.
+    const bool requested = gate != nullptr && gate(context);
+    if (!started_ || !networkAvailable_) return;
+    const bool defer = requested && canHoldCurrentSession();
+    if (!defer) sessionProvider_.poll(controlBudget);
 
     if (sessionProvider_.state() == SessionProviderState::Failed) {
         mqttTransport_.stop();
@@ -70,7 +94,7 @@ void ManagedMqttTransport::poll(uint32_t budgetMicros) {
         }
     }
 
-    mqttTransport_.poll(budgetMicros - controlBudget);
+    mqttTransport_.poll(transportBudget);
     if (mqttTransport_.state() == TransportState::Error &&
         mqttTransport_.lastError() == ErrorCode::AuthenticationRequired &&
         !refreshRequested_) {

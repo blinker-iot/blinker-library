@@ -6,3 +6,5 @@
 #include <BlinkerV2/core/Sha256.inc>
 #include <BlinkerV2/core/Utf8.inc>
 #include <BlinkerV2/core/WallClock.inc>
+#include <BlinkerV2/core/TaskTiming.inc>
+#include <BlinkerV2/core/TaskCalendarCursor.inc>

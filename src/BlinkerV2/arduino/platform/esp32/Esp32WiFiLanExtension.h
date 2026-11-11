@@ -6,6 +6,7 @@
 #endif
 
 #include "../../ports/esp32/Esp32LocalWebSocket.h"
+#include "../../../interface/IProductLifecycle.h"
 #if defined(BLINKER_INTERNAL_LAN_ENCRYPTED) && BLINKER_INTERNAL_LAN_ENCRYPTED
 #include "../../ports/esp32/Esp32Crypto.h"
 #include <BlinkerV2/security/LocalAccessNoiseSession.h>
@@ -23,7 +24,7 @@ namespace official_detail {
 template <typename Stack>
 class Esp32WifiLanExtension {
 public:
-    explicit Esp32WifiLanExtension(Stack& stack)
+    Esp32WifiLanExtension(Stack& stack, IProductLifecycle&)
         : link_(stack.random(), linkConfig()),
 #if defined(BLINKER_INTERNAL_LAN_ENCRYPTED) && BLINKER_INTERNAL_LAN_ENCRYPTED
           records_(crypto_, stack.random()),
@@ -42,6 +43,9 @@ public:
         return result;
     }
     uint16_t capabilities() const { return ProductCapabilityLanData; }
+    Result attachTime(ITimeSync&) { return Result::success(); }
+    IFrameTransport& carrier(Stack& stack) { return stack.cloudTransport(); }
+    IProductLifecycle& lifecycle(IProductLifecycle& base) { return base; }
 private:
 #if defined(BLINKER_INTERNAL_LAN_ENCRYPTED) && BLINKER_INTERNAL_LAN_ENCRYPTED
     using Records = security::LocalAccessNoiseSession;

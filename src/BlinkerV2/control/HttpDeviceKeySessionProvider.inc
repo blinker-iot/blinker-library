@@ -685,6 +685,14 @@ Result HttpDeviceKeySessionProvider::credentials(
     return Result::success();
 }
 
+bool HttpDeviceKeySessionProvider::canDeferRefresh() const {
+    // Refresh may already be in progress when a Task Prepare arrives. Preserve
+    // its old arena/proof too, but never hide expiry, failure or network loss.
+    return started_ && networkAvailable_ && hasCredentials_ &&
+        state_ != SessionProviderState::Failed && state_ != SessionProviderState::Stopped &&
+        !credentialsExpired(clock_.monotonicMillis());
+}
+
 void HttpDeviceKeySessionProvider::stop() {
     finishHttp();
     clearTransaction();

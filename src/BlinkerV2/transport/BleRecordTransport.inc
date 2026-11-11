@@ -42,6 +42,9 @@ Result BleRecordTransport::start() {
         format_.decodeSize == nullptr || format_.validate == nullptr ||
         config_.maxRecordSize < format_.minimumHeaderSize ||
         config_.maxRecordSize > ble::kMaximumRecordSizeAtMinimumPacket ||
+        (config_.initialPacketSize != 0U &&
+         (config_.initialPacketSize < ble::kMinimumPacketSize ||
+          config_.initialPacketSize > 244U)) ||
         config_.reassemblyTimeoutMillis == 0U ||
         config_.maxPacketsPerPoll == 0U ||
         config_.sessionCapacity == 0U ||
@@ -238,7 +241,8 @@ Result BleRecordTransport::sendPrepared(
     size_t recordSize,
     const SendTarget& target,
     BleRecordWriter writer,
-    void* context) {
+    void* context,
+    uint16_t packetLimit) {
     if (target.kind != SendTargetKind::Session || writer == nullptr) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
@@ -257,6 +261,11 @@ Result BleRecordTransport::sendPrepared(
         }
     }
     if (!found) return Result::failure(ErrorCode::NotConnected);
+    const size_t payloadCapacity = packetPayloadCapacity(recipient, packetLimit);
+    if (payloadCapacity < format_.minimumHeaderSize ||
+        fragmentCount(recordSize, payloadCapacity) > ble::kMaximumFragmentCount) {
+        return Result::failure(ErrorCode::BufferTooSmall);
+    }
 
     MutableByteSpan storage = txBuffer(txTail_);
     ByteView record;
@@ -267,7 +276,29 @@ Result BleRecordTransport::sendPrepared(
     }
     result = format_.validate(record);
     if (!result) return result;
-    return enqueue(recipient, record);
+    return enqueue(recipient, record, packetLimit);
+}
+
+uint16_t BleRecordTransport::negotiatePacketSize(
+    uint32_t sessionId,
+    uint16_t requested) {
+    RxSession* session = findRx(sessionId, false);
+    if (session == nullptr || !hasSession(sessionId) ||
+        requested < ble::kMinimumPacketSize || requested > 244U) return 0U;
+    BleSessionInfo physical;
+    for (size_t index = 0U; index < link_.sessionCount(); ++index) {
+        if (!link_.sessionAt(index, physical) ||
+            physical.sessionId != sessionId) continue;
+        size_t selected = requested;
+        if (selected > physical.maxPacketSize) selected = physical.maxPacketSize;
+        if (selected > packetScratch_.size) selected = packetScratch_.size;
+        if (selected < ble::kMinimumPacketSize) return 0U;
+        session->receivePacketLimit = static_cast<uint8_t>(selected);
+        if (session->packetFallback) selected = ble::kMinimumPacketSize;
+        session->packetLimit = static_cast<uint8_t>(selected);
+        return session->packetLimit;
+    }
+    return 0U;
 }
 
 Result BleRecordTransport::disconnectSession(
@@ -317,6 +348,8 @@ void BleRecordTransport::resetSession(uint32_t sessionId) {
         session->occupied = true;
         session->info = info;
         session->nextTxRecordId = nextTx;
+        session->packetLimit = static_cast<uint8_t>(config_.initialPacketSize);
+        session->receivePacketLimit = static_cast<uint8_t>(config_.initialPacketSize);
     }
     dropQueuedForSession(sessionId);
 }
@@ -388,6 +421,8 @@ void BleRecordTransport::onConnected(const BleSessionInfo& info) {
         return;
     }
     session->info = info;
+    session->packetLimit = static_cast<uint8_t>(config_.initialPacketSize);
+    session->receivePacketLimit = static_cast<uint8_t>(config_.initialPacketSize);
     if (sessionConnected_ != nullptr) {
         const RxContext rx = makeRxContext(info);
         sessionConnected_(sessionContext_, rx);
@@ -428,7 +463,9 @@ void BleRecordTransport::onPacket(
         return;
     }
     session->info = info;
-    if (packet.size > info.maxPacketSize) {
+    if (packet.size > info.maxPacketSize ||
+        (session->receivePacketLimit != 0U &&
+         packet.size > session->receivePacketLimit)) {
         abortRx(*session, ErrorCode::CapacityExceeded);
         return;
     }
@@ -602,13 +639,10 @@ void BleRecordTransport::flushTx() {
             popTx();
             continue;
         }
-        if (item.offset == 0U) {
-            item.fragmentPayloadCapacity = static_cast<uint16_t>(
-                availablePayloadCapacity);
-            item.fragmentIndex = 0U;
-        } else if (availablePayloadCapacity <
-                   item.fragmentPayloadCapacity) {
-            item.recordId = nextRecordId(*sessionState);
+        // Enqueue freezes a record's stride. Upgrading the session cannot
+        // enlarge an already-queued Hello/Auth response or in-flight record.
+        if (availablePayloadCapacity < item.fragmentPayloadCapacity) {
+            if (item.offset != 0U) item.recordId = nextRecordId(*sessionState);
             item.offset = 0U;
             item.fragmentIndex = 0U;
             item.fragmentPayloadCapacity = static_cast<uint16_t>(
@@ -654,6 +688,20 @@ void BleRecordTransport::flushTx() {
                 ble::kFragmentHeaderSize + payloadSize));
         if (!result) {
             if (result.code() == ErrorCode::WouldBlock) return;
+            if (result.code() == ErrorCode::CapacityExceeded &&
+                item.fragmentPayloadCapacity >
+                    ble::kMinimumPacketSize - ble::kFragmentHeaderSize) {
+                // The failed packet was not consumed. Restart the EXACT
+                // queued record/ciphertext; resealing would advance its nonce.
+                sessionState->packetLimit = ble::kMinimumPacketSize;
+                sessionState->packetFallback = true;
+                item.recordId = nextRecordId(*sessionState);
+                item.offset = 0U;
+                item.fragmentIndex = 0U;
+                item.fragmentPayloadCapacity = static_cast<uint16_t>(
+                    ble::kMinimumPacketSize - ble::kFragmentHeaderSize);
+                return;
+            }
             emitFault(info, result.code());
             popTx();
             continue;
@@ -746,12 +794,13 @@ MutableByteSpan BleRecordTransport::txBuffer(size_t index) const {
 
 Result BleRecordTransport::enqueue(
     const BleSessionInfo& session,
-    ByteView record) {
+    ByteView record,
+    uint16_t packetLimit) {
     if (txCount_ >= txCapacity()) {
         return Result::failure(ErrorCode::WouldBlock);
     }
     RxSession* sessionState = findRx(session.sessionId, false);
-    const size_t payloadCapacity = packetPayloadCapacity(session);
+    const size_t payloadCapacity = packetPayloadCapacity(session, packetLimit);
     if (sessionState == nullptr ||
         payloadCapacity < format_.minimumHeaderSize ||
         fragmentCount(record.size, payloadCapacity) >
@@ -821,11 +870,17 @@ size_t BleRecordTransport::txCapacity() const {
 }
 
 size_t BleRecordTransport::packetPayloadCapacity(
-    const BleSessionInfo& session) const {
-    const size_t packetLimit =
+    const BleSessionInfo& session,
+    uint16_t requestedLimit) const {
+    size_t packetLimit =
         session.maxPacketSize < packetScratch_.size
             ? session.maxPacketSize
             : packetScratch_.size;
+    const RxSession* admitted = findRx(session.sessionId);
+    if (admitted != nullptr && admitted->packetLimit != 0U &&
+        packetLimit > admitted->packetLimit) packetLimit = admitted->packetLimit;
+    if (requestedLimit != 0U && packetLimit > requestedLimit)
+        packetLimit = requestedLimit;
     return packetLimit > ble::kFragmentHeaderSize
                ? packetLimit - ble::kFragmentHeaderSize
                : 0U;

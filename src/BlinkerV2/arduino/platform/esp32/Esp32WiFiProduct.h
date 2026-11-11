@@ -8,6 +8,14 @@
 #include "../../internal/WiFiProduct.h"
 #include "Esp32WiFiPlatform.h"
 #include <BlinkerV2/api/WifiDeviceKeyProfile.h>
+#include <BlinkerV2/api/TaskSupport.h>
+#include "../../config/TaskConfig.h"
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+#if defined(BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL) && BLINKER_INTERNAL_LOCAL_ACCESS_CONTROL
+#error "Task pilot admits manual WiFi only; combined LAN/control profile is not yet admitted"
+#endif
+#include "Esp32WiFiTaskExtension.h"
+#endif
 #if defined(BLINKER_INTERNAL_LAN_WEBSOCKET) && BLINKER_INTERNAL_LAN_WEBSOCKET
 #include "Esp32WiFiLanExtension.h"
 #endif
@@ -16,7 +24,10 @@ namespace blinker {
 namespace integration {
 namespace official_detail {
 
-#if defined(BLINKER_INTERNAL_LAN_WEBSOCKET) && BLINKER_INTERNAL_LAN_WEBSOCKET
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+typedef DeviceKeyWifiProduct<Esp32WifiNetworkPlatform,
+    Esp32WifiTaskExtension<DeviceKeyWifiStack<Esp32WifiNetworkPlatform>, BLINKER_TASK_CAPACITY> >
+#elif defined(BLINKER_INTERNAL_LAN_WEBSOCKET) && BLINKER_INTERNAL_LAN_WEBSOCKET
 typedef DeviceKeyWifiProduct<Esp32WifiNetworkPlatform,
     Esp32WifiLanExtension<DeviceKeyWifiStack<Esp32WifiNetworkPlatform> > >
 #else
@@ -31,6 +42,16 @@ inline Esp32DeviceKeyWifiProduct& esp32WifiProduct() {
 
 } // namespace official_detail
 
+#if defined(BLINKER_ENABLE_TASKS) && BLINKER_ENABLE_TASKS
+template <>
+struct TaskSupport<WifiDeviceKeyProfile> {
+    template <typename... T>
+    static Result configure(Property<T>&... properties) {
+        return official_detail::esp32WifiProduct().extension().configure(properties...);
+    }
+};
+#endif
+
 inline IProductLifecycle& lifecycle(const WifiDeviceKeyProfile& profile) {
     official_detail::Esp32DeviceKeyWifiProduct& selected =
         official_detail::esp32WifiProduct();
@@ -38,7 +59,7 @@ inline IProductLifecycle& lifecycle(const WifiDeviceKeyProfile& profile) {
         profile.ssid(),
         profile.password(),
         profile.deviceKey());
-    return selected;
+    return selected.lifecycle();
 }
 
 } // namespace integration

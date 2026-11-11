@@ -1,4 +1,5 @@
 #include "BleFrameTransport.h"
+#include "../core/SecureMemory.h"
 
 namespace blinker {
 
@@ -98,24 +99,60 @@ Result BleFrameTransport::send(
     if (slot == nullptr || !slot->active()) {
         return records_.send(frame, target);
     }
+    return sendSecureFrame(frame, target, *slot, ByteView());
+}
 
+Result BleFrameTransport::canSendBoundSecure(size_t frameSize, const SendTarget& target, ByteView binding) const {
+    if (frameSize < bbp2::kBaseHeaderSize || frameSize > maxFrameSize_)
+        return Result::failure(ErrorCode::CapacityExceeded);
+    if (target.kind != SendTargetKind::Session || binding.size != security::kDirectSecureBindingSize ||
+        binding.data == nullptr || !constantTimeEqual(binding, committedSessionBinding(target.sessionId)))
+        return Result::failure(ErrorCode::AuthenticationRequired);
+    return records_.canQueue(security::directSecureRecordSize(frameSize), target);
+}
+
+Result BleFrameTransport::sendBoundSecure(ByteView frame, const SendTarget& target, ByteView binding) {
+    bbp2::FrameView parsed;
+    Result result = bbp2::parseFrame(frame, parsed);
+    if (!result) return result;
+    result = canSendBoundSecure(frame.size, target, binding);
+    if (!result) return result;
+    SecureSlot* slot = findSecure(target.sessionId, false);
+    if (slot == nullptr || !slot->active()) return Result::failure(ErrorCode::NotConnected);
+    return sendSecureFrame(frame, target, *slot, binding);
+}
+
+Result BleFrameTransport::sendSecureFrame(ByteView frame, const SendTarget& target, SecureSlot& slot, ByteView binding) {
     const size_t recordSize = security::directSecureRecordSize(frame.size);
     if (recordSize == 0U) {
         return Result::failure(ErrorCode::CapacityExceeded);
     }
     SealContext context;
     context.owner = this;
-    context.slot = slot;
+    context.slot = &slot;
     context.frame = frame;
-    result = records_.sendPrepared(
+    context.binding = binding;
+    context.sessionId = target.sessionId;
+    Result result = records_.sendPrepared(
         recordSize,
         target,
         &BleFrameTransport::sealThunk,
-        &context);
+        &context,
+        frame.data[3] == static_cast<uint8_t>(bbp2::MessageKind::Hello)
+            ? ble::kMinimumPacketSize : 0U);
     if (!result && context.attempted) {
         retire(target.sessionId, result.code());
     }
     return result;
+}
+
+uint16_t BleFrameTransport::negotiatePacketSize(
+    const RxContext& rx,
+    uint16_t requested) {
+    const SecureSlot* slot = findSecure(rx.sessionId);
+    if (!rx.encrypted || slot == nullptr || !slot->active() ||
+        requested < ble::kMinimumPacketSize || requested > 244U) return 0U;
+    return records_.negotiatePacketSize(rx.sessionId, requested);
 }
 
 Result BleFrameTransport::disconnectSession(uint32_t sessionId) {
@@ -192,6 +229,13 @@ void BleFrameTransport::cancel(uint32_t sessionId) {
     }
 }
 
+ByteView BleFrameTransport::committedSessionBinding(uint32_t sessionId) const {
+    const SecureSlot* slot = findSecure(sessionId);
+    return slot != nullptr && slot->active() &&
+           records_.state() == TransportState::Online && records_.hasSession(sessionId)
+               ? slot->session.sessionBinding() : ByteView();
+}
+
 BleRecordTransportConfig BleFrameTransport::recordConfig(
     const BleFrameTransportConfig& config) {
     BleRecordTransportConfig result;
@@ -200,6 +244,7 @@ BleRecordTransportConfig BleFrameTransport::recordConfig(
     result.maxRecordSize = maximum <= UINT16_MAX
                                ? static_cast<uint16_t>(maximum)
                                : 0U;
+    result.initialPacketSize = config.initialPacketSize;
     result.reassemblyTimeoutMillis = config.reassemblyTimeoutMillis;
     result.maxPacketsPerPoll = config.maxPacketsPerPoll;
     return result;
@@ -247,6 +292,10 @@ Result BleFrameTransport::sealThunk(
     if (seal == nullptr || seal->owner == nullptr || seal->slot == nullptr) {
         return Result::failure(ErrorCode::InvalidArgument);
     }
+    if (!seal->binding.empty() &&
+        (!constantTimeEqual(seal->binding, seal->owner->committedSessionBinding(seal->sessionId)) ||
+         seal->owner->findSecure(seal->sessionId) != seal->slot))
+        return Result::failure(ErrorCode::NotConnected);
     seal->attempted = true;
     return seal->slot->session.seal(
         seal->owner->crypto_,
@@ -277,6 +326,8 @@ void BleFrameTransport::onRecord(
             frame);
         if (result) result = direct::validateRecord(frame);
         if (!result || frame.size > maxFrameSize_) {
+            const size_t clearSize = record.size < maxFrameSize_ ? record.size : maxFrameSize_;
+            secureZero(MutableByteSpan(plaintextScratch_, clearSize));
             retire(
                 rx.sessionId,
                 result ? ErrorCode::CapacityExceeded : result.code());
@@ -291,6 +342,7 @@ void BleFrameTransport::onRecord(
         verified.encrypted = rx.encrypted || active;
         receiver_(receiverContext_, frame, verified);
     }
+    if (active) secureZero(MutableByteSpan(plaintextScratch_, frame.size));
 }
 
 void BleFrameTransport::onConnected(const RxContext& rx) {

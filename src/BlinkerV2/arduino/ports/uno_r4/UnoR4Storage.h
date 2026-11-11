@@ -10,8 +10,12 @@
 #include <BlinkerV2/identity/DeviceInstanceIdStore.h>
 #include <BlinkerV2/provisioning/WifiCredentialStore.h>
 #include <Preferences.h>
+#include "UnoR4ModemOwner.h"
 
 namespace blinker {
+
+template <size_t Capacity>
+class RenesasUnoTaskSnapshotBlobStore;
 
 struct RenesasUnoStorageConfig {
     const char* namespaceName;
@@ -23,7 +27,8 @@ struct RenesasUnoStorageConfig {
 // bank adds the IAtomicBlobStore contract above that plain key-value API: each
 // logical blob alternates between two keys and carries generation, CRC and a
 // tombstone. A failed replacement therefore leaves one complete prior record.
-// The views share one Preferences handle and must be used single-threaded.
+// The views share one module namespace and must be used single-threaded.
+// No Preferences object: its SDK destructor sends an unconditional RPC.
 class RenesasUnoPreferencesBlobBank {
 public:
     explicit RenesasUnoPreferencesBlobBank(
@@ -47,6 +52,7 @@ private:
         BlobWifiSlot1,
         BlobDeviceInstance,
         BlobDeviceAccess,
+        BlobTaskSnapshot,
         BlobCount
     };
 
@@ -77,13 +83,15 @@ private:
         uint8_t state;
         bool present;
         bool valid;
+        ErrorCode ioError;
 
         SlotInfo()
             : generation(0U),
               payloadSize(0U),
               state(0U),
               present(false),
-              valid(false) {}
+              valid(false),
+              ioError(ErrorCode::Ok) {}
     };
 
     enum : size_t {
@@ -104,10 +112,13 @@ private:
     SlotInfo inspect(
         BlobId id,
         uint8_t slot,
+        size_t maximumPayload,
         uint8_t* scratch,
         size_t scratchSize);
     Result newest(
         BlobId id,
+        size_t maximumPayload,
+        MutableByteSpan scratch,
         MutableByteSpan output,
         size_t& written,
         uint32_t& generation,
@@ -118,13 +129,24 @@ private:
         uint8_t slot,
         uint32_t generation,
         uint8_t state,
-        ByteView payload);
+        ByteView payload,
+        size_t maximumPayload,
+        MutableByteSpan encoded,
+        MutableByteSpan verified);
+    Result loadBounded(BlobId id, size_t maximumPayload,
+                       MutableByteSpan scratch, MutableByteSpan output,
+                       size_t& written, uint32_t budgetMillis = MODEM_TIMEOUT);
+    Result replaceBounded(BlobId id, size_t maximumPayload,
+                          MutableByteSpan encoded, MutableByteSpan verified,
+                          ByteView value, uint32_t budgetMillis = MODEM_TIMEOUT);
+    Result clearBounded(BlobId id, size_t maximumPayload,
+                        MutableByteSpan encoded, MutableByteSpan verified,
+                        uint32_t budgetMillis = MODEM_TIMEOUT);
     Result load(BlobId id, MutableByteSpan output, size_t& written);
     Result replace(BlobId id, ByteView value);
     Result clear(BlobId id);
 
     char namespaceName_[kNamespaceCapacity + 1U];
-    Preferences preferences_;
     BlobView wifiSelector_;
     BlobView wifiSlot0_;
     BlobView wifiSlot1_;
@@ -132,6 +154,9 @@ private:
     BlobView deviceAccess_;
     bool configValid_;
     bool opened_;
+
+    template <size_t Capacity>
+    friend class RenesasUnoTaskSnapshotBlobStore;
 
     RenesasUnoPreferencesBlobBank(
         const RenesasUnoPreferencesBlobBank&);

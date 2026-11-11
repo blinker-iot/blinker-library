@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "channel": "development",
+  "firmware_version": "device-v2-ci",
+  "control": {
+    "host": "device-v2-ci.invalid",
+    "port": 80,
+    "cloud_session_tls": false,
+    "mqtt_tls": false,
+    "cloud_session_ca_pem": "",
+    "mqtt_ca_pem": ""
+  },
+  "allow_plain_storage": true,
+  "server_keys": {
+    "p256": [
+      {
+        "id": 1,
+        "public_key": "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
+      }
+    ],
+    "ed25519": [
+      {
+        "id": 1,
+        "public_key": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+      }
+    ]
+  }
+}

@@ -55,6 +55,9 @@ public:
     size_t size() const { return count_; }
     IFrameTransport* at(size_t index) const;
     TransportAccess accessAt(size_t index) const;
+    bool managedAt(size_t index) const {
+        return index < count_ && lifecycles_[index] == TransportLifecyclePolicy::Managed;
+    }
 
 private:
     struct ReceiverContext {

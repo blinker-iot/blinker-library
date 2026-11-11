@@ -3,3 +3,8 @@
 #include <BlinkerV2/provisioning/ControllerControlEndpoint.inc>
 #include <BlinkerV2/provisioning/PresenceKeyControlContract.inc>
 #include <BlinkerV2/provisioning/ControllerGrantVerifier.inc>
+#include <BlinkerV2/provisioning/TaskManagementGrant.inc>
+#include <BlinkerV2/provisioning/TaskAuthorityContract.inc>
+#include <BlinkerV2/provisioning/TaskManagementContract.inc>
+#include <BlinkerV2/provisioning/TaskManagementSession.inc>
+#include <BlinkerV2/provisioning/TaskCommandAdapter.inc>

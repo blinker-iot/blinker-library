@@ -3,3 +3,4 @@
 #include <BlinkerV2/api/EndpointHandle.inc>
 #include <BlinkerV2/api/PatchBuilder.inc>
 #include <BlinkerV2/api/StateUpdate.inc>
+#include <BlinkerV2/api/TaskPropertyTarget.inc>

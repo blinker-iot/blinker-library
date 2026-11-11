@@ -6,6 +6,8 @@
 #include "../model/Manifest.h"
 #include "../model/EndpointValue.h"
 #include "../protocol/bbp2/TimeSync.h"
+#include "../security/ControllerHmacSha256Authorizer.h"
+#include "../transport/BleFrameTransport.h"
 
 namespace blinker {
 
@@ -256,6 +258,7 @@ DeviceRuntime::DeviceRuntime(
       timeSync_(nullptr),
       telemetryClock_(nullptr),
       telemetrySampleEncoder_(nullptr),
+      telemetrySamplePreparer_(nullptr),
       telemetrySampleContext_(nullptr),
       telemetryLeases_(),
       telemetryCounters_(),
@@ -270,10 +273,41 @@ DeviceRuntime::DeviceRuntime(
       stateRevision_(config.initialStateRevision),
       manifestFingerprint_(),
       hasManifestFingerprint_(false),
-      started_(false) {}
+      started_(false),
+      preCloudDirectPhase_(PreCloudDirectPhase::None) {}
+
+Result DeviceRuntime::bindPreCloudDirect(const PreCloudDirectBinding& binding) {
+    if (started_ || isPreCloudDirect() || transports_.size() != 0U ||
+        stateApplyTransactionHandler_ != nullptr || stateApplyTransactionContext_ != nullptr) {
+        return Result::failure(ErrorCode::StateConflict);
+    }
+    const Result added = transports_.addTransport(binding.transport,
+        TransportLifecyclePolicy::Managed, TransportAccess(&binding.authorization));
+    if (added) {
+        preCloudDirect_ = &binding;
+        preCloudDirectPhase_ = PreCloudDirectPhase::Open;
+    }
+    return added;
+}
 
 Result DeviceRuntime::start() {
     if (started_) return Result::failure(ErrorCode::AlreadyExists);
+    if (isPreCloudDirect()) {
+        if (preCloudDirectPhase_ == PreCloudDirectPhase::Retired) return Result::failure(ErrorCode::StateConflict);
+        const TransportAccess access = transports_.accessAt(0U);
+        if (transports_.size() != 1U ||
+            !transports_.managedAt(0U) ||
+            transports_.at(0U) != &preCloudDirect_->transport ||
+            access.authorization != &preCloudDirect_->authorization ||
+            access.control != nullptr || access.authorization->methodCount() != 1U ||
+            access.authorization->methodAt(0U) != security::kControllerHmacSha256Method ||
+            !access.authorization->establishesSecureTransport() ||
+            config_.protocolFeatures != bbp2::FeatureAuthentication ||
+            endpoints_.size() != 0U || reliableOutbox_ != nullptr ||
+            timeSync_ != nullptr || telemetrySampleEncoder_ != nullptr) {
+            return Result::failure(ErrorCode::NotConfigured);
+        }
+    }
     // Access services are validated per transport, never pooled into one
     // global advertised method list. Explicit feature requests still fail
     // if no binding supplies them.
@@ -340,8 +374,10 @@ Result DeviceRuntime::start() {
         if (!outboxResult) return outboxResult;
         reliableOutbox_->reset();
     }
-    Result registryResult = endpoints_.seal();
-    if (!registryResult) return registryResult;
+    if (!isPreCloudDirect()) {
+        const Result registryResult = endpoints_.seal();
+        if (!registryResult) return registryResult;
+    }
     if ((config_.protocolFeatures & bbp2::FeatureManifest) != 0U) {
         Result fingerprintResult = computeManifestFingerprint(
             config_.manifestRevision,
@@ -369,6 +405,10 @@ Result DeviceRuntime::start() {
 }
 
 void DeviceRuntime::stop() {
+    if (isPreCloudDirect() && preCloudDirectPhase_ != PreCloudDirectPhase::Retired) {
+        preCloudDirectPhase_ = PreCloudDirectPhase::Retired;
+        preCloudDirect_->endpoint.retire();
+    }
     if (timeSync_ != nullptr) timeSync_->reset(true);
     transports_.stopAll();
     transports_.setReceiver(nullptr, nullptr);
@@ -410,6 +450,8 @@ void DeviceRuntime::poll(uint32_t totalBudgetMicros) {
             }
             continue;
         }
+        // Keep the original peer invalidation, not automatic Hello or replay.
+        if (isPreCloudDirect()) continue;
         // Transport progress releases its existing TX slot. Service a bounded
         // cached result before automatic Hello/outbox/telemetry traffic.
         pollRequestAcks(static_cast<uint8_t>(index));
@@ -449,6 +491,7 @@ void DeviceRuntime::poll(uint32_t totalBudgetMicros) {
             if (result) helloSent_[index] = true;
         }
     }
+    if (isPreCloudDirect()) return;
     if (reliableOutbox_ != nullptr) reliableOutbox_->poll();
     pollTelemetry();
     pollTimeSync(); // Control/ACK/bootstrap and sampling keep their original priority.
@@ -484,7 +527,8 @@ TimeSyncPeer DeviceRuntime::timePeer(const PeerSession& session) const {
     value.source = timeSource(session.transportId); // Bound path, never Hello.role.
     value.features = session.helloComplete ? session.negotiatedFeatures : 0U;
     value.authenticated = authorizedFor(session, kAuthorizationPermissionControl);
-    value.permissions = value.authenticated ? kAuthorizationPermissionControl : 0U;
+    value.permissions = value.authenticated
+        ? static_cast<uint32_t>(kAuthorizationPermissionControl) : 0U;
     return value;
 }
 
@@ -538,6 +582,7 @@ void DeviceRuntime::setStateApplyHandler(
 void DeviceRuntime::setStateApplyTransactionHandler(
     StateApplyTransactionHandler handler,
     void* context) {
+    if (isPreCloudDirect()) return;
     stateApplyTransactionHandler_ = handler;
     stateApplyTransactionContext_ = context;
 }
@@ -581,7 +626,19 @@ uint32_t DeviceRuntime::transportFeatures(uint8_t transportId) const {
     const TransportAccess access = transports_.accessAt(transportId);
     uint32_t features = config_.protocolFeatures &
         ~static_cast<uint32_t>(bbp2::FeatureAuthentication |
-            bbp2::FeatureControllerControl | bbp2::FeaturePresenceKeyControl | bbp2::FeatureTimeSync);
+            bbp2::FeatureControllerControl | bbp2::FeaturePresenceKeyControl | bbp2::FeatureTimeSync |
+            bbp2::FeatureTaskManagement | bbp2::FeatureTaskServiceConfirmation);
+    const IFrameTransport* transport = transports_.at(transportId);
+    // Only an explicitly installed physical cloud handler may advertise tasks.
+    // Configuration bits alone must never expose an unimplemented capability.
+    if (transport != nullptr && cloudTransport(transportId) && !localTransport(transportId) &&
+        (transport->capabilities().features & TransportFeatureAuthenticated) != 0U &&
+        config_.maxFrameSize >= bbp2::kTaskManagementMaximumFrameSize &&
+        transport->capabilities().maxFrameSize >= bbp2::kTaskManagementMaximumFrameSize)
+        features |= transport->protocolFeatures() &
+            (bbp2::FeatureTaskManagement | bbp2::FeatureTaskServiceConfirmation);
+    if ((features & bbp2::FeatureTaskManagement) == 0U)
+        features &= ~static_cast<uint32_t>(bbp2::FeatureTaskServiceConfirmation);
     if (timeSync_ != nullptr && config_.maxFrameSize >= bbp2::kBaseHeaderSize + bbp2::kTimeResponseMaxSize &&
         timeSource(transportId) != WallTimeSource::None)
         features |= bbp2::FeatureTimeSync;
@@ -619,7 +676,8 @@ Result DeviceRuntime::setReliableOutbox(ReliableOutbox* outbox) {
 Result DeviceRuntime::setTelemetrySampler(
     IClock* clock,
     TelemetrySampleEncoder encoder,
-    void* context) {
+    void* context,
+    TelemetrySamplePreparer prepare) {
     if (started_) return Result::failure(ErrorCode::NotConfigured);
     if ((clock == nullptr) != (encoder == nullptr) ||
         (encoder != nullptr && context == nullptr)) {
@@ -627,6 +685,7 @@ Result DeviceRuntime::setTelemetrySampler(
     }
     telemetryClock_ = clock;
     telemetrySampleEncoder_ = encoder;
+    telemetrySamplePreparer_ = encoder != nullptr ? prepare : nullptr;
     telemetrySampleContext_ = context;
     if (encoder != nullptr) {
         config_.protocolFeatures |= bbp2::FeatureTelemetry;
@@ -737,12 +796,45 @@ void DeviceRuntime::receive(ByteView encoded, const RxContext& rx) {
     if (!result || encoded.size > config_.maxFrameSize ||
         frame.header.bodyLength > config_.maxReassemblySize) {
         incrementDiagnostic(rejectedFrameCount_);
-        sendError(WireError::MalformedMessage, 0, rx);
+        if (!isPreCloudDirect()) sendError(WireError::MalformedMessage, 0, rx);
         return;
     }
 
     const bbp2::MessageKind kind =
         static_cast<bbp2::MessageKind>(frame.header.kind);
+    if (isPreCloudDirect()) {
+        const bool negotiated = existingPeer != nullptr && existingPeer->helloComplete && existingPeer->helloSent;
+        const bool authorized = negotiated && existingPeer->authorizationPermissions != 0U;
+        const bool request = started_ && preCloudDirectPhase_ != PreCloudDirectPhase::Retired &&
+            rx.transportId == 0U && rx.sessionId != 0U &&
+            preCloudDirect_->transport.state() == TransportState::Online &&
+            frame.header.flags == bbp2::FlagNone && frame.header.sequence != 0U &&
+            frame.header.headerLength == bbp2::kBaseHeaderSize;
+        // The original client may request a larger packet with an encrypted
+        // Hello after Method 2, but not change that agreement after a purpose
+        // frame. An unsolicited Hello response cannot establish negotiation.
+        const bool hello = kind == bbp2::MessageKind::Hello &&
+            (!authorized || (rx.encrypted && preCloudDirectPhase_ == PreCloudDirectPhase::Open));
+        const bool auth = kind == bbp2::MessageKind::Authenticate && negotiated && !authorized;
+        if (!request || (!hello && !auth)) {
+            if (request && authorized && rx.encrypted &&
+                existingPeer->authorizationPermissions == kAuthorizationPermissionAll &&
+                (existingPeer->negotiatedFeatures & bbp2::FeatureAuthentication) != 0U &&
+                (kind == bbp2::MessageKind::InitialCloudKeyInstall || kind == bbp2::MessageKind::InitialCloudKeyHandoff ||
+                 kind == bbp2::MessageKind::InitialCloudNetworkHandoff)) {
+                const uint16_t remote = existingPeer->remoteMaxFrameSize;
+                const uint16_t local = preCloudDirect_->transport.capabilities().maxFrameSize;
+                const uint16_t configured = config_.maxFrameSize < local ? config_.maxFrameSize : local;
+                const uint16_t maximum = remote < configured ? remote : configured;
+                if (encoded.size <= maximum) {
+                    preCloudDirectPhase_ = PreCloudDirectPhase::Exchanged;
+                    if (preCloudDirect_->endpoint.receive(encoded, rx, maximum)) return;
+                }
+            }
+            incrementDiagnostic(rejectedFrameCount_);
+            return;
+        }
+    }
     if (kind == bbp2::MessageKind::Hello) {
         result = handleHello(frame, rx);
     } else if (kind == bbp2::MessageKind::Authenticate) {
@@ -992,6 +1084,10 @@ Result DeviceRuntime::handleHello(
     session->remoteMaxFrameSize = hello.maxFrameSize;
     if (hello.maxFrameSize < bbp2::kBaseHeaderSize + bbp2::kTimeResponseMaxSize)
         session->negotiatedFeatures &= ~static_cast<uint32_t>(bbp2::FeatureTimeSync);
+    if (hello.maxFrameSize < bbp2::kTaskManagementMaximumFrameSize)
+        session->negotiatedFeatures &= ~static_cast<uint32_t>(bbp2::FeatureTaskManagement | bbp2::FeatureTaskServiceConfirmation);
+    if ((session->negotiatedFeatures & bbp2::FeatureTaskManagement) == 0U)
+        session->negotiatedFeatures &= ~static_cast<uint32_t>(bbp2::FeatureTaskServiceConfirmation);
     if (hello.maxFrameSize <
         bbp2::kControllerMutationReceiptMaximumFrameSize) {
         session->negotiatedFeatures &=
@@ -1046,14 +1142,23 @@ Result DeviceRuntime::handleHello(
     session->bonded = rx.bonded;
     session->transportAuthenticated = rx.authenticated;
 
+    IFrameTransport* transport = transports_.at(rx.transportId);
     if ((frame.header.flags & bbp2::FlagIsResponse) == 0U) {
+        const uint16_t packetSize = hello.maxBlePacketSize != 0U &&
+                                           transport != nullptr
+                                       ? transport->negotiatePacketSize(
+                                             rx, hello.maxBlePacketSize)
+                                       : 0U;
         result = sendHello(
             responseTarget(rx),
             bbp2::FlagIsResponse,
-            frame.header.sequence);
+            frame.header.sequence,
+            packetSize);
         if (!result) return result;
     }
     session->helloSent = true;
+    if (transport != nullptr)
+        transport->protocolNegotiated(rx, session->negotiatedFeatures, hello.maxFrameSize);
     if ((frame.header.flags & bbp2::FlagAckRequired) != 0U) {
         return sendAck(frame.header.sequence, rx);
     }
@@ -1816,7 +1921,8 @@ Result DeviceRuntime::visitEndpointValue(
 Result DeviceRuntime::sendHello(
     const SendTarget& target,
     uint8_t flags,
-    uint16_t sequence) {
+    uint16_t sequence,
+    uint16_t maxBlePacketSize) {
     bbp2::HelloBody hello;
     hello.role = bbp2::PeerRole::Device;
     hello.versions[0] = bbp2::kVersion;
@@ -1826,6 +1932,7 @@ Result DeviceRuntime::sendHello(
         transports_.accessAt(target.transportId).authorization;
     hello.maxFrameSize = config_.maxFrameSize;
     hello.maxReassemblySize = config_.maxReassemblySize;
+    hello.maxBlePacketSize = maxBlePacketSize;
     if ((config_.protocolFeatures & bbp2::FeatureManifest) != 0U) {
         hello.manifestRevision = config_.manifestRevision;
         hello.hasManifestRevision = true;
@@ -1918,7 +2025,9 @@ Result DeviceRuntime::sendTelemetryStatus(
 
 Result DeviceRuntime::sendTelemetrySample(
     TelemetryLeaseSlot& lease,
-    uint32_t nowMillis) {
+    uint32_t nowMillis,
+    bool& sent) {
+    sent = false;
     SendTarget target;
     target.kind = lease.sessionId == 0U
                       ? SendTargetKind::Transport
@@ -1944,15 +2053,35 @@ Result DeviceRuntime::sendTelemetrySample(
     const size_t valueCapacity = maximumFrame < transmitBuffer_.size
                                      ? maximumFrame - reserve
                                      : transmitBuffer_.size - reserve;
+    ByteView selectedFields(lease.fields, sizeof(lease.fields));
+    size_t fieldCount = lease.fieldCount;
+    if (telemetrySamplePreparer_ != nullptr) {
+        // The eventual envelope is not encoded until after value sampling.
+        // Borrow its reserved scratch instead of allocating a second frame or
+        // keeping a mutable bitmap in every session/lease.
+        static_assert(sizeof(lease.fields) <= reserve, "Telemetry selection must fit reserved envelope scratch");
+        memcpy(transmitBuffer_.data, lease.fields, sizeof(lease.fields));
+        RxContext source;
+        source.transportId = session->transportId;
+        source.sessionId = session->sessionId;
+        source.encrypted = session->encrypted;
+        source.bonded = session->bonded;
+        source.authenticated = session->transportAuthenticated;
+        const Result prepared = telemetrySamplePreparer_(telemetrySampleContext_, source, nowMillis,
+            MutableByteSpan(transmitBuffer_.data, sizeof(lease.fields)), fieldCount);
+        if (!prepared) return prepared;
+        if (fieldCount == 0U) return Result::success(); // No empty-map heartbeat.
+        selectedFields = ByteView(transmitBuffer_.data, sizeof(lease.fields));
+    }
     bbp2::IdBodyWriter writer(MutableByteSpan(
         transmitBuffer_.data + reserve,
         valueCapacity));
-    Result result = writer.begin(lease.fieldCount);
+    Result result = writer.begin(fieldCount);
     if (result) {
         result = telemetrySampleEncoder_(
             telemetrySampleContext_,
-            ByteView(lease.fields, sizeof(lease.fields)),
-            lease.fieldCount,
+            selectedFields,
+            fieldCount,
             writer);
     }
     ByteView values;
@@ -1973,12 +2102,14 @@ Result DeviceRuntime::sendTelemetrySample(
             maximumFrame - bbp2::kBaseHeaderSize),
         body);
     if (!result) return result;
-    return sendEncodedBody(
+    result = sendEncodedBody(
         bbp2::MessageKind::TelemetryData,
         bbp2::FlagIdMode,
         nextSequence(),
         body.size,
         target);
+    sent = result.ok();
+    return result;
 }
 
 void DeviceRuntime::pollTelemetry() {
@@ -2013,10 +2144,11 @@ void DeviceRuntime::pollTelemetry() {
         // this sampling opportunity before sending so congestion drops the
         // old sample, advances sequence and cannot create a hot retry loop.
         telemetryLeases_.sampled(*due, now);
-        const Result result = sendTelemetrySample(*due, now);
-        if (result) {
+        bool sent = false;
+        const Result result = sendTelemetrySample(*due, now, sent);
+        if (result && sent) {
             incrementDiagnostic(telemetryCounters_.samplesSent);
-        } else {
+        } else if (!result) {
             incrementDiagnostic(telemetryCounters_.samplesDropped);
         }
     }
@@ -2479,6 +2611,11 @@ Result DeviceRuntime::prepareEncodedBody(
     uint16_t sequence,
     size_t bodySize,
     ByteView& encodedFrame) {
+    if (isPreCloudDirect() && kind != bbp2::MessageKind::Hello &&
+        kind != bbp2::MessageKind::AuthResult && kind != bbp2::MessageKind::Ack &&
+        kind != bbp2::MessageKind::Error) {
+        return Result::failure(ErrorCode::UnsupportedFeature);
+    }
     if (bodySize > UINT16_MAX ||
         bodySize + bbp2::kBaseHeaderSize > config_.maxFrameSize ||
         bodySize + bbp2::kBaseHeaderSize > transmitBuffer_.size) {
@@ -2505,8 +2642,11 @@ Result DeviceRuntime::fanOutPreparedFrame(
         return Result::failure(ErrorCode::NotConfigured);
     }
     Result firstError = Result::success();
+    Result stateBackpressure = Result::success();
     const bool carriesStateRevision =
         (requiredFeatures & bbp2::FeatureStateRevision) != 0U;
+    // Revision commits and peer lifecycle invalidate observations. A failed
+    // retry at the current revision must not discard an already-current snapshot.
     for (size_t index = 0; index < BLINKER_MAX_PEER_SESSIONS; ++index) {
         PeerSession& session = peers_[index];
         const bool manifestPending = cloudTransport(session.transportId) &&
@@ -2534,11 +2674,6 @@ Result DeviceRuntime::fanOutPreparedFrame(
         target.transportId = session.transportId;
         target.sessionId = session.sessionId;
         if (encodedFrame.size > maximumOutboundFrameSize(target)) {
-            if (carriesStateRevision) {
-                session.stateObserved = false;
-                session.snapshotCursor = 0U;
-                session.snapshotNextCursor = 0U;
-            }
             if (firstError) {
                 firstError = Result::failure(ErrorCode::BufferTooSmall);
             }
@@ -2547,14 +2682,16 @@ Result DeviceRuntime::fanOutPreparedFrame(
         const Result result = transports_.send(encodedFrame, target);
         if (!result) {
             if (carriesStateRevision) {
-                session.stateObserved = false;
-                session.snapshotCursor = 0U;
-                session.snapshotNextCursor = 0U;
+                if (result.code() == ErrorCode::WouldBlock) {
+                    stateBackpressure = result;
+                }
             }
             if (firstError) firstError = result;
         }
     }
-    return firstError;
+    // A permanent error on an earlier lane must not discard another lane's
+    // blocked State. Without actual backpressure, retain first-error semantics.
+    return stateBackpressure ? firstError : stateBackpressure;
 }
 
 Result DeviceRuntime::requestFingerprint(

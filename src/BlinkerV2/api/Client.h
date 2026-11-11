@@ -11,6 +11,18 @@
 namespace blinker {
 
 class PatchBuilder;
+class CloudLocationBinding;
+class Location;
+
+// One explicitly attached private source. Its lifetime must exceed Client.
+// Ordinary onSample callbacks and endpoint slot layout remain unchanged.
+class CloudTelemetrySampleProvider {
+public:
+    virtual ~CloudTelemetrySampleProvider() {}
+    virtual uint16_t endpointId() const = 0;
+    virtual Result prepare(uint32_t nowMillis) = 0;
+    virtual Result write(bbp2::IdBodyWriter& writer) const = 0;
+};
 
 // Called only after the complete incoming PATCH Apply transaction has passed
 // schema, access, constraint and state-capacity preflight. The application
@@ -233,6 +245,11 @@ private:
         ByteView selectedFields,
         size_t fieldCount,
         bbp2::IdBodyWriter& writer);
+    static Result telemetrySamplePreparerThunk(void* context, const RxContext& source,
+        uint32_t nowMillis, MutableByteSpan selectedFields, size_t& fieldCount);
+    static Result privateStateGuardThunk(void* context, StringView key,
+        ByteView value, cbor::Type type);
+    Result attachCloudSampleProvider(CloudTelemetrySampleProvider& provider);
     static Result stateApplyTransactionThunk(
         void* context,
         ByteView values,
@@ -250,6 +267,11 @@ private:
     static Result markDirtyThunk(
         void* context,
         StringView endpointKey,
+        ByteView encodedValue,
+        cbor::Type valueType);
+    static Result markDirtyIdThunk(
+        void* context,
+        uint16_t endpointId,
         ByteView encodedValue,
         cbor::Type valueType);
     Result dispatchCommand(
@@ -310,12 +332,20 @@ private:
     bool stateApplyActive_;
     Diagnostics* diagnostics_;
     IClock* clock_;
+    CloudTelemetrySampleProvider* cloudSampleProvider_;
+    // An unchanged blocked selection is already versioned. Keep only its
+    // revision/count; values and field bits remain in the existing stores.
+    uint32_t blockedStateRevision_;
+    size_t blockedStateFieldCount_;
 
     Client(const Client&);
     Client& operator=(const Client&);
 
     friend class EndpointHandle;
     friend class StateUpdate;
+    friend class TaskPropertyTarget;
+    friend class CloudLocationBinding;
+    friend class Location;
 };
 
 } // namespace blinker

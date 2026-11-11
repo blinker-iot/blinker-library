@@ -72,9 +72,12 @@ public:
     }
 
     void poll(uint32_t budgetMicros) override {
+        poll(budgetMicros, nullptr, nullptr);
+    }
+    void poll(uint32_t budgetMicros, SessionRefreshGate gate, void* context) {
         if (!started_) return;
         authority_.poll(clock_.monotonicMillis());
-        cloud_.poll(budgetMicros);
+        cloud_.poll(budgetMicros, gate, context);
         const uint32_t now = clock_.monotonicMillis();
         authority_.poll(now);
         const uint32_t version = provider_.authenticatedCredentialVersion();
@@ -129,7 +132,7 @@ public:
             secureZero(MutableByteSpan(output, sizeof(output)));
             return;
         }
-        if (provider_.state() == SessionProviderState::Ready &&
+        if (!(gate != nullptr && gate(context)) && provider_.state() == SessionProviderState::Ready &&
             (refreshRequested_ || static_cast<uint32_t>(now - progressAt_) >= 240000U) &&
             (!refreshAttempted_ || static_cast<uint32_t>(now - refreshAt_) >= 300000U)) {
             // Existing login refresh, not revokeSession or a global authority

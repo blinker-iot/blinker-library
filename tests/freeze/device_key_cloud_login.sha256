@@ -1,0 +1,121 @@
+# DeviceKey cloud-login freeze v53 (2026-11-03; IP-4 section 14.7 source review)
+# Only two implementation digests change; all other 22 entries remain exact.
+# Facade: the prior DA-4 internal ESP32 BLE four-slot branch requires both
+# explicit selectors; no shared class members or public begin/login change.
+# ESP32 WiFiBLE product: relative to the reviewed f878 graph, only the one-byte
+# RAM startup intent, pre-attach request, once-only consume and explicit initial
+# provisioning selection change. No NVS erase, grant or automatic rearm.
+# DeviceKey proof/session wire, providers and MQTT algorithms remain unchanged.
+# Selector include order is checked separately: only WiFiBLE loads maintained
+# OfficialConfig before Facade; ordinary WiFi/BLE remain Facade-first.
+# Previous v52 (2026-11-01; reviewed queued-RX renewal boundary)
+# Only ManagedMqttTransport declarations/implementation change: gated consumers
+# service the valid current MQTT connection before re-evaluating the local gate.
+# Split, not increase, the transport operation budget; ordinary poll is unchanged.
+# No member/callback retention, credential expiry extension or remote-ACK claim.
+# Previous v51 (2026-11-01; reviewed existing QA-3 provisioned graph)
+# Align only Facade, WiFiProduct, Esp32WiFiProv and Esp32WiFiBLEProduct:
+# internal ESP32 SoftAP four-slot selection, no-extension hooks, actual native
+# deinit observation, shared Client/carrier TaskSupport and guarded root/stop
+# lifecycle. Includes the previously approved non-empty PoP option consumer.
+# No new refresh logic, wire, public admission, slots, secrets or SDK changes.
+# Previous v50 (2026-11-01; reviewed QA-3 bounded Task refresh deferral)
+# Only HttpDeviceKeySessionProvider and ManagedMqttTransport declarations /
+# implementations change: opt-in valid-old-credential deferral before provider
+# poll, while MQTT continues. Normal poll, proof/session wire, expiry, auth
+# failure and retries are unchanged. No additional members or credential copy.
+# Previous v49 (2026-10-29; reviewed LOC-5 local input facade)
+# Compared with c719d29, Facade adds only the location include, four location
+# overloads and local loss/clear forwarding methods (21 added lines). No
+# fields, begin arguments or DeviceKey/login/session/MQTT paths change.
+# Local observation acceptance neither sends nor grants Cloud authorization.
+# Only the Facade digest changes; every other frozen entry is preserved.
+# Previous v48 (2026-10-17; R4 release/profile binding guard)
+# Only the task build contract gains the required maintained-library binding.
+# Existing SDK fault/heap entries, disabled graph, shared Facade and all other
+# DeviceKey/login/session/MQTT implementation digests remain unchanged.
+# Previous v46 (2026-10-16; reviewed R4 task candidate bounds)
+# Only task-enabled R4 guards tighten to four-slot plain manual WiFi. The
+# ordinary task-disabled graph, DeviceKey/login/session and MQTT stay unchanged.
+# Previous v45 (2026-10-14; reviewed internal Wio task admission)
+# Only the Facade platform guard adds the opt-in internal Wio task candidate.
+# Shared class layout, defaults, APIs, login/session and MQTT remain unchanged.
+# Previous v44 (2026-10-14; reviewed stable multi-TU facade)
+# Product selection is a dependent entry helper, never conditional members or
+# SelectedProfile binding in the shared BlinkerClass definition. The three
+# public entry headers select only call-site packs; the global facade, 12 B
+# ABI, begin arguments and existing TaskSupport/factory remain unchanged.
+# Renesas Print is forward-declared as the Core's arduino::Print entity in
+# every TU, preserving the existing native debug API independent of include order.
+# Only the Facade digest changes; login/session/MQTT digests are preserved.
+# Previous v43 (2026-10-14; reviewed internal R4 task seam)
+# Facade admits only explicitly gated R4 manual-WiFi tasks. The R4 product
+# selects the shared optional lifecycle/carrier only under that gate and an
+# explicit capacity/policy; default remains the original WiFi composition.
+# No facade fields, begin arguments, DeviceKey/login wire or MQTT changes.
+# Only Facade and R4 product digests change in this revision.
+# Previous v42 (2026-10-13; reviewed timeStatus observation)
+# Facade adds only a read of the existing business clock snapshot, resetting
+# output before the read. No fields, begin/login wire, credentials or time
+# negotiation changes. Sketch Timer is separate and never enters this graph.
+# All other frozen implementation digests remain unchanged.
+# Previous v41 (2026-09-24; reviewed typed task facade opt-in)
+# TaskSupport adds an explicit property allowlist before begin; no facade
+# instance fields, login credentials, begin signature or MQTT changes.
+# WiFi lifecycle selects one optional carrier and task lifecycle wrapper;
+# default extension keeps the original carrier/lifecycle, no extra state.
+# Shared business clock and read-only DeviceKey source are borrowed. Login
+# provider, key/proof/session wire, MQTT engine and public begin are unchanged.
+# Host 70-target regression and disabled/enabled firmware gates cover the seam;
+# task authority retirement/hardware admission remain explicit pending work.
+# Previous v39 (2026-09-13; reviewed B3-4c own time)
+# WiFiBLE versus B3-4b installed source: only attachTime using existing stack
+# tick/RNG/Client. No new members, login/provisioning wire or begin changes.
+# Previous v38 (2026-09-13; reviewed B3-3 optional time)
+# Review: Facade opt-in enableTime/time API and WiFiProduct attachTime injection.
+# Borrowed business-time service only; default off, begin arguments, DeviceKey,
+# login proof/session wire, TLS/security clocks and all other hashes unchanged.
+# Previous v37: reviewed B2b-12 recovery.
+# B1 review: HTTP transport truncation retries the same request, completed
+# malformed CBOR/authentication still fails closed; expose Backoff and dropped
+# MQTT socket errors. B2b-12/13 host 58/58 plus real login/reboot/revocation.
+# Login wire, golden vectors, proof/key material and public begin unchanged.
+# Previous v36 (2026-09-12; D1b optional diagnostic output):
+# Facade review: only an IDiagnosticOutput debug overload and API comments.
+# begin/login/provisioning implementation and all other hashes unchanged.
+# v35 changed only WiFiProduct's stopped-state candidate Retry policy injection.
+# Login wire/authentication and transactional provisioning defaults are unchanged.
+# Session contract/provider/Key/ManagedMQTT/golden hashes are unchanged.
+# Cloud is attached first so it polls revocation before LAN output. Default
+# NoWifiProductExtension adds no sockets, credentials, queue or SDK dependency.
+# Preserve the successful 16 B login proof separately from HTTP scratch.
+# Optional shared cloud wrapper handles local-control without a second MQTT.
+# Default products allocate no control table/queue; public begin and login wire
+# remain unchanged. AuthenticationRequired remains fail-closed.
+# Hashes cover non-empty implementation text but omit #include paths and blank
+# layout lines. Dependency/layout changes have separate architecture/package
+# gates. Implementation changes still require review and an explicit update.
+4f1287f4c37e08b02189859766b5c3b708ea7226ed0fa177033b49accc4a2d47  src/BlinkerV2/api/WifiDeviceKeyProfile.h
+4e2f1129dda71b27499c888d92a024843716b3b96255621d671f0a150feae465  src/BlinkerV2/api/BlinkerFacade.h
+7347cdea171a30c0277a99b01290b40e9b4df98bbfad7319d5c7a33e67371c00  src/BlinkerV2/identity/DeviceKey.h
+db599ad42759a06951c3b5e5ba64f14254668ce0104bf3e9764f1d0505b5c46d  src/BlinkerV2/identity/DeviceKey.inc
+e7da166a0c243a354019e7c21d4bf9d7bfaac6c1b4b62a16b34ae2ee70f200cd  src/BlinkerV2/identity/ConfiguredDeviceKeySource.h
+137237e4422b5ac26f499feb10ff0bbfc8d2d425161814f12bf6adcef83adf16  src/BlinkerV2/identity/ConfiguredDeviceKeySource.inc
+a9c9175f37afc4509258fd176049cf3c309977e5194f64c705d67355d52ba73a  src/BlinkerV2/control/DeviceKeySessionContract.h
+a9da3cb37e84fa6d70da7c4fc75ba77f7d78b0329ccba56800318349143c0f2a  src/BlinkerV2/control/DeviceKeySessionContract.inc
+a1afe0f8d153703014386a42e24a21472335ba8c9d3c43544cb5be1b0e2bd13a  src/BlinkerV2/control/HttpDeviceKeySessionProvider.h
+dba0f3b9f2859fba8641e5bd3147623d4dcf3f2dcf42d6341e73a98d33c3af15  src/BlinkerV2/control/HttpDeviceKeySessionProvider.inc
+4d2f83766017a4b6adce75ba7ed4faa8c3d975afdfdb305736369aa1b23ba4b8  src/BlinkerV2/runtime/DeviceKeySessionArena.h
+6a40e221aebc5bae370462e26ceecd6e986eaf5592df326a1b9582c7bbaf4944  src/BlinkerV2/runtime/WifiCloudLifecycle.h
+444180d7337166cd0b8fa0b4025743342af990f396252aa196ef7340b4d0c380  src/BlinkerV2/transport/ManagedMqttTransport.h
+d6b822d4a5a5f5b60fbf94d0e70977e683e82ed5f125f5a4c94e29f1c3df6e6d  src/BlinkerV2/transport/ManagedMqttTransport.inc
+672fb1341fa26d37a5eb318a46ddf013b2dce80e3c8986ed0dd1ba3c1fce6c37  src/BlinkerV2/transport/MqttFrameTransport.h
+9f320ab72e7dc28cd5bda897e2cbb8f325a3da77cee52c690e7ec30858bfa314  src/BlinkerV2/transport/MqttFrameTransport.inc
+e850d50d4c0203f7c42b7cc43ad9c0774281d1e9633d7cb1dc46d0673327577f  src/BlinkerV2/arduino/internal/WiFiProduct.h
+8cc65ffebfecd39a86a5f6b879f587bd932c10e8153fa8fad27a0faff25462a5  src/BlinkerV2/arduino/ports/esp32/Esp32WiFiProv.h
+d99a25cdada22ebe933acb40286ea06da82492207ff2f5a04786d4fec040052f  src/BlinkerV2/arduino/ports/esp32/Esp32WiFiProv.ipp
+fe91b8c62dafe51965cdf977c3961bdbcb9dac884f923a67a2b16f6398ac0a36  src/BlinkerV2/arduino/platform/esp32/Esp32WiFiProduct.h
+c0b184125cb372c83bb0a4f7dbcf6ed5cd15bf24491b70fcf74adbc1fe4967bf  src/BlinkerV2/arduino/platform/esp32/Esp32WiFiBLEProduct.h
+cf61b235ac4464c7fac9446523da0f3c831802032cbb58c5cc6bbd0948668dfb  src/BlinkerV2/arduino/platform/uno_r4/UnoR4WiFiProduct.h
+00e0683f7f375ff31060feff62111b04c38502251834bfe182125cb00358db56  src/BlinkerV2/arduino/ports/uno_r4/UnoR4TaskBuildContract.h
+6f2f7e75f56826eeaf7df8fc171886d751055058ef3c460e2ee57138b08742a3  tests/golden/device_key_session_golden_vectors.properties

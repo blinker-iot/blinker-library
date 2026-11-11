@@ -1,9 +1,8 @@
 #include <AES.h>
 #include <Curve25519.h>
-#include <Ed25519.h>
 #include <GCM.h>
 
-#include <BlinkerV2/security/Ed25519Signature.h>
+#include "PortableEd25519.h"
 
 namespace blinker {
 
@@ -153,24 +152,8 @@ inline Result ArduinoCryptoProvider::verifyDigest(
     ByteView publicKey,
     ByteView digest,
     ByteView signature) {
-    if (publicKey.data == nullptr ||
-        publicKey.size != kEd25519PublicKeySize ||
-        digest.data == nullptr || digest.size != kEd25519DigestSize ||
-        signature.data == nullptr ||
-        signature.size != kEd25519SignatureSize) {
-        return Result::failure(ErrorCode::InvalidArgument);
-    }
-    if (!isCanonicalEd25519PublicKey(publicKey) ||
-        !isCanonicalEd25519Signature(signature)) {
-        return Result::failure(ErrorCode::AuthenticationRequired);
-    }
-    return Ed25519::verify(
-               signature.data,
-               publicKey.data,
-               digest.data,
-               digest.size)
-               ? Result::success()
-               : Result::failure(ErrorCode::AuthenticationRequired);
+    ArduinoEd25519DigestVerifier verifier;
+    return verifier.verifyDigest(publicKey, digest, signature);
 }
 
 } // namespace blinker

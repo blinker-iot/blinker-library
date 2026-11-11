@@ -20,12 +20,16 @@
 #include <host/ble_gatt.h>
 #include <host/ble_uuid.h>
 #include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
-// BBP/2 BLE v1 fixes the bearer packet at the default ATT payload. An MTU
-// change alone is not a protocol negotiation and must not alter fragmentation.
+// Physical ATT capacity only. Direct/Noise start at ATT20 and the authenticated
+// Direct transport separately selects a per-session packet limit.
 #ifndef BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE
-#define BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE 20
+#define BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE 244
 #endif
+static_assert(BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE >= 20 &&
+              BLINKER_ESP32_NIMBLE_MAX_PACKET_SIZE <= 244,
+              "ESP32 BLE packet capacity must be 20..244 bytes");
 
 #ifndef BLINKER_ESP32_NIMBLE_RX_QUEUE_DEPTH
 #define BLINKER_ESP32_NIMBLE_RX_QUEUE_DEPTH 4
@@ -51,9 +55,16 @@ class Esp32NimBleLink : public IBleModeLink {
 public:
     explicit Esp32NimBleLink(
         const Esp32NimBleLinkConfig& config = Esp32NimBleLinkConfig());
+    ~Esp32NimBleLink() override;
+    Esp32NimBleLink(const Esp32NimBleLink&) = delete;
+    Esp32NimBleLink& operator=(const Esp32NimBleLink&) = delete;
 
     Result start() override;
     void stop() override;
+    // Cooperative owner only. A close request, dropped session or stopped
+    // logical transport is not proof that the native host can be handed off.
+    Result tryStop();
+    bool shutdownComplete() const;
     void poll(uint32_t budgetMicros) override;
     BleLinkState state() const override;
     ErrorCode lastError() const override;
@@ -72,6 +83,7 @@ public:
     ble::ModeProfile bleProfile() const override { return profile_; }
 
 private:
+    enum class HostPhase : uint8_t { Off, Initialized, Running, StopAccepted, Uncertain };
     enum : size_t {
         modeServiceDataSize = 16U + ble::kModeServiceDataSize
     };
@@ -103,6 +115,7 @@ private:
         uint8_t (&output)[modeServiceDataSize]);
     Result startAdvertising();
     Result terminateConnection(uint16_t handle);
+    Result releaseNativeHost();
     void markHostResult(ErrorCode error);
     int handleGapEvent(const ble_gap_event& event);
     int handleGattAccess(
@@ -117,6 +130,7 @@ private:
     void drainPackets();
     void clearPacketQueueLocked();
     void resetRuntimeLocked();
+    static uint16_t packetCapacity(uint16_t connectionHandle);
     uint32_t nextSessionId();
     bool validConfig() const;
 
@@ -164,8 +178,11 @@ private:
     bool securityPending_;
     bool hostResultPending_;
     bool hostReady_;
-    bool initialized_;
+    TaskHandle_t hostTaskHandle_;
+    bool hostLoopReturned_;
+    HostPhase hostPhase_;
     bool stopping_;
+    bool stopInProgress_;
     bool sessionAnnounced_;
     BleLinkState state_;
     ErrorCode lastError_;

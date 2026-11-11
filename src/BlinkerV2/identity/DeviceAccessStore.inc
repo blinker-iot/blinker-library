@@ -83,6 +83,29 @@ bool isShared(const ControllerCredential& credential) {
     return credential.permissions == kSharedPermissions;
 }
 
+Result verifyCloudRoot(const AccessState& state, ByteView adminId,
+    uint32_t epoch, uint32_t credentialVersion, const DeviceKeyLocator& locator) {
+    if (!state.hasDeviceKey || state.accessEpoch != epoch)
+        return Result::failure(ErrorCode::StateConflict);
+    bool sameAdmin = false;
+    for (size_t index = 0U; index < state.controllers.count(); ++index) {
+        const ControllerCredential& admin = state.controllers.at(index);
+        if (!isAdmin(admin)) continue;
+        sameAdmin = admin.domain == ControllerCredentialDomain::PlatformAccess &&
+            admin.suite == ControllerCredentialSuite::HmacSha256_32 &&
+            admin.ownershipGeneration == epoch && admin.credentialVersion == credentialVersion &&
+            constantTimeEqual(admin.id(), adminId);
+        break;
+    }
+    if (!sameAdmin) return Result::failure(ErrorCode::StateConflict);
+    DeviceKeyLocator actual;
+    const Result result = deriveDeviceKeyLocator(state.deviceKey, actual);
+    if (!result) return result;
+    return constantTimeEqual(ByteView(actual.bytes, sizeof(actual.bytes)),
+        ByteView(locator.bytes, sizeof(locator.bytes)))
+        ? Result::success() : Result::failure(ErrorCode::StateConflict);
+}
+
 Result validateRoles(
     const ControllerCredentialTable& table,
     uint32_t accessEpoch) {
@@ -198,7 +221,7 @@ Result decodeState(ByteView input, AccessState& state) {
         ? kLegacyCrcOffset
         : (previous ? kPreviousCrcOffset : kCrcOffset);
     const size_t slotCapacity = current
-        ? ControllerCredentialTable::capacity
+        ? static_cast<size_t>(ControllerCredentialTable::capacity)
         : 2U;
     if (input.data[5] != static_cast<uint8_t>(slotCapacity) ||
         input.data[6] > slotCapacity ||
@@ -303,35 +326,81 @@ bool sameState(const AccessState& first, const AccessState& second) {
            sameTable(first.controllers, second.controllers);
 }
 
+enum class AccessChangeKind : uint8_t { Ordinary, Presence, InitialCloudKey };
+
+class AccessChangeGuard {
+public:
+    explicit AccessChangeGuard(
+        IDeviceAccessChangeObserver* observer, bool cooperative = false)
+        : observer_(observer), kind_(cooperative ? AccessChangeKind::Presence : AccessChangeKind::Ordinary), admitted_(false),
+          outcome_(Result::failure(ErrorCode::InternalError)) {}
+    AccessChangeGuard(IDeviceAccessChangeObserver* observer, AccessChangeKind kind)
+        : observer_(observer), kind_(kind), admitted_(false),
+          outcome_(Result::failure(ErrorCode::InternalError)) {}
+    Result begin() {
+        const Result result = observer_ == nullptr
+            ? Result::success()
+            : (kind_ == AccessChangeKind::InitialCloudKey
+                   ? observer_->beginCooperativeInitialCloudKeyChange()
+                   : (kind_ == AccessChangeKind::Presence
+                          ? observer_->beginCooperativePresenceChange()
+                          : observer_->beginDeviceAccessChange()));
+        admitted_ = result.ok();
+        return result;
+    }
+    ~AccessChangeGuard() {
+        if (admitted_ && observer_ != nullptr) {
+            if (kind_ == AccessChangeKind::InitialCloudKey)
+                observer_->endCooperativeInitialCloudKeyChange(outcome_);
+            else if (kind_ == AccessChangeKind::Presence)
+                observer_->endCooperativePresenceChange(outcome_);
+            else observer_->endDeviceAccessChange(outcome_);
+        }
+    }
+    Result complete(Result outcome) { outcome_ = outcome; return outcome; }
+private:
+    IDeviceAccessChangeObserver* observer_;
+    AccessChangeKind kind_;
+    bool admitted_;
+    Result outcome_;
+};
+
 Result replaceAndVerify(
     IAtomicBlobStore& storage,
-    const AccessState& state) {
+    const AccessState& state,
+    IDeviceAccessChangeObserver* observer,
+    bool cooperative = false) {
     uint8_t encoded[DeviceAccessStore::serializedSize] = {};
     Result result = encodeState(
         state,
         MutableByteSpan(encoded, sizeof(encoded)));
+    AccessChangeGuard change(observer, cooperative);
+    if (result) result = change.begin();
     if (result) result = storage.replace(ByteView(encoded, sizeof(encoded)));
     secureZero(MutableByteSpan(encoded, sizeof(encoded)));
-    if (!result) return result;
+    if (!result) return change.complete(result);
 
     AccessState verified;
     result = loadState(storage, verified);
     const bool same = result && sameState(verified, state);
     verified.clearSecrets();
-    return same ? Result::success()
-                : (result ? Result::failure(ErrorCode::InternalError) : result);
+    return change.complete(same ? Result::success()
+                : (result ? Result::failure(ErrorCode::InternalError) : result));
 }
 
-Result clearAndVerify(IAtomicBlobStore& storage) {
-    Result result = storage.clear();
-    if (!result && result.code() != ErrorCode::NotFound) return result;
+Result clearAndVerify(IAtomicBlobStore& storage, IDeviceAccessChangeObserver* observer) {
+    AccessChangeGuard change(observer);
+    Result result = change.begin();
+    if (!result) return change.complete(result);
+    result = storage.clear();
+    if (!result && result.code() != ErrorCode::NotFound) return change.complete(result);
     uint8_t ignored[DeviceAccessStore::serializedSize] = {};
     size_t written = 0U;
     result = storage.load(MutableByteSpan(ignored, sizeof(ignored)), written);
     secureZero(MutableByteSpan(ignored, sizeof(ignored)));
-    return result.code() == ErrorCode::NotFound
+    return change.complete(result.code() == ErrorCode::NotFound
                ? Result::success()
-               : (result ? Result::failure(ErrorCode::InternalError) : result);
+               : (result ? Result::failure(ErrorCode::InternalError) : result));
 }
 
 Result validateBootstrap(
@@ -363,7 +432,8 @@ Result bootstrapState(
     const DeviceKey& deviceKey,
     uint32_t accessEpoch,
     const ControllerCredential& initialController,
-    const DevicePresenceKey* presence) {
+    const DevicePresenceKey* presence,
+    IDeviceAccessChangeObserver* observer) {
     Result result = validateBootstrap(
         hasDeviceKey,
         deviceKey,
@@ -386,8 +456,11 @@ Result bootstrapState(
             (presence == nullptr || sameDevicePresenceKey(
                 state.presence, *presence));
         state.clearSecrets();
-        return same ? Result::success()
-                    : Result::failure(ErrorCode::StateConflict);
+        if (!same) return Result::failure(ErrorCode::StateConflict);
+        // Exact bytes can come from an uncommitted same-handle view. Preserve
+        // zero-write replay, but never confirm it past the original poison.
+        AccessChangeGuard change(observer);
+        return change.complete(change.begin());
     }
     state.clearSecrets();
     if (result.code() != ErrorCode::NotFound) return result;
@@ -398,7 +471,7 @@ Result bootstrapState(
     if (presence != nullptr) state.presence = *presence;
     bool changed = false;
     result = state.controllers.install(initialController, changed);
-    if (result && changed) result = replaceAndVerify(storage, state);
+    if (result && changed) result = replaceAndVerify(storage, state, observer);
     state.clearSecrets();
     return result;
 }
@@ -419,20 +492,98 @@ Result DeviceAccessStore::load(DeviceKey& output) {
 Result DeviceAccessStore::replace(const DeviceKey& key) {
     Result result = validateDeviceKey(key);
     if (!result) return result;
+    AccessChangeGuard change(observer_);
+    result = change.begin();
+    if (!result) return result;
     AccessState state;
     result = loadState(storage_, state);
     if (result && state.hasDeviceKey &&
         sameDeviceKey(state.deviceKey, key)) {
         state.clearSecrets();
-        return Result::success();
+        // The same handle may expose attempted bytes after an unknown write.
+        // Exact replay stays no-write, but never bypasses the product poison.
+        return change.complete(Result::success());
+    }
+    if (result && !state.hasDeviceKey && state.controllers.count() != 0U) {
+        state.clearSecrets();
+        change.complete(Result::success()); // Known no-write rejection.
+        return Result::failure(ErrorCode::StateConflict);
     }
     if (result) {
         state.hasDeviceKey = true;
         state.deviceKey = key;
-        result = replaceAndVerify(storage_, state);
+        result = replaceAndVerify(storage_, state, nullptr);
     }
     state.clearSecrets();
-    return result;
+    return change.complete(result);
+}
+
+Result DeviceAccessStore::installInitialCloudKeyVerified(
+    const DeviceKey& candidate,
+    uint32_t expectedEpoch,
+    const ControllerCredential& expectedAdmin) {
+    return installInitialCloudKeyImpl(candidate, expectedEpoch, expectedAdmin, nullptr);
+}
+
+Result DeviceAccessStore::installInitialCloudKeyAuthorized(
+    const DeviceKey& candidate, uint32_t expectedEpoch,
+    const ControllerCredential& expectedAdmin, IInitialCloudKeyCommitGuard& guard) {
+    return installInitialCloudKeyImpl(candidate, expectedEpoch, expectedAdmin, &guard);
+}
+
+Result DeviceAccessStore::installInitialCloudKeyImpl(
+    const DeviceKey& candidate, uint32_t expectedEpoch,
+    const ControllerCredential& expectedAdmin, IInitialCloudKeyCommitGuard* guard) {
+    Result result = validateDeviceKey(candidate);
+    if (!result || expectedEpoch == 0U ||
+        expectedAdmin.domain != ControllerCredentialDomain::PlatformAccess ||
+        expectedAdmin.ownershipGeneration != expectedEpoch || !isAdmin(expectedAdmin) ||
+        !validateControllerCredential(expectedAdmin))
+        return Result::failure(ErrorCode::InvalidArgument);
+    if (observer_ == nullptr) return Result::failure(ErrorCode::UnsupportedFeature);
+
+    // This named transaction borrows an exclusive owner before
+    // reading the real root, and keeps it through CAS, commit and exact readback.
+    AccessChangeGuard change(observer_, AccessChangeKind::InitialCloudKey);
+    result = change.begin();
+    if (!result) return result;
+    AccessState state;
+    result = loadState(storage_, state);
+    if (!result) { state.clearSecrets(); return change.complete(result); }
+    bool sameAdmin = false;
+    const ControllerCredential* actualAdmin = nullptr;
+    for (size_t index = 0U; index < state.controllers.count(); ++index) {
+        const ControllerCredential& current = state.controllers.at(index);
+        if (isAdmin(current)) {
+            actualAdmin = &current;
+            sameAdmin = sameControllerCredential(current, expectedAdmin);
+        }
+    }
+    if (state.accessEpoch != expectedEpoch || !sameAdmin ||
+        (state.hasDeviceKey && !sameDeviceKey(state.deviceKey, candidate))) {
+        state.clearSecrets();
+        change.complete(Result::success()); // Known rejection, no write/unknown outcome.
+        return Result::failure(ErrorCode::StateConflict);
+    }
+    // Storage/root reads can run callbacks. Revalidate the LIVE consumer only
+    // after those reads and full CAS, including an otherwise same-key no-op.
+    // A rejected guard is a known zero-write result, never an unknown commit.
+    if (guard != nullptr) {
+        result = guard->validateInitialCloudKeyCommit(candidate, state.accessEpoch, *actualAdmin);
+        if (!result) {
+            state.clearSecrets();
+            change.complete(Result::success());
+            return result;
+        }
+    }
+    if (!state.hasDeviceKey) {
+        state.hasDeviceKey = true;
+        state.deviceKey = candidate;
+        // The outer named guard already owns the fence: do not reacquire it.
+        result = replaceAndVerify(storage_, state, nullptr);
+    }
+    state.clearSecrets();
+    return change.complete(result);
 }
 
 Result DeviceAccessStore::clear() {
@@ -442,7 +593,7 @@ Result DeviceAccessStore::clear() {
     if (result && state.hasDeviceKey) {
         state.hasDeviceKey = false;
         clearDeviceKey(state.deviceKey);
-        result = replaceAndVerify(storage_, state);
+        result = replaceAndVerify(storage_, state, observer_);
     }
     state.clearSecrets();
     return result;
@@ -455,6 +606,93 @@ Result DeviceAccessStore::loadAccessEpoch(uint32_t& output) {
     if (result) output = state.accessEpoch;
     state.clearSecrets();
     return result;
+}
+
+Result DeviceAccessStore::loadAdminSelector(DeviceAccessAdminSelector& output) {
+    output = DeviceAccessAdminSelector();
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result) {
+        result = Result::failure(ErrorCode::NotFound);
+        for (size_t index = 0U; index < state.controllers.count(); ++index) {
+            const ControllerCredential& credential = state.controllers.at(index);
+            if (!isAdmin(credential)) continue;
+            memcpy(output.controllerId, credential.controllerId, sizeof(output.controllerId));
+            output.accessEpoch = state.accessEpoch;
+            result = Result::success();
+            break;
+        }
+    }
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::verifyInitialCloudWifiRoot(ByteView adminId, uint32_t epoch,
+    uint32_t credentialVersion, const DeviceKeyLocator& locator) {
+    if (adminId.size != kControllerIdSize || allZero(adminId) || epoch == 0U || credentialVersion == 0U)
+        return Result::failure(ErrorCode::InvalidArgument);
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result) result = verifyCloudRoot(state, adminId, epoch, credentialVersion, locator);
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::replaceWifiProvisioningKeyVerified(ByteView expectedAdminId,
+    uint32_t expectedEpoch, uint32_t expectedAdminVersion,
+    const DeviceKeyLocator& expectedCurrent, const DeviceKey& candidate,
+    IWifiprovRekeyCommitGuard& guard) {
+    const ByteView oldLocator(expectedCurrent.bytes, sizeof(expectedCurrent.bytes));
+    if (expectedAdminId.size != kControllerIdSize || allZero(expectedAdminId) ||
+        expectedEpoch == 0U || expectedAdminVersion == 0U || allZero(oldLocator))
+        return Result::failure(ErrorCode::InvalidArgument);
+    DeviceKeyLocator candidateLocator;
+    Result result = deriveDeviceKeyLocator(candidate, candidateLocator);
+    if (!result) return result;
+    if (constantTimeEqual(oldLocator, ByteView(candidateLocator.bytes, sizeof(candidateLocator.bytes))))
+        return Result::failure(ErrorCode::StateConflict);
+    if (observer_ == nullptr) return Result::failure(ErrorCode::UnsupportedFeature);
+
+    AccessChangeGuard change(observer_);
+    result = change.begin();
+    if (!result) return result;
+    AccessState state;
+    result = loadState(storage_, state);
+    if (result) result = verifyCloudRoot(state, expectedAdminId, expectedEpoch, expectedAdminVersion, expectedCurrent);
+    if (result) result = guard.validateWifiprovRekeyCommit();
+    if (!result) {
+        state.clearSecrets();
+        change.complete(Result::success()); // No write was attempted.
+        return result;
+    }
+    state.deviceKey = candidate;
+    result = replaceAndVerify(storage_, state, nullptr); // Owner remains held through readback.
+    state.clearSecrets();
+    return change.complete(result);
+}
+
+Result DeviceAccessStore::loadWifiProvisioningKeyVerified(ByteView adminId, uint32_t epoch,
+    uint32_t adminVersion, const DeviceKeyLocator& locator, DeviceKey& output) {
+    clearDeviceKey(output);
+    if (adminId.size != kControllerIdSize || allZero(adminId) || epoch == 0U || adminVersion == 0U)
+        return Result::failure(ErrorCode::InvalidArgument);
+    AccessState state;
+    Result result = loadState(storage_, state);
+    if (result) result = verifyCloudRoot(state, adminId, epoch, adminVersion, locator);
+    if (result) output = state.deviceKey;
+    state.clearSecrets();
+    return result;
+}
+
+Result DeviceAccessStore::readDurableWifiProvisioningKeyVerified(IAtomicBlobStore& fresh,
+    ByteView adminId, uint32_t epoch, uint32_t adminVersion,
+    const DeviceKeyLocator& locator, DeviceKey& output) {
+    if (&fresh == &storage_) {
+        clearDeviceKey(output);
+        return Result::failure(ErrorCode::InvalidArgument);
+    }
+    DeviceAccessStore durableView(fresh);
+    return durableView.loadWifiProvisioningKeyVerified(adminId, epoch, adminVersion, locator, output);
 }
 
 Result DeviceAccessStore::loadActive(
@@ -528,7 +766,7 @@ Result DeviceAccessStore::installVerified(
             state.controllers, state.accessEpoch);
         if (!roles) result = Result::failure(ErrorCode::StateConflict);
     }
-    if (result && changed) result = replaceAndVerify(storage_, state);
+    if (result && changed) result = replaceAndVerify(storage_, state, observer_);
     state.clearSecrets();
     return result;
 }
@@ -555,7 +793,7 @@ Result DeviceAccessStore::rotateVerified(
         result = state.controllers.rotate(
             expectedCredentialVersion, credential, changed);
     }
-    if (result && changed) result = replaceAndVerify(storage_, state);
+    if (result && changed) result = replaceAndVerify(storage_, state, observer_);
     clearControllerCredential(current);
     state.clearSecrets();
     return result;
@@ -597,7 +835,7 @@ Result DeviceAccessStore::revokeVerified(
             expectedCredentialVersion,
             changed);
     }
-    if (result && changed) result = replaceAndVerify(storage_, state);
+    if (result && changed) result = replaceAndVerify(storage_, state, observer_);
     clearControllerCredential(current);
     state.clearSecrets();
     return result;
@@ -609,13 +847,13 @@ Result DeviceAccessStore::clearAll() {
     if (result.code() == ErrorCode::NotFound) return Result::success();
     if (result && !state.hasDeviceKey) {
         state.clearSecrets();
-        return clearAndVerify(storage_);
+        return clearAndVerify(storage_, observer_);
     }
     if (result &&
         (state.controllers.count() != 0U || state.hasPresence())) {
         state.controllers.clear();
         clearDevicePresenceKey(state.presence);
-        result = replaceAndVerify(storage_, state);
+        result = replaceAndVerify(storage_, state, observer_);
     }
     state.clearSecrets();
     return result;
@@ -631,7 +869,8 @@ Result DeviceAccessStore::bootstrap(
         deviceKey,
         accessEpoch,
         initialController,
-        nullptr);
+        nullptr,
+        observer_);
 }
 
 Result DeviceAccessStore::bootstrapAccess(
@@ -643,7 +882,8 @@ Result DeviceAccessStore::bootstrapAccess(
         DeviceKey(),
         accessEpoch,
         initialController,
-        nullptr);
+        nullptr,
+        observer_);
 }
 
 Result DeviceAccessStore::loadPresence(
@@ -667,6 +907,21 @@ Result DeviceAccessStore::replacePresenceVerified(
     uint32_t accessEpoch,
     uint32_t expectedVersion,
     const DevicePresenceKey& value) {
+    return replacePresenceImpl(accessEpoch, expectedVersion, value, false);
+}
+
+Result DeviceAccessStore::replacePresenceVerifiedCooperatively(
+    uint32_t accessEpoch,
+    uint32_t expectedVersion,
+    const DevicePresenceKey& value) {
+    return replacePresenceImpl(accessEpoch, expectedVersion, value, true);
+}
+
+Result DeviceAccessStore::replacePresenceImpl(
+    uint32_t accessEpoch,
+    uint32_t expectedVersion,
+    const DevicePresenceKey& value,
+    bool cooperative) {
     Result result = validateDevicePresenceKey(value);
     if (!result || accessEpoch == 0U) {
         return Result::failure(ErrorCode::InvalidArgument);
@@ -682,9 +937,15 @@ Result DeviceAccessStore::replacePresenceVerified(
             expectedVersion != UINT32_MAX &&
             value.version == expectedVersion + 1U;
         state.clearSecrets();
-        return exactRetry
-                   ? Result::success()
-                   : Result::failure(ErrorCode::StateConflict);
+        if (!exactRetry) return Result::failure(ErrorCode::StateConflict);
+        if (cooperative) {
+            // An uncertain atomic write may be visible through this handle.
+            // Exact bytes are not durable confirmation until the product's
+            // cooperative fence also admits this no-write completion.
+            AccessChangeGuard change(observer_, true);
+            return change.complete(change.begin());
+        }
+        return Result::success();
     }
     const uint32_t currentVersion = state.hasPresence()
         ? state.presence.version
@@ -696,7 +957,7 @@ Result DeviceAccessStore::replacePresenceVerified(
     }
     if (result) {
         state.presence = value;
-        result = replaceAndVerify(storage_, state);
+        result = replaceAndVerify(storage_, state, observer_, cooperative);
     }
     state.clearSecrets();
     return result;
@@ -713,7 +974,8 @@ Result DeviceAccessStore::bootstrapWithPresence(
         deviceKey,
         accessEpoch,
         initialController,
-        &presence);
+        &presence,
+        observer_);
 }
 
 Result DeviceAccessStore::bootstrapAccessWithPresence(
@@ -726,11 +988,12 @@ Result DeviceAccessStore::bootstrapAccessWithPresence(
         DeviceKey(),
         accessEpoch,
         initialController,
-        &presence);
+        &presence,
+        observer_);
 }
 
 Result DeviceAccessStore::eraseAccess() {
-    return clearAndVerify(storage_);
+    return clearAndVerify(storage_, observer_);
 }
 
 } // namespace blinker
